@@ -22,6 +22,7 @@ dependencies:
     - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
   post:
     - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
+    - find .
     - go test $(go list ./... | grep -v /vendor/)
 #    - gometalinter --install
     - go build .
