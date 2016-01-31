@@ -1,0 +1,35 @@
+machine:
+  pre:
+    - wget https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
+    - tar zxvf go1.5.3.linux-amd64.tar.gz
+  environment:
+    GOROOT: ${HOME}/go
+    PATH: ${GOROOT}/bin:${PATH}
+    GO15VENDOREXPERIMENT: "1"
+    IMPORT_PATH: "github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+  post:
+    - go version
+
+dependencies:
+  pre:
+    - go version
+    - go get github.com/alecthomas/gometalinter
+    - go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
+#    - go get github.com/mattn/goveralls
+    - git describe --tags |tee VERSION
+  override:
+    - 'mkdir -p "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
+    - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
+  post:
+    - go test -i ./...
+#    - gometalinter --install
+    - go build .
+
+#test:
+#  override:
+#    - gometalinter --cyclo-over=12 --tests --deadline=120s ./...
+#    - gocov test ./... -short -timeout=5m > cov.json
+#    - godep go test -v -timeout=5m ./...
+#    - godep go test -v -short -race -timeout=5m ./...
+#  post:
+#    - goveralls -service=circleci -gocovdata=cov.json -repotoken=$COVERALLS_REPO_TOKEN || true
