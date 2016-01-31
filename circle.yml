@@ -20,12 +20,11 @@ dependencies:
   override:
     - 'mkdir -p "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
     - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
-  post:
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go test $(go list ./... | grep -v /vendor/)'
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build .'
 
-#test:
-#  override:
+test:
+  override:
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build .'
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go test $(go list ./... | grep -v /vendor/)'
 #    - gometalinter --cyclo-over=12 --tests --deadline=120s ./...
 #    - gocov test ./... -short -timeout=5m > cov.json
 #    - godep go test -v -timeout=5m ./...
