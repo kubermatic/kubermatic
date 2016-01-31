@@ -21,7 +21,7 @@ dependencies:
     - 'mkdir -p "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
     - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
   post:
-    - go test -i ./...
+    - go test $(go list ./... | grep -v /vendor/)
 #    - gometalinter --install
     - go build .
 
