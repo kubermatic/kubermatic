@@ -21,12 +21,8 @@ dependencies:
     - 'mkdir -p "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
     - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
   post:
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
-    - 'find "$(echo "$GOPATH" | cut -d: -f1)"'
-    - env | sort
-    - go test $(go list ./... | grep -v /vendor/)
-#    - gometalinter --install
-    - go build .
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go test $(go list ./... | grep -v /vendor/)'
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build .'
 
 #test:
 #  override:
