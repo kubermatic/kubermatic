@@ -77,8 +77,8 @@ func (p *provider) Clusters() ([]cloud.Cluster, error) {
 }
 
 type cluster struct {
-	FakeID    string       `json: id`
-	FakeNodes []cloud.Node `json: nodes`
+	FakeID    string       `json:"id"`
+	FakeNodes []cloud.Node `json:"nodes"`
 }
 
 func (c *cluster) ID() string {
@@ -90,8 +90,8 @@ func (c *cluster) Nodes() []cloud.Node {
 }
 
 type node struct {
-	FakeID       string `json: id`
-	FakePublicIP string `json: public`
+	FakeID       string `json:"id"`
+	FakePublicIP string `json:"public"`
 }
 
 func (n *node) ID() string {

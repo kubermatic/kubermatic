@@ -19,7 +19,7 @@ func NewCluster(ctx context.Context) http.Handler {
 		ctx,
 		newClusterEndpoint(),
 		decodeNewClusterReq,
-		encodeNewClusterRes,
+		encodeJSON,
 	)
 }
 
@@ -28,7 +28,7 @@ func Clusters(ctx context.Context) http.Handler {
 		ctx,
 		clustersEndpoint(),
 		decodeClustersReq,
-		encodeNewClusterRes,
+		encodeJSON,
 	)
 }
 
@@ -57,7 +57,7 @@ func decodeClustersReq(r *http.Request) (interface{}, error) {
 
 type newClusterReq struct {
 	Provider string
-	Nodes    int `json: nodes`
+	Nodes    int `json:"nodes"`
 }
 
 func newClusterEndpoint() endpoint.Endpoint {
@@ -91,6 +91,6 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func encodeNewClusterRes(w http.ResponseWriter, response interface{}) (err error) {
+func encodeJSON(w http.ResponseWriter, response interface{}) (err error) {
 	return json.NewEncoder(w).Encode(response)
 }
