@@ -13,8 +13,17 @@ import (
 func main() {
 	ctx := context.Background()
 	mux := mux.NewRouter()
-	mux.Handle("/cluster", handler.NewCluster(ctx)).Methods("POST")
-	mux.Handle("/cluster/{provider}", handler.Clusters(ctx)).Methods("GET")
+
+	mux.
+		Methods("POST").
+		Path("/cluster/{provider}").
+		Handler(handler.NewCluster(ctx))
+
+	mux.
+		Methods("GET").
+		Path("/cluster/{provider}").
+		Handler(handler.Clusters(ctx))
+
 	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

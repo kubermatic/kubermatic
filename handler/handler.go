@@ -32,18 +32,11 @@ func Clusters(ctx context.Context) http.Handler {
 	)
 }
 
-type clustersReq struct {
-	provider  string
-	clusterID string
-}
-
 func clustersEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clustersReq)
-
 		var p cloud.Provider
 
-		switch req.provider {
+		switch request.(string) {
 		case "fake":
 			p = fake.NewProvider()
 		default:
@@ -55,18 +48,16 @@ func clustersEndpoint() endpoint.Endpoint {
 }
 
 func decodeClustersReq(r *http.Request) (interface{}, error) {
-	vars := mux.Vars(r)
-	provider, okProvider := vars["provider"]
-	clusterID := vars["clusterID"]
-	if !okProvider {
+	provider, ok := mux.Vars(r)["provider"]
+	if !ok {
 		return nil, errors.New("invalid clusters request")
 	}
-	return clustersReq{provider, clusterID}, nil
+	return provider, nil
 }
 
 type newClusterReq struct {
-	Provider string `json: provider`
-	Nodes    int    `json: nodes`
+	Provider string
+	Nodes    int `json: nodes`
 }
 
 func newClusterEndpoint() endpoint.Endpoint {
@@ -95,6 +86,8 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
+
+	req.Provider = mux.Vars(r)["provider"]
 	return req, nil
 }
 
