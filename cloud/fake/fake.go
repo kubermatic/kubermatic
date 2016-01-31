@@ -9,6 +9,11 @@ import (
 	"github.com/sttts/kubermatik-api/cloud"
 )
 
+var (
+	clusters map[string]cloud.Cluster = map[string]cloud.Cluster{}
+	mu       sync.Mutex               // protects fields above
+)
+
 type spec struct {
 	nodes int
 }
@@ -16,11 +21,6 @@ type spec struct {
 func NewSpec(nodes int) cloud.ClusterSpec {
 	return &spec{nodes}
 }
-
-var (
-	clusters map[string]cloud.Cluster = map[string]cloud.Cluster{}
-	mu       sync.Mutex               // protects fields above
-)
 
 type provider struct{}
 
@@ -43,19 +43,19 @@ func (p *provider) NewCluster(s cloud.ClusterSpec) (cloud.Cluster, error) {
 	}
 	id = "fake-" + id
 
-	nodes := make([]cloud.Node, 0, spec.nodes)
+	nodes := make([]cloud.Node, spec.nodes)
 	for i := 0; i < spec.nodes; i++ {
 		n := &node{
-			id:       fmt.Sprintf("%s-%d", id, i),
-			publicIP: "10.0.0.1",
+			FakeID:       fmt.Sprintf("%s-%d", id, i),
+			FakePublicIP: "10.0.0.1",
 		}
 
-		nodes = append(nodes, n)
+		nodes[i] = n
 	}
 
 	c := &cluster{
-		id:    id,
-		nodes: nodes,
+		FakeID:    id,
+		FakeNodes: nodes,
 	}
 
 	clusters[id] = c
@@ -66,42 +66,40 @@ func (p *provider) Clusters() ([]cloud.Cluster, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	cs := make([]cloud.Cluster, 0, len(clusters))
+	cs := make([]cloud.Cluster, len(clusters))
+	var i int
 	for _, c := range clusters {
-		cs = append(cs, c)
+		cs[i] = c
+		i++
 	}
 
 	return cs, nil
 }
 
 type cluster struct {
-	id    string
-	nodes []cloud.Node
+	FakeID    string       `json: id`
+	FakeNodes []cloud.Node `json: nodes`
 }
 
 func (c *cluster) ID() string {
-	return c.id
+	return c.FakeID
 }
 
 func (c *cluster) Nodes() []cloud.Node {
-	return c.nodes
+	return c.FakeNodes
 }
 
 type node struct {
-	id       string
-	publicIP string
+	FakeID       string `json: id`
+	FakePublicIP string `json: public`
 }
 
 func (n *node) ID() string {
-	return n.id
+	return n.FakeID
 }
 
 func (n *node) PublicIP() string {
-	return n.publicIP
-}
-
-func (n *node) String() string {
-	return n.id
+	return n.FakePublicIP
 }
 
 func uuid() (string, error) {
