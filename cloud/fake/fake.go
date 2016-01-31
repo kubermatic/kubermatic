@@ -22,6 +22,8 @@ func NewSpec(nodes int) cloud.ClusterSpec {
 	return &spec{nodes}
 }
 
+var _ cloud.Provider = (*provider)(nil)
+
 type provider struct{}
 
 func NewProvider() cloud.Provider {
@@ -76,6 +78,8 @@ func (p *provider) Clusters() ([]cloud.Cluster, error) {
 	return cs, nil
 }
 
+var _ cloud.Cluster = (*cluster)(nil)
+
 type cluster struct {
 	FakeID    string       `json:"id"`
 	FakeNodes []cloud.Node `json:"nodes"`
@@ -88,6 +92,8 @@ func (c *cluster) ID() string {
 func (c *cluster) Nodes() []cloud.Node {
 	return c.FakeNodes
 }
+
+var _ cloud.Node = (*node)(nil)
 
 type node struct {
 	FakeID       string `json:"id"`
