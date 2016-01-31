@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sttts/kubermatik-api/cloud"
+	"github.com/sttts/kubermatic-api/cloud"
 )
 
 var (

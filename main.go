@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/gorilla/mux"
-	"github.com/sttts/kubermatik-api/handler"
+	"github.com/sttts/kubermatic-api/handler"
 )
 
 func main() {

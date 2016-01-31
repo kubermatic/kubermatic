@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"github.com/sttts/kubermatik-api/cloud"
-	"github.com/sttts/kubermatik-api/cloud/fake"
+	"github.com/sttts/kubermatic-api/cloud"
+	"github.com/sttts/kubermatic-api/cloud/fake"
 	"golang.org/x/net/context"
 
 	httptransport "github.com/go-kit/kit/transport/http"
