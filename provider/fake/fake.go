@@ -6,31 +6,31 @@ import (
 	"fmt"
 	"sync"
 
-	cloud "github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider"
 )
 
 var (
-	clusters map[string]cloud.Cluster = map[string]cloud.Cluster{}
-	mu       sync.Mutex               // protects fields above
+	clusters map[string]provider.Cluster = map[string]provider.Cluster{}
+	mu       sync.Mutex                  // protects fields above
 )
 
 type spec struct {
 	nodes int
 }
 
-func NewSpec(nodes int) cloud.ClusterSpec {
+func NewSpec(nodes int) provider.ClusterSpec {
 	return &spec{nodes}
 }
 
-var _ cloud.ClusterProvider = (*provider)(nil)
+var _ provider.ClusterProvider = (*clusterProvider)(nil)
 
-type provider struct{}
+type clusterProvider struct{}
 
-func NewProvider() cloud.ClusterProvider {
-	return &provider{}
+func NewProvider() provider.ClusterProvider {
+	return &clusterProvider{}
 }
 
-func (p *provider) NewCluster(s cloud.ClusterSpec) (cloud.Cluster, error) {
+func (p *clusterProvider) NewCluster(s provider.ClusterSpec) (provider.Cluster, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -45,7 +45,7 @@ func (p *provider) NewCluster(s cloud.ClusterSpec) (cloud.Cluster, error) {
 	}
 	id = "fake-" + id
 
-	nodes := make([]cloud.Node, spec.nodes)
+	nodes := make([]provider.Node, spec.nodes)
 	for i := 0; i < spec.nodes; i++ {
 		n := &node{
 			FakeID:       fmt.Sprintf("%s-%d", id, i),
@@ -64,11 +64,11 @@ func (p *provider) NewCluster(s cloud.ClusterSpec) (cloud.Cluster, error) {
 	return c, nil
 }
 
-func (p *provider) Clusters() ([]cloud.Cluster, error) {
+func (p *clusterProvider) Clusters() ([]provider.Cluster, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	cs := make([]cloud.Cluster, len(clusters))
+	cs := make([]provider.Cluster, len(clusters))
 	var i int
 	for _, c := range clusters {
 		cs[i] = c
@@ -78,22 +78,22 @@ func (p *provider) Clusters() ([]cloud.Cluster, error) {
 	return cs, nil
 }
 
-var _ cloud.Cluster = (*cluster)(nil)
+var _ provider.Cluster = (*cluster)(nil)
 
 type cluster struct {
-	FakeID    string       `json:"id"`
-	FakeNodes []cloud.Node `json:"nodes"`
+	FakeID    string          `json:"id"`
+	FakeNodes []provider.Node `json:"nodes"`
 }
 
 func (c *cluster) ID() string {
 	return c.FakeID
 }
 
-func (c *cluster) Nodes() []cloud.Node {
+func (c *cluster) Nodes() []provider.Node {
 	return c.FakeNodes
 }
 
-var _ cloud.Node = (*node)(nil)
+var _ provider.Node = (*node)(nil)
 
 type node struct {
 	FakeID       string `json:"id"`
