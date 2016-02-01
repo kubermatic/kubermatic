@@ -36,6 +36,12 @@
 			"path": "/etcd"
 		},
 		{
+			"importpath": "github.com/digitalocean/godo",
+			"repository": "https://github.com/digitalocean/godo",
+			"revision": "6ca5b770f203b82a0fca68d0941736458efa8a4f",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/go-kit/kit",
 			"repository": "https://github.com/go-kit/kit",
 			"revision": "8e8823691c88d1c57bd1c91a8f3ae51c8bc015e0",
@@ -61,6 +67,13 @@
 			"revision": "45bba206dd5270d96bac4942dcfe515726613249",
 			"branch": "master",
 			"path": "/proto"
+		},
+		{
+			"importpath": "github.com/google/go-querystring/query",
+			"repository": "https://github.com/google/go-querystring",
+			"revision": "2a60fc2ba6c19de80291203597d752e9ba58e4c0",
+			"branch": "master",
+			"path": "/query"
 		},
 		{
 			"importpath": "github.com/gorilla/context",
@@ -167,6 +180,12 @@
 			"revision": "b8cb1681462b5fca34da3de14378a56d512e0dc7",
 			"branch": "master",
 			"path": "/breaker"
+		},
+		{
+			"importpath": "github.com/tent/http-link-go",
+			"repository": "https://github.com/tent/http-link-go",
+			"revision": "ac974c61c2f990f4115b119354b5e0b47550e888",
+			"branch": "master"
 		},
 		{
 			"importpath": "github.com/ugorji/go/codec",
