@@ -23,12 +23,12 @@ func main() {
 
 	mux.
 		Methods("POST").
-		Path("/cluster/{provider}").
+		Path("/api/v1/cluster/{provider}").
 		Handler(handler.NewCluster(ctx))
 
 	mux.
 		Methods("GET").
-		Path("/cluster/{provider}").
+		Path("/api/v1/cluster/{provider}").
 		Handler(handler.Clusters(ctx))
 
 	http.Handle("/", mux)
