@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"golang.org/x/net/context"
-
 	"github.com/gorilla/mux"
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/kubermatic/api/handler"
