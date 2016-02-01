@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"github.com/sttts/kubermatic-api/cloud"
-	"github.com/sttts/kubermatic-api/cloud/fake"
+	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/fake"
 	"golang.org/x/net/context"
 
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -38,7 +38,7 @@ func Clusters(ctx context.Context) http.Handler {
 
 func clustersEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var p cloud.Provider
+		var p provider.ClusterProvider
 
 		switch request.(string) {
 		case "fake":
@@ -69,8 +69,8 @@ func newClusterEndpoint() endpoint.Endpoint {
 		req := request.(newClusterReq)
 
 		var (
-			p    cloud.Provider
-			spec cloud.ClusterSpec
+			p    provider.ClusterProvider
+			spec provider.ClusterSpec
 		)
 
 		switch req.Provider {

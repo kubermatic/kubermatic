@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/gorilla/mux"
-	"github.com/sttts/kubermatic-api/handler"
+	"github.com/kubermatic/api/handler"
 )
 
 func main() {

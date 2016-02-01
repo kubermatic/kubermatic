@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sttts/kubermatic-api/cloud"
+	cloud "github.com/kubermatic/api/provider"
 )
 
 var (
@@ -22,11 +22,11 @@ func NewSpec(nodes int) cloud.ClusterSpec {
 	return &spec{nodes}
 }
 
-var _ cloud.Provider = (*provider)(nil)
+var _ cloud.ClusterProvider = (*provider)(nil)
 
 type provider struct{}
 
-func NewProvider() cloud.Provider {
+func NewProvider() cloud.ClusterProvider {
 	return &provider{}
 }
 
