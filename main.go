@@ -3,10 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/net/context"
 
 	"github.com/gorilla/mux"
+	ghandlers "github.com/gorilla/handlers"
 	"github.com/kubermatic/api/handler"
 )
 
@@ -30,5 +32,5 @@ func main() {
 		Handler(handler.Clusters(ctx))
 
 	http.Handle("/", mux)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
 }
