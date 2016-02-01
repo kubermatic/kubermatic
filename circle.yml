@@ -1,11 +1,9 @@
 machine:
+  services:
+    - docker
   pre:
     - wget https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
     - tar zxvf go1.5.3.linux-amd64.tar.gz
-    - |
-      sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.8.1-circleci'
-      sudo chmod 0755 /usr/bin/docker
-      sudo service docker start
   environment:
     GOROOT: ${HOME}/go
     PATH: ${GOROOT}/bin:${PATH}
