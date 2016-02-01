@@ -14,6 +14,10 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
+func StatusOK(res http.ResponseWriter, _ *http.Request) {
+	res.WriteHeader(http.StatusOK)
+}
+
 func NewCluster(ctx context.Context) http.Handler {
 	return httptransport.NewServer(
 		ctx,
