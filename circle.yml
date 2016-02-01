@@ -38,6 +38,6 @@ deployment:
   production:
     branch: master
     commands:
-      - docker build -t kubermatic/api .
+      - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; docker build -t kubermatic/api .'
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push kubermatic/api
