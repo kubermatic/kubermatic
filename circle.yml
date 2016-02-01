@@ -31,3 +31,11 @@ test:
 #    - godep go test -v -short -race -timeout=5m ./...
 #  post:
 #    - goveralls -service=circleci -gocovdata=cov.json -repotoken=$COVERALLS_REPO_TOKEN || true
+
+deployment:
+  production:
+    branch: master
+    commands:
+      - docker build -t kubermatic/api .
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push kubermatic/api
