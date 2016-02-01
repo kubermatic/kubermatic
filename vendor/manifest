@@ -202,6 +202,26 @@
 			"path": "/context"
 		},
 		{
+			"importpath": "golang.org/x/oauth2",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "8a57ed94ffd43444c0879fe75701732a38afc985",
+			"branch": "master"
+		},
+		{
+			"importpath": "google.golang.org/cloud/compute/metadata",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "fb10e8da373d97f6ba5e648299a10b3b91f14cd5",
+			"branch": "master",
+			"path": "/compute/metadata"
+		},
+		{
+			"importpath": "google.golang.org/cloud/internal",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "fb10e8da373d97f6ba5e648299a10b3b91f14cd5",
+			"branch": "master",
+			"path": "/internal"
+		},
+		{
 			"importpath": "gopkg.in/logfmt.v0",
 			"repository": "https://gopkg.in/logfmt.v0",
 			"revision": "c50dc9aa845e681529d8e49d3dc11ec0195aacac",
