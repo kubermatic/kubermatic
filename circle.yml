@@ -41,3 +41,6 @@ deployment:
       - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; docker build -t kubermatic/api .'
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push kubermatic/api
+      - echo "$KUBE_CONFIG_FILE" > .kubeconfig.yaml
+      - curl -O https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubectl && chmod +x kubectl
+      - ./kubectl --kubeconfig=.kubeconfig.yaml rolling-update kubermatic-api-v1 --image=kubermatic/api --update-period=500ms --poll-interval=1s
