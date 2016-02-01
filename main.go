@@ -15,6 +15,11 @@ func main() {
 	mux := mux.NewRouter()
 
 	mux.
+		Methods("GET").
+		Path("/").
+		HandlerFunc(handler.StatusOK)
+
+	mux.
 		Methods("POST").
 		Path("/cluster/{provider}").
 		Handler(handler.NewCluster(ctx))
