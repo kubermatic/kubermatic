@@ -53,14 +53,14 @@ func newClusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 
 func clusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*clusterReq)
+		req := request.(clusterReq)
 		return kp.Cluster(req.dc, req.cluster)
 	}
 }
 
 func clustersEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*clustersReq)
+		req := request.(clustersReq)
 		return kp.Clusters(req.dc)
 	}
 }
@@ -88,7 +88,7 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.dcReq = *dr.(*dcReq)
+	req.dcReq = dr.(dcReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.spec); err != nil {
 		return nil, err
@@ -106,7 +106,15 @@ type clustersReq struct {
 }
 
 func decodeClustersReq(r *http.Request) (interface{}, error) {
-	return decodeDcReq(r)
+	var req clustersReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	return req, nil
 }
 
 type clusterReq struct {
