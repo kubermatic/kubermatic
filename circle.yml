@@ -25,7 +25,7 @@ dependencies:
 
 test:
   override:
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build .'
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build $IMPORT_PATH/cmd/kubermatic-api'
     - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go test $(go list ./... | grep -v /vendor/)'
 #    - gometalinter --cyclo-over=12 --tests --deadline=120s ./...
 #    - gocov test ./... -short -timeout=5m > cov.json

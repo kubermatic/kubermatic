@@ -1,7 +1,7 @@
 FROM progrium/busybox
 MAINTAINER Stefan Schimanski <stefan.schimanski@gmail.com>
 
-COPY api /usr/bin/kubermatic-api
+COPY kubermatic-api /usr/bin/kubermatic-api
 RUN mkdir -p /opt
 WORKDIR /opt
 
