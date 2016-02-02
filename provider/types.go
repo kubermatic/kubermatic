@@ -1,7 +1,13 @@
 package provider
 
 import (
+	"fmt"
 	"github.com/kubermatic/api"
+)
+
+const (
+	DigitaloceanCloudProvider = iota
+	LinodeCloudProvider
 )
 
 type CloudSpecProvider interface {
@@ -11,7 +17,7 @@ type CloudSpecProvider interface {
 
 type NodeProvider interface {
 	CreateNode(cluster *api.Cluster, spec *api.NodeSpec) (*api.Node, error)
-	Nodes(cluster *api.Cluster)
+	Nodes(cluster *api.Cluster) ([]*api.Node, error)
 }
 
 type CloudProvider interface {
@@ -25,4 +31,15 @@ type KubernetesProvider interface {
 	Clusters(dc string) ([]*api.Cluster, error)
 
 	Nodes(dc string, cluster string) ([]string, error)
+}
+
+func ClusterCloudProvider(c *api.Cluster) (int, error) {
+	switch cloud := c.Spec.Cloud; {
+	case cloud.Digitalocean != nil:
+		return DigitaloceanCloudProvider, nil
+	case cloud.Linode != nil:
+		return LinodeCloudProvider, nil
+	}
+
+	return -1, fmt.Errorf("no cloud provider set")
 }

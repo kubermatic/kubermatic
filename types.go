@@ -6,9 +6,10 @@ import (
 )
 
 type Metadata struct {
-	Name     string `json:"name"`
-	Revision uint64 `json:"revision"`
-	Uid      string `json:"uid"`
+	Name        string            `json:"name"`
+	Revision    uint64            `json:"revision"`
+	Uid         string            `json:"uid"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 type NodeSpec struct {
