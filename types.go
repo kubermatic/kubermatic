@@ -33,8 +33,9 @@ type Node struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Token string `json:"token,omitempty"`
-	Dc    string `json:"dc,omitempty"`
+	Token  string `json:"token,omitempty"`
+	Region string `json:"region,omitempty"`
+	Dc     string `json:"dc,omitempty"`
 }
 
 // LinodeCloudSpec specifies access data to digital ocean.
@@ -60,7 +61,7 @@ type ClusterHealth struct {
 
 // ClusterStatus stores status informations about a cluster.
 type ClusterStatus struct {
-	Health *ClusterHealth `json:"health,omitempty"`
+	Health ClusterHealth `json:"health"`
 }
 
 // ClusterSpec specifies the data for a new cluster.
@@ -78,7 +79,8 @@ type ClusterAddress struct {
 
 // Cluster ist the object representating a cluster.
 type Cluster struct {
-	Metadata Metadata       `json:"metadata"`
-	Spec     ClusterSpec    `json:"spec"`
-	Address  ClusterAddress `json:"address"`
+	Metadata Metadata        `json:"metadata"`
+	Spec     ClusterSpec     `json:"spec"`
+	Address  *ClusterAddress `json:"address,omitempty"`
+	Status   *ClusterStatus  `json:"status,omitempty"`
 }
