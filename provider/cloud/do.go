@@ -1,5 +1,6 @@
-package do
+package cloud
 
+/*
 import (
 	"github.com/digitalocean/godo"
 	"github.com/kubermatic/api/provider"
@@ -32,3 +33,4 @@ func (p *clusterProvider) Clusters() ([]provider.Cluster, error) {
 func (p *clusterProvider) NewCluster(s provider.ClusterSpec) (provider.Cluster, error) {
 	return nil, nil
 }
+*/

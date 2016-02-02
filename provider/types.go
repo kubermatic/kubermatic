@@ -1,24 +1,28 @@
 package provider
 
-type Node interface {
-	ID() string
-	PublicIP() string
-}
+import (
+	"github.com/kubermatic/api"
+)
 
-type Cluster interface {
-	ID() string
-	Nodes() []Node
+type CloudSpecProvider interface {
+	CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error)
+	Cloud(annotations map[string]string) (*api.CloudSpec, error)
 }
-
-type NodeSpec interface{}
 
 type NodeProvider interface {
-	CreateNode(NodeSpec) error
+	CreateNode(cluster *api.Cluster, spec *api.NodeSpec) (*api.Node, error)
+	Nodes(cluster *api.Cluster)
 }
 
-type ClusterSpec interface{}
+type CloudProvider interface {
+	CloudSpecProvider
+	NodeProvider
+}
 
-type ClusterProvider interface {
-	NewCluster(ClusterSpec) (Cluster, error)
-	Clusters() ([]Cluster, error)
+type KubernetesProvider interface {
+	NewCluster(cluster string, spec api.ClusterSpec) (*api.Cluster, error)
+	Cluster(dc string, cluster string) (*api.Cluster, error)
+	Clusters(dc string) ([]*api.Cluster, error)
+
+	Nodes(dc string, cluster string) ([]string, error)
 }
