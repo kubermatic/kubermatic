@@ -17,7 +17,7 @@ func main() {
 	ctx := context.Background()
 	mux := mux.NewRouter()
 
-	kp := kubernetes.NewClusterProvider()
+	kp := kubernetes.NewKubernetesProvider()
 
 	cps := map[int]provider.CloudProvider{
 		provider.DigitaloceanCloudProvider: nil,

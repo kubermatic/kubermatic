@@ -15,7 +15,8 @@ type kubernetesProvider struct {
 	clusters map[string]map[string]api.Cluster // by dc and name
 }
 
-func NewClusterProvider() provider.KubernetesProvider {
+// NewKubernetesProvider creates a new kubernetes provider object
+func NewKubernetesProvider() provider.KubernetesProvider {
 	return &kubernetesProvider{
 		clusters: map[string]map[string]api.Cluster{},
 	}
@@ -25,7 +26,7 @@ func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	id, err := provider.Uuid()
+	id, err := provider.UUID()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api
 		Metadata: api.Metadata{
 			Name:     name,
 			Revision: 0,
-			Uid:      id,
+			UID:      id,
 		},
 		Spec: spec,
 	}

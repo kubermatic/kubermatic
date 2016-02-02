@@ -1,4 +1,4 @@
-package kubernetes
+package cloud
 
 /*
 var _ provider.CloudProvider = (*node)(nil)

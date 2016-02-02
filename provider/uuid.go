@@ -5,7 +5,8 @@ import (
 	"fmt"
 )
 
-func Uuid() (string, error) {
+// UUID is a very simple random uuid generator used for faking.
+func UUID() (string, error) {
 	b := make([]byte, 2)
 
 	_, err := rand.Read(b)

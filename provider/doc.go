@@ -1,2 +1,2 @@
-// package cloud contains abstract cloud provider types and interfaces.
+// Package provider contains abstract cloud provider types and interfaces.
 package provider

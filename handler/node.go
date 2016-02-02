@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Nodes returns a handler delegating to CloudProvider.Nodes.
 func Nodes(
 	ctx context.Context,
 	kp provider.KubernetesProvider,
@@ -19,7 +20,7 @@ func Nodes(
 	return httptransport.NewServer(
 		ctx,
 		nodesEndpoint(kp, cps),
-		decodeNodesReq,
+		decodeReq,
 		encodeJSON,
 	)
 }
@@ -55,7 +56,7 @@ type nodesReq struct {
 	cluster string
 }
 
-func decodeNodesReq(r *http.Request) (interface{}, error) {
+func decodeReq(r *http.Request) (interface{}, error) {
 	var req nodesReq
 
 	dr, err := decodeDcReq(r)

@@ -14,6 +14,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
+// NewCluster creates a handler delegating to KubernetesProvider.NewCluster.
 func NewCluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
@@ -23,15 +24,17 @@ func NewCluster(ctx context.Context, kp provider.KubernetesProvider) http.Handle
 	)
 }
 
+// Cluster creates a handler delegating to KubernetesProvider.Cluster.
 func Cluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
 		clusterEndpoint(kp),
-		decodeClusterReq,
+		decodeReq,
 		encodeJSON,
 	)
 }
 
+// Clusters creates a handler delegating to KubernetesProvider.Clusters.
 func Clusters(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
@@ -109,18 +112,4 @@ func decodeClustersReq(r *http.Request) (interface{}, error) {
 type clusterReq struct {
 	dcReq
 	cluster string
-}
-
-func decodeClusterReq(r *http.Request) (interface{}, error) {
-	var req clusterReq
-
-	dr, err := decodeDcReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.dcReq = *dr.(*dcReq)
-
-	req.cluster = mux.Vars(r)["cluster"]
-
-	return req, nil
 }
