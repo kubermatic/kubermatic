@@ -5,43 +5,51 @@ import (
 	"time"
 )
 
+// Metadata is an object storing common metadata for persistable objects.
 type Metadata struct {
 	Name        string            `json:"name"`
 	Revision    uint64            `json:"revision"`
-	Uid         string            `json:"uid"`
+	UID         string            `json:"uid"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// NodeSpec specifies a node.
 type NodeSpec struct {
 	Type string `json:"type"`
 	OS   string `json:"os"`
 }
 
+// NodeStatus stores status informations about a node.
 type NodeStatus struct {
 	Online bool `json:"online"`
 }
 
+// Node is the object representing a cluster node.
 type Node struct {
 	Metadata Metadata   `json:"metadata"`
 	Spec     NodeSpec   `json:"spec"`
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
+// DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
 	Token string `json:"token,omitempty"`
 	Dc    string `json:"dc,omitempty"`
 }
 
+// LinodeCloudSpec specifies access data to digital ocean.
 type LinodeCloudSpec struct {
 	Token string `json:"token,omitempty"`
 	Dc    string `json:"dc,omitempty"`
 }
 
+// CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 }
 
+// ClusterHealth stores health information of a cluster.
 type ClusterHealth struct {
 	Timestamp  time.Time `json:"timestamp"`
 	Apiserver  bool      `json:"apiserver"`
@@ -50,21 +58,25 @@ type ClusterHealth struct {
 	Etcd       bool      `json:"etcd"`
 }
 
+// ClusterStatus stores status informations about a cluster.
 type ClusterStatus struct {
 	Health *ClusterHealth `json:"health,omitempty"`
 }
 
+// ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
 	Dc     string         `json:"dc"`
 	Cloud  *CloudSpec     `json:"cloud,omitempty"`
 	Status *ClusterStatus `json:"cloud,omitempty"`
 }
 
+// ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	Url   url.URL `json:"url"`
+	URL   url.URL `json:"url"`
 	Token string  `json:"token"`
 }
 
+// Cluster ist the object representating a cluster.
 type Cluster struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     ClusterSpec    `json:"spec"`

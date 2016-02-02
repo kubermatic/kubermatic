@@ -19,15 +19,14 @@ dependencies:
     - go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
 #    - go get github.com/mattn/goveralls
     - git describe --tags |tee VERSION
+    - gometalinter --install --update --force
   override:
     - 'mkdir -p "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"'
     - 'rsync -avzC --delete ./ "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH/"'
 
 test:
   override:
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go build $IMPORT_PATH/cmd/kubermatic-api'
-    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; go test $(go list ./... | grep -v /vendor/)'
-#    - gometalinter --cyclo-over=12 --tests --deadline=120s ./...
+    - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; make'
 #    - gocov test ./... -short -timeout=5m > cov.json
 #    - godep go test -v -timeout=5m ./...
 #    - godep go test -v -short -race -timeout=5m ./...
