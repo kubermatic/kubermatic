@@ -1,10 +1,7 @@
-package node
+package kubernetes
 
-import (
-	"github.com/kubermatic/api/provider"
-)
-
-var _ provider.Node = (*node)(nil)
+/*
+var _ provider.CloudProvider = (*node)(nil)
 
 type node struct {
 	FakeID       string `json:"id"`
@@ -18,3 +15,4 @@ func (n *node) ID() string {
 func (n *node) PublicIP() string {
 	return n.FakePublicIP
 }
+*/

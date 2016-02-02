@@ -7,13 +7,14 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-func NewCluster(ctx context.Context, p provider.ClusterProvider) http.Handler {
+func NewCluster(ctx context.Context, p provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
 		newClusterEndpoint(p),
@@ -22,7 +23,7 @@ func NewCluster(ctx context.Context, p provider.ClusterProvider) http.Handler {
 	)
 }
 
-func Cluster(ctx context.Context, p provider.ClusterProvider) http.Handler {
+func Cluster(ctx context.Context, p provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
 		clusterEndpoint(p),
@@ -31,7 +32,7 @@ func Cluster(ctx context.Context, p provider.ClusterProvider) http.Handler {
 	)
 }
 
-func Clusters(ctx context.Context, p provider.ClusterProvider) http.Handler {
+func Clusters(ctx context.Context, p provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
 		clustersEndpoint(p),
@@ -40,23 +41,23 @@ func Clusters(ctx context.Context, p provider.ClusterProvider) http.Handler {
 	)
 }
 
-func newClusterEndpoint(p provider.ClusterProvider) endpoint.Endpoint {
+func newClusterEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
 		return p.NewCluster(req.name, req.spec)
 	}
 }
 
-func clusterEndpoint(p provider.ClusterProvider) endpoint.Endpoint {
+func clusterEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*clusterReq)
 		return p.Cluster(req.dc, req.cluster)
 	}
 }
 
-func clustersEndpoint(p provider.ClusterProvider) endpoint.Endpoint {
+func clustersEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var p provider.ClusterProvider
+		var p provider.KubernetesProvider
 		req := request.(*clustersReq)
 		return p.Clusters(req.dc)
 	}
@@ -75,7 +76,7 @@ func decodeDcReq(r *http.Request) (interface{}, error) {
 type newClusterReq struct {
 	dcReq
 	name string
-	spec provider.ClusterSpec
+	spec api.ClusterSpec
 }
 
 func decodeNewClusterReq(r *http.Request) (interface{}, error) {

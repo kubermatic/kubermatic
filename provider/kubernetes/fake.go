@@ -1,26 +1,27 @@
-package cluster
+package kubernetes
 
 import (
 	"fmt"
 	"sync"
 
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 )
 
-var _ provider.ClusterProvider = (*clusterProvider)(nil)
+var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
 
-type clusterProvider struct {
+type kubernetesProvider struct {
 	mu       sync.Mutex
-	clusters map[string]map[string]provider.Cluster // by dc and name
+	clusters map[string]map[string]api.Cluster // by dc and name
 }
 
-func NewClusterProvider() provider.ClusterProvider {
-	return &clusterProvider{
-		clusters: map[string]map[string]provider.Cluster{},
+func NewClusterProvider() provider.KubernetesProvider {
+	return &kubernetesProvider{
+		clusters: map[string]map[string]api.Cluster{},
 	}
 }
 
-func (p *clusterProvider) NewCluster(name string, spec provider.ClusterSpec) (*provider.Cluster, error) {
+func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -30,16 +31,17 @@ func (p *clusterProvider) NewCluster(name string, spec provider.ClusterSpec) (*p
 	}
 
 	if _, found := p.clusters[spec.Dc]; !found {
-		p.clusters[spec.Dc] = map[string]provider.Cluster{}
+		p.clusters[spec.Dc] = map[string]api.Cluster{}
 	}
 	if _, found := p.clusters[spec.Dc][name]; found {
 		return nil, fmt.Errorf("cluster %s already exists in dc %s", name, spec.Dc)
 	}
 
-	c := provider.Cluster{
-		Metadata: provider.Metadata{
-			Name: name,
-			Uid:  "fake-" + id,
+	c := api.Cluster{
+		Metadata: api.Metadata{
+			Name:     name,
+			Revision: 0,
+			Uid:      id,
 		},
 		Spec: spec,
 	}
@@ -47,7 +49,7 @@ func (p *clusterProvider) NewCluster(name string, spec provider.ClusterSpec) (*p
 	return &c, nil
 }
 
-func (p *clusterProvider) Cluster(dc string, name string) (*provider.Cluster, error) {
+func (p *kubernetesProvider) Cluster(dc string, name string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -62,7 +64,7 @@ func (p *clusterProvider) Cluster(dc string, name string) (*provider.Cluster, er
 	return &c, nil
 }
 
-func (p *clusterProvider) Clusters(dc string) ([]*provider.Cluster, error) {
+func (p *kubernetesProvider) Clusters(dc string) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -70,10 +72,14 @@ func (p *clusterProvider) Clusters(dc string) ([]*provider.Cluster, error) {
 		return nil, fmt.Errorf("dc %s not found", dc)
 	}
 
-	cs := make([]*provider.Cluster, len(p.clusters[dc]))
+	cs := make([]*api.Cluster, len(p.clusters[dc]))
 	for _, c := range p.clusters[dc] {
 		cs = append(cs, &c)
 	}
 
 	return cs, nil
+}
+
+func (p *kubernetesProvider) Nodes(dc string, cluster string) ([]string, error) {
+	return []string{}, nil
 }

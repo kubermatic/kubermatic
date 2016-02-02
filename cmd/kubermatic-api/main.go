@@ -8,14 +8,14 @@ import (
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/handler"
-	"github.com/kubermatic/api/provider/cluster"
+	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
 )
 
 func main() {
 	ctx := context.Background()
 	mux := mux.NewRouter()
-	cp := cluster.NewClusterProvider()
+	cp := kubernetes.NewClusterProvider()
 
 	mux.
 		Methods("GET").
@@ -36,6 +36,12 @@ func main() {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(handler.Cluster(ctx, cp))
+
+	/*
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/nodes/{node}").
+		Handler(handler.Node(ctx, cp, np))
+	*/
 
 	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
