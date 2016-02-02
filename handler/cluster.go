@@ -14,52 +14,51 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-func NewCluster(ctx context.Context, p provider.KubernetesProvider) http.Handler {
+func NewCluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		newClusterEndpoint(p),
+		newClusterEndpoint(kp),
 		decodeNewClusterReq,
 		encodeJSON,
 	)
 }
 
-func Cluster(ctx context.Context, p provider.KubernetesProvider) http.Handler {
+func Cluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clusterEndpoint(p),
+		clusterEndpoint(kp),
 		decodeClusterReq,
 		encodeJSON,
 	)
 }
 
-func Clusters(ctx context.Context, p provider.KubernetesProvider) http.Handler {
+func Clusters(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clustersEndpoint(p),
+		clustersEndpoint(kp),
 		decodeClustersReq,
 		encodeJSON,
 	)
 }
 
-func newClusterEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
+func newClusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
-		return p.NewCluster(req.name, req.spec)
+		return kp.NewCluster(req.name, req.spec)
 	}
 }
 
-func clusterEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
+func clusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*clusterReq)
-		return p.Cluster(req.dc, req.cluster)
+		return kp.Cluster(req.dc, req.cluster)
 	}
 }
 
-func clustersEndpoint(p provider.KubernetesProvider) endpoint.Endpoint {
+func clustersEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var p provider.KubernetesProvider
 		req := request.(*clustersReq)
-		return p.Clusters(req.dc)
+		return kp.Clusters(req.dc)
 	}
 }
 
