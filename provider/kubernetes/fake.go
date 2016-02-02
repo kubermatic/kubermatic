@@ -107,7 +107,7 @@ func (p *kubernetesProvider) Clusters(dc string) ([]*api.Cluster, error) {
 		return nil, fmt.Errorf("dc %s not found", dc)
 	}
 
-	cs := make([]*api.Cluster, len(p.clusters[dc]))
+	cs := make([]*api.Cluster, 0, len(p.clusters[dc]))
 	for _, c := range p.clusters[dc] {
 		cs = append(cs, &c)
 	}
