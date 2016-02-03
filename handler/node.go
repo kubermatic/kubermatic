@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -15,7 +14,7 @@ import (
 func Nodes(
 	ctx context.Context,
 	kp provider.KubernetesProvider,
-	cps map[int]provider.CloudProvider,
+	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
@@ -27,7 +26,7 @@ func Nodes(
 
 func nodesEndpoint(
 	kp provider.KubernetesProvider,
-	cps map[int]provider.CloudProvider,
+	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*nodesReq)
@@ -37,14 +36,9 @@ func nodesEndpoint(
 			return nil, err
 		}
 
-		cpIdx, err := provider.ClusterCloudProvider(c)
+		cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
-		}
-
-		cp, found := cps[cpIdx]
-		if !found {
-			return nil, fmt.Errorf("unsupported cloud provider")
 		}
 
 		return cp.Nodes(c)

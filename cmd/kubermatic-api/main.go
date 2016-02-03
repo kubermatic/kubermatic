@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/handler"
 	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
 )
@@ -19,7 +20,8 @@ func main() {
 
 	kp := kubernetes.NewKubernetesProvider()
 
-	cps := map[int]provider.CloudProvider{
+	cps := map[string]provider.CloudProvider{
+		provider.FakeCloudProvider:         cloud.NewFakeCloudProvider(),
 		provider.DigitaloceanCloudProvider: nil,
 		// provider.LinodeCloudProvider: nil,
 	}
@@ -32,17 +34,17 @@ func main() {
 	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.NewCluster(ctx, kp))
+		Handler(handler.NewCluster(ctx, kp, cps))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(handler.Clusters(ctx, kp))
+		Handler(handler.Clusters(ctx, kp, cps))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.Cluster(ctx, kp))
+		Handler(handler.Cluster(ctx, kp, cps))
 
 	mux.
 		Methods("GET").

@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -19,7 +18,6 @@ type kubernetesProvider struct {
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider() provider.KubernetesProvider {
-	url, _ := url.Parse("http://104.155.80.128:8888")
 	return &kubernetesProvider{
 		clusters: map[string]map[string]api.Cluster{
 			"fra-1": {
@@ -29,17 +27,18 @@ func NewKubernetesProvider() provider.KubernetesProvider {
 						Revision: 42,
 						UID:      "4711",
 						Annotations: map[string]string{
-							"user":                "sttts",
-							"digitalocean-token":  "983475982374895723958",
-							"digitalocean-region": "fra",
-							"digitalocean-dc":     "1",
+							"user":              "sttts",
+							"cloud-provider":    provider.FakeCloudProvider,
+							"cloud-fake-token":  "983475982374895723958",
+							"cloud-fake-region": "fra",
+							"cloud-fake-dc":     "1",
 						},
 					},
 					Spec: api.ClusterSpec{
 						Dc: "fra-1",
 					},
 					Address: &api.ClusterAddress{
-						URL: *url,
+						URL: "http://104.155.80.128:8888",
 					},
 					Status: &api.ClusterStatus{
 						Health: api.ClusterHealth{
