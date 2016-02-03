@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	ghandlers "github.com/gorilla/handlers"
@@ -13,20 +15,47 @@ import (
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
+
+	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 )
 
 func main() {
-	ctx := context.Background()
-	mux := mux.NewRouter()
+	// parse flags
+	flag.Parse()
+
+	// create CloudProviders
 	cps := map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         cloud.NewFakeCloudProvider(),
 		provider.DigitaloceanCloudProvider: nil,
 		// provider.LinodeCloudProvider: nil,
 	}
+
+	// create KubernetesProvider for each context in the kubeconfig
 	kps := map[string]provider.KubernetesProvider{
 		"fake-1": kubernetes.NewKubernetesFakeProvider("fake-1", cps),
 		"fake-2": kubernetes.NewKubernetesFakeProvider("fake-2", cps),
 	}
+	clientcmdConfig, err := clientcmd.LoadFromFile(".kubeconfig")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for ctx := range clientcmdConfig.Contexts {
+		clientconfig := clientcmd.NewNonInteractiveClientConfig(
+			*clientcmdConfig,
+			ctx,
+			&clientcmd.ConfigOverrides{},
+		)
+		cfg, err := clientconfig.ClientConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps)
+	}
+
+	// start server
+	ctx := context.Background()
+	mux := mux.NewRouter()
 
 	mux.
 		Methods("GET").
