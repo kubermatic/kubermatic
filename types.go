@@ -1,7 +1,6 @@
 package api
 
 import (
-	"net/url"
 	"time"
 )
 
@@ -31,6 +30,13 @@ type Node struct {
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
+// FakeCloudSpec specifies access data for a fake cloud.
+type FakeCloudSpec struct {
+	Token  string `json:"token,omitempty"`
+	Region string `json:"region,omitempty"`
+	Dc     string `json:"dc,omitempty"`
+}
+
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
 	Token  string `json:"token,omitempty"`
@@ -46,6 +52,7 @@ type LinodeCloudSpec struct {
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
+	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 }
@@ -68,13 +75,13 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Dc     string         `json:"dc"`
 	Cloud  *CloudSpec     `json:"cloud,omitempty"`
-	Status *ClusterStatus `json:"cloud,omitempty"`
+	Status *ClusterStatus `json:"status,omitempty"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL   url.URL `json:"url"`
-	Token string  `json:"token"`
+	URL   string `json:"url"`
+	Token string `json:"token"`
 }
 
 // Cluster ist the object representating a cluster.

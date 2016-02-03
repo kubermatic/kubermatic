@@ -8,8 +8,9 @@ import (
 
 // Constants defining known cloud providers.
 const (
-	DigitaloceanCloudProvider = iota
-	LinodeCloudProvider
+	FakeCloudProvider         = "fake"
+	DigitaloceanCloudProvider = "digitalocean"
+	LinodeCloudProvider       = "linode"
 )
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
@@ -27,6 +28,8 @@ type NodeProvider interface {
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudProvider interface {
+	Name() string
+
 	CloudSpecProvider
 	NodeProvider
 }
@@ -40,14 +43,37 @@ type KubernetesProvider interface {
 	Nodes(dc string, cluster string) ([]string, error)
 }
 
-// ClusterCloudProvider returns the provider index for the given cluster.
-func ClusterCloudProvider(c *api.Cluster) (int, error) {
+// clusterCloudProviderName returns the provider name for the given cluster where
+// one of Cluster.Spec.Cloud.* is set
+func clusterCloudProviderName(c *api.Cluster) (string, error) {
+	if c.Spec.Cloud == nil {
+		return "", fmt.Errorf("no cloud provider set")
+	}
+
 	switch cloud := c.Spec.Cloud; {
+	case cloud.Fake != nil:
+		return FakeCloudProvider, nil
 	case cloud.Digitalocean != nil:
 		return DigitaloceanCloudProvider, nil
 	case cloud.Linode != nil:
 		return LinodeCloudProvider, nil
 	}
 
-	return -1, fmt.Errorf("no cloud provider set")
+	return "", fmt.Errorf("no cloud provider set")
+}
+
+// ClusterCloudProvider returns the provider for the given cluster where
+// one of Cluster.Spec.Cloud.* is set
+func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (CloudProvider, error) {
+	name, err := clusterCloudProviderName(c)
+	if err != nil {
+		return nil, err
+	}
+
+	cp, found := cps[name]
+	if !found {
+		return nil, fmt.Errorf("unsupported cloud provider %q", name)
+	}
+
+	return cp, nil
 }

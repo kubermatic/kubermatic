@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -15,19 +14,19 @@ import (
 func Nodes(
 	ctx context.Context,
 	kp provider.KubernetesProvider,
-	cps map[int]provider.CloudProvider,
+	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
 		nodesEndpoint(kp, cps),
-		decodeReq,
+		decodeNodesReq,
 		encodeJSON,
 	)
 }
 
 func nodesEndpoint(
 	kp provider.KubernetesProvider,
-	cps map[int]provider.CloudProvider,
+	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*nodesReq)
@@ -37,14 +36,9 @@ func nodesEndpoint(
 			return nil, err
 		}
 
-		cpIdx, err := provider.ClusterCloudProvider(c)
+		cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
-		}
-
-		cp, found := cps[cpIdx]
-		if !found {
-			return nil, fmt.Errorf("unsupported cloud provider")
 		}
 
 		return cp.Nodes(c)
@@ -56,14 +50,14 @@ type nodesReq struct {
 	cluster string
 }
 
-func decodeReq(r *http.Request) (interface{}, error) {
+func decodeNodesReq(r *http.Request) (interface{}, error) {
 	var req nodesReq
 
 	dr, err := decodeDcReq(r)
 	if err != nil {
 		return nil, err
 	}
-	req.dcReq = *dr.(*dcReq)
+	req.dcReq = dr.(dcReq)
 
 	req.cluster = mux.Vars(r)["cluster"]
 

@@ -15,53 +15,106 @@ import (
 )
 
 // NewCluster creates a handler delegating to KubernetesProvider.NewCluster.
-func NewCluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
+func NewCluster(
+	ctx context.Context,
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		newClusterEndpoint(kp),
+		newClusterEndpoint(kp, cps),
 		decodeNewClusterReq,
 		encodeJSON,
 	)
 }
 
 // Cluster creates a handler delegating to KubernetesProvider.Cluster.
-func Cluster(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
+func Cluster(
+	ctx context.Context,
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clusterEndpoint(kp),
-		decodeReq,
+		clusterEndpoint(kp, cps),
+		decodeClusterReq,
 		encodeJSON,
 	)
 }
 
 // Clusters creates a handler delegating to KubernetesProvider.Clusters.
-func Clusters(ctx context.Context, kp provider.KubernetesProvider) http.Handler {
+func Clusters(
+	ctx context.Context,
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clustersEndpoint(kp),
+		clustersEndpoint(kp, cps),
 		decodeClustersReq,
 		encodeJSON,
 	)
 }
 
-func newClusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
+func newClusterEndpoint(
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
-		return kp.NewCluster(req.name, req.spec)
+		c, err := kp.NewCluster(req.name, req.spec)
+		if err != nil {
+			return nil, err
+		}
+
+		err = marshalClusterCloud(cps, c)
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
 	}
 }
 
-func clusterEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
+func clusterEndpoint(
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*clusterReq)
-		return kp.Cluster(req.dc, req.cluster)
+		req := request.(clusterReq)
+		c, err := kp.Cluster(req.dc, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		err = unmarshalClusterCloud(cps, c)
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
 	}
 }
 
-func clustersEndpoint(kp provider.KubernetesProvider) endpoint.Endpoint {
+func clustersEndpoint(
+	kp provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*clustersReq)
-		return kp.Clusters(req.dc)
+		req := request.(clustersReq)
+		cs, err := kp.Clusters(req.dc)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, c := range cs {
+			err = unmarshalClusterCloud(cps, c)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return cs, nil
 	}
 }
 
@@ -88,7 +141,7 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.dcReq = *dr.(*dcReq)
+	req.dcReq = dr.(dcReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.spec); err != nil {
 		return nil, err
@@ -106,10 +159,32 @@ type clustersReq struct {
 }
 
 func decodeClustersReq(r *http.Request) (interface{}, error) {
-	return decodeDcReq(r)
+	var req clustersReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	return req, nil
 }
 
 type clusterReq struct {
 	dcReq
 	cluster string
+}
+
+func decodeClusterReq(r *http.Request) (interface{}, error) {
+	var req clusterReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	req.cluster = mux.Vars(r)["cluster"]
+
+	return req, nil
 }
