@@ -55,6 +55,27 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/docker/libcontainer/cgroups",
+			"repository": "https://github.com/docker/libcontainer",
+			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
+			"branch": "master",
+			"path": "/cgroups"
+		},
+		{
+			"importpath": "github.com/docker/libcontainer/cgroups/fs",
+			"repository": "https://github.com/docker/libcontainer",
+			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
+			"branch": "master",
+			"path": "/cgroups/fs"
+		},
+		{
+			"importpath": "github.com/docker/libcontainer/configs",
+			"repository": "https://github.com/docker/libcontainer",
+			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
+			"branch": "master",
+			"path": "/configs"
+		},
+		{
 			"importpath": "github.com/emicklei/go-restful",
 			"repository": "https://github.com/emicklei/go-restful",
 			"revision": "b86acf97a74ed7603ac78d012f5535b4d587b156",
