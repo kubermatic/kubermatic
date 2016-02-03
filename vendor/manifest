@@ -2,6 +2,24 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/BurntSushi/toml",
+			"repository": "https://github.com/BurntSushi/toml",
+			"revision": "5c4df71dfe9ac89ef6287afc05e4c1b16ae65a1e",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/Microsoft/go-winio",
+			"repository": "https://github.com/Microsoft/go-winio",
+			"revision": "2b085935f02c272e7a1855df6f8fe03029ffcadd",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "be52937128b38f1d99787bb476c789e2af1147f1",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/afex/hystrix-go/hystrix",
 			"repository": "https://github.com/afex/hystrix-go",
 			"revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
@@ -9,11 +27,30 @@
 			"path": "/hystrix"
 		},
 		{
+			"importpath": "github.com/agl/ed25519",
+			"repository": "https://github.com/agl/ed25519",
+			"revision": "278e1ec8e8a6e017cd07577924d6766039146ced",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/apache/thrift/lib/go/thrift",
 			"repository": "https://github.com/apache/thrift",
 			"revision": "194959917c1b44e485ab47845eaa99aedb255817",
 			"branch": "master",
 			"path": "/lib/go/thrift"
+		},
+		{
+			"importpath": "github.com/armon/go-metrics",
+			"repository": "https://github.com/armon/go-metrics",
+			"revision": "345426c77237ece5dab0e1605c3e4b35c3f54757",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/aws",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"revision": "a170e9cb76475a0da7c0326a13cc2b39e9244b3b",
+			"branch": "master",
+			"path": "/aws"
 		},
 		{
 			"importpath": "github.com/beorn7/perks/quantile",
@@ -55,6 +92,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/docker/docker",
+			"repository": "https://github.com/docker/docker",
+			"revision": "7ecba9c6687ee922b1c77add0c92ad11858de558",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/docker/libcontainer/cgroups",
 			"repository": "https://github.com/docker/libcontainer",
 			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
@@ -74,6 +117,13 @@
 			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
 			"branch": "master",
 			"path": "/configs"
+		},
+		{
+			"importpath": "github.com/docker/libcontainer/system",
+			"repository": "https://github.com/docker/libcontainer",
+			"revision": "83a102cc68a09d890cce3b6c2e5c14c49e6373a0",
+			"branch": "master",
+			"path": "/system"
 		},
 		{
 			"importpath": "github.com/emicklei/go-restful",

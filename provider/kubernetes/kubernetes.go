@@ -19,12 +19,15 @@ type kubernetesProvider struct {
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
 	client *unversioned.Client
+
+	description, country, provider string
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
 	clientConfig *unversioned.Config,
 	cps map[string]provider.CloudProvider,
+	desc, country, provider string,
 ) provider.KubernetesProvider {
 	client, err := unversioned.New(clientConfig)
 	if err != nil {
@@ -32,8 +35,19 @@ func NewKubernetesProvider(
 	}
 
 	return &kubernetesProvider{
-		cps:    cps,
-		client: client,
+		cps:         cps,
+		client:      client,
+		description: desc,
+		country:     country,
+		provider:    provider,
+	}
+}
+
+func (p *kubernetesProvider) Spec() *api.DatacenterSpec {
+	return &api.DatacenterSpec{
+		Description: p.description,
+		Country:     p.country,
+		Provider:    p.provider,
 	}
 }
 

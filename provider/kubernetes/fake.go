@@ -54,6 +54,18 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 	}
 }
 
+func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
+	return &api.DatacenterSpec{
+		Description: "Fakehausen",
+		Country: "Germany",
+		Provider: "2&2",
+	}
+}
+
+func (p *kubernetesFakeProvider) Country() string {
+	return "Germany"
+}
+
 func (p *kubernetesFakeProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

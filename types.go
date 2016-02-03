@@ -82,10 +82,23 @@ type ClusterAddress struct {
 	Token string `json:"token"`
 }
 
-// Cluster ist the object representating a cluster.
+// Cluster is the object representating a cluster.
 type Cluster struct {
 	Metadata Metadata        `json:"metadata"`
 	Spec     ClusterSpec     `json:"spec"`
 	Address  *ClusterAddress `json:"address,omitempty"`
 	Status   *ClusterStatus  `json:"status,omitempty"`
+}
+
+// DatacenterSpec specifies the data for a datacenter.
+type DatacenterSpec struct {
+	Description string `json:"description,omitempty"`
+	Country     string `json:"country,omitempty"`
+	Provider    string `json:"provider,omitempty"`
+}
+
+// KubernetesDatacenter is the object representing a Kubernetes infra datacenter.
+type Datacenter struct {
+	Metadata Metadata       `json:"metadata"`
+	Spec     DatacenterSpec `json:"spec"`
 }

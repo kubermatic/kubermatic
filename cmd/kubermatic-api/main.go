@@ -50,7 +50,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps)
+		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "Germany", "Google Cloud")
 	}
 
 	// start server
@@ -61,6 +61,11 @@ func main() {
 		Methods("GET").
 		Path("/").
 		HandlerFunc(handler.StatusOK)
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc").
+		Handler(handler.Datacenters(ctx, kps, cps))
 
 	mux.
 		Methods("POST").
