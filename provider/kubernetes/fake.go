@@ -17,7 +17,7 @@ type kubernetesFakeProvider struct {
 	cps      map[string]provider.CloudProvider
 }
 
-// NewKubernetesProvider creates a new kubernetes provider object
+// NewKubernetesFakeProvider creates a new kubernetes provider object
 func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
 	return &kubernetesFakeProvider{
 		clusters: map[string]api.Cluster{
