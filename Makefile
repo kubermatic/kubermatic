@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 default: all
 
 all: check test build
