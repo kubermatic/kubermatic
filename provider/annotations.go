@@ -1,4 +1,4 @@
-package handler
+package provider
 
 import (
 	"errors"
@@ -6,18 +6,17 @@ import (
 	"strings"
 
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/provider"
 )
 
 const cloudAnnotationPrefix = "cloud-"
 
-func cloudProviderAnnotationPrefix(cp provider.CloudProvider) string {
+func cloudProviderAnnotationPrefix(cp CloudProvider) string {
 	return cloudAnnotationPrefix + cp.Name() + "-"
 }
 
-// marshalClusterCloud sets the annotations to persist Spec.Cloud
-func marshalClusterCloud(cps map[string]provider.CloudProvider, c *api.Cluster) error {
-	cp, err := provider.ClusterCloudProvider(cps, c)
+// MarshalClusterCloud sets the annotations to persist Spec.Cloud
+func MarshalClusterCloud(cps map[string]CloudProvider, c *api.Cluster) error {
+	cp, err := ClusterCloudProvider(cps, c)
 	if err != nil {
 		return err
 	}
@@ -43,8 +42,8 @@ func marshalClusterCloud(cps map[string]provider.CloudProvider, c *api.Cluster) 
 	return nil
 }
 
-// unmarshalClusterCloud sets the Spec.Cloud field according to the annotations
-func unmarshalClusterCloud(cps map[string]provider.CloudProvider, c *api.Cluster) error {
+// UnmarshalClusterCloud sets the Spec.Cloud field according to the annotations
+func UnmarshalClusterCloud(cps map[string]CloudProvider, c *api.Cluster) error {
 	name, found := c.Metadata.Annotations[cloudAnnotationPrefix+"provider"]
 	if !found {
 		return errors.New("no cloud provider annotation found")

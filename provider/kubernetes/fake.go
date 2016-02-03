@@ -14,10 +14,11 @@ var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
 type kubernetesProvider struct {
 	mu       sync.Mutex
 	clusters map[string]map[string]api.Cluster // by dc and name
+	cps      map[string]provider.CloudProvider
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
-func NewKubernetesProvider() provider.KubernetesProvider {
+func NewKubernetesProvider(cps map[string]provider.CloudProvider) provider.KubernetesProvider {
 	return &kubernetesProvider{
 		clusters: map[string]map[string]api.Cluster{
 			"fra-1": {
@@ -38,7 +39,8 @@ func NewKubernetesProvider() provider.KubernetesProvider {
 						Dc: "fra-1",
 					},
 					Address: &api.ClusterAddress{
-						URL: "http://104.155.80.128:8888",
+						URL:   "http://104.155.80.128:8888",
+						Token: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
 					},
 					Status: &api.ClusterStatus{
 						Health: api.ClusterHealth{
@@ -52,6 +54,7 @@ func NewKubernetesProvider() provider.KubernetesProvider {
 				},
 			},
 		},
+		cps: cps,
 	}
 }
 
@@ -79,6 +82,12 @@ func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api
 		},
 		Spec: spec,
 	}
+
+	err = provider.MarshalClusterCloud(p.cps, &c)
+	if err != nil {
+		return nil, err
+	}
+
 	p.clusters[spec.Dc][name] = c
 	return &c, nil
 }
@@ -95,6 +104,12 @@ func (p *kubernetesProvider) Cluster(dc string, name string) (*api.Cluster, erro
 	}
 
 	c := p.clusters[dc][name]
+
+	err := provider.UnmarshalClusterCloud(p.cps, &c)
+	if err != nil {
+		return nil, err
+	}
+
 	return &c, nil
 }
 
@@ -108,6 +123,11 @@ func (p *kubernetesProvider) Clusters(dc string) ([]*api.Cluster, error) {
 
 	cs := make([]*api.Cluster, 0, len(p.clusters[dc]))
 	for _, c := range p.clusters[dc] {
+		err := provider.UnmarshalClusterCloud(p.cps, &c)
+		if err != nil {
+			return nil, err
+		}
+
 		cs = append(cs, &c)
 	}
 

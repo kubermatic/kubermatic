@@ -17,14 +17,12 @@ import (
 func main() {
 	ctx := context.Background()
 	mux := mux.NewRouter()
-
-	kp := kubernetes.NewKubernetesProvider()
-
 	cps := map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         cloud.NewFakeCloudProvider(),
 		provider.DigitaloceanCloudProvider: nil,
 		// provider.LinodeCloudProvider: nil,
 	}
+	kp := kubernetes.NewKubernetesProvider(cps)
 
 	mux.
 		Methods("GET").
