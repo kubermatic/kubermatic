@@ -19,7 +19,7 @@ func Nodes(
 	return httptransport.NewServer(
 		ctx,
 		nodesEndpoint(kp, cps),
-		decodeReq,
+		decodeNodesReq,
 		encodeJSON,
 	)
 }
@@ -50,14 +50,14 @@ type nodesReq struct {
 	cluster string
 }
 
-func decodeReq(r *http.Request) (interface{}, error) {
+func decodeNodesReq(r *http.Request) (interface{}, error) {
 	var req nodesReq
 
 	dr, err := decodeDcReq(r)
 	if err != nil {
 		return nil, err
 	}
-	req.dcReq = *dr.(*dcReq)
+	req.dcReq = dr.(dcReq)
 
 	req.cluster = mux.Vars(r)["cluster"]
 

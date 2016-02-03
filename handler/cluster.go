@@ -37,7 +37,7 @@ func Cluster(
 	return httptransport.NewServer(
 		ctx,
 		clusterEndpoint(kp, cps),
-		decodeReq,
+		decodeClusterReq,
 		encodeJSON,
 	)
 }
@@ -173,4 +173,18 @@ func decodeClustersReq(r *http.Request) (interface{}, error) {
 type clusterReq struct {
 	dcReq
 	cluster string
+}
+
+func decodeClusterReq(r *http.Request) (interface{}, error) {
+	var req clusterReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	req.cluster = mux.Vars(r)["cluster"]
+
+	return req, nil
 }
