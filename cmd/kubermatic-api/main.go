@@ -2,10 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 
 	ghandlers "github.com/gorilla/handlers"
@@ -21,6 +19,8 @@ import (
 
 func main() {
 	// parse flags
+	var kubeconfig string
+	flag.StringVar(&kubeconfig, "kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	flag.Parse()
 
 	// create CloudProviders
@@ -35,7 +35,7 @@ func main() {
 		"fake-1": kubernetes.NewKubernetesFakeProvider("fake-1", cps),
 		"fake-2": kubernetes.NewKubernetesFakeProvider("fake-2", cps),
 	}
-	clientcmdConfig, err := clientcmd.LoadFromFile(".kubeconfig")
+	clientcmdConfig, err := clientcmd.LoadFromFile(kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
