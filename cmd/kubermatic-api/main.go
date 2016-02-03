@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +23,10 @@ func main() {
 		provider.DigitaloceanCloudProvider: nil,
 		// provider.LinodeCloudProvider: nil,
 	}
-	kp := kubernetes.NewKubernetesProvider(cps)
+	kps := map[string]provider.KubernetesProvider{
+		"fake-1": kubernetes.NewKubernetesFakeProvider("fake-1", cps),
+		"fake-2": kubernetes.NewKubernetesFakeProvider("fake-2", cps),
+	}
 
 	mux.
 		Methods("GET").
@@ -32,22 +36,22 @@ func main() {
 	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.NewCluster(ctx, kp, cps))
+		Handler(handler.NewCluster(ctx, kps, cps))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(handler.Clusters(ctx, kp, cps))
+		Handler(handler.Clusters(ctx, kps, cps))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.Cluster(ctx, kp, cps))
+		Handler(handler.Cluster(ctx, kps, cps))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(handler.Nodes(ctx, kp, cps))
+		Handler(handler.Nodes(ctx, kps, cps))
 
 	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -17,12 +17,12 @@ import (
 // NewCluster creates a handler delegating to KubernetesProvider.NewCluster.
 func NewCluster(
 	ctx context.Context,
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		newClusterEndpoint(kp, cps),
+		newClusterEndpoint(kps, cps),
 		decodeNewClusterReq,
 		encodeJSON,
 	)
@@ -31,12 +31,12 @@ func NewCluster(
 // Cluster creates a handler delegating to KubernetesProvider.Cluster.
 func Cluster(
 	ctx context.Context,
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clusterEndpoint(kp, cps),
+		clusterEndpoint(kps, cps),
 		decodeClusterReq,
 		encodeJSON,
 	)
@@ -45,23 +45,28 @@ func Cluster(
 // Clusters creates a handler delegating to KubernetesProvider.Clusters.
 func Clusters(
 	ctx context.Context,
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		clustersEndpoint(kp, cps),
+		clustersEndpoint(kps, cps),
 		decodeClustersReq,
 		encodeJSON,
 	)
 }
 
 func newClusterEndpoint(
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+		}
 
 		c, err := kp.NewCluster(req.name, req.spec)
 		if err != nil {
@@ -73,12 +78,18 @@ func newClusterEndpoint(
 }
 
 func clusterEndpoint(
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(clusterReq)
-		c, err := kp.Cluster(req.dc, req.cluster)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -88,12 +99,18 @@ func clusterEndpoint(
 }
 
 func clustersEndpoint(
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(clustersReq)
-		cs, err := kp.Clusters(req.dc)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		cs, err := kp.Clusters()
 		if err != nil {
 			return nil, err
 		}
@@ -129,10 +146,6 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req.spec); err != nil {
 		return nil, err
-	}
-
-	if req.spec.Dc != req.dc {
-		return nil, errors.New("dc in spec does not match url")
 	}
 
 	return req, nil

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -13,25 +14,30 @@ import (
 // Nodes returns a handler delegating to CloudProvider.Nodes.
 func Nodes(
 	ctx context.Context,
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) http.Handler {
 	return httptransport.NewServer(
 		ctx,
-		nodesEndpoint(kp, cps),
+		nodesEndpoint(kps, cps),
 		decodeNodesReq,
 		encodeJSON,
 	)
 }
 
 func nodesEndpoint(
-	kp provider.KubernetesProvider,
+	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*nodesReq)
 
-		c, err := kp.Cluster(req.dc, req.cluster)
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.cluster)
 		if err != nil {
 			return nil, err
 		}
