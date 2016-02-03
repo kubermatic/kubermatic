@@ -73,7 +73,6 @@ type ClusterStatus struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Dc    string     `json:"dc"`
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 }
 
