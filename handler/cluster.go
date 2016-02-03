@@ -62,12 +62,8 @@ func newClusterEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
-		c, err := kp.NewCluster(req.name, req.spec)
-		if err != nil {
-			return nil, err
-		}
 
-		err = marshalClusterCloud(cps, c)
+		c, err := kp.NewCluster(req.name, req.spec)
 		if err != nil {
 			return nil, err
 		}
@@ -87,11 +83,6 @@ func clusterEndpoint(
 			return nil, err
 		}
 
-		err = unmarshalClusterCloud(cps, c)
-		if err != nil {
-			return nil, err
-		}
-
 		return c, nil
 	}
 }
@@ -105,13 +96,6 @@ func clustersEndpoint(
 		cs, err := kp.Clusters(req.dc)
 		if err != nil {
 			return nil, err
-		}
-
-		for _, c := range cs {
-			err = unmarshalClusterCloud(cps, c)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		return cs, nil

@@ -9,7 +9,7 @@ type Metadata struct {
 	Name        string            `json:"name"`
 	Revision    uint64            `json:"revision"`
 	UID         string            `json:"uid"`
-	Annotations map[string]string `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"-"` // only for internal use
 }
 
 // NodeSpec specifies a node.
@@ -73,9 +73,8 @@ type ClusterStatus struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Dc     string         `json:"dc"`
-	Cloud  *CloudSpec     `json:"cloud,omitempty"`
-	Status *ClusterStatus `json:"status,omitempty"`
+	Dc    string     `json:"dc"`
+	Cloud *CloudSpec `json:"cloud,omitempty"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
