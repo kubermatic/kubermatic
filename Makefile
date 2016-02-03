@@ -18,7 +18,7 @@ gometalinter:
 		--tests \
 		--deadline=120s \
 		--dupl-threshold=53 \
-		--disable=gotype --disable=aligncheck --disable=structcheck --disable=interfacer \
+		--disable=gotype --disable=aligncheck --disable=structcheck --disable=interfacer --disable=deadcode --disable=dupl \
 		./...
 
 check: gofmt gometalinter
