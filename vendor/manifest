@@ -238,8 +238,8 @@
 		{
 			"importpath": "github.com/imdario/mergo",
 			"repository": "https://github.com/imdario/mergo",
-			"revision": "b1859b199a7171589445bdea9fa8c19362613f80",
-			"branch": "master"
+			"revision": "6633656539c1639d9d78127b7d47c622b5d7b6dc",
+			"branch": "HEAD"
 		},
 		{
 			"importpath": "github.com/juju/ratelimit",
