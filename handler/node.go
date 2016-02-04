@@ -31,6 +31,9 @@ func nodesEndpoint(
 		if err != nil {
 			return nil, err
 		}
+		if cp == nil {
+			return nil, fmt.Errorf("no nodes without cloud provider")
+		}
 
 		return cp.Nodes(c)
 	}

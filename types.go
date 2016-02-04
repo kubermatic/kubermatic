@@ -6,10 +6,13 @@ import (
 
 // Metadata is an object storing common metadata for persistable objects.
 type Metadata struct {
-	Name        string            `json:"name"`
-	Revision    uint64            `json:"revision"`
-	UID         string            `json:"uid"`
-	Annotations map[string]string `json:"-"` // only for internal use
+	Name     string `json:"name"`
+	Revision string `json:"revision,omitempty"`
+	UID      string `json:"uid,omitempty"`
+
+	// private fields
+	Annotations map[string]string `json:"-"`
+	User        string            `json:"-"`
 }
 
 // NodeSpec specifies a node.

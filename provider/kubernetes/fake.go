@@ -24,17 +24,18 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 			"sttts": {
 				Metadata: api.Metadata{
 					Name:     "sttts",
-					Revision: 42,
+					Revision: "42",
 					UID:      "4711",
-					Annotations: map[string]string{
-						"user":              "sttts",
-						"cloud-provider":    provider.FakeCloudProvider,
-						"cloud-fake-token":  "983475982374895723958",
-						"cloud-fake-region": "fra",
-						"cloud-fake-dc":     "1",
+				},
+				Spec: api.ClusterSpec{
+					Cloud: &api.CloudSpec{
+						Fake: &api.FakeCloudSpec{
+							Token:  "983475982374895723958",
+							Region: "fra",
+							Dc:     "1",
+						},
 					},
 				},
-				Spec: api.ClusterSpec{},
 				Address: &api.ClusterAddress{
 					URL:   "http://104.155.80.128:8888",
 					Token: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
@@ -82,15 +83,10 @@ func (p *kubernetesFakeProvider) NewCluster(name string, spec api.ClusterSpec) (
 	c := api.Cluster{
 		Metadata: api.Metadata{
 			Name:     name,
-			Revision: 0,
+			Revision: "0",
 			UID:      id,
 		},
 		Spec: spec,
-	}
-
-	err = provider.MarshalClusterCloud(p.cps, &c)
-	if err != nil {
-		return nil, err
 	}
 
 	p.clusters[name] = c
@@ -107,11 +103,6 @@ func (p *kubernetesFakeProvider) Cluster(name string) (*api.Cluster, error) {
 
 	c := p.clusters[name]
 
-	err := provider.UnmarshalClusterCloud(p.cps, &c)
-	if err != nil {
-		return nil, err
-	}
-
 	return &c, nil
 }
 
@@ -121,11 +112,6 @@ func (p *kubernetesFakeProvider) Clusters() ([]*api.Cluster, error) {
 
 	cs := make([]*api.Cluster, 0, len(p.clusters))
 	for _, c := range p.clusters {
-		err := provider.UnmarshalClusterCloud(p.cps, &c)
-		if err != nil {
-			return nil, err
-		}
-
 		cs = append(cs, &c)
 	}
 

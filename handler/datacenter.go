@@ -19,7 +19,7 @@ func datacentersEndpoint(
 			dc := api.Datacenter{
 				Metadata: api.Metadata{
 					Name:     dcName,
-					Revision: 1,
+					Revision: "1",
 				},
 				Spec: *kp.Spec(),
 			}
