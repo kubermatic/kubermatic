@@ -3,3 +3,4 @@ kubermatic-api
 .env
 .idea
 *.iml*
+.kubeconfig
