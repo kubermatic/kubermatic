@@ -9,17 +9,17 @@ import (
 	"github.com/kubermatic/api/provider"
 )
 
-var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
+var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
 
-type kubernetesProvider struct {
+type kubernetesFakeProvider struct {
 	mu       sync.Mutex
 	clusters map[string]api.Cluster // by name
 	cps      map[string]provider.CloudProvider
 }
 
-// NewKubernetesProvider creates a new kubernetes provider object
+// NewKubernetesFakeProvider creates a new kubernetes provider object
 func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
-	return &kubernetesProvider{
+	return &kubernetesFakeProvider{
 		clusters: map[string]api.Cluster{
 			"sttts": {
 				Metadata: api.Metadata{
@@ -54,7 +54,19 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 	}
 }
 
-func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
+	return &api.DatacenterSpec{
+		Description: "Fakehausen",
+		Country:     "Germany",
+		Provider:    "2&2",
+	}
+}
+
+func (p *kubernetesFakeProvider) Country() string {
+	return "Germany"
+}
+
+func (p *kubernetesFakeProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -85,7 +97,7 @@ func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api
 	return &c, nil
 }
 
-func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Cluster(name string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -103,7 +115,7 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 	return &c, nil
 }
 
-func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Clusters() ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -120,6 +132,6 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	return cs, nil
 }
 
-func (p *kubernetesProvider) Nodes(cluster string) ([]string, error) {
+func (p *kubernetesFakeProvider) Nodes(cluster string) ([]string, error) {
 	return []string{}, nil
 }

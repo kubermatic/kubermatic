@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 )
 
@@ -189,7 +188,7 @@ func (r *Route) addRegexpMatcher(tpl string, matchHost, matchPrefix, matchQuery 
 type headerMatcher map[string]string
 
 func (m headerMatcher) Match(r *http.Request, match *RouteMatch) bool {
-	return matchMapWithString(m, r.Header, true)
+	return matchMap(m, r.Header, true)
 }
 
 // Headers adds a matcher for request header values.
@@ -200,36 +199,13 @@ func (m headerMatcher) Match(r *http.Request, match *RouteMatch) bool {
 //               "X-Requested-With", "XMLHttpRequest")
 //
 // The above route will only match if both request header values match.
-// If the value is an empty string, it will match any value if the key is set.
+//
+// It the value is an empty string, it will match any value if the key is set.
 func (r *Route) Headers(pairs ...string) *Route {
 	if r.err == nil {
 		var headers map[string]string
-		headers, r.err = mapFromPairsToString(pairs...)
+		headers, r.err = mapFromPairs(pairs...)
 		return r.addMatcher(headerMatcher(headers))
-	}
-	return r
-}
-
-// headerRegexMatcher matches the request against the route given a regex for the header
-type headerRegexMatcher map[string]*regexp.Regexp
-
-func (m headerRegexMatcher) Match(r *http.Request, match *RouteMatch) bool {
-	return matchMapWithRegex(m, r.Header, true)
-}
-
-// Regular expressions can be used with headers as well.
-// It accepts a sequence of key/value pairs, where the value has regex support. For example
-//     r := mux.NewRouter()
-//     r.HeadersRegexp("Content-Type", "application/(text|json)",
-//               "X-Requested-With", "XMLHttpRequest")
-//
-// The above route will only match if both the request header matches both regular expressions.
-// It the value is an empty string, it will match any value if the key is set.
-func (r *Route) HeadersRegexp(pairs ...string) *Route {
-	if r.err == nil {
-		var headers map[string]*regexp.Regexp
-		headers, r.err = mapFromPairsToRegex(pairs...)
-		return r.addMatcher(headerRegexMatcher(headers))
 	}
 	return r
 }
@@ -238,7 +214,7 @@ func (r *Route) HeadersRegexp(pairs ...string) *Route {
 
 // Host adds a matcher for the URL host.
 // It accepts a template with zero or more URL variables enclosed by {}.
-// Variables can define an optional regexp pattern to be matched:
+// Variables can define an optional regexp pattern to me matched:
 //
 // - {name} matches anything until the next dot.
 //
@@ -247,7 +223,7 @@ func (r *Route) HeadersRegexp(pairs ...string) *Route {
 // For example:
 //
 //     r := mux.NewRouter()
-//     r.Host("www.example.com")
+//     r.Host("www.domain.com")
 //     r.Host("{subdomain}.domain.com")
 //     r.Host("{subdomain:[a-z]+}.domain.com")
 //
@@ -296,7 +272,7 @@ func (r *Route) Methods(methods ...string) *Route {
 // Path adds a matcher for the URL path.
 // It accepts a template with zero or more URL variables enclosed by {}. The
 // template must start with a "/".
-// Variables can define an optional regexp pattern to be matched:
+// Variables can define an optional regexp pattern to me matched:
 //
 // - {name} matches anything until the next slash.
 //
@@ -347,7 +323,7 @@ func (r *Route) PathPrefix(tpl string) *Route {
 //
 // It the value is an empty string, it will match any value if the key is set.
 //
-// Variables can define an optional regexp pattern to be matched:
+// Variables can define an optional regexp pattern to me matched:
 //
 // - {name} matches anything until the next slash.
 //
@@ -360,7 +336,7 @@ func (r *Route) Queries(pairs ...string) *Route {
 		return nil
 	}
 	for i := 0; i < length; i += 2 {
-		if r.err = r.addRegexpMatcher(pairs[i]+"="+pairs[i+1], false, false, true); r.err != nil {
+		if r.err = r.addRegexpMatcher(pairs[i]+"="+pairs[i+1], false, true, true); r.err != nil {
 			return r
 		}
 	}
@@ -406,7 +382,7 @@ func (r *Route) BuildVarsFunc(f BuildVarsFunc) *Route {
 // It will test the inner routes only if the parent route matched. For example:
 //
 //     r := mux.NewRouter()
-//     s := r.Host("www.example.com").Subrouter()
+//     s := r.Host("www.domain.com").Subrouter()
 //     s.HandleFunc("/products/", ProductsHandler)
 //     s.HandleFunc("/products/{key}", ProductHandler)
 //     s.HandleFunc("/articles/{category}/{id:[0-9]+}"), ArticleHandler)
@@ -535,7 +511,7 @@ func (r *Route) URLPath(pairs ...string) (*url.URL, error) {
 // prepareVars converts the route variable pairs into a map. If the route has a
 // BuildVarsFunc, it is invoked.
 func (r *Route) prepareVars(pairs ...string) (map[string]string, error) {
-	m, err := mapFromPairsToString(pairs...)
+	m, err := mapFromPairs(pairs...)
 	if err != nil {
 		return nil, err
 	}

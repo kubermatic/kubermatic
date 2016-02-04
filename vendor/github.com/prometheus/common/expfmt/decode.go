@@ -37,13 +37,12 @@ type DecodeOptions struct {
 }
 
 // ResponseFormat extracts the correct format from a HTTP response header.
-// If no matching format can be found FormatUnknown is returned.
-func ResponseFormat(h http.Header) Format {
+func ResponseFormat(h http.Header) (Format, error) {
 	ct := h.Get(hdrContentType)
 
 	mediatype, params, err := mime.ParseMediaType(ct)
 	if err != nil {
-		return FmtUnknown
+		return "", fmt.Errorf("invalid Content-Type header %q: %s", ct, err)
 	}
 
 	const (
@@ -53,19 +52,19 @@ func ResponseFormat(h http.Header) Format {
 
 	switch mediatype {
 	case ProtoType:
-		if p, ok := params["proto"]; ok && p != ProtoProtocol {
-			return FmtUnknown
+		if p := params["proto"]; p != ProtoProtocol {
+			return "", fmt.Errorf("unrecognized protocol message %s", p)
 		}
-		if e, ok := params["encoding"]; ok && e != "delimited" {
-			return FmtUnknown
+		if e := params["encoding"]; e != "delimited" {
+			return "", fmt.Errorf("unsupported encoding %s", e)
 		}
-		return FmtProtoDelim
+		return FmtProtoDelim, nil
 
 	case textType:
 		if v, ok := params["version"]; ok && v != TextVersion {
-			return FmtUnknown
+			return "", fmt.Errorf("unrecognized protocol version %s", v)
 		}
-		return FmtText
+		return FmtText, nil
 
 	case jsonType:
 		var prometheusAPIVersion string
@@ -77,26 +76,27 @@ func ResponseFormat(h http.Header) Format {
 		}
 
 		switch prometheusAPIVersion {
-		case "0.0.2", "":
-			return fmtJSON2
+		case "0.0.2":
+			return FmtJSON2, nil
 		default:
-			return FmtUnknown
+			return "", fmt.Errorf("unrecognized API version %s", prometheusAPIVersion)
 		}
 	}
 
-	return FmtUnknown
+	return "", fmt.Errorf("unsupported media type %q, expected %q or %q", mediatype, ProtoType, textType)
 }
 
-// NewDecoder returns a new decoder based on the given input format.
-// If the input format does not imply otherwise, a text format decoder is returned.
-func NewDecoder(r io.Reader, format Format) Decoder {
+// NewDecoder returns a new decoder based on the HTTP header.
+func NewDecoder(r io.Reader, format Format) (Decoder, error) {
 	switch format {
 	case FmtProtoDelim:
-		return &protoDecoder{r: r}
-	case fmtJSON2:
-		return newJSON2Decoder(r)
+		return &protoDecoder{r: r}, nil
+	case FmtText:
+		return &textDecoder{r: r}, nil
+	case FmtJSON2:
+		return newJSON2Decoder(r), nil
 	}
-	return &textDecoder{r: r}
+	return nil, fmt.Errorf("unsupported decoding format %q", format)
 }
 
 // protoDecoder implements the Decoder interface for protocol buffers.
@@ -107,29 +107,7 @@ type protoDecoder struct {
 // Decode implements the Decoder interface.
 func (d *protoDecoder) Decode(v *dto.MetricFamily) error {
 	_, err := pbutil.ReadDelimited(d.r, v)
-	if err != nil {
-		return err
-	}
-	if !model.IsValidMetricName(model.LabelValue(v.GetName())) {
-		return fmt.Errorf("invalid metric name %q", v.GetName())
-	}
-	for _, m := range v.GetMetric() {
-		if m == nil {
-			continue
-		}
-		for _, l := range m.GetLabel() {
-			if l == nil {
-				continue
-			}
-			if !model.LabelValue(l.GetValue()).IsValid() {
-				return fmt.Errorf("invalid label value %q", l.GetValue())
-			}
-			if !model.LabelName(l.GetName()).IsValid() {
-				return fmt.Errorf("invalid label name %q", l.GetName())
-			}
-		}
-	}
-	return nil
+	return err
 }
 
 // textDecoder implements the Decoder interface for the text protcol.
@@ -151,14 +129,13 @@ func (d *textDecoder) Decode(v *dto.MetricFamily) error {
 		if len(fams) == 0 {
 			return io.EOF
 		}
-		d.fams = make([]*dto.MetricFamily, 0, len(fams))
 		for _, f := range fams {
 			d.fams = append(d.fams, f)
 		}
 	}
 
-	*v = *d.fams[0]
-	d.fams = d.fams[1:]
+	*v = *d.fams[len(d.fams)-1]
+	d.fams = d.fams[:len(d.fams)-1]
 
 	return nil
 }
