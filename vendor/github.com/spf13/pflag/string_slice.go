@@ -1,7 +1,6 @@
 package pflag
 
 import (
-	"encoding/csv"
 	"fmt"
 	"strings"
 )
@@ -22,12 +21,7 @@ func newStringSliceValue(val []string, p *[]string) *stringSliceValue {
 }
 
 func (s *stringSliceValue) Set(val string) error {
-	stringReader := strings.NewReader(val)
-	csvReader := csv.NewReader(stringReader)
-	v, err := csvReader.Read()
-	if err != nil {
-		return err
-	}
+	v := strings.Split(val, ",")
 	if !s.changed {
 		*s.value = v
 	} else {

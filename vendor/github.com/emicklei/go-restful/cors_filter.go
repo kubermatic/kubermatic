@@ -74,11 +74,7 @@ func (c CrossOriginResourceSharing) doActualRequest(req *Request, resp *Response
 
 func (c *CrossOriginResourceSharing) doPreflightRequest(req *Request, resp *Response) {
 	if len(c.AllowedMethods) == 0 {
-		if c.Container == nil {
-			c.AllowedMethods = DefaultContainer.computeAllowedMethods(req)
-		} else {
-			c.AllowedMethods = c.Container.computeAllowedMethods(req)
-		}
+		c.AllowedMethods = c.Container.computeAllowedMethods(req)
 	}
 
 	acrm := req.Request.Header.Get(HEADER_AccessControlRequestMethod)

@@ -20,7 +20,6 @@ var EnableContentEncoding = false
 type CompressingResponseWriter struct {
 	writer     http.ResponseWriter
 	compressor io.WriteCloser
-	encoding   string
 }
 
 // Header is part of http.ResponseWriter interface
@@ -36,9 +35,6 @@ func (c *CompressingResponseWriter) WriteHeader(status int) {
 // Write is part of http.ResponseWriter interface
 // It is passed through the compressor
 func (c *CompressingResponseWriter) Write(bytes []byte) (int, error) {
-	if c.isCompressorClosed() {
-		return -1, errors.New("Compressing error: tried to write data using closed compressor")
-	}
 	return c.compressor.Write(bytes)
 }
 
@@ -48,25 +44,8 @@ func (c *CompressingResponseWriter) CloseNotify() <-chan bool {
 }
 
 // Close the underlying compressor
-func (c *CompressingResponseWriter) Close() error {
-	if c.isCompressorClosed() {
-		return errors.New("Compressing error: tried to close already closed compressor")
-	}
-
+func (c *CompressingResponseWriter) Close() {
 	c.compressor.Close()
-	if ENCODING_GZIP == c.encoding {
-		currentCompressorProvider.ReleaseGzipWriter(c.compressor.(*gzip.Writer))
-	}
-	if ENCODING_DEFLATE == c.encoding {
-		currentCompressorProvider.ReleaseZlibWriter(c.compressor.(*zlib.Writer))
-	}
-	// gc hint needed?
-	c.compressor = nil
-	return nil
-}
-
-func (c *CompressingResponseWriter) isCompressorClosed() bool {
-	return nil == c.compressor
 }
 
 // WantsCompressedResponse reads the Accept-Encoding header to see if and which encoding is requested.
@@ -94,15 +73,13 @@ func NewCompressingResponseWriter(httpWriter http.ResponseWriter, encoding strin
 	c.writer = httpWriter
 	var err error
 	if ENCODING_GZIP == encoding {
-		w := currentCompressorProvider.AcquireGzipWriter()
+		w := GzipWriterPool.Get().(*gzip.Writer)
 		w.Reset(httpWriter)
 		c.compressor = w
-		c.encoding = ENCODING_GZIP
 	} else if ENCODING_DEFLATE == encoding {
-		w := currentCompressorProvider.AcquireZlibWriter()
+		w := ZlibWriterPool.Get().(*zlib.Writer)
 		w.Reset(httpWriter)
 		c.compressor = w
-		c.encoding = ENCODING_DEFLATE
 	} else {
 		return nil, errors.New("Unknown encoding:" + encoding)
 	}
