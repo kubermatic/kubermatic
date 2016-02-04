@@ -7,6 +7,7 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	kerrors "k8s.io/kubernetes/pkg/api/errors"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
@@ -98,7 +99,7 @@ func (p *kubernetesFakeProvider) Cluster(name string) (*api.Cluster, error) {
 	defer p.mu.Unlock()
 
 	if _, found := p.clusters[name]; !found {
-		return nil, fmt.Errorf("cluster %q not found", name)
+		return nil, kerrors.NewNotFound("cluster", name)
 	}
 
 	c := p.clusters[name]
