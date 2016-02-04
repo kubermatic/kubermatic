@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	"github.com/kubermatic/api"
 )
 
 // Nodes returns a handler delegating to CloudProvider.Nodes.
@@ -33,7 +33,7 @@ func datacentersEndpoint(
 		for dcName, kp := range kps {
 			dc := api.Datacenter{
 				Metadata: api.Metadata{
-					Name: dcName,
+					Name:     dcName,
 					Revision: 1,
 				},
 				Spec: *kp.Spec(),
