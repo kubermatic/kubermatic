@@ -8,7 +8,7 @@ build:
 	go build github.com/kubermatic/api/cmd/kubermatic-api
 
 test:
-	go test -i $$(go list ./... | grep -v /vendor/)
+	go test -v $$(go list ./... | grep -v /vendor/)
 
 gofmt:
 	UNFMT=$$(find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
