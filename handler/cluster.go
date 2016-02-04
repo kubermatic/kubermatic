@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -10,6 +9,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	kerrors "k8s.io/kubernetes/pkg/api/errors"
 )
 
 func newClusterEndpoint(
@@ -21,7 +21,7 @@ func newClusterEndpoint(
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		c, err := kp.NewCluster(req.name, req.spec)
@@ -42,11 +42,14 @@ func clusterEndpoint(
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		c, err := kp.Cluster(req.cluster)
 		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			}
 			return nil, err
 		}
 
@@ -63,7 +66,7 @@ func clustersEndpoint(
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		cs, err := kp.Clusters()

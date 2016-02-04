@@ -8,6 +8,7 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
@@ -64,6 +65,9 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 
 	ns, err := p.client.Namespaces().Get(namePrefix + name)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil, kerrors.NewNotFound("cluster", name)
+		}
 		return nil, err
 	}
 

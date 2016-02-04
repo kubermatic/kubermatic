@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
@@ -19,7 +19,7 @@ func nodesEndpoint(
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, fmt.Errorf("unknown kubernetes datacenter %q", req.dc)
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		c, err := kp.Cluster(req.cluster)
@@ -32,7 +32,7 @@ func nodesEndpoint(
 			return nil, err
 		}
 		if cp == nil {
-			return nil, fmt.Errorf("no nodes without cloud provider")
+			return []*api.Node{}, nil
 		}
 
 		return cp.Nodes(c)

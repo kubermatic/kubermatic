@@ -76,6 +76,7 @@ func (b Binding) datacentersHandler() http.Handler {
 		b.datacentersEndpoint,
 		decodeDatacentersReq,
 		encodeJSON,
+		defaultHTTPErrorEncoder(),
 	)
 }
 
@@ -85,6 +86,7 @@ func (b Binding) newClusterHandler() http.Handler {
 		b.newClusterEndpoint,
 		decodeNewClusterReq,
 		encodeJSON,
+		defaultHTTPErrorEncoder(),
 	)
 }
 
@@ -94,6 +96,7 @@ func (b Binding) clusterHandler() http.Handler {
 		b.clusterEndpoint,
 		decodeClusterReq,
 		encodeJSON,
+		defaultHTTPErrorEncoder(),
 	)
 }
 
@@ -103,6 +106,7 @@ func (b Binding) clustersHandler() http.Handler {
 		b.clustersEndpoint,
 		decodeClustersReq,
 		encodeJSON,
+		defaultHTTPErrorEncoder(),
 	)
 }
 
@@ -112,5 +116,6 @@ func (b Binding) nodesHandler() http.Handler {
 		b.nodesEndpoint,
 		decodeNodesReq,
 		encodeJSON,
+		defaultHTTPErrorEncoder(),
 	)
 }
