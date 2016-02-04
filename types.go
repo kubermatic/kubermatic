@@ -97,7 +97,7 @@ type DatacenterSpec struct {
 	Provider    string `json:"provider,omitempty"`
 }
 
-// KubernetesDatacenter is the object representing a Kubernetes infra datacenter.
+// Datacenter is the object representing a Kubernetes infra datacenter.
 type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`

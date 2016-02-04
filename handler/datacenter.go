@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Nodes returns a handler delegating to CloudProvider.Nodes.
+// Datacenters returns a handler delegating to CloudProvider.Nodes.
 func Datacenters(
 	ctx context.Context,
 	kps map[string]provider.KubernetesProvider,
