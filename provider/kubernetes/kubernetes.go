@@ -2,15 +2,15 @@ package kubernetes
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	"k8s.io/kubernetes/pkg/client/unversioned"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
-	"time"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -18,18 +18,18 @@ var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
 type kubernetesProvider struct {
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
-	client *unversioned.Client
+	client *client.Client
 
 	description, country, provider string
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
-	clientConfig *unversioned.Config,
+	clientConfig *client.Config,
 	cps map[string]provider.CloudProvider,
 	desc, country, provider string,
 ) provider.KubernetesProvider {
-	client, err := unversioned.New(clientConfig)
+	client, err := client.New(clientConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,7 +62,17 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return nil, errors.New("not implemented")
+	ns, err := p.client.Namespaces().Get(namePrefix + name)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := unmarshalCluster(p.cps, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
 func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
@@ -70,7 +80,7 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	defer p.mu.Unlock()
 
 	nsList, err := p.client.Namespaces().List(
-		labels.SelectorFromSet(labels.Set(map[string]string{"role": "kubermatic-cluster"})),
+		labels.SelectorFromSet(labels.Set(map[string]string{roleLabelKey: clusterRoleLabel})),
 		fields.Everything(),
 	)
 	if err != nil {
@@ -80,35 +90,13 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	cs := make([]*api.Cluster, 0, len(nsList.Items))
 	for i := range nsList.Items {
 		ns := nsList.Items[i]
-		c := api.Cluster{
-			Metadata: api.Metadata{
-				Name:     ns.Labels["name"],
-				Revision: 42,
-				UID:      "4711",
-				Annotations: map[string]string{
-					"user":              "sttts",
-					"cloud-provider":    provider.FakeCloudProvider,
-					"cloud-fake-token":  "983475982374895723958",
-					"cloud-fake-region": "fra",
-					"cloud-fake-dc":     "1",
-				},
-			},
-			Spec: api.ClusterSpec{},
-			Address: &api.ClusterAddress{
-				URL:   "http://104.155.80.128:8888",
-				Token: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
-			},
-			Status: &api.ClusterStatus{
-				Health: api.ClusterHealth{
-					Timestamp:  time.Now().Add(-7 * time.Second),
-					Apiserver:  true,
-					Scheduler:  true,
-					Controller: false,
-					Etcd:       true,
-				},
-			},
+		c, err := unmarshalCluster(p.cps, &ns)
+		if err != nil {
+			log.Println(fmt.Sprintf("error unmarshaling namespace %s: %v", ns.Name, err))
+			continue
 		}
-		cs = append(cs, &c)
+
+		cs = append(cs, c)
 	}
 
 	return cs, nil

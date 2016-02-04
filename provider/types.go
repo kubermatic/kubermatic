@@ -49,7 +49,7 @@ type KubernetesProvider interface {
 // one of Cluster.Spec.Cloud.* is set
 func clusterCloudProviderName(c *api.Cluster) (string, error) {
 	if c.Spec.Cloud == nil {
-		return "", fmt.Errorf("no cloud provider set")
+		return "", nil
 	}
 
 	switch cloud := c.Spec.Cloud; {
@@ -61,7 +61,7 @@ func clusterCloudProviderName(c *api.Cluster) (string, error) {
 		return LinodeCloudProvider, nil
 	}
 
-	return "", fmt.Errorf("no cloud provider set")
+	return "", nil
 }
 
 // ClusterCloudProvider returns the provider for the given cluster where
@@ -70,6 +70,9 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (CloudPr
 	name, err := clusterCloudProviderName(c)
 	if err != nil {
 		return nil, err
+	}
+	if name == "" {
+		return nil, nil
 	}
 
 	cp, found := cps[name]

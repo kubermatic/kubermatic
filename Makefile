@@ -16,7 +16,7 @@ gofmt:
 gometalinter:
 	gometalinter \
 		--vendor \
-		--cyclo-over=12 \
+		--cyclo-over=13 \
 		--tests \
 		--deadline=120s \
 		--dupl-threshold=53 \

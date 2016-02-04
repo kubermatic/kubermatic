@@ -50,7 +50,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "Germany", "Google Cloud")
+		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "de", "gce")
 	}
 
 	// start server
