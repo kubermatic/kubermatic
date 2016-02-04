@@ -10,51 +10,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-
-	httptransport "github.com/go-kit/kit/transport/http"
 )
-
-// NewCluster creates a handler delegating to KubernetesProvider.NewCluster.
-func NewCluster(
-	ctx context.Context,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) http.Handler {
-	return httptransport.NewServer(
-		ctx,
-		newClusterEndpoint(kps, cps),
-		decodeNewClusterReq,
-		encodeJSON,
-	)
-}
-
-// Cluster creates a handler delegating to KubernetesProvider.Cluster.
-func Cluster(
-	ctx context.Context,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) http.Handler {
-	return httptransport.NewServer(
-		ctx,
-		clusterEndpoint(kps, cps),
-		decodeClusterReq,
-		encodeJSON,
-	)
-}
-
-// Clusters creates a handler delegating to KubernetesProvider.Clusters.
-func Clusters(
-	ctx context.Context,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) http.Handler {
-	return httptransport.NewServer(
-		ctx,
-		clustersEndpoint(kps, cps),
-		decodeClustersReq,
-		encodeJSON,
-	)
-}
 
 func newClusterEndpoint(
 	kps map[string]provider.KubernetesProvider,

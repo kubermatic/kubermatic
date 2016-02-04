@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"os"
 
-	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/handler"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
-
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+
+	ghandlers "github.com/gorilla/handlers"
 )
 
 func main() {
@@ -55,38 +55,9 @@ func main() {
 
 	// start server
 	ctx := context.Background()
+	b := handler.NewBinding(ctx, kps, cps)
 	mux := mux.NewRouter()
+	b.Register(mux)
 
-	mux.
-		Methods("GET").
-		Path("/").
-		HandlerFunc(handler.StatusOK)
-
-	mux.
-		Methods("GET").
-		Path("/api/v1/dc").
-		Handler(handler.Datacenters(ctx, kps, cps))
-
-	mux.
-		Methods("POST").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.NewCluster(ctx, kps, cps))
-
-	mux.
-		Methods("GET").
-		Path("/api/v1/dc/{dc}/cluster").
-		Handler(handler.Clusters(ctx, kps, cps))
-
-	mux.
-		Methods("GET").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(handler.Cluster(ctx, kps, cps))
-
-	mux.
-		Methods("GET").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(handler.Nodes(ctx, kps, cps))
-
-	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
 }

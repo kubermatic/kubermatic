@@ -4,25 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
-
-// Datacenters returns a handler delegating to CloudProvider.Nodes.
-func Datacenters(
-	ctx context.Context,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) http.Handler {
-	return httptransport.NewServer(
-		ctx,
-		datacentersEndpoint(kps, cps),
-		decodeDatacentersReq,
-		encodeJSON,
-	)
-}
 
 func datacentersEndpoint(
 	kps map[string]provider.KubernetesProvider,
