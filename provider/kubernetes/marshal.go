@@ -126,6 +126,8 @@ func marshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	}
 
 	ns.Annotations = as
+	ns.Labels[roleLabelKey] = clusterRoleLabel
+	ns.Labels[nameLabelKey] = c.Metadata.Name
 	return ns, nil
 }
 

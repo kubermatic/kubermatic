@@ -19,18 +19,23 @@ func (err HTTPError) Error() string {
 }
 
 // NewNotFound creates a HTTP 404 error for a kind.
-func NewNotFound(kind string, name string) error {
+func NewNotFound(kind, name string) error {
 	return HTTPError{http.StatusNotFound, fmt.Sprintf("%s %q not found", kind, name)}
 }
 
 // NewInDcNotFound creates a HTTP 404 error for a kind in a datacenter.
-func NewInDcNotFound(kind string, dc string, name string) error {
+func NewInDcNotFound(kind, dc, name string) error {
 	return HTTPError{http.StatusNotFound, fmt.Sprintf("%s %q in dc %q not found", kind, name, dc)}
 }
 
 // NewBadRequest creates a HTTP 400 error.
 func NewBadRequest(msg string, options ...interface{}) error {
 	return HTTPError{http.StatusBadRequest, fmt.Sprintf(msg, options...)}
+}
+
+// NewConflict creates a HTTP 409 error for a kind in a datacenter.
+func NewConflict(kind, dc, name string) error {
+	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q in dc %q already exists", kind, name, dc)}
 }
 
 func defaultHTTPErrorEncoder() httptransport.ServerOption {
