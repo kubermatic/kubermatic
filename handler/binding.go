@@ -14,6 +14,7 @@ import (
 // Binding represents an object which binds endpoints to http handlers.
 type Binding struct {
 	ctx                 context.Context
+	datacenterEndpoint  endpoint.Endpoint
 	datacentersEndpoint endpoint.Endpoint
 	newClusterEndpoint  endpoint.Endpoint
 	clusterEndpoint     endpoint.Endpoint
@@ -29,6 +30,7 @@ func NewBinding(
 ) Binding {
 	return Binding{
 		ctx:                 ctx,
+		datacenterEndpoint:  datacenterEndpoint(kps, cps),
 		datacentersEndpoint: datacentersEndpoint(kps, cps),
 		newClusterEndpoint:  newClusterEndpoint(kps, cps),
 		clusterEndpoint:     clusterEndpoint(kps, cps),
@@ -48,6 +50,11 @@ func (b Binding) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc").
 		Handler(b.datacentersHandler())
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}").
+		Handler(b.datacenterHandler())
 
 	mux.
 		Methods("POST").
@@ -75,6 +82,16 @@ func (b Binding) datacentersHandler() http.Handler {
 		b.ctx,
 		b.datacentersEndpoint,
 		decodeDatacentersReq,
+		encodeJSON,
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Binding) datacenterHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		b.datacenterEndpoint,
+		decodeDatacenterReq,
 		encodeJSON,
 		defaultHTTPErrorEncoder(),
 	)
