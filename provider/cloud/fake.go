@@ -3,6 +3,8 @@ package cloud
 import (
 	"errors"
 
+	"golang.org/x/net/context"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 )
@@ -15,8 +17,7 @@ const (
 
 var _ provider.CloudProvider = (*fakeCloudProvider)(nil)
 
-type fakeCloudProvider struct {
-}
+type fakeCloudProvider struct{}
 
 // NewFakeCloudProvider creates a new fake cloud provider
 func NewFakeCloudProvider() provider.CloudProvider {
@@ -56,11 +57,15 @@ func (p *fakeCloudProvider) Cloud(as map[string]string) (*api.CloudSpec, error) 
 	return &c, nil
 }
 
-func (p *fakeCloudProvider) CreateNode(cluster *api.Cluster, spec *api.NodeSpec) (*api.Node, error) {
+func (p *fakeCloudProvider) CreateNode(
+	ctx context.Context,
+	cluster *api.Cluster,
+	spec *api.NodeSpec,
+) (*api.Node, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (p *fakeCloudProvider) Nodes(cluster *api.Cluster) ([]*api.Node, error) {
+func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	nodes := []*api.Node{
 		&api.Node{
 			Metadata: api.Metadata{

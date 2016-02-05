@@ -23,7 +23,9 @@ type NodeSpec struct {
 
 // NodeStatus stores status informations about a node.
 type NodeStatus struct {
-	Online bool `json:"online"`
+	Online    bool              `json:"online"`
+	Hostname  string            `json:"hostname"`
+	Addresses map[string]string `json:"addresses"`
 }
 
 // Node is the object representing a cluster node.
@@ -33,24 +35,24 @@ type Node struct {
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
+// LinodeCloudSpec specifies access data to digital ocean.
+type LinodeCloudSpec struct {
+	Token string `json:"token,omitempty"`
+	Dc    string `json:"dc,omitempty"`
+}
+
+// DigitaloceanCloudSpec specifies access data to digital ocean.
+type DigitaloceanCloudSpec struct {
+	DC      string   `json:"dc"`
+	Token   string   `json:"token"`
+	SSHKeys []string `json:"sshKeys,omitempty"`
+}
+
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token  string `json:"token,omitempty"`
 	Region string `json:"region,omitempty"`
 	Dc     string `json:"dc,omitempty"`
-}
-
-// DigitaloceanCloudSpec specifies access data to digital ocean.
-type DigitaloceanCloudSpec struct {
-	Token  string `json:"token,omitempty"`
-	Region string `json:"region,omitempty"`
-	Dc     string `json:"dc,omitempty"`
-}
-
-// LinodeCloudSpec specifies access data to digital ocean.
-type LinodeCloudSpec struct {
-	Token string `json:"token,omitempty"`
-	Dc    string `json:"dc,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
