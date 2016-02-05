@@ -119,6 +119,18 @@ func (p *kubernetesFakeProvider) Clusters() ([]*api.Cluster, error) {
 	return cs, nil
 }
 
+func (p *kubernetesFakeProvider) DeleteCluster(cluster string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if _, found := p.clusters[cluster]; !found {
+		return kerrors.NewNotFound("cluster", cluster)
+	}
+
+	delete(p.clusters, cluster)
+	return nil
+}
+
 func (p *kubernetesFakeProvider) Nodes(cluster string) ([]string, error) {
 	return []string{}, nil
 }

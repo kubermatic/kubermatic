@@ -142,6 +142,13 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	return cs, nil
 }
 
+func (p *kubernetesProvider) DeleteCluster(cluster string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.client.Namespaces().Delete(namePrefix + cluster)
+}
+
 func (p *kubernetesProvider) Nodes(cluster string) ([]string, error) {
 	return []string{}, nil
 }
