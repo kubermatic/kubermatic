@@ -1,13 +1,13 @@
 package kubernetes
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"sync"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
@@ -52,11 +52,47 @@ func (p *kubernetesProvider) Spec() *api.DatacenterSpec {
 	}
 }
 
-func (p *kubernetesProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return nil, errors.New("not implemented")
+	// sanity checks for a fresh cluster
+	if name == "" {
+		return nil, kerrors.NewBadRequest("cluster name is required")
+	}
+
+	ns := &kapi.Namespace{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:        namePrefix + name,
+			Annotations: map[string]string{},
+			Labels:      map[string]string{},
+		},
+	}
+
+	c := &api.Cluster{
+		Metadata: api.Metadata{
+			Name: name,
+		},
+		Spec: *spec,
+	}
+
+	ns, err := marshalCluster(p.cps, c, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	ns, err = p.client.Namespaces().Create(ns)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err = unmarshalCluster(p.cps, ns)
+	if err != nil {
+		_ = p.client.Namespaces().Delete(namePrefix + name)
+		return nil, err
+	}
+
+	return c, nil
 }
 
 func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {

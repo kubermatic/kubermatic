@@ -58,7 +58,7 @@ func (b Binding) Register(mux *mux.Router) {
 
 	mux.
 		Methods("POST").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Path("/api/v1/dc/{dc}/cluster").
 		Handler(b.newClusterHandler())
 
 	mux.

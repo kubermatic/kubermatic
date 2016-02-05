@@ -68,7 +68,7 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewCluster(name string, spec api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewCluster(name string, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -87,7 +87,7 @@ func (p *kubernetesFakeProvider) NewCluster(name string, spec api.ClusterSpec) (
 			Revision: "0",
 			UID:      id,
 		},
-		Spec: spec,
+		Spec: *spec,
 	}
 
 	p.clusters[name] = c

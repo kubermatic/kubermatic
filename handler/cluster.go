@@ -24,8 +24,11 @@ func newClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.NewCluster(req.name, req.spec)
+		c, err := kp.NewCluster(req.cluster.Metadata.Name, &req.cluster.Spec)
 		if err != nil {
+			if kerrors.IsAlreadyExists(err) {
+				return nil, NewConflict("cluster", req.dc, req.cluster.Metadata.Name)
+			}
 			return nil, err
 		}
 
@@ -90,8 +93,7 @@ func decodeDcReq(r *http.Request) (interface{}, error) {
 
 type newClusterReq struct {
 	dcReq
-	name string
-	spec api.ClusterSpec
+	cluster api.Cluster
 }
 
 func decodeNewClusterReq(r *http.Request) (interface{}, error) {
@@ -103,7 +105,7 @@ func decodeNewClusterReq(r *http.Request) (interface{}, error) {
 	}
 	req.dcReq = dr.(dcReq)
 
-	if err := json.NewDecoder(r.Body).Decode(&req.spec); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.cluster); err != nil {
 		return nil, err
 	}
 
