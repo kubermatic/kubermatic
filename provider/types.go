@@ -41,6 +41,7 @@ type KubernetesProvider interface {
 	NewCluster(cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
 	Cluster(cluster string) (*api.Cluster, error)
 	Clusters() ([]*api.Cluster, error)
+	DeleteCluster(cluster string) error
 
 	Nodes(cluster string) ([]string, error)
 }

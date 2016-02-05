@@ -13,13 +13,14 @@ import (
 
 // Binding represents an object which binds endpoints to http handlers.
 type Binding struct {
-	ctx                 context.Context
-	datacenterEndpoint  endpoint.Endpoint
-	datacentersEndpoint endpoint.Endpoint
-	newClusterEndpoint  endpoint.Endpoint
-	clusterEndpoint     endpoint.Endpoint
-	clustersEndpoint    endpoint.Endpoint
-	nodesEndpoint       endpoint.Endpoint
+	ctx                   context.Context
+	datacenterEndpoint    endpoint.Endpoint
+	datacentersEndpoint   endpoint.Endpoint
+	newClusterEndpoint    endpoint.Endpoint
+	deleteClusterEndpoint endpoint.Endpoint
+	clusterEndpoint       endpoint.Endpoint
+	clustersEndpoint      endpoint.Endpoint
+	nodesEndpoint         endpoint.Endpoint
 }
 
 // NewBinding creates a new Binding.
@@ -29,13 +30,14 @@ func NewBinding(
 	cps map[string]provider.CloudProvider,
 ) Binding {
 	return Binding{
-		ctx:                 ctx,
-		datacenterEndpoint:  datacenterEndpoint(kps, cps),
-		datacentersEndpoint: datacentersEndpoint(kps, cps),
-		newClusterEndpoint:  newClusterEndpoint(kps, cps),
-		clusterEndpoint:     clusterEndpoint(kps, cps),
-		clustersEndpoint:    clustersEndpoint(kps, cps),
-		nodesEndpoint:       nodesEndpoint(kps, cps),
+		ctx:                   ctx,
+		datacenterEndpoint:    datacenterEndpoint(kps, cps),
+		datacentersEndpoint:   datacentersEndpoint(kps, cps),
+		newClusterEndpoint:    newClusterEndpoint(kps, cps),
+		deleteClusterEndpoint: deleteClusterEndpoint(kps, cps),
+		clusterEndpoint:       clusterEndpoint(kps, cps),
+		clustersEndpoint:      clustersEndpoint(kps, cps),
+		nodesEndpoint:         nodesEndpoint(kps, cps),
 	}
 }
 
@@ -70,6 +72,11 @@ func (b Binding) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(b.clusterHandler())
+
+	mux.
+		Methods("DELETE").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Handler(b.deleteClusterHandler())
 
 	mux.
 		Methods("GET").
@@ -122,6 +129,16 @@ func (b Binding) clustersHandler() http.Handler {
 		b.ctx,
 		b.clustersEndpoint,
 		decodeClustersReq,
+		encodeJSON,
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Binding) deleteClusterHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		b.deleteClusterEndpoint,
+		decodeDeleteClusterReq,
 		encodeJSON,
 		defaultHTTPErrorEncoder(),
 	)

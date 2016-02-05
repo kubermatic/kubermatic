@@ -81,6 +81,30 @@ func clustersEndpoint(
 	}
 }
 
+func deleteClusterEndpoint(
+	kps map[string]provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(deleteClusterReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		err := kp.DeleteCluster(req.cluster)
+		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			}
+			return nil, err
+		}
+
+		return struct{}{}, nil
+	}
+}
+
 type dcReq struct {
 	dc string
 }
@@ -135,6 +159,25 @@ type clusterReq struct {
 
 func decodeClusterReq(r *http.Request) (interface{}, error) {
 	var req clusterReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	req.cluster = mux.Vars(r)["cluster"]
+
+	return req, nil
+}
+
+type deleteClusterReq struct {
+	dcReq
+	cluster string
+}
+
+func decodeDeleteClusterReq(r *http.Request) (interface{}, error) {
+	var req deleteClusterReq
 
 	dr, err := decodeDcReq(r)
 	if err != nil {
