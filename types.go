@@ -74,16 +74,16 @@ type ClusterPhase string
 
 const (
 	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
-	UnknownClusterStatusPhase  ClusterPhase = "Unknown"
+	UnknownClusterStatusPhase ClusterPhase = "Unknown"
 
 	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
-	PendingClusterStatusPhase  ClusterPhase = "Pending"
+	PendingClusterStatusPhase ClusterPhase = "Pending"
 
 	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
-	RunningClusterStatusPhase  ClusterPhase = "Running"
+	RunningClusterStatusPhase ClusterPhase = "Running"
 
 	// PausedClusterStatusPhase means that the cluster was paused after the idle time.
-	PausedClusterStatusPhase   ClusterPhase = "Paused"
+	PausedClusterStatusPhase ClusterPhase = "Paused"
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
