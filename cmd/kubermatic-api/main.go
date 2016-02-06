@@ -53,10 +53,14 @@ func main() {
 		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "de", "gce")
 	}
 
+	// setup auth0
+	jwtMw := jwtMiddleware()
+
 	// start server
 	ctx := context.Background()
 	b := handler.NewBinding(ctx, kps, cps)
 	mux := mux.NewRouter()
+	mux.Handle("/secured/ping", jwtMw.Handler(http.HandlerFunc(securedPingHandler)))
 	b.Register(mux)
 
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
