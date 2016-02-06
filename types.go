@@ -69,9 +69,30 @@ type ClusterHealth struct {
 	Etcd       bool      `json:"etcd"`
 }
 
+// ClusterPhase is the life cycle phase of a cluster.
+type ClusterPhase string
+
+const (
+	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
+	UnknownClusterStatusPhase  ClusterPhase = "Unknown"
+
+	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
+	PendingClusterStatusPhase  ClusterPhase = "Pending"
+
+	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
+	RunningClusterStatusPhase  ClusterPhase = "Running"
+
+	// PausedClusterStatusPhase means that the cluster was paused after the idle time.
+	PausedClusterStatusPhase   ClusterPhase = "Paused"
+
+	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
+	DeletingClusterStatusPhase ClusterPhase = "Deleting"
+)
+
 // ClusterStatus stores status informations about a cluster.
 type ClusterStatus struct {
-	Health ClusterHealth `json:"health"`
+	Phase  ClusterPhase   `json:"phase,omitempty"`
+	Health *ClusterHealth `json:"health,omitempty"`
 }
 
 // ClusterSpec specifies the data for a new cluster.
@@ -90,7 +111,7 @@ type Cluster struct {
 	Metadata Metadata        `json:"metadata"`
 	Spec     ClusterSpec     `json:"spec"`
 	Address  *ClusterAddress `json:"address,omitempty"`
-	Status   *ClusterStatus  `json:"status,omitempty"`
+	Status   ClusterStatus   `json:"status,omitempty"`
 }
 
 // DatacenterSpec specifies the data for a datacenter.

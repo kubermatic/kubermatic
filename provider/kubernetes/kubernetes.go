@@ -74,6 +74,9 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 			Name: name,
 		},
 		Spec: *spec,
+		Status: api.ClusterStatus{
+			Phase: api.PendingClusterStatusPhase,
+		},
 	}
 
 	ns, err := marshalCluster(p.cps, c, ns)
