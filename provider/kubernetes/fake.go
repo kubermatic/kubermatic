@@ -41,8 +41,9 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 					URL:   "http://104.155.80.128:8888",
 					Token: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
 				},
-				Status: &api.ClusterStatus{
-					Health: api.ClusterHealth{
+				Status: api.ClusterStatus{
+					Phase: api.RunningClusterStatusPhase,
+					Health: &api.ClusterHealth{
 						Timestamp:  time.Now().Add(-7 * time.Second),
 						Apiserver:  true,
 						Scheduler:  true,
