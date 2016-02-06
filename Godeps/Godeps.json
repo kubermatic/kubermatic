@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/kubermatic/api",
-	"GoVersion": "go1.5.3",
+	"GoVersion": "go1.5",
 	"Packages": [
 		"github.com/docker/libcontainer/cgroups/fs"
 	],
