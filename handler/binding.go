@@ -14,6 +14,7 @@ import (
 // Binding represents an object which binds endpoints to http handlers.
 type Binding struct {
 	ctx                   context.Context
+	authenticated         func(http.Handler) http.Handler
 	datacenterEndpoint    endpoint.Endpoint
 	datacentersEndpoint   endpoint.Endpoint
 	newClusterEndpoint    endpoint.Endpoint
@@ -28,9 +29,17 @@ func NewBinding(
 	ctx context.Context,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
+	auth bool,
+	jwtKey string,
 ) Binding {
+	var authenticated = func(h http.Handler) http.Handler { return h }
+	if auth {
+		authenticated = jwtMiddleware(jwtKey).Handler
+	}
+
 	return Binding{
 		ctx:                   ctx,
+		authenticated:         authenticated,
 		datacenterEndpoint:    datacenterEndpoint(kps, cps),
 		datacentersEndpoint:   datacentersEndpoint(kps, cps),
 		newClusterEndpoint:    newClusterEndpoint(kps, cps),
@@ -51,37 +60,37 @@ func (b Binding) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc").
-		Handler(b.datacentersHandler())
+		Handler(b.authenticated(b.datacentersHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}").
-		Handler(b.datacenterHandler())
+		Handler(b.authenticated(b.datacenterHandler()))
 
 	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(b.newClusterHandler())
+		Handler(b.authenticated(b.newClusterHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(b.clustersHandler())
+		Handler(b.authenticated(b.clustersHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(b.clusterHandler())
+		Handler(b.authenticated(b.clusterHandler()))
 
 	mux.
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(b.deleteClusterHandler())
+		Handler(b.authenticated(b.deleteClusterHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(b.nodesHandler())
+		Handler(b.authenticated(b.nodesHandler()))
 }
 
 func (b Binding) datacentersHandler() http.Handler {

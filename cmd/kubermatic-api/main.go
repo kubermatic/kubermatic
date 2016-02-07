@@ -19,8 +19,9 @@ import (
 
 func main() {
 	// parse flags
-	var kubeconfig string
-	flag.StringVar(&kubeconfig, "kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
+	kubeconfig := flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
+	auth := flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
+	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	flag.Parse()
 
 	// create CloudProviders
@@ -35,7 +36,7 @@ func main() {
 		"fake-1": kubernetes.NewKubernetesFakeProvider("fake-1", cps),
 		"fake-2": kubernetes.NewKubernetesFakeProvider("fake-2", cps),
 	}
-	clientcmdConfig, err := clientcmd.LoadFromFile(kubeconfig)
+	clientcmdConfig, err := clientcmd.LoadFromFile(*kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,14 +54,10 @@ func main() {
 		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "de", "gce")
 	}
 
-	// setup auth0
-	jwtMw := jwtMiddleware()
-
 	// start server
 	ctx := context.Background()
-	b := handler.NewBinding(ctx, kps, cps)
+	b := handler.NewBinding(ctx, kps, cps, *auth, *jwtKey)
 	mux := mux.NewRouter()
-	mux.Handle("/secured/ping", jwtMw.Handler(http.HandlerFunc(securedPingHandler)))
 	b.Register(mux)
 
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
