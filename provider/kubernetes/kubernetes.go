@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -63,7 +64,7 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 
 	ns := &kapi.Namespace{
 		ObjectMeta: kapi.ObjectMeta{
-			Name:        namePrefix + name,
+			Name:        NamePrefix + name,
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
@@ -75,11 +76,12 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 		},
 		Spec: *spec,
 		Status: api.ClusterStatus{
-			Phase: api.PendingClusterStatusPhase,
+			LastTransitionTime: time.Now(),
+			Phase:              api.PendingClusterStatusPhase,
 		},
 	}
 
-	ns, err := marshalCluster(p.cps, c, ns)
+	ns, err := MarshalCluster(p.cps, c, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +91,9 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 		return nil, err
 	}
 
-	c, err = unmarshalCluster(p.cps, ns)
+	c, err = UnmarshalCluster(p.cps, ns)
 	if err != nil {
-		_ = p.client.Namespaces().Delete(namePrefix + name)
+		_ = p.client.Namespaces().Delete(NamePrefix + name)
 		return nil, err
 	}
 
@@ -102,7 +104,7 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(namePrefix + name)
+	ns, err := p.client.Namespaces().Get(NamePrefix + name)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil, kerrors.NewNotFound("cluster", name)
@@ -110,7 +112,7 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 		return nil, err
 	}
 
-	c, err := unmarshalCluster(p.cps, ns)
+	c, err := UnmarshalCluster(p.cps, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +125,7 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	defer p.mu.Unlock()
 
 	nsList, err := p.client.Namespaces().List(
-		labels.SelectorFromSet(labels.Set(map[string]string{roleLabelKey: clusterRoleLabel})),
+		labels.SelectorFromSet(labels.Set(map[string]string{RoleLabelKey: ClusterRoleLabel})),
 		fields.Everything(),
 	)
 	if err != nil {
@@ -133,7 +135,7 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	cs := make([]*api.Cluster, 0, len(nsList.Items))
 	for i := range nsList.Items {
 		ns := nsList.Items[i]
-		c, err := unmarshalCluster(p.cps, &ns)
+		c, err := UnmarshalCluster(p.cps, &ns)
 		if err != nil {
 			log.Println(fmt.Sprintf("error unmarshaling namespace %s: %v", ns.Name, err))
 			continue
@@ -149,7 +151,7 @@ func (p *kubernetesProvider) DeleteCluster(cluster string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return p.client.Namespaces().Delete(namePrefix + cluster)
+	return p.client.Namespaces().Delete(NamePrefix + cluster)
 }
 
 func (p *kubernetesProvider) Nodes(cluster string) ([]string, error) {

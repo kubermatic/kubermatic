@@ -25,11 +25,7 @@ func main() {
 	flag.Parse()
 
 	// create CloudProviders
-	cps := map[string]provider.CloudProvider{
-		provider.FakeCloudProvider:         cloud.NewFakeCloudProvider(),
-		provider.DigitaloceanCloudProvider: nil,
-		// provider.LinodeCloudProvider: nil,
-	}
+	cps := cloud.Providers()
 
 	// create KubernetesProvider for each context in the kubeconfig
 	kps := map[string]provider.KubernetesProvider{

@@ -44,11 +44,13 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 				Status: api.ClusterStatus{
 					Phase: api.RunningClusterStatusPhase,
 					Health: &api.ClusterHealth{
-						Timestamp:  time.Now().Add(-7 * time.Second),
-						Apiserver:  true,
-						Scheduler:  true,
-						Controller: false,
-						Etcd:       true,
+						LastTransitionTime: time.Now().Add(-7 * time.Second),
+						ClusterHealthStatus: api.ClusterHealthStatus{
+							Apiserver:  true,
+							Scheduler:  true,
+							Controller: false,
+							Etcd:       []bool{true},
+						},
 					},
 				},
 			},
