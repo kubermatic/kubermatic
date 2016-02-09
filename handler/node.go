@@ -15,7 +15,7 @@ func nodesEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*nodesReq)
+		req := request.(nodesReq)
 
 		kp, found := kps[req.dc]
 		if !found {
