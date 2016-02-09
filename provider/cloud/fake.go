@@ -61,7 +61,27 @@ func (p *fakeCloudProvider) CreateNode(cluster *api.Cluster, spec *api.NodeSpec)
 }
 
 func (p *fakeCloudProvider) Nodes(cluster *api.Cluster) ([]*api.Node, error) {
-	return []*api.Node{}, nil
+	nodes := []*api.Node{
+		&api.Node{
+			Metadata: api.Metadata{
+				Name: "server1",
+			},
+			Spec: api.NodeSpec{
+				Type: "standard-1",
+				OS:   "CoreOS alpha 1234",
+			},
+		},
+		&api.Node{
+			Metadata: api.Metadata{
+				Name: "server2",
+			},
+			Spec: api.NodeSpec{
+				Type: "standard-1",
+				OS:   "CoreOS alpha 1234",
+			},
+		},
+	}
+	return nodes, nil
 }
 
 func (p *fakeCloudProvider) Name() string {
