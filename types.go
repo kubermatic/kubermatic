@@ -60,13 +60,18 @@ type CloudSpec struct {
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 }
 
-// ClusterHealth stores health information of a cluster.
+// ClusterHealthStatus stores health information of the components of a cluster.
+type ClusterHealthStatus struct {
+	Apiserver  bool   `json:"apiserver"`
+	Scheduler  bool   `json:"scheduler"`
+	Controller bool   `json:"controller"`
+	Etcd       []bool `json:"etcd"`
+}
+
+// ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
-	Timestamp  time.Time `json:"timestamp"`
-	Apiserver  bool      `json:"apiserver"`
-	Scheduler  bool      `json:"scheduler"`
-	Controller bool      `json:"controller"`
-	Etcd       bool      `json:"etcd"`
+	ClusterHealthStatus `json:",inline"`
+	LastTransitionTime  time.Time `json:"lastTransitionTime"`
 }
 
 // ClusterPhase is the life cycle phase of a cluster.
@@ -78,6 +83,9 @@ const (
 
 	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
 	PendingClusterStatusPhase ClusterPhase = "Pending"
+
+	// FailedClusterStatusPhase means that the cluster controller time out launching the cluster.
+	FailedClusterStatusPhase ClusterPhase = "Failed"
 
 	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
 	RunningClusterStatusPhase ClusterPhase = "Running"
@@ -91,8 +99,9 @@ const (
 
 // ClusterStatus stores status informations about a cluster.
 type ClusterStatus struct {
-	Phase  ClusterPhase   `json:"phase,omitempty"`
-	Health *ClusterHealth `json:"health,omitempty"`
+	LastTransitionTime time.Time      `json:"lastTransitionTime"`
+	Phase              ClusterPhase   `json:"phase,omitempty"`
+	Health             *ClusterHealth `json:"health,omitempty"`
 }
 
 // ClusterSpec specifies the data for a new cluster.

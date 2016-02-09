@@ -6,6 +6,7 @@ all: check test build
 
 build:
 	go build github.com/kubermatic/api/cmd/kubermatic-api
+	go build github.com/kubermatic/api/cmd/kubermatic-cluster-controller
 
 test:
 	go test -v $$(go list ./... | grep -v /vendor/)

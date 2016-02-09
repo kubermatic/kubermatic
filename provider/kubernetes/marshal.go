@@ -1,47 +1,71 @@
 package kubernetes
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 const (
-	annotationPrefix = "kubermatic.io/"
+	// AnnotationPrefix is the prefix string of every cluster namespace annotation.
+	AnnotationPrefix = "kubermatic.io/"
 
-	namePrefix = "kubermatic-cluster-"
+	// NamePrefix is the prefix string of every cluster namespace name.
+	NamePrefix = "kubermatic-cluster-"
 
-	addressURLAnnoation    = annotationPrefix + "address-url"   // kubermatic.io/address-url
-	addressTokenAnnoation  = annotationPrefix + "address-token" // kubermatic.io/address-token
-	customAnnotationPrefix = annotationPrefix + "annotation-"   // kubermatic.io/annotation-
-	cloudAnnotationPrefix  = annotationPrefix + "cloud-"        // kubermatic.io/cloud-
-	providerAnnotation     = cloudAnnotationPrefix + "provider" // kubermatic.io/cloud-provider
+	urlAnnotation            = AnnotationPrefix + "url"           // kubermatic.io/url
+	tokenAnnoation           = AnnotationPrefix + "token"         // kubermatic.io/token
+	customAnnotationPrefix   = AnnotationPrefix + "annotation-"   // kubermatic.io/annotation-
+	cloudAnnotationPrefix    = AnnotationPrefix + "cloud-"        // kubermatic.io/cloud-
+	providerAnnotation       = cloudAnnotationPrefix + "provider" // kubermatic.io/cloud-provider
+	phaseTimestampAnnotation = AnnotationPrefix + "phase-ts"      // kubermatic.io/phase-ts
+	healthAnnotation         = AnnotationPrefix + "health"        // kubermatic.io/health
 
-	roleLabelKey     = "role"
-	nameLabelKey     = "name"
-	phaseLabelKey    = "phase"
-	clusterRoleLabel = "kubermatic-cluster"
+	// RoleLabelKey is the label key set to the value kubermatic-cluster.
+	RoleLabelKey = "role"
+	// ClusterRoleLabel is the value of the role label of a cluster namespace.
+	ClusterRoleLabel = "kubermatic-cluster"
+
+	// NameLabelKey is the key of the name label set to the cluster name.
+	NameLabelKey = "name"
+
+	// PhaseLabelKey is the key of the phase label set to the Cluster.Status.Phase value.
+	PhaseLabelKey = "phase"
 )
 
 func cloudProviderAnnotationPrefix(cp provider.CloudProvider) string {
 	return cloudAnnotationPrefix + cp.Name() + "-"
 }
 
-// unmarshalCluster decodes a Kubernetes namespace into a Kubermatic cluster.
-func unmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace) (*api.Cluster, error) {
+// UnmarshalCluster decodes a Kubernetes namespace into a Kubermatic cluster.
+func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace) (*api.Cluster, error) {
+	phaseTS, err := time.Parse(time.RFC3339, ns.Annotations[phaseTimestampAnnotation])
+	if err != nil {
+		glog.Warningf(
+			"Invalid Cluster.Status.LastTransitionTime string %q in namespace %q",
+			ns.Annotations[phaseTimestampAnnotation],
+			ns.Name,
+		)
+		phaseTS = time.Now() // gracefully use "now"
+	}
+
 	c := api.Cluster{
 		Metadata: api.Metadata{
-			Name:        ns.Labels[nameLabelKey],
+			Name:        ns.Labels[NameLabelKey],
 			Revision:    ns.ResourceVersion,
 			UID:         string(ns.UID),
 			Annotations: map[string]string{},
 		},
 		Spec: api.ClusterSpec{},
 		Status: api.ClusterStatus{
-			Phase: clusterPhase(ns),
+			LastTransitionTime: phaseTS,
+			Phase:              ClusterPhase(ns),
 		},
 	}
 
@@ -55,20 +79,20 @@ func unmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 	}
 
 	// get address
-	if url, found := ns.Annotations[addressURLAnnoation]; found {
-		token, _ := ns.Annotations[addressTokenAnnoation]
+	if url, found := ns.Annotations[urlAnnotation]; found {
+		token, _ := ns.Annotations[tokenAnnoation]
 		c.Address = &api.ClusterAddress{
 			URL:   url,
 			Token: token,
 		}
 	}
 
-	// decode the cloud spec from annoations
-	name, found := ns.Annotations[providerAnnotation]
+	// decode the cloud spec from annotations
+	provider, found := ns.Annotations[providerAnnotation]
 	if found {
-		cp, found := cps[name]
+		cp, found := cps[provider]
 		if !found {
-			return nil, fmt.Errorf("unsupported cloud provider %q", name)
+			return nil, fmt.Errorf("unsupported cloud provider %q", provider)
 		}
 
 		var err error
@@ -78,27 +102,36 @@ func unmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		}
 	}
 
+	// decode health
+	if healthJSON, found := ns.Annotations[healthAnnotation]; found {
+		health := api.ClusterHealth{}
+		err := json.Unmarshal([]byte(healthJSON), &health)
+		if err != nil {
+			glog.Errorf("Error unmarshaling the cluster health of %q: %s", c.Metadata.Name, err.Error())
+		} else {
+			c.Status.Health = &health
+		}
+	}
+
 	return &c, nil
 }
 
-// marshalCluster updates a Kubernetes namespace from a Kubermatic cluster.
-func marshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *kapi.Namespace) (*kapi.Namespace, error) {
+// MarshalCluster updates a Kubernetes namespace from a Kubermatic cluster.
+func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *kapi.Namespace) (*kapi.Namespace, error) {
 	// filter out old annotations in our domain
 	as := map[string]string{}
 	for k, v := range ns.Annotations {
-		if !strings.HasPrefix(k, annotationPrefix) {
+		if strings.HasPrefix(k, AnnotationPrefix) {
 			continue
 		}
-		k = k[len(annotationPrefix):]
 		as[k] = v
 	}
 
 	// set name
-	if ns.Name != "" && ns.Name != namePrefix+c.Metadata.Name {
+	if ns.Name != "" && ns.Name != NamePrefix+c.Metadata.Name {
 		return nil, fmt.Errorf("cannot rename cluster %s", ns.Name)
 	}
-	ns.Name = namePrefix + c.Metadata.Name
-	as[nameLabelKey] = c.Metadata.Name
+	ns.Name = NamePrefix + c.Metadata.Name
 
 	// copy custom annotations
 	for k, v := range c.Metadata.Annotations {
@@ -108,10 +141,10 @@ func marshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	// set address
 	if c.Address != nil {
 		if c.Address.URL != "" {
-			as[addressURLAnnoation] = c.Address.URL
+			as[urlAnnotation] = c.Address.URL
 		}
 		if c.Address.Token != "" {
-			as[addressTokenAnnoation] = c.Address.Token
+			as[tokenAnnoation] = c.Address.Token
 		}
 	}
 
@@ -130,12 +163,23 @@ func marshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 		}
 	}
 
-	ns.Annotations = as
+	// encode health as json
+	if c.Status.Health != nil {
+		health, err := json.Marshal(c.Status.Health)
+		if err != nil {
+			glog.Errorf("Error marshaling the cluster health of %q: %s", c.Metadata.Name, err.Error())
+		}
+		if health != nil {
+			as[healthAnnotation] = string(health)
+		}
+	}
 
-	ns.Labels[roleLabelKey] = clusterRoleLabel
-	ns.Labels[nameLabelKey] = c.Metadata.Name
+	ns.Annotations = as
+	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
+	ns.Labels[RoleLabelKey] = ClusterRoleLabel
+	ns.Labels[NameLabelKey] = c.Metadata.Name
 	if c.Status.Phase != api.UnknownClusterStatusPhase {
-		ns.Labels[phaseLabelKey] = strings.ToLower(string(c.Status.Phase))
+		ns.Labels[PhaseLabelKey] = strings.ToLower(string(c.Status.Phase))
 	}
 
 	return ns, nil
@@ -159,7 +203,7 @@ func marshalClusterCloud(cp provider.CloudProvider, c *api.Cluster) (map[string]
 	return as, nil
 }
 
-// UnmarshalClusterCloud sets the Spec.Cloud field according to the annotations.
+// unmarshalClusterCloud sets the Spec.Cloud field according to the annotations.
 func unmarshalClusterCloud(cp provider.CloudProvider, as map[string]string) (*api.CloudSpec, error) {
 	prefix := cloudProviderAnnotationPrefix(cp)
 	cloudAs := map[string]string{}
@@ -178,15 +222,17 @@ func unmarshalClusterCloud(cp provider.CloudProvider, as map[string]string) (*ap
 	return spec, nil
 }
 
-// clusterPhase derives the cluster phase from the Kubernetes namespace.
-func clusterPhase(ns *kapi.Namespace) api.ClusterPhase {
+// ClusterPhase derives the cluster phase from the Kubernetes namespace.
+func ClusterPhase(ns *kapi.Namespace) api.ClusterPhase {
 	if ns.Status.Phase == kapi.NamespaceTerminating {
 		return api.DeletingClusterStatusPhase
 	}
 
-	switch api.ClusterPhase(toCapital(ns.Labels[phaseLabelKey])) {
+	switch api.ClusterPhase(toCapital(ns.Labels[PhaseLabelKey])) {
 	case api.PendingClusterStatusPhase:
 		return api.PendingClusterStatusPhase
+	case api.FailedClusterStatusPhase:
+		return api.FailedClusterStatusPhase
 	case api.RunningClusterStatusPhase:
 		return api.RunningClusterStatusPhase
 	case api.PausedClusterStatusPhase:
