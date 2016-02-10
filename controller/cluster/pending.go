@@ -3,7 +3,6 @@ package cluster
 import (
 	crand "crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,8 +13,10 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/util/yaml"
+	"strings"
 )
 
 func (cc *clusterController) pendingCheckTimeout(c *api.Cluster) (*api.Cluster, error) {
@@ -39,7 +40,8 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 			return nil, err
 		}
 		token := sha256.Sum256(rawToken)
-		hexToken := hex.EncodeToString(token[:])
+		token62 := base62.StdEncoding.EncodeToString(token[:])
+		trimmedToken62 := strings.TrimRight(token62, "+")
 
 		secret := kapi.Secret{
 			ObjectMeta: kapi.ObjectMeta{
@@ -47,16 +49,16 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 			},
 			Type: kapi.SecretTypeOpaque,
 			Data: map[string][]byte{
-				"file": []byte(fmt.Sprintf("%s,admin,admin", hexToken)),
+				"file": []byte(fmt.Sprintf("%s,admin,admin", token62)),
 			},
 		}
 		c.Address = &api.ClusterAddress{
 			URL:   fmt.Sprintf(cc.urlPattern, c.Metadata.Name),
-			Token: hexToken,
+			Token: trimmedToken62,
 		}
 		return &secret, nil
 	}
-	ns := kubernetes.NamePrefix + c.Metadata.Name
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	key := fmt.Sprintf("%s/token-users", ns)
 	_, exists, err := cc.secretStore.GetByKey(key)
@@ -102,7 +104,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 		"apiserver-ssh":  loadFile,
 	}
 
-	ns := kubernetes.NamePrefix + c.Metadata.Name
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	for s, gen := range secrets {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.secretStore.GetByKey(key)
@@ -152,7 +154,7 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 		"apiserver-public": loadFile,
 	}
 
-	ns := kubernetes.NamePrefix + c.Metadata.Name
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	for s, gen := range services {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.serviceStore.GetByKey(key)
@@ -203,7 +205,7 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 		"scheduler":          loadFile,
 	}
 
-	ns := kubernetes.NamePrefix + c.Metadata.Name
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	existingRCs, err := cc.rcStore.ByIndex("namespace", ns)
 	if err != nil {
 		return err
@@ -237,7 +239,7 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 }
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
-	ns := kubernetes.NamePrefix + c.Metadata.Name
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	rcs, err := cc.rcStore.ByIndex("namespace", ns)
 	if err != nil {
 		return false, nil, err

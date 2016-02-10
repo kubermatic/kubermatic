@@ -22,7 +22,7 @@ func nodesEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.cluster)
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}

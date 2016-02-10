@@ -53,18 +53,35 @@ func (p *kubernetesProvider) Spec() *api.DatacenterSpec {
 	}
 }
 
-func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesProvider) NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+	// call cluster before lock is taken
+	cs, err := p.Clusters(user)
+	if err != nil {
+		return nil, err
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	// sanity checks for a fresh cluster
-	if name == "" {
+	if cluster == "" {
 		return nil, kerrors.NewBadRequest("cluster name is required")
+	}
+	if user == "" {
+		return nil, kerrors.NewBadRequest("cluster user is required")
+	}
+	if spec.HumanReadableName == "" {
+		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
+	}
+	for _, c := range cs {
+		if c.Spec.HumanReadableName == spec.HumanReadableName {
+			return nil, kerrors.NewAlreadyExists("cluster", spec.HumanReadableName)
+		}
 	}
 
 	ns := &kapi.Namespace{
 		ObjectMeta: kapi.ObjectMeta{
-			Name:        NamePrefix + name,
+			Name:        NamespaceName(user, cluster),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
@@ -72,7 +89,8 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
-			Name: name,
+			User: user,
+			Name: cluster,
 		},
 		Spec: *spec,
 		Status: api.ClusterStatus{
@@ -81,7 +99,7 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 		},
 	}
 
-	ns, err := MarshalCluster(p.cps, c, ns)
+	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -93,21 +111,21 @@ func (p *kubernetesProvider) NewCluster(name string, spec *api.ClusterSpec) (*ap
 
 	c, err = UnmarshalCluster(p.cps, ns)
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamePrefix + name)
+		_ = p.client.Namespaces().Delete(NamespaceName(user, cluster))
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
+func (p *kubernetesProvider) Cluster(user, cluster string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(NamePrefix + name)
+	ns, err := p.client.Namespaces().Get(NamespaceName(user, cluster))
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return nil, kerrors.NewNotFound("cluster", name)
+			return nil, kerrors.NewNotFound("cluster", cluster)
 		}
 		return nil, err
 	}
@@ -117,15 +135,23 @@ func (p *kubernetesProvider) Cluster(name string) (*api.Cluster, error) {
 		return nil, err
 	}
 
+	if c.Metadata.User != user {
+		// don't return Forbidden, not NotFound to obfuscate the existence
+		return nil, kerrors.NewNotFound("cluster", cluster)
+	}
+
 	return c, nil
 }
 
-func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
+func (p *kubernetesProvider) Clusters(user string) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	nsList, err := p.client.Namespaces().List(
-		labels.SelectorFromSet(labels.Set(map[string]string{RoleLabelKey: ClusterRoleLabel})),
+		labels.SelectorFromSet(labels.Set(map[string]string{
+			RoleLabelKey: ClusterRoleLabel,
+			userLabelKey: LabelUser(user),
+		})),
 		fields.Everything(),
 	)
 	if err != nil {
@@ -147,13 +173,16 @@ func (p *kubernetesProvider) Clusters() ([]*api.Cluster, error) {
 	return cs, nil
 }
 
-func (p *kubernetesProvider) DeleteCluster(cluster string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+func (p *kubernetesProvider) DeleteCluster(user, cluster string) error {
+	// check permission by getting the cluster first
+	_, err := p.Cluster(user, cluster)
+	if err != nil {
+		return err
+	}
 
-	return p.client.Namespaces().Delete(NamePrefix + cluster)
+	return p.client.Namespaces().Delete(NamespaceName(user, cluster))
 }
 
-func (p *kubernetesProvider) Nodes(cluster string) ([]string, error) {
+func (p *kubernetesProvider) Nodes(user, cluster string) ([]string, error) {
 	return []string{}, nil
 }

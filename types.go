@@ -106,7 +106,8 @@ type ClusterStatus struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud *CloudSpec `json:"cloud,omitempty"`
+	Cloud             *CloudSpec `json:"cloud,omitempty"`
+	HumanReadableName string     `json:"humanReadableName"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
