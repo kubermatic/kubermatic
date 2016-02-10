@@ -252,6 +252,10 @@
 			"Rev": "772f5c38e468398c4511514f4f6aa9a4185bc0a0"
 		},
 		{
+			"ImportPath": "github.com/lytics/base62",
+			"Rev": "2c06157bd55d0d09bb15e7648606e065a8a5079f"
+		},
+		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
@@ -344,7 +348,15 @@
 			"Rev": "2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79"
 		},
 		{
+			"ImportPath": "golang.org/x/text/internal/tag",
+			"Rev": "2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79"
+		},
+		{
 			"ImportPath": "golang.org/x/text/internal/utf8internal",
+			"Rev": "2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79"
+		},
+		{
+			"ImportPath": "golang.org/x/text/language",
 			"Rev": "2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79"
 		},
 		{
@@ -371,6 +383,11 @@
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
 			"Rev": "d466437aa4adc35830964cffc5b5f262c63ddcb4"
+		},
+		{
+			"ImportPath": "k8s.io/heapster/api/v1/types",
+			"Comment": "v0.17.0-75-g0e1b652",
+			"Rev": "0e1b652781812dee2c51c75180fc590223e0b9c6"
 		},
 		{
 			"ImportPath": "k8s.io/kubernetes/pkg/admission",
@@ -434,6 +451,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/kubernetes/pkg/client/unversioned",
+			"Comment": "v1.1.7",
+			"Rev": "e4e6878293a339e4087dae684647c9e53f1cf9f0"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/cloudprovider",
 			"Comment": "v1.1.7",
 			"Rev": "e4e6878293a339e4087dae684647c9e53f1cf9f0"
 		},
@@ -649,6 +671,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/kubernetes/pkg/version",
+			"Comment": "v1.1.7",
+			"Rev": "e4e6878293a339e4087dae684647c9e53f1cf9f0"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/volume",
 			"Comment": "v1.1.7",
 			"Rev": "e4e6878293a339e4087dae684647c9e53f1cf9f0"
 		},
