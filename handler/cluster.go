@@ -24,10 +24,10 @@ func newClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.NewCluster(req.cluster.Metadata.Name, &req.cluster.Spec)
+		c, err := kp.NewCluster(req.user, req.cluster.Metadata.Name, &req.cluster.Spec)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
-				return nil, NewConflict("cluster", req.dc, req.cluster.Metadata.Name)
+				return nil, NewConflict("cluster", req.dc, req.cluster.Spec.HumanReadableName)
 			}
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func clusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.cluster)
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -72,7 +72,7 @@ func clustersEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		cs, err := kp.Clusters()
+		cs, err := kp.Clusters(req.user)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func deleteClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		err := kp.DeleteCluster(req.cluster)
+		err := kp.DeleteCluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -106,11 +106,19 @@ func deleteClusterEndpoint(
 }
 
 type dcReq struct {
+	userReq
 	dc string
 }
 
 func decodeDcReq(r *http.Request) (interface{}, error) {
 	var req dcReq
+
+	dr, err := decodeUserReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.userReq = dr.(userReq)
+
 	req.dc = mux.Vars(r)["dc"]
 	return req, nil
 }

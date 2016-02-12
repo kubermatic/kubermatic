@@ -206,11 +206,11 @@ func (cc *clusterController) recordClusterPhaseChange(ns *kapi.Namespace, newPha
 		Namespace: ns.Name,
 	}
 	glog.V(2).Infof("Recording phase change %s event message for namespace %s", string(newPhase), ns.Name)
-	cc.recorder.Eventf(ref, string(newPhase), "Cluster %s phase is now: %s", ns.Labels[kprovider.NameLabelKey], newPhase)
+	cc.recorder.Eventf(ref, string(newPhase), "Cluster phase is now: %s", newPhase)
 }
 
 func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
-	nsName := kprovider.NamePrefix + c.Metadata.Name
+	nsName := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	ref := &kapi.ObjectReference{
 		Kind:      "Namespace",
 		Name:      nsName,
@@ -222,7 +222,7 @@ func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg stri
 }
 
 func (cc *clusterController) updateCluster(c *api.Cluster) error {
-	ns := kprovider.NamePrefix + c.Metadata.Name
+	ns := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
 		oldNS, err := cc.client.Namespaces().Get(ns)

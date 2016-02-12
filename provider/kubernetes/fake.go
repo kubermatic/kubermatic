@@ -22,13 +22,15 @@ type kubernetesFakeProvider struct {
 func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
 	return &kubernetesFakeProvider{
 		clusters: map[string]api.Cluster{
-			"sttts": {
+			"234jkh24234g": {
 				Metadata: api.Metadata{
-					Name:     "sttts",
+					Name:     "234jkh24234g",
 					Revision: "42",
 					UID:      "4711",
+					User:     "sttts",
 				},
 				Spec: api.ClusterSpec{
+					HumanReadableName: "sttts",
 					Cloud: &api.CloudSpec{
 						Fake: &api.FakeCloudSpec{
 							Token:  "983475982374895723958",
@@ -71,7 +73,7 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewCluster(name string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -80,37 +82,37 @@ func (p *kubernetesFakeProvider) NewCluster(name string, spec *api.ClusterSpec) 
 		return nil, err
 	}
 
-	if _, found := p.clusters[name]; found {
-		return nil, fmt.Errorf("cluster %s already exists", name)
+	if _, found := p.clusters[cluster]; found {
+		return nil, fmt.Errorf("cluster %s already exists", cluster)
 	}
 
 	c := api.Cluster{
 		Metadata: api.Metadata{
-			Name:     name,
+			Name:     cluster,
 			Revision: "0",
 			UID:      id,
 		},
 		Spec: *spec,
 	}
 
-	p.clusters[name] = c
+	p.clusters[cluster] = c
 	return &c, nil
 }
 
-func (p *kubernetesFakeProvider) Cluster(name string) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Cluster(user, cluster string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if _, found := p.clusters[name]; !found {
-		return nil, kerrors.NewNotFound("cluster", name)
+	if _, found := p.clusters[cluster]; !found {
+		return nil, kerrors.NewNotFound("cluster", cluster)
 	}
 
-	c := p.clusters[name]
+	c := p.clusters[cluster]
 
 	return &c, nil
 }
 
-func (p *kubernetesFakeProvider) Clusters() ([]*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Clusters(user string) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -122,7 +124,7 @@ func (p *kubernetesFakeProvider) Clusters() ([]*api.Cluster, error) {
 	return cs, nil
 }
 
-func (p *kubernetesFakeProvider) DeleteCluster(cluster string) error {
+func (p *kubernetesFakeProvider) DeleteCluster(user, cluster string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -134,6 +136,6 @@ func (p *kubernetesFakeProvider) DeleteCluster(cluster string) error {
 	return nil
 }
 
-func (p *kubernetesFakeProvider) Nodes(cluster string) ([]string, error) {
+func (p *kubernetesFakeProvider) Nodes(user, cluster string) ([]string, error) {
 	return []string{}, nil
 }

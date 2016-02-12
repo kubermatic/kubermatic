@@ -38,12 +38,12 @@ type CloudProvider interface {
 type KubernetesProvider interface {
 	Spec() *api.DatacenterSpec
 
-	NewCluster(cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
-	Cluster(cluster string) (*api.Cluster, error)
-	Clusters() ([]*api.Cluster, error)
-	DeleteCluster(cluster string) error
+	NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
+	Cluster(user, cluster string) (*api.Cluster, error)
+	Clusters(user string) ([]*api.Cluster, error)
+	DeleteCluster(user, cluster string) error
 
-	Nodes(cluster string) ([]string, error)
+	Nodes(user, cluster string) ([]string, error)
 }
 
 // clusterCloudProviderName returns the provider name for the given cluster where
