@@ -10,20 +10,19 @@ import (
 
 func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {
 	allHealthy, health, err := cc.clusterHealth(c)
-	healthChanged := false
 	if err != nil {
 		return nil, err
 	}
-	if health != nil && (c.Status.Health == nil || !reflect.DeepEqual(health, c.Status.Health)) {
+
+	if health != nil && (c.Status.Health == nil ||
+		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
+		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
 		c.Status.Health = health
 		c.Status.Health.LastTransitionTime = time.Now()
-		healthChanged = true
+		return c, nil
 	}
 	if !allHealthy {
 		glog.V(5).Infof("Cluster %q not healthy: %+v", c.Metadata.Name, c.Status.Health)
-		if healthChanged {
-			return c, nil
-		}
 	} else {
 		glog.V(6).Infof("Cluster %q is healthy", c.Metadata.Name)
 	}
