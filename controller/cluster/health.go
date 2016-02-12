@@ -18,6 +18,7 @@ func (cc *clusterController) healthyRC(rc *kapi.ReplicationController) (bool, er
 	}
 
 	healthyPods := 0
+
 	for _, p := range pods {
 		if p.DeletionTimestamp != nil {
 			continue
@@ -26,11 +27,11 @@ func (cc *clusterController) healthyRC(rc *kapi.ReplicationController) (bool, er
 			continue
 		}
 		for _, c := range p.Status.Conditions {
-			if c.Type != kapi.PodReady || c.Status != kapi.ConditionTrue {
-				continue
+			if c.Type == kapi.PodReady && c.Status == kapi.ConditionTrue {
+				healthyPods++
+				break
 			}
 		}
-		healthyPods++
 	}
 
 	if float64(healthyPods) < healthBar*float64(replicas) {
