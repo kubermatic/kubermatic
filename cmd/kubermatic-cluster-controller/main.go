@@ -27,29 +27,39 @@ func main() {
 		os.Exit(1)
 	}
 
-	// create kube client
+	// create controller for each context
 	clientcmdConfig, err := clientcmd.LoadFromFile(*kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	clientConfig := clientcmd.NewDefaultClientConfig(
-		*clientcmdConfig,
-		&clientcmd.ConfigOverrides{},
-	)
-	cfg, err := clientConfig.ClientConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-	client, err := client.New(cfg)
-	if err != nil {
-		log.Fatal(err)
+	for ctx := range clientcmdConfig.Contexts {
+		// create kube client
+		clientcmdConfig, err := clientcmd.LoadFromFile(*kubeconfig)
+		if err != nil {
+			log.Fatal(err)
+		}
+		clientConfig := clientcmd.NewNonInteractiveClientConfig(
+			*clientcmdConfig,
+			ctx,
+			&clientcmd.ConfigOverrides{},
+		)
+		cfg, err := clientConfig.ClientConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+		client, err := client.New(cfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// start controller
+		cps := cloud.Providers()
+		ctrl, err := cluster.NewController(client, cps, *masterResources, *urlPattern)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go ctrl.Run(util.NeverStop)
 	}
 
-	// start controller
-	cps := cloud.Providers()
-	ctrl, err := cluster.NewController(client, cps, *masterResources, *urlPattern)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ctrl.Run(util.NeverStop)
+	<-util.NeverStop
 }
