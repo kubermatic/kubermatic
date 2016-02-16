@@ -1,12 +1,15 @@
 SHELL=/bin/bash
+CMD=kubermatic-api kubermatic-cluster-controller
+GOBUILD=go build
 
 default: all
 
 all: check test build
 
-build:
-	go build github.com/kubermatic/api/cmd/kubermatic-api
-	go build github.com/kubermatic/api/cmd/kubermatic-cluster-controller
+$(CMD):
+	$(GOBUILD) github.com/kubermatic/api/cmd/$@
+
+build: $(CMD)
 
 test:
 	go test -v $$(go list ./... | grep -v /vendor/)
@@ -27,6 +30,6 @@ gometalinter:
 check: gofmt gometalinter
 
 clean:
-	rm -f kubermatic-api
+	rm -f $(CMD)
 
 .PHONY: build test check

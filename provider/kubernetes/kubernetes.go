@@ -64,15 +64,15 @@ func (p *kubernetesProvider) NewCluster(user, cluster string, spec *api.ClusterS
 	defer p.mu.Unlock()
 
 	// sanity checks for a fresh cluster
-	if cluster == "" {
+	switch {
+	case cluster == "":
 		return nil, kerrors.NewBadRequest("cluster name is required")
-	}
-	if user == "" {
+	case user == "":
 		return nil, kerrors.NewBadRequest("cluster user is required")
-	}
-	if spec.HumanReadableName == "" {
+	case spec.HumanReadableName == "":
 		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
 	}
+
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
 			return nil, kerrors.NewAlreadyExists("cluster", spec.HumanReadableName)
