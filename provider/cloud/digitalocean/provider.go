@@ -20,8 +20,8 @@ var _ provider.CloudProvider = (*digitalocean)(nil)
 
 type digitalocean struct{}
 
-// NewDigitialoceanCloudProvider creates a new digitalocean provider.
-func NewDigitialoceanCloudProvider() provider.CloudProvider {
+// NewCloudProvider creates a new digitalocean provider.
+func NewCloudProvider() provider.CloudProvider {
 	return &digitalocean{}
 }
 

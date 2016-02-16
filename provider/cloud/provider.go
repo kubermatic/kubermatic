@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/cloud/digitalocean"
 	"github.com/kubermatic/api/provider/cloud/fake"
 )
 
@@ -9,6 +10,6 @@ import (
 func Providers() map[string]provider.CloudProvider {
 	return map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.DigitaloceanCloudProvider: nil,
+		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
 	}
 }
