@@ -64,7 +64,7 @@ func main() {
 		Datacenters: map[string]Datacenter{},
 	}
 	var err error
-	if dcFile != "" {
+	if *dcFile != "" {
 		dcs, err = datacenters(*dcFile)
 		if err != nil {
 			log.Fatal(err)
