@@ -40,3 +40,11 @@ $ godep save -v ./... github.com/docker/libcontainer/cgroups/fs github.com/docke
 ```
 
 Finally commit the vendored changes.
+
+## Building locally
+
+In order to use incremental compilation one can compile a binary as follows:
+```
+$ make GOBUILD="go install" kubermatic-api
+```
+Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depending on what you want to build.
