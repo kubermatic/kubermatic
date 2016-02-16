@@ -7,7 +7,7 @@ import (
 )
 
 // Providers returns a map from cloud provider id to the actual provider.
-func Providers() map[string]provider.CloudProvider {
+func Providers() provider.CloudRegistry {
 	return map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
 		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
