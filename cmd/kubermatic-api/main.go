@@ -8,11 +8,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/handler"
-	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 
 	ghandlers "github.com/gorilla/handlers"
 )
@@ -26,28 +24,10 @@ func main() {
 
 	// create CloudProviders
 	cps := cloud.Providers()
-
 	// create KubernetesProvider for each context in the kubeconfig
-	kps := map[string]provider.KubernetesProvider{
-		"fake-1": kubernetes.NewKubernetesFakeProvider("fake-1", cps),
-		"fake-2": kubernetes.NewKubernetesFakeProvider("fake-2", cps),
-	}
-	clientcmdConfig, err := clientcmd.LoadFromFile(*kubeconfig)
+	kps, err := kubernetes.Providers(*kubeconfig, cps)
 	if err != nil {
 		log.Fatal(err)
-	}
-	for ctx := range clientcmdConfig.Contexts {
-		clientconfig := clientcmd.NewNonInteractiveClientConfig(
-			*clientcmdConfig,
-			ctx,
-			&clientcmd.ConfigOverrides{},
-		)
-		cfg, err := clientconfig.ClientConfig()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		kps[ctx] = kubernetes.NewKubernetesProvider(cfg, cps, "Frankfurt", "de", "gce")
 	}
 
 	// start server
