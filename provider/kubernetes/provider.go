@@ -6,7 +6,11 @@ import (
 )
 
 // Providers creates KubernetesProviders for each context in the kubeconfig
-func Providers(kubeconfig string, cps provider.CloudRegistry) (provider.KubernetesRegistry, error) {
+func Providers(
+	kubeconfig string,
+	cps provider.CloudRegistry,
+	metas map[string]DatacenterMeta,
+) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
 		"fake-1": NewKubernetesFakeProvider("fake-1", cps),
 		"fake-2": NewKubernetesFakeProvider("fake-2", cps),
@@ -28,7 +32,22 @@ func Providers(kubeconfig string, cps provider.CloudRegistry) (provider.Kubernet
 			return nil, err
 		}
 
-		kps[ctx] = NewKubernetesProvider(cfg, cps, "Frankfurt", "DE", "do")
+		meta := DatacenterMeta{
+			Location: "Unknown",
+			Country: "Unknown",
+			Provider: "Unknown",
+		}
+		if m, found := metas[ctx]; found {
+			meta = m
+		}
+
+		kps[ctx] = NewKubernetesProvider(
+			cfg,
+			cps,
+			meta.Location,
+			meta.Country,
+			meta.Provider,
+		)
 	}
 
 	return kps, nil
