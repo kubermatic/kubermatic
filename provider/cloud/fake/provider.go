@@ -1,4 +1,4 @@
-package cloud
+package fake
 
 import (
 	"errors"
@@ -19,8 +19,8 @@ var _ provider.CloudProvider = (*fakeCloudProvider)(nil)
 
 type fakeCloudProvider struct{}
 
-// NewFakeCloudProvider creates a new fake cloud provider
-func NewFakeCloudProvider() provider.CloudProvider {
+// NewCloudProvider creates a new fake cloud provider
+func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{}
 }
 
