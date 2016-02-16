@@ -55,14 +55,20 @@ func main() {
 	// parse flags
 	kubeconfig := flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	auth := flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
-	dcFile := flag.String("datacenters", ".datacenters.yaml", "The datacenters.yaml file path")
+	dcFile := flag.String("datacenters", "", "The datacenters.yaml file path")
 	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	flag.Parse()
 
 	// load meta data for datacenters
-	dcs, err := datacenters(*dcFile)
-	if err != nil {
-		log.Fatal(err)
+	dcs := &DatacentersMetadata{
+		Datacenters: map[string]Datacenter{},
+	}
+	var err error
+	if dcFile != "" {
+		dcs, err = datacenters(*dcFile)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// create CloudProviders
