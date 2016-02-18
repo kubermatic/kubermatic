@@ -60,14 +60,14 @@ func (do *digitalocean) CreateNode(
 
 	dropletName := fmt.Sprintf(
 		"%s-%s-%s",
-		doSpec.DC,
+		doSpec.Region,
 		cluster.Metadata.Name,
 		cluster.Metadata.UID,
 	)
 
 	createRequest := &godo.DropletCreateRequest{
 		Name:   dropletName,
-		Region: doSpec.DC,
+		Region: doSpec.Region,
 		Size:   "512mb",
 		Image: godo.DropletCreateImage{
 			Slug: "coreos-stable",
