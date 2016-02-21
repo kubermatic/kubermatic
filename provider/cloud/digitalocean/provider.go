@@ -50,10 +50,10 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 
 func (do *digitalocean) CreateNode(
 	ctx context.Context,
-	cluster *api.Cluster,
-	spec *api.NodeSpec,
+	cluster *api.Cluster, spec *api.NodeSpec,
 ) (*api.Node, error) {
 	doSpec := cluster.Spec.Cloud.GetDigitalocean()
+	node := spec.Digitalocean
 
 	t := token(doSpec.GetToken())
 	client := godo.NewClient(oauth2.NewClient(ctx, t))
@@ -66,13 +66,13 @@ func (do *digitalocean) CreateNode(
 	)
 
 	createRequest := &godo.DropletCreateRequest{
-		Name:   dropletName,
-		Region: doSpec.Region,
-		Size:   "512mb",
-		Image: godo.DropletCreateImage{
-			Slug: "coreos-stable",
-		},
-		SSHKeys: dropletKeys(doSpec.SSHKeys),
+		Region:            doSpec.Region,
+		Image:             godo.DropletCreateImage{Slug: node.Image},
+		Size:              node.Size,
+		PrivateNetworking: true,
+		SSHKeys:           dropletKeys(node.SSHKeys),
+		Name:              dropletName,
+		UserData:          node.UserData,
 	}
 
 	droplet, _, err := client.Droplets.Create(createRequest)
@@ -82,7 +82,7 @@ func (do *digitalocean) CreateNode(
 
 	n := api.Node{}
 	n.Metadata.Name = droplet.Name
-	n.Spec.OS = droplet.Image.Name
+	n.Spec.Digitalocean = node
 
 	return &n, nil
 }

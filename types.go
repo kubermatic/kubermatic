@@ -15,10 +15,26 @@ type Metadata struct {
 	User        string            `json:"-"`
 }
 
-// NodeSpec specifies a node.
-type NodeSpec struct {
+// DigitaloceanNodeSpec specifies a digital ocean node.
+type DigitaloceanNodeSpec struct {
+	Type     string   `json:"type"`
+	OS       string   `json:"os"`
+	Size     string   `json:"size"`
+	Image    string   `json:"image"`
+	SSHKeys  []string `json:"sshKeys,omitempty"`
+	UserData string   `json:"userData"`
+}
+
+// FakeNodeSpec specifies a fake node.
+type FakeNodeSpec struct {
 	Type string `json:"type"`
 	OS   string `json:"os"`
+}
+
+// NodeSpec mutually stores data of a cloud specific node.
+type NodeSpec struct {
+	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
+	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 }
 
 // NodeStatus stores status informations about a node.
@@ -38,21 +54,21 @@ type Node struct {
 // LinodeCloudSpec specifies access data to digital ocean.
 type LinodeCloudSpec struct {
 	Token string `json:"token,omitempty"`
-	Dc    string `json:"dc,omitempty"`
+	DC    string `json:"dc,omitempty"`
 }
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Region  string   `json:"region"`
-	Token   string   `json:"token"`
-	SSHKeys []string `json:"sshKeys,omitempty"`
+	Region       string `json:"region"`
+	Token        string `json:"token"`
+	DiscoveryURL string `json:"discoveryURL"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token  string `json:"token,omitempty"`
 	Region string `json:"region,omitempty"`
-	Dc     string `json:"dc,omitempty"`
+	DC     string `json:"dc,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -110,6 +126,7 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
+	DiscoveryURL      string     `json:"discoveryURL"`
 }
 
 // ClusterAddress stores access and address information of a cluster.

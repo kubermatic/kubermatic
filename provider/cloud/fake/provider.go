@@ -28,7 +28,7 @@ func (p *fakeCloudProvider) CreateAnnotations(cloud *api.CloudSpec) (map[string]
 	as := map[string]string{}
 	as[tokenAnnotationKey] = cloud.Fake.Token
 	as[regionAnnotationKey] = cloud.Fake.Region
-	as[dcAnnotationKey] = cloud.Fake.Dc
+	as[dcAnnotationKey] = cloud.Fake.DC
 
 	return as, nil
 }
@@ -49,7 +49,7 @@ func (p *fakeCloudProvider) Cloud(as map[string]string) (*api.CloudSpec, error) 
 		return nil, errors.New("no region found in fake cloud provider")
 	}
 
-	c.Fake.Dc, found = as[dcAnnotationKey]
+	c.Fake.DC, found = as[dcAnnotationKey]
 	if !found {
 		return nil, errors.New("no datacenter found in fake cloud provider")
 	}
@@ -72,8 +72,10 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 				Name: "server1",
 			},
 			Spec: api.NodeSpec{
-				Type: "standard-1",
-				OS:   "CoreOS alpha 1234",
+				Fake: &api.FakeNodeSpec{
+					Type: "standard-1",
+					OS:   "CoreOS alpha 1234",
+				},
 			},
 		},
 		&api.Node{
@@ -81,8 +83,10 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 				Name: "server2",
 			},
 			Spec: api.NodeSpec{
-				Type: "standard-1",
-				OS:   "CoreOS alpha 1234",
+				Fake: &api.FakeNodeSpec{
+					Type: "standard-1",
+					OS:   "CoreOS alpha 1234",
+				},
 			},
 		},
 	}
