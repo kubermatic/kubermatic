@@ -3,20 +3,18 @@ package cluster
 import (
 	crand "crypto/rand"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"path"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/util/yaml"
-	"strings"
 )
 
 func (cc *clusterController) pendingCheckTimeout(c *api.Cluster) (*api.Cluster, error) {
@@ -84,21 +82,15 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 
 func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Secret, error) {
-		file, err := ioutil.ReadFile(path.Join(cc.masterResourcesPath, s+"-secret.yaml"))
-		if err != nil {
-			return nil, err
-		}
 		var secret kapi.Secret
-		jsonBytes, err := yaml.ToJSON(file)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(jsonBytes, &secret)
-		if err != nil {
-			return nil, err
-		}
-		return &secret, nil
+		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
+		err := t.Unmarshal(
+			path.Join(cc.masterResourcesPath, s+"-secret.yaml"),
+			&secret,
+		)
+		return &secret, err
 	}
+
 	secrets := map[string]func(s string) (*kapi.Secret, error){
 		"apiserver-auth": loadFile,
 		"apiserver-ssh":  loadFile,
@@ -132,21 +124,15 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 
 func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Service, error) {
-		file, err := ioutil.ReadFile(path.Join(cc.masterResourcesPath, s+"-service.yaml"))
-		if err != nil {
-			return nil, err
-		}
 		var service kapi.Service
-		jsonBytes, err := yaml.ToJSON(file)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(jsonBytes, &service)
-		if err != nil {
-			return nil, err
-		}
-		return &service, nil
+		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
+		err := t.Unmarshal(
+			path.Join(cc.masterResourcesPath, s+"-service.yaml"),
+			&service,
+		)
+		return &service, err
 	}
+
 	services := map[string]func(s string) (*kapi.Service, error){
 		"etcd":             loadFile,
 		"etcd-public":      loadFile,
@@ -182,21 +168,15 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 
 func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.ReplicationController, error) {
-		file, err := ioutil.ReadFile(path.Join(cc.masterResourcesPath, s+"-rc.yaml"))
-		if err != nil {
-			return nil, err
-		}
 		var rc kapi.ReplicationController
-		jsonBytes, err := yaml.ToJSON(file)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(jsonBytes, &rc)
-		if err != nil {
-			return nil, err
-		}
-		return &rc, nil
+		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
+		err := t.Unmarshal(
+			path.Join(cc.masterResourcesPath, s+"-rc.yaml"),
+			&rc,
+		)
+		return &rc, err
 	}
+
 	rcs := map[string]func(s string) (*kapi.ReplicationController, error){
 		"etcd":               loadFile,
 		"etcd-public":        loadFile,

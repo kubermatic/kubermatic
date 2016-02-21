@@ -28,7 +28,7 @@ func Providers(kubeconfig string, cps provider.CloudRegistry) (provider.Kubernet
 			return nil, err
 		}
 
-		kps[ctx] = NewKubernetesProvider(cfg, cps, "Frankfurt", "DE", "gce")
+		kps[ctx] = NewKubernetesProvider(cfg, cps, "Frankfurt", "DE", "do")
 	}
 
 	return kps, nil
