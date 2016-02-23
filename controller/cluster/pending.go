@@ -15,6 +15,8 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/client/cache"
+	"strconv"
 )
 
 func (cc *clusterController) pendingCheckTimeout(c *api.Cluster) (*api.Cluster, error) {
@@ -83,7 +85,7 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Secret, error) {
 		var secret kapi.Secret
-		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
+		t := template.New(nil)
 		err := t.Unmarshal(
 			path.Join(cc.masterResourcesPath, s+"-secret.yaml"),
 			&secret,
@@ -125,7 +127,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Service, error) {
 		var service kapi.Service
-		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
+		t := template.New(nil)
 		err := t.Unmarshal(
 			path.Join(cc.masterResourcesPath, s+"-service.yaml"),
 			&service,
@@ -147,6 +149,7 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 		if err != nil {
 			return err
 		}
+
 		if exists {
 			glog.V(6).Infof("Skipping already existing service %q", key)
 			continue
@@ -156,10 +159,12 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 		if err != nil {
 			return err
 		}
+
 		_, err = cc.client.Services(ns).Create(services)
 		if err != nil {
 			return err
 		}
+
 		cc.recordClusterEvent(c, "pending", "Created service %q", s)
 	}
 
@@ -167,14 +172,39 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 }
 
 func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) error {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+
+	apiserverPort, err := servicePort(cc.serviceStore, ns+"/apiserver-public", "secure")
+	if err != nil {
+		return err
+	}
+
+	etcdPort, err := servicePort(cc.serviceStore, ns+"/etcd-public", "peer")
+	if err != nil {
+		return err
+	}
+
+	glog.V(7).Infof("apiserver port %d etcd port %d", apiserverPort, etcdPort)
+
 	loadFile := func(s string) (*kapi.ReplicationController, error) {
+		t := template.New(struct {
+			AdvertiseAddress    string
+			InsecurePort        int
+			AdvertiseClientURLs string
+			ListenClientURLs    string
+		}{
+			AdvertiseAddress:    "46.101.238.154",
+			InsecurePort:        apiserverPort,
+			AdvertiseClientURLs: "http://46.101.238.154:" + strconv.Itoa(etcdPort),
+			ListenClientURLs:    "http://0.0.0.0:" + strconv.Itoa(etcdPort),
+		})
+
 		var rc kapi.ReplicationController
-		t := template.New(struct{ AdvertiseAddress string }{"1.2.3.4"})
-		err := t.Unmarshal(
+		errUnmarshal := t.Unmarshal(
 			path.Join(cc.masterResourcesPath, s+"-rc.yaml"),
 			&rc,
 		)
-		return &rc, err
+		return &rc, errUnmarshal
 	}
 
 	rcs := map[string]func(s string) (*kapi.ReplicationController, error){
@@ -185,11 +215,11 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 		"scheduler":          loadFile,
 	}
 
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	existingRCs, err := cc.rcStore.ByIndex("namespace", ns)
 	if err != nil {
 		return err
 	}
+
 	for s, gen := range rcs {
 		exists := false
 		for _, obj := range existingRCs {
@@ -224,11 +254,13 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	if err != nil {
 		return false, nil, err
 	}
+
 	health := api.ClusterHealth{
 		ClusterHealthStatus: api.ClusterHealthStatus{
 			Etcd: []bool{false},
 		},
 	}
+
 	healthMapping := map[string]*bool{
 		"etcd": &health.Etcd[0],
 		// "etcd-public" TODO(sttts): add etcd-public?
@@ -236,7 +268,9 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 		"controller-manager": &health.Controller,
 		"scheduler":          &health.Scheduler,
 	}
+
 	allHealthy := true
+
 	for _, obj := range rcs {
 		rc := obj.(*kapi.ReplicationController)
 		role := rc.Spec.Selector["role"]
@@ -315,4 +349,23 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 	c.Status.LastTransitionTime = time.Now()
 
 	return c, nil
+}
+
+func servicePort(idx cache.Indexer, key, portName string) (int, error) {
+	obj, exists, err := idx.GetByKey(key)
+	if err != nil {
+		return 0, err
+	}
+
+	if !exists {
+		return 0, fmt.Errorf("service %q doesn't exist", key)
+	}
+
+	for _, port := range obj.(*kapi.Service).Spec.Ports {
+		if port.Name == portName && port.NodePort > 0 {
+			return port.NodePort, nil
+		}
+	}
+
+	return 0, fmt.Errorf("service %q not found", key)
 }
