@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/kubermatic/api"
 )
 
@@ -15,14 +17,14 @@ const (
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
-	CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error)
+	CreateAnnotations(*api.CloudSpec) (map[string]string, error)
 	Cloud(annotations map[string]string) (*api.CloudSpec, error)
 }
 
 // NodeProvider declares methods for creating/listing nodes.
 type NodeProvider interface {
-	CreateNode(cluster *api.Cluster, spec *api.NodeSpec) (*api.Node, error)
-	Nodes(cluster *api.Cluster) ([]*api.Node, error)
+	CreateNode(context.Context, *api.Cluster, *api.NodeSpec) (*api.Node, error)
+	Nodes(context.Context, *api.Cluster) ([]*api.Node, error)
 }
 
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes

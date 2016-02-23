@@ -35,7 +35,7 @@ func nodesEndpoint(
 			return []*api.Node{}, nil
 		}
 
-		return cp.Nodes(c)
+		return cp.Nodes(ctx, c)
 	}
 }
 

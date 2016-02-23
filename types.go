@@ -15,15 +15,30 @@ type Metadata struct {
 	User        string            `json:"-"`
 }
 
-// NodeSpec specifies a node.
-type NodeSpec struct {
+// DigitaloceanNodeSpec specifies a digital ocean node.
+type DigitaloceanNodeSpec struct {
+	Type    string   `json:"type"`
+	Size    string   `json:"size"`
+	SSHKeys []string `json:"sshKeys,omitempty"`
+}
+
+// FakeNodeSpec specifies a fake node.
+type FakeNodeSpec struct {
 	Type string `json:"type"`
 	OS   string `json:"os"`
 }
 
+// NodeSpec mutually stores data of a cloud specific node.
+type NodeSpec struct {
+	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
+	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
+}
+
 // NodeStatus stores status informations about a node.
 type NodeStatus struct {
-	Online bool `json:"online"`
+	Online    bool              `json:"online"`
+	Hostname  string            `json:"hostname"`
+	Addresses map[string]string `json:"addresses"`
 }
 
 // Node is the object representing a cluster node.
@@ -33,24 +48,24 @@ type Node struct {
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
-// FakeCloudSpec specifies access data for a fake cloud.
-type FakeCloudSpec struct {
-	Token  string `json:"token,omitempty"`
-	Region string `json:"region,omitempty"`
-	Dc     string `json:"dc,omitempty"`
+// LinodeCloudSpec specifies access data to digital ocean.
+type LinodeCloudSpec struct {
+	Token string `json:"token,omitempty"`
+	DC    string `json:"dc,omitempty"`
 }
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Token  string `json:"token,omitempty"`
-	Region string `json:"region,omitempty"`
-	Dc     string `json:"dc,omitempty"`
+	Region       string `json:"region"`
+	Token        string `json:"token"`
+	DiscoveryURL string `json:"discoveryURL"`
 }
 
-// LinodeCloudSpec specifies access data to digital ocean.
-type LinodeCloudSpec struct {
-	Token string `json:"token,omitempty"`
-	Dc    string `json:"dc,omitempty"`
+// FakeCloudSpec specifies access data for a fake cloud.
+type FakeCloudSpec struct {
+	Token  string `json:"token,omitempty"`
+	Region string `json:"region,omitempty"`
+	DC     string `json:"dc,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -108,6 +123,7 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
+	DiscoveryURL      string     `json:"discoveryURL"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
