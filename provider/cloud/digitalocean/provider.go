@@ -67,12 +67,11 @@ func (do *digitalocean) CreateNode(
 
 	createRequest := &godo.DropletCreateRequest{
 		Region:            doSpec.Region,
-		Image:             godo.DropletCreateImage{Slug: node.Image},
+		Image:             godo.DropletCreateImage{Slug: "coreos-stable"},
 		Size:              node.Size,
 		PrivateNetworking: true,
 		SSHKeys:           dropletKeys(node.SSHKeys),
 		Name:              dropletName,
-		UserData:          node.UserData,
 	}
 
 	droplet, _, err := client.Droplets.Create(createRequest)

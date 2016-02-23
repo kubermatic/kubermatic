@@ -17,12 +17,9 @@ type Metadata struct {
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
 type DigitaloceanNodeSpec struct {
-	Type     string   `json:"type"`
-	OS       string   `json:"os"`
-	Size     string   `json:"size"`
-	Image    string   `json:"image"`
-	SSHKeys  []string `json:"sshKeys,omitempty"`
-	UserData string   `json:"userData"`
+	Type    string   `json:"type"`
+	Size    string   `json:"size"`
+	SSHKeys []string `json:"sshKeys,omitempty"`
 }
 
 // FakeNodeSpec specifies a fake node.
