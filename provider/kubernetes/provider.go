@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/golang/glog"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 )
@@ -40,6 +41,8 @@ func Providers(
 		if m, found := metas[ctx]; found {
 			meta = m
 		}
+
+		glog.Infof("Add kubernetes provider %q at %s, meta=%+v", ctx, cfg.Host, meta)
 
 		kps[ctx] = NewKubernetesProvider(
 			cfg,
