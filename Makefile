@@ -38,7 +38,7 @@ clean:
 	rm -f $(CMD)
 
 docker: $(CMD)
-	@if [ $$GOOS != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
+	@if [ "$$GOOS" != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
 	docker build -t $(REPO) .
 
 push: docker
