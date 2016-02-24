@@ -1,6 +1,7 @@
 SHELL=/bin/bash
 CMD=kubermatic-api kubermatic-cluster-controller
 GOBUILD=go build
+REPO=kubermatic/api
 
 default: all
 
@@ -35,5 +36,12 @@ check: gofmt gometalinter
 
 clean:
 	rm -f $(CMD)
+
+docker: $(CMD)
+	@if [ $$GOOS != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
+	docker build -t $(REPO) .
+
+push: docker
+	docker push $(REPO)
 
 .PHONY: build test check
