@@ -33,6 +33,7 @@ const (
 	maxUpdateRetries               = 5
 	launchTimeout                  = 5 * time.Minute
 
+	workerPeriod      = time.Second
 	pendingSyncPeriod = 10 * time.Second
 	runningSyncPeriod = 1 * time.Minute
 )
@@ -293,11 +294,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 		return nil
 	}
 	ns := obj.(*kapi.Namespace)
-	if !cc.nsController.HasSynced() ||
-		!cc.podController.HasSynced() ||
-		!cc.secretController.HasSynced() ||
-		!cc.rcController.HasSynced() ||
-		!cc.serviceController.HasSynced() {
+	if !cc.controllersHaveSynced() {
 		// Sleep so we give the pod reflector goroutine a chance to run.
 		time.Sleep(namespaceStoreSyncedPollPeriod)
 		glog.Infof("Waiting for controllers to sync, requeuing namespace %q", ns.Name)
@@ -388,7 +385,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.serviceController.Run(util.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
-		go util.Until(cc.worker, time.Second, stopCh)
+		go util.Until(cc.worker, workerPeriod, stopCh)
 	}
 
 	go util.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
@@ -398,4 +395,12 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 
 	glog.Info("Shutting down cluster controller")
 	cc.queue.ShutDown()
+}
+
+func (cc *clusterController) controllersHaveSynced() bool {
+	return cc.nsController.HasSynced() &&
+		cc.podController.HasSynced() &&
+		cc.secretController.HasSynced() &&
+		cc.rcController.HasSynced() &&
+		cc.serviceController.HasSynced()
 }

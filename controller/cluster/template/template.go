@@ -8,26 +8,23 @@ import (
 	"k8s.io/kubernetes/pkg/util/yaml"
 )
 
-// Template holds the data to be passed to a template
+// Template holds the actual cluster template
 type Template struct {
-	data interface{}
+	tpl *texttemplate.Template
 }
 
-// New creates a new template with the given template data
-func New(data interface{}) *Template {
-	return &Template{data}
+// ParseFiles creates a new template for the given filenames
+// and parses the template definitions from the named files.
+func ParseFiles(filenames ...string) (*Template, error) {
+	tpl, err := texttemplate.ParseFiles(filenames...)
+	return &Template{tpl}, err
 }
 
-// Unmarshal parses the given filename and stores the result in
-// the value pointed to by v.
-func (t *Template) Unmarshal(filename string, v interface{}) error {
-	tpl, err := texttemplate.ParseFiles(filename)
-	if err != nil {
-		return err
-	}
-
+// Execute applies a parsed template to the specified data object,
+// and stores the result in the value pointed to by v.
+func (t *Template) Execute(data, v interface{}) error {
 	var buf bytes.Buffer
-	if err = tpl.Execute(&buf, t.data); err != nil {
+	if err := t.tpl.Execute(&buf, data); err != nil {
 		return err
 	}
 
@@ -36,8 +33,7 @@ func (t *Template) Unmarshal(filename string, v interface{}) error {
 		return err
 	}
 
-	err = json.Unmarshal(jsonBytes, &v)
-	if err != nil {
+	if err := json.Unmarshal(jsonBytes, &v); err != nil {
 		return err
 	}
 
