@@ -34,7 +34,7 @@ func Providers(
 
 		meta := DatacenterMeta{
 			Location: "Unknown",
-			Country: "Unknown",
+			Country:  "Unknown",
 			Provider: "Unknown",
 		}
 		if m, found := metas[ctx]; found {

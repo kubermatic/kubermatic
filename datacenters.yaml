@@ -1,0 +1,13 @@
+datacenters:
+  gke-west1b:
+    location: Europe
+    country: eu
+    provider: gce
+  do-ams2:
+    location: Amsterdam
+    country: nl
+    provider: do
+  do-fra1:
+    location: Frankfurt
+    country: de
+    provider: do

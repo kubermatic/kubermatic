@@ -8,19 +8,19 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Datacenter describes a Kubermatic datacenter.
+// DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location string `yaml:"location"`
 	Country  string `yaml:"country"`
 	Provider string `yaml:"provider"`
 }
 
-// datacentersMetadata describes a number of Kubermatic datacenters.
+// datacentersMeta describes a number of Kubermatic datacenters.
 type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `yaml:"datacenters"`
 }
 
-// Datacenters loads datacenter metadata from the given path.
+// DatacentersMeta loads datacenter metadata from the given path.
 func DatacentersMeta(path string) (map[string]DatacenterMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
