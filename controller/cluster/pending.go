@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/cache"
-	"strconv"
 )
 
 func (cc *clusterController) pendingCheckTimeout(c *api.Cluster) (*api.Cluster, error) {
