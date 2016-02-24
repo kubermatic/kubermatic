@@ -6,6 +6,7 @@ default: all
 
 all: check test build
 
+.PHONY: $(CMD)
 $(CMD):
 	$(GOBUILD) github.com/kubermatic/api/cmd/$@
 
