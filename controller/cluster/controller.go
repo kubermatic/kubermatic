@@ -33,6 +33,7 @@ const (
 	maxUpdateRetries               = 5
 	launchTimeout                  = 5 * time.Minute
 
+	workerPeriod      = time.Second
 	pendingSyncPeriod = 10 * time.Second
 	runningSyncPeriod = 1 * time.Minute
 )
@@ -388,7 +389,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.serviceController.Run(util.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
-		go util.Until(cc.worker, time.Second, stopCh)
+		go util.Until(cc.worker, workerPeriod, stopCh)
 	}
 
 	go util.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
