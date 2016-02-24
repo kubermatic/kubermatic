@@ -4,9 +4,10 @@ import (
 	crand "crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"net"
+	"net/url"
 	"path"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -52,10 +53,12 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 				"file": []byte(fmt.Sprintf("%s,admin,admin", token62)),
 			},
 		}
+
 		c.Address = &api.ClusterAddress{
 			URL:   fmt.Sprintf(cc.urlPattern, c.Metadata.Name),
 			Token: trimmedToken62,
 		}
+
 		return &secret, nil
 	}
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -84,12 +87,13 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 
 func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Secret, error) {
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-secret.yaml"))
+		if err != nil {
+			return nil, err
+		}
+
 		var secret kapi.Secret
-		t := template.New(nil)
-		err := t.Unmarshal(
-			path.Join(cc.masterResourcesPath, s+"-secret.yaml"),
-			&secret,
-		)
+		err = t.Execute(nil, &secret)
 		return &secret, err
 	}
 
@@ -126,12 +130,13 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 
 func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 	loadFile := func(s string) (*kapi.Service, error) {
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-service.yaml"))
+		if err != nil {
+			return nil, err
+		}
+
 		var service kapi.Service
-		t := template.New(nil)
-		err := t.Unmarshal(
-			path.Join(cc.masterResourcesPath, s+"-service.yaml"),
-			&service,
-		)
+		err = t.Execute(nil, &service)
 		return &service, err
 	}
 
@@ -174,43 +179,48 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	apiserverPort, err := servicePort(cc.serviceStore, ns+"/apiserver-public", "secure")
-	if err != nil {
-		return err
-	}
-
-	etcdPort, err := servicePort(cc.serviceStore, ns+"/etcd-public", "peer")
-	if err != nil {
-		return err
-	}
-
-	glog.V(7).Infof("apiserver port %d etcd port %d", apiserverPort, etcdPort)
-
 	loadFile := func(s string) (*kapi.ReplicationController, error) {
-		t := template.New(struct {
-			AdvertiseAddress    string
-			InsecurePort        int
-			AdvertiseClientURLs string
-			ListenClientURLs    string
-		}{
-			AdvertiseAddress:    "46.101.238.154",
-			InsecurePort:        apiserverPort,
-			AdvertiseClientURLs: "http://46.101.238.154:" + strconv.Itoa(etcdPort),
-			ListenClientURLs:    "http://0.0.0.0:" + strconv.Itoa(etcdPort),
-		})
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-rc.yaml"))
+		if err != nil {
+			return nil, err
+		}
 
 		var rc kapi.ReplicationController
-		errUnmarshal := t.Unmarshal(
-			path.Join(cc.masterResourcesPath, s+"-rc.yaml"),
-			&rc,
-		)
-		return &rc, errUnmarshal
+		err = t.Execute(nil, &rc)
+		return &rc, err
+	}
+
+	loadApiserver := func(s string) (*kapi.ReplicationController, error) {
+		u, err := url.Parse(fmt.Sprintf(cc.urlPattern, "fra1"))
+		if err != nil {
+			return nil, err
+		}
+
+		addrs, err := net.LookupHost(u.Host)
+		if err != nil {
+			return nil, err
+		}
+
+		data := struct {
+			AdvertiseAddress string
+		}{
+			AdvertiseAddress: addrs[0],
+		}
+
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-rc.yaml"))
+		if err != nil {
+			return nil, err
+		}
+
+		var rc kapi.ReplicationController
+		err = t.Execute(data, &rc)
+		return &rc, err
 	}
 
 	rcs := map[string]func(s string) (*kapi.ReplicationController, error){
 		"etcd":               loadFile,
 		"etcd-public":        loadFile,
-		"apiserver":          loadFile,
+		"apiserver":          loadApiserver,
 		"controller-manager": loadFile,
 		"scheduler":          loadFile,
 	}
@@ -358,7 +368,7 @@ func servicePort(idx cache.Indexer, key, portName string) (int, error) {
 	}
 
 	if !exists {
-		return 0, fmt.Errorf("service %q doesn't exist", key)
+		return 0, fmt.Errorf("service %q does not exist", key)
 	}
 
 	for _, port := range obj.(*kapi.Service).Spec.Ports {
