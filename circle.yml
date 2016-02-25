@@ -43,4 +43,4 @@ deployment:
       - docker push kubermatic/api && docker push kubermatic/api:$CIRCLE_SHA1
       - echo "$KUBE_CONFIG_FILE" | base64 -d > .kubeconfig.yaml
       - curl -O https://storage.googleapis.com/kubernetes-release/release/v1.1.2/bin/linux/amd64/kubectl && chmod +x kubectl
-      - ./kubectl --kubeconfig=.kubeconfig.yaml rolling-update kubermatic-api-v1 --image=kubermatic/api:$CIRCLE_SHA1 --update-period=500ms --poll-interval=1s
+      - ./kubectl --kubeconfig=.kubeconfig.yaml rolling-update --namespace=api kubermatic-api-v1 --image=kubermatic/api:$CIRCLE_SHA1 --update-period=500ms --poll-interval=1s
