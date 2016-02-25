@@ -2,13 +2,14 @@ package handler
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/log"
+	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-
-	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 // Binding represents an object which binds endpoints to http handlers.
@@ -94,71 +95,92 @@ func (b Binding) Register(mux *mux.Router) {
 }
 
 func (b Binding) datacentersHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.datacentersEndpoint,
 		decodeDatacentersReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) datacenterHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.datacenterEndpoint,
 		decodeDatacenterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) newClusterHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.newClusterEndpoint,
 		decodeNewClusterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) clusterHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.clusterEndpoint,
 		decodeClusterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) clustersHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.clustersEndpoint,
 		decodeClustersReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) deleteClusterHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.deleteClusterEndpoint,
 		decodeDeleteClusterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 func (b Binding) nodesHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
 	return httptransport.NewServer(
 		b.ctx,
 		b.nodesEndpoint,
 		decodeNodesReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
