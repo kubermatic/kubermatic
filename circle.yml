@@ -4,13 +4,13 @@ machine:
   pre:
     - wget https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
     - tar zxvf go1.5.3.linux-amd64.tar.gz
+    - echo 'DOCKER_OPTS="-s overlay -e lxc -D --userland-proxy=false"' | sudo tee -a /etc/default/docker
   environment:
     GOROOT: ${HOME}/go
     PATH: ${GOROOT}/bin:${PATH}
     GO15VENDOREXPERIMENT: "1"
     IMPORT_PATH: "github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
   post:
-    - docker version
     - go version
 
 dependencies:
