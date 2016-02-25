@@ -37,7 +37,7 @@ deployment:
   production:
     branch: master
     commands:
-      - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; docker build -t kubermatic/api .'
+      - 'cd "$(echo "$GOPATH" | cut -d: -f1)/src/$IMPORT_PATH"; GOOS=linux make docker'
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker tag kubermatic/api:latest kubermatic/api:$CIRCLE_SHA1
       - docker push kubermatic/api && docker push kubermatic/api:$CIRCLE_SHA1

@@ -3,9 +3,9 @@ MAINTAINER Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
 
 RUN apk add -U ca-certificates && rm -rf /var/cache/apk/*
 
-COPY kubermatic-api /usr/bin/kubermatic-api
+COPY kubermatic-api /usr/bin/
 RUN mkdir -p /opt
 WORKDIR /opt
-ADD datacenters.yaml /opt/datacenters.yaml
+ADD datacenters.yaml /opt/
 
 CMD ["kubermatic-api"]
