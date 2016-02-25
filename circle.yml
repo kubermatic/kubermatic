@@ -10,6 +10,7 @@ machine:
     GO15VENDOREXPERIMENT: "1"
     IMPORT_PATH: "github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
   post:
+    - docker version
     - go version
 
 dependencies:
