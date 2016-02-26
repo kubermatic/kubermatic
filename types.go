@@ -140,11 +140,17 @@ type Cluster struct {
 	Status   ClusterStatus   `json:"status,omitempty"`
 }
 
+// DigitialoceanDatacenterSpec specifies a data center of digital ocean.
+type DigitialoceanDatacenterSpec struct {
+	Region string `json:"region"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Description string `json:"description,omitempty"`
-	Country     string `json:"country,omitempty"`
-	Provider    string `json:"provider,omitempty"`
+	Description  string                       `json:"description,omitempty"`
+	Country      string                       `json:"country,omitempty"`
+	Provider     string                       `json:"provider,omitempty"`
+	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.

@@ -49,9 +49,7 @@ func Providers(
 		kps[ctx] = NewKubernetesProvider(
 			cfg,
 			cps,
-			meta.Location,
-			meta.Country,
-			meta.Provider,
+			meta,
 		)
 	}
 
