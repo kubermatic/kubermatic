@@ -193,7 +193,7 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 	}
 
 	loadApiserver := func(s string) (*kapi.ReplicationController, error) {
-		u, err := url.Parse(fmt.Sprintf(cc.urlPattern, "fra1"))
+		u, err := url.Parse(fmt.Sprintf(cc.urlPattern, c.Spec.Cloud.GetRegion()))
 		if err != nil {
 			return nil, err
 		}
