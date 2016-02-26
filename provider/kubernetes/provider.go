@@ -28,6 +28,7 @@ func Providers(
 			ctx,
 			&clientcmd.ConfigOverrides{},
 		)
+
 		cfg, err := clientconfig.ClientConfig()
 		if err != nil {
 			return nil, err
@@ -38,6 +39,7 @@ func Providers(
 			Country:  "Unknown",
 			Provider: "Unknown",
 		}
+
 		if m, found := metas[ctx]; found {
 			meta = m
 		}

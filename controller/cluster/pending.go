@@ -118,10 +118,12 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 		if err != nil {
 			return err
 		}
+
 		_, err = cc.client.Secrets(ns).Create(secret)
 		if err != nil {
 			return err
 		}
+
 		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
 	}
 
@@ -248,10 +250,12 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 		if err != nil {
 			return err
 		}
+
 		_, err = cc.client.ReplicationControllers(ns).Create(rc)
 		if err != nil {
 			return err
 		}
+
 		cc.recordClusterEvent(c, "pending", "Created rc %q", s)
 	}
 
