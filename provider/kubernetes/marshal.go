@@ -26,7 +26,7 @@ const (
 	namePrefix = "cluster"
 
 	urlAnnotation               = annotationPrefix + "url"           // kubermatic.io/url
-	tokenAnnoation              = annotationPrefix + "token"         // kubermatic.io/token
+	tokenAnnotation             = annotationPrefix + "token"         // kubermatic.io/token
 	customAnnotationPrefix      = annotationPrefix + "annotation-"   // kubermatic.io/annotation-
 	cloudAnnotationPrefix       = annotationPrefix + "cloud-"        // kubermatic.io/cloud-
 	providerAnnotation          = cloudAnnotationPrefix + "provider" // kubermatic.io/cloud-provider
@@ -100,7 +100,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
-		token, _ := ns.Annotations[tokenAnnoation]
+		token, _ := ns.Annotations[tokenAnnotation]
 		c.Address = &api.ClusterAddress{
 			URL:   url,
 			Token: token,
@@ -164,7 +164,7 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 			ns.Annotations[urlAnnotation] = c.Address.URL
 		}
 		if c.Address.Token != "" {
-			ns.Annotations[tokenAnnoation] = c.Address.Token
+			ns.Annotations[tokenAnnotation] = c.Address.Token
 		}
 	}
 

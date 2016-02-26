@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	tokenAnnotationKey = "token"
+	tokenAnnotationKey  = "token"
+	regionAnnotationKey = "region"
 )
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
@@ -31,7 +32,9 @@ func (do *digitalocean) Name() string {
 
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
-		tokenAnnotationKey: cloud.Digitalocean.Token,
+		// TODO(sur): change value to cloud.Digitalocean.Token, specified in the frontend by the user
+		tokenAnnotationKey:  "c465373bf74b4d8eca066c71b172a5ba19ddf4c7910a9f5a7b6e39e26697c2d6",
+		regionAnnotationKey: cloud.Digitalocean.Region,
 	}, nil
 }
 
@@ -43,6 +46,10 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 	var ok bool
 	if c.Digitalocean.Token, ok = annotations[tokenAnnotationKey]; !ok {
 		return nil, errors.New("no token found")
+	}
+
+	if c.Digitalocean.Region, ok = annotations[regionAnnotationKey]; !ok {
+		return nil, errors.New("no region found")
 	}
 
 	return &c, nil

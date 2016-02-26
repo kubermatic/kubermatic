@@ -56,9 +56,8 @@ type LinodeCloudSpec struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Region       string `json:"region"`
-	Token        string `json:"token"`
-	DiscoveryURL string `json:"discoveryURL"`
+	Region string `json:"region"`
+	Token  string `json:"token"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
