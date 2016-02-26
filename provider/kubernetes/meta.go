@@ -8,10 +8,12 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// DigitaloceanSpec describes a digital ocean datacenter
 type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
 }
 
+// DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 }
