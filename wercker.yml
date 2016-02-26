@@ -32,7 +32,7 @@ build:
         name: copy to deployment directory
         code: |
           mkdir -p "$WERCKER_OUTPUT_DIR/opt"
-          cp -av alpine-3.1.tar kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
+          cp -av alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
           cp datacenters.yaml "$WERCKER_OUTPUT_DIR/opt"
 
 deploy:
@@ -40,8 +40,8 @@ deploy:
   rolling-update:
     - script:
         code: |
-          tar -xvf alpine-3.1.tar
-          rm -f alpine-3.1.tar
+          tar -xvjf alpine-3.1.tar.bz2
+          rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>

@@ -44,4 +44,9 @@ docker: $(CMD)
 push: docker
 	docker push $(REPO)
 
+.PHONY: alpine-3.1.tar.bz2
+alpine-3.1.tar.bz2:
+	docker run -i alpine:3.1 /bin/sh -c "apk add -U ca-certificates && rm -rf /var/cache/apk/*"
+	docker export $$(docker ps -l -q) | bzip2 > $@
+
 .PHONY: build test check
