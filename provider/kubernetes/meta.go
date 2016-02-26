@@ -8,11 +8,22 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// DigitaloceanSpec describes a digital ocean datacenter
+type DigitaloceanSpec struct {
+	Region string `yaml:"region"`
+}
+
+// DatacenterSpec describes mutually points to provider datacenter spec
+type DatacenterSpec struct {
+	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
+}
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
-	Location string `yaml:"location"`
-	Country  string `yaml:"country"`
-	Provider string `yaml:"provider"`
+	Location string         `yaml:"location"`
+	Country  string         `yaml:"country"`
+	Provider string         `yaml:"provider"`
+	Spec     DatacenterSpec `yaml:"spec"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.
