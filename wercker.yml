@@ -1,0 +1,66 @@
+dev:
+  box: golang:1.6
+  steps:
+    - setup-go-workspace:
+        package-dir: github.com/kubermatic/api
+    - internal/watch:
+        code: |
+          set -e
+          make build GOBUILD="go install"
+          echo "Build finished."
+        reload: true
+
+build:
+  box: golang:1.6
+  steps:
+    - setup-go-workspace:
+        package-dir: github.com/kubermatic/api
+    - script:
+        name: install go tools
+        code: |
+          go version
+          go get github.com/alecthomas/gometalinter
+          go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
+          # go get github.com/mattn/goveralls
+          git describe --tags |tee VERSION
+          gometalinter --install --update --force
+    - script:
+        name: build and test
+        code: |
+          CGO_ENABLED=0 GOBUILD="go install" make gofmt build
+    - script:
+        name: copy to deployment directory
+        code: |
+          mkdir -p "$WERCKER_OUTPUT_DIR/opt"
+          cp -av alpine-3.1.tar kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
+          cp datacenters.yaml "$WERCKER_OUTPUT_DIR/opt"
+
+deploy:
+  box: golang:1.6
+  rolling-update:
+    - script:
+        code: |
+          tar -xvf alpine-3.1.tar
+          rm -f alpine-3.1.tar
+    - internal/docker-scratch-push:
+        name: push to docker hub
+        author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
+        cmd: /kubermatic-api
+        username: $USERNAME
+        password: $PASSWORD
+        email: stefan.schimanski@gmail.com
+        tag: $WERCKER_GIT_COMMIT
+        working-dir: /opt
+        repository: kubermatic/api
+        registry: https://registry.hub.docker.com
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=4 kubermatic-api-v1
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
+  rollback:
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=3 kubermatic-api-v1 --rollback
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
