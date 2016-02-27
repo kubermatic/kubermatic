@@ -15,17 +15,3 @@ func (spec *CloudSpec) GetDigitalocean() *DigitaloceanCloudSpec {
 	}
 	return spec.Digitalocean
 }
-
-// GetRegion returns the region for the active cloud spec or empty string.
-func (spec *CloudSpec) GetRegion() string {
-	switch {
-	case spec.Digitalocean != nil:
-		return spec.Digitalocean.Region
-	case spec.Fake != nil:
-		return spec.Fake.Region
-	case spec.Linode != nil:
-		return "linode"
-	}
-
-	return ""
-}
