@@ -181,7 +181,7 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 
 func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	key := fmt.Sprintf("%s/%s", ns, "ingress")
+	key := fmt.Sprintf("%s/%s", ns, "apiserver-public")
 	_, exists, err := cc.ingressStore.GetByKey(key)
 	if err != nil {
 		return err
