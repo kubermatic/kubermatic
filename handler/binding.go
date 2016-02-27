@@ -16,11 +16,13 @@ import (
 type Binding struct {
 	ctx                   context.Context
 	authenticated         func(http.Handler) http.Handler
+	getAuthenticated      func(http.Handler) http.Handler
 	datacenterEndpoint    endpoint.Endpoint
 	datacentersEndpoint   endpoint.Endpoint
 	newClusterEndpoint    endpoint.Endpoint
 	deleteClusterEndpoint endpoint.Endpoint
 	clusterEndpoint       endpoint.Endpoint
+	kubeconfigEndpoint    endpoint.Endpoint
 	clustersEndpoint      endpoint.Endpoint
 	nodesEndpoint         endpoint.Endpoint
 }
@@ -34,18 +36,22 @@ func NewBinding(
 	jwtKey string,
 ) Binding {
 	var authenticated = func(h http.Handler) http.Handler { return h }
+	var getAuthenticated = func(h http.Handler) http.Handler { return h }
 	if auth {
 		authenticated = jwtMiddleware(jwtKey).Handler
+		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
 
 	return Binding{
 		ctx:                   ctx,
 		authenticated:         authenticated,
+		getAuthenticated:      getAuthenticated,
 		datacenterEndpoint:    datacenterEndpoint(kps, cps),
 		datacentersEndpoint:   datacentersEndpoint(kps, cps),
 		newClusterEndpoint:    newClusterEndpoint(kps, cps),
 		deleteClusterEndpoint: deleteClusterEndpoint(kps, cps),
 		clusterEndpoint:       clusterEndpoint(kps, cps),
+		kubeconfigEndpoint:    kubeconfigEndpoint(kps, cps),
 		clustersEndpoint:      clustersEndpoint(kps, cps),
 		nodesEndpoint:         nodesEndpoint(kps, cps),
 	}
@@ -82,6 +88,11 @@ func (b Binding) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(b.authenticated(b.clusterHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Handler(b.getAuthenticated(b.kubeconfigHandler()))
 
 	mux.
 		Methods("DELETE").
@@ -141,6 +152,19 @@ func (b Binding) clusterHandler() http.Handler {
 		b.clusterEndpoint,
 		decodeClusterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Binding) kubeconfigHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
+	return httptransport.NewServer(
+		b.ctx,
+		b.kubeconfigEndpoint,
+		decodeKubeconfigReq,
+		encodeKubeconfig,
 		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)

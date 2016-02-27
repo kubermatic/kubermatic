@@ -20,3 +20,9 @@ func jwtMiddleware(key string) *jwtmiddleware.JWTMiddleware {
 		Debug: bool(glog.V(6)),
 	})
 }
+
+func jwtGetMiddleware(key string) *jwtmiddleware.JWTMiddleware {
+	mw := jwtMiddleware(key)
+	mw.Options.Extractor = jwtmiddleware.FromParameter("token")
+	return mw
+}
