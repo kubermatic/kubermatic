@@ -37,7 +37,7 @@ build:
 
 deploy:
   box: ubuntu:14.04
-  rolling-update:
+  api:
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
@@ -55,13 +55,42 @@ deploy:
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
     - kubectl:
-        server: $KUBERNETES_MASTER
-        token: $KUBERNETES_TOKEN
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=4 kubermatic-api-v1
+        server: https://do-ams2.kubermatic.io
+        token: $KUBERNETES_TOKEN_DO_AMS2
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
-  rollback:
+    - internal/docker-scratch-push:
+        name: push to docker hub
+        author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
+        cmd: /kubermatic-api
+        username: $USERNAME
+        password: $PASSWORD
+        email: stefan.schimanski@gmail.com
+        tag: latest
+        working-dir: /opt
+        repository: kubermatic/api
+        registry: https://registry.hub.docker.com
+  cluster-controller:
+    - script:
+        code: apt-get install -y ca-certificates
     - kubectl:
-        server: $KUBERNETES_MASTER
-        token: $KUBERNETES_TOKEN
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=3 kubermatic-api-v1 --rollback
+        server: https://do-ams2.kubermatic.io
+        token: $KUBERNETES_TOKEN_DO_AMS2
+        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
+  rollback-api:
+    - script:
+          code: apt-get install -y ca-certificates
+    - kubectl:
+        server: https://do-ams2.kubermatic.io
+        token: $KUBERNETES_TOKEN_DO_AMS2
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
+  rollback-cluster-controller-do-ams2:
+    - script:
+          code: apt-get install -y ca-certificates
+    - kubectl:
+        server: https://do-ams2.kubermatic.io
+        token: $KUBERNETES_TOKEN_DO_AMS2
+        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
