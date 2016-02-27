@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
-	extensions "k8s.io/kubernetes/pkg/apis/extensions"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 )
 
@@ -197,7 +197,14 @@ func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
 	}
 
 	var ingress extensions.Ingress
-	err = t.Execute(nil, &ingress)
+	data := struct {
+		DC          string
+		ClusterName string
+	}{
+		DC:          cc.dc,
+		ClusterName: c.Metadata.Name,
+	}
+	err = t.Execute(data, &ingress)
 	if err != nil {
 		return err
 	}
