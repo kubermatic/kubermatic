@@ -42,7 +42,6 @@ deploy:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
-          apt-get update
           apt-get install -y ca-certificates
     - internal/docker-scratch-push:
         name: push to docker hub
