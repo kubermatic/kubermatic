@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 )
 
@@ -178,6 +179,45 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 	return nil
 }
 
+func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	key := fmt.Sprintf("%s/%s", ns, "apiserver-public")
+	_, exists, err := cc.ingressStore.GetByKey(key)
+	if err != nil {
+		return err
+	}
+	if exists {
+		glog.V(6).Infof("Skipping already existing ingress %q", key)
+		return nil
+	}
+
+	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, "ingress.yaml"))
+	if err != nil {
+		return err
+	}
+
+	var ingress extensions.Ingress
+	data := struct {
+		DC          string
+		ClusterName string
+	}{
+		DC:          cc.dc,
+		ClusterName: c.Metadata.Name,
+	}
+	err = t.Execute(data, &ingress)
+	if err != nil {
+		return err
+	}
+
+	_, err = cc.client.Ingress(ns).Create(&ingress)
+	if err != nil {
+		return err
+	}
+
+	cc.recordClusterEvent(c, "pending", "Created ingress")
+	return nil
+}
+
 func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
@@ -330,6 +370,12 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 
 	// check that all services are available
 	err = cc.pendingCheckServices(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// check that the ingress is available
+	err = cc.pendingCheckIngress(c)
 	if err != nil {
 		return nil, err
 	}
