@@ -3,6 +3,7 @@ package cluster
 import (
 	crand "crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/provider/kubernetes"
-	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
@@ -42,8 +42,8 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 			return nil, err
 		}
 		token := sha256.Sum256(rawToken)
-		token62 := base62.StdEncoding.EncodeToString(token[:])
-		trimmedToken62 := strings.TrimRight(token62, "+")
+		token64 := base64.URLEncoding.EncodeToString(token[:])
+		trimmedToken64 := strings.TrimRight(token64, "=")
 
 		secret := kapi.Secret{
 			ObjectMeta: kapi.ObjectMeta{
@@ -51,13 +51,13 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 			},
 			Type: kapi.SecretTypeOpaque,
 			Data: map[string][]byte{
-				"file": []byte(fmt.Sprintf("%s,admin,admin", token62)),
+				"file": []byte(fmt.Sprintf("%s,admin,admin", trimmedToken64)),
 			},
 		}
 
 		c.Address = &api.ClusterAddress{
 			URL:   fmt.Sprintf(cc.urlPattern, cc.dc, c.Metadata.Name),
-			Token: trimmedToken62,
+			Token: trimmedToken64,
 		}
 
 		return &secret, nil

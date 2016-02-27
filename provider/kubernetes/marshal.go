@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	"github.com/lytics/base62"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
 
@@ -52,8 +52,8 @@ func LabelUser(user string) string {
 	if user == "" {
 		return user
 	}
-	user62 := base62.StdEncoding.EncodeToString([]byte(user))
-	return strings.TrimRight(user62, "+")
+	user64 := base64.URLEncoding.EncodeToString([]byte(user))
+	return strings.TrimRight(user64, "=")
 }
 
 func cloudProviderAnnotationPrefix(cp provider.CloudProvider) string {
