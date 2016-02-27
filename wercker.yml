@@ -59,6 +59,17 @@ deploy:
         token: $KUBERNETES_TOKEN
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=4 kubermatic-api-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
+    - internal/docker-scratch-push:
+        name: push to docker hub
+        author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
+        cmd: /kubermatic-api
+        username: $USERNAME
+        password: $PASSWORD
+        email: stefan.schimanski@gmail.com
+        tag: latest
+        working-dir: /opt
+        repository: kubermatic/api
+        registry: https://registry.hub.docker.com
   rollback:
     - kubectl:
         server: $KUBERNETES_MASTER
