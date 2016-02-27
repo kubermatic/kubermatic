@@ -10,7 +10,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
+	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(
@@ -38,22 +38,25 @@ func kubeconfigEndpoint(
 			Kind:           "Config",
 			APIVersion:     "v1",
 			CurrentContext: id,
-			Clusters: map[string]*capi.Cluster{
-				id: &capi.Cluster{
+			Clusters: []capi.NamedCluster{capi.NamedCluster{
+				Name: id,
+				Cluster: capi.Cluster{
 					Server: c.Address.URL,
 				},
-			},
-			Contexts: map[string]*capi.Context{
-				id: &capi.Context{
+			}},
+			Contexts: []capi.NamedContext{capi.NamedContext{
+				Name: id,
+				Context: capi.Context{
 					Cluster:  id,
 					AuthInfo: id,
 				},
-			},
-			AuthInfos: map[string]*capi.AuthInfo{
-				id: &capi.AuthInfo{
+			}},
+			AuthInfos: []capi.NamedAuthInfo{capi.NamedAuthInfo{
+				Name: id,
+				AuthInfo: capi.AuthInfo{
 					Token: c.Address.Token,
 				},
-			},
+			}},
 		}
 
 		return &cfg, nil
