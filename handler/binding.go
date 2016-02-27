@@ -16,6 +16,7 @@ import (
 type Binding struct {
 	ctx                   context.Context
 	authenticated         func(http.Handler) http.Handler
+	getAuthenticated      func(http.Handler) http.Handler
 	datacenterEndpoint    endpoint.Endpoint
 	datacentersEndpoint   endpoint.Endpoint
 	newClusterEndpoint    endpoint.Endpoint
@@ -35,13 +36,16 @@ func NewBinding(
 	jwtKey string,
 ) Binding {
 	var authenticated = func(h http.Handler) http.Handler { return h }
+	var getAuthenticated = func(h http.Handler) http.Handler { return h }
 	if auth {
 		authenticated = jwtMiddleware(jwtKey).Handler
+		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
 
 	return Binding{
 		ctx:                   ctx,
 		authenticated:         authenticated,
+		getAuthenticated:      getAuthenticated,
 		datacenterEndpoint:    datacenterEndpoint(kps, cps),
 		datacentersEndpoint:   datacentersEndpoint(kps, cps),
 		newClusterEndpoint:    newClusterEndpoint(kps, cps),
@@ -88,7 +92,7 @@ func (b Binding) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
-		Handler(b.authenticated(b.kubeconfigHandler()))
+		Handler(b.getAuthenticated(b.kubeconfigHandler()))
 
 	mux.
 		Methods("DELETE").
