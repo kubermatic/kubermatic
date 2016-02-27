@@ -18,7 +18,7 @@ func main() {
 	homeDir := os.Getenv("HOME")
 	kubeconfig := flag.String("kubeconfig", path.Join(homeDir, ".kube/config"), "The kubeconfig file with a current context.")
 	masterResources := flag.String("master-resources", "", "The master resources path (required).")
-	urlPattern := flag.String("url-pattern", "https://%s.gke-1.kubermatic.io", "The fmt.Sprintf pattern for the url, interpolated with the cluster name.")
+	urlPattern := flag.String("url-pattern", "https://api-%s.kubermatic.io/%s", "The fmt.Sprintf pattern for the url, interpolated with the dc and cluster name.")
 	flag.Parse()
 
 	if *masterResources == "" {
@@ -54,7 +54,7 @@ func main() {
 
 		// start controller
 		cps := cloud.Providers()
-		ctrl, err := cluster.NewController(client, cps, *masterResources, *urlPattern)
+		ctrl, err := cluster.NewController(ctx, client, cps, *masterResources, *urlPattern)
 		if err != nil {
 			log.Fatal(err)
 		}

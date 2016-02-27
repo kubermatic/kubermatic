@@ -39,6 +39,7 @@ const (
 )
 
 type clusterController struct {
+	dc                  string
 	client              *client.Client
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
@@ -73,12 +74,14 @@ type clusterController struct {
 
 // NewController creates a cluster controller.
 func NewController(
+	dc string,
 	client *client.Client,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	urlPattern string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
+		dc:                  dc,
 		client:              client,
 		queue:               workqueue.New(),
 		cps:                 cps,

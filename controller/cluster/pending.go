@@ -55,7 +55,7 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 		}
 
 		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf(cc.urlPattern, c.Metadata.Name),
+			URL:   fmt.Sprintf(cc.urlPattern, cc.dc, c.Metadata.Name),
 			Token: trimmedToken62,
 		}
 
