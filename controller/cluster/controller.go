@@ -12,6 +12,7 @@ import (
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/client/record"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -50,21 +51,20 @@ type clusterController struct {
 	nsController *framework.Controller
 	nsStore      cache.Store
 
-	// store pods with the realm=kubermatic-cluster label
 	podController *framework.Controller
 	podStore      cache.StoreToPodLister
 
-	// store rcs with the realm=kubermatic-cluster label
 	rcController *framework.Controller
 	rcStore      cache.Indexer
 
-	// store rcs with the realm=kubermatic-cluster label
 	secretController *framework.Controller
 	secretStore      cache.Indexer
 
-	// store rcs with the realm=kubermatic-cluster label
 	serviceController *framework.Controller
 	serviceStore      cache.Indexer
+
+	ingressController *framework.Controller
+	ingressStore      cache.Indexer
 
 	// non-thread safe:
 	mu         sync.Mutex
@@ -194,6 +194,21 @@ func NewController(
 			},
 		},
 		&kapi.Service{},
+		fullResyncPeriod,
+		framework.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.ingressStore, cc.ingressController = framework.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func() (runtime.Object, error) {
+				return cc.client.Ingress(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+			},
+			WatchFunc: func(rv string) (watch.Interface, error) {
+				return cc.client.Ingress(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+			},
+		},
+		&v1beta1.Ingress{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
