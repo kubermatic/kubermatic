@@ -12,7 +12,7 @@ import (
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/client/record"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -208,7 +208,7 @@ func NewController(
 				return cc.client.Ingress(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
 			},
 		},
-		&v1beta1.Ingress{},
+		&extensions.Ingress{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
