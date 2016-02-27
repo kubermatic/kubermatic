@@ -202,10 +202,12 @@ func NewController(
 	cc.ingressStore, cc.ingressController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Ingress(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+				return cc.client.Extensions().Ingress(kapi.NamespaceAll).
+					List(labels.Everything(), fields.Everything())
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Ingress(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+				return cc.client.Extensions().Ingress(kapi.NamespaceAll).
+					Watch(labels.Everything(), fields.Everything(), rv)
 			},
 		},
 		&extensions.Ingress{},
@@ -401,6 +403,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.rcController.Run(util.NeverStop)
 	go cc.secretController.Run(util.NeverStop)
 	go cc.serviceController.Run(util.NeverStop)
+	go cc.ingressController.Run(util.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go util.Until(cc.worker, workerPeriod, stopCh)
@@ -420,5 +423,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.podController.HasSynced() &&
 		cc.secretController.HasSynced() &&
 		cc.rcController.HasSynced() &&
-		cc.serviceController.HasSynced()
+		cc.serviceController.HasSynced() &&
+		cc.ingressController.HasSynced()
 }
