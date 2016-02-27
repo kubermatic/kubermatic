@@ -37,7 +37,9 @@ build:
 
 deploy:
   box: ubuntu:14.04
-  push:
+  rolling-update:
+    - script:
+        code: apt-get install -y ca-certificates
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
@@ -53,23 +55,16 @@ deploy:
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
-  api:
-    - script:
-        code: apt-get install -y ca-certificates
     - kubectl:
         server: https://do-ams2.kubermatic.io
         token: $KUBERNETES_TOKEN_DO_AMS2
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
-  cluster-controller:
-    - script:
-        code: apt-get install -y ca-certificates
     - kubectl:
         server: https://do-ams2.kubermatic.io
         token: $KUBERNETES_TOKEN_DO_AMS2
         command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
-  push-latest:
     - internal/docker-scratch-push:
         name: push to docker hub as latest
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
