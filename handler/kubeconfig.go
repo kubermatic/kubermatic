@@ -18,7 +18,7 @@ func kubeconfigEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterReq)
+		req := request.(kubeconfigReq)
 
 		kp, found := kps[req.dc]
 		if !found {
