@@ -187,7 +187,7 @@ func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
 		return err
 	}
 	if exists {
-		glog.V(6).Infof("Skipping already existing service %q", key)
+		glog.V(6).Infof("Skipping already existing ingress %q", key)
 		return nil
 	}
 
