@@ -37,7 +37,7 @@ build:
 
 deploy:
   box: ubuntu:14.04
-  rolling-update:
+  api:
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
@@ -57,7 +57,7 @@ deploy:
     - kubectl:
         server: $KUBERNETES_MASTER
         token: $KUBERNETES_TOKEN
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=4 kubermatic-api-v1
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
     - internal/docker-scratch-push:
         name: push to docker hub
@@ -70,9 +70,21 @@ deploy:
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
-  rollback:
+  cluster-controller:
     - kubectl:
         server: $KUBERNETES_MASTER
         token: $KUBERNETES_TOKEN
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s --v=3 kubermatic-api-v1 --rollback
+        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
+  rollback-api:
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
+        image: kubermatic/api:$WERCKER_GIT_COMMIT
+  rollback-cluster-controller-do-ams2:
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
