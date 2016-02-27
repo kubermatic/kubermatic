@@ -71,18 +71,24 @@ deploy:
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
   cluster-controller:
+    - script:
+        code: apt-get install -y ca-certificates
     - kubectl:
         server: https://do-ams2.kubermatic.io
         token: $KUBERNETES_TOKEN_DO_AMS2
         command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
   rollback-api:
+    - script:
+          code: apt-get install -y ca-certificates
     - kubectl:
         server: https://do-ams2.kubermatic.io
         token: $KUBERNETES_TOKEN_DO_AMS2
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
   rollback-cluster-controller-do-ams2:
+    - script:
+          code: apt-get install -y ca-certificates
     - kubectl:
         server: https://do-ams2.kubermatic.io
         token: $KUBERNETES_TOKEN_DO_AMS2
