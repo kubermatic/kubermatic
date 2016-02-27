@@ -21,6 +21,7 @@ type Binding struct {
 	newClusterEndpoint    endpoint.Endpoint
 	deleteClusterEndpoint endpoint.Endpoint
 	clusterEndpoint       endpoint.Endpoint
+	kubeconfigEndpoint    endpoint.Endpoint
 	clustersEndpoint      endpoint.Endpoint
 	nodesEndpoint         endpoint.Endpoint
 }
@@ -46,6 +47,7 @@ func NewBinding(
 		newClusterEndpoint:    newClusterEndpoint(kps, cps),
 		deleteClusterEndpoint: deleteClusterEndpoint(kps, cps),
 		clusterEndpoint:       clusterEndpoint(kps, cps),
+		kubeconfigEndpoint:    kubeconfigEndpoint(kps, cps),
 		clustersEndpoint:      clustersEndpoint(kps, cps),
 		nodesEndpoint:         nodesEndpoint(kps, cps),
 	}
@@ -82,6 +84,11 @@ func (b Binding) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(b.authenticated(b.clusterHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Handler(b.authenticated(b.kubeconfigHandler()))
 
 	mux.
 		Methods("DELETE").
@@ -141,6 +148,19 @@ func (b Binding) clusterHandler() http.Handler {
 		b.clusterEndpoint,
 		decodeClusterReq,
 		encodeJSON,
+		httptransport.ServerErrorLogger(logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Binding) kubeconfigHandler() http.Handler {
+	logger := log.NewLogfmtLogger(os.Stderr)
+
+	return httptransport.NewServer(
+		b.ctx,
+		b.kubeconfigEndpoint,
+		decodeKubeconfigReq,
+		encodeKubeconfig,
 		httptransport.ServerErrorLogger(logger),
 		defaultHTTPErrorEncoder(),
 	)
