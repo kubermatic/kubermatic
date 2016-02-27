@@ -27,7 +27,7 @@ build:
     - script:
         name: build and test
         code: |
-          CGO_ENABLED=0 GOBUILD="go install" make gofmt build
+          CGO_ENABLED=0 GOBUILD="go install" make
     - script:
         name: copy to deployment directory
         code: |
