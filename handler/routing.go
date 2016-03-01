@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -12,29 +11,24 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Binding represents an object which binds endpoints to http handlers.
-type Binding struct {
-	ctx                   context.Context
-	authenticated         func(http.Handler) http.Handler
-	getAuthenticated      func(http.Handler) http.Handler
-	datacenterEndpoint    endpoint.Endpoint
-	datacentersEndpoint   endpoint.Endpoint
-	newClusterEndpoint    endpoint.Endpoint
-	deleteClusterEndpoint endpoint.Endpoint
-	clusterEndpoint       endpoint.Endpoint
-	kubeconfigEndpoint    endpoint.Endpoint
-	clustersEndpoint      endpoint.Endpoint
-	nodesEndpoint         endpoint.Endpoint
+// Routing represents an object which binds endpoints to http handlers.
+type Routing struct {
+	ctx              context.Context
+	authenticated    func(http.Handler) http.Handler
+	getAuthenticated func(http.Handler) http.Handler
+	kps              map[string]provider.KubernetesProvider
+	cps              map[string]provider.CloudProvider
+	logger           log.Logger
 }
 
-// NewBinding creates a new Binding.
-func NewBinding(
+// NewRouting creates a new Routing.
+func NewRouting(
 	ctx context.Context,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	auth bool,
 	jwtKey string,
-) Binding {
+) Routing {
 	var authenticated = func(h http.Handler) http.Handler { return h }
 	var getAuthenticated = func(h http.Handler) http.Handler { return h }
 	if auth {
@@ -42,23 +36,18 @@ func NewBinding(
 		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
 
-	return Binding{
-		ctx:                   ctx,
-		authenticated:         authenticated,
-		getAuthenticated:      getAuthenticated,
-		datacenterEndpoint:    datacenterEndpoint(kps, cps),
-		datacentersEndpoint:   datacentersEndpoint(kps, cps),
-		newClusterEndpoint:    newClusterEndpoint(kps, cps),
-		deleteClusterEndpoint: deleteClusterEndpoint(kps, cps),
-		clusterEndpoint:       clusterEndpoint(kps, cps),
-		kubeconfigEndpoint:    kubeconfigEndpoint(kps, cps),
-		clustersEndpoint:      clustersEndpoint(kps, cps),
-		nodesEndpoint:         nodesEndpoint(kps, cps),
+	return Routing{
+		ctx:              ctx,
+		authenticated:    authenticated,
+		getAuthenticated: getAuthenticated,
+		kps:              kps,
+		cps:              cps,
+		logger:           log.NewLogfmtLogger(os.Stderr),
 	}
 }
 
 // Register registers all known endpoints in the given router.
-func (b Binding) Register(mux *mux.Router) {
+func (b Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/").
@@ -105,106 +94,90 @@ func (b Binding) Register(mux *mux.Router) {
 		Handler(b.authenticated(b.nodesHandler()))
 }
 
-func (b Binding) datacentersHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.datacentersEndpoint,
+		datacentersEndpoint(b.kps, b.cps),
 		decodeDatacentersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) datacenterHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.datacenterEndpoint,
+		datacenterEndpoint(b.kps, b.cps),
 		decodeDatacenterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) newClusterHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.newClusterEndpoint,
+		newClusterEndpoint(b.kps, b.cps),
 		decodeNewClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) clusterHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.clusterEndpoint,
+		clusterEndpoint(b.kps, b.cps),
 		decodeClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) kubeconfigHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.kubeconfigEndpoint,
+		kubeconfigEndpoint(b.kps, b.cps),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) clustersHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.clustersEndpoint,
+		clustersEndpoint(b.kps, b.cps),
 		decodeClustersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) deleteClusterHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.deleteClusterEndpoint,
+		deleteClusterEndpoint(b.kps, b.cps),
 		decodeDeleteClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Binding) nodesHandler() http.Handler {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
+func (b Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		b.nodesEndpoint,
+		nodesEndpoint(b.kps, b.cps),
 		decodeNodesReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
