@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/docker/docker/daemon/logger"
-	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -13,24 +11,24 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Binding represents an object which binds endpoints to http handlers.
-type Binding struct {
+// Routing represents an object which binds endpoints to http handlers.
+type Routing struct {
 	ctx              context.Context
 	authenticated    func(http.Handler) http.Handler
 	getAuthenticated func(http.Handler) http.Handler
 	kps              map[string]provider.KubernetesProvider
 	cps              map[string]provider.CloudProvider
-	logger           logger.Logger
+	logger           log.Logger
 }
 
-// NewBinding creates a new Binding.
-func NewBinding(
+// NewRouting creates a new Routing.
+func NewRouting(
 	ctx context.Context,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	auth bool,
 	jwtKey string,
-) Binding {
+) Routing {
 	var authenticated = func(h http.Handler) http.Handler { return h }
 	var getAuthenticated = func(h http.Handler) http.Handler { return h }
 	if auth {
@@ -38,7 +36,7 @@ func NewBinding(
 		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
 
-	return Binding{
+	return Routing{
 		ctx:              ctx,
 		authenticated:    authenticated,
 		getAuthenticated: getAuthenticated,
@@ -49,7 +47,7 @@ func NewBinding(
 }
 
 // Register registers all known endpoints in the given router.
-func (b Binding) Register(mux *mux.Router) {
+func (b Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/").
@@ -96,7 +94,7 @@ func (b Binding) Register(mux *mux.Router) {
 		Handler(b.authenticated(b.nodesHandler()))
 }
 
-func (b Binding) datacentersHandler() http.Handler {
+func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		datacentersEndpoint(b.kps, b.cps),
@@ -107,7 +105,7 @@ func (b Binding) datacentersHandler() http.Handler {
 	)
 }
 
-func (b Binding) datacenterHandler() http.Handler {
+func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		datacenterEndpoint(b.kps, b.cps),
@@ -118,7 +116,7 @@ func (b Binding) datacenterHandler() http.Handler {
 	)
 }
 
-func (b Binding) newClusterHandler() http.Handler {
+func (b Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		newClusterEndpoint(b.kps, b.cps),
@@ -129,7 +127,7 @@ func (b Binding) newClusterHandler() http.Handler {
 	)
 }
 
-func (b Binding) clusterHandler() http.Handler {
+func (b Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		clusterEndpoint(b.kps, b.cps),
@@ -140,7 +138,7 @@ func (b Binding) clusterHandler() http.Handler {
 	)
 }
 
-func (b Binding) kubeconfigHandler() http.Handler {
+func (b Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		kubeconfigEndpoint(b.kps, b.cps),
@@ -151,7 +149,7 @@ func (b Binding) kubeconfigHandler() http.Handler {
 	)
 }
 
-func (b Binding) clustersHandler() http.Handler {
+func (b Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		clustersEndpoint(b.kps, b.cps),
@@ -162,7 +160,7 @@ func (b Binding) clustersHandler() http.Handler {
 	)
 }
 
-func (b Binding) deleteClusterHandler() http.Handler {
+func (b Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		deleteClusterEndpoint(b.kps, b.cps),
@@ -173,7 +171,7 @@ func (b Binding) deleteClusterHandler() http.Handler {
 	)
 }
 
-func (b Binding) nodesHandler() http.Handler {
+func (b Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		nodesEndpoint(b.kps, b.cps),

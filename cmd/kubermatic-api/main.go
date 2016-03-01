@@ -43,9 +43,9 @@ func main() {
 
 	// start server
 	ctx := context.Background()
-	b := handler.NewBinding(ctx, kps, cps, *auth, *jwtKey)
+	r := handler.NewRouting(ctx, kps, cps, *auth, *jwtKey)
 	mux := mux.NewRouter()
-	b.Register(mux)
+	r.Register(mux)
 
 	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
 }
