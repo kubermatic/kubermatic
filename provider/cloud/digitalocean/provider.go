@@ -3,6 +3,7 @@ package digitalocean
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -94,7 +95,65 @@ func (do *digitalocean) CreateNode(
 }
 
 func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	panic("not implemented")
+	doSpec := cluster.Spec.Cloud.GetDigitalocean()
+	t := token(doSpec.GetToken())
+	client := godo.NewClient(oauth2.NewClient(ctx, t))
+
+	ds := []godo.Droplet{}
+	opt := &godo.ListOptions{}
+	for {
+		droplets, resp, err := client.Droplets.List(opt)
+		if err != nil {
+			return nil, err
+		}
+
+		// append the current page's droplets to our list
+		for _, d := range droplets {
+			ds = append(ds, d)
+		}
+
+		// if we are at the last page, break out the for loop
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			return nil, err
+		}
+
+		// set the page we want for the next request
+		opt.Page = page + 1
+	}
+
+	nodes := make([]*api.Node, 0, len(ds))
+	for _, d := range ds {
+		ss := strings.Split(d.Name, "-")
+
+		switch {
+		case len(ss) != 3: // assuming %s-%s-%s format, see CreateNode
+			continue
+		case ss[1] != cluster.Metadata.Name:
+			continue
+		}
+
+		n := &api.Node{
+			Metadata: api.Metadata{
+				Name: d.Name,
+				UID:  ss[2],
+			},
+			Spec: api.NodeSpec{
+				Digitalocean: &api.DigitaloceanNodeSpec{
+					Type: d.Image.Slug,
+					Size: d.Size.Slug,
+				},
+			},
+		}
+
+		nodes = append(nodes, n)
+	}
+
+	return nodes, nil
 }
 
 var _ oauth2.TokenSource = (*token)(nil)
