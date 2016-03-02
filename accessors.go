@@ -15,3 +15,11 @@ func (spec *CloudSpec) GetDigitalocean() *DigitaloceanCloudSpec {
 	}
 	return spec.Digitalocean
 }
+
+// GetBringYourOwn returns the bringyourown cloud spec.
+func (spec *CloudSpec) GetBringYourOwn() *BringYourOwnCloudSpec {
+	if spec == nil {
+		return nil
+	}
+	return spec.BringYourOwn
+}
