@@ -12,6 +12,7 @@ import (
 const (
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
+	BringYourOwnCloudProvider = "bringyourown"
 	LinodeCloudProvider       = "linode"
 )
 
@@ -60,6 +61,8 @@ func clusterCloudProviderName(c *api.Cluster) (string, error) {
 		return FakeCloudProvider, nil
 	case cloud.Digitalocean != nil:
 		return DigitaloceanCloudProvider, nil
+	case cloud.BringYourOwn != nil:
+		return BringYourOwnCloudProvider, nil
 	case cloud.Linode != nil:
 		return LinodeCloudProvider, nil
 	}

@@ -13,9 +13,14 @@ type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
 }
 
+// BringYourOwnSpec describes a datacenter our of bring your own nodes
+type BringYourOwnSpec struct {
+}
+
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
+	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

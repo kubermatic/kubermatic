@@ -22,6 +22,10 @@ type DigitaloceanNodeSpec struct {
 	SSHKeys []string `json:"sshKeys,omitempty"`
 }
 
+// BringYourOwnNodeSpec specifies a bring your own node
+type BringYourOwnNodeSpec struct {
+}
+
 // FakeNodeSpec specifies a fake node.
 type FakeNodeSpec struct {
 	Type string `json:"type"`
@@ -31,6 +35,7 @@ type FakeNodeSpec struct {
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
+	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 }
 
@@ -60,6 +65,10 @@ type DigitaloceanCloudSpec struct {
 	Token  string `json:"token"`
 }
 
+// BringYourOwnCloudSpec specifies access data for a bring your own cluster.
+type BringYourOwnCloudSpec struct {
+}
+
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token  string `json:"token,omitempty"`
@@ -71,6 +80,7 @@ type FakeCloudSpec struct {
 type CloudSpec struct {
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 }
 

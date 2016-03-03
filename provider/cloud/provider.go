@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/cloud/bringyourown"
 	"github.com/kubermatic/api/provider/cloud/digitalocean"
 	"github.com/kubermatic/api/provider/cloud/fake"
 )
@@ -11,5 +12,6 @@ func Providers() provider.CloudRegistry {
 	return map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
 		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
+		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
 	}
 }

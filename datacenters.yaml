@@ -17,3 +17,7 @@ datacenters:
     spec:
       digitalocean:
         region: fra1
+  bringyourown:
+    provider: bringyourown
+    spec:
+      bringyourown:
