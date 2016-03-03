@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ func main() {
 	auth := flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
 	dcFile := flag.String("datacenters", "", "The datacenters.yaml file path")
 	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
+	address := flag.String("address", ":8080", "The address to listen on")
 	flag.Parse()
 
 	// load list of datacenters
@@ -47,6 +49,6 @@ func main() {
 	r := handler.NewRouting(ctx, dcs, kps, cps, *auth, *jwtKey)
 	mux := mux.NewRouter()
 	r.Register(mux)
-
-	log.Fatal(http.ListenAndServe(":8080", ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
+	log.Println(fmt.Sprintf("Listening on %s", *address))
+	log.Fatal(http.ListenAndServe(*address, ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
 }
