@@ -132,13 +132,13 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
-	DiscoveryURL      string     `json:"discoveryURL"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL   string `json:"url"`
-	Token string `json:"token"`
+	URL     string `json:"url"`
+	EtcdURL string `json:"etcdURL"`
+	Token   string `json:"token"`
 }
 
 // Cluster is the object representating a cluster.
