@@ -11,44 +11,53 @@ import (
 )
 
 func datacentersEndpoint(
+	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		dcs := make([]api.Datacenter, 0, len(kps))
-		for dcName, kp := range kps {
-			dc := api.Datacenter{
+		adcs := make([]api.Datacenter, 0, len(kps))
+		for dcName := range dcs {
+			_, kpFound := kps[dcName]
+			dc := dcs[dcName]
+
+			adc := api.Datacenter{
 				Metadata: api.Metadata{
 					Name:     dcName,
 					Revision: "1",
 				},
-				Spec: *kp.Spec(),
+				Spec: *apiSpec(&dc),
+				Seed: kpFound,
 			}
-			dcs = append(dcs, dc)
+			adcs = append(adcs, adc)
 		}
 
-		return dcs, nil
+		return adcs, nil
 	}
 }
 
 func datacenterEndpoint(
+	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(dcReq)
 
-		kp, found := kps[req.dc]
+		dc, found := dcs[req.dc]
 		if !found {
-			return nil, NewNotFound("kubernetes datacenter", req.dc)
+			return nil, NewNotFound("datacenter", req.dc)
 		}
+
+		_, kpFound := kps[req.dc]
 
 		return &api.Datacenter{
 			Metadata: api.Metadata{
 				Name:     req.dc,
 				Revision: "1",
 			},
-			Spec: *kp.Spec(),
+			Spec: *apiSpec(&dc),
+			Seed: kpFound,
 		}, nil
 	}
 }
@@ -64,4 +73,23 @@ func decodeDatacenterReq(r *http.Request) (interface{}, error) {
 	return dcReq{
 		dc: mux.Vars(r)["dc"],
 	}, nil
+}
+
+func apiSpec(dc *provider.DatacenterMeta) *api.DatacenterSpec {
+	spec := &api.DatacenterSpec{
+		Description: dc.Location,
+		Country:     dc.Country,
+		Provider:    dc.Provider,
+	}
+
+	switch {
+	case dc.Spec.Digitalocean != nil:
+		spec.Digitalocean = &api.DigitialoceanDatacenterSpec{
+			Region: dc.Spec.Digitalocean.Region,
+		}
+	case dc.Spec.BringYourOwn != nil:
+		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
+	}
+
+	return spec
 }

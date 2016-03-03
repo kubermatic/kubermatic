@@ -9,6 +9,7 @@ import (
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/handler"
+	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/net/context"
@@ -22,11 +23,11 @@ func main() {
 	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	flag.Parse()
 
-	// load meta data for datacenters
-	metas := map[string]kubernetes.DatacenterMeta{}
+	// load list of datacenters
+	dcs := map[string]provider.DatacenterMeta{}
 	if *dcFile != "" {
 		var err error
-		metas, err = kubernetes.DatacentersMeta(*dcFile)
+		dcs, err = provider.DatacentersMeta(*dcFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -36,14 +37,14 @@ func main() {
 	cps := cloud.Providers()
 
 	// create KubernetesProvider for each context in the kubeconfig
-	kps, err := kubernetes.Providers(*kubeconfig, cps, metas)
+	kps, err := kubernetes.Providers(*kubeconfig, cps)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// start server
 	ctx := context.Background()
-	r := handler.NewRouting(ctx, kps, cps, *auth, *jwtKey)
+	r := handler.NewRouting(ctx, dcs, kps, cps, *auth, *jwtKey)
 	mux := mux.NewRouter()
 	r.Register(mux)
 

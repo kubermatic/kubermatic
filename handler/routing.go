@@ -16,6 +16,7 @@ type Routing struct {
 	ctx              context.Context
 	authenticated    func(http.Handler) http.Handler
 	getAuthenticated func(http.Handler) http.Handler
+	dcs              map[string]provider.DatacenterMeta
 	kps              map[string]provider.KubernetesProvider
 	cps              map[string]provider.CloudProvider
 	logger           log.Logger
@@ -24,6 +25,7 @@ type Routing struct {
 // NewRouting creates a new Routing.
 func NewRouting(
 	ctx context.Context,
+	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	auth bool,
@@ -40,6 +42,7 @@ func NewRouting(
 		ctx:              ctx,
 		authenticated:    authenticated,
 		getAuthenticated: getAuthenticated,
+		dcs:              dcs,
 		kps:              kps,
 		cps:              cps,
 		logger:           log.NewLogfmtLogger(os.Stderr),
@@ -97,7 +100,7 @@ func (b Routing) Register(mux *mux.Router) {
 func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		datacentersEndpoint(b.kps, b.cps),
+		datacentersEndpoint(b.dcs, b.kps, b.cps),
 		decodeDatacentersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -108,7 +111,7 @@ func (b Routing) datacentersHandler() http.Handler {
 func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		datacenterEndpoint(b.kps, b.cps),
+		datacenterEndpoint(b.dcs, b.kps, b.cps),
 		decodeDatacenterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
