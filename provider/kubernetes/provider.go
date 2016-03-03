@@ -10,7 +10,6 @@ import (
 func Providers(
 	kubeconfig string,
 	cps provider.CloudRegistry,
-	metas map[string]DatacenterMeta,
 ) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
 		"fake-1": NewKubernetesFakeProvider("fake-1", cps),
@@ -34,22 +33,11 @@ func Providers(
 			return nil, err
 		}
 
-		meta := DatacenterMeta{
-			Location: "Unknown",
-			Country:  "Unknown",
-			Provider: "Unknown",
-		}
-
-		if m, found := metas[ctx]; found {
-			meta = m
-		}
-
-		glog.Infof("Add kubernetes provider %q at %s, meta=%+v", ctx, cfg.Host, meta)
+		glog.Infof("Add kubernetes provider %q at %s", ctx, cfg.Host)
 
 		kps[ctx] = NewKubernetesProvider(
 			cfg,
 			cps,
-			meta,
 		)
 	}
 

@@ -154,16 +154,23 @@ type DigitialoceanDatacenterSpec struct {
 	Region string `json:"region"`
 }
 
+// BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
+type BringYourOwnDatacenterSpec struct {
+	Region string `json:"region"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Description  string                       `json:"description,omitempty"`
 	Country      string                       `json:"country,omitempty"`
 	Provider     string                       `json:"provider,omitempty"`
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
+	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
 type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
+	Seed     bool           `json:"seed,omitempty"`
 }
