@@ -156,7 +156,6 @@ type DigitialoceanDatacenterSpec struct {
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct {
-	Region string `json:"region"`
 }
 
 // DatacenterSpec specifies the data for a datacenter.
