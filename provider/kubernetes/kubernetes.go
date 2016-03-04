@@ -17,10 +17,15 @@ import (
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
 
+const (
+	updateRetries = 5
+)
+
 type kubernetesProvider struct {
-	mu     sync.Mutex
-	cps    map[string]provider.CloudProvider
 	client *client.Client
+
+	mu  sync.Mutex
+	cps map[string]provider.CloudProvider
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -104,29 +109,71 @@ func (p *kubernetesProvider) NewCluster(user, cluster string, spec *api.ClusterS
 	return c, nil
 }
 
-func (p *kubernetesProvider) Cluster(user, cluster string) (*api.Cluster, error) {
+func (p *kubernetesProvider) clusterAndNS(user, cluster string) (*api.Cluster, *kapi.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	ns, err := p.client.Namespaces().Get(NamespaceName(user, cluster))
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return nil, kerrors.NewNotFound("cluster", cluster)
+			return nil, nil, kerrors.NewNotFound("cluster", cluster)
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
 	c, err := UnmarshalCluster(p.cps, ns)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if c.Metadata.User != user {
 		// don't return Forbidden, not NotFound to obfuscate the existence
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, nil, kerrors.NewNotFound("cluster", cluster)
 	}
 
-	return c, nil
+	return c, ns, nil
+}
+
+func (p *kubernetesProvider) Cluster(user, cluster string) (*api.Cluster, error) {
+	c, _, err := p.clusterAndNS(user, cluster)
+	return c, err
+}
+
+func (p *kubernetesProvider) SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+	var err error
+	for r := updateRetries; r >= 0; r-- {
+		if r != updateRetries {
+			time.Sleep(500 * time.Millisecond)
+		}
+
+		var c *api.Cluster
+		var ns *kapi.Namespace
+		c, ns, err = p.clusterAndNS(user, cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		c.Spec.Cloud = cloud
+
+		ns, err = MarshalCluster(p.cps, c, ns)
+		if err != nil {
+			return nil, err
+		}
+
+		ns, err = p.client.Namespaces().Update(ns)
+		if err == nil {
+			c, err = UnmarshalCluster(p.cps, ns)
+			if err != nil {
+				return nil, err
+			}
+
+			return c, nil
+		}
+		if !kerrors.IsConflict(err) {
+			return nil, err
+		}
+	}
+	return nil, err
 }
 
 func (p *kubernetesProvider) Clusters(user string) ([]*api.Cluster, error) {

@@ -41,37 +41,44 @@ type CloudProvider interface {
 type KubernetesProvider interface {
 	NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
 	Cluster(user, cluster string) (*api.Cluster, error)
+	SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 	Clusters(user string) ([]*api.Cluster, error)
 	DeleteCluster(user, cluster string) error
 
 	Nodes(user, cluster string) ([]string, error)
 }
 
-// clusterCloudProviderName returns the provider name for the given cluster where
-// one of Cluster.Spec.Cloud.* is set
-func clusterCloudProviderName(c *api.Cluster) (string, error) {
-	if c.Spec.Cloud == nil {
+// ClusterCloudProviderName returns the provider name for the given CloudSpec
+func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
+	if spec == nil {
 		return "", nil
 	}
-
-	switch cloud := c.Spec.Cloud; {
-	case cloud.Fake != nil:
-		return FakeCloudProvider, nil
-	case cloud.Digitalocean != nil:
-		return DigitaloceanCloudProvider, nil
-	case cloud.BringYourOwn != nil:
-		return BringYourOwnCloudProvider, nil
-	case cloud.Linode != nil:
-		return LinodeCloudProvider, nil
+	clouds := []string{}
+	if spec.BringYourOwn != nil {
+		clouds = append(clouds, BringYourOwnCloudProvider)
 	}
-
-	return "", nil
+	if spec.Digitalocean != nil {
+		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if spec.Linode != nil {
+		clouds = append(clouds, LinodeCloudProvider)
+	}
+	if spec.Fake != nil {
+		clouds = append(clouds, FakeCloudProvider)
+	}
+	if len(clouds) == 0 {
+		return "", nil
+	}
+	if len(clouds) != 1 {
+		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
+	}
+	return clouds[0], nil
 }
 
 // ClusterCloudProvider returns the provider for the given cluster where
 // one of Cluster.Spec.Cloud.* is set
 func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (CloudProvider, error) {
-	name, err := clusterCloudProviderName(c)
+	name, err := ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}

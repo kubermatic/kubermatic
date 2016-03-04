@@ -82,6 +82,11 @@ func (b Routing) Register(mux *mux.Router) {
 		Handler(b.authenticated(b.clusterHandler()))
 
 	mux.
+		Methods("PUT").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/cloud").
+		Handler(b.authenticated(b.setCloudHandler()))
+
+	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(b.getAuthenticated(b.kubeconfigHandler()))
@@ -135,6 +140,17 @@ func (b Routing) clusterHandler() http.Handler {
 		b.ctx,
 		clusterEndpoint(b.kps, b.cps),
 		decodeClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(b.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Routing) setCloudHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		setCloudEndpoint(b.kps, b.cps),
+		decodeSetCloudReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),

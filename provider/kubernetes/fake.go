@@ -112,6 +112,15 @@ func (p *kubernetesFakeProvider) Cluster(user, cluster string) (*api.Cluster, er
 	return &c, nil
 }
 
+func (p *kubernetesFakeProvider) SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+	c, err := p.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+	c.Spec.Cloud = cloud
+	return c, nil
+}
+
 func (p *kubernetesFakeProvider) Clusters(user string) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

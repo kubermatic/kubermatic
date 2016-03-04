@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -49,6 +50,39 @@ func clusterEndpoint(
 		}
 
 		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			}
+			return nil, err
+		}
+
+		return c, nil
+	}
+}
+
+func setCloudEndpoint(
+	kps map[string]provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(setCloudReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		if req.provider != "" {
+			_, found := cps[req.provider]
+			if !found {
+				return nil, fmt.Errorf("invalid cloud provider %q", req.provider)
+			}
+
+			// TODO(sttts): add cloud credential smoke test
+		}
+
+		c, err := kp.SetCloud(req.user, req.cluster, &req.cloud)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -175,6 +209,33 @@ func decodeClusterReq(r *http.Request) (interface{}, error) {
 	req.dcReq = dr.(dcReq)
 
 	req.cluster = mux.Vars(r)["cluster"]
+
+	return req, nil
+}
+
+type setCloudReq struct {
+	clusterReq
+	provider string
+	cloud    api.CloudSpec
+}
+
+func decodeSetCloudReq(r *http.Request) (interface{}, error) {
+	var req setCloudReq
+
+	cr, err := decodeClusterReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.clusterReq = cr.(clusterReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.cloud); err != nil {
+		return nil, err
+	}
+
+	req.provider, err = provider.ClusterCloudProviderName(&req.cloud)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
