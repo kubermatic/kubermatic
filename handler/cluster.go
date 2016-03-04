@@ -79,7 +79,7 @@ func setCloudEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		if req.provider != "" {
+		if req.provider != "" && req.provider != provider.BringYourOwnCloudProvider {
 			if _, found := cps[req.provider]; !found {
 				return nil, fmt.Errorf("invalid cloud provider %q", req.provider)
 			}
@@ -246,7 +246,8 @@ func decodeSetCloudReq(r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 
-	if req.provider != "" && req.cloud.DC == "" {
+	if req.provider != "" && req.provider != provider.BringYourOwnCloudProvider &&
+		req.cloud.DC == "" {
 		return nil, errors.New("dc cannot be empty when a cloud provider is set")
 	}
 
