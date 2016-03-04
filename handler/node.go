@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
@@ -40,20 +39,17 @@ func nodesEndpoint(
 }
 
 type nodesReq struct {
-	dcReq
-	cluster string
+	clusterReq
 }
 
 func decodeNodesReq(r *http.Request) (interface{}, error) {
 	var req nodesReq
 
-	dr, err := decodeDcReq(r)
+	cr, err := decodeClusterReq(r)
 	if err != nil {
 		return nil, err
 	}
-	req.dcReq = dr.(dcReq)
-
-	req.cluster = mux.Vars(r)["cluster"]
+	req.clusterReq = cr.(clusterReq)
 
 	return req, nil
 }
