@@ -228,7 +228,7 @@ func decodeSetCloudReq(r *http.Request) (interface{}, error) {
 	}
 	req.clusterReq = cr.(clusterReq)
 
-	if err := json.NewDecoder(r.Body).Decode(&req.cloud); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&req.cloud); err != nil {
 		return nil, err
 	}
 
