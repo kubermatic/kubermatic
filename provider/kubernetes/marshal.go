@@ -25,16 +25,16 @@ const (
 	// namePrefix is the prefix string of every cluster namespace name.
 	namePrefix = "cluster"
 
-	urlAnnotation               = annotationPrefix + "url"           // kubermatic.io/url
-	tokenAnnotation             = annotationPrefix + "token"         // kubermatic.io/token
-	customAnnotationPrefix      = annotationPrefix + "annotation-"   // kubermatic.io/annotation-
-	cloudAnnotationPrefix       = annotationPrefix + "cloud-"        // kubermatic.io/cloud-
-	providerAnnotation          = cloudAnnotationPrefix + "provider" // kubermatic.io/cloud-provider
-	cloudDCAnnotation           = cloudAnnotationPrefix + "dc"       // kubermatic.io/cloud-dc
-	phaseTimestampAnnotation    = annotationPrefix + "phase-ts"      // kubermatic.io/phase-ts
-	healthAnnotation            = annotationPrefix + "health"        // kubermatic.io/health
-	userAnnotation              = annotationPrefix + "user"          // kubermatic.io/user
-	humanReadableNameAnnotation = annotationPrefix + "name"          // kubermatic.io/name
+	urlAnnotation               = annotationPrefix + "url"             // kubermatic.io/url
+	tokenAnnotation             = annotationPrefix + "token"           // kubermatic.io/token
+	customAnnotationPrefix      = annotationPrefix + "annotation-"     // kubermatic.io/annotation-
+	cloudAnnotationPrefix       = annotationPrefix + "cloud-provider-" // kubermatic.io/cloud-provider-
+	providerAnnotation          = annotationPrefix + "cloud-provider"  // kubermatic.io/cloud-provider
+	cloudDCAnnotation           = annotationPrefix + "cloud-dc"        // kubermatic.io/cloud-dc
+	phaseTimestampAnnotation    = annotationPrefix + "phase-ts"        // kubermatic.io/phase-ts
+	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
+	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
+	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
