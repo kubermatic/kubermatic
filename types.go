@@ -78,6 +78,7 @@ type FakeCloudSpec struct {
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
+	DC           string                 `json:"dc"`
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`

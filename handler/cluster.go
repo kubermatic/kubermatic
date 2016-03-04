@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -19,6 +20,10 @@ func newClusterEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReq)
+
+		if req.cluster.Spec.Cloud != nil {
+			return nil, NewBadRequest("new clusters cannot have a cloud assigned")
+		}
 
 		kp, found := kps[req.dc]
 		if !found {
@@ -62,6 +67,7 @@ func clusterEndpoint(
 }
 
 func setCloudEndpoint(
+	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
@@ -74,9 +80,12 @@ func setCloudEndpoint(
 		}
 
 		if req.provider != "" {
-			_, found := cps[req.provider]
-			if !found {
+			if _, found := cps[req.provider]; !found {
 				return nil, fmt.Errorf("invalid cloud provider %q", req.provider)
+			}
+
+			if _, found := dcs[req.cloud.DC]; !found {
+				return nil, fmt.Errorf("invalid node datacenter %q", req.cloud.DC)
 			}
 
 			// TODO(sttts): add cloud credential smoke test
@@ -235,6 +244,10 @@ func decodeSetCloudReq(r *http.Request) (interface{}, error) {
 	req.provider, err = provider.ClusterCloudProviderName(&req.cloud)
 	if err != nil {
 		return nil, err
+	}
+
+	if req.provider != "" && req.cloud.DC == "" {
+		return nil, errors.New("dc cannot be empty when a cloud provider is set")
 	}
 
 	return req, nil
