@@ -149,7 +149,7 @@ func (b Routing) clusterHandler() http.Handler {
 func (b Routing) setCloudHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		setCloudEndpoint(b.kps, b.cps),
+		setCloudEndpoint(b.dcs, b.kps, b.cps),
 		decodeSetCloudReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),

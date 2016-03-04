@@ -6,42 +6,42 @@ datacenters:
   do-ams2:
     location: Amsterdam
     country: NL
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: ams2
   do-ams3:
     location: Amsterdam
     country: NL
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: ams3
   do-fra1:
     location: Frankfurt
     country: DE
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: fra1
   do-ny1:
     location: New York
     country: US
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: ny1
   do-ny2:
     location: New York
     country: US
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: ny2
   do-ny3:
     location: New York
     country: US
-    provider: do
+    provider: digitalocean
     spec:
       digitalocean:
         region: ny3
