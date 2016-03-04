@@ -57,11 +57,12 @@ func (p *fakeCloudProvider) Cloud(as map[string]string) (*api.CloudSpec, error) 
 	return &c, nil
 }
 
-func (p *fakeCloudProvider) CreateNode(
+func (p *fakeCloudProvider) CreateNodes(
 	ctx context.Context,
 	cluster *api.Cluster,
 	spec *api.NodeSpec,
-) (*api.Node, error) {
+	instances int,
+) ([]*api.Node, error) {
 	return nil, errors.New("not implemented")
 }
 

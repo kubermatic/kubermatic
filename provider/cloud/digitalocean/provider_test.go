@@ -36,5 +36,5 @@ func TestCreate(t *testing.T) {
 	spec.Type = "512mb"
 
 	provider := NewDigitialoceanCloudProvider()
-	t.Log(provider.CreateNode(context.Background(), &cluster, &spec))
+	t.Log(provider.CreateNode(context.Background(), &cluster, &spec, 1))
 }
