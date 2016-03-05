@@ -24,7 +24,7 @@ type CloudSpecProvider interface {
 
 // NodeProvider declares methods for creating/listing nodes.
 type NodeProvider interface {
-	CreateNode(context.Context, *api.Cluster, *api.NodeSpec) (*api.Node, error)
+	CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error)
 	Nodes(context.Context, *api.Cluster) ([]*api.Node, error)
 }
 

@@ -56,12 +56,14 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 	return &c, nil
 }
 
-func (do *digitalocean) CreateNode(
+func (do *digitalocean) CreateNodes(
 	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec,
-) (*api.Node, error) {
+	cluster *api.Cluster, spec *api.NodeSpec, instances int,
+) ([]*api.Node, error) {
 	doSpec := cluster.Spec.Cloud.GetDigitalocean()
 	node := spec.Digitalocean
+
+	// TODO(sttts): implement instances support
 
 	t := token(doSpec.GetToken())
 	client := godo.NewClient(oauth2.NewClient(ctx, t))
@@ -91,7 +93,7 @@ func (do *digitalocean) CreateNode(
 	n.Metadata.Name = droplet.Name
 	n.Spec.Digitalocean = node
 
-	return &n, nil
+	return []*api.Node{&n}, nil
 }
 
 func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {

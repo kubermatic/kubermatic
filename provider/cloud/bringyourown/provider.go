@@ -35,10 +35,10 @@ func (do *bringyourown) Cloud(annotations map[string]string) (*api.CloudSpec, er
 	return &c, nil
 }
 
-func (do *bringyourown) CreateNode(
+func (do *bringyourown) CreateNodes(
 	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec,
-) (*api.Node, error) {
+	cluster *api.Cluster, spec *api.NodeSpec, instances int,
+) ([]*api.Node, error) {
 	return nil, errors.New("not implemented")
 }
 

@@ -100,6 +100,11 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(b.authenticated(b.nodesHandler()))
+
+	mux.
+		Methods("POST").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
+		Handler(b.authenticated(b.createNodesHandler()))
 }
 
 func (b Routing) datacentersHandler() http.Handler {
@@ -195,6 +200,17 @@ func (b Routing) nodesHandler() http.Handler {
 		b.ctx,
 		nodesEndpoint(b.kps, b.cps),
 		decodeNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(b.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Routing) createNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		createNodesEndpoint(b.kps, b.cps),
+		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),
