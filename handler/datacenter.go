@@ -78,8 +78,8 @@ func decodeDatacenterReq(r *http.Request) (interface{}, error) {
 func apiSpec(dc *provider.DatacenterMeta) *api.DatacenterSpec {
 	spec := &api.DatacenterSpec{
 		Location: dc.Location,
-		Country:     dc.Country,
-		Provider:    dc.Provider,
+		Country:  dc.Country,
+		Provider: dc.Provider,
 	}
 
 	switch {

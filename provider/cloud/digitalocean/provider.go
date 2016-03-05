@@ -20,7 +20,7 @@ const (
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
 
-type digitalocean struct{
+type digitalocean struct {
 	dcs map[string]provider.DatacenterMeta
 }
 

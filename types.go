@@ -61,7 +61,7 @@ type LinodeCloudSpec struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Token  string `json:"token"`
+	Token   string   `json:"token"`
 	SSHKeys []string `json:"sshKeys"`
 }
 
@@ -71,7 +71,7 @@ type BringYourOwnCloudSpec struct {
 
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
-	Token  string `json:"token,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.

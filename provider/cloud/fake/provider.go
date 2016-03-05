@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	tokenAnnotationKey  = "token"
+	tokenAnnotationKey = "token"
 )
 
 var _ provider.CloudProvider = (*fakeCloudProvider)(nil)
