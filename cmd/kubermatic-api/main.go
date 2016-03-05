@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// create CloudProviders
-	cps := cloud.Providers()
+	cps := cloud.Providers(dcs)
 
 	// create KubernetesProvider for each context in the kubeconfig
 	kps, err := kubernetes.Providers(*kubeconfig, cps)

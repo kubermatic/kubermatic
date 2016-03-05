@@ -8,10 +8,10 @@ import (
 )
 
 // Providers returns a map from cloud provider id to the actual provider.
-func Providers() provider.CloudRegistry {
+func Providers(dcs map[string]provider.DatacenterMeta) provider.CloudRegistry {
 	return map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
+		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(dcs),
 		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
 	}
 }

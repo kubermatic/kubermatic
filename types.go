@@ -34,6 +34,7 @@ type FakeNodeSpec struct {
 
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
+	DC           string                `json:"dc"`
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
@@ -56,7 +57,6 @@ type Node struct {
 // LinodeCloudSpec specifies access data to digital ocean.
 type LinodeCloudSpec struct {
 	Token string `json:"token,omitempty"`
-	DC    string `json:"dc,omitempty"`
 }
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
@@ -73,8 +73,6 @@ type BringYourOwnCloudSpec struct {
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token  string `json:"token,omitempty"`
-	Region string `json:"region,omitempty"`
-	DC     string `json:"dc,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
