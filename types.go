@@ -67,6 +67,7 @@ type DigitaloceanCloudSpec struct {
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct {
+	PrivateIntf string `json:"privateInterface"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
