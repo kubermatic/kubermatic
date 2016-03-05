@@ -93,3 +93,28 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (CloudPr
 
 	return cp, nil
 }
+
+// NodeCloudProviderName returns the provider name for the given node where
+// one of NodeSpec.Cloud.* is set
+func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
+	if spec == nil {
+		return "", nil
+	}
+	clouds := []string{}
+	if spec.BringYourOwn != nil {
+		clouds = append(clouds, BringYourOwnCloudProvider)
+	}
+	if spec.Digitalocean != nil {
+		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if spec.Fake != nil {
+		clouds = append(clouds, FakeCloudProvider)
+	}
+	if len(clouds) == 0 {
+		return "", nil
+	}
+	if len(clouds) != 1 {
+		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
+	}
+	return clouds[0], nil
+}

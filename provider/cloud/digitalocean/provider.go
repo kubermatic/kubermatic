@@ -63,6 +63,10 @@ func (do *digitalocean) CreateNodes(
 	doSpec := cluster.Spec.Cloud.GetDigitalocean()
 	node := spec.Digitalocean
 
+	if node.Type != "" {
+		return nil, errors.New("digitalocean node type cannot be specified on create")
+	}
+
 	// TODO(sttts): implement instances support
 
 	t := token(doSpec.GetToken())
@@ -75,9 +79,12 @@ func (do *digitalocean) CreateNodes(
 		cluster.Metadata.UID,
 	)
 
+	image := godo.DropletCreateImage{Slug: "coreos-stable"}
+	node.Type = image.Slug
+
 	createRequest := &godo.DropletCreateRequest{
 		Region:            doSpec.Region,
-		Image:             godo.DropletCreateImage{Slug: "coreos-stable"},
+		Image:             image,
 		Size:              node.Size,
 		PrivateNetworking: true,
 		SSHKeys:           dropletKeys(node.SSHKeys),
