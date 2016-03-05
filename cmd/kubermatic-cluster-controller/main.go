@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/kubermatic/api/controller/cluster"
+	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
@@ -19,12 +20,23 @@ func main() {
 	kubeconfig := flag.String("kubeconfig", path.Join(homeDir, ".kube/config"), "The kubeconfig file with a current context.")
 	masterResources := flag.String("master-resources", "", "The master resources path (required).")
 	urlPattern := flag.String("url-pattern", "https://%s.%s.kubermatic.io", "The fmt.Sprintf pattern for the url, interpolated with the cluster name and the dc.")
+	dcFile := flag.String("datacenters", "", "The datacenters.yaml file path")
 	flag.Parse()
 
 	if *masterResources == "" {
 		print("master-resources path is undefined\n\n")
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// load list of datacenters
+	dcs := map[string]provider.DatacenterMeta{}
+	if *dcFile != "" {
+		var err error
+		dcs, err = provider.DatacentersMeta(*dcFile)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// create controller for each context
@@ -53,7 +65,7 @@ func main() {
 		}
 
 		// start controller
-		cps := cloud.Providers()
+		cps := cloud.Providers(dcs)
 		ctrl, err := cluster.NewController(ctx, client, cps, *masterResources, *urlPattern)
 		if err != nil {
 			log.Fatal(err)
