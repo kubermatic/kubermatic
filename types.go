@@ -160,8 +160,8 @@ type BringYourOwnDatacenterSpec struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Description  string                       `json:"description,omitempty"`
 	Country      string                       `json:"country,omitempty"`
+	Location     string                       `json:"location,omitempty"`
 	Provider     string                       `json:"provider,omitempty"`
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
