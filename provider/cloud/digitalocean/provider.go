@@ -16,6 +16,7 @@ import (
 const (
 	tokenAnnotationKey  = "token"
 	regionAnnotationKey = "region"
+	sshKeysAnnotionsKey = "ssh-keys"
 )
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
@@ -32,12 +33,15 @@ func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]stri
 		// TODO(sur): change value to cloud.Digitalocean.Token, specified in the frontend by the user
 		tokenAnnotationKey:  "c465373bf74b4d8eca066c71b172a5ba19ddf4c7910a9f5a7b6e39e26697c2d6",
 		regionAnnotationKey: cloud.Digitalocean.Region,
+		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
 	}, nil
 }
 
 func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
-		Digitalocean: &api.DigitaloceanCloudSpec{},
+		Digitalocean: &api.DigitaloceanCloudSpec{
+			SSHKeys: []string{},
+		},
 	}
 
 	var ok bool
@@ -47,6 +51,10 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 
 	if c.Digitalocean.Region, ok = annotations[regionAnnotationKey]; !ok {
 		return nil, errors.New("no region found")
+	}
+
+	if s, ok := annotations[sshKeysAnnotionsKey]; ok && s != "" {
+		c.Digitalocean.SSHKeys = strings.Split(s, ",")
 	}
 
 	return &c, nil
