@@ -61,9 +61,8 @@ type LinodeCloudSpec struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Region string `json:"region"`
 	Token  string `json:"token"`
-	SSHKeys []string `json:"sshKeys,omitempty"`
+	SSHKeys []string `json:"sshKeys"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
