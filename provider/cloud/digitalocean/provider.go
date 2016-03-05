@@ -143,7 +143,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 
 	nodes := make([]*api.Node, 0, len(ds))
 	for _, d := range ds {
-		ss := strings.Split(d.Name, "-")
+		ss := strings.SplitN(d.Name, "-", 3)
 
 		switch {
 		case len(ss) != 3: // assuming kubermatic-%s-%s format, see CreateNode
