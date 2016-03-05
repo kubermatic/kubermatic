@@ -20,7 +20,7 @@ func main() {
 	kubeconfig := flag.String("kubeconfig", path.Join(homeDir, ".kube/config"), "The kubeconfig file with a current context.")
 	masterResources := flag.String("master-resources", "", "The master resources path (required).")
 	urlPattern := flag.String("url-pattern", "https://%s.%s.kubermatic.io", "The fmt.Sprintf pattern for the url, interpolated with the cluster name and the dc.")
-	dcFile := flag.String("datacenters", "", "The datacenters.yaml file path")
+	dcFile := flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.Parse()
 
 	if *masterResources == "" {
