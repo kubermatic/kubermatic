@@ -146,7 +146,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 		ss := strings.Split(d.Name, "-")
 
 		switch {
-		case len(ss) != 3: // assuming %s-%s-%s format, see CreateNode
+		case len(ss) != 3: // assuming kubermatic-%s-%s format, see CreateNode
 			continue
 		case ss[1] != cluster.Metadata.Name:
 			continue
