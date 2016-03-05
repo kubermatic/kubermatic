@@ -31,8 +31,6 @@ type NodeProvider interface {
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudProvider interface {
-	Name() string
-
 	CloudSpecProvider
 	NodeProvider
 }
@@ -77,21 +75,21 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 
 // ClusterCloudProvider returns the provider for the given cluster where
 // one of Cluster.Spec.Cloud.* is set
-func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (CloudProvider, error) {
+func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (string, CloudProvider, error) {
 	name, err := ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	if name == "" {
-		return nil, nil
+		return "", nil, nil
 	}
 
 	cp, found := cps[name]
 	if !found {
-		return nil, fmt.Errorf("unsupported cloud provider %q", name)
+		return "", nil, fmt.Errorf("unsupported cloud provider %q", name)
 	}
 
-	return cp, nil
+	return name, cp, nil
 }
 
 // NodeCloudProviderName returns the provider name for the given node where

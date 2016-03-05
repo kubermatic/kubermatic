@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api"
@@ -27,7 +27,7 @@ func nodesEndpoint(
 			return nil, err
 		}
 
-		cp, err := provider.ClusterCloudProvider(cps, c)
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func createNodesEndpoint(
 			return nil, err
 		}
 
-		cp, err := provider.ClusterCloudProvider(cps, c)
+		cpName, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
 		}
@@ -64,13 +64,13 @@ func createNodesEndpoint(
 			return nil, NewBadRequest("cannot create nodes without cloud provider")
 		}
 
-		np, err := provider.NodeCloudProviderName(&req.Spec)
+		npName, err := provider.NodeCloudProviderName(&req.Spec)
 		if err != nil {
 			return nil, err
 		}
-		if np != cp.Name() {
+		if npName != cpName {
 			return nil, NewBadRequest("cluster cloud provider %q and node cloud provider %q do not match",
-				cp.Name(), np)
+				cpName, npName)
 		}
 
 		return cp.CreateNodes(ctx, c, &req.Spec, req.Instances)

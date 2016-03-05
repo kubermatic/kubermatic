@@ -57,8 +57,8 @@ func LabelUser(user string) string {
 	return strings.TrimRight(user64, "=")
 }
 
-func cloudProviderAnnotationPrefix(cp provider.CloudProvider) string {
-	return cloudAnnotationPrefix + cp.Name() + "-"
+func cloudProviderAnnotationPrefix(name string) string {
+	return cloudAnnotationPrefix + name + "-"
 }
 
 // UnmarshalCluster decodes a Kubernetes namespace into a Kubermatic cluster.
@@ -109,15 +109,15 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 	}
 
 	// decode the cloud spec from annotations
-	provider, found := ns.Annotations[providerAnnotation]
+	cpName, found := ns.Annotations[providerAnnotation]
 	if found {
-		cp, found := cps[provider]
+		cp, found := cps[cpName]
 		if !found {
-			return nil, fmt.Errorf("unsupported cloud provider %q", provider)
+			return nil, fmt.Errorf("unsupported cloud provider %q", cpName)
 		}
 
 		var err error
-		c.Spec.Cloud, err = unmarshalClusterCloud(cp, ns.Annotations)
+		c.Spec.Cloud, err = unmarshalClusterCloud(cpName, cp, ns.Annotations)
 		if err != nil {
 			return nil, err
 		}
@@ -170,12 +170,12 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	}
 
 	// encode cloud spec
-	cp, err := provider.ClusterCloudProvider(cps, c)
+	cpName, cp, err := provider.ClusterCloudProvider(cps, c)
 	if err != nil {
 		return nil, err
 	}
 	if cp != nil {
-		cloudAs, err := marshalClusterCloud(cp, c)
+		cloudAs, err := marshalClusterCloud(cpName, cp, c)
 		if err != nil {
 			return nil, err
 		}
@@ -209,27 +209,27 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 }
 
 // marshalClusterCloud returns annotations to persist Spec.Cloud
-func marshalClusterCloud(cp provider.CloudProvider, c *api.Cluster) (map[string]string, error) {
+func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (map[string]string, error) {
 	cloudAs, err := cp.CreateAnnotations(c.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
 
-	prefix := cloudProviderAnnotationPrefix(cp)
+	prefix := cloudProviderAnnotationPrefix(cpName)
 	as := make(map[string]string, len(cloudAs))
 	for k, v := range cloudAs {
 		as[prefix+k] = v
 	}
 
-	as[providerAnnotation] = cp.Name()
+	as[providerAnnotation] = cpName
 	as[cloudDCAnnotation] = c.Spec.Cloud.DC
 
 	return as, nil
 }
 
 // unmarshalClusterCloud sets the Spec.Cloud field according to the annotations.
-func unmarshalClusterCloud(cp provider.CloudProvider, as map[string]string) (*api.CloudSpec, error) {
-	prefix := cloudProviderAnnotationPrefix(cp)
+func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, as map[string]string) (*api.CloudSpec, error) {
+	prefix := cloudProviderAnnotationPrefix(cpName)
 	cloudAs := map[string]string{}
 	for k, v := range as {
 		if strings.HasPrefix(k, prefix) {

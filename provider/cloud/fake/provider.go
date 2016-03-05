@@ -93,7 +93,3 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 	}
 	return nodes, nil
 }
-
-func (p *fakeCloudProvider) Name() string {
-	return provider.FakeCloudProvider
-}

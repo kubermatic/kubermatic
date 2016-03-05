@@ -19,10 +19,6 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (do *bringyourown) Name() string {
-	return provider.BringYourOwnCloudProvider
-}
-
 func (do *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{}, nil
 }

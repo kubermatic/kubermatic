@@ -27,10 +27,6 @@ func NewCloudProvider() provider.CloudProvider {
 	return &digitalocean{}
 }
 
-func (do *digitalocean) Name() string {
-	return provider.DigitaloceanCloudProvider
-}
-
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
 		// TODO(sur): change value to cloud.Digitalocean.Token, specified in the frontend by the user
