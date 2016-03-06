@@ -1,16 +1,21 @@
 package digitalocean
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strings"
-
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
+	"text/template"
 
 	"github.com/digitalocean/godo"
+	"github.com/golang/glog"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"k8s.io/kubernetes/pkg/util"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	ktemplate "github.com/kubermatic/api/template"
 )
 
 const (
@@ -33,8 +38,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
-		// TODO(sur): change value to cloud.Digitalocean.Token, specified in the frontend by the user
-		tokenAnnotationKey:  "c465373bf74b4d8eca066c71b172a5ba19ddf4c7910a9f5a7b6e39e26697c2d6",
+		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
 	}, nil
 }
@@ -62,35 +66,65 @@ func (do *digitalocean) CreateNodes(
 	ctx context.Context,
 	cluster *api.Cluster, spec *api.NodeSpec, instances int,
 ) ([]*api.Node, error) {
-	doSpec := cluster.Spec.Cloud.GetDigitalocean()
-
 	dc, found := do.dcs[spec.DC]
 	if !found || dc.Spec.Digitalocean == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", spec.DC)
 	}
+
 	if spec.Digitalocean.Type != "" {
 		return nil, errors.New("digitalocean node type cannot be specified on create")
 	}
 
-	// TODO(sttts): implement instances support
+	cSpec := cluster.Spec.Cloud.GetDigitalocean()
+	nSpec := spec.Digitalocean
 
-	t := token(doSpec.GetToken())
-	client := godo.NewClient(oauth2.NewClient(ctx, t))
-
+	id := string(util.NewUUID())
 	dropletName := fmt.Sprintf(
 		"kubermatic-%s-%s",
 		cluster.Metadata.Name,
-		cluster.Metadata.UID,
+		id,
 	)
 
+	glog.V(2).Infof("dropletName %q", dropletName)
+
 	image := godo.DropletCreateImage{Slug: "coreos-stable"}
+
+	data := ktemplate.Data{
+		SSHAuthorizedKeys: cSpec.SSHKeys,
+		EtcdURL:           cluster.Address.EtcdURL,
+		APIServerURL:      cluster.Address.URL,
+		KubeletToken:      cluster.Address.Token,
+		Region:            dc.Spec.Digitalocean.Region,
+		Name:              dropletName,
+	}
+
+	tpl, err := template.
+		New("cloud-config-node.yaml").
+		Funcs(ktemplate.FuncMap).
+		ParseFiles("template/coreos/cloud-config-node.yaml")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	if err = tpl.Execute(&buf, data); err != nil {
+		return nil, err
+	}
+
+	glog.V(2).Infof("---- template\n%s\n----", buf.String())
+
+	t := token(cSpec.GetToken())
+	client := godo.NewClient(oauth2.NewClient(ctx, t))
+
 	createRequest := &godo.DropletCreateRequest{
 		Region:            dc.Spec.Digitalocean.Region,
 		Image:             image,
-		Size:              spec.Digitalocean.Size,
+		Size:              nSpec.Size,
 		PrivateNetworking: true,
-		SSHKeys:           dropletKeys(spec.Digitalocean.SSHKeys),
+		SSHKeys:           dropletKeys(nSpec.SSHKeys),
 		Name:              dropletName,
+		UserData:          buf.String(),
 	}
 
 	droplet, _, err := client.Droplets.Create(createRequest)
@@ -100,7 +134,9 @@ func (do *digitalocean) CreateNodes(
 
 	n := api.Node{
 		Metadata: api.Metadata{
+			UID:  id,
 			Name: droplet.Name,
+			User: cluster.Metadata.User,
 		},
 		Spec: *spec,
 	}
