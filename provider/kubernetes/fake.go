@@ -34,9 +34,7 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 					Cloud: &api.CloudSpec{
 						DC: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
-							Token:  "983475982374895723958",
-							Region: "fra",
-							DC:     "1",
+							Token: "983475982374895723958",
 						},
 					},
 				},
@@ -64,9 +62,9 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 
 func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
 	return &api.DatacenterSpec{
-		Description: "Fakehausen",
-		Country:     "US",
-		Provider:    "fake",
+		Location: "Fakehausen",
+		Country:  "US",
+		Provider: "fake",
 	}
 }
 

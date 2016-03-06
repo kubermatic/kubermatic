@@ -15,33 +15,35 @@ import (
 
 const (
 	tokenAnnotationKey  = "token"
-	regionAnnotationKey = "region"
+	sshKeysAnnotionsKey = "ssh-keys"
 )
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
 
-type digitalocean struct{}
-
-// NewCloudProvider creates a new digitalocean provider.
-func NewCloudProvider() provider.CloudProvider {
-	return &digitalocean{}
+type digitalocean struct {
+	dcs map[string]provider.DatacenterMeta
 }
 
-func (do *digitalocean) Name() string {
-	return provider.DigitaloceanCloudProvider
+// NewCloudProvider creates a new digitalocean provider.
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+	return &digitalocean{
+		dcs: dcs,
+	}
 }
 
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
 		// TODO(sur): change value to cloud.Digitalocean.Token, specified in the frontend by the user
 		tokenAnnotationKey:  "c465373bf74b4d8eca066c71b172a5ba19ddf4c7910a9f5a7b6e39e26697c2d6",
-		regionAnnotationKey: cloud.Digitalocean.Region,
+		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
 	}, nil
 }
 
 func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
-		Digitalocean: &api.DigitaloceanCloudSpec{},
+		Digitalocean: &api.DigitaloceanCloudSpec{
+			SSHKeys: []string{},
+		},
 	}
 
 	var ok bool
@@ -49,8 +51,8 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 		return nil, errors.New("no token found")
 	}
 
-	if c.Digitalocean.Region, ok = annotations[regionAnnotationKey]; !ok {
-		return nil, errors.New("no region found")
+	if s, ok := annotations[sshKeysAnnotionsKey]; ok && s != "" {
+		c.Digitalocean.SSHKeys = strings.Split(s, ",")
 	}
 
 	return &c, nil
@@ -61,7 +63,14 @@ func (do *digitalocean) CreateNodes(
 	cluster *api.Cluster, spec *api.NodeSpec, instances int,
 ) ([]*api.Node, error) {
 	doSpec := cluster.Spec.Cloud.GetDigitalocean()
-	node := spec.Digitalocean
+
+	dc, found := do.dcs[spec.DC]
+	if !found || dc.Spec.Digitalocean == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", spec.DC)
+	}
+	if spec.Digitalocean.Type != "" {
+		return nil, errors.New("digitalocean node type cannot be specified on create")
+	}
 
 	// TODO(sttts): implement instances support
 
@@ -69,18 +78,18 @@ func (do *digitalocean) CreateNodes(
 	client := godo.NewClient(oauth2.NewClient(ctx, t))
 
 	dropletName := fmt.Sprintf(
-		"%s-%s-%s",
-		doSpec.Region,
+		"kubermatic-%s-%s",
 		cluster.Metadata.Name,
 		cluster.Metadata.UID,
 	)
 
+	image := godo.DropletCreateImage{Slug: "coreos-stable"}
 	createRequest := &godo.DropletCreateRequest{
-		Region:            doSpec.Region,
-		Image:             godo.DropletCreateImage{Slug: "coreos-stable"},
-		Size:              node.Size,
+		Region:            dc.Spec.Digitalocean.Region,
+		Image:             image,
+		Size:              spec.Digitalocean.Size,
 		PrivateNetworking: true,
-		SSHKeys:           dropletKeys(node.SSHKeys),
+		SSHKeys:           dropletKeys(spec.Digitalocean.SSHKeys),
 		Name:              dropletName,
 	}
 
@@ -89,9 +98,13 @@ func (do *digitalocean) CreateNodes(
 		return nil, err
 	}
 
-	n := api.Node{}
-	n.Metadata.Name = droplet.Name
-	n.Spec.Digitalocean = node
+	n := api.Node{
+		Metadata: api.Metadata{
+			Name: droplet.Name,
+		},
+		Spec: *spec,
+	}
+	spec.Digitalocean.Type = image.Slug
 
 	return []*api.Node{&n}, nil
 }
@@ -130,10 +143,10 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 
 	nodes := make([]*api.Node, 0, len(ds))
 	for _, d := range ds {
-		ss := strings.Split(d.Name, "-")
+		ss := strings.SplitN(d.Name, "-", 3)
 
 		switch {
-		case len(ss) != 3: // assuming %s-%s-%s format, see CreateNode
+		case len(ss) != 3: // assuming kubermatic-%s-%s format, see CreateNode
 			continue
 		case ss[1] != cluster.Metadata.Name:
 			continue

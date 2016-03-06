@@ -34,6 +34,7 @@ type FakeNodeSpec struct {
 
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
+	DC           string                `json:"dc"`
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
@@ -56,24 +57,22 @@ type Node struct {
 // LinodeCloudSpec specifies access data to digital ocean.
 type LinodeCloudSpec struct {
 	Token string `json:"token,omitempty"`
-	DC    string `json:"dc,omitempty"`
 }
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Region string `json:"region"`
-	Token  string `json:"token"`
+	Token   string   `json:"token"`
+	SSHKeys []string `json:"sshKeys"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct {
+	PrivateIntf string `json:"privateInterface"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
-	Token  string `json:"token,omitempty"`
-	Region string `json:"region,omitempty"`
-	DC     string `json:"dc,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -161,8 +160,8 @@ type BringYourOwnDatacenterSpec struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Description  string                       `json:"description,omitempty"`
 	Country      string                       `json:"country,omitempty"`
+	Location     string                       `json:"location,omitempty"`
 	Provider     string                       `json:"provider,omitempty"`
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`

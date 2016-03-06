@@ -27,7 +27,7 @@ func nodesEndpoint(
 			return nil, err
 		}
 
-		cp, err := provider.ClusterCloudProvider(cps, c)
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
 		}
@@ -56,12 +56,21 @@ func createNodesEndpoint(
 			return nil, err
 		}
 
-		cp, err := provider.ClusterCloudProvider(cps, c)
+		cpName, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
 		}
 		if cp == nil {
-			return []*api.Node{}, nil
+			return nil, NewBadRequest("cannot create nodes without cloud provider")
+		}
+
+		npName, err := provider.NodeCloudProviderName(&req.Spec)
+		if err != nil {
+			return nil, err
+		}
+		if npName != cpName {
+			return nil, NewBadRequest("cluster cloud provider %q and node cloud provider %q do not match",
+				cpName, npName)
 		}
 
 		return cp.CreateNodes(ctx, c, &req.Spec, req.Instances)

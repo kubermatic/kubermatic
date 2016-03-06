@@ -8,7 +8,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-const ()
+const (
+	privateIntfAnnotationKey = "private-interface"
+)
 
 var _ provider.CloudProvider = (*bringyourown)(nil)
 
@@ -19,17 +21,17 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (do *bringyourown) Name() string {
-	return provider.BringYourOwnCloudProvider
-}
-
 func (do *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
-	return map[string]string{}, nil
+	return map[string]string{
+		privateIntfAnnotationKey: cloud.BringYourOwn.PrivateIntf,
+	}, nil
 }
 
-func (do *bringyourown) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
+func (do *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
-		BringYourOwn: &api.BringYourOwnCloudSpec{},
+		BringYourOwn: &api.BringYourOwnCloudSpec{
+			PrivateIntf: as[privateIntfAnnotationKey],
+		},
 	}
 
 	return &c, nil
