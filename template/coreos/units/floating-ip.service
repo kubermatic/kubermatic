@@ -1,0 +1,6 @@
+[Unit]
+Description=Add the anchor ip for the floating ip
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'ifconfig eth0:anchor $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address) netmask $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/netmask)'
+ExecStartPost=/bin/bash -c 'route add -host $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address) gw $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/gateway)'

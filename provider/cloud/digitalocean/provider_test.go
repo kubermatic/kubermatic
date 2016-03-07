@@ -23,6 +23,7 @@ func TestCreate(t *testing.T) {
 		Metadata: api.Metadata{
 			Name: "test",
 			UID:  "1",
+			User: "sur",
 		},
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{

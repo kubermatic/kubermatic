@@ -35,6 +35,7 @@ const (
 	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
+	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcdUrl
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
@@ -102,9 +103,11 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
 		token, _ := ns.Annotations[tokenAnnotation]
+		etcdPort, _ := ns.Annotations[etcdURLAnnotation]
 		c.Address = &api.ClusterAddress{
-			URL:   url,
-			Token: token,
+			URL:     url,
+			Token:   token,
+			EtcdURL: etcdPort,
 		}
 	}
 
@@ -164,8 +167,13 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 		if c.Address.URL != "" {
 			ns.Annotations[urlAnnotation] = c.Address.URL
 		}
+
 		if c.Address.Token != "" {
 			ns.Annotations[tokenAnnotation] = c.Address.Token
+		}
+
+		if c.Address.EtcdURL != "" {
+			ns.Annotations[etcdURLAnnotation] = c.Address.EtcdURL
 		}
 	}
 
@@ -198,9 +206,11 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
+
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name
 	ns.Labels[userLabelKey] = LabelUser(c.Metadata.User)
+
 	if c.Status.Phase != api.UnknownClusterStatusPhase {
 		ns.Labels[phaseLabelKey] = strings.ToLower(string(c.Status.Phase))
 	}

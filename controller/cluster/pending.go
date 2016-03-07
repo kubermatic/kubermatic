@@ -56,7 +56,7 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 		}
 
 		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf(cc.urlPattern, c.Metadata.Name, cc.dc),
+			URL:   fmt.Sprintf("https://"+cc.urlPattern, c.Metadata.Name, cc.dc),
 			Token: trimmedToken64,
 		}
 
@@ -131,7 +131,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
+func (cc *clusterController) pendingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	loadFile := func(s string) (*kapi.Service, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-service.yaml"))
 		if err != nil {
@@ -155,7 +155,7 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.serviceStore.GetByKey(key)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if exists {
@@ -165,18 +165,32 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) error {
 
 		services, err := gen(s)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = cc.client.Services(ns).Create(services)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		cc.recordClusterEvent(c, "pending", "Created service %q", s)
 	}
 
-	return nil
+	if c.Address.EtcdURL != "" {
+		return nil, nil
+	}
+
+	p, err := servicePort(cc.serviceStore, ns+"/etcd-public", "clients")
+	if err != nil {
+		return nil, err
+	}
+
+	c.Address.EtcdURL = fmt.Sprintf(
+		"http://"+cc.urlPattern+":%d",
+		c.Metadata.Name, cc.dc, p,
+	)
+
+	return c, nil
 }
 
 func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
@@ -345,21 +359,15 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, error) {
 	changedC, err := cc.pendingCheckTimeout(c)
-	if err != nil {
-		return nil, err
-	}
-	if changedC != nil {
-		return changedC, nil
+	if err != nil || changedC != nil {
+		return changedC, err
 	}
 
 	// create token-users first and also persist immediately because this
 	// changes the cluster. The later secrets and other resources don't.
 	changedC, err = cc.pendingCheckTokenUsers(c)
-	if err != nil {
+	if err != nil || changedC != nil {
 		return changedC, err
-	}
-	if changedC != nil {
-		return changedC, nil
 	}
 
 	// check that all secrets are available
@@ -369,9 +377,9 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 	}
 
 	// check that all services are available
-	err = cc.pendingCheckServices(c)
-	if err != nil {
-		return nil, err
+	changedC, err = cc.pendingCheckServices(c)
+	if err != nil || changedC != nil {
+		return changedC, err
 	}
 
 	// check that the ingress is available
@@ -391,6 +399,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 	if err != nil {
 		return nil, err
 	}
+
 	if health != nil && (c.Status.Health == nil ||
 		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
 		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
@@ -398,6 +407,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 		c.Status.Health.LastTransitionTime = time.Now()
 		changedC = c
 	}
+
 	if !allHealthy {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Metadata.Name, c.Status.Health)
 		return changedC, nil
