@@ -11,7 +11,7 @@ import (
 )
 
 // FuncMap defines the available functions to kubermatic templates.
-var FuncMap template.FuncMap = template.FuncMap{
+var FuncMap = template.FuncMap{
 	"readLinesTemplate":  readLinesTemplate,
 	"readBase64":         readBase64,
 	"readBase64Gzip":     readBase64Gzip,
@@ -43,7 +43,9 @@ func readLinesTemplate(data interface{}, path string) (lines []string) {
 		}
 
 		var buf bytes.Buffer
-		t.Execute(&buf, data)
+		if err := t.Execute(&buf, data); err != nil {
+			panic(err)
+		}
 
 		lines = append(lines, buf.String())
 	}
@@ -61,11 +63,19 @@ func readBase64(paths ...string) string {
 			panic(err)
 		}
 
-		io.Copy(b64, f)
-		f.Close()
+		if _, err := io.Copy(b64, f); err != nil {
+			panic(err)
+		}
+
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
 	}
 
-	b64.Close()
+	if err := b64.Close(); err != nil {
+		panic(err)
+	}
+
 	return buf.String()
 }
 
@@ -80,12 +90,22 @@ func readBase64Gzip(paths ...string) string {
 			panic(err)
 		}
 
-		io.Copy(gz, f)
-		f.Close()
+		if _, err := io.Copy(gz, f); err != nil {
+			panic(err)
+		}
+
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
 	}
 
-	gz.Close()
-	b64.Close()
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
+	if err := b64.Close(); err != nil {
+		panic(err)
+	}
 
 	return buf.String()
 }
@@ -102,7 +122,10 @@ func readBase64Template(data interface{}, filename string) string {
 	if err := t.Execute(b64, data); err != nil {
 		panic(err)
 	}
-	b64.Close()
+
+	if err := b64.Close(); err != nil {
+		panic(err)
+	}
 
 	return buf.String()
 }
