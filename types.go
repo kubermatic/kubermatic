@@ -42,7 +42,6 @@ type NodeSpec struct {
 
 // NodeStatus stores status informations about a node.
 type NodeStatus struct {
-	Online    bool              `json:"online"`
 	Hostname  string            `json:"hostname"`
 	Addresses map[string]string `json:"addresses"`
 }
