@@ -11,7 +11,6 @@ import (
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"k8s.io/kubernetes/pkg/util"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -78,7 +77,7 @@ func (do *digitalocean) CreateNodes(
 	cSpec := cluster.Spec.Cloud.GetDigitalocean()
 	nSpec := spec.Digitalocean
 
-	id := string(util.NewUUID())
+	id := provider.ShortUID(5)
 	dropletName := fmt.Sprintf(
 		"kubermatic-%s-%s",
 		cluster.Metadata.Name,
@@ -132,11 +131,26 @@ func (do *digitalocean) CreateNodes(
 		return nil, err
 	}
 
+	publicIP, err := droplet.PublicIPv4()
+	if err != nil {
+		return nil, err
+	}
+	privateIP, err := droplet.PrivateIPv4()
+	if err != nil {
+		return nil, err
+	}
+
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  id,
-			Name: droplet.Name,
+			Name: privateIP,
 			User: cluster.Metadata.User,
+		},
+		Status: api.NodeStatus{
+			Addresses: map[string]string{
+				"public":  publicIP,
+				"private": privateIP,
+			},
 		},
 		Spec: *spec,
 	}
