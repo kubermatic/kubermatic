@@ -48,3 +48,11 @@ In order to use incremental compilation one can compile a binary as follows:
 $ make GOBUILD="go install" kubermatic-api
 ```
 Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depending on what you want to build.
+
+# Misc
+
+## Upload to S3
+
+```
+s3cmd put -P --multipart-chunk-size-mb=1 etcd2-proxy-proxy s3://kubermatic/coreos/etcd2-proxy-proxy
+```
