@@ -24,5 +24,6 @@ func decodeUserReq(r *http.Request) (interface{}, error) {
 		return nil, fmt.Errorf("No user in JWT in request %v", r)
 	}
 	glog.V(6).Infof("Request for user %q", req.user)
+	glog.V(7).Infof("Request for user %q, token %+v", req.user, token)
 	return req, nil
 }

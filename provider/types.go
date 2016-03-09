@@ -42,11 +42,9 @@ type KubernetesProvider interface {
 	SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 	Clusters(user string) ([]*api.Cluster, error)
 	DeleteCluster(user, cluster string) error
-
-	Nodes(user, cluster string) ([]string, error)
 }
 
-// ClusterCloudProviderName returns the provider name for the given CloudSpec
+// ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	if spec == nil {
 		return "", nil
@@ -74,7 +72,7 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 }
 
 // ClusterCloudProvider returns the provider for the given cluster where
-// one of Cluster.Spec.Cloud.* is set
+// one of Cluster.Spec.Cloud.* is set.
 func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (string, CloudProvider, error) {
 	name, err := ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
@@ -93,7 +91,7 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (string,
 }
 
 // NodeCloudProviderName returns the provider name for the given node where
-// one of NodeSpec.Cloud.* is set
+// one of NodeSpec.Cloud.* is set.
 func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec == nil {
 		return "", nil
@@ -113,6 +111,27 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	}
 	if len(clouds) != 1 {
 		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
+	}
+	return clouds[0], nil
+}
+
+// DatacenterProviderName returns the provider name for the given Datacenter.
+func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
+	if spec == nil {
+		return "", nil
+	}
+	clouds := []string{}
+	if spec.BringYourOwn != nil {
+		clouds = append(clouds, BringYourOwnCloudProvider)
+	}
+	if spec.Digitalocean != nil {
+		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if len(clouds) == 0 {
+		return "", nil
+	}
+	if len(clouds) != 1 {
+		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
 	}
 	return clouds[0], nil
 }

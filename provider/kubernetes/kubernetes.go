@@ -215,7 +215,3 @@ func (p *kubernetesProvider) DeleteCluster(user, cluster string) error {
 
 	return p.client.Namespaces().Delete(NamespaceName(user, cluster))
 }
-
-func (p *kubernetesProvider) Nodes(user, cluster string) ([]string, error) {
-	return []string{}, nil
-}

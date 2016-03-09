@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -21,12 +23,18 @@ func datacentersEndpoint(
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
+			spec, err := apiSpec(&dc)
+			if err != nil {
+				glog.Errorf("api spec error in dc %q: %v", dcName, err)
+				continue
+			}
+
 			adc := api.Datacenter{
 				Metadata: api.Metadata{
 					Name:     dcName,
 					Revision: "1",
 				},
-				Spec: *apiSpec(&dc),
+				Spec: *spec,
 				Seed: kpFound,
 			}
 			adcs = append(adcs, adc)
@@ -51,12 +59,17 @@ func datacenterEndpoint(
 
 		_, kpFound := kps[req.dc]
 
+		spec, err := apiSpec(&dc)
+		if err != nil {
+			return nil, fmt.Errorf("api spec error in dc %q: %v", req.dc, err)
+		}
+
 		return &api.Datacenter{
 			Metadata: api.Metadata{
 				Name:     req.dc,
 				Revision: "1",
 			},
-			Spec: *apiSpec(&dc),
+			Spec: *spec,
 			Seed: kpFound,
 		}, nil
 	}
@@ -75,11 +88,15 @@ func decodeDatacenterReq(r *http.Request) (interface{}, error) {
 	}, nil
 }
 
-func apiSpec(dc *provider.DatacenterMeta) *api.DatacenterSpec {
+func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
+	p, err := provider.DatacenterCloudProviderName(&dc.Spec)
+	if err != nil {
+		return nil, err
+	}
 	spec := &api.DatacenterSpec{
 		Location: dc.Location,
 		Country:  dc.Country,
-		Provider: dc.Provider,
+		Provider: p,
 	}
 
 	switch {
@@ -91,5 +108,5 @@ func apiSpec(dc *provider.DatacenterMeta) *api.DatacenterSpec {
 		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
 	}
 
-	return spec
+	return spec, nil
 }

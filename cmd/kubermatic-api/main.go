@@ -21,6 +21,7 @@ func main() {
 	kubeconfig := flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	auth := flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
 	dcFile := flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	secretsFile := flag.String("secrets", "secrets.yaml", "The secrets.yaml file path")
 	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	address := flag.String("address", ":8080", "The address to listen on")
 	flag.Parse()
@@ -39,7 +40,7 @@ func main() {
 	cps := cloud.Providers(dcs)
 
 	// create KubernetesProvider for each context in the kubeconfig
-	kps, err := kubernetes.Providers(*kubeconfig, cps)
+	kps, err := kubernetes.Providers(*kubeconfig, dcs, cps, *secretsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
