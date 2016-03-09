@@ -7,34 +7,62 @@ ssh_authorized_keys:
 coreos:
   flannel:
     interface: $private_ipv4
-    etcd_endpoints: "{{.EtcdURL}}"
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   fleet:
     metadata: role=node,hostname={{.Name}},region={{.Region}},private_ipv4=$private_ipv4
-    etcd_servers: "{{.EtcdURL}}"
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   locksmith:
-    endpoint: "{{.EtcdURL}}"
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   units:
     - name: flanneld.service
       command: start
+      enable: true
       drop-ins:
         - name: 50-network-config.conf
           content: |
+            [Unit]
+            Requires=etcd2.service
+
             [Service]
-            ExecStartPre=/usr/bin/etcdctl --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key  -C {{.EtcdURL}} --no-sync set /coreos.com/network/config '{ "Network": "10.0.0.0/16" }'
+            ExecStartPre=/usr/bin/etcdctl --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key -C http://127.0.0.1:2379 set /coreos.com/network/config '{ "Network": "172.17.0.0/16" }'
+
+    - name: etcd2-proxy-proxy-download.service
+      command: start
+      content: |
+        [Unit]
+        Description=etcd2-proxy-proxy downloader
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStartPre=/usr/bin/mkdir -p /opt/bin
+        ExecStart=/bin/bash -c "test -x /opt/bin/etcd2-proxy-proxy || /usr/bin/curl -L -o /opt/bin/etcd2-proxy-proxy https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/etcd2-proxy-proxy && /usr/bin/chmod +x /opt/bin/etcd2-proxy-proxy"
+
+        [Install]
+        WantedBy=multi-user.target
 
     - name: etcd2.service
+      enable: true
       command: start
+      drop-ins:
+        - name: 10-etcd2-proxy-proxy.conf
+          content: |
+            [Unit]
+            Requires=etcd2-proxy-proxy-download.service
+            After=etcd2-proxy-proxy-download.service
+
+            [Service]
+            ExecStart=
+            ExecStart=/opt/bin/etcd2-proxy-proxy -upstream={{.EtcdURL}} -upstream-key-file=/etc/ssl/etcd/client.key -upstream-cert-file=/etc/ssl/etcd/client.crt
 
     - name: fleet.service
+      enable: true
       command: start
 
     - name: floating-ip.service
