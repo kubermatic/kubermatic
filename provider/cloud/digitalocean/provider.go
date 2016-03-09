@@ -61,6 +61,39 @@ func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, er
 	return &c, nil
 }
 
+func node(dc string, d *godo.Droplet) (*api.Node, error) {
+	publicIP, err := d.PublicIPv4()
+	if err != nil {
+		return nil, err
+	}
+	privateIP, err := d.PrivateIPv4()
+	if err != nil {
+		return nil, err
+	}
+
+	n := api.Node{
+		Metadata: api.Metadata{
+			UID:  d.Name,
+			Name: privateIP,
+		},
+		Status: api.NodeStatus{
+			Addresses: map[string]string{
+				"public":  publicIP,
+				"private": privateIP,
+			},
+		},
+		Spec: api.NodeSpec{
+			DC: dc,
+			Digitalocean: &api.DigitaloceanNodeSpec{
+				Type: d.Image.Slug,
+				Size: d.Size.Slug,
+			},
+		},
+	}
+
+	return &n, nil
+}
+
 func (do *digitalocean) CreateNodes(
 	ctx context.Context,
 	cluster *api.Cluster, spec *api.NodeSpec, instances int,
@@ -131,32 +164,12 @@ func (do *digitalocean) CreateNodes(
 		return nil, err
 	}
 
-	publicIP, err := droplet.PublicIPv4()
-	if err != nil {
-		return nil, err
-	}
-	privateIP, err := droplet.PrivateIPv4()
+	n, err := node(cluster.Spec.Cloud.DC, droplet)
 	if err != nil {
 		return nil, err
 	}
 
-	n := api.Node{
-		Metadata: api.Metadata{
-			UID:  id,
-			Name: privateIP,
-			User: cluster.Metadata.User,
-		},
-		Status: api.NodeStatus{
-			Addresses: map[string]string{
-				"public":  publicIP,
-				"private": privateIP,
-			},
-		},
-		Spec: *spec,
-	}
-	spec.Digitalocean.Type = image.Slug
-
-	return []*api.Node{&n}, nil
+	return []*api.Node{n}, nil
 }
 
 func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
@@ -202,19 +215,11 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 			continue
 		}
 
-		n := &api.Node{
-			Metadata: api.Metadata{
-				Name: d.Name,
-				UID:  ss[2],
-			},
-			Spec: api.NodeSpec{
-				Digitalocean: &api.DigitaloceanNodeSpec{
-					Type: d.Image.Slug,
-					Size: d.Size.Slug,
-				},
-			},
+		n, err := node(cluster.Spec.Cloud.DC, &d)
+		if err != nil {
+			glog.Error(err)
+			continue
 		}
-
 		nodes = append(nodes, n)
 	}
 
