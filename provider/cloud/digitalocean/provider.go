@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -73,7 +74,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 
 	n := api.Node{
 		Metadata: api.Metadata{
-			UID:  d.Name,
+			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
 			Name: privateIP,
 		},
 		Status: api.NodeStatus{
@@ -184,6 +185,34 @@ func (do *digitalocean) CreateNodes(
 }
 
 func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
+	return nil
+}
+
+func (do *digitalocean) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
+	doSpec := c.Spec.Cloud.GetDigitalocean()
+	t := token(doSpec.GetToken())
+	client := godo.NewClient(oauth2.NewClient(ctx, t))
+
+	for _, UID := range UIDs {
+		ss := strings.SplitN(UID, "-", 4)
+
+		switch {
+		case len(ss) != 4: // assuming kubermatic-%s-%s-%d format, see CreateNode and node
+			continue
+		case ss[1] != c.Metadata.Name:
+			continue
+		}
+
+		id, err := strconv.Atoi(ss[3])
+		if err != nil {
+			return err
+		}
+
+		if _, err := client.Droplets.Delete(id); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -33,6 +33,7 @@ type CloudSpecProvider interface {
 type NodeProvider interface {
 	CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error)
 	Nodes(context.Context, *api.Cluster) ([]*api.Node, error)
+	DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error
 }
 
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes

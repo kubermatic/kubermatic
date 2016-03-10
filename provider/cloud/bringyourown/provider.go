@@ -79,3 +79,7 @@ func (do *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
 func (do *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	return []*api.Node{}, nil
 }
+
+func (b *bringyourown) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
+	return errors.New("delete: unsupported operation")
+}
