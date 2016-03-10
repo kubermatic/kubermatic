@@ -72,7 +72,7 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -98,7 +98,7 @@ func (p *kubernetesFakeProvider) NewCluster(user, cluster string, spec *api.Clus
 	return &c, nil
 }
 
-func (p *kubernetesFakeProvider) Cluster(user, cluster string) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -111,7 +111,7 @@ func (p *kubernetesFakeProvider) Cluster(user, cluster string) (*api.Cluster, er
 	return &c, nil
 }
 
-func (p *kubernetesFakeProvider) SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
 	c, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (p *kubernetesFakeProvider) SetCloud(user, cluster string, cloud *api.Cloud
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) Clusters(user string) ([]*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -132,7 +132,7 @@ func (p *kubernetesFakeProvider) Clusters(user string) ([]*api.Cluster, error) {
 	return cs, nil
 }
 
-func (p *kubernetesFakeProvider) DeleteCluster(user, cluster string) error {
+func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -144,6 +144,6 @@ func (p *kubernetesFakeProvider) DeleteCluster(user, cluster string) error {
 	return nil
 }
 
-func (p *kubernetesFakeProvider) Nodes(user, cluster string) ([]string, error) {
+func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]string, error) {
 	return []string{}, nil
 }

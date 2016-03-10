@@ -6,46 +6,49 @@ datacenters:
   do-ams2:
     location: Amsterdam
     country: NL
-    provider: digitalocean
     spec:
       digitalocean:
         region: ams2
+        seed:
+          sshKeys:
+          - 93:17:f1:16:e2:43:a8:0c:24:ef:64:ba:09:74:f2:41 # sts@tarski
+          - da:8d:b7:50:1e:5e:03:ed:a4:78:e9:b4:34:44:9d:12 # grimlok
+          - 24:fa:e3:ba:49:cb:45:8b:30:74:ff:91:58:d8:55:df # k8s
   do-ams3:
     location: Amsterdam
     country: NL
-    provider: digitalocean
     spec:
       digitalocean:
         region: ams3
   do-fra1:
     location: Frankfurt
     country: DE
-    provider: digitalocean
     spec:
       digitalocean:
         region: fra1
   do-ny1:
     location: New York
     country: US
-    provider: digitalocean
     spec:
       digitalocean:
         region: ny1
   do-ny2:
     location: New York
     country: US
-    provider: digitalocean
     spec:
       digitalocean:
         region: ny2
   do-ny3:
     location: New York
     country: US
-    provider: digitalocean
     spec:
       digitalocean:
         region: ny3
   bringyourown:
-    provider: bringyourown
+    spec:
+      bringyourown:
+        privateInterface: eth0:1
+  seed:
+    private: true
     spec:
       bringyourown:

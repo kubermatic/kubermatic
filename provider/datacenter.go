@@ -11,10 +11,17 @@ import (
 // DigitaloceanSpec describes a digital ocean datacenter
 type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
+
+	Seed struct {
+		SSHKeys []string `yaml:"sshKeys"`
+	} `yaml:"seed"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
 type BringYourOwnSpec struct {
+	Seed struct {
+		PrivateIntf string `yaml:"privateInterface"`
+	} `yaml:"seed"`
 }
 
 // DatacenterSpec describes mutually points to provider datacenter spec
@@ -27,8 +34,8 @@ type DatacenterSpec struct {
 type DatacenterMeta struct {
 	Location string         `yaml:"location"`
 	Country  string         `yaml:"country"`
-	Provider string         `yaml:"provider"`
 	Spec     DatacenterSpec `yaml:"spec"`
+	Private  bool           `yaml:"private"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.

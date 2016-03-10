@@ -122,7 +122,7 @@ func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
 		datacenterEndpoint(b.dcs, b.kps, b.cps),
-		decodeDatacenterReq,
+		decodeDcReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),

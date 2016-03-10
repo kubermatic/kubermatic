@@ -148,24 +148,6 @@ func deleteClusterEndpoint(
 	}
 }
 
-type dcReq struct {
-	userReq
-	dc string
-}
-
-func decodeDcReq(r *http.Request) (interface{}, error) {
-	var req dcReq
-
-	dr, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = dr.(userReq)
-
-	req.dc = mux.Vars(r)["dc"]
-	return req, nil
-}
-
 type newClusterReq struct {
 	dcReq
 	cluster api.Cluster
