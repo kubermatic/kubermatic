@@ -34,7 +34,8 @@ func Providers(
 			&clientcmd.ConfigOverrides{},
 		)
 
-		cfg, err := clientconfig.ClientConfig()
+		var cfg *client.Config
+		cfg, err = clientconfig.ClientConfig()
 		if err != nil {
 			return nil, err
 		}

@@ -16,6 +16,12 @@ const (
 	LinodeCloudProvider       = "linode"
 )
 
+// User represents an API user that is used for authentication.
+type User struct {
+	Name  string
+	Roles map[string]struct{}
+}
+
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
 	CreateAnnotations(*api.CloudSpec) (map[string]string, error)
@@ -37,11 +43,11 @@ type CloudProvider interface {
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
-	NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
-	Cluster(user, cluster string) (*api.Cluster, error)
-	SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
-	Clusters(user string) ([]*api.Cluster, error)
-	DeleteCluster(user, cluster string) error
+	NewCluster(user User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
+	Cluster(user User, cluster string) (*api.Cluster, error)
+	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
+	Clusters(user User) ([]*api.Cluster, error)
+	DeleteCluster(user User, cluster string) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
@@ -115,7 +121,7 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	return clouds[0], nil
 }
 
-// DatacenterProviderName returns the provider name for the given Datacenter.
+// DatacenterCloudProviderName returns the provider name for the given Datacenter.
 func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	if spec == nil {
 		return "", nil

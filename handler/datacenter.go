@@ -18,10 +18,17 @@ func datacentersEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(dcsReq)
+
 		adcs := make([]api.Datacenter, 0, len(kps))
 		for dcName := range dcs {
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
+
+			if _, isAdmin := req.user.Roles["admin"]; dc.Private && !isAdmin {
+				glog.V(7).Infof("Hiding dc %q for non-admin user", dcName, req.user.Name)
+				continue
+			}
 
 			spec, err := apiSpec(&dc)
 			if err != nil {
@@ -57,6 +64,10 @@ func datacenterEndpoint(
 			return nil, NewNotFound("datacenter", req.dc)
 		}
 
+		if _, isAdmin := req.user.Roles["admin"]; dc.Private && !isAdmin {
+			return nil, NewNotFound("datacenter", req.dc)
+		}
+
 		_, kpFound := kps[req.dc]
 
 		spec, err := apiSpec(&dc)
@@ -76,16 +87,37 @@ func datacenterEndpoint(
 }
 
 type dcsReq struct {
+	userReq
 }
 
 func decodeDatacentersReq(r *http.Request) (interface{}, error) {
-	return dcsReq{}, nil
+	var req dcsReq
+
+	ur, err := decodeUserReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.userReq = ur.(userReq)
+
+	return req, nil
 }
 
-func decodeDatacenterReq(r *http.Request) (interface{}, error) {
-	return dcReq{
-		dc: mux.Vars(r)["dc"],
-	}, nil
+type dcReq struct {
+	userReq
+	dc string
+}
+
+func decodeDcReq(r *http.Request) (interface{}, error) {
+	var req dcReq
+
+	dr, err := decodeUserReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.userReq = dr.(userReq)
+
+	req.dc = mux.Vars(r)["dc"]
+	return req, nil
 }
 
 func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {

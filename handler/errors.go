@@ -38,6 +38,11 @@ func NewConflict(kind, dc, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q in dc %q already exists", kind, name, dc)}
 }
 
+// NewNotAuthorized creates a HTTP 403 error.
+func NewNotAuthorized() error {
+	return HTTPError{http.StatusForbidden, "not authorized"}
+}
+
 func defaultHTTPErrorEncoder() httptransport.ServerOption {
 	return httptransport.ServerErrorEncoder(
 		func(w http.ResponseWriter, err error) {

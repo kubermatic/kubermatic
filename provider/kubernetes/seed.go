@@ -2,11 +2,10 @@ package kubernetes
 
 import (
 	"errors"
-	"log"
-	"sync"
-
 	"fmt"
+	"log"
 	"strings"
+	"sync"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -66,7 +65,7 @@ func NewSeedProvider(
 		case provider.DigitaloceanCloudProvider:
 			token, found := secrets.Tokens[dcName]
 			if !found {
-				log.Fatal("cannot find dc %q in secret tokens", dcName)
+				log.Fatalf("cannot find dc %q in secret tokens", dcName)
 			}
 			c.Spec.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   token,
@@ -85,12 +84,16 @@ func NewSeedProvider(
 	}
 }
 
-func (p *seedProvider) NewCluster(user, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *seedProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		return nil, kerrors.NewNotFound("cluster", cluster)
+	}
+
 	return nil, errors.New("not implemented")
 }
 
-func (p *seedProvider) Cluster(user, cluster string) (*api.Cluster, error) {
-	if user != "seeds" {
+func (p *seedProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
 		return nil, kerrors.NewNotFound("cluster", cluster)
 	}
 
@@ -104,13 +107,17 @@ func (p *seedProvider) Cluster(user, cluster string) (*api.Cluster, error) {
 	return c, nil
 }
 
-func (p *seedProvider) SetCloud(user, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+func (p *seedProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		return nil, kerrors.NewNotFound("cluster", cluster)
+	}
+
 	return nil, errors.New("not implemented")
 }
 
-func (p *seedProvider) Clusters(user string) ([]*api.Cluster, error) {
-	if user != "seeds" {
-		return []*api.Cluster{}, nil
+func (p *seedProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		return nil, errors.New("forbidden to access clusters")
 	}
 
 	p.mu.Lock()
@@ -124,6 +131,10 @@ func (p *seedProvider) Clusters(user string) ([]*api.Cluster, error) {
 	return cs, nil
 }
 
-func (p *seedProvider) DeleteCluster(user, cluster string) error {
+func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		return kerrors.NewNotFound("cluster", cluster)
+	}
+
 	return errors.New("not implemented")
 }

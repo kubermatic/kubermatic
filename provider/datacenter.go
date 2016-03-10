@@ -35,6 +35,7 @@ type DatacenterMeta struct {
 	Location string         `yaml:"location"`
 	Country  string         `yaml:"country"`
 	Spec     DatacenterSpec `yaml:"spec"`
+	Private  bool           `yaml:"private"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.

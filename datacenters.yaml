@@ -48,3 +48,7 @@ datacenters:
     spec:
       bringyourown:
         privateInterface: eth0:1
+  seed:
+    private: true
+    spec:
+      bringyourown:
