@@ -25,7 +25,7 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (do *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (b *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		privateIntfAnnotationKey: cloud.BringYourOwn.PrivateIntf,
 	}
@@ -39,7 +39,7 @@ func (do *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]stri
 	return as, nil
 }
 
-func (do *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
+func (b *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		BringYourOwn: &api.BringYourOwnCloudSpec{
 			PrivateIntf: as[privateIntfAnnotationKey],
@@ -57,14 +57,14 @@ func (do *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
 	return &c, nil
 }
 
-func (do *bringyourown) CreateNodes(
+func (b *bringyourown) CreateNodes(
 	ctx context.Context,
 	cluster *api.Cluster, spec *api.NodeSpec, instances int,
 ) ([]*api.Node, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (do *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
+func (b *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
 	if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
 		clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
 		if err != nil {
@@ -76,7 +76,7 @@ func (do *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
 	return nil
 }
 
-func (do *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
+func (b *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	return []*api.Node{}, nil
 }
 
