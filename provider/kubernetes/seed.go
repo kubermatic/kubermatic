@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -46,7 +47,10 @@ func NewSeedProvider(
 				Token:   cfg.BearerToken,
 				EtcdURL: strings.Replace(cfg.Host, "://", "://etcd-", 1),
 			},
-			Status: api.ClusterStatus{},
+			Status: api.ClusterStatus{
+				LastTransitionTime: time.Now(),
+				Phase:              api.RunningClusterStatusPhase,
+			},
 		}
 
 		dc, found := dcs[dcName]
