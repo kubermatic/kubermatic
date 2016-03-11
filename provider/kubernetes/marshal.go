@@ -18,6 +18,10 @@ const (
 	RoleLabelKey = "role"
 	// ClusterRoleLabel is the value of the role label of a cluster namespace.
 	ClusterRoleLabel = "kubermatic-cluster"
+	// DevLabelKey identifies clusters that are only processed by dev cluster controllers.
+	DevLabelKey = "dev"
+	// DevLabelValue is the value for DevLabelKey.
+	DevLabelValue = "true"
 
 	// annotationPrefix is the prefix string of every cluster namespace annotation.
 	annotationPrefix = "kubermatic.io/"
@@ -84,6 +88,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: ns.Annotations[humanReadableNameAnnotation],
+			Dev:               ns.Annotations[DevLabelKey] == DevLabelValue,
 		},
 		Status: api.ClusterStatus{
 			LastTransitionTime: phaseTS,
@@ -210,6 +215,9 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name
 	ns.Labels[userLabelKey] = LabelUser(c.Metadata.User)
+	if c.Spec.Dev {
+		ns.Labels[DevLabelKey] = DevLabelValue
+	}
 
 	if c.Status.Phase != api.UnknownClusterStatusPhase {
 		ns.Labels[phaseLabelKey] = strings.ToLower(string(c.Status.Phase))

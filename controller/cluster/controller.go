@@ -79,6 +79,7 @@ func NewController(
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	urlPattern string,
+	dev bool,
 ) (controller.Controller, error) {
 	cc := &clusterController{
 		dc:                  dc,
@@ -95,21 +96,24 @@ func NewController(
 	eventBroadcaster.StartLogging(glog.Infof)
 	eventBroadcaster.StartRecordingToSink(cc.client.Events(""))
 
+	nsLabels := map[string]string{
+		kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
+	}
+	if dev {
+		nsLabels[kprovider.DevLabelKey] = kprovider.DevLabelValue
+	}
+
 	cc.nsStore, cc.nsController = framework.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
 				return cc.client.Namespaces().List(
-					labels.SelectorFromSet(labels.Set(map[string]string{
-						kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
-					})),
+					labels.SelectorFromSet(labels.Set(nsLabels)),
 					fields.Everything(),
 				)
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
 				return cc.client.Namespaces().Watch(
-					labels.SelectorFromSet(labels.Set(map[string]string{
-						kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
-					})),
+					labels.SelectorFromSet(labels.Set(nsLabels)),
 					fields.Everything(),
 					rv,
 				)
@@ -357,6 +361,10 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 }
 
 func (cc *clusterController) enqueue(ns *kapi.Namespace) {
+	if ns.Labels[kprovider.DevLabelKey] == kprovider.DevLabelValue {
+		glog.V(5).Infof("Skipping dev cluster %q", ns.Name)
+		return
+	}
 	key, err := kcontroller.KeyFunc(ns)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", ns, err)

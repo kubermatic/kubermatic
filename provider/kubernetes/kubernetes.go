@@ -26,12 +26,14 @@ type kubernetesProvider struct {
 
 	mu  sync.Mutex
 	cps map[string]provider.CloudProvider
+	dev bool
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
 	clientConfig *client.Config,
 	cps map[string]provider.CloudProvider,
+	dev bool,
 ) provider.KubernetesProvider {
 	client, err := client.New(clientConfig)
 	if err != nil {
@@ -41,6 +43,7 @@ func NewKubernetesProvider(
 	return &kubernetesProvider{
 		cps:    cps,
 		client: client,
+		dev:    dev,
 	}
 }
 
@@ -88,6 +91,9 @@ func (p *kubernetesProvider) NewCluster(user provider.User, cluster string, spec
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
+	}
+	if p.dev {
+		c.Spec.Dev = true
 	}
 
 	ns, err = MarshalCluster(p.cps, c, ns)

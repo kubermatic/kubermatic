@@ -131,6 +131,8 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
+
+	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.
