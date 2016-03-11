@@ -1,40 +1,206 @@
 package cluster
 
 import (
+	"bytes"
+	"crypto/rand"
 	crand "crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"net/url"
 	"path"
-	"reflect"
 	"strings"
 	"time"
 
+	"github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"golang.org/x/crypto/ssh"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/client/cache"
 )
 
-func (cc *clusterController) pendingCheckTimeout(c *api.Cluster) (*api.Cluster, error) {
-	now := time.Now()
-	timeSinceCreation := now.Sub(c.Status.LastTransitionTime)
-	if timeSinceCreation > launchTimeout {
-		glog.Infof("Launch timeout for cluster %q after %v", c.Metadata.Name, timeSinceCreation)
-		c.Status.Phase = api.FailedClusterStatusPhase
-		c.Status.LastTransitionTime = now
-		return c, nil
+func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, error) {
+	changedC, err := cc.checkTimeout(c)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	changedC, err = cc.pendingCreateRootCA(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	// create token-users first and also persist immediately because this
+	// changes the cluster. The later secrets and other resources don't.
+	changedC, err = cc.launchingCheckTokenUsers(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	// check that all services are available
+	changedC, err = cc.launchingCheckServices(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	err = cc.pendingCheckSecrets(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// check that the ingress is available
+	err = cc.launchingCheckIngress(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// check that all replication controllers are available
+	err = cc.launchingCheckReplicationController(c)
+	if err != nil {
+		return nil, err
+	}
+
+	c.Status.LastTransitionTime = time.Now()
+	c.Status.Phase = api.LaunchingClusterStatusPhase
+	return c, nil
 }
 
-func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluster, error) {
+func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
+	if c.Status.RootCA.Key != nil {
+		return nil, nil
+	}
+
+	rootCAReq := csr.CertificateRequest{
+		CN: fmt.Sprintf("root-ca."+cc.hostPattern, c.Metadata.Name, cc.dc),
+		KeyRequest: &csr.BasicKeyRequest{
+			A: "rsa",
+			S: 2048,
+		},
+		CA: &csr.CAConfig{
+			Expiry: fmt.Sprintf("%dh", 24*365*10),
+		},
+	}
+	var err error
+	c.Status.RootCA.Cert, _, c.Status.RootCA.Key, err = initca.New(&rootCAReq)
+	if err != nil {
+		return nil, fmt.Errorf("error creating root-ca: %v", err)
+	}
+
+	return c, nil
+}
+
+func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
+	createApiserverAuth := func(t *template.Template) (*kapi.Secret, error) {
+		saKey, err := createServiceAccountKey()
+		if err != nil {
+			return nil, err
+		}
+
+		asKC, err := c.CreateKeyCert("10.10.0.1")
+		if err != nil {
+			return nil, err
+		}
+
+		data := struct {
+			ApiserverKey, ApiserverCert, RootCACert, ServiceAccountKey string
+		}{
+			ApiserverKey:      base64.StdEncoding.EncodeToString(asKC.Key),
+			ApiserverCert:     base64.StdEncoding.EncodeToString(asKC.Cert),
+			RootCACert:        base64.StdEncoding.EncodeToString(c.Status.RootCA.Cert),
+			ServiceAccountKey: base64.StdEncoding.EncodeToString(saKey),
+		}
+		var secret kapi.Secret
+		err = t.Execute(data, &secret)
+		return &secret, err
+	}
+
+	createEtcdAuth := func(t *template.Template) (*kapi.Secret, error) {
+		u, err := url.Parse(c.Address.EtcdURL)
+		if err != nil {
+			return nil, err
+		}
+		etcdKC, err := c.CreateKeyCert(strings.Split(u.Host, ":")[0])
+		if err != nil {
+			return nil, err
+		}
+
+		data := struct {
+			EtcdKey, EtcdCert, RootCACert string
+		}{
+			RootCACert: base64.StdEncoding.EncodeToString(c.Status.RootCA.Cert),
+			EtcdKey:    base64.StdEncoding.EncodeToString(etcdKC.Key),
+			EtcdCert:   base64.StdEncoding.EncodeToString(etcdKC.Cert),
+		}
+		var secret kapi.Secret
+		err = t.Execute(data, &secret)
+		return &secret, err
+	}
+
+	createApiserverSSH := func(t *template.Template) (*kapi.Secret, error) {
+		kc, err := createSSHKeyCert()
+		if err != nil {
+			return nil, err
+		}
+
+		data := struct {
+			Key, Cert string
+		}{
+			Key:  base64.StdEncoding.EncodeToString(kc.Key),
+			Cert: base64.StdEncoding.EncodeToString(kc.Cert),
+		}
+		var secret kapi.Secret
+		err = t.Execute(data, &secret)
+		return &secret, err
+	}
+
+	secrets := map[string]func(t *template.Template) (*kapi.Secret, error){
+		"apiserver-auth":   createApiserverAuth,
+		"apiserver-ssh":    createApiserverSSH,
+		"etcd-public-auth": createEtcdAuth,
+	}
+
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	for s, gen := range secrets {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.secretStore.GetByKey(key)
+		if err != nil {
+			return err
+		}
+		if exists {
+			glog.V(6).Infof("Skipping already existing secret %q", key)
+			continue
+		}
+
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-secret.yaml"))
+		if err != nil {
+			return err
+		}
+
+		secret, err := gen(t)
+		if err != nil {
+			return err
+		}
+
+		_, err = cc.client.Secrets(ns).Create(secret)
+		if err != nil {
+			return err
+		}
+
+		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
+	}
+
+	return nil
+}
+
+func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Cluster, error) {
 	generateTokenUsers := func() (*kapi.Secret, error) {
 		rawToken := make([]byte, 64)
 		_, err := crand.Read(rawToken)
@@ -56,7 +222,7 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 		}
 
 		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf("https://"+cc.urlPattern, c.Metadata.Name, cc.dc),
+			URL:   fmt.Sprintf("https://"+cc.hostPattern, c.Metadata.Name, cc.dc),
 			Token: trimmedToken64,
 		}
 
@@ -82,56 +248,11 @@ func (cc *clusterController) pendingCheckTokenUsers(c *api.Cluster) (*api.Cluste
 	if err != nil {
 		return nil, err
 	}
-	cc.recordClusterEvent(c, "pending", "Created secret %q", key)
+	cc.recordClusterEvent(c, "launching", "Created secret %q", key)
 	return c, nil
 }
 
-func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
-	loadFile := func(s string) (*kapi.Secret, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-secret.yaml"))
-		if err != nil {
-			return nil, err
-		}
-
-		var secret kapi.Secret
-		err = t.Execute(nil, &secret)
-		return &secret, err
-	}
-
-	secrets := map[string]func(s string) (*kapi.Secret, error){
-		"apiserver-auth": loadFile,
-		"apiserver-ssh":  loadFile,
-	}
-
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	for s, gen := range secrets {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.secretStore.GetByKey(key)
-		if err != nil {
-			return err
-		}
-		if exists {
-			glog.V(6).Infof("Skipping already existing secret %q", key)
-			continue
-		}
-
-		secret, err := gen(s)
-		if err != nil {
-			return err
-		}
-
-		_, err = cc.client.Secrets(ns).Create(secret)
-		if err != nil {
-			return err
-		}
-
-		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
-	}
-
-	return nil
-}
-
-func (cc *clusterController) pendingCheckServices(c *api.Cluster) (*api.Cluster, error) {
+func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	loadFile := func(s string) (*kapi.Service, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-service.yaml"))
 		if err != nil {
@@ -173,7 +294,7 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) (*api.Cluster,
 			return nil, err
 		}
 
-		cc.recordClusterEvent(c, "pending", "Created service %q", s)
+		cc.recordClusterEvent(c, "launching", "Created service %q", s)
 	}
 
 	if c.Address.EtcdURL != "" {
@@ -186,14 +307,14 @@ func (cc *clusterController) pendingCheckServices(c *api.Cluster) (*api.Cluster,
 	}
 
 	c.Address.EtcdURL = fmt.Sprintf(
-		"http://"+cc.urlPattern+":%d",
+		"https://"+cc.hostPattern+":%d",
 		c.Metadata.Name, cc.dc, p,
 	)
 
 	return c, nil
 }
 
-func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	key := fmt.Sprintf("%s/%s", ns, "apiserver-public")
 	_, exists, err := cc.ingressStore.GetByKey(key)
@@ -228,11 +349,11 @@ func (cc *clusterController) pendingCheckIngress(c *api.Cluster) error {
 		return err
 	}
 
-	cc.recordClusterEvent(c, "pending", "Created ingress")
+	cc.recordClusterEvent(c, "launching", "Created ingress")
 	return nil
 }
 
-func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	loadFile := func(s string) (*kapi.ReplicationController, error) {
@@ -309,132 +430,42 @@ func (cc *clusterController) pendingCheckReplicationController(c *api.Cluster) e
 			return err
 		}
 
-		cc.recordClusterEvent(c, "pending", "Created rc %q", s)
+		cc.recordClusterEvent(c, "launching", "Created rc %q", s)
 	}
 
 	return nil
 }
 
-func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	rcs, err := cc.rcStore.ByIndex("namespace", ns)
+func createServiceAccountKey() ([]byte, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
 
-	health := api.ClusterHealth{
-		ClusterHealthStatus: api.ClusterHealthStatus{
-			Etcd: []bool{false},
-		},
+	saKey := x509.MarshalPKCS1PrivateKey(priv)
+	block := pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: saKey,
 	}
-
-	healthMapping := map[string]*bool{
-		"etcd": &health.Etcd[0],
-		// "etcd-public" TODO(sttts): add etcd-public?
-		"apiserver":          &health.Apiserver,
-		"controller-manager": &health.Controller,
-		"scheduler":          &health.Scheduler,
-	}
-
-	allHealthy := true
-
-	for _, obj := range rcs {
-		rc := obj.(*kapi.ReplicationController)
-		role := rc.Spec.Selector["role"]
-		rcHealth, err := cc.healthyRC(rc)
-		if err != nil {
-			return false, nil, err
-		}
-		allHealthy = allHealthy && rcHealth
-		if !rcHealth {
-			glog.V(6).Infof("Cluster %q rc %q is not healthy", c.Metadata.Name, rc.Name)
-		}
-		if m, found := healthMapping[role]; found {
-			*m = rcHealth
-		}
-	}
-
-	return allHealthy, &health, nil
+	return pem.EncodeToMemory(&block), nil
 }
 
-func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, error) {
-	changedC, err := cc.pendingCheckTimeout(c)
-	if err != nil || changedC != nil {
-		return changedC, err
-	}
-
-	// create token-users first and also persist immediately because this
-	// changes the cluster. The later secrets and other resources don't.
-	changedC, err = cc.pendingCheckTokenUsers(c)
-	if err != nil || changedC != nil {
-		return changedC, err
-	}
-
-	// check that all secrets are available
-	err = cc.pendingCheckSecrets(c)
+func createSSHKeyCert() (*api.KeyCert, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
 	}
 
-	// check that all services are available
-	changedC, err = cc.pendingCheckServices(c)
-	if err != nil || changedC != nil {
-		return changedC, err
-	}
-
-	// check that the ingress is available
-	err = cc.pendingCheckIngress(c)
+	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+	privBuf := bytes.Buffer{}
+	err = pem.Encode(&privBuf, privateKeyPEM)
 	if err != nil {
 		return nil, err
 	}
 
-	// check that all replication controllers are available
-	err = cc.pendingCheckReplicationController(c)
+	pub, err := ssh.NewPublicKey(&priv.PublicKey)
 	if err != nil {
 		return nil, err
 	}
-
-	// check that all replication controllers are healthy
-	allHealthy, health, err := cc.clusterHealth(c)
-	if err != nil {
-		return nil, err
-	}
-
-	if health != nil && (c.Status.Health == nil ||
-		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
-		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
-		c.Status.Health = health
-		c.Status.Health.LastTransitionTime = time.Now()
-		changedC = c
-	}
-
-	if !allHealthy {
-		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Metadata.Name, c.Status.Health)
-		return changedC, nil
-	}
-
-	// no error until now? We are running.
-	c.Status.Phase = api.RunningClusterStatusPhase
-	c.Status.LastTransitionTime = time.Now()
-
-	return c, nil
-}
-
-func servicePort(idx cache.Indexer, key, portName string) (int, error) {
-	obj, exists, err := idx.GetByKey(key)
-	if err != nil {
-		return 0, err
-	}
-
-	if !exists {
-		return 0, fmt.Errorf("service %q does not exist", key)
-	}
-
-	for _, port := range obj.(*kapi.Service).Spec.Ports {
-		if port.Name == portName && port.NodePort > 0 {
-			return port.NodePort, nil
-		}
-	}
-
-	return 0, fmt.Errorf("service %q not found", key)
+	return &api.KeyCert{privBuf.Bytes(), ssh.MarshalAuthorizedKey(pub)}, nil
 }

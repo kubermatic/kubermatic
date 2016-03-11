@@ -24,8 +24,11 @@ type Data struct {
 	EtcdURL           string
 	APIServerURL      string
 	Region            string
-	KubeletToken      string
 	Name              string
+	ClientKey         string
+	ClientCert        string
+	RootCACert        string
+	ApiserverToken    string
 }
 
 func readLinesTemplate(data interface{}, path string) (lines []string) {

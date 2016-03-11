@@ -7,15 +7,18 @@ ssh_authorized_keys:
 coreos:
   flannel:
     interface: $private_ipv4
+    etcd_cafile: /etc/ssl/etcd/root-ca.crt
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   fleet:
     metadata: role=node,hostname={{.Name}},region={{.Region}},private_ipv4=$private_ipv4
+    etcd_cafile: /etc/ssl/etcd/root-ca.crt
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   locksmith:
+    etcd_cafile: /etc/ssl/etcd/root-ca.crt
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
 
@@ -30,7 +33,7 @@ coreos:
             Requires=etcd2.service
 
             [Service]
-            ExecStartPre=/usr/bin/etcdctl --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key -C http://127.0.0.1:2379 set /coreos.com/network/config '{ "Network": "172.17.0.0/16" }'
+            ExecStartPre=/usr/bin/etcdctl --ca-file=/etc/ssl/etcd/root-ca.crt --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key -C http://127.0.0.1:2379 set /coreos.com/network/config '{ "Network": "172.17.0.0/16" }'
 
     - name: etcd2-proxy-proxy-download.service
       command: start
@@ -59,7 +62,7 @@ coreos:
 
             [Service]
             ExecStart=
-            ExecStart=/opt/bin/etcd2-proxy-proxy -upstream={{.EtcdURL}} -upstream-key-file=/etc/ssl/etcd/client.key -upstream-cert-file=/etc/ssl/etcd/client.crt
+            ExecStart=/opt/bin/etcd2-proxy-proxy -upstream={{.EtcdURL}} -upstream-key-file=/etc/ssl/etcd/client.key -upstream-cert-file=/etc/ssl/etcd/client.crt --upstream-ca-file=/etc/ssl/etcd/root-ca.crt
 
     - name: fleet.service
       enable: true
@@ -135,24 +138,6 @@ write_files:
     content: |
       {{readBase64Template . "template/coreos/manifests/proxy-node.yaml"}}
 
-  - path: "/etc/ssl/etcd/root-ca.crt"
-    permissions: "0444"
-    encoding: base64
-    content: |
-      {{readBase64 "template/coreos/certs/root-ca.crt"}}
-
-  - path: "/etc/ssl/etcd/client.key"
-    permissions: "0444"
-    encoding: base64
-    content: |
-      {{readBase64 "template/coreos/certs/client.key"}}
-
-  - path: "/etc/ssl/etcd/client.crt"
-    permissions: "0444"
-    encoding: base64
-    content: |
-      {{readBase64 "template/coreos/certs/client.crt"}}
-
   - path: "/var/run/kubelet/kubeconfig"
     permissions: "0400"
     content: |
@@ -172,4 +157,22 @@ write_files:
       users:
       - name: do-{{.Region}}.kubermatic.io
         user:
-          token: {{.KubeletToken}}
+          Token: {{.ApiserverToken}}
+
+  - path: "/etc/ssl/etcd/client.key"
+    permissions: "0444"
+    encoding: base64
+    content: |
+      {{ .ClientKey }}
+
+  - path: "/etc/ssl/etcd/client.crt"
+    permissions: "0444"
+    encoding: base64
+    content: |
+      {{ .ClientCert }}
+
+  - path: "/etc/ssl/etcd/root-ca.crt"
+    permissions: "0444"
+    encoding: base64
+    content: |
+      {{ .RootCACert }}

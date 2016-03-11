@@ -2,6 +2,7 @@ package digitalocean
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,12 +10,11 @@ import (
 
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -119,15 +119,22 @@ func (do *digitalocean) CreateNodes(
 
 	glog.V(2).Infof("dropletName %q", dropletName)
 
-	image := godo.DropletCreateImage{Slug: "coreos-stable"}
+	clientKC, err := cluster.CreateKeyCert("dropletName")
+	if err != nil {
+		return nil, err
+	}
 
+	image := godo.DropletCreateImage{Slug: "coreos-stable"}
 	data := ktemplate.Data{
 		SSHAuthorizedKeys: cSpec.SSHKeys,
 		EtcdURL:           cluster.Address.EtcdURL,
 		APIServerURL:      cluster.Address.URL,
-		KubeletToken:      cluster.Address.Token,
 		Region:            dc.Spec.Digitalocean.Region,
 		Name:              dropletName,
+		ClientKey:         base64.StdEncoding.EncodeToString(clientKC.Key),
+		ClientCert:        base64.StdEncoding.EncodeToString(clientKC.Cert),
+		RootCACert:        base64.StdEncoding.EncodeToString(cluster.Status.RootCA.Cert),
+		ApiserverToken:    cluster.Address.Token,
 	}
 
 	tpl, err := template.
@@ -170,6 +177,10 @@ func (do *digitalocean) CreateNodes(
 	}
 
 	return []*api.Node{n}, nil
+}
+
+func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
+	return nil
 }
 
 func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {

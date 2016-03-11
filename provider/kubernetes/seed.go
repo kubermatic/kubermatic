@@ -45,12 +45,17 @@ func NewSeedProvider(
 			Address: &api.ClusterAddress{
 				URL:     cfg.Host,
 				Token:   cfg.BearerToken,
-				EtcdURL: strings.Replace(cfg.Host, "://", "://etcd-", 1),
+				EtcdURL: strings.TrimRight(cfg.Host, "/") + ":2379",
 			},
 			Status: api.ClusterStatus{
 				LastTransitionTime: time.Now(),
 				Phase:              api.RunningClusterStatusPhase,
 			},
+		}
+
+		if ca, found := secrets.RootCAs[dcName]; found {
+			c.Status.RootCA.Key = nilify(deBase64(ca.Key))
+			c.Status.RootCA.Cert = nilify(deBase64(ca.Cert))
 		}
 
 		dc, found := dcs[dcName]
@@ -65,6 +70,13 @@ func NewSeedProvider(
 		case provider.BringYourOwnCloudProvider:
 			c.Spec.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
 				PrivateIntf: dc.Spec.BringYourOwn.Seed.PrivateIntf,
+			}
+			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
+				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
+				if err != nil {
+					log.Fatalf("failed to create a client ca for seed dc %q", dcName)
+				}
+				c.Spec.Cloud.BringYourOwn.ClientKeyCert = *clientCA
 			}
 		case provider.DigitaloceanCloudProvider:
 			token, found := secrets.Tokens[dcName]

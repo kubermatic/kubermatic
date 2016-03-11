@@ -39,7 +39,9 @@ const (
 	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
-	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcdUrl
+	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
+	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
+	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root--cert
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
@@ -88,15 +90,19 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: ns.Annotations[humanReadableNameAnnotation],
-			Dev:               ns.Annotations[DevLabelKey] == DevLabelValue,
+			Dev:               ns.Labels[DevLabelKey] == DevLabelValue,
 		},
 		Status: api.ClusterStatus{
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
+			RootCA: api.SecretKeyCert{
+				Key:  nilify(deBase64(ns.Annotations[rootCAKeyAnnotation])),
+				Cert: nilify(deBase64(ns.Annotations[rootCACertAnnotation])),
+			},
 		},
 	}
 
-	// unprefix and copy kubermatic  annotations
+	// unprefix and copy kubermatic annotations
 	for k, v := range ns.Annotations {
 		if !strings.HasPrefix(k, customAnnotationPrefix) {
 			continue
@@ -208,9 +214,21 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 		}
 	}
 
+	b64 := func(bs []byte) string {
+		if bs == nil {
+			return ""
+		}
+		return base64.StdEncoding.EncodeToString(bs)
+	}
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
+	if c.Status.RootCA.Key != nil {
+		ns.Annotations[rootCAKeyAnnotation] = b64(c.Status.RootCA.Key)
+	}
+	if c.Status.RootCA.Cert != nil {
+		ns.Annotations[rootCACertAnnotation] = b64(c.Status.RootCA.Cert)
+	}
 
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name
@@ -274,6 +292,8 @@ func ClusterPhase(ns *kapi.Namespace) api.ClusterPhase {
 	switch api.ClusterPhase(toCapital(ns.Labels[phaseLabelKey])) {
 	case api.PendingClusterStatusPhase:
 		return api.PendingClusterStatusPhase
+	case api.LaunchingClusterStatusPhase:
+		return api.LaunchingClusterStatusPhase
 	case api.FailedClusterStatusPhase:
 		return api.FailedClusterStatusPhase
 	case api.RunningClusterStatusPhase:
@@ -291,4 +311,16 @@ func toCapital(s string) string {
 		return ""
 	}
 	return strings.ToUpper(s[0:1]) + s[1:]
+}
+
+func nilify(bs []byte) []byte {
+	if len(bs) == 0 {
+		return nil
+	}
+	return bs
+}
+
+func deBase64(s string) []byte {
+	bs, _ := base64.StdEncoding.DecodeString(s)
+	return bs
 }

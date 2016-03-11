@@ -160,6 +160,20 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 
 		c.Spec.Cloud = cloud
+		provName, prov, err := provider.ClusterCloudProvider(p.cps, c)
+		if err != nil {
+			return nil, err
+		}
+
+		err = prov.PrepareCloudSpec(c)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"cannot set %s cloud config for cluster %q: %v",
+				provName,
+				c.Metadata.Name,
+				err,
+			)
+		}
 
 		ns, err = MarshalCluster(p.cps, c, ns)
 		if err != nil {
