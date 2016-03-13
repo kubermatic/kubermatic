@@ -40,22 +40,28 @@ func NewSeedProvider(
 				HumanReadableName: dcName,
 				Cloud: &api.CloudSpec{
 					DC: dcName,
+					Network: api.NetworkSpec{
+						Flannel: api.FlannelNetworkSpec{
+							CIDR: flannelCIDRADefault,
+						},
+					},
 				},
 			},
 			Address: &api.ClusterAddress{
 				URL:     cfg.Host,
 				Token:   cfg.BearerToken,
-				EtcdURL: strings.TrimRight(cfg.Host, "/") + ":2379",
+				EtcdURL: strings.TrimRight(cfg.Host, "/") + ":2378",
 			},
 			Status: api.ClusterStatus{
 				LastTransitionTime: time.Now(),
 				Phase:              api.RunningClusterStatusPhase,
+				ApiserverSSH:       secrets.ApiserverSSH[dcName],
 			},
 		}
 
 		if ca, found := secrets.RootCAs[dcName]; found {
-			c.Status.RootCA.Key = nilify(deBase64(ca.Key))
-			c.Status.RootCA.Cert = nilify(deBase64(ca.Cert))
+			c.Status.RootCA.Key = api.NewBytes(ca.Key)
+			c.Status.RootCA.Cert = api.NewBytes(ca.Cert)
 		}
 
 		dc, found := dcs[dcName]
@@ -66,10 +72,15 @@ func NewSeedProvider(
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if dc.Spec.Seed.Network.Flannel.CIDR != "" {
+			c.Spec.Cloud.Network.Flannel.CIDR = dc.Spec.Seed.Network.Flannel.CIDR
+		}
+
 		switch p {
 		case provider.BringYourOwnCloudProvider:
 			c.Spec.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
-				PrivateIntf: dc.Spec.BringYourOwn.Seed.PrivateIntf,
+				PrivateIntf: dc.Spec.Seed.BringYourOwn.PrivateIntf,
 			}
 			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
 				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
@@ -85,8 +96,9 @@ func NewSeedProvider(
 			}
 			c.Spec.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   token,
-				SSHKeys: dc.Spec.Digitalocean.Seed.SSHKeys,
+				SSHKeys: dc.Spec.Seed.Digitalocean.SSHKeys,
 			}
+
 		default:
 			log.Fatalf("unsupported cloud provider %q for seed dc %q", p, dcName)
 		}

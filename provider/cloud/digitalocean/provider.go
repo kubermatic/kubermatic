@@ -2,7 +2,6 @@ package digitalocean
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -36,10 +35,11 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
-	return map[string]string{
+	as := map[string]string{
 		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
-	}, nil
+	}
+	return as, nil
 }
 
 func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
@@ -126,15 +126,19 @@ func (do *digitalocean) CreateNodes(
 
 	image := godo.DropletCreateImage{Slug: "coreos-stable"}
 	data := ktemplate.Data{
+		DC:                spec.DC,
+		ClusterName:       cluster.Metadata.Name,
 		SSHAuthorizedKeys: cSpec.SSHKeys,
 		EtcdURL:           cluster.Address.EtcdURL,
 		APIServerURL:      cluster.Address.URL,
 		Region:            dc.Spec.Digitalocean.Region,
 		Name:              dropletName,
-		ClientKey:         base64.StdEncoding.EncodeToString(clientKC.Key),
-		ClientCert:        base64.StdEncoding.EncodeToString(clientKC.Cert),
-		RootCACert:        base64.StdEncoding.EncodeToString(cluster.Status.RootCA.Cert),
+		ClientKey:         clientKC.Key.Base64(),
+		ClientCert:        clientKC.Cert.Base64(),
+		RootCACert:        cluster.Status.RootCA.Cert.Base64(),
+		ApiserverPubSSH:   cluster.Status.ApiserverSSH,
 		ApiserverToken:    cluster.Address.Token,
+		FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
 	}
 
 	tpl, err := template.
@@ -217,12 +221,12 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 
 	nodes := make([]*api.Node, 0, len(ds))
 	for _, d := range ds {
-		ss := strings.SplitN(d.Name, "-", 3)
+		ss := strings.Split(d.Name, "-")
 
 		switch {
-		case len(ss) != 3: // assuming kubermatic-%s-%s format, see CreateNode
+		case len(ss) < 3: // assuming kubermatic-%s-%s format, see CreateNode
 			continue
-		case ss[1] != cluster.Metadata.Name:
+		case strings.Join(ss[1:len(ss)-1], "-") != cluster.Metadata.Name:
 			continue
 		}
 

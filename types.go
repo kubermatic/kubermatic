@@ -75,6 +75,16 @@ type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
+// FlannelNetworkSpec specifies a deployed flannel network.
+type FlannelNetworkSpec struct {
+	CIDR string
+}
+
+// NetworkSpec specifies the deployed network.
+type NetworkSpec struct {
+	Flannel FlannelNetworkSpec
+}
+
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
 	DC           string                 `json:"dc"`
@@ -82,6 +92,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
+	Network      NetworkSpec            `json:"-"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -125,23 +136,20 @@ const (
 )
 
 type (
-	// Key is a PEM format key, encoded as base64 in JSON.
-	Key []byte
-
-	// Cert is a PEM format certificate, encoded as base64 in JSON.
-	Cert []byte
+	// Bytes stores a byte slices and ecnodes as base64 in JSON.
+	Bytes []byte
 )
 
 // KeyCert is a pair of key and cert.
 type KeyCert struct {
-	Key  Key  `json:"key"`
-	Cert Cert `json:"cert"`
+	Key  Bytes `json:"key"`
+	Cert Bytes `json:"cert"`
 }
 
 // SecretKeyCert is a pair of key and cert where the key is not published to the API client.
 type SecretKeyCert struct {
-	Key  Key  `json:"-"`
-	Cert Cert `json:"cert"`
+	Key  Bytes `json:"-"`
+	Cert Bytes `json:"cert"`
 }
 
 // ClusterStatus stores status informations about a cluster.
@@ -150,7 +158,8 @@ type ClusterStatus struct {
 	Phase              ClusterPhase   `json:"phase,omitempty"`
 	Health             *ClusterHealth `json:"health,omitempty"`
 
-	RootCA SecretKeyCert `json:"rootCA"`
+	RootCA       SecretKeyCert `json:"rootCA"`
+	ApiserverSSH string        `json:"apiserverSSH"`
 }
 
 // ClusterSpec specifies the data for a new cluster.

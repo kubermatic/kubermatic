@@ -60,17 +60,13 @@ func (c *Cluster) CreateKeyCert(cn string) (*KeyCert, error) {
 	return &KeyCert{key, cert}, nil
 }
 
-// MarshalJSON adds base64 json encoding to the Key type.
-func (k Key) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(k))), nil
+// MarshalJSON adds base64 json encoding to the Bytes type.
+func (bs Bytes) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(bs))), nil
 }
 
-// MarshalJSON adds base64 json encoding to the Cert type.
-func (c Cert) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(c))), nil
-}
-
-func unmarshalJSON(dest *[]byte, src []byte) error {
+// UnmarshalJSON adds base64 json decoding to the Bytes type.
+func (bs *Bytes) UnmarshalJSON(src []byte) error {
 	if len(src) < 2 {
 		return errors.New("base64 string expected")
 	}
@@ -78,37 +74,33 @@ func unmarshalJSON(dest *[]byte, src []byte) error {
 		return errors.New("\" quotations expected")
 	}
 	if len(src) == 2 {
-		*dest = nil
+		*bs = nil
 		return nil
 	}
-	bs, err := base64.StdEncoding.DecodeString(string(src[1 : len(src)-1]))
+	var err error
+	*bs, err = base64.StdEncoding.DecodeString(string(src[1 : len(src)-1]))
 	if err != nil {
 		return err
 	}
-	*dest = bs
 	return nil
 }
 
-// UnmarshalJSON adds base64 json decoding to the Key type.
-func (k Key) UnmarshalJSON(bs []byte) error {
-	var dest []byte
-	err := unmarshalJSON(&dest, bs)
-	if err != nil {
-		return err
+// Base64 converts a Bytes instance to a base64 string.
+func (bs Bytes) Base64() string {
+	if []byte(bs) == nil {
+		return ""
 	}
-	k = Key(dest)
-	_ = k
-	return nil
+	return base64.StdEncoding.EncodeToString([]byte(bs))
 }
 
-// UnmarshalJSON adds base64 json decoding to the Cert type.
-func (c Cert) UnmarshalJSON(bs []byte) error {
-	var dest []byte
-	err := unmarshalJSON(&dest, bs)
-	if err != nil {
-		return err
+// NewBytes creates a Bytes instance from a base64 string, returning nil for an empty base64 string.
+func NewBytes(b64 string) Bytes {
+	if b64 == "" {
+		return Bytes(nil)
 	}
-	c = Cert(bs)
-	_ = c
-	return nil
+	bs, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid base64 string %q", b64))
+	}
+	return Bytes(bs)
 }

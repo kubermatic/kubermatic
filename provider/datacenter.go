@@ -11,23 +11,39 @@ import (
 // DigitaloceanSpec describes a digital ocean datacenter
 type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
-
-	Seed struct {
-		SSHKeys []string `yaml:"sshKeys"`
-	} `yaml:"seed"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
 type BringYourOwnSpec struct {
-	Seed struct {
+}
+
+// SeedSpec describes a seed in the given datacenter.
+type SeedSpec struct {
+	Digitalocean struct {
+		SSHKeys []string `yaml:"sshKeys"`
+	} `yaml:"digitalocean"`
+	BringYourOwn struct {
 		PrivateIntf string `yaml:"privateInterface"`
-	} `yaml:"seed"`
+	} `yaml:"bringyourown"`
+
+	Network struct {
+		Flannel struct {
+			CIDR string `yaml:"cidr"`
+		} `yaml:"flannel"`
+	} `yaml:"network"`
+
+	ApiserverSSH struct {
+		Private string `yaml:"private"`
+		Public  string `yaml:"public"`
+	} `yaml:"apiserverSSH"`
 }
 
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
+
+	Seed SeedSpec `yaml:"seed"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

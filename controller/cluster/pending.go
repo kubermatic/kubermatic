@@ -51,9 +51,9 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 		return changedC, err
 	}
 
-	err = cc.pendingCheckSecrets(c)
-	if err != nil {
-		return nil, err
+	changedC, err = cc.pendingCheckSecrets(c)
+	if err != nil || changedC != nil {
+		return changedC, err
 	}
 
 	// check that the ingress is available
@@ -97,74 +97,86 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 	return c, nil
 }
 
-func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
-	createApiserverAuth := func(t *template.Template) (*kapi.Secret, error) {
+func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, error) {
+	createApiserverAuth := func(t *template.Template) (*api.Cluster, *kapi.Secret, error) {
 		saKey, err := createServiceAccountKey()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		asKC, err := c.CreateKeyCert("10.10.0.1")
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		data := struct {
 			ApiserverKey, ApiserverCert, RootCACert, ServiceAccountKey string
 		}{
-			ApiserverKey:      base64.StdEncoding.EncodeToString(asKC.Key),
-			ApiserverCert:     base64.StdEncoding.EncodeToString(asKC.Cert),
-			RootCACert:        base64.StdEncoding.EncodeToString(c.Status.RootCA.Cert),
-			ServiceAccountKey: base64.StdEncoding.EncodeToString(saKey),
+			ApiserverKey:      asKC.Key.Base64(),
+			ApiserverCert:     asKC.Cert.Base64(),
+			RootCACert:        c.Status.RootCA.Cert.Base64(),
+			ServiceAccountKey: saKey.Base64(),
 		}
 		var secret kapi.Secret
 		err = t.Execute(data, &secret)
-		return &secret, err
+		return nil, &secret, err
 	}
 
-	createEtcdAuth := func(t *template.Template) (*kapi.Secret, error) {
+	createEtcdAuth := func(t *template.Template) (*api.Cluster, *kapi.Secret, error) {
 		u, err := url.Parse(c.Address.EtcdURL)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		etcdKC, err := c.CreateKeyCert(strings.Split(u.Host, ":")[0])
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		data := struct {
 			EtcdKey, EtcdCert, RootCACert string
 		}{
-			RootCACert: base64.StdEncoding.EncodeToString(c.Status.RootCA.Cert),
-			EtcdKey:    base64.StdEncoding.EncodeToString(etcdKC.Key),
-			EtcdCert:   base64.StdEncoding.EncodeToString(etcdKC.Cert),
+			RootCACert: c.Status.RootCA.Cert.Base64(),
+			EtcdKey:    etcdKC.Key.Base64(),
+			EtcdCert:   etcdKC.Cert.Base64(),
 		}
 		var secret kapi.Secret
 		err = t.Execute(data, &secret)
-		return &secret, err
+		return nil, &secret, err
 	}
 
-	createApiserverSSH := func(t *template.Template) (*kapi.Secret, error) {
+	createApiserverSSH := func(t *template.Template) (*api.Cluster, *kapi.Secret, error) {
 		kc, err := createSSHKeyCert()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		data := struct {
 			Key, Cert string
 		}{
-			Key:  base64.StdEncoding.EncodeToString(kc.Key),
-			Cert: base64.StdEncoding.EncodeToString(kc.Cert),
+			Key:  kc.Key.Base64(),
+			Cert: kc.Cert.Base64(),
 		}
 		var secret kapi.Secret
 		err = t.Execute(data, &secret)
-		return &secret, err
+		if err != nil {
+			return nil, nil, err
+		}
+
+		glog.Warningf("####################### %v ###############", len(kc.Cert))
+		c.Status.ApiserverSSH = string(kc.Cert)
+
+		return c, &secret, nil
 	}
 
-	secrets := map[string]func(t *template.Template) (*kapi.Secret, error){
+	secrets := map[string]func(t *template.Template) (*api.Cluster, *kapi.Secret, error){
 		"apiserver-auth":   createApiserverAuth,
 		"apiserver-ssh":    createApiserverSSH,
 		"etcd-public-auth": createEtcdAuth,
+	}
+
+	recreateSecrets := map[string]struct{}{}
+	if len(c.Status.ApiserverSSH) == 0 {
+		recreateSecrets["apiserver-ssh"] = struct{}{}
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -172,32 +184,43 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) error {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.secretStore.GetByKey(key)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if exists {
-			glog.V(6).Infof("Skipping already existing secret %q", key)
-			continue
+			if _, recreate := recreateSecrets[s]; !recreate {
+				glog.V(6).Infof("Skipping already existing secret %q", key)
+				continue
+			}
+
+			err = cc.client.Secrets(ns).Delete(s)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-secret.yaml"))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		secret, err := gen(t)
+		changedC, secret, err := gen(t)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = cc.client.Secrets(ns).Create(secret)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
+
+		if changedC != nil {
+			return changedC, nil
+		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Cluster, error) {
@@ -436,7 +459,7 @@ func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster)
 	return nil
 }
 
-func createServiceAccountKey() ([]byte, error) {
+func createServiceAccountKey() (api.Bytes, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -447,7 +470,7 @@ func createServiceAccountKey() ([]byte, error) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: saKey,
 	}
-	return pem.EncodeToMemory(&block), nil
+	return api.Bytes(pem.EncodeToMemory(&block)), nil
 }
 
 func createSSHKeyCert() (*api.KeyCert, error) {

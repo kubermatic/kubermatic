@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -37,7 +38,7 @@ func main() {
 		var err error
 		dcs, err = provider.DatacentersMeta(*dcFile)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", *dcFile, err))
 		}
 	}
 

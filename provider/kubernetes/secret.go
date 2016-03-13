@@ -19,6 +19,7 @@ type Secrets struct {
 	Tokens       map[string]string  `yaml:"tokens"`
 	RootCAs      map[string]KeyCert `yaml:"root-cas"`
 	Certificates map[string]KeyCert `yaml:"certificates"`
+	ApiserverSSH map[string]string  `yaml:"apiserverSSH"`
 }
 
 // LoadSecrets loads secrets from the given path.

@@ -2,7 +2,7 @@
 
 ssh_authorized_keys:
   {{range .SSHAuthorizedKeys}}- {{.}}
-  {{end}}
+  {{end}}- "{{.ApiserverPubSSH}} apiserver@{{.ClusterName}}.{{.DC}}.kubermatic.io"
 
 coreos:
   flannel:
@@ -12,7 +12,7 @@ coreos:
     etcd_keyfile: /etc/ssl/etcd/client.key
 
   fleet:
-    metadata: role=node,hostname={{.Name}},region={{.Region}},private_ipv4=$private_ipv4
+    metadata: role=node,hostname={{.Name}},dc={{.DC}},private_ipv4=$private_ipv4
     etcd_cafile: /etc/ssl/etcd/root-ca.crt
     etcd_certfile: /etc/ssl/etcd/client.crt
     etcd_keyfile: /etc/ssl/etcd/client.key
@@ -33,7 +33,7 @@ coreos:
             Requires=etcd2.service
 
             [Service]
-            ExecStartPre=/usr/bin/etcdctl --ca-file=/etc/ssl/etcd/root-ca.crt --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key -C http://127.0.0.1:2379 set /coreos.com/network/config '{ "Network": "172.17.0.0/16" }'
+            ExecStartPre=/usr/bin/etcdctl --ca-file=/etc/ssl/etcd/root-ca.crt --cert-file=/etc/ssl/etcd/client.crt --key-file=/etc/ssl/etcd/client.key -C http://127.0.0.1:2379 set /coreos.com/network/config '{ "Network": "{{.FlannelCIDR}}" }'
 
     - name: etcd2-proxy-proxy-download.service
       command: start
@@ -145,17 +145,17 @@ write_files:
       clusters:
       - cluster:
           server: "{{.APIServerURL}}"
-        name: do-{{.Region}}.kubermatic.io
+        name: {{.ClusterName}}.{{.DC}}.kubermatic.io
       contexts:
       - context:
-          cluster: do-{{.Region}}.kubermatic.io
-          user: do-{{.Region}}.kubermatic.io
-        name: do-{{.Region}}.kubermatic.io
-      current-context: do-{{.Region}}.kubermatic.io
+          cluster: {{.ClusterName}}.{{.DC}}.kubermatic.io
+          user: {{.ClusterName}}.{{.DC}}.kubermatic.io
+        name: {{.ClusterName}}.{{.DC}}.kubermatic.io
+      current-context: {{.ClusterName}}.{{.DC}}.kubermatic.io
       kind: Config
       preferences: {}
       users:
-      - name: do-{{.Region}}.kubermatic.io
+      - name: {{.ClusterName}}.{{.DC}}.kubermatic.io
         user:
           Token: {{.ApiserverToken}}
 

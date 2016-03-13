@@ -20,6 +20,8 @@ var FuncMap = template.FuncMap{
 
 // Data is the struct defining kubermatic template variables.
 type Data struct {
+	DC                string
+	ClusterName       string
 	SSHAuthorizedKeys []string
 	EtcdURL           string
 	APIServerURL      string
@@ -28,7 +30,9 @@ type Data struct {
 	ClientKey         string
 	ClientCert        string
 	RootCACert        string
+	ApiserverPubSSH   string
 	ApiserverToken    string
+	FlannelCIDR       string
 }
 
 func readLinesTemplate(data interface{}, path string) (lines []string) {

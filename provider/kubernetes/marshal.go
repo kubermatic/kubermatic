@@ -41,11 +41,14 @@ const (
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
 	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
 	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
-	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root--cert
+	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
+	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
 	phaseLabelKey = "phase"
+
+	flannelCIDRADefault = "172.17.0.0/16"
 )
 
 // NamespaceName create a namespace name for a given user and cluster.
@@ -80,6 +83,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		phaseTS = time.Now() // gracefully use "now"
 	}
 
+	apiserverSSH, _ := base64.StdEncoding.DecodeString(ns.Annotations[apiserverPubSSHAnnotation])
 	c := api.Cluster{
 		Metadata: api.Metadata{
 			Name:        ns.Labels[nameLabelKey],
@@ -96,9 +100,10 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
 			RootCA: api.SecretKeyCert{
-				Key:  nilify(deBase64(ns.Annotations[rootCAKeyAnnotation])),
-				Cert: nilify(deBase64(ns.Annotations[rootCACertAnnotation])),
+				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
+				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
 			},
+			ApiserverSSH: string(apiserverSSH),
 		},
 	}
 
@@ -214,21 +219,16 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 		}
 	}
 
-	b64 := func(bs []byte) string {
-		if bs == nil {
-			return ""
-		}
-		return base64.StdEncoding.EncodeToString(bs)
-	}
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
 	if c.Status.RootCA.Key != nil {
-		ns.Annotations[rootCAKeyAnnotation] = b64(c.Status.RootCA.Key)
+		ns.Annotations[rootCAKeyAnnotation] = c.Status.RootCA.Key.Base64()
 	}
 	if c.Status.RootCA.Cert != nil {
-		ns.Annotations[rootCACertAnnotation] = b64(c.Status.RootCA.Cert)
+		ns.Annotations[rootCACertAnnotation] = c.Status.RootCA.Cert.Base64()
 	}
+	ns.Annotations[apiserverPubSSHAnnotation] = base64.StdEncoding.EncodeToString([]byte(c.Status.ApiserverSSH))
 
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name
@@ -279,6 +279,7 @@ func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, as map[stri
 		return nil, err
 	}
 	spec.DC = as[cloudDCAnnotation]
+	spec.Network.Flannel.CIDR = flannelCIDRADefault
 
 	return spec, nil
 }
@@ -311,16 +312,4 @@ func toCapital(s string) string {
 		return ""
 	}
 	return strings.ToUpper(s[0:1]) + s[1:]
-}
-
-func nilify(bs []byte) []byte {
-	if len(bs) == 0 {
-		return nil
-	}
-	return bs
-}
-
-func deBase64(s string) []byte {
-	bs, _ := base64.StdEncoding.DecodeString(s)
-	return bs
 }
