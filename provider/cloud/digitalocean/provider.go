@@ -193,24 +193,34 @@ func (do *digitalocean) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []
 	t := token(doSpec.GetToken())
 	client := godo.NewClient(oauth2.NewClient(ctx, t))
 
-	for _, UID := range UIDs {
-		ss := strings.SplitN(UID, "-", 4)
+	ids := make([]int, len(UIDs))
+	for i, UID := range UIDs {
+		ss := strings.Split(UID, "-")
 
 		switch {
-		case len(ss) != 4: // assuming kubermatic-%s-%s-%d format, see CreateNode and node
-			continue
-		case ss[1] != c.Metadata.Name:
-			continue
+		case len(ss) < 4: // assuming kubermatic-%s-%s-%d format, see CreateNode and node
+			return errors.New("invalid UID")
+		case strings.Join(ss[1:len(ss)-2], "-") != c.Metadata.Name:
+			return errors.New("cluster name mismatch")
 		}
 
-		id, err := strconv.Atoi(ss[3])
+		id, err := strconv.Atoi(ss[len(ss)-1])
 		if err != nil {
 			return err
 		}
 
-		if _, err := client.Droplets.Delete(id); err != nil {
+		ids[i] = id
+	}
+
+	for _, id := range ids {
+		glog.V(7).Infof("deleting %d", id)
+
+		res, err := client.Droplets.Delete(id)
+		if err != nil {
 			return err
 		}
+
+		glog.V(7).Infof("digital ocean delete response %+v", res)
 	}
 
 	return nil

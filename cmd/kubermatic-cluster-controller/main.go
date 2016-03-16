@@ -47,6 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for ctx := range clientcmdConfig.Contexts {
 		// create kube client
 		clientcmdConfig, err := clientcmd.LoadFromFile(*kubeconfig)
