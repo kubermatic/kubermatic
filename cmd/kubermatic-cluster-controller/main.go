@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -19,8 +20,9 @@ func main() {
 	homeDir := os.Getenv("HOME")
 	kubeconfig := flag.String("kubeconfig", path.Join(homeDir, ".kube/config"), "The kubeconfig file with a current context.")
 	masterResources := flag.String("master-resources", "", "The master resources path (required).")
-	urlPattern := flag.String("url-pattern", "%s.%s.kubermatic.io", "The fmt.Sprintf pattern for the url, interpolated with the cluster name and the dc.")
+	hostPattern := flag.String("host-pattern", "%s.%s.kubermatic.io", "The fmt.Sprintf pattern for the apiserver host, interpolated with the cluster name and the dc.")
 	dcFile := flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	dev := flag.Bool("dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
 
 	flag.Parse()
 
@@ -36,7 +38,7 @@ func main() {
 		var err error
 		dcs, err = provider.DatacentersMeta(*dcFile)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", *dcFile, err))
 		}
 	}
 
@@ -67,7 +69,9 @@ func main() {
 
 		// start controller
 		cps := cloud.Providers(dcs)
-		ctrl, err := cluster.NewController(ctx, client, cps, *masterResources, *urlPattern)
+		ctrl, err := cluster.NewController(
+			ctx, client, cps, *masterResources, *hostPattern, *dev,
+		)
 		if err != nil {
 			log.Fatal(err)
 		}

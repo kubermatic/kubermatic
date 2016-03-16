@@ -18,6 +18,10 @@ const (
 	RoleLabelKey = "role"
 	// ClusterRoleLabel is the value of the role label of a cluster namespace.
 	ClusterRoleLabel = "kubermatic-cluster"
+	// DevLabelKey identifies clusters that are only processed by dev cluster controllers.
+	DevLabelKey = "dev"
+	// DevLabelValue is the value for DevLabelKey.
+	DevLabelValue = "true"
 
 	// annotationPrefix is the prefix string of every cluster namespace annotation.
 	annotationPrefix = "kubermatic.io/"
@@ -35,11 +39,16 @@ const (
 	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
-	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcdUrl
+	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
+	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
+	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
+	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
 	phaseLabelKey = "phase"
+
+	flannelCIDRADefault = "172.17.0.0/16"
 )
 
 // NamespaceName create a namespace name for a given user and cluster.
@@ -74,6 +83,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		phaseTS = time.Now() // gracefully use "now"
 	}
 
+	apiserverSSH, _ := base64.StdEncoding.DecodeString(ns.Annotations[apiserverPubSSHAnnotation])
 	c := api.Cluster{
 		Metadata: api.Metadata{
 			Name:        ns.Labels[nameLabelKey],
@@ -84,14 +94,20 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: ns.Annotations[humanReadableNameAnnotation],
+			Dev:               ns.Labels[DevLabelKey] == DevLabelValue,
 		},
 		Status: api.ClusterStatus{
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
+			RootCA: api.SecretKeyCert{
+				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
+				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
+			},
+			ApiserverSSH: string(apiserverSSH),
 		},
 	}
 
-	// unprefix and copy kubermatic  annotations
+	// unprefix and copy kubermatic annotations
 	for k, v := range ns.Annotations {
 		if !strings.HasPrefix(k, customAnnotationPrefix) {
 			continue
@@ -206,10 +222,20 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
+	if c.Status.RootCA.Key != nil {
+		ns.Annotations[rootCAKeyAnnotation] = c.Status.RootCA.Key.Base64()
+	}
+	if c.Status.RootCA.Cert != nil {
+		ns.Annotations[rootCACertAnnotation] = c.Status.RootCA.Cert.Base64()
+	}
+	ns.Annotations[apiserverPubSSHAnnotation] = base64.StdEncoding.EncodeToString([]byte(c.Status.ApiserverSSH))
 
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name
 	ns.Labels[userLabelKey] = LabelUser(c.Metadata.User)
+	if c.Spec.Dev {
+		ns.Labels[DevLabelKey] = DevLabelValue
+	}
 
 	if c.Status.Phase != api.UnknownClusterStatusPhase {
 		ns.Labels[phaseLabelKey] = strings.ToLower(string(c.Status.Phase))
@@ -253,6 +279,7 @@ func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, as map[stri
 		return nil, err
 	}
 	spec.DC = as[cloudDCAnnotation]
+	spec.Network.Flannel.CIDR = flannelCIDRADefault
 
 	return spec, nil
 }
@@ -266,6 +293,8 @@ func ClusterPhase(ns *kapi.Namespace) api.ClusterPhase {
 	switch api.ClusterPhase(toCapital(ns.Labels[phaseLabelKey])) {
 	case api.PendingClusterStatusPhase:
 		return api.PendingClusterStatusPhase
+	case api.LaunchingClusterStatusPhase:
+		return api.LaunchingClusterStatusPhase
 	case api.FailedClusterStatusPhase:
 		return api.FailedClusterStatusPhase
 	case api.RunningClusterStatusPhase:

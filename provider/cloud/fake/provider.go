@@ -3,10 +3,9 @@ package fake
 import (
 	"errors"
 
-	"golang.org/x/net/context"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -50,6 +49,10 @@ func (p *fakeCloudProvider) CreateNodes(
 	instances int,
 ) ([]*api.Node, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (p *fakeCloudProvider) PrepareCloudSpec(c *api.Cluster) error {
+	return nil
 }
 
 func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {

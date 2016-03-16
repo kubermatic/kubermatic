@@ -9,12 +9,11 @@ import (
 
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -36,10 +35,11 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
-	return map[string]string{
+	as := map[string]string{
 		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
-	}, nil
+	}
+	return as, nil
 }
 
 func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
@@ -119,15 +119,26 @@ func (do *digitalocean) CreateNodes(
 
 	glog.V(2).Infof("dropletName %q", dropletName)
 
-	image := godo.DropletCreateImage{Slug: "coreos-stable"}
+	clientKC, err := cluster.CreateKeyCert("dropletName")
+	if err != nil {
+		return nil, err
+	}
 
+	image := godo.DropletCreateImage{Slug: "coreos-stable"}
 	data := ktemplate.Data{
+		DC:                spec.DC,
+		ClusterName:       cluster.Metadata.Name,
 		SSHAuthorizedKeys: cSpec.SSHKeys,
 		EtcdURL:           cluster.Address.EtcdURL,
 		APIServerURL:      cluster.Address.URL,
-		KubeletToken:      cluster.Address.Token,
 		Region:            dc.Spec.Digitalocean.Region,
 		Name:              dropletName,
+		ClientKey:         clientKC.Key.Base64(),
+		ClientCert:        clientKC.Cert.Base64(),
+		RootCACert:        cluster.Status.RootCA.Cert.Base64(),
+		ApiserverPubSSH:   cluster.Status.ApiserverSSH,
+		ApiserverToken:    cluster.Address.Token,
+		FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
 	}
 
 	tpl, err := template.
@@ -172,6 +183,10 @@ func (do *digitalocean) CreateNodes(
 	return []*api.Node{n}, nil
 }
 
+func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
+	return nil
+}
+
 func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	doSpec := cluster.Spec.Cloud.GetDigitalocean()
 	t := token(doSpec.GetToken())
@@ -206,12 +221,12 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 
 	nodes := make([]*api.Node, 0, len(ds))
 	for _, d := range ds {
-		ss := strings.SplitN(d.Name, "-", 3)
+		ss := strings.Split(d.Name, "-")
 
 		switch {
-		case len(ss) != 3: // assuming kubermatic-%s-%s format, see CreateNode
+		case len(ss) < 3: // assuming kubermatic-%s-%s format, see CreateNode
 			continue
-		case ss[1] != cluster.Metadata.Name:
+		case strings.Join(ss[1:len(ss)-1], "-") != cluster.Metadata.Name:
 			continue
 		}
 

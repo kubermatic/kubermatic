@@ -66,12 +66,23 @@ type DigitaloceanCloudSpec struct {
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct {
-	PrivateIntf string `json:"privateInterface"`
+	PrivateIntf   string  `json:"privateInterface"`
+	ClientKeyCert KeyCert `json:"clientKeyCert"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
+}
+
+// FlannelNetworkSpec specifies a deployed flannel network.
+type FlannelNetworkSpec struct {
+	CIDR string
+}
+
+// NetworkSpec specifies the deployed network.
+type NetworkSpec struct {
+	Flannel FlannelNetworkSpec
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -81,6 +92,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
+	Network      NetworkSpec            `json:"-"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -107,6 +119,9 @@ const (
 	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
 	PendingClusterStatusPhase ClusterPhase = "Pending"
 
+	// LaunchingClusterStatusPhase means that the cluster controller starts up the cluster.
+	LaunchingClusterStatusPhase ClusterPhase = "Launching"
+
 	// FailedClusterStatusPhase means that the cluster controller time out launching the cluster.
 	FailedClusterStatusPhase ClusterPhase = "Failed"
 
@@ -120,17 +135,39 @@ const (
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
 
+type (
+	// Bytes stores a byte slices and ecnodes as base64 in JSON.
+	Bytes []byte
+)
+
+// KeyCert is a pair of key and cert.
+type KeyCert struct {
+	Key  Bytes `json:"key"`
+	Cert Bytes `json:"cert"`
+}
+
+// SecretKeyCert is a pair of key and cert where the key is not published to the API client.
+type SecretKeyCert struct {
+	Key  Bytes `json:"-"`
+	Cert Bytes `json:"cert"`
+}
+
 // ClusterStatus stores status informations about a cluster.
 type ClusterStatus struct {
 	LastTransitionTime time.Time      `json:"lastTransitionTime"`
 	Phase              ClusterPhase   `json:"phase,omitempty"`
 	Health             *ClusterHealth `json:"health,omitempty"`
+
+	RootCA       SecretKeyCert `json:"rootCA"`
+	ApiserverSSH string        `json:"apiserverSSH"`
 }
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
 	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
+
+	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.

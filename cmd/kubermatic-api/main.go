@@ -24,6 +24,7 @@ func main() {
 	secretsFile := flag.String("secrets", "secrets.yaml", "The secrets.yaml file path")
 	jwtKey := flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	address := flag.String("address", ":8080", "The address to listen on")
+	dev := flag.Bool("dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
 	flag.Parse()
 
 	// load list of datacenters
@@ -32,7 +33,7 @@ func main() {
 		var err error
 		dcs, err = provider.DatacentersMeta(*dcFile)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", *dcFile, err))
 		}
 	}
 
@@ -40,7 +41,7 @@ func main() {
 	cps := cloud.Providers(dcs)
 
 	// create KubernetesProvider for each context in the kubeconfig
-	kps, err := kubernetes.Providers(*kubeconfig, dcs, cps, *secretsFile)
+	kps, err := kubernetes.Providers(*kubeconfig, dcs, cps, *secretsFile, *dev)
 	if err != nil {
 		log.Fatal(err)
 	}
