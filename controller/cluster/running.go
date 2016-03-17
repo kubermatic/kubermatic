@@ -21,6 +21,7 @@ func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, e
 		c.Status.Health.LastTransitionTime = time.Now()
 		return c, nil
 	}
+
 	if !allHealthy {
 		glog.V(5).Infof("Cluster %q not healthy: %+v", c.Metadata.Name, c.Status.Health)
 	} else {

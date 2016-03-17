@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
@@ -36,6 +37,36 @@ func nodesEndpoint(
 		}
 
 		return cp.Nodes(ctx, c)
+	}
+}
+
+func deleteNodeEndpoint(
+	kps map[string]provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
+		if err != nil {
+			return nil, err
+		}
+
+		if cp == nil {
+			return []*api.Node{}, nil
+		}
+
+		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
 	}
 }
 
@@ -111,6 +142,24 @@ func decodeCreateNodesReq(r *http.Request) (interface{}, error) {
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+type nodeReq struct {
+	nodesReq
+	uid string
+}
+
+func decodeNodeReq(r *http.Request) (interface{}, error) {
+	var req nodeReq
+
+	cr, err := decodeNodesReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.nodesReq = cr.(nodesReq)
+	req.uid = mux.Vars(r)["node"]
 
 	return req, nil
 }
