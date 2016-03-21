@@ -110,78 +110,83 @@ func (do *digitalocean) CreateNodes(
 
 	cSpec := cluster.Spec.Cloud.GetDigitalocean()
 	nSpec := spec.Digitalocean
+	created := make([]*api.Node, 0, instances)
 
-	id := provider.ShortUID(5)
-	dropletName := fmt.Sprintf(
-		"kubermatic-%s-%s",
-		cluster.Metadata.Name,
-		id,
-	)
+	for i := 0; i < instances; i++ {
+		id := provider.ShortUID(5)
+		dropletName := fmt.Sprintf(
+			"kubermatic-%s-%s",
+			cluster.Metadata.Name,
+			id,
+		)
 
-	glog.V(2).Infof("dropletName %q", dropletName)
+		glog.V(2).Infof("dropletName %q", dropletName)
 
-	clientKC, err := cluster.CreateKeyCert("dropletName")
-	if err != nil {
-		return nil, err
+		clientKC, err := cluster.CreateKeyCert("dropletName")
+		if err != nil {
+			return created, err
+		}
+
+		image := godo.DropletCreateImage{Slug: "coreos-stable"}
+		data := ktemplate.Data{
+			DC:                spec.DC,
+			ClusterName:       cluster.Metadata.Name,
+			SSHAuthorizedKeys: cSpec.SSHKeys,
+			EtcdURL:           cluster.Address.EtcdURL,
+			APIServerURL:      cluster.Address.URL,
+			Region:            dc.Spec.Digitalocean.Region,
+			Name:              dropletName,
+			ClientKey:         clientKC.Key.Base64(),
+			ClientCert:        clientKC.Cert.Base64(),
+			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
+			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
+			ApiserverToken:    cluster.Address.Token,
+			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
+		}
+
+		tpl, err := template.
+			New("cloud-config-node.yaml").
+			Funcs(ktemplate.FuncMap).
+			ParseFiles("template/coreos/cloud-config-node.yaml")
+
+		if err != nil {
+			return created, err
+		}
+
+		var buf bytes.Buffer
+		if err = tpl.Execute(&buf, data); err != nil {
+			return created, err
+		}
+
+		glog.V(2).Infof("---- template\n%s\n----", buf.String())
+
+		t := token(cSpec.GetToken())
+		client := godo.NewClient(oauth2.NewClient(ctx, t))
+
+		createRequest := &godo.DropletCreateRequest{
+			Region:            dc.Spec.Digitalocean.Region,
+			Image:             image,
+			Size:              nSpec.Size,
+			PrivateNetworking: true,
+			SSHKeys:           dropletKeys(nSpec.SSHKeys),
+			Name:              dropletName,
+			UserData:          buf.String(),
+		}
+
+		droplet, _, err := client.Droplets.Create(createRequest)
+		if err != nil {
+			return created, err
+		}
+
+		n, err := node(cluster.Spec.Cloud.DC, droplet)
+		if err != nil {
+			return created, err
+		}
+
+		created = append(created, n)
 	}
 
-	image := godo.DropletCreateImage{Slug: "coreos-stable"}
-	data := ktemplate.Data{
-		DC:                spec.DC,
-		ClusterName:       cluster.Metadata.Name,
-		SSHAuthorizedKeys: cSpec.SSHKeys,
-		EtcdURL:           cluster.Address.EtcdURL,
-		APIServerURL:      cluster.Address.URL,
-		Region:            dc.Spec.Digitalocean.Region,
-		Name:              dropletName,
-		ClientKey:         clientKC.Key.Base64(),
-		ClientCert:        clientKC.Cert.Base64(),
-		RootCACert:        cluster.Status.RootCA.Cert.Base64(),
-		ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-		ApiserverToken:    cluster.Address.Token,
-		FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
-	}
-
-	tpl, err := template.
-		New("cloud-config-node.yaml").
-		Funcs(ktemplate.FuncMap).
-		ParseFiles("template/coreos/cloud-config-node.yaml")
-
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	if err = tpl.Execute(&buf, data); err != nil {
-		return nil, err
-	}
-
-	glog.V(2).Infof("---- template\n%s\n----", buf.String())
-
-	t := token(cSpec.GetToken())
-	client := godo.NewClient(oauth2.NewClient(ctx, t))
-
-	createRequest := &godo.DropletCreateRequest{
-		Region:            dc.Spec.Digitalocean.Region,
-		Image:             image,
-		Size:              nSpec.Size,
-		PrivateNetworking: true,
-		SSHKeys:           dropletKeys(nSpec.SSHKeys),
-		Name:              dropletName,
-		UserData:          buf.String(),
-	}
-
-	droplet, _, err := client.Droplets.Create(createRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	n, err := node(cluster.Spec.Cloud.DC, droplet)
-	if err != nil {
-		return nil, err
-	}
-
-	return []*api.Node{n}, nil
+	return created, nil
 }
 
 func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
