@@ -386,7 +386,14 @@ func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster)
 		}
 
 		var rc kapi.ReplicationController
-		err = t.Execute(nil, &rc)
+		data := struct {
+			DC          string
+			ClusterName string
+		}{
+			DC:          cc.dc,
+			ClusterName: c.Metadata.Name,
+		}
+		err = t.Execute(data, &rc)
 		return &rc, err
 	}
 
