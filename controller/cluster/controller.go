@@ -321,7 +321,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 	startTime := time.Now()
 	glog.V(4).Infof("Syncing cluster %q", key)
 	defer func() {
-		glog.V(4).Infof("Finished syncing namespace %q (%v)", key, time.Now().Sub(startTime))
+		glog.V(4).Infof("Finished syncing namespace %q (%v)", key, time.Since(startTime))
 	}()
 	obj, exists, err := cc.nsStore.GetByKey(key)
 	if err != nil {
