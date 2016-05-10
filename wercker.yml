@@ -40,7 +40,9 @@ deploy:
   box: ubuntu:14.04
   rolling-update:
     - script:
-        code: apt-get install -y ca-certificates
+        code: |
+          apt-get update
+          apt-get install -y ca-certificates
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
