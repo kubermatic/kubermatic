@@ -249,8 +249,8 @@ func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg stri
 	cc.recorder.Eventf(ref, reason, msg, args)
 }
 
-func (cc *clusterController) updateCluster(c *api.Cluster) error {
-	ns := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
+func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
+	ns := kprovider.NamespaceName(newC.Metadata.User, newC.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
 		oldNS, err := cc.client.Namespaces().Get(ns)
@@ -262,7 +262,7 @@ func (cc *clusterController) updateCluster(c *api.Cluster) error {
 		newNS, err := func() (*kapi.Namespace, error) {
 			cc.mu.Lock()
 			defer cc.mu.Unlock()
-			return kprovider.MarshalCluster(cc.cps, c, oldNS)
+			return kprovider.MarshalCluster(cc.cps, newC, oldNS)
 		}()
 		if err != nil {
 			return err
@@ -279,9 +279,10 @@ func (cc *clusterController) updateCluster(c *api.Cluster) error {
 		}
 
 		// record phase change events
-		if c.Status.Phase != c.Status.Phase {
-			cc.recordClusterPhaseChange(newNS, c.Status.Phase)
+		if oldC.Status.Phase != newC.Status.Phase {
+			cc.recordClusterPhaseChange(newNS, newC.Status.Phase)
 		}
+
 		return nil
 	}
 
@@ -380,7 +381,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 			c.Metadata.Name,
 			c.Status.Phase,
 		)
-		err = cc.updateCluster(changedC)
+		err = cc.updateCluster(c, changedC)
 		if err != nil {
 			return fmt.Errorf(
 				"failed to update changed namespace for cluster %q: %v",
