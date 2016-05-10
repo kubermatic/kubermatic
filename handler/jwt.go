@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/base64"
-	
 	"github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/glog"
