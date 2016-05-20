@@ -1,8 +1,22 @@
 datacenters:
-  gke-west1b:
+  vagrant-single:
     location: Europe
     country: EU
     provider: gce
+    spec:
+      bringyourown:
+        region: europe-west1
+      seed:
+        bringyourown:
+  gke-us:
+    location: US-Central
+    country: US
+    provider: gce
+    spec:
+      bringyourown:
+        region: us-central1-c
+      seed:
+        bringyourown:
   do-ams2:
     location: Amsterdam
     country: NL
