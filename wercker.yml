@@ -85,7 +85,9 @@ deploy:
         registry: https://registry.hub.docker.com
   rollback-api:
     - script:
-        code: apt-get install -y ca-certificates
+        code: |
+          apt-get update
+          apt-get install -y ca-certificates
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
@@ -95,7 +97,9 @@ deploy:
         image: kubermatic/api:$WERCKER_GIT_COMMIT
   rollback-cluster-controller-do-ams2:
     - script:
-        code: apt-get install -y ca-certificates
+        code: |
+          apt-get update
+          apt-get install -y ca-certificates
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
