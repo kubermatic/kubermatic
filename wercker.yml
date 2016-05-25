@@ -62,14 +62,18 @@ deploy:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
-        insecure-skip-tls-verify: true
+        certificate-authority: $CERTIFICATE_AUTHORITY
+        client-certificate: $ CLIENT_CERTIFICATE
+        client-key: $CLIENT_KEY
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
-        insecure-skip-tls-verify: true
+        certificate-authority: $CERTIFICATE_AUTHORITY
+        client-certificate: $ CLIENT_CERTIFICATE
+        client-key: $CLIENT_KEY
         command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
         image: kubermatic/api:$WERCKER_GIT_COMMIT
     - internal/docker-scratch-push:
@@ -92,7 +96,9 @@ deploy:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
-        insecure-skip-tls-verify: true
+        certificate-authority: $CERTIFICATE_AUTHORITY
+        client-certificate: $ CLIENT_CERTIFICATE
+        client-key: $CLIENT_KEY
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
   rollback-cluster-controller-do-ams2:
@@ -104,6 +110,8 @@ deploy:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
-        insecure-skip-tls-verify: true
+        certificate-authority: $CERTIFICATE_AUTHORITY
+        client-certificate: $ CLIENT_CERTIFICATE
+        client-key: $CLIENT_KEY
         command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
