@@ -117,15 +117,15 @@ deploy:
         filename: admin-key.pem
         content: $CLIENT_KEY
     - kubectl:
-      server: $KUBERNETES_MASTER
+        server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
-        password: $KUBERNETES_PASSWORD      
+        password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
         client-certificate: admin.pem
         client-key: admin-key.pem
         command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
         image: kubermatic/api:$WERCKER_GIT_COMMIT
-  rollback-cluster-controller-do-ams2:
+  rollback-cluster-controller:
     - script:
         code: |
           apt-get update
@@ -143,7 +143,7 @@ deploy:
         filename: admin-key.pem
         content: $CLIENT_KEY
     - kubectl:
-      server: $KUBERNETES_MASTER
+        server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
