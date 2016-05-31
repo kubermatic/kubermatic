@@ -8,7 +8,7 @@ datacenters:
         region: europe-west1
       seed:
         bringyourown:
-  gke-us:
+  gke:
     location: US-Central
     country: US
     provider: gce
