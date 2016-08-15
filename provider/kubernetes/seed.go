@@ -11,7 +11,8 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/client/restclient"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)
@@ -26,7 +27,7 @@ type seedProvider struct {
 func NewSeedProvider(
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	cfgs map[string]client.Config,
+	cfgs map[string]restclient.Config,
 	secrets *Secrets,
 ) provider.KubernetesProvider {
 	seeds := map[string]*api.Cluster{}
@@ -114,7 +115,7 @@ func NewSeedProvider(
 
 func (p *seedProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	return nil, errors.New("not implemented")
@@ -122,7 +123,7 @@ func (p *seedProvider) NewCluster(user provider.User, cluster string, spec *api.
 
 func (p *seedProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	p.mu.Lock()
@@ -130,14 +131,14 @@ func (p *seedProvider) Cluster(user provider.User, cluster string) (*api.Cluster
 
 	c, found := p.seeds[cluster]
 	if !found {
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 	return c, nil
 }
 
 func (p *seedProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	return nil, errors.New("not implemented")
@@ -161,7 +162,7 @@ func (p *seedProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
 
 func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return kerrors.NewNotFound("cluster", cluster)
+		return kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	return errors.New("not implemented")
