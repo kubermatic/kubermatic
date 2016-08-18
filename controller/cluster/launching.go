@@ -86,7 +86,7 @@ func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster,
 	return c, nil
 }
 
-func servicePort(idx cache.Indexer, key, portName string) (int, error) {
+func servicePort(idx cache.Indexer, key, portName string) (int32, error) {
 	obj, exists, err := idx.GetByKey(key)
 	if err != nil {
 		return 0, err
