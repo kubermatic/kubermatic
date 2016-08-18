@@ -202,11 +202,10 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	l := kapi.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+	nsList, err := p.client.Namespaces().List(kapi.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
 		RoleLabelKey: ClusterRoleLabel,
 		userLabelKey: LabelUser(user.Name),
-	})), FieldSelector: fields.Everything()}
-	nsList, err := p.client.Namespaces().List(l)
+	})), FieldSelector: fields.Everything()})
 	if err != nil {
 		return nil, err
 	}

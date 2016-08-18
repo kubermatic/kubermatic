@@ -109,17 +109,17 @@ func NewController(
 	cc.nsStore, cc.nsController = framework.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Namespaces().List(
-					labels.SelectorFromSet(labels.Set(nsLabels)),
-					fields.Everything(),
-				)
+				return cc.client.Namespaces().List(kapi.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labels.Set(nsLabels)),
+					FieldSelector: fields.Everything(),
+				})
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Namespaces().Watch(
-					labels.SelectorFromSet(labels.Set(nsLabels)),
-					fields.Everything(),
-					rv,
-				)
+				return cc.client.Namespaces().Watch(kapi.ListOptions{
+					LabelSelector:   labels.SelectorFromSet(labels.Set(nsLabels)),
+					FieldSelector:   fields.Everything(),
+					ResourceVersion: rv,
+				})
 			},
 		},
 		&kapi.Namespace{},
@@ -147,27 +147,45 @@ func NewController(
 		"namespace": cache.IndexFunc(cache.MetaNamespaceIndexFunc),
 	}
 
-	cc.podStore.Store, cc.podController = framework.NewInformer(
+	cc.podStore.Indexer, cc.podController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Pods(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+				l := kapi.ListOptions{
+					LabelSelector: labels.Everything(),
+					FieldSelector: fields.Everything(),
+				}
+				return cc.client.Pods(kapi.NamespaceAll).List(l)
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Pods(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+				l := kapi.ListOptions{
+					LabelSelector:   labels.Everything(),
+					FieldSelector:   fields.Everything(),
+					ResourceVersion: rv,
+				}
+				return cc.client.Pods(kapi.NamespaceAll).Watch(l)
 			},
 		},
 		&kapi.Pod{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
 	)
 
 	cc.rcStore, cc.rcController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).List(labels.Everything())
+				l := kapi.ListOptions{
+					LabelSelector: labels.Everything(),
+				}
+				return cc.client.ReplicationControllers(kapi.NamespaceAll).List(l)
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+				l := kapi.ListOptions{
+					LabelSelector:   labels.Everything(),
+					FieldSelector:   fields.Everything(),
+					ResourceVersion: rv,
+				}
+				return cc.client.ReplicationControllers(kapi.NamespaceAll).Watch(l)
 			},
 		},
 		&kapi.ReplicationController{},
@@ -179,10 +197,19 @@ func NewController(
 	cc.secretStore, cc.secretController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+				l := kapi.ListOptions{
+					LabelSelector: labels.Everything(),
+					FieldSelector: fields.Everything(),
+				}
+				return cc.client.Secrets(kapi.NamespaceAll).List(l)
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+				l := kapi.ListOptions{
+					LabelSelector:   labels.Everything(),
+					FieldSelector:   fields.Everything(),
+					ResourceVersion: rv,
+				}
+				return cc.client.Secrets(kapi.NamespaceAll).Watch(l)
 			},
 		},
 		&kapi.Secret{},
@@ -194,10 +221,19 @@ func NewController(
 	cc.serviceStore, cc.serviceController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Services(kapi.NamespaceAll).List(labels.Everything())
+				l := kapi.ListOptions{
+					LabelSelector: labels.Everything(),
+				}
+
+				return cc.client.Services(kapi.NamespaceAll).List(l)
 			},
 			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Services(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+				l := kapi.ListOptions{
+					LabelSelector:   labels.Everything(),
+					FieldSelector:   fields.Everything(),
+					ResourceVersion: rv,
+				}
+				return cc.client.Services(kapi.NamespaceAll).Watch(l)
 			},
 		},
 		&kapi.Service{},
