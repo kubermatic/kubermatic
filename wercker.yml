@@ -23,7 +23,7 @@ build:
           go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
           # go get github.com/mattn/goveralls
           git describe --tags |tee VERSION
-          gometalinter --install --update --force
+          gometalinter --install
     - script:
         name: build and test
         code: |

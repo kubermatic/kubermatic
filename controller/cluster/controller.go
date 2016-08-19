@@ -18,11 +18,11 @@ import (
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	kcontroller "k8s.io/kubernetes/pkg/controller"
 	"k8s.io/kubernetes/pkg/controller/framework"
-	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/types"
-	"k8s.io/kubernetes/pkg/util"
+	uruntime "k8s.io/kubernetes/pkg/util/runtime"
+	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/util/workqueue"
 	"k8s.io/kubernetes/pkg/watch"
 )
@@ -108,18 +108,12 @@ func NewController(
 
 	cc.nsStore, cc.nsController = framework.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Namespaces().List(
-					labels.SelectorFromSet(labels.Set(nsLabels)),
-					fields.Everything(),
-				)
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels))
+				return cc.client.Namespaces().List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Namespaces().Watch(
-					labels.SelectorFromSet(labels.Set(nsLabels)),
-					fields.Everything(),
-					rv,
-				)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.Namespaces().Watch(options)
 			},
 		},
 		&kapi.Namespace{},
@@ -147,27 +141,28 @@ func NewController(
 		"namespace": cache.IndexFunc(cache.MetaNamespaceIndexFunc),
 	}
 
-	cc.podStore.Store, cc.podController = framework.NewInformer(
+	cc.podStore.Indexer, cc.podController = framework.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Pods(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.Pods(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Pods(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.Pods(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&kapi.Pod{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
 	)
 
 	cc.rcStore, cc.rcController = framework.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).List(labels.Everything())
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.ReplicationControllers(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.ReplicationControllers(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&kapi.ReplicationController{},
@@ -178,11 +173,11 @@ func NewController(
 
 	cc.secretStore, cc.secretController = framework.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).List(labels.Everything(), fields.Everything())
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.Secrets(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.Secrets(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&kapi.Secret{},
@@ -193,11 +188,11 @@ func NewController(
 
 	cc.serviceStore, cc.serviceController = framework.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Services(kapi.NamespaceAll).List(labels.Everything())
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.Services(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Services(kapi.NamespaceAll).Watch(labels.Everything(), fields.Everything(), rv)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.Services(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&kapi.Service{},
@@ -208,13 +203,11 @@ func NewController(
 
 	cc.ingressStore, cc.ingressController = framework.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func() (runtime.Object, error) {
-				return cc.client.Extensions().Ingress(kapi.NamespaceAll).
-					List(labels.Everything(), fields.Everything())
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.Extensions().Ingress(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(rv string) (watch.Interface, error) {
-				return cc.client.Extensions().Ingress(kapi.NamespaceAll).
-					Watch(labels.Everything(), fields.Everything(), rv)
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.Extensions().Ingress(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&extensions.Ingress{},
@@ -234,7 +227,7 @@ func (cc *clusterController) recordClusterPhaseChange(ns *kapi.Namespace, newPha
 		Namespace: ns.Name,
 	}
 	glog.V(2).Infof("Recording phase change %s event message for namespace %s", string(newPhase), ns.Name)
-	cc.recorder.Eventf(ref, string(newPhase), "Cluster phase is now: %s", newPhase)
+	cc.recorder.Eventf(ref, kapi.EventTypeNormal, string(newPhase), "Cluster phase is now: %s", newPhase)
 }
 
 func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
@@ -246,7 +239,7 @@ func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg stri
 		Namespace: nsName,
 	}
 	glog.V(4).Infof("Recording event for namespace %q: %s", nsName, fmt.Sprintf(msg, args...))
-	cc.recorder.Eventf(ref, reason, msg, args)
+	cc.recorder.Eventf(ref, kapi.EventTypeNormal, reason, msg, args)
 }
 
 func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
@@ -441,23 +434,23 @@ func (cc *clusterController) syncInPhase(phase api.ClusterPhase) {
 }
 
 func (cc *clusterController) Run(stopCh <-chan struct{}) {
-	defer util.HandleCrash()
+	defer uruntime.HandleCrash()
 	glog.Info("Starting cluster controller")
 
-	go cc.nsController.Run(util.NeverStop)
-	go cc.podController.Run(util.NeverStop)
-	go cc.rcController.Run(util.NeverStop)
-	go cc.secretController.Run(util.NeverStop)
-	go cc.serviceController.Run(util.NeverStop)
-	go cc.ingressController.Run(util.NeverStop)
+	go cc.nsController.Run(wait.NeverStop)
+	go cc.podController.Run(wait.NeverStop)
+	go cc.rcController.Run(wait.NeverStop)
+	go cc.secretController.Run(wait.NeverStop)
+	go cc.serviceController.Run(wait.NeverStop)
+	go cc.ingressController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
-		go util.Until(cc.worker, workerPeriod, stopCh)
+		go wait.Until(cc.worker, workerPeriod, stopCh)
 	}
 
-	go util.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
-	go util.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
-	go util.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
 
 	<-stopCh
 

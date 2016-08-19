@@ -27,32 +27,39 @@ import (
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/fielderrors"
+	"k8s.io/kubernetes/pkg/util/validation/field"
 )
 
 // strategy implements behavior for ThirdPartyResource objects
 type strategy struct {
 	runtime.ObjectTyper
-	api.NameGenerator
 }
 
 // Strategy is the default logic that applies when creating and updating ThirdPartyResource
 // objects via the REST API.
-var Strategy = strategy{api.Scheme, api.SimpleNameGenerator}
+var Strategy = strategy{api.Scheme}
 
 var _ = rest.RESTCreateStrategy(Strategy)
 
 var _ = rest.RESTUpdateStrategy(Strategy)
 
 func (strategy) NamespaceScoped() bool {
-	return true
+	return false
+}
+
+func (strategy) GenerateName(base string) string {
+	return ""
 }
 
 func (strategy) PrepareForCreate(obj runtime.Object) {
 }
 
-func (strategy) Validate(ctx api.Context, obj runtime.Object) fielderrors.ValidationErrorList {
+func (strategy) Validate(ctx api.Context, obj runtime.Object) field.ErrorList {
 	return validation.ValidateThirdPartyResource(obj.(*extensions.ThirdPartyResource))
+}
+
+// Canonicalize normalizes the object after validation.
+func (strategy) Canonicalize(obj runtime.Object) {
 }
 
 func (strategy) AllowCreateOnUpdate() bool {
@@ -62,8 +69,8 @@ func (strategy) AllowCreateOnUpdate() bool {
 func (strategy) PrepareForUpdate(obj, old runtime.Object) {
 }
 
-func (strategy) ValidateUpdate(ctx api.Context, obj, old runtime.Object) fielderrors.ValidationErrorList {
-	return validation.ValidateThirdPartyResourceUpdate(old.(*extensions.ThirdPartyResource), obj.(*extensions.ThirdPartyResource))
+func (strategy) ValidateUpdate(ctx api.Context, obj, old runtime.Object) field.ErrorList {
+	return validation.ValidateThirdPartyResourceUpdate(obj.(*extensions.ThirdPartyResource), old.(*extensions.ThirdPartyResource))
 }
 
 func (strategy) AllowUnconditionalUpdate() bool {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api/provider"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 )
 
@@ -27,15 +27,16 @@ func Providers(
 		return nil, err
 	}
 
-	cfgs := map[string]client.Config{}
+	cfgs := map[string]restclient.Config{}
 	for ctx := range clientcmdConfig.Contexts {
 		clientconfig := clientcmd.NewNonInteractiveClientConfig(
 			*clientcmdConfig,
 			ctx,
 			&clientcmd.ConfigOverrides{},
+			nil,
 		)
 
-		var cfg *client.Config
+		var cfg *restclient.Config
 		cfg, err = clientconfig.ClientConfig()
 		if err != nil {
 			return nil, err
