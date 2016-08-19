@@ -57,7 +57,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 	}
 
 	// check that the TLS secret is available
-	err = cc.launchingCheckTlsSecret(c)
+	err = cc.launchingCheckTLSSecret(c)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +343,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 	return c, nil
 }
 
-func (cc *clusterController) launchingCheckTlsSecret(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckTLSSecret(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	key := fmt.Sprintf("%s/%s", ns, "apiserver-secret")
 	_, exists, err := cc.secretStore.GetByKey(key)
