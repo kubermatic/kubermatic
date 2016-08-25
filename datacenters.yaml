@@ -1,13 +1,10 @@
 datacenters:
-  vagrant-single:
+  minikube:
     location: Europe
     country: EU
-    provider: gce
     spec:
       bringyourown:
-        region: europe-west1
-      seed:
-        bringyourown:
+        region: local
   gke:
     location: US-Central
     country: US
