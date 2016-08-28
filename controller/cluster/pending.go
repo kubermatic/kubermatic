@@ -133,7 +133,8 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 		if err != nil {
 			return nil, nil, err
 		}
-		etcdKC, err := c.CreateKeyCert(strings.Split(u.Host, ":")[0])
+		etcdURL := "etcd." + strings.Split(u.Host, ":")[0]
+		etcdKC, err := c.CreateKeyCert(etcdURL)
 		if err != nil {
 			return nil, nil, err
 		}
