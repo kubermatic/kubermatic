@@ -16,11 +16,11 @@ $ cd api
 
 ## Dependencies
 
-How to update the vendor dependencies with a new Kubernetes version:
+How to update the Glide/vendor dependencies with a new Kubernetes version:
 
-Update the vendored sources in Kubermatic:```
+Update the vendored sources in Kubermatic:
+```
 $ ./glide-update.sh
-
 ```
 
 Finally commit the vendored changes.
@@ -36,13 +36,20 @@ Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depen
 Example for `kubermatic-api`
 
 ```
-make build CMD=kubermatic-api && ./kubermatic-api --v=7 --jwt-key="RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc" --datacenters=datacenters.yaml --kubeconfig .kubeconfig --logtostderr
+make build CMD=kubermatic-api && ./kubermatic-api --v=7 \
+ --jwt-key="RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc" \
+--datacenters=datacenters.yaml --kubeconfig .kubeconfig --logtostderr
 ```
 
 and `kubermatic-cluster-controller`
+
 ```
-make build CMD=kubermatic-cluster-controller && ./kubermatic-cluster-controller -master-resources ../kubermatic/master --kubeconfig=.kubeconfig --v=7 --dev --loglevel=4
+make build CMD=kubermatic-cluster-controller &&  \
+ ./kubermatic-cluster-controller \
+ -master-resources ../kubermatic/master \
+  --kubeconfig=.kubeconfig --v=7 --dev --loglevel=4
 ```
+
 
 # Misc
 

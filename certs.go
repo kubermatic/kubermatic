@@ -79,10 +79,7 @@ func (bs *Bytes) UnmarshalJSON(src []byte) error {
 	}
 	var err error
 	*bs, err = base64.StdEncoding.DecodeString(string(src[1 : len(src)-1]))
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // Base64 converts a Bytes instance to a base64 string.

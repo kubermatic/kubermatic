@@ -1,8 +1,19 @@
 datacenters:
-  gke-west1b:
+  minikube:
     location: Europe
     country: EU
+    spec:
+      bringyourown:
+        region: local
+  gke:
+    location: US-Central
+    country: US
     provider: gce
+    spec:
+      bringyourown:
+        region: us-central1-c
+      seed:
+        bringyourown:
   do-ams2:
     location: Amsterdam
     country: NL
