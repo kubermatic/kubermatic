@@ -10,6 +10,8 @@ import (
 	"github.com/kubermatic/api/provider"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/client/restclient"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
@@ -31,7 +33,7 @@ type kubernetesProvider struct {
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
-	clientConfig *client.Config,
+	clientConfig *restclient.Config,
 	cps map[string]provider.CloudProvider,
 	dev bool,
 ) provider.KubernetesProvider {
@@ -69,7 +71,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, cluster string, spec
 
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, kerrors.NewAlreadyExists("cluster", spec.HumanReadableName)
+			return nil, kerrors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
 		}
 	}
 
@@ -122,7 +124,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster))
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return nil, nil, kerrors.NewNotFound("cluster", cluster)
+			return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 		}
 		return nil, nil, err
 	}
@@ -134,7 +136,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 
 	if c.Metadata.User != user.Name {
 		// don't return Forbidden, not NotFound to obfuscate the existence
-		return nil, nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	return c, ns, nil
@@ -200,13 +202,10 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	nsList, err := p.client.Namespaces().List(
-		labels.SelectorFromSet(labels.Set(map[string]string{
-			RoleLabelKey: ClusterRoleLabel,
-			userLabelKey: LabelUser(user.Name),
-		})),
-		fields.Everything(),
-	)
+	nsList, err := p.client.Namespaces().List(kapi.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+		RoleLabelKey: ClusterRoleLabel,
+		userLabelKey: LabelUser(user.Name),
+	})), FieldSelector: fields.Everything()})
 	if err != nil {
 		return nil, err
 	}

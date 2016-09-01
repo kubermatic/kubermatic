@@ -43,15 +43,18 @@ import (
 // TODO: consider merging keyLister with this object, tracking a list of
 //       "known" keys when Pop() is called. Have to think about how that
 //       affects error retrying.
+// TODO(lavalamp): I believe there is a possible race only when using an
+//                 external known object source that the above TODO would
+//                 fix.
 //
 // Also see the comment on DeltaFIFO.
-func NewDeltaFIFO(keyFunc KeyFunc, compressor DeltaCompressor, knownObjectKeys KeyLister) *DeltaFIFO {
+func NewDeltaFIFO(keyFunc KeyFunc, compressor DeltaCompressor, knownObjects KeyListerGetter) *DeltaFIFO {
 	f := &DeltaFIFO{
 		items:           map[string]Deltas{},
 		queue:           []string{},
 		keyFunc:         keyFunc,
 		deltaCompressor: compressor,
-		knownObjectKeys: knownObjectKeys,
+		knownObjects:    knownObjects,
 	}
 	f.cond.L = &f.lock
 	return f
@@ -79,10 +82,9 @@ func NewDeltaFIFO(keyFunc KeyFunc, compressor DeltaCompressor, knownObjectKeys K
 // different versions of the same object.
 //
 // A note on the KeyLister used by the DeltaFIFO: It's main purpose is
-// to list keys that are "known", for the puspose of figuring out which
-// items have been deleted when Replace() is called. If the given KeyLister
-// also satisfies the KeyGetter interface, the deleted objet will be
-// included in the DeleteFinalStateUnknown markers. These objects
+// to list keys that are "known", for the purpose of figuring out which
+// items have been deleted when Replace() or Delete() are called. The deleted
+// object will be included in the DeleteFinalStateUnknown markers. These objects
 // could be stale.
 //
 // You may provide a function to compress deltas (e.g., represent a
@@ -98,6 +100,12 @@ type DeltaFIFO struct {
 	items map[string]Deltas
 	queue []string
 
+	// populated is true if the first batch of items inserted by Replace() has been populated
+	// or Delete/Add/Update was called first.
+	populated bool
+	// initialPopulationCount is the number of items inserted by the first call of Replace()
+	initialPopulationCount int
+
 	// keyFunc is used to make the key used for queued item
 	// insertion and retrieval, and should be deterministic.
 	keyFunc KeyFunc
@@ -106,10 +114,10 @@ type DeltaFIFO struct {
 	// deltas. It may be nil.
 	deltaCompressor DeltaCompressor
 
-	// knownObjectKeys list keys that are "known", for the
+	// knownObjects list keys that are "known", for the
 	// purpose of figuring out which items have been deleted
-	// when Replace() is called.
-	knownObjectKeys KeyLister
+	// when Replace() or Delete() is called.
+	knownObjects KeyListerGetter
 }
 
 var (
@@ -139,11 +147,20 @@ func (f *DeltaFIFO) KeyOf(obj interface{}) (string, error) {
 	return f.keyFunc(obj)
 }
 
+// Return true if an Add/Update/Delete/AddIfNotPresent are called first,
+// or an Update called first but the first batch of items inserted by Replace() has been popped
+func (f *DeltaFIFO) HasSynced() bool {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	return f.populated && f.initialPopulationCount == 0
+}
+
 // Add inserts an item, and puts it in the queue. The item is only enqueued
 // if it doesn't already exist in the set.
 func (f *DeltaFIFO) Add(obj interface{}) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	f.populated = true
 	return f.queueActionLocked(Added, obj)
 }
 
@@ -151,13 +168,43 @@ func (f *DeltaFIFO) Add(obj interface{}) error {
 func (f *DeltaFIFO) Update(obj interface{}) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	f.populated = true
 	return f.queueActionLocked(Updated, obj)
 }
 
-// Delete is just like Add, but makes an Deleted Delta.
+// Delete is just like Add, but makes an Deleted Delta. If the item does not
+// already exist, it will be ignored. (It may have already been deleted by a
+// Replace (re-list), for example.
 func (f *DeltaFIFO) Delete(obj interface{}) error {
+	id, err := f.KeyOf(obj)
+	if err != nil {
+		return KeyError{obj, err}
+	}
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	f.populated = true
+	if f.knownObjects == nil {
+		if _, exists := f.items[id]; !exists {
+			// Presumably, this was deleted when a relist happened.
+			// Don't provide a second report of the same deletion.
+			return nil
+		}
+	} else {
+		// We only want to skip the "deletion" action if the object doesn't
+		// exist in knownObjects and it doesn't have corresponding item in items.
+		// Note that even if there is a "deletion" action in items, we can ignore it,
+		// because it will be deduped automatically in "queueActionLocked"
+		_, exists, err := f.knownObjects.GetByKey(id)
+		_, itemsExist := f.items[id]
+		if err == nil && !exists && !itemsExist {
+			// Presumably, this was deleted when a relist happened.
+			// Don't provide a second report of the same deletion.
+			// TODO(lavalamp): This may be racy-- we aren't properly locked
+			// with knownObjects.
+			return nil
+		}
+	}
+
 	return f.queueActionLocked(Deleted, obj)
 }
 
@@ -181,6 +228,7 @@ func (f *DeltaFIFO) AddIfNotPresent(obj interface{}) error {
 	}
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	f.populated = true
 	if _, exists := f.items[id]; exists {
 		return nil
 	}
@@ -191,14 +239,69 @@ func (f *DeltaFIFO) AddIfNotPresent(obj interface{}) error {
 	return nil
 }
 
+// re-listing and watching can deliver the same update multiple times in any
+// order. This will combine the most recent two deltas if they are the same.
+func dedupDeltas(deltas Deltas) Deltas {
+	n := len(deltas)
+	if n < 2 {
+		return deltas
+	}
+	a := &deltas[n-1]
+	b := &deltas[n-2]
+	if out := isDup(a, b); out != nil {
+		d := append(Deltas{}, deltas[:n-2]...)
+		return append(d, *out)
+	}
+	return deltas
+}
+
+// If a & b represent the same event, returns the delta that ought to be kept.
+// Otherwise, returns nil.
+// TODO: is there anything other than deletions that need deduping?
+func isDup(a, b *Delta) *Delta {
+	if out := isDeletionDup(a, b); out != nil {
+		return out
+	}
+	// TODO: Detect other duplicate situations? Are there any?
+	return nil
+}
+
+// keep the one with the most information if both are deletions.
+func isDeletionDup(a, b *Delta) *Delta {
+	if b.Type != Deleted || a.Type != Deleted {
+		return nil
+	}
+	// Do more sophisticated checks, or is this sufficient?
+	if _, ok := b.Object.(DeletedFinalStateUnknown); ok {
+		return a
+	}
+	return b
+}
+
+// willObjectBeDeletedLocked returns true only if the last delta for the
+// given object is Delete. Caller must lock first.
+func (f *DeltaFIFO) willObjectBeDeletedLocked(id string) bool {
+	deltas := f.items[id]
+	return len(deltas) > 0 && deltas[len(deltas)-1].Type == Deleted
+}
+
 // queueActionLocked appends to the delta list for the object, calling
-// f.deltaCompressor if needed
+// f.deltaCompressor if needed. Caller must lock first.
 func (f *DeltaFIFO) queueActionLocked(actionType DeltaType, obj interface{}) error {
 	id, err := f.KeyOf(obj)
 	if err != nil {
 		return KeyError{obj, err}
 	}
+
+	// If object is supposed to be deleted (last event is Deleted),
+	// then we should ignore Sync events, because it would result in
+	// recreation of this object.
+	if actionType == Sync && f.willObjectBeDeletedLocked(id) {
+		return nil
+	}
+
 	newDeltas := append(f.items[id], Delta{actionType, obj})
+	newDeltas = dedupDeltas(newDeltas)
 	if f.deltaCompressor != nil {
 		newDeltas = f.deltaCompressor.Compress(newDeltas)
 	}
@@ -226,6 +329,10 @@ func (f *DeltaFIFO) queueActionLocked(actionType DeltaType, obj interface{}) err
 func (f *DeltaFIFO) List() []interface{} {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+	return f.listLocked()
+}
+
+func (f *DeltaFIFO) listLocked() []interface{} {
 	list := make([]interface{}, 0, len(f.items))
 	for _, item := range f.items {
 		// Copy item's slice so operations on this slice (delta
@@ -279,10 +386,12 @@ func (f *DeltaFIFO) GetByKey(key string) (item interface{}, exists bool, err err
 // added/updated. The item is removed from the queue (and the store) before it
 // is returned, so if you don't successfully process it, you need to add it back
 // with AddIfNotPresent().
+// process function is called under lock, so it is safe update data structures
+// in it that need to be in sync with the queue (e.g. knownKeys).
 //
 // Pop returns a 'Deltas', which has a complete list of all the things
 // that happened to the object (deltas) while it was sitting in the queue.
-func (f *DeltaFIFO) Pop() interface{} {
+func (f *DeltaFIFO) Pop(process PopProcessFunc) (interface{}, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	for {
@@ -292,6 +401,9 @@ func (f *DeltaFIFO) Pop() interface{} {
 		id := f.queue[0]
 		f.queue = f.queue[1:]
 		item, ok := f.items[id]
+		if f.initialPopulationCount > 0 {
+			f.initialPopulationCount--
+		}
 		if !ok {
 			// Item may have been deleted subsequently.
 			continue
@@ -299,7 +411,7 @@ func (f *DeltaFIFO) Pop() interface{} {
 		delete(f.items, id)
 		// Don't need to copyDeltas here, because we're transferring
 		// ownership to the caller.
-		return item
+		return item, process(item)
 	}
 }
 
@@ -310,58 +422,90 @@ func (f *DeltaFIFO) Pop() interface{} {
 func (f *DeltaFIFO) Replace(list []interface{}, resourceVersion string) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	for _, item := range list {
-		if err := f.queueActionLocked(Sync, item); err != nil {
-			return fmt.Errorf("couldn't enqueue object: %v", err)
-		}
-	}
-	if f.knownObjectKeys == nil {
-		return nil
+	keys := make(sets.String, len(list))
+
+	if !f.populated {
+		f.populated = true
+		f.initialPopulationCount = len(list)
 	}
 
-	keySet := make(sets.String, len(list))
 	for _, item := range list {
 		key, err := f.KeyOf(item)
 		if err != nil {
 			return KeyError{item, err}
 		}
-		keySet.Insert(key)
+		keys.Insert(key)
+		if err := f.queueActionLocked(Sync, item); err != nil {
+			return fmt.Errorf("couldn't enqueue object: %v", err)
+		}
+	}
+
+	if f.knownObjects == nil {
+		// Do deletion detection against our own list.
+		for k, oldItem := range f.items {
+			if keys.Has(k) {
+				continue
+			}
+			var deletedObj interface{}
+			if n := oldItem.Newest(); n != nil {
+				deletedObj = n.Object
+			}
+			if err := f.queueActionLocked(Deleted, DeletedFinalStateUnknown{k, deletedObj}); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// Detect deletions not already in the queue.
-	knownKeys := f.knownObjectKeys.ListKeys()
+	// TODO(lavalamp): This may be racy-- we aren't properly locked
+	// with knownObjects. Unproven.
+	knownKeys := f.knownObjects.ListKeys()
 	for _, k := range knownKeys {
-		if _, exists := keySet[k]; exists {
+		if keys.Has(k) {
 			continue
 		}
 
-		// This key isn't in the complete set we got, so it must have been deleted.
-		if d, exists := f.items[k]; exists {
-			// Don't issue a delete delta if we have one enqueued as the most
-			// recent delta.
-			if d.Newest().Type == Deleted {
-				continue
-			}
-		}
-		var deletedObj interface{}
-		if keyGetter, ok := f.knownObjectKeys.(KeyGetter); ok {
-			var exists bool
-			var err error
-			deletedObj, exists, err = keyGetter.GetByKey(k)
-			if err != nil || !exists {
-				deletedObj = nil
-				if err != nil {
-					glog.Errorf("Unexpected error %v during lookup of key %v, placing DeleteFinalStateUnknown marker without object", err, k)
-				} else {
-					glog.Infof("Key %v does not exist in known objects store, placing DeleteFinalStateUnknown marker without object", k)
-				}
-			}
+		deletedObj, exists, err := f.knownObjects.GetByKey(k)
+		if err != nil {
+			deletedObj = nil
+			glog.Errorf("Unexpected error %v during lookup of key %v, placing DeleteFinalStateUnknown marker without object", err, k)
+		} else if !exists {
+			deletedObj = nil
+			glog.Infof("Key %v does not exist in known objects store, placing DeleteFinalStateUnknown marker without object", k)
 		}
 		if err := f.queueActionLocked(Deleted, DeletedFinalStateUnknown{k, deletedObj}); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// Resync will send a sync event for each item
+func (f *DeltaFIFO) Resync() error {
+	f.lock.RLock()
+	defer f.lock.RUnlock()
+	for _, k := range f.knownObjects.ListKeys() {
+		obj, exists, err := f.knownObjects.GetByKey(k)
+		if err != nil {
+			glog.Errorf("Unexpected error %v during lookup of key %v, unable to queue object for sync", err, k)
+			continue
+		} else if !exists {
+			glog.Infof("Key %v does not exist in known objects store, unable to queue object for sync", k)
+			continue
+		}
+
+		if err := f.queueActionLocked(Sync, obj); err != nil {
+			return fmt.Errorf("couldn't queue object: %v", err)
+		}
+	}
+	return nil
+}
+
+// A KeyListerGetter is anything that knows how to list its keys and look up by key.
+type KeyListerGetter interface {
+	KeyLister
+	KeyGetter
 }
 
 // A KeyLister is anything that knows how to list its keys.

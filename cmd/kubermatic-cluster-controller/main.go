@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/api/provider/cloud"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util"
+	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 func main() {
@@ -58,6 +58,7 @@ func main() {
 			*clientcmdConfig,
 			ctx,
 			&clientcmd.ConfigOverrides{},
+			nil,
 		)
 		cfg, err := clientConfig.ClientConfig()
 		if err != nil {
@@ -76,8 +77,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		go ctrl.Run(util.NeverStop)
+		go ctrl.Run(wait.NeverStop)
 	}
 
-	<-util.NeverStop
+	<-wait.NeverStop
 }

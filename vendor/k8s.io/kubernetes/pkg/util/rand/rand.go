@@ -32,19 +32,28 @@ var rng = struct {
 	rand: rand.New(rand.NewSource(time.Now().UTC().UnixNano())),
 }
 
-// String generates a random alphanumeric string n characters long.  This will
-// panic if n is less than zero.
-func String(n int) string {
-	if n < 0 {
-		panic("out-of-bounds value")
-	}
-	b := make([]rune, n)
+// Intn generates an integer in range [0,max).
+// By design this should panic if input is invalid, <= 0.
+func Intn(max int) int {
 	rng.Lock()
 	defer rng.Unlock()
-	for i := range b {
-		b[i] = letters[rng.rand.Intn(numLetters)]
-	}
-	return string(b)
+	return rng.rand.Intn(max)
+}
+
+// IntnRange generates an integer in range [min,max).
+// By design this should panic if input is invalid, <= 0.
+func IntnRange(min, max int) int {
+	rng.Lock()
+	defer rng.Unlock()
+	return rng.rand.Intn(max-min) + min
+}
+
+// IntnRange generates an int64 integer in range [min,max).
+// By design this should panic if input is invalid, <= 0.
+func Int63nRange(min, max int64) int64 {
+	rng.Lock()
+	defer rng.Unlock()
+	return rng.rand.Int63n(max-min) + min
 }
 
 // Seed seeds the rng with the provided seed.
@@ -61,4 +70,14 @@ func Perm(n int) []int {
 	rng.Lock()
 	defer rng.Unlock()
 	return rng.rand.Perm(n)
+}
+
+// String generates a random alphanumeric string n characters long.  This will
+// panic if n is less than zero.
+func String(length int) string {
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = letters[Intn(numLetters)]
+	}
+	return string(b)
 }

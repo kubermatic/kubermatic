@@ -2,12 +2,12 @@ package kubernetes
 
 import (
 	"fmt"
-	"sync"
-	"time"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	"sync"
+	"time"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
@@ -101,9 +101,8 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, cluster string, 
 func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
 	if _, found := p.clusters[cluster]; !found {
-		return nil, kerrors.NewNotFound("cluster", cluster)
+		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	c := p.clusters[cluster]
@@ -137,7 +136,7 @@ func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster strin
 	defer p.mu.Unlock()
 
 	if _, found := p.clusters[cluster]; !found {
-		return kerrors.NewNotFound("cluster", cluster)
+		return kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	delete(p.clusters, cluster)
