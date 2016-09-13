@@ -378,41 +378,56 @@ func (cc *clusterController) launchingCheckTLSSecret(c *api.Cluster) error {
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
+	loadFile := func(s string) (*extensions.Ingress, error) {
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-ingress.yaml"))
+		if err != nil {
+			return nil, err
+		}
+		var ingress extensions.Ingress
+		data := struct {
+			DC          string
+			ClusterName string
+		}{
+			DC:          cc.dc,
+			ClusterName: c.Metadata.Name,
+		}
+		err = t.Execute(data, &ingress)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &ingress, err
+	}
+
+	ingress := map[string]func(s string) (*extensions.Ingress, error){
+		"https": loadFile,
+		"sniff": loadFile,
+	}
+
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	key := fmt.Sprintf("%s/%s", ns, "apiserver-public")
-	_, exists, err := cc.ingressStore.GetByKey(key)
-	if err != nil {
-		return err
-	}
-	if exists {
-		glog.V(6).Infof("Skipping already existing ingress %q", key)
-		return nil
-	}
+	for s, gen := range ingress {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.ingressStore.GetByKey(key)
+		if err != nil {
+			return err
+		}
+		if exists {
+			glog.V(6).Infof("Skipping already existing ingress %q", key)
+			return nil
+		}
+		ingress, err := gen(s)
+		if err != nil {
+			return err
+		}
 
-	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, "ingress.yaml"))
-	if err != nil {
-		return err
-	}
+		_, err = cc.client.Ingress(ns).Create(ingress)
+		if err != nil {
+			return err
+		}
 
-	var ingress extensions.Ingress
-	data := struct {
-		DC          string
-		ClusterName string
-	}{
-		DC:          cc.dc,
-		ClusterName: c.Metadata.Name,
+		cc.recordClusterEvent(c, "launching", "Created ingress")
 	}
-	err = t.Execute(data, &ingress)
-	if err != nil {
-		return err
-	}
-
-	_, err = cc.client.Ingress(ns).Create(&ingress)
-	if err != nil {
-		return err
-	}
-
-	cc.recordClusterEvent(c, "launching", "Created ingress")
 	return nil
 }
 
