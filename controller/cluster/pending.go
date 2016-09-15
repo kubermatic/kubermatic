@@ -252,7 +252,7 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 		}
 
 		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf("https://"+cc.hostPattern, c.Metadata.Name, cc.dc),
+			URL:   fmt.Sprintf("https://"+cc.externalURL, c.Metadata.Name, cc.dc),
 			Token: trimmedToken64,
 		}
 
