@@ -332,7 +332,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 	}
 
 	c.Address.EtcdURL = fmt.Sprintf(
-		"https://"+cc.hostPattern,
+		"https://etcd."+cc.hostPattern,
 		c.Metadata.Name, cc.dc,
 	)
 
