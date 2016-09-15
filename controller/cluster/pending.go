@@ -331,14 +331,9 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		return nil, nil
 	}
 
-	p, err := servicePort(cc.serviceStore, ns+"/etcd-public", "clients")
-	if err != nil {
-		return nil, err
-	}
-
 	c.Address.EtcdURL = fmt.Sprintf(
-		"https://"+cc.hostPattern+":%d",
-		c.Metadata.Name, cc.dc, p,
+		"https://"+cc.hostPattern,
+		c.Metadata.Name, cc.dc,
 	)
 
 	return c, nil

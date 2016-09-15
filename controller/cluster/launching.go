@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
 	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/cache"
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
@@ -84,23 +82,4 @@ func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster,
 	c.Status.LastTransitionTime = time.Now()
 
 	return c, nil
-}
-
-func servicePort(idx cache.Indexer, key, portName string) (int32, error) {
-	obj, exists, err := idx.GetByKey(key)
-	if err != nil {
-		return 0, err
-	}
-
-	if !exists {
-		return 0, fmt.Errorf("service %q does not exist", key)
-	}
-
-	for _, port := range obj.(*kapi.Service).Spec.Ports {
-		if port.Name == portName && port.NodePort > 0 {
-			return port.NodePort, nil
-		}
-	}
-
-	return 0, fmt.Errorf("service %q not found", key)
 }
