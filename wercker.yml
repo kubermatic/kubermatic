@@ -36,9 +36,9 @@ build:
           cp datacenters.yaml "$WERCKER_OUTPUT_DIR/opt"
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
 
-deploy:
-  box: ubuntu:14.04
-  rolling-update:
+push-hash-image:
+    box: ubuntu:14.04
+    steps:
     - script:
         code: |
           apt-get update
@@ -58,17 +58,24 @@ deploy:
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
+
+deployment-update:
+    box: ubuntu:14.04
+    steps:
     - create-file:
         name: Create ca.pem
         filename: ca.pem
+        overwrite: true
         content: $CERTIFICATE_AUTHORITY
     - create-file:
         name: Create admin.pem
         filename: admin.pem
+        overwrite: true
         content: $CLIENT_CERTIFICATE
     - create-file:
         name: Create admin-key.pem
         filename: admin-key.pem
+        overwrite: true
         content: $CLIENT_KEY
     - kubectl:
         server: $KUBERNETES_MASTER
@@ -77,8 +84,7 @@ deploy:
         certificate-authority: ca.pem
         client-certificate: admin.pem
         client-key: admin-key.pem
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1
-        image: kubermatic/api:$WERCKER_GIT_COMMIT
+        command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=api
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
@@ -86,8 +92,11 @@ deploy:
         certificate-authority: ca.pem
         client-certificate: admin.pem
         client-key: admin-key.pem
-        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1
-        image: kubermatic/api:$WERCKER_GIT_COMMIT
+        command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
+
+push-latest-image:
+    box: ubuntu:14.04
+    steps:
     - internal/docker-scratch-push:
         name: push to docker hub as latest
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
@@ -99,7 +108,10 @@ deploy:
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
-  rollback-api:
+
+rollback-api:
+    box: ubuntu:14.04
+    steps:
     - script:
         code: |
           apt-get update
@@ -123,9 +135,11 @@ deploy:
         certificate-authority: ca.pem
         client-certificate: admin.pem
         client-key: admin-key.pem
-        command: rolling-update --namespace=api --poll-interval=500ms --update-period=2s kubermatic-api-v1 --rollback
-        image: kubermatic/api:$WERCKER_GIT_COMMIT
-  rollback-cluster-controller:
+        command: rollout undo deployment/kubermatic-api-v1 --namespace=api
+
+rollback-cluster-controller:
+    box: ubuntu:14.04
+    steps:
     - script:
         code: |
           apt-get update
@@ -149,5 +163,4 @@ deploy:
         certificate-authority: ca.pem
         client-certificate: admin.pem
         client-key: admin-key.pem
-        command: rolling-update --namespace=control --poll-interval=500ms --update-period=2s cluster-controller-v1 --rollback
-        image: kubermatic/api:$WERCKER_GIT_COMMIT
+        command: rollout undo deployment/kubermatic-api-v1 --namespace=control

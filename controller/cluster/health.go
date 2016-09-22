@@ -3,6 +3,7 @@ package cluster
 import (
 	"github.com/kubermatic/api"
 	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/labels"
 )
 
@@ -10,9 +11,9 @@ const (
 	healthBar = 0.9
 )
 
-func (cc *clusterController) healthyRC(rc *kapi.ReplicationController) (bool, error) {
-	replicas := rc.Spec.Replicas
-	pods, err := cc.podStore.List(labels.SelectorFromSet(labels.Set(rc.Spec.Selector)))
+func (cc *clusterController) healthyDep(dep *extensions.Deployment) (bool, error) {
+	replicas := dep.Spec.Replicas
+	pods, err := cc.podStore.List(labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels)))
 	if err != nil {
 		return false, err
 	}

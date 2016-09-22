@@ -341,7 +341,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 
 func (cc *clusterController) launchingCheckTLSSecret(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	key := fmt.Sprintf("%s/%s", ns, "apiserver-secret")
+	key := fmt.Sprintf("%s/%s", ns, "apiserver-tls")
 	_, exists, err := cc.secretStore.GetByKey(key)
 	if err != nil {
 		return err
@@ -429,13 +429,13 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	loadFile := func(s string) (*kapi.ReplicationController, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-rc.yaml"))
+	loadFile := func(s string) (*extensions.Deployment, error) {
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
 		if err != nil {
 			return nil, err
 		}
 
-		var rc kapi.ReplicationController
+		var dep extensions.Deployment
 		data := struct {
 			DC          string
 			ClusterName string
@@ -443,11 +443,11 @@ func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster)
 			DC:          cc.dc,
 			ClusterName: c.Metadata.Name,
 		}
-		err = t.Execute(data, &rc)
-		return &rc, err
+		err = t.Execute(data, &dep)
+		return &dep, err
 	}
 
-	loadApiserver := func(s string) (*kapi.ReplicationController, error) {
+	loadApiserver := func(s string) (*extensions.Deployment, error) {
 		u, err := url.Parse(c.Address.URL)
 		if err != nil {
 			return nil, err
@@ -463,17 +463,17 @@ func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster)
 			AdvertiseAddress: addrs[0],
 		}
 
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-rc.yaml"))
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
 		if err != nil {
 			return nil, err
 		}
 
-		var rc kapi.ReplicationController
-		err = t.Execute(data, &rc)
-		return &rc, err
+		var dep extensions.Deployment
+		err = t.Execute(data, &dep)
+		return &dep, err
 	}
 
-	rcs := map[string]func(s string) (*kapi.ReplicationController, error){
+	deps := map[string]func(s string) (*extensions.Deployment, error){
 		"etcd":               loadFile,
 		"etcd-public":        loadFile,
 		"apiserver":          loadApiserver,
@@ -481,36 +481,36 @@ func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster)
 		"scheduler":          loadFile,
 	}
 
-	existingRCs, err := cc.rcStore.ByIndex("namespace", ns)
+	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
 		return err
 	}
 
-	for s, gen := range rcs {
+	for s, gen := range deps {
 		exists := false
-		for _, obj := range existingRCs {
-			rc := obj.(*kapi.ReplicationController)
-			if role, found := rc.Spec.Selector["role"]; found && role == s {
+		for _, obj := range existingDeps {
+			dep := obj.(*extensions.Deployment)
+			if role, found := dep.Spec.Selector.MatchLabels["role"]; found && role == s {
 				exists = true
 				break
 			}
 		}
 		if exists {
-			glog.V(7).Infof("Skipping already existing rc %q for cluster %q", s, c.Metadata.Name)
+			glog.V(7).Infof("Skipping already existing dep %q for cluster %q", s, c.Metadata.Name)
 			continue
 		}
 
-		rc, err := gen(s)
+		dep, err := gen(s)
 		if err != nil {
 			return err
 		}
 
-		_, err = cc.client.ReplicationControllers(ns).Create(rc)
+		_, err = cc.client.Deployments(ns).Create(dep)
 		if err != nil {
 			return err
 		}
 
-		cc.recordClusterEvent(c, "launching", "Created rc %q", s)
+		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
 	}
 
 	return nil
