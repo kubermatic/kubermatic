@@ -68,8 +68,8 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, e
 		return nil, err
 	}
 
-	// check that all replication controllers are available
-	err = cc.launchingCheckReplicationController(c)
+	// check that all deployments are available
+	err = cc.launchingCheckDeployments(c)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckReplicationController(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	loadFile := func(s string) (*extensions.Deployment, error) {

@@ -59,7 +59,7 @@ func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster,
 		return nil, err
 	}
 
-	// check that all replication controllers are healthy
+	// check that all deployments are healthy
 	allHealthy, health, err := cc.clusterHealth(c)
 	if err != nil {
 		return nil, err
