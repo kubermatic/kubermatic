@@ -4,15 +4,16 @@ import (
 	"reflect"
 	"time"
 
+	"k8s.io/kubernetes/pkg/apis/extensions"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
-	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	rcs, err := cc.rcStore.ByIndex("namespace", ns)
+	deps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
 		return false, nil, err
 	}
@@ -33,19 +34,19 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 
 	allHealthy := true
 
-	for _, obj := range rcs {
-		rc := obj.(*kapi.ReplicationController)
-		role := rc.Spec.Selector["role"]
-		rcHealth, err := cc.healthyRC(rc)
+	for _, obj := range deps {
+		dep := obj.(*extensions.Deployment)
+		role := dep.Spec.Selector.MatchLabels["role"]
+		depHealth, err := cc.healthyDep(dep)
 		if err != nil {
 			return false, nil, err
 		}
-		allHealthy = allHealthy && rcHealth
-		if !rcHealth {
-			glog.V(6).Infof("Cluster %q rc %q is not healthy", c.Metadata.Name, rc.Name)
+		allHealthy = allHealthy && depHealth
+		if !depHealth {
+			glog.V(6).Infof("Cluster %q dep %q is not healthy", c.Metadata.Name, dep.Name)
 		}
 		if m, found := healthMapping[role]; found {
-			*m = rcHealth
+			*m = depHealth
 		}
 	}
 
@@ -58,7 +59,7 @@ func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster,
 		return nil, err
 	}
 
-	// check that all replication controllers are healthy
+	// check that all deployments are healthy
 	allHealthy, health, err := cc.clusterHealth(c)
 	if err != nil {
 		return nil, err

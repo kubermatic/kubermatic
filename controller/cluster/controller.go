@@ -55,8 +55,8 @@ type clusterController struct {
 	podController *framework.Controller
 	podStore      cache.StoreToPodLister
 
-	rcController *framework.Controller
-	rcStore      cache.Indexer
+	depController *framework.Controller
+	depStore      cache.Indexer
 
 	secretController *framework.Controller
 	secretStore      cache.Indexer
@@ -158,16 +158,16 @@ func NewController(
 		namespaceIndexer,
 	)
 
-	cc.rcStore, cc.rcController = framework.NewIndexerInformer(
+	cc.depStore, cc.depController = framework.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).List(options)
+				return cc.client.Deployments(kapi.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.ReplicationControllers(kapi.NamespaceAll).Watch(options)
+				return cc.client.Deployments(kapi.NamespaceAll).Watch(options)
 			},
 		},
-		&kapi.ReplicationController{},
+		&extensions.Deployment{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -441,7 +441,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 
 	go cc.nsController.Run(wait.NeverStop)
 	go cc.podController.Run(wait.NeverStop)
-	go cc.rcController.Run(wait.NeverStop)
+	go cc.depController.Run(wait.NeverStop)
 	go cc.secretController.Run(wait.NeverStop)
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
@@ -464,7 +464,7 @@ func (cc *clusterController) controllersHaveSynced() bool {
 	return cc.nsController.HasSynced() &&
 		cc.podController.HasSynced() &&
 		cc.secretController.HasSynced() &&
-		cc.rcController.HasSynced() &&
+		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced()
 }
