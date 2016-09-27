@@ -1,5 +1,5 @@
 dev:
-  box: golang:1.6
+  box: golang:1.7
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
@@ -11,7 +11,7 @@ dev:
         reload: true
 
 build:
-  box: golang:1.6
+  box: golang:1.7
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
@@ -39,10 +39,6 @@ build:
 push-hash-image:
     box: ubuntu:14.04
     steps:
-    - script:
-        code: |
-          apt-get update
-          apt-get install -y ca-certificates
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
@@ -97,6 +93,14 @@ deployment-update:
 push-latest-image:
     box: ubuntu:14.04
     steps:
+    # - script:
+    #     code: |
+    #       apt-get update
+    #       apt-get install -y ca-certificates
+    - script:
+        code: |
+          tar -xvjf alpine-3.1.tar.bz2
+          rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as latest
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
@@ -112,10 +116,6 @@ push-latest-image:
 rollback-api:
     box: ubuntu:14.04
     steps:
-    - script:
-        code: |
-          apt-get update
-          apt-get install -y ca-certificates
     - create-file:
         name: Create ca.pem
         filename: ca.pem
