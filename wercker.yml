@@ -37,12 +37,12 @@ build:
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
 
 push-hash-image:
-    box: ubuntu:16.04
+    box: ubuntu:14.04
     steps:
     - script:
         code: |
           apt-get update
-          apt-get install -y ca-certificates      
+          apt-get install -y ca-certificates
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
@@ -60,7 +60,7 @@ push-hash-image:
         registry: https://registry.hub.docker.com
 
 deployment-update:
-    box: ubuntu:16.04
+    box: ubuntu:14.04
     steps:
     - create-file:
         name: Create ca.pem
@@ -95,7 +95,7 @@ deployment-update:
         command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
 
 push-latest-image:
-    box: ubuntu:16.04
+    box: ubuntu:14.04
     steps:
     - script:
         code: |
@@ -104,7 +104,7 @@ push-latest-image:
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
-          rm -f alpine-3.1.tar.bz2
+          rm -f alpine-3.1.tar.bz2      
     - internal/docker-scratch-push:
         name: push to docker hub as latest
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
@@ -118,7 +118,7 @@ push-latest-image:
         registry: https://registry.hub.docker.com
 
 rollback-api:
-    box: ubuntu:16.04
+    box: ubuntu:14.04
     steps:
     - script:
         code: |
@@ -146,7 +146,7 @@ rollback-api:
         command: rollout undo deployment/kubermatic-api-v1 --namespace=api
 
 rollback-cluster-controller:
-    box: ubuntu:16.04
+    box: ubuntu:14.04
     steps:
     - script:
         code: |
