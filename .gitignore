@@ -5,3 +5,5 @@
 .idea
 *.iml*
 .kubeconfig
+./secrets.yaml
+./template/coreos
