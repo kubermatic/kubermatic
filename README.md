@@ -11,6 +11,7 @@ $ export GOPATH=$PWD
 $ mkdir -p bin pkg src
 $ cd src/kubermatic
 $ git clone git@github.com:kubermatic/api
+$ git clone git@github.com:kubermatic/kubermatic
 $ cd api
 $ ln -s ../kubermatic/api/datacenter-secrets.yaml secrets.yaml
 $ cd template
