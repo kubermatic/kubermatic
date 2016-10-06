@@ -53,11 +53,6 @@ type Node struct {
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
-// LinodeCloudSpec specifies access data to digital ocean.
-type LinodeCloudSpec struct {
-	Token string `json:"token,omitempty"`
-}
-
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
 	Token   string   `json:"token"`
@@ -91,7 +86,6 @@ type CloudSpec struct {
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 	Network      NetworkSpec            `json:"-"`
 }
 
