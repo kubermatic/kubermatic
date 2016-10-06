@@ -53,11 +53,6 @@ type Node struct {
 	Status   NodeStatus `json:"status,omitempty"`
 }
 
-// LinodeCloudSpec specifies access data to digital ocean.
-type LinodeCloudSpec struct {
-	Token string `json:"token,omitempty"`
-}
-
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
 	Token   string   `json:"token"`
