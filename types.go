@@ -92,8 +92,6 @@ type CloudSpec struct {
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
-	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 	Network      NetworkSpec            `json:"-"`
 }
 
