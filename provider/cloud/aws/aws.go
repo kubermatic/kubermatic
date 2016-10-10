@@ -1,13 +1,17 @@
 package aws
 
 import (
+	"context"
 	"errors"
 	"strconv"
 
-	"golang.org/x/net/context"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+)
+
+const (
+	accessKeyIDAnnotationKey     = "acccess-key-id"
+	secretAccessKeyAnnotationKey = "secret-access-key"
 )
 
 const (

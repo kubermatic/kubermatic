@@ -29,5 +29,5 @@ func (spec *CloudSpec) GetAWS() *AWSCloudSpec {
 	if spec == nil {
 		return nil
 	}
-	return spec.AWS
+	return spec.AWSCloudSpec
 }
