@@ -64,6 +64,12 @@ type DigitaloceanCloudSpec struct {
 	SSHKeys []string `json:"sshKeys"`
 }
 
+// AWSCloudSpec specifies access data to digital ocean.
+type AWSCloudSpec struct {
+	AccessKeyID     int64  `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+}
+
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct {
 	PrivateIntf   string  `json:"privateInterface"`
@@ -91,6 +97,7 @@ type CloudSpec struct {
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
+	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Linode       *LinodeCloudSpec       `json:"linode,omitempty"`
 	Network      NetworkSpec            `json:"-"`
 }
