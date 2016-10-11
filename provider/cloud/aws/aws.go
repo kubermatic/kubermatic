@@ -1,9 +1,10 @@
 package aws
 
 import (
-	"context"
 	"errors"
 	"strconv"
+
+	"golang.org/x/net/context"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -19,7 +20,7 @@ type aws struct {
 }
 
 // NewCloudProvider returns a new aws provider.
-func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) *provider.CloudProvider {
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
 	return &aws{
 		datacenters: datacenters,
 	}
@@ -31,7 +32,7 @@ func (a *aws) PrepareCloudSpec(*api.Cluster) error {
 
 func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
-		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessToken, 10),
+		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessKeyID, 10),
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
 	}, nil
 }
@@ -41,7 +42,9 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 		AWS: &api.AWSCloudSpec{},
 	}
 	var ok bool
-	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
+	if val, ok := annotations[accessKeyIDAnnotationKey]; ok {
+		spec.AWS.AccessKeyID, _ = strconv.ParseInt(val, 10, 64)
+	} else {
 		return nil, errors.New("no access key ID found")
 	}
 	if spec.AWS.SecretAccessKey, ok = annotations[secretAccessKeyAnnotationKey]; !ok {

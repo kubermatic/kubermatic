@@ -14,6 +14,6 @@ func Providers(dcs map[string]provider.DatacenterMeta) provider.CloudRegistry {
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
 		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(dcs),
 		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(),
+		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
 	}
 }
