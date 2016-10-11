@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/kubermatic/api"
@@ -28,15 +29,25 @@ func (a *aws) PrepareCloudSpec(*api.Cluster) error {
 	panic("not implemented")
 }
 
-func (a *aws) CreateAnnotations(cs *api.CloudSpec) (map[string]string, error) {
+func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
 		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessToken, 10),
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
 	}, nil
 }
 
-func (a *aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
-	panic("not implemented")
+func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
+	spec := &api.CloudSpec{
+		AWS: &api.AWSCloudSpec{},
+	}
+	var ok bool
+	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
+		return nil, errors.New("no access key ID found")
+	}
+	if spec.AWS.SecretAccessKey, ok = annotations[secretAccessKeyAnnotationKey]; !ok {
+		return nil, errors.New("no secret key found")
+	}
+	return spec, nil
 }
 
 func (a *aws) CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error) {
