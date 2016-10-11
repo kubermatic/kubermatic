@@ -24,7 +24,7 @@ type aws struct {
 }
 
 // NewCloudProvider returns a new aws provider.
-func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) *provider.CloudProvider {
 	return &aws{
 		datacenters: datacenters,
 	}
