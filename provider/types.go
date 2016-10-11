@@ -14,6 +14,7 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	LinodeCloudProvider       = "linode"
+	AWSCloudProvider          = "aws"
 )
 
 // User represents an API user that is used for authentication.
@@ -58,6 +59,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 		return "", nil
 	}
 	clouds := []string{}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
 	}

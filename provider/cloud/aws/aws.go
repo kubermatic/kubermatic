@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/provider"
 )
 
 const (
@@ -13,6 +14,14 @@ const (
 )
 
 type aws struct {
+	datacenters map[string]provider.DatacenterMeta
+}
+
+// NewCloudProvider returns a new aws provider.
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) *provider.CloudProvider {
+	return &aws{
+		datacenters: datacenters,
+	}
 }
 
 func (a *aws) PrepareCloudSpec(*api.Cluster) error {
