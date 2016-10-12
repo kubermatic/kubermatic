@@ -46,7 +46,6 @@ type clusterController struct {
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
-	hostPattern         string
 	externalURL         string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *framework.Controller
@@ -80,7 +79,6 @@ func NewController(
 	client *client.Client,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
-	hostPattern string,
 	externalURL string,
 	dev bool,
 ) (controller.Controller, error) {
@@ -91,7 +89,6 @@ func NewController(
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
-		hostPattern:         hostPattern,
 		externalURL:         externalURL,
 		dev:                 dev,
 	}
