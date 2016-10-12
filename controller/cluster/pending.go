@@ -85,7 +85,7 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 	}
 
 	rootCAReq := csr.CertificateRequest{
-		CN: fmt.Sprintf("root-ca."+cc.hostPattern, c.Metadata.Name, cc.dc),
+		CN: fmt.Sprintf("root-ca.%s.%s.etcd-%s", c.Metadata.Name, cc.dc, cc.externalURL),
 		KeyRequest: &csr.BasicKeyRequest{
 			A: "rsa",
 			S: 2048,
@@ -252,7 +252,7 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 		}
 
 		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf("https://"+cc.externalURL, c.Metadata.Name, cc.dc),
+			URL:   fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL),
 			Token: trimmedToken64,
 		}
 
@@ -331,10 +331,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		return nil, nil
 	}
 
-	c.Address.EtcdURL = fmt.Sprintf(
-		"https://etcd."+cc.hostPattern,
-		c.Metadata.Name, cc.dc,
-	)
+	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.etcd-%s", c.Metadata.Name, cc.dc, cc.externalURL)
 
 	return c, nil
 }
@@ -382,9 +379,13 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 		data := struct {
 			DC          string
 			ClusterName string
+			ExternalURL string
+			EtcdURL     string
 		}{
 			DC:          cc.dc,
 			ClusterName: c.Metadata.Name,
+			ExternalURL: cc.externalURL,
+			EtcdURL:     fmt.Sprintf("etcd-%s", cc.externalURL),
 		}
 		err = t.Execute(data, &ingress)
 
