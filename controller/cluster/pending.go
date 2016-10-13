@@ -85,7 +85,7 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 	}
 
 	rootCAReq := csr.CertificateRequest{
-		CN: fmt.Sprintf("root-ca.%s.%s.etcd-%s", c.Metadata.Name, cc.dc, cc.externalURL),
+		CN: fmt.Sprintf("root-ca.%s.%s.%s", c.Metadata.Name, cc.dc, cc.etcdURL),
 		KeyRequest: &csr.BasicKeyRequest{
 			A: "rsa",
 			S: 2048,
@@ -331,7 +331,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		return nil, nil
 	}
 
-	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.etcd-%s", c.Metadata.Name, cc.dc, cc.externalURL)
+	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s", c.Metadata.Name, cc.dc, cc.etcdURL)
 
 	return c, nil
 }
@@ -385,7 +385,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 			DC:          cc.dc,
 			ClusterName: c.Metadata.Name,
 			ExternalURL: cc.externalURL,
-			EtcdURL:     fmt.Sprintf("etcd-%s", cc.externalURL),
+			EtcdURL:     cc.etcdURL,
 		}
 		err = t.Execute(data, &ingress)
 
