@@ -38,6 +38,7 @@ const (
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
+	etcdURLFormat       = "etcd-%s"
 )
 
 type clusterController struct {
@@ -46,8 +47,8 @@ type clusterController struct {
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
-	hostPattern         string
 	externalURL         string
+	etcdURL             string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *framework.Controller
 	nsStore      cache.Store
@@ -80,7 +81,6 @@ func NewController(
 	client *client.Client,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
-	hostPattern string,
 	externalURL string,
 	dev bool,
 ) (controller.Controller, error) {
@@ -91,8 +91,8 @@ func NewController(
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
-		hostPattern:         hostPattern,
 		externalURL:         externalURL,
+		etcdURL:             fmt.Sprintf(etcdURLFormat, externalURL),
 		dev:                 dev,
 	}
 
