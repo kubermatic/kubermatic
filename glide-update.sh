@@ -19,5 +19,5 @@ if [ ! $(command -v glide-vc) ]; then
 	exit 255
 fi
 
-glide update --strip-vcs --strip-vendor --update-vendored --delete
+glide update --strip-vendor
 glide-vc --only-code --no-tests --keep="**/*.json.in"

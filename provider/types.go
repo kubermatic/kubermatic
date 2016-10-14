@@ -13,7 +13,6 @@ const (
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
-	LinodeCloudProvider       = "linode"
 	AWSCloudProvider          = "aws"
 )
 
@@ -67,9 +66,6 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.Linode != nil {
-		clouds = append(clouds, LinodeCloudProvider)
 	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)

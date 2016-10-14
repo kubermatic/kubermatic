@@ -20,8 +20,7 @@ func main() {
 	homeDir := os.Getenv("HOME")
 	kubeconfig := flag.String("kubeconfig", path.Join(homeDir, ".kube/config"), "The kubeconfig file with a current context.")
 	masterResources := flag.String("master-resources", "", "The master resources path (required).")
-	hostPattern := flag.String("host-pattern", "%s.%s.i.kubermatic.io", "The fmt.Sprintf pattern for the etcd server host, interpolated with the cluster name.")
-	externalURL := flag.String("external-url", "%s.%s.kubermatic.io", "The fmt.Sprintf pattern for the apiserver host and the the dc.")
+	externalURL := flag.String("external-url", "seed1.kubermatic.io", "The external url for the apiserver host and the the dc.")
 	dcFile := flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	dev := flag.Bool("dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
 
@@ -73,7 +72,7 @@ func main() {
 		// start controller
 		cps := cloud.Providers(dcs)
 		ctrl, err := cluster.NewController(
-			ctx, client, cps, *masterResources, *hostPattern, *externalURL, *dev,
+			ctx, client, cps, *masterResources, *externalURL, *dev,
 		)
 		if err != nil {
 			log.Fatal(err)
