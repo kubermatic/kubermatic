@@ -122,7 +122,7 @@ func (do *digitalocean) CreateNodes(
 
 		glog.V(2).Infof("dropletName %q", dropletName)
 
-		clientKC, err := cluster.CreateKeyCert("dropletName")
+		clientKC, err := cluster.CreateKeyCert(dropletName)
 		if err != nil {
 			return created, err
 		}
