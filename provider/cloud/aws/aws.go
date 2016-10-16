@@ -221,9 +221,20 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 	return nil, nil
 }
 
+func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
+	svc := getSession(cluster)
 
-func (a *aws) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
-	panic("not implemented")
+	awsInstanceIds := make([]*string, len(UIDs))
+	for i := 0; i < len(UIDs); i++ {
+		awsInstanceIds[i] = sdk.String(UIDs[i])
+	}
+
+	terminateRequest := &ec2.TerminateInstancesInput{
+		InstanceIds: awsInstanceIds,
+	}
+
+	_, err := svc.TerminateInstances(terminateRequest)
+	return err
 }
 
 func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api.Node, error) {
