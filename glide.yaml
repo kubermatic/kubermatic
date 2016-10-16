@@ -36,7 +36,7 @@ import:
 - package: github.com/dgrijalva/jwt-go
 - package: github.com/digitalocean/godo
   version: 6ca5b770f203b82a0fca68d0941736458efa8a4f
-- packagUsere: github.com/ghodss/yaml
+- package: github.com/ghodss/yaml
 - package: github.com/go-kit/kit
   version: e553b8eff9eaa30f42387b5a17c7ea5354f3016d
   subpackages:
