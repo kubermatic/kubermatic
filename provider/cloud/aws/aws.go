@@ -30,7 +30,6 @@ const (
 
 	defaultDeviceName   = "/dev/sda1"
 	defaultInstanceType = "t2.micro"
-	defaultVolumeType   = "gp2"
 )
 
 var defaultCreatorTagLoodse = &ec2.Tag{
