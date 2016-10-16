@@ -13,10 +13,14 @@ import (
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
 
 func main() {
+
+	initConfig()
+
 	// parse flags
 	kubeconfig := flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	auth := flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
@@ -53,4 +57,11 @@ func main() {
 	r.Register(mux)
 	log.Println(fmt.Sprintf("Listening on %s", *address))
 	log.Fatal(http.ListenAndServe(*address, ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
+}
+
+func initConfig() {
+	viper.SetConfigName("config")         // name of config file (without extension)
+	viper.AddConfigPath("/etc/appname/")  // path to look for the config file in
+	viper.AddConfigPath("$HOME/.appname") // call multiple times to add many search paths
+	viper.ReadInConfig()                  // Find and read the config file
 }
