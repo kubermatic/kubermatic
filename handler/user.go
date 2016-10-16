@@ -23,15 +23,20 @@ func decodeUserReq(r *http.Request) (interface{}, error) {
 
 	obj := context.Get(r, "user")
 	token := obj.(*jwt.Token)
-	var ok bool
-	req.user.Name, ok = token.Claims["sub"].(string)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("Invalid token in JWT in request %v", r)
+	}
+
+	req.user.Name, ok = claims["sub"].(string)
 	if req.user.Name == "" || !ok {
 		// this is security critical. Better stop here hard. If auth0
 		// works, this should never happen though.
 		return nil, fmt.Errorf("No user in JWT in request %v", r)
 	}
 
-	md, ok := token.Claims["app_metadata"].(map[string]interface{})
+	md, ok := claims["app_metadata"].(map[string]interface{})
 	if ok && md != nil {
 		roles, ok := md["roles"].([]interface{})
 		if ok && roles != nil {

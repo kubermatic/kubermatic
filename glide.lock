@@ -1,5 +1,5 @@
-hash: adff28cc5f2522d9549a47a2a132a73b2f2df09334e1234fdfa6f9930ca209f5
-updated: 2016-10-16T19:36:22.156988445+02:00
+hash: 35cc60febc6e7fd7bf134fc6e8b6027ab2496fb35fcd04f583c18aab715d8755
+updated: 2016-10-16T19:50:42.504720323+02:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -59,7 +59,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/dgrijalva/jwt-go
-  version: 5ca80149b9d3f8b863af0e2bb6742e608603bd99
+  version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/digitalocean/godo
   version: 6ca5b770f203b82a0fca68d0941736458efa8a4f
 - name: github.com/docker/distribution
