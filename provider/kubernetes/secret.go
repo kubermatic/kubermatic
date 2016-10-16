@@ -16,8 +16,8 @@ type KeyCert struct {
 
 // AWSLogin is the AWSLogin for the seed cluster.
 type AWSLogin struct {
-	AccessKeyID     map[string]int64  `yaml:"access-key-id"`
-	SecretAccessKey map[string]string `yaml:"secret-access-key"`
+	AccessKeyID     int64  `yaml:"access-key-id"`
+	SecretAccessKey string `yaml:"secret-access-key"`
 }
 
 // Secrets keeps cloud provider secrets, e.g. to create seed nodes.
