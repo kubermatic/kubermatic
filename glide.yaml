@@ -1,5 +1,6 @@
 package: github.com/kubermatic/api
 import:
+- package: github.com/spf13/viper
 - package: github.com/auth0/go-jwt-middleware
   version: 731fd2f34fda4c4a7c22816f2167e2d310cb1e42
 - package: github.com/beorn7/perks
