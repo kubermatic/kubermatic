@@ -6,6 +6,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	sdk "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 )
@@ -29,6 +33,7 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 func (a *aws) PrepareCloudSpec(*api.Cluster) error {
 	panic("not implemented")
 }
+
 
 func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
@@ -57,10 +62,46 @@ func (a *aws) CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]
 	panic("not implemented")
 }
 
+
 func (a *aws) Nodes(context.Context, *api.Cluster) ([]*api.Node, error) {
 	panic("not implemented")
 }
 
+
 func (a *aws) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	panic("not implemented")
+}
+
+
+func getSession(cluster *api.Cluster) *ec2.EC2 {
+	awsSpec := cluster.Spec.Cloud.GetAWS()
+	config := sdk.NewConfig()
+	config = config.WithRegion(cluster.Spec.Cloud.DC)
+	config = config.WithCredentials(credentials.NewStaticCredentials(strconv.FormatInt(awsSpec.AccessKeyID, 10), awsSpec.SecretAccessKey, ""))
+	// TODO: specify retrycount
+	config = config.WithMaxRetries(3)
+	return ec2.New(session.New(config))
+}
+
+func getDefaultVPCId(client *ec2.EC2) (string, error) {
+	output, err := client.DescribeAccountAttributes(&ec2.DescribeAccountAttributesInput{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, attribute := range output.AccountAttributes {
+		if *attribute.AttributeName == "default-vpc" {
+			return *attribute.AttributeValues[0].AttributeValue, nil
+		}
+	}
+
+	return "", errors.New("No default-vpc attribute")
+}
+
+func makePointerSlice(stackSlice []string) []*string {
+	pointerSlice := []*string{}
+	for i := range stackSlice {
+		pointerSlice = append(pointerSlice, &stackSlice[i])
+	}
+	return pointerSlice
 }
