@@ -49,10 +49,21 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	}
 }
 
-func (a *aws) PrepareCloudSpec(*api.Cluster) error {
-	panic("not implemented")
-}
+func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
+	svc := getSession(cluster)
+	for i, cert := range cluster.Spec.Cloud.AWS.SSHKeys {
+		params := &ec2.ImportKeyPairInput{
+			KeyName:           sdk.String(fmt.Sprintf("Loodse-%d", i)),
+			PublicKeyMaterial: []byte(cert),
+		}
+		_, err := svc.ImportKeyPair(params)
+		if err != nil {
+			continue
+		}
 
+	}
+	return nil
+}
 
 func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
