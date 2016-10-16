@@ -1,9 +1,14 @@
 package aws
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 
+	"text/template"
+
+	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
 	sdk "github.com/aws/aws-sdk-go/aws"
@@ -18,6 +23,20 @@ const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
 )
+
+const (
+	// TODO: Create aws image
+	awsLoodseImageName = ""
+
+	defaultDeviceName   = "/dev/sda1"
+	defaultInstanceType = "t2.micro"
+	defaultVolumeType   = "gp2"
+)
+
+var defaultCreatorTagLoodse = &ec2.Tag{
+	Key:   sdk.String("Creator"),
+	Value: sdk.String("Loodse"),
+}
 
 type aws struct {
 	datacenters map[string]provider.DatacenterMeta
@@ -58,8 +77,84 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	return spec, nil
 }
 
-func (a *aws) CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error) {
-	panic("not implemented")
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+	dc, ok := a.datacenters[node.DC]
+	if !ok || dc.Spec.AWS == nil {
+		return nil, nil
+	}
+
+	if node.AWS.Type != "" {
+		return nil, nil
+	}
+
+	svc := getSession(cluster)
+	cSpec := cluster.Spec.Cloud.GetAWS()
+	nSpec := node.AWS
+
+	var created []*api.Node
+
+	for i := 0; i < num; i++ {
+		id := provider.ShortUID(5)
+		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
+
+		clientKC, err := cluster.CreateKeyCert(instanceName)
+		if err != nil {
+			return created, err
+		}
+
+		block := &ec2.BlockDeviceMapping{
+			DeviceName: sdk.String(defaultDeviceName),
+			Ebs: &ec2.EbsBlockDevice{
+				DeleteOnTermination: sdk.Bool(true),
+				VolumeSize:          sdk.Int64(nSpec.Size),
+				VolumeType:          sdk.String(defaultInstanceType),
+			},
+		}
+		data := ktemplate.Data{
+			DC:                node.DC,
+			ClusterName:       cluster.Metadata.Name,
+			SSHAuthorizedKeys: cSpec.SSHKeys,
+			EtcdURL:           cluster.Address.EtcdURL,
+			APIServerURL:      cluster.Address.URL,
+			Region:            dc.Spec.AWS.AvailabilityZone,
+			Name:              instanceName,
+			ClientKey:         clientKC.Key.Base64(),
+			ClientCert:        clientKC.Cert.Base64(),
+			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
+			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
+			ApiserverToken:    cluster.Address.Token,
+			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
+		}
+
+		tpl, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles("template/coreos/cloud-config-node.yaml")
+
+		if err != nil {
+			return created, err
+		}
+
+		var buf bytes.Buffer
+		if err = tpl.Execute(&buf, data); err != nil {
+			return created, err
+		}
+
+		instanceRequest := &ec2.RunInstancesInput{
+			ImageId:             sdk.String(awsLoodseImageName),
+			MaxCount:            sdk.Int64(1),
+			MinCount:            sdk.Int64(1),
+			BlockDeviceMappings: []*ec2.BlockDeviceMapping{block},
+			InstanceType:        sdk.String(defaultInstanceType),
+			Placement: &ec2.Placement{
+				AvailabilityZone: sdk.String(node.DC),
+			},
+			UserData: sdk.String(buf.String()),
+		}
+
+		node, err := launch(svc, instanceName, instanceRequest)
+		if err == nil {
+			created = append(created, node)
+		}
+	}
+	return created, nil
 }
 
 
@@ -72,6 +167,50 @@ func (a *aws) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) er
 	panic("not implemented")
 }
 
+func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api.Node, error) {
+	serverReq, err := client.RunInstances(instance)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = client.CreateTags(&ec2.CreateTagsInput{
+		Resources: []*string{serverReq.Instances[0].InstanceId},
+		Tags: []*ec2.Tag{
+			{
+				Key:   sdk.String("Name"),
+				Value: sdk.String(name),
+			},
+			defaultCreatorTagLoodse,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.Node{
+		Metadata: api.Metadata{
+			// This looks weird but is correct
+			UID:  *serverReq.Instances[0].InstanceId,
+			Name: name,
+		},
+		Status: api.NodeStatus{
+			Addresses: map[string]string{
+				// Probably won't have one... VPC ?
+				// TODO: VPC rules ... NetworkInterfaces
+				"public":  *serverReq.Instances[0].PublicIpAddress,
+				"private": *serverReq.Instances[0].PrivateIpAddress,
+			},
+		},
+		Spec: api.NodeSpec{
+			DC: *instance.Placement.AvailabilityZone,
+			AWS: &api.AWSNodeSpec{
+				Type: *instance.ImageId,
+				Size: *instance.BlockDeviceMappings[0].Ebs.VolumeSize,
+			},
+		},
+	}, nil
+}
 
 func getSession(cluster *api.Cluster) *ec2.EC2 {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
