@@ -157,9 +157,68 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	return created, nil
 }
 
+func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
+	svc := getSession(cluster)
 
-func (a *aws) Nodes(context.Context, *api.Cluster) ([]*api.Node, error) {
-	panic("not implemented")
+	var nodes []*api.Node
+
+	params := &ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{{
+			// TODO: Direct Tag filtering
+			Name: sdk.String("instance-state-name"),
+			Values: []*string{
+				sdk.String("running"),
+				sdk.String("pending"),
+			},
+		}},
+	}
+
+	resp, err := svc.DescribeInstances(params)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range resp.Reservations {
+		for _, instance := range n.Instances {
+			var isOwner bool
+			var name string
+			// Max 10 iterations
+			for _, tag := range instance.Tags {
+				if *tag.Key == *defaultCreatorTagLoodse.Key && *tag.Value == *defaultCreatorTagLoodse.Value {
+					isOwner = true
+				}
+				if *tag.Key == "Name" {
+					name = *tag.Value
+				}
+			}
+			if !isOwner {
+				continue
+			}
+
+			node := &api.Node{
+				Metadata: api.Metadata{
+					UID:  *instance.InstanceId,
+					Name: name,
+				},
+				Status: api.NodeStatus{
+					Addresses: map[string]string{
+						"public":  *instance.PublicIpAddress,
+						"private": *instance.PrivateIpAddress,
+					},
+				},
+				Spec: api.NodeSpec{
+					DC: *instance.Placement.AvailabilityZone,
+					AWS: &api.AWSNodeSpec{
+						Type: *instance.ImageId,
+						// TODO: Get BlockDeviceMapping Volume Size
+						Size: -1,
+					},
+				},
+			}
+			nodes = append(nodes, node)
+		}
+	}
+	return nil, nil
 }
 
 
