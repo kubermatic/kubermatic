@@ -119,7 +119,7 @@ func NewSeedProvider(
 				AccessKeyID:     accessKeyID,
 				SecretAccessKey: secretAccessKey,
 				VPVId:           vpcID,
-				SSHKeys:         []string{},
+				SSHKeys:         dc.Spec.Seed.AWS.SSHKeys,
 			}
 
 		default:
