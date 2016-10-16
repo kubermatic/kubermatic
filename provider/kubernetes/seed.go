@@ -93,31 +93,26 @@ func NewSeedProvider(
 		case provider.DigitaloceanCloudProvider:
 			token, found := secrets.Tokens[dcName]
 			if !found {
-				log.Fatalf("cannot find dc %q in secret tokens", dcName)
+				log.Fatalf("cannot find aws-login in dc %q", dcName)
 			}
 			c.Spec.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   token,
 				SSHKeys: dc.Spec.Seed.Digitalocean.SSHKeys,
 			}
 		case provider.AWSCloudProvider:
-			accessKeyID, ok := secrets.AccessKeyID[dcName]
+			awsLogin, ok := secrets.Login[dcName]
 			if !ok {
-				log.Fatalf("cannot find dc %q in secret access-key-id", dcName)
-			}
-
-			secretAccessKey, ok := secrets.SecretAccessKey[dcName]
-			if !ok {
-				log.Fatalf("cannot find dc %q in secret secret-access-key", dcName)
+				log.Fatalf("cannot find aws-login in dc %q", dcName)
 			}
 
 			vpcID, ok := secrets.VPCId[dcName]
 			if !ok {
-				log.Fatalf("cannot find dc %q in secret default-vpc-id", dcName)
+				log.Fatalf("cannot find vpc-default-id in dc %q", dcName)
 			}
 
 			c.Spec.Cloud.AWS = &api.AWSCloudSpec{
-				AccessKeyID:     accessKeyID,
-				SecretAccessKey: secretAccessKey,
+				AccessKeyID:     awsLogin.AccessKeyID,
+				SecretAccessKey: awsLogin.SecretAccessKey,
 				VPVId:           vpcID,
 				SSHKeys:         dc.Spec.Seed.AWS.SSHKeys,
 			}
