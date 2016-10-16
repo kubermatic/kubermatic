@@ -138,6 +138,10 @@ func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
 		}
 	case dc.Spec.BringYourOwn != nil:
 		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
+	case dc.Spec.AWS != nil:
+		spec.AWS = &api.AWSDatacenterSpec{
+			AvailabilityZone: dc.Spec.AWS.AvailabilityZone,
+		}
 	}
 
 	return spec, nil

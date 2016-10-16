@@ -195,6 +195,11 @@ type DigitialoceanDatacenterSpec struct {
 type BringYourOwnDatacenterSpec struct {
 }
 
+// AWSDatacenterSpec specifies a data center of Amazon Web Services.
+type AWSDatacenterSpec struct {
+	AvailabilityZone string `json:"availabilit_zone"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Country      string                       `json:"country,omitempty"`
@@ -202,6 +207,7 @@ type DatacenterSpec struct {
 	Provider     string                       `json:"provider,omitempty"`
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
+	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
