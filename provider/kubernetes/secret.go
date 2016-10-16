@@ -16,10 +16,13 @@ type KeyCert struct {
 
 // Secrets keeps cloud provider secrets, e.g. to create seed nodes.
 type Secrets struct {
-	Tokens       map[string]string  `yaml:"tokens"`
-	RootCAs      map[string]KeyCert `yaml:"root-cas"`
-	Certificates map[string]KeyCert `yaml:"certificates"`
-	ApiserverSSH map[string]string  `yaml:"apiserverSSH"`
+	AccessKeyID     map[string]int64   `yaml:"access-key-id"`
+	SecretAccessKey map[string]string  `yaml:"secret-access-key"`
+	VPCId           map[string]string  `yaml:"default-vpc-id"`
+	Tokens          map[string]string  `yaml:"tokens"`
+	RootCAs         map[string]KeyCert `yaml:"root-cas"`
+	Certificates    map[string]KeyCert `yaml:"certificates"`
+	ApiserverSSH    map[string]string  `yaml:"apiserverSSH"`
 }
 
 // LoadSecrets loads secrets from the given path.

@@ -99,6 +99,28 @@ func NewSeedProvider(
 				Token:   token,
 				SSHKeys: dc.Spec.Seed.Digitalocean.SSHKeys,
 			}
+		case provider.AWSCloudProvider:
+			accessKeyID, ok := secrets.AccessKeyID[dcName]
+			if !ok {
+				log.Fatalf("cannot find dc %q in secret access-key-id", dcName)
+			}
+
+			secretAccessKey, ok := secrets.SecretAccessKey[dcName]
+			if !ok {
+				log.Fatalf("cannot find dc %q in secret secret-access-key", dcName)
+			}
+
+			vpcID, ok := secrets.VPCId[dcName]
+			if !ok {
+				log.Fatalf("cannot find dc %q in secret default-vpc-id", dcName)
+			}
+
+			c.Spec.Cloud.AWS = &api.AWSCloudSpec{
+				AccessKeyID:     accessKeyID,
+				SecretAccessKey: secretAccessKey,
+				VPVId:           vpcID,
+				SSHKeys:         []string{},
+			}
 
 		default:
 			log.Fatalf("unsupported cloud provider %q for seed dc %q", p, dcName)

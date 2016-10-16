@@ -111,6 +111,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
 	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
@@ -134,6 +137,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
