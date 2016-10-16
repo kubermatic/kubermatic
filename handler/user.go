@@ -26,7 +26,7 @@ func decodeUserReq(r *http.Request) (interface{}, error) {
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("Invalid token in JWT in request %v", r)
+		return nil, fmt.Errorf("Invalid JWT in request %v", r)
 	}
 
 	req.user.Name, ok = claims["sub"].(string)
