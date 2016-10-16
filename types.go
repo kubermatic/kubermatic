@@ -32,9 +32,17 @@ type FakeNodeSpec struct {
 	OS   string `json:"os"`
 }
 
+// AWSNodeSpec specifies an aws node.
+type AWSNodeSpec struct {
+	Type    string   `jason:"type"`
+	Size    int64    `jason:"size"`
+	SSHKeys []string `json:"sshKeys,omitempty"`
+}
+
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
 	DC           string                `json:"dc"`
+	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
