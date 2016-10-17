@@ -43,8 +43,8 @@ const (
 )
 
 var defaultCreatorTagLoodse = &ec2.Tag{
-	Key:   sdk.String("Creator"),
-	Value: sdk.String("Loodse"),
+	Key:   sdk.String("controller"),
+	Value: sdk.String("kubermatic"),
 }
 
 type aws struct {
