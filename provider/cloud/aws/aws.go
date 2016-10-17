@@ -42,6 +42,9 @@ const (
 	defaultInstanceType = "t2.micro"
 )
 
+// TODO: viper
+var tpl = template.Must(template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles("template/coreos/cloud-config-node.yaml"))
+
 var defaultCreatorTagLoodse = &ec2.Tag{
 	Key:   sdk.String("controller"),
 	Value: sdk.String("kubermatic"),
