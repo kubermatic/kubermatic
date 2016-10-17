@@ -22,6 +22,16 @@ import (
 const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
+	sshAnnotationKey             = "ssh-key"
+	awsKeyDelimitor              = ","
+)
+
+const (
+	awsFilterName       = "Name"
+	awsFilterState      = "instance-state-name"
+	awsFilterRunning    = "running"
+	awsFilterPending    = "pending"
+	awsFilterDefaultVPC = "default-vpc"
 )
 
 const (
@@ -175,10 +185,10 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{{
 			// TODO: Direct Tag filtering
-			Name: sdk.String("instance-state-name"),
+			Name: sdk.String(awsFilterState),
 			Values: []*string{
-				sdk.String("running"),
-				sdk.String("pending"),
+				sdk.String(awsFilterRunning),
+				sdk.String(awsFilterPending),
 			},
 		}},
 	}
@@ -197,7 +207,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 				if *tag.Key == *defaultCreatorTagLoodse.Key && *tag.Value == *defaultCreatorTagLoodse.Value {
 					isOwner = true
 				}
-				if *tag.Key == "Name" {
+				if *tag.Key == awsFilterName {
 					name = *tag.Value
 				}
 			}
@@ -257,7 +267,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api
 		Resources: []*string{serverReq.Instances[0].InstanceId},
 		Tags: []*ec2.Tag{
 			{
-				Key:   sdk.String("Name"),
+				Key:   sdk.String(awsLoodseImageName),
 				Value: sdk.String(name),
 			},
 			defaultCreatorTagLoodse,
@@ -309,7 +319,7 @@ func getDefaultVPCId(client *ec2.EC2) (string, error) {
 	}
 
 	for _, attribute := range output.AccountAttributes {
-		if *attribute.AttributeName == "default-vpc" {
+		if *attribute.AttributeName == awsFilterDefaultVPC {
 			return *attribute.AttributeValues[0].AttributeValue, nil
 		}
 	}
