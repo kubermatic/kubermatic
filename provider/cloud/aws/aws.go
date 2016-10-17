@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-
+	"strings"
 	"text/template"
 
 	ktemplate "github.com/kubermatic/api/template"
@@ -62,18 +62,6 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 }
 
 func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
-	svc := getSession(cluster)
-	for i, cert := range cluster.Spec.Cloud.AWS.SSHKeys {
-		params := &ec2.ImportKeyPairInput{
-			KeyName:           sdk.String(fmt.Sprintf("Loodse-%d", i)),
-			PublicKeyMaterial: []byte(cert),
-		}
-		_, err := svc.ImportKeyPair(params)
-		if err != nil {
-			continue
-		}
-
-	}
 	return nil
 }
 
@@ -81,12 +69,15 @@ func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string,
 	return map[string]string{
 		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessKeyID, 10),
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
+		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimitor),
 	}, nil
 }
 
 func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	spec := &api.CloudSpec{
-		AWS: &api.AWSCloudSpec{},
+		AWS: &api.AWSCloudSpec{
+			SSHKeys: []string{},
+		},
 	}
 	var ok bool
 	if val, ok := annotations[accessKeyIDAnnotationKey]; ok {
@@ -94,9 +85,21 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	} else {
 		return nil, errors.New("no access key ID found")
 	}
+
 	if spec.AWS.SecretAccessKey, ok = annotations[secretAccessKeyAnnotationKey]; !ok {
 		return nil, errors.New("no secret key found")
 	}
+
+	sshKeys, ok := annotations[secretAccessKeyAnnotationKey]
+	if !ok {
+		return nil, errors.New("ssh keys found")
+	}
+	for _, key := range strings.Split(sshKeys, awsKeyDelimitor) {
+		if len(key) > 0 {
+			spec.AWS.SSHKeys = append(spec.AWS.SSHKeys, key)
+		}
+	}
+
 	return spec, nil
 }
 
@@ -124,6 +127,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if !ok || dc.Spec.AWS == nil {
 		return nil, nil
 	}
+
 
 	if node.AWS.Type != "" {
 		return nil, nil
