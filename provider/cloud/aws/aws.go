@@ -37,9 +37,6 @@ const (
 const (
 	// TODO: Create aws image
 	awsLoodseImageName = ""
-
-	defaultDeviceName   = "/dev/sda1"
-	defaultInstanceType = "t2.micro"
 )
 
 // TODO: viper
@@ -134,8 +131,6 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	}
 
 	svc := getSession(cluster)
-	cSpec := cluster.Spec.Cloud.GetAWS()
-	nSpec := node.AWS
 
 	var created []*api.Node
 	var buf bytes.Buffer
@@ -162,10 +157,12 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			UserData: sdk.String(buf.String()),
 		}
 
-		node, err := launch(svc, instanceName, instanceRequest)
-		if err == nil {
-			created = append(created, node)
+		newNode, err := launch(svc, instanceName, instanceRequest)
+
+		if err != nil {
+			return created, err
 		}
+		created = append(created, newNode)
 	}
 	return created, nil
 }
