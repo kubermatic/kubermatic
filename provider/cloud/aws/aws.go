@@ -142,7 +142,9 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, err
 		}
 
-		userData(&buf, instanceName, node, cluster, dc, clientKC)
+		if err = userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+			return createdNodes, err
+		}
 
 		instanceRequest := &ec2.RunInstancesInput{
 			ImageId:      sdk.String(awsLoodseImageName),
