@@ -100,6 +100,25 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	return spec, nil
 }
 
+func userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
+	data := ktemplate.Data{
+		DC:                node.DC,
+		ClusterName:       clusterState.Metadata.Name,
+		SSHAuthorizedKeys: clusterState.Spec.Cloud.GetAWS().SSHKeys,
+		EtcdURL:           clusterState.Address.EtcdURL,
+		APIServerURL:      clusterState.Address.URL,
+		Region:            dc.Spec.AWS.AvailabilityZone,
+		Name:              instanceName,
+		ClientKey:         key.Key.Base64(),
+		ClientCert:        key.Cert.Base64(),
+		RootCACert:        clusterState.Status.RootCA.Cert.Base64(),
+		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
+		ApiserverToken:    clusterState.Address.Token,
+		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
+	}
+	return tpl.Execute(buf, data)
+}
+
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DC]
 	if !ok || dc.Spec.AWS == nil {
@@ -125,40 +144,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return created, err
 		}
 
-		block := &ec2.BlockDeviceMapping{
-			DeviceName: sdk.String(defaultDeviceName),
-			Ebs: &ec2.EbsBlockDevice{
-				DeleteOnTermination: sdk.Bool(true),
-				VolumeSize:          sdk.Int64(nSpec.Size),
-				VolumeType:          sdk.String(defaultInstanceType),
-			},
-		}
-		data := ktemplate.Data{
-			DC:                node.DC,
-			ClusterName:       cluster.Metadata.Name,
-			SSHAuthorizedKeys: cSpec.SSHKeys,
-			EtcdURL:           cluster.Address.EtcdURL,
-			APIServerURL:      cluster.Address.URL,
-			Region:            dc.Spec.AWS.AvailabilityZone,
-			Name:              instanceName,
-			ClientKey:         clientKC.Key.Base64(),
-			ClientCert:        clientKC.Cert.Base64(),
-			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
-			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-			ApiserverToken:    cluster.Address.Token,
-			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
-		}
-
-		tpl, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles("template/coreos/cloud-config-node.yaml")
-
-		if err != nil {
-			return created, err
-		}
-
-		var buf bytes.Buffer
-		if err = tpl.Execute(&buf, data); err != nil {
-			return created, err
-		}
+		userData(&buf, instanceName, node, cluster, dc, clientKC)
 
 		instanceRequest := &ec2.RunInstancesInput{
 			ImageId:             sdk.String(awsLoodseImageName),
@@ -214,29 +200,8 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 					name = *tag.Value
 				}
 			}
-			if !isOwner {
-				continue
-			}
-
-			node := &api.Node{
-				Metadata: api.Metadata{
-					UID:  *instance.InstanceId,
-					Name: name,
-				},
-				Status: api.NodeStatus{
-					Addresses: map[string]string{
-						"public":  *instance.PublicIpAddress,
-						"private": *instance.PrivateIpAddress,
-					},
-				},
-				Spec: api.NodeSpec{
-					DC: *instance.Placement.AvailabilityZone,
-					AWS: &api.AWSNodeSpec{
-						Type: *instance.ImageId,
-						// TODO: Get BlockDeviceMapping Volume Size
-						Size: -1,
-					},
-				},
+			if isOwner {
+				nodes = append(nodes, createNode(name, instance))
 			}
 			nodes = append(nodes, node)
 		}
@@ -281,28 +246,31 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api
 		return nil, err
 	}
 
+	return createNode(name, serverReq.Instances[0]), nil
+}
+
+func createNode(name string, instance *ec2.Instance) *api.Node {
 	return &api.Node{
 		Metadata: api.Metadata{
 			// This looks weird but is correct
-			UID:  *serverReq.Instances[0].InstanceId,
+			UID:  *instance.InstanceId,
 			Name: name,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
 				// Probably won't have one... VPC ?
 				// TODO: VPC rules ... NetworkInterfaces
-				"public":  *serverReq.Instances[0].PublicIpAddress,
-				"private": *serverReq.Instances[0].PrivateIpAddress,
+				"public":  *instance.PublicIpAddress,
+				"private": *instance.PrivateIpAddress,
 			},
 		},
 		Spec: api.NodeSpec{
 			DC: *instance.Placement.AvailabilityZone,
 			AWS: &api.AWSNodeSpec{
 				Type: *instance.ImageId,
-				Size: *instance.BlockDeviceMappings[0].Ebs.VolumeSize,
 			},
 		},
-	}, nil
+	}
 }
 
 func getSession(cluster *api.Cluster) *ec2.EC2 {
