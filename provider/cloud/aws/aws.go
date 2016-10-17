@@ -146,11 +146,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		userData(&buf, instanceName, node, cluster, dc, clientKC)
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:             sdk.String(awsLoodseImageName),
-			MaxCount:            sdk.Int64(1),
-			MinCount:            sdk.Int64(1),
-			BlockDeviceMappings: []*ec2.BlockDeviceMapping{block},
-			InstanceType:        sdk.String(defaultInstanceType),
+			ImageId:      sdk.String(awsLoodseImageName),
+			MaxCount:     sdk.Int64(1),
+			MinCount:     sdk.Int64(1),
+			InstanceType: sdk.String(node.AWS.Type),
 			Placement: &ec2.Placement{
 				AvailabilityZone: sdk.String(node.DC),
 			},
