@@ -204,10 +204,9 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 			if isOwner {
 				nodes = append(nodes, createNode(name, instance))
 			}
-			nodes = append(nodes, node)
 		}
 	}
-	return nil, nil
+	return nodes, nil
 }
 
 func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
