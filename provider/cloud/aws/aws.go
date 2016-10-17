@@ -125,14 +125,13 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, nil
 	}
 
-
 	if node.AWS.Type != "" {
 		return nil, nil
 	}
 
 	svc := getSession(cluster)
 
-	var created []*api.Node
+	var createdNodes []*api.Node
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		id := provider.ShortUID(5)
@@ -140,7 +139,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 
 		clientKC, err := cluster.CreateKeyCert(instanceName)
 		if err != nil {
-			return created, err
+			return createdNodes, err
 		}
 
 		userData(&buf, instanceName, node, cluster, dc, clientKC)
@@ -159,11 +158,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		newNode, err := launch(svc, instanceName, instanceRequest)
 
 		if err != nil {
-			return created, err
+			return createdNodes, err
 		}
-		created = append(created, newNode)
+		createdNodes = append(createdNodes, newNode)
 	}
-	return created, nil
+	return createdNodes, nil
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
@@ -191,7 +190,6 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 		for _, instance := range n.Instances {
 			var isOwner bool
 			var name string
-			// Max 10 iterations
 			for _, tag := range instance.Tags {
 				if *tag.Key == *defaultCreatorTagLoodse.Key && *tag.Value == *defaultCreatorTagLoodse.Value {
 					isOwner = true
