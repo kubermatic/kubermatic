@@ -35,7 +35,6 @@ type FakeNodeSpec struct {
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
 	Type    string   `jason:"type"`
-	Size    int64    `jason:"size"`
 	SSHKeys []string `json:"sshKeys,omitempty"`
 }
 
