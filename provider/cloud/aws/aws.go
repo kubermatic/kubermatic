@@ -266,7 +266,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 		Spec: api.NodeSpec{
 			DC: *instance.Placement.AvailabilityZone,
 			AWS: &api.AWSNodeSpec{
-				Type: *instance.ImageId,
+				Type: *instance.InstanceType,
 			},
 		},
 	}
