@@ -154,6 +154,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			Placement: &ec2.Placement{
 				AvailabilityZone: sdk.String(node.DC),
 			},
+			KeyName:  sdk.String(node.AWS.SSHKeyName),
 			UserData: sdk.String(buf.String()),
 		}
 

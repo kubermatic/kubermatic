@@ -34,8 +34,8 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type    string   `jason:"type"`
-	SSHKeys []string `json:"sshKeys,omitempty"`
+	Type       string `jason:"type"`
+	SSHKeyName string `json:"sshKeys,omitempty"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
