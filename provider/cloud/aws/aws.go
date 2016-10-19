@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/golang/glog"
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
@@ -39,8 +40,7 @@ const (
 	awsLoodseImageName = ""
 )
 
-// TODO: viper
-var tpl = template.Must(template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles("template/coreos/cloud-config-node.yaml"))
+var tpl *template.Template
 
 var defaultCreatorTagLoodse = &ec2.Tag{
 	Key:   sdk.String("controller"),
@@ -49,6 +49,15 @@ var defaultCreatorTagLoodse = &ec2.Tag{
 
 type aws struct {
 	datacenters map[string]provider.DatacenterMeta
+}
+
+// Init template
+func Init() {
+	tplPath := "template/coreos/cloud-config-node.yaml"
+	if parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath); err != nil {
+		tpl = parsed
+		glog.Errorln("template not found:", err)
+	}
 }
 
 // NewCloudProvider returns a new aws provider.
@@ -101,6 +110,9 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 }
 
 func userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
+	if tpl == nil {
+		return errors.New("No AWS template was found")
+	}
 	data := ktemplate.Data{
 		DC:                node.DC,
 		ClusterName:       clusterState.Metadata.Name,
