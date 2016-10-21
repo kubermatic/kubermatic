@@ -21,14 +21,14 @@ func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{}
 }
 
-func (p *fakeCloudProvider) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (p *fakeCloudProvider) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{}
 	as[tokenAnnotationKey] = cloud.Fake.Token
 
 	return as, nil
 }
 
-func (p *fakeCloudProvider) Cloud(as map[string]string) (*api.CloudSpec, error) {
+func (p *fakeCloudProvider) Unmarshal(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		Fake: &api.FakeCloudSpec{},
 	}
@@ -51,7 +51,7 @@ func (p *fakeCloudProvider) CreateNodes(
 	return nil, errors.New("not implemented")
 }
 
-func (p *fakeCloudProvider) PrepareCloudSpec(c *api.Cluster) error {
+func (p *fakeCloudProvider) InitializeCloudSpec(c *api.Cluster) error {
 	return nil
 }
 

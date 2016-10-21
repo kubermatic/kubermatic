@@ -35,7 +35,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (do *digitalocean) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
@@ -43,7 +43,7 @@ func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]stri
 	return as, nil
 }
 
-func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
+func (do *digitalocean) Unmarshal(annotations map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		Digitalocean: &api.DigitaloceanCloudSpec{
 			SSHKeys: []string{},
@@ -95,10 +95,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	return &n, nil
 }
 
-func (do *digitalocean) CreateNodes(
-	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec, instances int,
-) ([]*api.Node, error) {
+func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int) ([]*api.Node, error) {
 	dc, found := do.dcs[spec.DC]
 	if !found || dc.Spec.Digitalocean == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", spec.DC)
@@ -189,7 +186,7 @@ func (do *digitalocean) CreateNodes(
 	return created, nil
 }
 
-func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
+func (do *digitalocean) InitializeCloudSpec(c *api.Cluster) error {
 	return nil
 }
 

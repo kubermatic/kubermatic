@@ -25,7 +25,7 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (b *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (b *bringyourown) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		privateIntfAnnotationKey: cloud.BringYourOwn.PrivateIntf,
 	}
@@ -39,7 +39,7 @@ func (b *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]strin
 	return as, nil
 }
 
-func (b *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
+func (b *bringyourown) Unmarshal(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		BringYourOwn: &api.BringYourOwnCloudSpec{
 			PrivateIntf: as[privateIntfAnnotationKey],
@@ -64,7 +64,7 @@ func (b *bringyourown) CreateNodes(
 	return nil, errors.New("not implemented")
 }
 
-func (b *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
+func (b *bringyourown) InitializeCloudSpec(c *api.Cluster) error {
 	if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
 		clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
 		if err != nil {

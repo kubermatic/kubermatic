@@ -167,7 +167,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 			return nil, err
 		}
 
-		err = prov.PrepareCloudSpec(c)
+		err = prov.InitializeCloudSpec(c)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",

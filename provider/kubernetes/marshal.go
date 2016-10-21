@@ -245,40 +245,40 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 }
 
 // marshalClusterCloud returns annotations to persist Spec.Cloud
-func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (map[string]string, error) {
-	cloudAs, err := cp.CreateAnnotations(c.Spec.Cloud)
+func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (annotations map[string]string, err error) {
+	cloudAs, err := cp.Marshal(c.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
 
 	prefix := cloudProviderAnnotationPrefix(cpName)
-	as := make(map[string]string, len(cloudAs))
+	annotations = make(map[string]string, len(cloudAs))
 	for k, v := range cloudAs {
-		as[prefix+k] = v
+		annotations[prefix+k] = v
 	}
 
-	as[providerAnnotation] = cpName
-	as[cloudDCAnnotation] = c.Spec.Cloud.DC
+	annotations[providerAnnotation] = cpName
+	annotations[cloudDCAnnotation] = c.Spec.Cloud.DC
 
-	return as, nil
+	return annotations, nil
 }
 
 // unmarshalClusterCloud sets the Spec.Cloud field according to the annotations.
-func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, as map[string]string) (*api.CloudSpec, error) {
+func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, annotations map[string]string) (*api.CloudSpec, error) {
 	prefix := cloudProviderAnnotationPrefix(cpName)
 	cloudAs := map[string]string{}
-	for k, v := range as {
+	for k, v := range annotations {
 		if strings.HasPrefix(k, prefix) {
 			cloudAs[k[len(prefix):]] = v
 		}
 	}
 
 	var err error
-	spec, err := cp.Cloud(cloudAs)
+	spec, err := cp.Unmarshal(cloudAs)
 	if err != nil {
 		return nil, err
 	}
-	spec.DC = as[cloudDCAnnotation]
+	spec.DC = annotations[cloudDCAnnotation]
 	spec.Network.Flannel.CIDR = flannelCIDRADefault
 
 	return spec, nil
