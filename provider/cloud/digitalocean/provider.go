@@ -126,8 +126,9 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
 		data := ktemplate.Data{
-			DC:                spec.DC,
-			ClusterName:       cluster.Metadata.Name,
+			DC:          spec.DC,
+			ClusterName: cluster.Metadata.Name,
+			//
 			SSHAuthorizedKeys: cSpec.SSHKeys,
 			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
@@ -165,7 +166,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			Image:             image,
 			Size:              nSpec.Size,
 			PrivateNetworking: true,
-			SSHKeys:           dropletKeys(nSpec.SSHKeys),
+			SSHKeys:           dropletKeys(nSpec.SSHKeyNames),
 			Name:              dropletName,
 			UserData:          buf.String(),
 		}

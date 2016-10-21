@@ -17,9 +17,10 @@ type Metadata struct {
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
 type DigitaloceanNodeSpec struct {
-	Type    string   `json:"type"`
-	Size    string   `json:"size"`
-	SSHKeys []string `json:"sshKeys,omitempty"`
+	Type string `json:"type"`
+	Size string `json:"size"`
+	// Signatures - KeyNames
+	SSHKeyNames []string `json:"sshKeys,omitempty"`
 }
 
 // BringYourOwnNodeSpec specifies a bring your own node
