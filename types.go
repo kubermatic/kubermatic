@@ -70,7 +70,7 @@ type DigitaloceanCloudSpec struct {
 type AWSCloudSpec struct {
 	AccessKeyID     int64    `json:"access_key_id"`
 	SecretAccessKey string   `json:"secret_access_key"`
-	VPVId           string   `json:"vpc_id"`
+	VPCId           string   `json:"vpc_id"`
 	SSHKeys         []string `json:"sshKeys"`
 	SubnetID        string   `json:"subnet_id"`
 }

@@ -93,7 +93,7 @@ func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.VPVId = *vRes.Vpc.VpcId
+	cluster.Spec.Cloud.AWS.VPCId = *vRes.Vpc.VpcId
 	cluster.Spec.Cloud.AWS.SubnetID = *sRes.Subnet.SubnetId
 
 	return nil
