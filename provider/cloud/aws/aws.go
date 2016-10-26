@@ -24,7 +24,7 @@ const (
 	// VPCCidrBlock is the default CIDR block in the VpcSubnet
 	VPCCidrBlock = "10.10.0.0/16"
 	// SubnetCidrBlock is the default CIDR for the VPC
-	SubnetCidrBlock = "10.10.10.0/16"
+	SubnetCidrBlock = "10.10.10.0/24"
 )
 
 const (
