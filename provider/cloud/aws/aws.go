@@ -46,9 +46,8 @@ const (
 const (
 	// TODO: Create aws image
 	awsLoodseImageName = ""
+	tplPath            = "template/coreos/cloud-config-node.yaml"
 )
-
-var tpl *template.Template
 
 var defaultCreatorTagLoodse = &ec2.Tag{
 	Key:   sdk.String("controller"),
@@ -57,22 +56,20 @@ var defaultCreatorTagLoodse = &ec2.Tag{
 
 type aws struct {
 	datacenters map[string]provider.DatacenterMeta
-}
-
-// Init template
-func Init() {
-	tplPath := "template/coreos/cloud-config-node.yaml"
-	if parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath); err != nil {
-		tpl = parsed
-		glog.Errorln("template not found:", err)
-	}
+	tpl         *template.Template
 }
 
 // NewCloudProvider returns a new aws provider.
 func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &aws{
+	provider := &aws{
 		datacenters: datacenters,
 	}
+
+	if parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath); err != nil {
+		provider.tpl = parsed
+		glog.Errorln("template not found:", err)
+	}
+	return provider
 }
 
 func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
@@ -142,8 +139,8 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	return spec, nil
 }
 
-func userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
-	if tpl == nil {
+func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
+	if a.tpl == nil {
 		return errors.New("No AWS template was found")
 	}
 	data := ktemplate.Data{
@@ -161,7 +158,7 @@ func userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, cluste
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 	}
-	return tpl.Execute(buf, data)
+	return a.tpl.Execute(buf, data)
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
@@ -187,7 +184,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, err
 		}
 
-		if err = userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
 			return createdNodes, err
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
