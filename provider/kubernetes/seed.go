@@ -110,11 +110,17 @@ func NewSeedProvider(
 				log.Fatalf("cannot find vpc-default-id in dc %q", dcName)
 			}
 
+			sID, ok := secrets.SubnetID[dcName]
+			if !ok {
+				log.Fatalf("cannot find vpc-default-subnet-id in dc %q", dcName)
+			}
+
 			c.Spec.Cloud.AWS = &api.AWSCloudSpec{
 				AccessKeyID:     awsLogin.AccessKeyID,
 				SecretAccessKey: awsLogin.SecretAccessKey,
 				VPVId:           vpcID,
 				SSHKeys:         dc.Spec.Seed.AWS.SSHKeys,
+				SubnetID:        sID,
 			}
 
 		default:

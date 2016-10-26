@@ -21,9 +21,17 @@ import (
 )
 
 const (
+	// VPCCidrBlock is the default CIDR block in the VpcSubnet
+	VPCCidrBlock = "10.10.0.0/16"
+	// SubnetCidrBlock is the default CIDR for the VPC
+	SubnetCidrBlock = "10.10.10.0/16"
+)
+
+const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
 	sshAnnotationKey             = "ssh-key"
+	subnetIDKey                  = "subnet-id"
 	awsKeyDelimitor              = ","
 )
 
@@ -68,6 +76,26 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 }
 
 func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
+	svc := getSession(cluster)
+	vReq := &ec2.CreateVpcInput{
+		CidrBlock:       sdk.String(VPCCidrBlock),
+		InstanceTenancy: sdk.String(ec2.TenancyDefault),
+	}
+	vRes, err := svc.CreateVpc(vReq)
+	if err != nil {
+		return err
+	}
+	sReq := &ec2.CreateSubnetInput{
+		CidrBlock: sdk.String(SubnetCidrBlock),
+		VpcId:     vRes.Vpc.VpcId,
+	}
+	sRes, err := svc.CreateSubnet(sReq)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.VPVId = *vRes.Vpc.VpcId
+	cluster.Spec.Cloud.AWS.SubnetID = *sRes.Subnet.SubnetId
+
 	return nil
 }
 
@@ -76,6 +104,7 @@ func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string,
 		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessKeyID, 10),
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
 		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimitor),
+		subnetIDKey:                  cs.AWS.SubnetID,
 	}, nil
 }
 
@@ -104,6 +133,10 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 		if len(key) > 0 {
 			spec.AWS.SSHKeys = append(spec.AWS.SSHKeys, key)
 		}
+	}
+
+	if spec.AWS.SubnetID, ok = annotations[subnetIDKey]; !ok {
+		return nil, errors.New("no subnet ID found")
 	}
 
 	return spec, nil
@@ -157,6 +190,14 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		if err = userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
 			return createdNodes, err
 		}
+		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
+			{
+				DeviceIndex:              sdk.Int64(0), // eth0
+				AssociatePublicIpAddress: sdk.Bool(true),
+				DeleteOnTermination:      sdk.Bool(true),
+				SubnetId:                 sdk.String(cluster.Spec.Cloud.AWS.SubnetID),
+			},
+		}
 
 		instanceRequest := &ec2.RunInstancesInput{
 			ImageId:      sdk.String(awsLoodseImageName),
@@ -166,8 +207,13 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			Placement: &ec2.Placement{
 				AvailabilityZone: sdk.String(node.DC),
 			},
-			KeyName:  sdk.String(node.AWS.SSHKeyName),
-			UserData: sdk.String(buf.String()),
+			KeyName:           sdk.String(node.AWS.SSHKeyName),
+			UserData:          sdk.String(buf.String()),
+			NetworkInterfaces: netSpec,
+
+			// Not sure if it needs to be decaled two times
+			// or also in the NetworkInterfaces
+			SubnetId: sdk.String(cluster.Spec.Cloud.AWS.SubnetID),
 		}
 
 		newNode, err := launch(svc, instanceName, instanceRequest)
@@ -253,7 +299,16 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api
 			defaultCreatorTagLoodse,
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	// Allow unchecked source/destination addresses for flannel
+	_, err = client.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
+		SourceDestCheck: &ec2.AttributeBooleanValue{
+			Value: sdk.Bool(true),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}

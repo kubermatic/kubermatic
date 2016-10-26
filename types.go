@@ -72,6 +72,7 @@ type AWSCloudSpec struct {
 	SecretAccessKey string   `json:"secret_access_key"`
 	VPVId           string   `json:"vpc_id"`
 	SSHKeys         []string `json:"sshKeys"`
+	SubnetID        string   `json:"subnet_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
