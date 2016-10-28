@@ -68,7 +68,7 @@ type DigitaloceanCloudSpec struct {
 
 // AWSCloudSpec specifies access data to digital ocean.
 type AWSCloudSpec struct {
-	AccessKeyID     int64    `json:"access_key_id"`
+	AccessKeyID     string    `json:"access_key_id"`
 	SecretAccessKey string   `json:"secret_access_key"`
 	VPVId           string   `json:"vpc_id"`
 	SSHKeys         []string `json:"sshKeys"`

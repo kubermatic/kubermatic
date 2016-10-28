@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -73,7 +72,7 @@ func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
 
 func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
-		accessKeyIDAnnotationKey:     strconv.FormatInt(cs.AWS.AccessKeyID, 10),
+		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
 		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimitor),
 	}, nil
@@ -86,9 +85,7 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 		},
 	}
 	var ok bool
-	if val, ok := annotations[accessKeyIDAnnotationKey]; ok {
-		spec.AWS.AccessKeyID, _ = strconv.ParseInt(val, 10, 64)
-	} else {
+	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
 		return nil, errors.New("no access key ID found")
 	}
 
@@ -289,7 +286,7 @@ func getSession(cluster *api.Cluster) *ec2.EC2 {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
 	config := sdk.NewConfig()
 	config = config.WithRegion(cluster.Spec.Cloud.DC)
-	config = config.WithCredentials(credentials.NewStaticCredentials(strconv.FormatInt(awsSpec.AccessKeyID, 10), awsSpec.SecretAccessKey, ""))
+	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
 	return ec2.New(session.New(config))
