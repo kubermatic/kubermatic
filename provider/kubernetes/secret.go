@@ -24,6 +24,7 @@ type AWSLogin struct {
 type Secrets struct {
 	Login        map[string]AWSLogin `yaml:"aws-login"`
 	VPCId        map[string]string   `yaml:"default-vpc-id"`
+	SubnetID     map[string]string   `yaml:"vpc-default-subnet-id"`
 	Tokens       map[string]string   `yaml:"tokens"`
 	RootCAs      map[string]KeyCert  `yaml:"root-cas"`
 	Certificates map[string]KeyCert  `yaml:"certificates"`
