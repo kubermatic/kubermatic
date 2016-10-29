@@ -223,8 +223,6 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	svc := getSession(cluster)
 
-	var nodes []*api.Node
-
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{{
 			// TODO: Direct Tag filtering
@@ -241,6 +239,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 		return nil, err
 	}
 
+	nodes := make([]*api.Node, 0, len(resp.Reservations))
 	for _, n := range resp.Reservations {
 		for _, instance := range n.Instances {
 			var isOwner bool
