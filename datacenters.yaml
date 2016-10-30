@@ -74,6 +74,12 @@ datacenters:
     spec:
       digitalocean:
         region: ny3
+  us-east-1:
+    location: US East (N. Virginia)
+    country: US
+    spec:
+      aws:
+        region: us-east-1
   bringyourown:
     spec:
       bringyourown:
