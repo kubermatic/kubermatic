@@ -48,10 +48,10 @@ const (
 	tplPath            = "template/coreos/cloud-config-node.yaml"
 )
 
-var defaultCreatorTagLoodse = &ec2.Tag{
-	Key:   sdk.String("controller"),
-	Value: sdk.String("kubermatic"),
-}
+var (
+	defaultKubermaticClusterNameTagKey = "kubermatic-cluster-name"
+	defaultKubermaticClusterIDTagKey   = "kubermatic-cluster-id"
+)
 
 type aws struct {
 	datacenters map[string]provider.DatacenterMeta
@@ -71,25 +71,51 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	return provider
 }
 
-func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
-	svc := getSession(cluster)
+func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
 	vReq := &ec2.CreateVpcInput{
 		CidrBlock:       sdk.String(VPCCidrBlock),
 		InstanceTenancy: sdk.String(ec2.TenancyDefault),
 	}
 	vRes, err := svc.CreateVpc(vReq)
 	if err != nil {
+		return "", err
+	}
+
+	tReq := &ec2.CreateTagsInput{
+		Resources: []*string{vRes.Vpc.VpcId},
+		Tags: []*ec2.Tag{
+			{
+				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
+				Value: sdk.String(cluster.Metadata.UID),
+			},
+			{
+				Key:   sdk.String(defaultKubermaticClusterNameTagKey),
+				Value: sdk.String(cluster.Metadata.Name),
+			},
+		},
+	}
+	_, err = svc.CreateTags(tReq)
+	return *vRes.Vpc.VpcId, err
+}
+
+func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
+	svc := getSession(cluster)
+
+	vpcID, err := setupVPC(svc, cluster)
+	if err != nil {
 		return err
 	}
+
 	sReq := &ec2.CreateSubnetInput{
 		CidrBlock: sdk.String(SubnetCidrBlock),
-		VpcId:     vRes.Vpc.VpcId,
+		VpcId:     sdk.String(vpcID),
 	}
 	sRes, err := svc.CreateSubnet(sReq)
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.VPCId = *vRes.Vpc.VpcId
+
+	cluster.Spec.Cloud.AWS.VPCId = vpcID
 	cluster.Spec.Cloud.AWS.SubnetID = *sRes.Subnet.SubnetId
 
 	return nil
@@ -210,7 +236,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			SubnetId: sdk.String(cluster.Spec.Cloud.AWS.SubnetID),
 		}
 
-		newNode, err := launch(svc, instanceName, instanceRequest)
+		newNode, err := launch(svc, instanceName, instanceRequest, cluster)
 
 		if err != nil {
 			return createdNodes, err
@@ -246,7 +272,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 			var isOwner bool
 			var name string
 			for _, tag := range instance.Tags {
-				if *tag.Key == *defaultCreatorTagLoodse.Key && *tag.Value == *defaultCreatorTagLoodse.Value {
+				if *tag.Key == defaultKubermaticClusterIDTagKey && *tag.Value == cluster.Metadata.Name {
 					isOwner = true
 				}
 				if *tag.Key == awsFilterName {
@@ -277,7 +303,7 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	return err
 }
 
-func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api.Node, error) {
+func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, cluster *api.Cluster) (*api.Node, error) {
 	serverReq, err := client.RunInstances(instance)
 	if err != nil {
 		return nil, err
@@ -290,7 +316,14 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput) (*api
 				Key:   sdk.String(awsLoodseImageName),
 				Value: sdk.String(name),
 			},
-			defaultCreatorTagLoodse,
+			{
+				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
+				Value: sdk.String(cluster.Metadata.UID),
+			},
+			{
+				Key:   sdk.String(defaultKubermaticClusterNameTagKey),
+				Value: sdk.String(cluster.Metadata.Name),
+			},
 		},
 	})
 	if err != nil {
