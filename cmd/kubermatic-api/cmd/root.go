@@ -100,7 +100,10 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&secretsFile, "secrets", "secrets.yaml", "The secrets.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&jwtKey, "jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	RootCmd.PersistentFlags().StringVar(&address, "address", ":8080", "The address to listen on")
-	viper.BindPFlags(RootCmd.PersistentFlags())
+	err := viper.BindPFlags(RootCmd.PersistentFlags())
+	if err != nil {
+		log.Fatalf("Unable to bind Command Line flags: %s\n", err)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -133,7 +136,10 @@ func setFlagsUsingViper() {
 		}
 		// Viper will give precedence first to calls to the Set command,
 		// then to values from the config.yml
-		a.Value.Set(viper.GetString(a.Name))
+		err := a.Value.Set(viper.GetString(a.Name))
+		if err != nil {
+			// ignore
+		}
 		a.Changed = true
 	}
 }
