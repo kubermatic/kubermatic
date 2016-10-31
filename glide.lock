@@ -1,5 +1,5 @@
 hash: aeb2a1ed8067c206b4c648a41f03f6457675e50f05c047cff8befc3d7e020951
-updated: 2016-10-31T15:56:20.249194826+01:00
+updated: 2016-10-31T16:39:17.997952187+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -214,7 +214,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/mitchellh/mapstructure
-  version: 740c764bc6149d3f1806231418adb9f52c11bcbf
+  version: f3009df150dadf309fdee4a54ed65c124afad715
 - name: github.com/mreiferson/go-httpclient
   version: 63fe23f7434723dc904c901043af07931f293c47
   repo: https://github.com/mreiferson/go-httpclient
