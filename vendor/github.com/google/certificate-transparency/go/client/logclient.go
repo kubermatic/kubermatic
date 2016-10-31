@@ -18,7 +18,6 @@ import (
 
 	"github.com/google/certificate-transparency/go"
 	"github.com/mreiferson/go-httpclient"
-	"golang.org/x/net/context"
 )
 
 // URI paths for CT Log endpoints
@@ -179,65 +178,44 @@ func (c *LogClient) postAndParse(uri string, req interface{}, res interface{}) (
 	return resp, string(body), nil
 }
 
-func backoffForRetry(ctx context.Context, d time.Duration) error {
-	backoffTimer := time.NewTimer(d)
-	if ctx != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-backoffTimer.C:
-		}
-	} else {
-		<-backoffTimer.C
-	}
-	return nil
-}
-
 // Attempts to add |chain| to the log, using the api end-point specified by
-// |path|. If provided context expires before submission is complete an
-// error will be returned.
-func (c *LogClient) addChainWithRetry(ctx context.Context, path string, chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
+// |path|.
+func (c *LogClient) addChainWithRetry(path string, chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
 	var resp addChainResponse
 	var req addChainRequest
 	for _, link := range chain {
 		req.Chain = append(req.Chain, base64.StdEncoding.EncodeToString(link))
 	}
-	httpStatus := "Unknown"
-	backoffSeconds := 0
 	done := false
+	httpStatus := "Unknown"
 	for !done {
-		if backoffSeconds > 0 {
-			log.Printf("Got %s, backing-off %d seconds", httpStatus, backoffSeconds)
-		}
-		err := backoffForRetry(ctx, time.Second*time.Duration(backoffSeconds))
-		if err != nil {
-			return nil, err
-		}
-		if backoffSeconds > 0 {
-			backoffSeconds = 0
-		}
+		backoffSeconds := 0
 		httpResp, errorBody, err := c.postAndParse(c.uri+path, &req, &resp)
 		if err != nil {
+			log.Printf("Got %s, backing off.", err)
 			backoffSeconds = 10
-			continue
-		}
-		switch {
-		case httpResp.StatusCode == 200:
-			done = true
-		case httpResp.StatusCode == 408:
-			// request timeout, retry immediately
-		case httpResp.StatusCode == 503:
-			// Retry
-			backoffSeconds = 10
-			if retryAfter := httpResp.Header.Get("Retry-After"); retryAfter != "" {
-				if seconds, err := strconv.Atoi(retryAfter); err == nil {
-					backoffSeconds = seconds
+		} else {
+			switch {
+			case httpResp.StatusCode == 200:
+				done = true
+				break
+			case httpResp.StatusCode == 408:
+			case httpResp.StatusCode == 503:
+				// Retry
+				backoffSeconds = 10
+				if retryAfter := httpResp.Header.Get("Retry-After"); retryAfter != "" {
+					if seconds, err := strconv.Atoi(retryAfter); err != nil {
+						backoffSeconds = seconds
+					}
 				}
+			default:
+				return nil, fmt.Errorf("Got HTTP Status %s: %s", httpResp.Status, errorBody)
 			}
-		default:
-			return nil, fmt.Errorf("got HTTP Status %s: %s", httpResp.Status, errorBody)
+			httpStatus = httpResp.Status
 		}
-		httpStatus = httpResp.Status
+		// Now back-off before retrying
+		log.Printf("Got %s, backing-off %d seconds.", httpStatus, backoffSeconds)
+		time.Sleep(time.Duration(backoffSeconds) * time.Second)
 	}
 
 	rawLogID, err := base64.StdEncoding.DecodeString(resp.ID)
@@ -264,18 +242,12 @@ func (c *LogClient) addChainWithRetry(ctx context.Context, path string, chain []
 
 // AddChain adds the (DER represented) X509 |chain| to the log.
 func (c *LogClient) AddChain(chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
-	return c.addChainWithRetry(nil, AddChainPath, chain)
+	return c.addChainWithRetry(AddChainPath, chain)
 }
 
 // AddPreChain adds the (DER represented) Precertificate |chain| to the log.
 func (c *LogClient) AddPreChain(chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
-	return c.addChainWithRetry(nil, AddPreChainPath, chain)
-}
-
-// AddChainWithContext adds the (DER represented) X509 |chain| to the log and
-// fails if the provided context expires before the chain is submitted.
-func (c *LogClient) AddChainWithContext(ctx context.Context, chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
-	return c.addChainWithRetry(ctx, AddChainPath, chain)
+	return c.addChainWithRetry(AddPreChainPath, chain)
 }
 
 // GetSTH retrieves the current STH from the log.
