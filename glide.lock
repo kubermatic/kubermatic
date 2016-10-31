@@ -1,10 +1,33 @@
-hash: 35cc60febc6e7fd7bf134fc6e8b6027ab2496fb35fcd04f583c18aab715d8755
-updated: 2016-10-16T19:50:42.504720323+02:00
+hash: 96d4e203dfa41c44c9f3a7a96c87502e6e216b0988971b865830065e21bf635b
+updated: 2016-10-31T11:49:11.656226234+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/auth0/go-jwt-middleware
   version: 731fd2f34fda4c4a7c22816f2167e2d310cb1e42
+- name: github.com/aws/aws-sdk-go
+  version: c924893c38ecc04b18d7aab8a7aa561cb8b4c4cc
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/request
+  - aws/session
+  - private/endpoints
+  - private/protocol/ec2query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/xml/xmlutil
+  - private/signer/v4
+  - private/waiter
+  - service/ec2
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
@@ -74,6 +97,8 @@ imports:
   - swagger
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-kit/kit
   version: e553b8eff9eaa30f42387b5a17c7ea5354f3016d
   subpackages:
@@ -186,6 +211,8 @@ imports:
   version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
+- name: github.com/jmespath/go-jmespath
+  version: 3433f3ea46d9f8019119e7dd41274e112a2359a9
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
