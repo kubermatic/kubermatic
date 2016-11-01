@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -37,6 +38,41 @@ func nodesEndpoint(
 		}
 
 		return cp.Nodes(ctx, c)
+	}
+}
+
+func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodesReq)
+
+		// Get dc info
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		// Get cluster from dc
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		// Metalinter is buggy due to a bug see: https://github.com/golang/linter/issues/46
+		kURL := fmt.Sprintf(c.Address.URL + "/api/v1/nodes")
+		hCl := &http.Client{}
+		hReq, err := http.NewRequest("GET", kURL, nil)
+		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
+		if err != nil {
+			return []byte{}, nil
+		}
+
+		hReq = hReq.WithContext(ctx)
+		res, err := hCl.Do(hReq)
+		if err != nil {
+			return nil, err
+		}
+
+		return res.Body, nil
 	}
 }
 
