@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"flag"
+	goflag "flag"
 	"fmt"
 	"log"
 	"os"
@@ -40,14 +40,10 @@ var viperWhiteList = []string{
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "api",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Use:   "kubermatic-cluster-controller",
+	Short: "Controller for Kubermatic",
+	Long:  `Cluster controller... Needs better description`,
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if masterResources == "" {
 			print("master-resources path is undefined\n\n")
@@ -117,17 +113,18 @@ func Execute() {
 }
 
 func init() {
+	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports Persistent Flags, which, if defined here,
-	// will be global for your application.
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.api.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/kubermatic/kubermatic-cluster-controller.yaml)")
 	RootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
-	RootCmd.PersistentFlags().StringVar(&masterResources, "master-resources", "", "The master resources path (required).")
-	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "seed1.kubermatic.io", "The external url for the apiserver host and the the dc.")
+	RootCmd.PersistentFlags().StringVar(&masterResources, "master-resources", "", "The master resources path (Required).")
+	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
+	err := viper.BindPFlags(RootCmd.PersistentFlags())
+	if err != nil {
+		log.Fatalf("Unable to bind Command Line flags: %s\n", err)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
