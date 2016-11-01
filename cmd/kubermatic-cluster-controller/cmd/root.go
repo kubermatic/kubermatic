@@ -47,7 +47,6 @@ var RootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if masterResources == "" {
 			print("master-resources path is undefined\n\n")
-			flag.Usage()
 			os.Exit(1)
 		}
 
