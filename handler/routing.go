@@ -114,7 +114,12 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
 		Handler(b.authenticated(b.getKubernetesNodesHandler()))
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/node/{node}").
+		Handler(b.authenticated(b.getKubernetesNodeInfoHandler()))
 }
+
 func (b Routing) getKubernetesNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -125,6 +130,16 @@ func (b Routing) getKubernetesNodesHandler() http.Handler {
 		defaultHTTPErrorEncoder(),
 	)
 }
+
+func (b Routing) getKubernetesNodeInfoHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		kubernetesNodeInfoEndpoint(b.kps),
+		decodeNodeReq,
+		encodeText,
+		httptransport.ServerErrorLogger(b.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 func (b Routing) datacentersHandler() http.Handler {

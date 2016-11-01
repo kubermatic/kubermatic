@@ -76,6 +76,40 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 	}
 }
 
+func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeReq)
+
+		// Get dc info
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		// Get cluster from dc
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		kURL := fmt.Sprintf(c.Address.URL + fmt.Sprintf("/api/v1/nodes/%s", req.uid))
+		hCl := &http.Client{}
+		hReq, err := http.NewRequest("GET", kURL, nil)
+		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
+		if err != nil {
+			return []byte{}, nil
+		}
+
+		hReq = hReq.WithContext(ctx)
+		res, err := hCl.Do(hReq)
+		if err != nil {
+			return nil, err
+		}
+
+		return res.Body, nil
+	}
+}
+
 func deleteNodeEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
