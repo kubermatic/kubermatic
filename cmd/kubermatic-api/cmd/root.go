@@ -112,9 +112,10 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigName(".kubermatic-api") // name of config file (without extension)
+	viper.SetConfigName("kubermatic-api")  // name of config file (without extension)
 	viper.AddConfigPath("$HOME")           // adding home directory as first search path
 	viper.AddConfigPath(".")               // adding current directory as second search path
+	viper.AddConfigPath("/etc/kubermatic") // adding current directory as third search path
 	viper.AutomaticEnv()                   // read in environment variables that match
 
 	setFlagsUsingViper()
@@ -126,7 +127,6 @@ func initConfig() {
 }
 
 func setFlagsUsingViper() {
-	fmt.Println("setFlagsUsingViper")
 	for _, config := range viperWhiteList {
 		var a = pflag.Lookup(config)
 		viper.SetDefault(a.Name, a.DefValue)
