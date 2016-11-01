@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 )
 
@@ -12,4 +14,16 @@ func StatusOK(res http.ResponseWriter, _ *http.Request) {
 
 func encodeJSON(w http.ResponseWriter, response interface{}) (err error) {
 	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeText(w http.ResponseWriter, response interface{}) (err error) {
+	rc, ok := response.(io.ReadCloser)
+	if !ok {
+		return errors.New("response does not implement io.ReadCloser")
+	}
+	defer rc.Close()
+
+	_, err = io.Copy(w, rc)
+
+	return err
 }
