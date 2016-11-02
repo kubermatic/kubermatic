@@ -43,6 +43,7 @@ func readLinesTemplate(data interface{}, path string) (lines []string) {
 
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
+	var buf bytes.Buffer
 	for scanner.Scan() {
 		text := scanner.Text()
 		t, err := template.New("line").Parse(text)
@@ -50,12 +51,12 @@ func readLinesTemplate(data interface{}, path string) (lines []string) {
 			panic(err)
 		}
 
-		var buf bytes.Buffer
 		if err := t.Execute(&buf, data); err != nil {
 			panic(err)
 		}
 
 		lines = append(lines, buf.String())
+		buf.Reset()
 	}
 
 	return
