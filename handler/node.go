@@ -71,6 +71,9 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 		if err != nil {
 			return nil, err
 		}
+		if res.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("bad response, got :%d", res.StatusCode)
+		}
 
 		return res.Body, nil
 	}
@@ -104,6 +107,9 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 		res, err := hCl.Do(hReq)
 		if err != nil {
 			return nil, err
+		}
+		if res.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("bad response, got :%d", res.StatusCode)
 		}
 
 		return res.Body, nil
