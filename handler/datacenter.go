@@ -19,6 +19,7 @@ func datacentersEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
+	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(dcsReq)
 

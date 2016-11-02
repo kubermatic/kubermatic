@@ -112,7 +112,8 @@ func (b Routing) Register(mux *mux.Router) {
 		Handler(b.authenticated(b.deleteNodeHandler()))
 }
 
-// datacentersHandler handles
+// datacentersHandler serves a list of datacenters.
+// Admin only!
 func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -124,7 +125,8 @@ func (b Routing) datacentersHandler() http.Handler {
 	)
 }
 
-// datacenterHandler handles
+// datacenterHandler server information for a datacenter.
+// Admin only!
 func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -136,7 +138,7 @@ func (b Routing) datacenterHandler() http.Handler {
 	)
 }
 
-// newClusterHandler
+// newClusterHandler creates a new cluster.
 func (b Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -148,7 +150,7 @@ func (b Routing) newClusterHandler() http.Handler {
 	)
 }
 
-// clusterHandler
+// clusterHandler returns a cluster object.
 func (b Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -160,7 +162,7 @@ func (b Routing) clusterHandler() http.Handler {
 	)
 }
 
-// setCloudHandler
+// setCloudHandler updates a cluster.
 func (b Routing) setCloudHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -172,7 +174,7 @@ func (b Routing) setCloudHandler() http.Handler {
 	)
 }
 
-// kubeconfigHandler
+// kubeconfigHandler returns the cubeconfig for the cluster.
 func (b Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
