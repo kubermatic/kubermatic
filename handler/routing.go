@@ -13,13 +13,13 @@ import (
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx              context.Context
-	authenticated    func(http.Handler) http.Handler
-	getAuthenticated func(http.Handler) http.Handler
-	dcs              map[string]provider.DatacenterMeta
-	kps              map[string]provider.KubernetesProvider
-	cps              map[string]provider.CloudProvider
-	logger           log.Logger
+	ctx                 context.Context
+	authenticated       func(http.Handler) http.Handler
+	getAuthenticated    func(http.Handler) http.Handler
+	datacenters         map[string]provider.DatacenterMeta
+	kubernetesProviders map[string]provider.KubernetesProvider
+	cloudProviders      map[string]provider.CloudProvider
+	logger              log.Logger
 }
 
 // NewRouting creates a new Routing.
@@ -39,13 +39,13 @@ func NewRouting(
 	}
 
 	return Routing{
-		ctx:              ctx,
-		authenticated:    authenticated,
-		getAuthenticated: getAuthenticated,
-		dcs:              dcs,
-		kps:              kps,
-		cps:              cps,
-		logger:           log.NewLogfmtLogger(os.Stderr),
+		ctx:                 ctx,
+		authenticated:       authenticated,
+		getAuthenticated:    getAuthenticated,
+		datacenters:         dcs,
+		kubernetesProviders: kps,
+		cloudProviders:      cps,
+		logger:              log.NewLogfmtLogger(os.Stderr),
 	}
 }
 
@@ -115,7 +115,7 @@ func (b Routing) Register(mux *mux.Router) {
 func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		datacentersEndpoint(b.dcs, b.kps, b.cps),
+		datacentersEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
 		decodeDatacentersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -126,7 +126,7 @@ func (b Routing) datacentersHandler() http.Handler {
 func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		datacenterEndpoint(b.dcs, b.kps, b.cps),
+		datacenterEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
 		decodeDcReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -137,7 +137,7 @@ func (b Routing) datacenterHandler() http.Handler {
 func (b Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		newClusterEndpoint(b.kps, b.cps),
+		newClusterEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeNewClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -148,7 +148,7 @@ func (b Routing) newClusterHandler() http.Handler {
 func (b Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		clusterEndpoint(b.kps, b.cps),
+		clusterEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -159,7 +159,7 @@ func (b Routing) clusterHandler() http.Handler {
 func (b Routing) setCloudHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		setCloudEndpoint(b.dcs, b.kps, b.cps),
+		setCloudEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
 		decodeSetCloudReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -170,7 +170,7 @@ func (b Routing) setCloudHandler() http.Handler {
 func (b Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		kubeconfigEndpoint(b.kps, b.cps),
+		kubeconfigEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		httptransport.ServerErrorLogger(b.logger),
@@ -181,7 +181,7 @@ func (b Routing) kubeconfigHandler() http.Handler {
 func (b Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		clustersEndpoint(b.kps, b.cps),
+		clustersEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeClustersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -192,7 +192,7 @@ func (b Routing) clustersHandler() http.Handler {
 func (b Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		deleteClusterEndpoint(b.kps, b.cps),
+		deleteClusterEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeDeleteClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -203,7 +203,7 @@ func (b Routing) deleteClusterHandler() http.Handler {
 func (b Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		nodesEndpoint(b.kps, b.cps),
+		nodesEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -214,7 +214,7 @@ func (b Routing) nodesHandler() http.Handler {
 func (b Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		createNodesEndpoint(b.kps, b.cps),
+		createNodesEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
@@ -225,7 +225,7 @@ func (b Routing) createNodesHandler() http.Handler {
 func (b Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
-		deleteNodeEndpoint(b.kps, b.cps),
+		deleteNodeEndpoint(b.kubernetesProviders, b.cloudProviders),
 		decodeNodeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
