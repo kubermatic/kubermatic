@@ -11,15 +11,20 @@ type Metadata struct {
 	UID      string `json:"uid,omitempty"`
 
 	// private fields
+	// Annotations are kubernetes Annotations from the namespace.
+	// Used to store data persistend.
 	Annotations map[string]string `json:"-"`
 	User        string            `json:"-"`
 }
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
 type DigitaloceanNodeSpec struct {
+	// Type specifies the type of the image used to create the node.
 	Type string `json:"type"`
+	// Size is the size of the node.
 	Size string `json:"size"`
-	// Signatures - KeyNames
+	// SSHKeyNames represent the fingerprints of the keys.
+	// Digitalocean utilizes the fingerprints to identify SSHKeys stored at digitalocean.
 	SSHKeyNames []string `json:"sshKeys,omitempty"`
 }
 
@@ -35,7 +40,9 @@ type FakeNodeSpec struct {
 
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
-	DC           string                `json:"dc"`
+	// DC contains the name of the datacenter the node is located in.
+	DC string `json:"dc"`
+
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
@@ -56,7 +63,9 @@ type Node struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	Token   string   `json:"token"`
+	// Token grants access to the digitalocean api.
+	Token string `json:"token"`
+	// SSHKeys are real SSH keys ("id-alg .....") used by the cloud-init.
 	SSHKeys []string `json:"sshKeys"`
 }
 
@@ -73,21 +82,28 @@ type FakeCloudSpec struct {
 
 // FlannelNetworkSpec specifies a deployed flannel network.
 type FlannelNetworkSpec struct {
+	// CIDR is the subnet used by flannel.
+	// It need's to be provided in CIDR notation.
+	// See RFC: 4632, eg. "127.1.0.0/16"
 	CIDR string
 }
 
 // NetworkSpec specifies the deployed network.
 type NetworkSpec struct {
+	// FlannelNetworkSpec holds the informations needed for running a flannel network.
 	Flannel FlannelNetworkSpec
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
-	DC           string                 `json:"dc"`
+	// The datacenter the users 'cloud' lives in.
+	DC string `json:"dc"`
+	// Network holds the network specifications.
+	Network NetworkSpec `json:"-"`
+
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	Network      NetworkSpec            `json:"-"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -159,8 +175,9 @@ type ClusterStatus struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud             *CloudSpec `json:"cloud,omitempty"`
-	HumanReadableName string     `json:"humanReadableName"`
+	Cloud *CloudSpec `json:"cloud,omitempty"`
+	// The name choosen by the user.
+	HumanReadableName string `json:"humanReadableName"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }

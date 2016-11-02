@@ -55,7 +55,6 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/").
 		HandlerFunc(StatusOK)
-
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc").
@@ -112,6 +111,7 @@ func (b Routing) Register(mux *mux.Router) {
 		Handler(b.authenticated(b.deleteNodeHandler()))
 }
 
+// datacentersHandler handles
 func (b Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -123,6 +123,7 @@ func (b Routing) datacentersHandler() http.Handler {
 	)
 }
 
+// datacenterHandler handles
 func (b Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -134,6 +135,7 @@ func (b Routing) datacenterHandler() http.Handler {
 	)
 }
 
+// newClusterHandler
 func (b Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -145,6 +147,7 @@ func (b Routing) newClusterHandler() http.Handler {
 	)
 }
 
+// clusterHandler
 func (b Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -156,6 +159,7 @@ func (b Routing) clusterHandler() http.Handler {
 	)
 }
 
+// setCloudHandler
 func (b Routing) setCloudHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -167,6 +171,7 @@ func (b Routing) setCloudHandler() http.Handler {
 	)
 }
 
+// kubeconfigHandler
 func (b Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -178,6 +183,7 @@ func (b Routing) kubeconfigHandler() http.Handler {
 	)
 }
 
+// clustersHandler lists all clusters from a user.
 func (b Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -189,6 +195,7 @@ func (b Routing) clustersHandler() http.Handler {
 	)
 }
 
+// deleteClusterHandler deletes a cluster.
 func (b Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -200,6 +207,7 @@ func (b Routing) deleteClusterHandler() http.Handler {
 	)
 }
 
+// nodesHandler returns all nodes from a user.
 func (b Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -211,6 +219,7 @@ func (b Routing) nodesHandler() http.Handler {
 	)
 }
 
+// createNodesHandler let's you create nodes.
 func (b Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
@@ -222,6 +231,7 @@ func (b Routing) createNodesHandler() http.Handler {
 	)
 }
 
+// deleteNodeHandler let's you delete nodes.
 func (b Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		b.ctx,
