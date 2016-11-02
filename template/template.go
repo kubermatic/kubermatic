@@ -42,6 +42,7 @@ func readLinesTemplate(data interface{}, path string) (lines []string) {
 	}
 
 	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		text := scanner.Text()
 		t, err := template.New("line").Parse(text)
