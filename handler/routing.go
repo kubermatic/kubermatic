@@ -55,6 +55,7 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/").
 		HandlerFunc(StatusOK)
+
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc").
