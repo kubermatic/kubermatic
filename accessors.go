@@ -31,3 +31,8 @@ func (spec *CloudSpec) GetAWS() *AWSCloudSpec {
 	}
 	return spec.AWS
 }
+
+// Region gets the region from the AvailabilityZone.
+func (a *AWSDatacenterSpec) Region() string {
+	return a.AvailabilityZone[:len(a.AvailabilityZone)-1]
+}

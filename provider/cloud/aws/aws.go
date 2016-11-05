@@ -99,7 +99,10 @@ func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
 }
 
 func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
-	svc := getSession(cluster)
+	svc, err := a.getSession(cluster)
+	if err != nil {
+		return err
+	}
 
 	vpcID, err := setupVPC(svc, cluster)
 	if err != nil {
@@ -194,7 +197,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, nil
 	}
 
-	svc := getSession(cluster)
+	svc, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
 
 	var createdNodes []*api.Node
 	var buf bytes.Buffer
@@ -247,7 +253,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	svc := getSession(cluster)
+	svc, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{{
@@ -287,7 +296,10 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 }
 
 func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
-	svc := getSession(cluster)
+	svc, err := a.getSession(cluster)
+	if err != nil {
+		return err
+	}
 
 	awsInstanceIds := make([]*string, len(UIDs))
 	for i := 0; i < len(UIDs); i++ {
@@ -298,7 +310,7 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 		InstanceIds: awsInstanceIds,
 	}
 
-	_, err := svc.TerminateInstances(terminateRequest)
+	_, err = svc.TerminateInstances(terminateRequest)
 	return err
 }
 
@@ -366,14 +378,19 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 	}
 }
 
-func getSession(cluster *api.Cluster) *ec2.EC2 {
+func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
 	config := sdk.NewConfig()
-	config = config.WithRegion(cluster.Spec.Cloud.DC)
+	dc, found := a.datacenters[cluster.Spec.Cloud.DC]
+	if !found || dc.Spec.AWS == nil {
+		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
+	}
+
+	config = config.WithRegion(dc.Spec.AWS.Region())
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
-	return ec2.New(session.New(config))
+	return ec2.New(session.New(config)), nil
 }
 
 func getDefaultVPCId(client *ec2.EC2) (string, error) {

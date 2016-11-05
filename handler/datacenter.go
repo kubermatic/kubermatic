@@ -95,7 +95,7 @@ func datacenterKeyEndpoint(
 
 		// Create aws ec2 client.
 		config := aws.NewConfig()
-		config = config.WithRegion(dc.Spec.AWS.AvailabilityZone[:len(dc.Spec.AWS.AvailabilityZone)-1]) // Truncate AvailabilityZone to Region.
+		config = config.WithRegion(dc.Spec.AWS.Region())
 		// TODO(realfake): Implement token for AWS.
 		config = config.WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
 		sess := ec2.New(session.New(config))
