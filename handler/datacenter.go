@@ -1,9 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -48,6 +53,55 @@ func datacentersEndpoint(
 		}
 
 		return adcs, nil
+	}
+}
+
+type dcKeyListReq struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Token    string `json:"token,omitempty"`
+	dcReq
+}
+
+func decodeDcKeyListRequest(r *http.Request) (interface{}, error) {
+	var req dcKeyListReq
+
+	dr, err := decodeDcReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+func datacenterKeyEndpoint(
+	dcs map[string]provider.DatacenterMeta,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(dcKeyListReq)
+
+		dc, found := dcs[req.dc]
+		if !found {
+			return nil, NewNotFound("datacenter", req.dc)
+		}
+
+		//TODO: Make more generic.
+		// also for digitalocean ... or libmachine?
+		if dc.Spec.AWS == nil {
+			return nil, NewBadRequest("not aws", req.dc)
+		}
+
+		// Create aws ec2 client.
+		config := aws.NewConfig()
+		config = config.WithRegion(dc.Spec.AWS.AvailabilityZone[:len(dc.Spec.AWS.AvailabilityZone)-1]) // Truncate AvailabilityZone to Region.
+		// TODO(realfake): Implement token for AWS.
+		config = config.WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
+		sess := ec2.New(session.New(config))
+
+		// Begin describing key pairs.
+		return sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
 	}
 }
 

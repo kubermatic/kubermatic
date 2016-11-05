@@ -110,6 +110,22 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(b.authenticated(b.deleteNodeHandler()))
+
+	mux.
+		Methods("POST").
+		Path("/api/v1/ext/{dc}/keys").
+		Handler(b.authenticated(b.getAWSKeyHandler()))
+}
+
+func (b Routing) getAWSKeyHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		datacenterKeyEndpoint(b.dcs),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(b.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 func (b Routing) datacentersHandler() http.Handler {
