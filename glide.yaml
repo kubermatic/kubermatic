@@ -59,3 +59,4 @@ import:
 - package: golang.org/x/oauth2
 - package: gopkg.in/yaml.v2
 - package: github.com/aws/aws-sdk-go
+- package: github.com/spf13/cobra
