@@ -128,18 +128,18 @@ func initConfig() {
 
 func setFlagsUsingViper() {
 	for _, config := range viperWhiteList {
-		var a = pflag.Lookup(config)
-		viper.SetDefault(a.Name, a.DefValue)
+		var flag = pflag.Lookup(config)
+		viper.SetDefault(flag.Name, flag.DefValue)
 		// If the flag is set, override viper value
-		if a.Changed {
-			viper.Set(a.Name, a.Value.String())
+		if flag.Changed {
+			viper.Set(flag.Name, flag.Value.String())
 		}
 		// Viper will give precedence first to calls to the Set command,
 		// then to values from the config.yml
-		err := a.Value.Set(viper.GetString(a.Name))
+		err := flag.Value.Set(viper.GetString(flag.Name))
 		if err != nil {
 			// ignore
 		}
-		a.Changed = true
+		flag.Changed = true
 	}
 }
