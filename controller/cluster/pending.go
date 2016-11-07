@@ -449,19 +449,19 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	}
 
 	loadApiserver := func(s string) (*extensions.Deployment, error) {
-		u, err := url.Parse(c.Address.URL)
-		if err != nil {
-			return nil, err
-		}
-		addrs, err := net.LookupHost(u.Host)
-		if err != nil {
-			return nil, err
-		}
-
-		data := struct {
-			AdvertiseAddress string
-		}{
-			AdvertiseAddress: addrs[0],
+		var data struct{ AdvertiseAddress string }
+		if cc.overwriteHost == "" {
+			u, err := url.Parse(c.Address.URL)
+			if err != nil {
+				return nil, err
+			}
+			addrs, err := net.LookupHost(u.Host)
+			if err != nil {
+				return nil, err
+			}
+			data.AdvertiseAddress = addrs[0]
+		} else {
+			data.AdvertiseAddress = cc.overwriteHost
 		}
 
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
