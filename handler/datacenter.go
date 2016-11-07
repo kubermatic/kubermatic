@@ -95,13 +95,18 @@ func datacenterKeyEndpoint(
 
 		// Create aws ec2 client.
 		config := aws.NewConfig()
-		config = config.WithRegion(dc.Spec.AWS.Region())
+		config = config.WithRegion(dc.Spec.AWS.Region)
 		// TODO(realfake): Implement token for AWS.
 		config = config.WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
 		sess := ec2.New(session.New(config))
-
 		// Begin describing key pairs.
-		return sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
+		keys, err := sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
+		println("1")
+		println(keys.String())
+		println(keys.GoString())
+		println(keys)
+		println("2")
+		return keys, err
 	}
 }
 
@@ -194,7 +199,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
 		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
 	case dc.Spec.AWS != nil:
 		spec.AWS = &api.AWSDatacenterSpec{
-			AvailabilityZone: dc.Spec.AWS.AvailabilityZone,
+			Region: dc.Spec.AWS.Region,
 		}
 	}
 

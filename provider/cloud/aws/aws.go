@@ -175,7 +175,7 @@ func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpe
 		SSHAuthorizedKeys: clusterState.Spec.Cloud.GetAWS().SSHKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
-		Region:            dc.Spec.AWS.AvailabilityZone,
+		Region:            dc.Spec.AWS.Region,
 		Name:              instanceName,
 		ClientKey:         key.Key.Base64(),
 		ClientCert:        key.Cert.Base64(),
@@ -386,7 +386,7 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
 	}
 
-	config = config.WithRegion(dc.Spec.AWS.Region())
+	config = config.WithRegion(dc.Spec.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)

@@ -15,7 +15,7 @@ type DigitaloceanSpec struct {
 
 // AWSSpec describes a digital ocean datacenter
 type AWSSpec struct {
-	AvailabilityZone string `yaml:"availability-zone"`
+	Region string `yaml:"region"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes

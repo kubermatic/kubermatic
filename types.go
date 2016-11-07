@@ -207,7 +207,7 @@ type BringYourOwnDatacenterSpec struct {
 
 // AWSDatacenterSpec specifies a data center of Amazon Web Services.
 type AWSDatacenterSpec struct {
-	AvailabilityZone string `json:"availabilit_zone"`
+	Region string `json:"region"`
 }
 
 // DatacenterSpec specifies the data for a datacenter.
