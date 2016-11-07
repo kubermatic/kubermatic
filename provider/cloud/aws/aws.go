@@ -43,9 +43,7 @@ const (
 )
 
 const (
-	// TODO: Create aws image
-	awsLoodseImageName = ""
-	tplPath            = "template/coreos/cloud-config-node.yaml"
+	tplPath = "template/coreos/cloud-config-node.yaml"
 )
 
 var (
@@ -223,7 +221,7 @@ func (aws *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:      sdk.String(awsLoodseImageName),
+			ImageId:      sdk.String(dc.Spec.AWS.AMI),
 			MaxCount:     sdk.Int64(1),
 			MinCount:     sdk.Int64(1),
 			InstanceType: sdk.String(node.AWS.Type),
