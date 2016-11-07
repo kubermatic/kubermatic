@@ -165,8 +165,8 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	return spec, nil
 }
 
-func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
-	if a.tpl == nil {
+func (aws *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
+	if aws.tpl == nil {
 		return errors.New("No AWS template was found")
 	}
 	data := ktemplate.Data{
@@ -184,24 +184,21 @@ func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpe
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 	}
-	return a.tpl.Execute(buf, data)
+	return aws.tpl.Execute(buf, data)
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
-	dc, ok := a.datacenters[node.DC]
+func (aws *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+	dc, ok := aws.datacenters[node.DC]
 	if !ok || dc.Spec.AWS == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", node.DC)
+	}
+	if node.AWS.Type == "" {
 		return nil, nil
 	}
-
-	if node.AWS.Type != "" {
-		return nil, nil
-	}
-
-	svc, err := a.getSession(cluster)
+	svc, err := aws.getSession(cluster)
 	if err != nil {
 		return nil, err
 	}
-
 	var createdNodes []*api.Node
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
@@ -213,7 +210,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, err
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = aws.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
 			return createdNodes, err
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
@@ -385,7 +382,6 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 	if !found || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
 	}
-
 	config = config.WithRegion(dc.Spec.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
