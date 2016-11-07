@@ -319,10 +319,6 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		Resources: []*string{serverReq.Instances[0].InstanceId},
 		Tags: []*ec2.Tag{
 			{
-				Key:   sdk.String(awsLoodseImageName),
-				Value: sdk.String(name),
-			},
-			{
 				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
 				Value: sdk.String(cluster.Metadata.UID),
 			},
