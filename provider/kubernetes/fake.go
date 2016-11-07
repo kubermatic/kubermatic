@@ -146,3 +146,7 @@ func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster strin
 func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]string, error) {
 	return []string{}, nil
 }
+
+func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string, addon api.ClusterAddonSpec) error {
+	return nil
+}

@@ -1,6 +1,10 @@
 package api
 
 import (
+	"encoding/json"
+	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/meta"
+	"k8s.io/kubernetes/pkg/api/unversioned"
 	"time"
 )
 
@@ -146,7 +150,7 @@ type SecretKeyCert struct {
 	Cert Bytes `json:"cert"`
 }
 
-// ClusterStatus stores status informations about a cluster.
+// ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	LastTransitionTime time.Time      `json:"lastTransitionTime"`
 	Phase              ClusterPhase   `json:"phase,omitempty"`
@@ -171,7 +175,7 @@ type ClusterAddress struct {
 	Token   string `json:"token"`
 }
 
-// Cluster is the object representating a cluster.
+// Cluster is the object representing a cluster.
 type Cluster struct {
 	Metadata Metadata        `json:"metadata"`
 	Spec     ClusterSpec     `json:"spec"`
@@ -202,4 +206,66 @@ type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
 	Seed     bool           `json:"seed,omitempty"`
+}
+
+type ClusterAddonSpec struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+type ClusterAddon struct {
+	unversioned.TypeMeta `json:",inline"`
+	Metadata             api.ObjectMeta `json:"metadata"`
+
+	Spec ClusterAddonSpec `json:"spec"`
+}
+
+type ClusterAddonList struct {
+	unversioned.TypeMeta `json:",inline"`
+	Metadata             unversioned.ListMeta `json:"metadata"`
+
+	Items []ClusterAddon `json:"items"`
+}
+
+func (e *ClusterAddon) GetObjectKind() unversioned.ObjectKind {
+	return &e.TypeMeta
+}
+
+func (e *ClusterAddon) GetObjectMeta() meta.Object {
+	return &e.Metadata
+}
+
+func (el *ClusterAddonList) GetObjectKind() unversioned.ObjectKind {
+	return &el.TypeMeta
+}
+
+func (el *ClusterAddonList) GetListMeta() unversioned.List {
+	return &el.Metadata
+}
+
+// Code below is a needed workaround, see: https://github.com/kubernetes/client-go/issues/8
+
+type ClusterAddonListCopy ClusterAddonList
+type ClusterAddonCopy ClusterAddon
+
+func (e *ClusterAddon) UnmarshalJSON(data []byte) error {
+	tmp := ClusterAddonCopy{}
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+	tmp2 := ClusterAddon(tmp)
+	*e = tmp2
+	return nil
+}
+
+func (el *ClusterAddonList) UnmarshalJSON(data []byte) error {
+	tmp := ClusterAddonListCopy{}
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+	tmp2 := ClusterAddonList(tmp)
+	*el = tmp2
+	return nil
 }

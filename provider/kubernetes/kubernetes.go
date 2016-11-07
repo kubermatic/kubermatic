@@ -6,15 +6,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/api/unversioned"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/kubernetes/pkg/runtime/serializer"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -26,9 +31,10 @@ const (
 type kubernetesProvider struct {
 	client *client.Client
 
-	mu  sync.Mutex
-	cps map[string]provider.CloudProvider
-	dev bool
+	mu     sync.Mutex
+	cps    map[string]provider.CloudProvider
+	dev    bool
+	config *restclient.Config
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -37,6 +43,7 @@ func NewKubernetesProvider(
 	cps map[string]provider.CloudProvider,
 	dev bool,
 ) provider.KubernetesProvider {
+
 	client, err := client.New(clientConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -46,6 +53,7 @@ func NewKubernetesProvider(
 		cps:    cps,
 		client: client,
 		dev:    dev,
+		config: clientConfig,
 	}
 }
 
@@ -233,4 +241,110 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	}
 
 	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
+}
+
+func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonSpec api.ClusterAddonSpec) error {
+	groupversion := unversioned.GroupVersion{
+		Group:   "k8s.io",
+		Version: "v1",
+	}
+	p.config.GroupVersion = &groupversion
+
+	config := *p.config
+	config.APIPath = "/apis"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: kapi.Codecs}
+
+	client, err := client.New(&config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schemeBuilder := runtime.NewSchemeBuilder(
+		func(scheme *runtime.Scheme) error {
+			scheme.AddKnownTypes(
+				groupversion,
+				&api.ClusterAddon{},
+				&api.ClusterAddonList{},
+				&kapi.ListOptions{},
+				&kapi.DeleteOptions{},
+			)
+			return nil
+		})
+	schemeBuilder.AddToScheme(kapi.Scheme)
+
+	// initialize third party resource if it does not exist
+	tpr, err := client.Extensions().ThirdPartyResources().Get("addons.kubermatic.io")
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			tpr := &extensions.ThirdPartyResource{
+				ObjectMeta: kapi.ObjectMeta{
+					Name:            "addons.kubermatic.io",
+					ResourceVersion: "v1",
+				},
+				Versions: []extensions.APIVersion{
+					{Name: "v1"},
+				},
+				Description: "Addon resource",
+			}
+
+			result, err := client.Extensions().ThirdPartyResources().Create(tpr)
+			if err != nil {
+				return err
+			}
+			glog.Infof("CREATED: %#v\nFROM: %#v\n", result, tpr)
+		} else {
+			return err
+		}
+	} else {
+		glog.Infof("SKIPPING: already exists %#v\n", tpr)
+	}
+
+	var resultAddon api.ClusterAddon
+
+	err = client.Get().
+		Resource("addons").
+		Namespace(kapi.NamespaceDefault).
+		Name(addonSpec.Name).
+		Do().Into(&resultAddon)
+
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			// Create an instance of our TPR
+			tprAddon := &api.ClusterAddon{
+				Metadata: kapi.ObjectMeta{
+					Name: "addon1",
+				},
+				Spec: addonSpec,
+			}
+
+			var result api.ClusterAddon
+			request := client.Post()
+			request.Resource("addons")
+			request.Namespace(kapi.NamespaceDefault)
+			request.Body(tprAddon)
+
+			requestResult := request.Do()
+			requestResult.Into(&result)
+
+			if err != nil {
+				return err
+			}
+			glog.Infof("CREATED: %#v\n", result)
+		} else {
+			return err
+		}
+	} else {
+		glog.Infof("GET: %#v\n", resultAddon)
+	}
+
+	// Fetch a list of our addons
+	addonList := api.ClusterAddonList{}
+	err = client.Get().Resource("addons").Do().Into(&addonList)
+	if err != nil {
+		return err
+	}
+	glog.Infof("LIST: %#v\n", addonList)
+
+	return nil
 }

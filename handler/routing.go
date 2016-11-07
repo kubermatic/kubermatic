@@ -110,6 +110,12 @@ func (b Routing) Register(mux *mux.Router) {
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(b.authenticated(b.deleteNodeHandler()))
+
+	mux.
+		Methods("POST").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
+		Handler(b.authenticated(b.createAddonHandler()))
+
 }
 
 func (b Routing) datacentersHandler() http.Handler {
@@ -227,6 +233,17 @@ func (b Routing) deleteNodeHandler() http.Handler {
 		b.ctx,
 		deleteNodeEndpoint(b.kps, b.cps),
 		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(b.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (b Routing) createAddonHandler() http.Handler {
+	return httptransport.NewServer(
+		b.ctx,
+		createAddonEndpoint(b.kps, b.cps),
+		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(b.logger),
 		defaultHTTPErrorEncoder(),

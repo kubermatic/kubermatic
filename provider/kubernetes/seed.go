@@ -167,3 +167,7 @@ func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 
 	return errors.New("not implemented")
 }
+
+func (p *seedProvider) CreateAddon(user provider.User, cluster string, addon api.ClusterAddonSpec) error {
+	return nil
+}
