@@ -367,7 +367,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 			},
 		},
 		Spec: api.NodeSpec{
-			DC: *instance.Placement.AvailabilityZone,
+			DC: *instance.Placement.AvailabilityZone[:len(*instance.Placement.AvailabilityZone)-1],
 			AWS: &api.AWSNodeSpec{
 				Type: *instance.InstanceType,
 			},
