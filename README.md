@@ -51,7 +51,7 @@ and `kubermatic-cluster-controller`
 make build CMD=kubermatic-cluster-controller &&  \
  ./kubermatic-cluster-controller \
  -master-resources ../kubermatic/master \
-  --kubeconfig=.kubeconfig --v=7 --dev --loglevel=4
+  --kubeconfig=.kubeconfig --v=7 --dev
 ```
 
 
