@@ -91,6 +91,9 @@ func encodeKubeconfig(w http.ResponseWriter, response interface{}) (err error) {
 	}
 
 	ycfg, err := yaml.JSONToYAML(jcfg)
+	if err != nil {
+		return err
+	}
 	_, err = w.Write(ycfg)
 	return err
 }

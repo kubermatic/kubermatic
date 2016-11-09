@@ -27,8 +27,8 @@ import (
 	"k8s.io/kubernetes/pkg/apis/extensions"
 )
 
-func (cc *clusterController) syncPendingCluster(c *api.Cluster) (*api.Cluster, error) {
-	changedC, err := cc.checkTimeout(c)
+func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
+	_, err = cc.checkTimeout(c)
 	if err != nil {
 		return nil, err
 	}
