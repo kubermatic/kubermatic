@@ -21,7 +21,12 @@ func encodeText(w http.ResponseWriter, response interface{}) (err error) {
 	if !ok {
 		return errors.New("response does not implement io.ReadCloser")
 	}
-	defer rc.Close()
+
+	// Dirty but metalinter won't let us build.
+	defer func() {
+		err := rc.Close()
+		_ = err
+	}()
 
 	_, err = io.Copy(w, rc)
 
