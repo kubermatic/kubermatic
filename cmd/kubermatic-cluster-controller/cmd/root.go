@@ -31,7 +31,7 @@ import (
 	"k8s.io/kubernetes/pkg/util/wait"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
 var dev bool
 
 var viperWhiteList = []string{
@@ -90,7 +90,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, cps, masterResources, externalURL, dev,
+				ctx, client, cps, masterResources, externalURL, dev, overwriteHost,
 			)
 			if err != nil {
 				log.Fatal(err)
@@ -120,6 +120,8 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
+	RootCmd.PersistentFlags().StringVar(&overwriteHost, "overwrite-host", "", "If set it will not do a hostlookup and will force the given host on all clustes. This is mostly used to run one static cluster.")
+
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("Unable to bind Command Line flags: %s\n", err)
