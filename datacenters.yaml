@@ -80,6 +80,7 @@ datacenters:
     spec:
       aws:
         region: us-east-1
+        ami: ami-442d7721 # HVM image - Will run on small instances too
   bringyourown:
     spec:
       bringyourown:
