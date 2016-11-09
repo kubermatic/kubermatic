@@ -7,14 +7,13 @@
 // Package stack's types implement fmt.Formatter, which provides a simple and
 // flexible way to declaratively configure formatting when used with logging
 // or error tracking packages.
-package stack // import "gopkg.in/stack.v1"
+package stack
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -94,43 +93,7 @@ func (c Call) Format(s fmt.State, verb rune) {
 		case s.Flag('#'):
 			// done
 		case s.Flag('+'):
-			// Here we want to get the source file path relative to the
-			// compile time GOPATH. As of Go 1.4.x there is no direct way to
-			// know the compiled GOPATH at runtime, but we can infer the
-			// number of path segments in the GOPATH. We note that fn.Name()
-			// returns the function name qualified by the import path, which
-			// does not include the GOPATH. Thus we can trim segments from the
-			// beginning of the file path until the number of path separators
-			// remaining is one more than the number of path separators in the
-			// function name. For example, given:
-			//
-			//    GOPATH     /home/user
-			//    file       /home/user/src/pkg/sub/file.go
-			//    fn.Name()  pkg/sub.Type.Method
-			//
-			// We want to produce:
-			//
-			//    pkg/sub/file.go
-			//
-			// From this we can easily see that fn.Name() has one less path
-			// separator than our desired output. We count separators from the
-			// end of the file path until it finds two more than in the
-			// function name and then move one character forward to preserve
-			// the initial path segment without a leading separator.
-			const sep = "/"
-			goal := strings.Count(c.fn.Name(), sep) + 2
-			pathCnt := 0
-			i := len(file)
-			for pathCnt < goal {
-				i = strings.LastIndex(file[:i], sep)
-				if i == -1 {
-					i = -len(sep)
-					break
-				}
-				pathCnt++
-			}
-			// get back to 0 or trim the leading seperator
-			file = file[i+len(sep):]
+			file = file[pkgIndex(file, c.fn.Name()):]
 		default:
 			const sep = "/"
 			if i := strings.LastIndex(file, sep); i != -1 {
@@ -162,6 +125,12 @@ func (c Call) Format(s fmt.State, verb rune) {
 		}
 		io.WriteString(s, name)
 	}
+}
+
+// PC returns the program counter for this call frame; multiple frames may
+// have the same PC value.
+func (c Call) PC() uintptr {
+	return c.pc
 }
 
 // name returns the import path qualified name of the function containing the
@@ -222,7 +191,7 @@ func (cs CallStack) MarshalText() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Format implements fmt.Formatter by printing the CallStack as square brackes
+// Format implements fmt.Formatter by printing the CallStack as square brackets
 // ([, ]) surrounding a space separated list of Calls each formatted with the
 // supplied verb and options.
 func (cs CallStack) Format(s fmt.State, verb rune) {
@@ -236,10 +205,11 @@ func (cs CallStack) Format(s fmt.State, verb rune) {
 	s.Write(closeBracketBytes)
 }
 
-// findSigpanic intentially executes faulting code to generate a stack trace
+// findSigpanic intentionally executes faulting code to generate a stack trace
 // containing an entry for runtime.sigpanic.
 func findSigpanic() *runtime.Func {
 	var fn *runtime.Func
+	var p *int
 	func() int {
 		defer func() {
 			if p := recover(); p != nil {
@@ -254,9 +224,8 @@ func findSigpanic() *runtime.Func {
 				}
 			}
 		}()
-		// intentional division by zero fault
-		a, b := 1, 0
-		return a / b
+		// intentional nil pointer dereference to trigger sigpanic
+		return *p
 	}()
 	return fn
 }
@@ -302,12 +271,59 @@ func (cs CallStack) TrimAbove(c Call) CallStack {
 	return cs
 }
 
-var goroot string
+// pkgIndex returns the index that results in file[index:] being the path of
+// file relative to the compile time GOPATH, and file[:index] being the
+// $GOPATH/src/ portion of file. funcName must be the name of a function in
+// file as returned by runtime.Func.Name.
+func pkgIndex(file, funcName string) int {
+	// As of Go 1.6.2 there is no direct way to know the compile time GOPATH
+	// at runtime, but we can infer the number of path segments in the GOPATH.
+	// We note that runtime.Func.Name() returns the function name qualified by
+	// the import path, which does not include the GOPATH. Thus we can trim
+	// segments from the beginning of the file path until the number of path
+	// separators remaining is one more than the number of path separators in
+	// the function name. For example, given:
+	//
+	//    GOPATH     /home/user
+	//    file       /home/user/src/pkg/sub/file.go
+	//    fn.Name()  pkg/sub.Type.Method
+	//
+	// We want to produce:
+	//
+	//    file[:idx] == /home/user/src/
+	//    file[idx:] == pkg/sub/file.go
+	//
+	// From this we can easily see that fn.Name() has one less path separator
+	// than our desired result for file[idx:]. We count separators from the
+	// end of the file path until it finds two more than in the function name
+	// and then move one character forward to preserve the initial path
+	// segment without a leading separator.
+	const sep = "/"
+	i := len(file)
+	for n := strings.Count(funcName, sep) + 2; n > 0; n-- {
+		i = strings.LastIndex(file[:i], sep)
+		if i == -1 {
+			i = -len(sep)
+			break
+		}
+	}
+	// get back to 0 or trim the leading separator
+	return i + len(sep)
+}
+
+var runtimePath string
 
 func init() {
-	goroot = filepath.ToSlash(runtime.GOROOT())
+	var pcs [1]uintptr
+	runtime.Callers(0, pcs[:])
+	fn := runtime.FuncForPC(pcs[0])
+	file, _ := fn.FileLine(pcs[0])
+
+	idx := pkgIndex(file, fn.Name())
+
+	runtimePath = file[:idx]
 	if runtime.GOOS == "windows" {
-		goroot = strings.ToLower(goroot)
+		runtimePath = strings.ToLower(runtimePath)
 	}
 }
 
@@ -319,7 +335,7 @@ func inGoroot(c Call) bool {
 	if runtime.GOOS == "windows" {
 		file = strings.ToLower(file)
 	}
-	return strings.HasPrefix(file, goroot) || strings.HasSuffix(file, "/_testmain.go")
+	return strings.HasPrefix(file, runtimePath) || strings.HasSuffix(file, "/_testmain.go")
 }
 
 // TrimRuntime returns a slice of the CallStack with the topmost entries from

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Update vendored dedendencies.
+# Update vendored dependencies.
 #
 set -e
 
