@@ -17,7 +17,6 @@ import (
 	"k8s.io/kubernetes/pkg/client/record"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	kcontroller "k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/types"
@@ -50,22 +49,22 @@ type clusterController struct {
 	externalURL         string
 	etcdURL             string
 	// store namespaces with the role=kubermatic-cluster label
-	nsController *framework.Controller
+	nsController *cache.Controller
 	nsStore      cache.Store
 
-	podController *framework.Controller
+	podController *cache.Controller
 	podStore      cache.StoreToPodLister
 
-	depController *framework.Controller
+	depController *cache.Controller
 	depStore      cache.Indexer
 
-	secretController *framework.Controller
+	secretController *cache.Controller
 	secretStore      cache.Indexer
 
-	serviceController *framework.Controller
+	serviceController *cache.Controller
 	serviceStore      cache.Indexer
 
-	ingressController *framework.Controller
+	ingressController *cache.Controller
 	ingressStore      cache.Indexer
 
 	// non-thread safe:
@@ -108,7 +107,7 @@ func NewController(
 		nsLabels[kprovider.DevLabelKey] = kprovider.DevLabelValue
 	}
 
-	cc.nsStore, cc.nsController = framework.NewInformer(
+	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels))
@@ -120,7 +119,7 @@ func NewController(
 		},
 		&kapi.Namespace{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{
+		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				ns := obj.(*kapi.Namespace)
 				glog.V(4).Infof("Adding cluster %q", ns.Name)
@@ -143,7 +142,7 @@ func NewController(
 		"namespace": cache.IndexFunc(cache.MetaNamespaceIndexFunc),
 	}
 
-	cc.podStore.Indexer, cc.podController = framework.NewIndexerInformer(
+	cc.podStore.Indexer, cc.podController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return cc.client.Pods(kapi.NamespaceAll).List(options)
@@ -154,11 +153,11 @@ func NewController(
 		},
 		&kapi.Pod{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
-	cc.depStore, cc.depController = framework.NewIndexerInformer(
+	cc.depStore, cc.depController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return cc.client.Deployments(kapi.NamespaceAll).List(options)
@@ -169,11 +168,11 @@ func NewController(
 		},
 		&extensions.Deployment{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
-	cc.secretStore, cc.secretController = framework.NewIndexerInformer(
+	cc.secretStore, cc.secretController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return cc.client.Secrets(kapi.NamespaceAll).List(options)
@@ -184,11 +183,11 @@ func NewController(
 		},
 		&kapi.Secret{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
-	cc.serviceStore, cc.serviceController = framework.NewIndexerInformer(
+	cc.serviceStore, cc.serviceController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return cc.client.Services(kapi.NamespaceAll).List(options)
@@ -199,11 +198,11 @@ func NewController(
 		},
 		&kapi.Service{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
-	cc.ingressStore, cc.ingressController = framework.NewIndexerInformer(
+	cc.ingressStore, cc.ingressController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return cc.client.Extensions().Ingress(kapi.NamespaceAll).List(options)
@@ -214,7 +213,7 @@ func NewController(
 		},
 		&extensions.Ingress{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
