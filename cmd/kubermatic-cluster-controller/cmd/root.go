@@ -23,6 +23,7 @@ import (
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
+	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -82,15 +83,16 @@ var RootCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			client, err := client.New(cfg)
+			kclient, err := client.New(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
+			tprClient := kubernetes.NewTprClient(cfg)
 
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, cps, masterResources, externalURL, dev,
+				ctx, kclient, tprClient, cps, masterResources, externalURL, dev,
 			)
 			if err != nil {
 				log.Fatal(err)

@@ -208,18 +208,15 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
-type ClusterAddonSpec struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-}
-
+// ClusterAddon specifies a cluster addon
 type ClusterAddon struct {
 	unversioned.TypeMeta `json:",inline"`
 	Metadata             api.ObjectMeta `json:"metadata"`
-
-	Spec ClusterAddonSpec `json:"spec"`
+	Name                 string         `json:"name"`
+	Status               string         `json:"status"`
 }
 
+// ClusterAddonList specifies a list of cluster addons
 type ClusterAddonList struct {
 	unversioned.TypeMeta `json:",inline"`
 	Metadata             unversioned.ListMeta `json:"metadata"`
@@ -227,29 +224,33 @@ type ClusterAddonList struct {
 	Items []ClusterAddon `json:"items"`
 }
 
+//GetObjectKind returns the object typemeta information
 func (e *ClusterAddon) GetObjectKind() unversioned.ObjectKind {
 	return &e.TypeMeta
 }
 
+//GetObjectMeta returns the object metadata
 func (e *ClusterAddon) GetObjectMeta() meta.Object {
 	return &e.Metadata
 }
 
+//GetObjectKind returns the object typemeta information
 func (el *ClusterAddonList) GetObjectKind() unversioned.ObjectKind {
 	return &el.TypeMeta
 }
 
+//GetListMeta returns the list object metadata
 func (el *ClusterAddonList) GetListMeta() unversioned.List {
 	return &el.Metadata
 }
 
 // Code below is a needed workaround, see: https://github.com/kubernetes/client-go/issues/8
+type clusterAddonListCopy ClusterAddonList
+type clusterAddonCopy ClusterAddon
 
-type ClusterAddonListCopy ClusterAddonList
-type ClusterAddonCopy ClusterAddon
-
+//UnmarshalJSON doe a json.Unmarshal. Needed for kubernetes
 func (e *ClusterAddon) UnmarshalJSON(data []byte) error {
-	tmp := ClusterAddonCopy{}
+	tmp := clusterAddonCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
@@ -259,8 +260,9 @@ func (e *ClusterAddon) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+//UnmarshalJSON doe a json.Unmarshal. Needed for kubernetes
 func (el *ClusterAddonList) UnmarshalJSON(data []byte) error {
-	tmp := ClusterAddonListCopy{}
+	tmp := clusterAddonListCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err

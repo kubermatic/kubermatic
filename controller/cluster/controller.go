@@ -17,6 +17,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/record"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	kcontroller "k8s.io/kubernetes/pkg/controller"
+	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/types"
@@ -43,6 +44,7 @@ const (
 type clusterController struct {
 	dc                  string
 	client              *client.Client
+	tprClient           *client.Client
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
@@ -67,6 +69,9 @@ type clusterController struct {
 	ingressController *cache.Controller
 	ingressStore      cache.Indexer
 
+	addonController *cache.Controller
+	addonStore      cache.Store
+
 	// non-thread safe:
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -78,6 +83,7 @@ type clusterController struct {
 func NewController(
 	dc string,
 	client *client.Client,
+	tprClient *client.Client,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -86,6 +92,7 @@ func NewController(
 	cc := &clusterController{
 		dc:                  dc,
 		client:              client,
+		tprClient:           tprClient,
 		queue:               workqueue.New(),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
@@ -215,6 +222,24 @@ func NewController(
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
+	)
+
+	cc.addonStore, cc.addonController = cache.NewInformer(
+		cache.NewListWatchFromClient(cc.tprClient, "clusteraddons", "", fields.Everything()),
+		&api.ClusterAddon{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				addon := obj.(*api.ClusterAddon)
+				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
+				//Tell helm now to install the plugin in the cluster
+			},
+			DeleteFunc: func(obj interface{}) {
+				addon := obj.(*api.ClusterAddon)
+				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
+				//Tell helm now to remove the plugin in the cluster
+			},
+		},
 	)
 
 	return cc, nil
@@ -444,6 +469,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.secretController.Run(wait.NeverStop)
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
+	go cc.addonController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -465,5 +491,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.secretController.HasSynced() &&
 		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
-		cc.ingressController.HasSynced()
+		cc.ingressController.HasSynced() &&
+		cc.addonController.HasSynced()
 }

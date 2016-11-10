@@ -12,10 +12,9 @@ import (
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -29,12 +28,56 @@ const (
 )
 
 type kubernetesProvider struct {
-	client *client.Client
+	client    *kclient.Client
+	tprClient *kclient.Client
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
 	dev    bool
 	config *restclient.Config
+}
+
+//RegisterTprs register's our own ThirdPartyResources
+func RegisterTprs(gv unversioned.GroupVersion) {
+	schemeBuilder := runtime.NewSchemeBuilder(
+		func(scheme *runtime.Scheme) error {
+			scheme.AddKnownTypes(
+				gv,
+				&api.ClusterAddon{},
+				&api.ClusterAddonList{},
+				&kapi.ListOptions{},
+				&kapi.DeleteOptions{},
+			)
+			return nil
+		})
+	err := schemeBuilder.AddToScheme(kapi.Scheme)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+//NewTprClient returns a client which is meant for our own ThirdPartyResources
+func NewTprClient(clientConfig *restclient.Config) *kclient.Client {
+	config := *clientConfig
+
+	groupversion := unversioned.GroupVersion{
+		Group:   "kubermatic.io",
+		Version: "v1",
+	}
+	RegisterTprs(groupversion)
+
+	config.GroupVersion = &groupversion
+	config.APIPath = "/apis/kubermatic.io"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: kapi.Codecs}
+
+	client, err := kclient.New(&config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return client
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -44,16 +87,17 @@ func NewKubernetesProvider(
 	dev bool,
 ) provider.KubernetesProvider {
 
-	client, err := client.New(clientConfig)
+	client, err := kclient.New(clientConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &kubernetesProvider{
-		cps:    cps,
-		client: client,
-		dev:    dev,
-		config: clientConfig,
+		cps:       cps,
+		client:    client,
+		tprClient: NewTprClient(clientConfig),
+		dev:       dev,
+		config:    clientConfig,
 	}
 }
 
@@ -243,69 +287,13 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
 }
 
-func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonSpec api.ClusterAddonSpec) error {
-	groupversion := unversioned.GroupVersion{
-		Group:   "k8s.io",
-		Version: "v1",
-	}
-	p.config.GroupVersion = &groupversion
-
-	config := *p.config
-	config.APIPath = "/apis"
-	config.ContentType = runtime.ContentTypeJSON
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: kapi.Codecs}
-
-	client, err := client.New(&config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	schemeBuilder := runtime.NewSchemeBuilder(
-		func(scheme *runtime.Scheme) error {
-			scheme.AddKnownTypes(
-				groupversion,
-				&api.ClusterAddon{},
-				&api.ClusterAddonList{},
-				&kapi.ListOptions{},
-				&kapi.DeleteOptions{},
-			)
-			return nil
-		})
-	schemeBuilder.AddToScheme(kapi.Scheme)
-
-	// initialize third party resource if it does not exist
-	tpr, err := client.Extensions().ThirdPartyResources().Get("addons.kubermatic.io")
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			tpr := &extensions.ThirdPartyResource{
-				ObjectMeta: kapi.ObjectMeta{
-					Name:            "addons.kubermatic.io",
-					ResourceVersion: "v1",
-				},
-				Versions: []extensions.APIVersion{
-					{Name: "v1"},
-				},
-				Description: "Addon resource",
-			}
-
-			result, err := client.Extensions().ThirdPartyResources().Create(tpr)
-			if err != nil {
-				return err
-			}
-			glog.Infof("CREATED: %#v\nFROM: %#v\n", result, tpr)
-		} else {
-			return err
-		}
-	} else {
-		glog.Infof("SKIPPING: already exists %#v\n", tpr)
-	}
-
+func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addon api.ClusterAddon) error {
 	var resultAddon api.ClusterAddon
 
-	err = client.Get().
-		Resource("addons").
+	err := p.tprClient.Get().
+		Resource("clusteraddons").
 		Namespace(kapi.NamespaceDefault).
-		Name(addonSpec.Name).
+		Name(addon.Name).
 		Do().Into(&resultAddon)
 
 	if err != nil {
@@ -315,36 +303,28 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 				Metadata: kapi.ObjectMeta{
 					Name: "addon1",
 				},
-				Spec: addonSpec,
 			}
 
 			var result api.ClusterAddon
-			request := client.Post()
-			request.Resource("addons")
-			request.Namespace(kapi.NamespaceDefault)
-			request.Body(tprAddon)
-
-			requestResult := request.Do()
-			requestResult.Into(&result)
-
+			err := p.tprClient.
+				Post().
+				Resource("clusteraddons").
+				Namespace(kapi.NamespaceDefault).
+				Body(tprAddon).
+				Do().
+				Into(&result)
 			if err != nil {
 				return err
 			}
+
 			glog.Infof("CREATED: %#v\n", result)
+
 		} else {
 			return err
 		}
 	} else {
 		glog.Infof("GET: %#v\n", resultAddon)
 	}
-
-	// Fetch a list of our addons
-	addonList := api.ClusterAddonList{}
-	err = client.Get().Resource("addons").Do().Into(&addonList)
-	if err != nil {
-		return err
-	}
-	glog.Infof("LIST: %#v\n", addonList)
 
 	return nil
 }

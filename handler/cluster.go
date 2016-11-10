@@ -279,7 +279,7 @@ func decodeDeleteClusterReq(r *http.Request) (interface{}, error) {
 
 type createAddonRequest struct {
 	dcReq
-	addon   api.ClusterAddonSpec
+	addon   api.ClusterAddon
 	cluster string
 }
 
