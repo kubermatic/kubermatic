@@ -120,7 +120,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
-	RootCmd.PersistentFlags().StringVar(&overwriteHost, "overwrite-host", "", "If set it will not do a hostlookup and will force the given host")
+	RootCmd.PersistentFlags().StringVar(&overwriteHost, "overwrite-host", "", "If set it will not do a hostlookup and will force the given host on all clustes. This is mostly used to run one static cluster.")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
