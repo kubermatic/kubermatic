@@ -11,8 +11,8 @@ type Metadata struct {
 	UID      string `json:"uid,omitempty"`
 
 	// private fields
-	// Annotations are kubernetes Annotations from the namespace.
-	// Used to store data persistend.
+	// Annotations represent Annotations on Kubernetes Namespace for the respective cluster,
+	// which are used to store persistent data for the cluster.
 	Annotations map[string]string `json:"-"`
 	User        string            `json:"-"`
 }
@@ -63,9 +63,9 @@ type Node struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	// Token grants access to the digitalocean api.
+	// APIToken is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
-	// SSHKeys are real SSH keys ("id-alg .....") used by the cloud-init.
+	// SSHKeys are SSH keys used in the cloud-init generation to deploy to nodes.
 	SSHKeys []string `json:"sshKeys"`
 }
 
@@ -82,15 +82,14 @@ type FakeCloudSpec struct {
 
 // FlannelNetworkSpec specifies a deployed flannel network.
 type FlannelNetworkSpec struct {
-	// CIDR is the subnet used by flannel.
-	// It need's to be provided in CIDR notation.
-	// See RFC: 4632, eg. "127.1.0.0/16"
+	// CIDR is the subnet used by Flannel in CIDR notation.
+	// See RFC 4632, e.g. "127.1.0.0/16"
 	CIDR string
 }
 
 // NetworkSpec specifies the deployed network.
 type NetworkSpec struct {
-	// FlannelNetworkSpec holds the informations needed for running a flannel network.
+	// FlannelNetworkSpec holds the required information to configure Flannel
 	Flannel FlannelNetworkSpec
 }
 
@@ -98,7 +97,7 @@ type NetworkSpec struct {
 type CloudSpec struct {
 	// The datacenter the users 'cloud' lives in.
 	DC string `json:"dc"`
-	// Network holds the network specifications.
+	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
@@ -176,7 +175,7 @@ type ClusterStatus struct {
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud,omitempty"`
-	// The name choosen by the user.
+	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.

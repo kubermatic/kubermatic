@@ -44,16 +44,16 @@ type CloudProvider interface {
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
-	// NewCluster creates a cluster under the provided user with the given ClusterSpec prerequisites.
+	// NewCluster creates a cluster for the provided user using the given ClusterSpec.
 	NewCluster(user User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
 
-	// Cluster return a Cluster struct from the namespace, given the user and cluster.
+	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
 
-	// SetCloud updates a given cluster from a user with the CloudSpec settings.
+	// SetCloud updates CloudSpec settings on the given cluster for the given user
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 
-	// Cluster returns all cluster for a given user.
+	// Cluster returns all clusters for a given user.
 	Clusters(user User) ([]*api.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
