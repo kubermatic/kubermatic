@@ -20,6 +20,9 @@ build:
         code: |
           go version
           go get -u github.com/alecthomas/gometalinter
+          go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
+          # go get github.com/mattn/goveralls
+          git describe --tags |tee VERSION
           gometalinter --install
     - script:
         name: build and test
