@@ -23,7 +23,6 @@ type User struct {
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
-	// Initialises fields needed for cloudSpec
 	InitializeCloudSpec(*api.Cluster) error
 	Marshal(*api.CloudSpec) (annotations map[string]string, err error)
 	Unmarshal(annotations map[string]string) (*api.CloudSpec, error)
