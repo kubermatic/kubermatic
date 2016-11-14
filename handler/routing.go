@@ -50,7 +50,7 @@ func NewRouting(
 }
 
 // Register registers all known endpoints in the given router.
-func (b Routing) Register(mux *mux.Router) {
+func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/").
@@ -59,189 +59,189 @@ func (b Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc").
-		Handler(b.authenticated(b.datacentersHandler()))
+		Handler(r.authenticated(r.datacentersHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}").
-		Handler(b.authenticated(b.datacenterHandler()))
+		Handler(r.authenticated(r.datacenterHandler()))
 
 	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(b.authenticated(b.newClusterHandler()))
+		Handler(r.authenticated(r.newClusterHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(b.authenticated(b.clustersHandler()))
+		Handler(r.authenticated(r.clustersHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(b.authenticated(b.clusterHandler()))
+		Handler(r.authenticated(r.clusterHandler()))
 
 	mux.
 		Methods("PUT").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/cloud").
-		Handler(b.authenticated(b.setCloudHandler()))
+		Handler(r.authenticated(r.setCloudHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
-		Handler(b.getAuthenticated(b.kubeconfigHandler()))
+		Handler(r.getAuthenticated(r.kubeconfigHandler()))
 
 	mux.
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(b.authenticated(b.deleteClusterHandler()))
+		Handler(r.authenticated(r.deleteClusterHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(b.authenticated(b.nodesHandler()))
+		Handler(r.authenticated(r.nodesHandler()))
 
 	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(b.authenticated(b.createNodesHandler()))
+		Handler(r.authenticated(r.createNodesHandler()))
 
 	mux.
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(b.authenticated(b.deleteNodeHandler()))
+		Handler(r.authenticated(r.deleteNodeHandler()))
 }
 
 // datacentersHandler serves a list of datacenters.
 // Admin only!
-func (b Routing) datacentersHandler() http.Handler {
+func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		datacentersEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		datacentersEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
 		decodeDatacentersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // datacenterHandler server information for a datacenter.
 // Admin only!
-func (b Routing) datacenterHandler() http.Handler {
+func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		datacenterEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		datacenterEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
 		decodeDcReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // newClusterHandler creates a new cluster.
-func (b Routing) newClusterHandler() http.Handler {
+func (r Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		newClusterEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		newClusterEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNewClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // clusterHandler returns a cluster object.
-func (b Routing) clusterHandler() http.Handler {
+func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		clusterEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		clusterEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // setCloudHandler updates a cluster.
-func (b Routing) setCloudHandler() http.Handler {
+func (r Routing) setCloudHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		setCloudEndpoint(b.datacenters, b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		setCloudEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
 		decodeSetCloudReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // kubeconfigHandler returns the cubeconfig for the cluster.
-func (b Routing) kubeconfigHandler() http.Handler {
+func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		kubeconfigEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		kubeconfigEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // clustersHandler lists all clusters from a user.
-func (b Routing) clustersHandler() http.Handler {
+func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		clustersEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		clustersEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeClustersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // deleteClusterHandler deletes a cluster.
-func (b Routing) deleteClusterHandler() http.Handler {
+func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		deleteClusterEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeDeleteClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // nodesHandler returns all nodes from a user.
-func (b Routing) nodesHandler() http.Handler {
+func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		nodesEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		nodesEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodesReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // createNodesHandler let's you create nodes.
-func (b Routing) createNodesHandler() http.Handler {
+func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		createNodesEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeCreateNodesReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
 // deleteNodeHandler let's you delete nodes.
-func (b Routing) deleteNodeHandler() http.Handler {
+func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		deleteNodeEndpoint(b.kubernetesProviders, b.cloudProviders),
+		r.ctx,
+		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodeReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
