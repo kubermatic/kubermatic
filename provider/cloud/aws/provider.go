@@ -58,15 +58,15 @@ type aws struct {
 
 // NewCloudProvider returns a new aws provider.
 func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
-	provider := &aws{
+	p := &aws{
 		datacenters: datacenters,
 	}
 
 	if parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath); err != nil {
-		provider.tpl = parsed
+		p.tpl = parsed
 		glog.Errorln("template not found:", err)
 	}
-	return provider
+	return p
 }
 
 func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
@@ -163,8 +163,8 @@ func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
 	return spec, nil
 }
 
-func (aws *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
-	if aws.tpl == nil {
+func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpec, clusterState *api.Cluster, dc provider.DatacenterMeta, key *api.KeyCert) error {
+	if a.tpl == nil {
 		return errors.New("No AWS template was found")
 	}
 	data := ktemplate.Data{
@@ -182,18 +182,18 @@ func (aws *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeS
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 	}
-	return aws.tpl.Execute(buf, data)
+	return a.tpl.Execute(buf, data)
 }
 
-func (aws *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
-	dc, ok := aws.datacenters[node.DC]
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+	dc, ok := a.datacenters[node.DC]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DC)
 	}
 	if node.AWS.Type == "" {
 		return nil, nil
 	}
-	svc, err := aws.getSession(cluster)
+	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func (aws *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api
 			return createdNodes, err
 		}
 
-		if err = aws.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
 			return createdNodes, err
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
@@ -309,6 +309,44 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	return err
 }
 
+func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
+	awsSpec := cluster.Spec.Cloud.GetAWS()
+	config := sdk.NewConfig()
+	dc, found := a.datacenters[cluster.Spec.Cloud.DC]
+	if !found || dc.Spec.AWS == nil {
+		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
+	}
+	config = config.WithRegion(dc.Spec.AWS.Region)
+	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
+	// TODO: specify retrycount
+	config = config.WithMaxRetries(3)
+	return ec2.New(session.New(config)), nil
+}
+
+func createNode(name string, instance *ec2.Instance) *api.Node {
+	return &api.Node{
+		Metadata: api.Metadata{
+			// This looks weird but is correct
+			UID:  *instance.InstanceId,
+			Name: name,
+		},
+		Status: api.NodeStatus{
+			Addresses: map[string]string{
+				// Probably won't have one... VPC ?
+				// TODO: VPC rules ... NetworkInterfaces
+				"public":  *instance.PublicIpAddress,
+				"private": *instance.PrivateIpAddress,
+			},
+		},
+		Spec: api.NodeSpec{
+			DC: (*instance.Placement.AvailabilityZone)[:len(*instance.Placement.AvailabilityZone)-1],
+			AWS: &api.AWSNodeSpec{
+				Type: *instance.InstanceType,
+			},
+		},
+	}
+}
+
 func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, cluster *api.Cluster) (*api.Node, error) {
 	serverReq, err := client.RunInstances(instance)
 	if err != nil {
@@ -343,44 +381,6 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 	}
 
 	return createNode(name, serverReq.Instances[0]), nil
-}
-
-func createNode(name string, instance *ec2.Instance) *api.Node {
-	return &api.Node{
-		Metadata: api.Metadata{
-			// This looks weird but is correct
-			UID:  *instance.InstanceId,
-			Name: name,
-		},
-		Status: api.NodeStatus{
-			Addresses: map[string]string{
-				// Probably won't have one... VPC ?
-				// TODO: VPC rules ... NetworkInterfaces
-				"public":  *instance.PublicIpAddress,
-				"private": *instance.PrivateIpAddress,
-			},
-		},
-		Spec: api.NodeSpec{
-			DC: (*instance.Placement.AvailabilityZone)[:len(*instance.Placement.AvailabilityZone)-1],
-			AWS: &api.AWSNodeSpec{
-				Type: *instance.InstanceType,
-			},
-		},
-	}
-}
-
-func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
-	awsSpec := cluster.Spec.Cloud.GetAWS()
-	config := sdk.NewConfig()
-	dc, found := a.datacenters[cluster.Spec.Cloud.DC]
-	if !found || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
-	}
-	config = config.WithRegion(dc.Spec.AWS.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
-	// TODO: specify retrycount
-	config = config.WithMaxRetries(3)
-	return ec2.New(session.New(config)), nil
 }
 
 func getDefaultVPCId(client *ec2.EC2) (string, error) {
