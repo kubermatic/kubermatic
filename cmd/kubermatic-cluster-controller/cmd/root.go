@@ -26,14 +26,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
 var dev bool
-
 var viperWhiteList = []string{
 	"v",
 }
@@ -45,30 +44,31 @@ var RootCmd = &cobra.Command{
 	Long:  `Cluster controller... Needs better description`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if masterResources == "" {
+		viper.Debug()
+		if viper.GetString("master-resources") == "" {
 			print("master-resources path is undefined\n\n")
 			os.Exit(1)
 		}
 
 		// load list of datacenters
 		dcs := map[string]provider.DatacenterMeta{}
-		if dcFile != "" {
+		if viper.GetString("datacenters") != "" {
 			var err error
-			dcs, err = provider.DatacentersMeta(dcFile)
+			dcs, err = provider.DatacentersMeta(viper.GetString("datacenters"))
 			if err != nil {
-				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", dcFile, err))
+				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", viper.GetString("datacenters"), err))
 			}
 		}
 
 		// create controller for each context
-		clientcmdConfig, err := clientcmd.LoadFromFile(kubeConfig)
+		clientcmdConfig, err := clientcmd.LoadFromFile(viper.GetString("kubeconfig"))
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		for ctx := range clientcmdConfig.Contexts {
 			// create kube client
-			clientcmdConfig, err := clientcmd.LoadFromFile(kubeConfig)
+			clientcmdConfig, err := clientcmd.LoadFromFile(viper.GetString("kubeconfig"))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -82,7 +82,7 @@ var RootCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			client, err := client.New(cfg)
+			client, err := kclient.New(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -90,7 +90,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, cps, masterResources, externalURL, dev, overwriteHost,
+				ctx, client, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
 			)
 			if err != nil {
 				log.Fatal(err)

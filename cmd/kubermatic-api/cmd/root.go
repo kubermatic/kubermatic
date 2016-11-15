@@ -48,15 +48,15 @@ var RootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-
+		viper.Debug()
 		// load list of datacenters
 
 		dcs := map[string]provider.DatacenterMeta{}
-		if dcFile != "" {
+		if viper.GetString("datacenters") != "" {
 			var err error
-			dcs, err = provider.DatacentersMeta(dcFile)
+			dcs, err = provider.DatacentersMeta(viper.GetString("datacenters"))
 			if err != nil {
-				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", dcFile, err))
+				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", viper.GetString("datacenters"), err))
 			}
 		}
 
@@ -65,18 +65,18 @@ var RootCmd = &cobra.Command{
 
 		// create KubernetesProvider for each context in the kubeconfig
 
-		kps, err := kubernetes.Providers(kubeConfig, dcs, cps, secretsFile, dev)
+		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetBool("dev"))
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// start server
 		ctx := context.Background()
-		r := handler.NewRouting(ctx, dcs, kps, cps, auth, jwtKey)
+		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"))
 		mux := mux.NewRouter()
 		r.Register(mux)
-		log.Println(fmt.Sprintf("Listening on %s", address))
-		log.Fatal(http.ListenAndServe(address, ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
+		log.Println(fmt.Sprintf("Listening on %s", viper.GetString("address")))
+		log.Fatal(http.ListenAndServe(viper.GetString("address"), ghandlers.CombinedLoggingHandler(os.Stdout, mux)))
 	},
 }
 
