@@ -44,6 +44,14 @@ var RootCmd = &cobra.Command{
 	Long:  `Cluster controller... Needs better description`,
 
 	Run: func(cmd *cobra.Command, args []string) {
+
+		fmt.Println("master-resources: " + viper.GetString("master-resources"))
+		fmt.Println("datacenters: " + viper.GetString("datacenters"))
+		fmt.Println("kubeconfig: " + viper.GetString("kubeconfig"))
+		fmt.Println("external-url: " + viper.GetString("external-url"))
+		fmt.Println("dev: " + viper.GetBool("dev"))
+		fmt.Println("overwrite-host" + viper.GetString("overwrite-host"))
+
 		if viper.GetString("master-resources") == "" {
 			print("master-resources path is undefined\n\n")
 			os.Exit(1)
