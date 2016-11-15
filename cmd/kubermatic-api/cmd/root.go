@@ -48,9 +48,7 @@ var RootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.Debug()
 		// load list of datacenters
-
 		dcs := map[string]provider.DatacenterMeta{}
 		if viper.GetString("datacenters") != "" {
 			var err error

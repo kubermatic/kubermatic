@@ -44,7 +44,6 @@ var RootCmd = &cobra.Command{
 	Long:  `Cluster controller... Needs better description`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.Debug()
 		if viper.GetString("master-resources") == "" {
 			print("master-resources path is undefined\n\n")
 			os.Exit(1)
