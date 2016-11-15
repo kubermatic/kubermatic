@@ -53,7 +53,7 @@ var RootCmd = &cobra.Command{
 		fmt.Println("overwrite-host: " + viper.GetString("overwrite-host"))
 
 		if viper.GetString("master-resources") == "" {
-			print("master-resources path is undefined\n\n")
+			print("master-resources path is undefined\n\n ")
 			os.Exit(1)
 		}
 
