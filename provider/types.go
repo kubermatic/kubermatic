@@ -44,7 +44,7 @@ type CloudProvider interface {
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
-	NewCluster(user User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
+	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
 	Cluster(user User, cluster string) (*api.Cluster, error)
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 	Clusters(user User) ([]*api.Cluster, error)

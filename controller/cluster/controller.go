@@ -52,6 +52,7 @@ type clusterController struct {
 	masterResourcesPath string
 	externalURL         string
 	etcdURL             string
+	overwriteHost       string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
 	nsStore      cache.Store
@@ -91,6 +92,7 @@ func NewController(
 	masterResourcesPath string,
 	externalURL string,
 	dev bool,
+	overwriteHost string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
 		dc:                  dc,
@@ -104,6 +106,7 @@ func NewController(
 		externalURL:         externalURL,
 		etcdURL:             fmt.Sprintf(etcdURLFormat, externalURL),
 		dev:                 dev,
+		overwriteHost:       overwriteHost,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
