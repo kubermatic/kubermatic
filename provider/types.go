@@ -49,7 +49,7 @@ type KubernetesProvider interface {
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 	Clusters(user User) ([]*api.Cluster, error)
 	DeleteCluster(user User, cluster string) error
-	CreateAddon(user User, cluster string, addon api.ClusterAddon) error
+	CreateAddon(user User, cluster string, addonName string) (*api.ClusterAddon, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

@@ -168,6 +168,6 @@ func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 	return errors.New("not implemented")
 }
 
-func (p *seedProvider) CreateAddon(user provider.User, cluster string, addon api.ClusterAddon) error {
-	return nil
+func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
+	return nil, nil
 }

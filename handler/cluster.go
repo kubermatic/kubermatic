@@ -160,13 +160,13 @@ func createAddonEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		err := kp.CreateAddon(req.user, req.cluster, req.addon)
+		addon, err := kp.CreateAddon(req.user, req.cluster, req.addonName)
 
 		if err != nil {
-			return struct{}{}, err
+			return nil, err
 		}
 
-		return struct{}{}, nil
+		return addon, nil
 	}
 }
 
@@ -279,8 +279,8 @@ func decodeDeleteClusterReq(r *http.Request) (interface{}, error) {
 
 type createAddonRequest struct {
 	dcReq
-	addon   api.ClusterAddon
-	cluster string
+	addonName string
+	cluster   string
 }
 
 func decodeCreateAddonRequest(r *http.Request) (interface{}, error) {
@@ -294,9 +294,14 @@ func decodeCreateAddonRequest(r *http.Request) (interface{}, error) {
 
 	req.cluster = mux.Vars(r)["cluster"]
 
-	if err = json.NewDecoder(r.Body).Decode(&req.addon); err != nil {
+	var addon struct {
+		Name string `json:"name"`
+	}
+
+	if err = json.NewDecoder(r.Body).Decode(&addon); err != nil {
 		return nil, err
 	}
+	req.addonName = addon.Name
 
 	return req, nil
 }

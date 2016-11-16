@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/addons"
 	"github.com/kubermatic/api/controller"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
@@ -45,6 +46,7 @@ type clusterController struct {
 	dc                  string
 	client              *client.Client
 	tprClient           *client.Client
+	addonManager        addons.Interface
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
@@ -84,6 +86,7 @@ func NewController(
 	dc string,
 	client *client.Client,
 	tprClient *client.Client,
+	am *addons.AddonManager,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -93,6 +96,7 @@ func NewController(
 		dc:                  dc,
 		client:              client,
 		tprClient:           tprClient,
+		addonManager:        am,
 		queue:               workqueue.New(),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
@@ -232,7 +236,7 @@ func NewController(
 			AddFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)
 				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
-				//Tell helm now to install the plugin in the cluster
+				cc.addonManager.Install(addon.Name)
 			},
 			DeleteFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)

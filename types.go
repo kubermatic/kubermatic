@@ -109,6 +109,7 @@ type ClusterHealth struct {
 
 // ClusterPhase is the life cycle phase of a cluster.
 type ClusterPhase string
+type AddonPhase string
 
 const (
 	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
@@ -131,6 +132,12 @@ const (
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
+
+	PendingAddonStatusPhase   AddonPhase = "Pending"
+	LaunchingAddonStatusPhase AddonPhase = "Launching"
+	FailedAddonStatusPhase    AddonPhase = "Failed"
+	DeletingAddonStatusPhase  AddonPhase = "Deleting"
+	RunningAddonStatusPhase   AddonPhase = "Running"
 )
 
 type (
@@ -208,12 +215,16 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
+type ClusterAddonRequest struct {
+	Name string `json:"name"`
+}
+
 // ClusterAddon specifies a cluster addon
 type ClusterAddon struct {
 	unversioned.TypeMeta `json:",inline"`
 	Metadata             api.ObjectMeta `json:"metadata"`
 	Name                 string         `json:"name"`
-	Status               string         `json:"status"`
+	Phase                AddonPhase     `json:"phase"`
 }
 
 // ClusterAddonList specifies a list of cluster addons

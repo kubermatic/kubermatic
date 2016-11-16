@@ -27,9 +27,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/wait"
+	"github.com/kubermatic/api/addons"
 )
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile string
@@ -79,11 +80,17 @@ var RootCmd = &cobra.Command{
 				&clientcmd.ConfigOverrides{},
 				nil,
 			)
+
+			am, err := addons.NewAddonManager(clientConfig)
+			if err != nil {
+				log.Fatal("failed to initialize addon manager: " + err.Error())
+			}
+
 			cfg, err := clientConfig.ClientConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
-			kclient, err := client.New(cfg)
+			client, err := kclient.New(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -92,7 +99,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, kclient, tprClient, cps, masterResources, externalURL, dev,
+				ctx, client, tprClient, am, cps, masterResources, externalURL, dev,
 			)
 			if err != nil {
 				log.Fatal(err)

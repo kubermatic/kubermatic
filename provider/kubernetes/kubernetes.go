@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kapi "k8s.io/kubernetes/pkg/api"
@@ -287,44 +286,40 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
 }
 
-func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addon api.ClusterAddon) error {
+func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
 	var resultAddon api.ClusterAddon
 
-	err := p.tprClient.Get().
-		Resource("clusteraddons").
-		Namespace(kapi.NamespaceDefault).
-		Name(addon.Name).
-		Do().Into(&resultAddon)
-
+	_, err := p.Cluster(user, cluster)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
-			// Create an instance of our TPR
-			tprAddon := &api.ClusterAddon{
-				Metadata: kapi.ObjectMeta{
-					Name: "addon1",
-				},
-			}
-
-			var result api.ClusterAddon
-			err := p.tprClient.
-				Post().
-				Resource("clusteraddons").
-				Namespace(kapi.NamespaceDefault).
-				Body(tprAddon).
-				Do().
-				Into(&result)
-			if err != nil {
-				return err
-			}
-
-			glog.Infof("CREATED: %#v\n", result)
-
-		} else {
-			return err
-		}
-	} else {
-		glog.Infof("GET: %#v\n", resultAddon)
+		return nil, err
 	}
 
-	return nil
+	err = p.tprClient.Get().
+		Resource("clusteraddons").
+		Namespace(cluster).
+		Name(addonName).
+		Do().Into(&resultAddon)
+
+	// Create an instance of our TPR
+	addon := &api.ClusterAddon{
+		Metadata: kapi.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", cluster, addonName),
+		},
+		Name:  addonName,
+		Phase: api.PendingAddonStatusPhase,
+	}
+
+	var result api.ClusterAddon
+	err = p.tprClient.
+		Post().
+		Resource("clusteraddons").
+		Namespace(cluster).
+		Body(addon).
+		Do().
+		Into(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
