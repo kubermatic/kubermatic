@@ -40,8 +40,8 @@ type FakeNodeSpec struct {
 
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
-	// DC contains the name of the datacenter the node is located in.
-	DC string `json:"dc"`
+	// DatacenterName contains the name of the datacenter the node is located in.
+	DatacenterName string `json:"dc"`
 
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
@@ -95,8 +95,8 @@ type NetworkSpec struct {
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
-	// The datacenter the users 'cloud' lives in.
-	DC string `json:"dc"`
+	// DatacenterName where the users 'cloud' lives in.
+	DatacenterName string `json:"dc"`
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 

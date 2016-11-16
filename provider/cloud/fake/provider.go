@@ -62,7 +62,7 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 				Name: "server1",
 			},
 			Spec: api.NodeSpec{
-				DC: "fake-fra1",
+				DatacenterName: "fake-fra1",
 				Fake: &api.FakeNodeSpec{
 					Type: "standard-1",
 					OS:   "CoreOS alpha 1234",
@@ -74,7 +74,7 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 				Name: "server2",
 			},
 			Spec: api.NodeSpec{
-				DC: "fake-fra1",
+				DatacenterName: "fake-fra1",
 				Fake: &api.FakeNodeSpec{
 					Type: "standard-1",
 					OS:   "CoreOS alpha 1234",

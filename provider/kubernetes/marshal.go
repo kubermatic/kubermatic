@@ -258,7 +258,7 @@ func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluste
 	}
 
 	annotations[providerAnnotation] = cpName
-	annotations[cloudDCAnnotation] = c.Spec.Cloud.DC
+	annotations[cloudDCAnnotation] = c.Spec.Cloud.DatacenterName
 
 	return annotations, nil
 }
@@ -278,7 +278,7 @@ func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, annotations
 	if err != nil {
 		return nil, err
 	}
-	spec.DC = annotations[cloudDCAnnotation]
+	spec.DatacenterName = annotations[cloudDCAnnotation]
 	spec.Network.Flannel.CIDR = flannelCIDRADefault
 
 	return spec, nil
