@@ -6,9 +6,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/pem"
@@ -312,21 +310,9 @@ func ParseOneCertificateFromPEM(certsPEM []byte) ([]*x509.Certificate, []byte, e
 
 // LoadPEMCertPool loads a pool of PEM certificates from file.
 func LoadPEMCertPool(certsFile string) (*x509.CertPool, error) {
-	if certsFile == "" {
-		return nil, nil
-	}
 	pemCerts, err := ioutil.ReadFile(certsFile)
 	if err != nil {
 		return nil, err
-	}
-
-	return PEMToCertPool(pemCerts)
-}
-
-// PEMToCertPool concerts PEM certificates to a CertPool.
-func PEMToCertPool(pemCerts []byte) (*x509.CertPool, error) {
-	if len(pemCerts) == 0 {
-		return nil, nil
 	}
 
 	certPool := x509.NewCertPool()
@@ -424,7 +410,7 @@ func ParseCSR(in []byte) (csr *x509.CertificateRequest, rest []byte, err error) 
 	in = bytes.TrimSpace(in)
 	p, rest := pem.Decode(in)
 	if p != nil {
-		if p.Type != "NEW CERTIFICATE REQUEST" && p.Type != "CERTIFICATE REQUEST" {
+		if p.Type != "CERTIFICATE REQUEST" {
 			return nil, rest, cferr.New(cferr.CSRError, cferr.BadRequest)
 		}
 
@@ -460,59 +446,33 @@ func ParseCSRPEM(csrPEM []byte) (*x509.CertificateRequest, error) {
 	return csrObject, nil
 }
 
-// SignerAlgo returns an X.509 signature algorithm from a crypto.Signer.
-func SignerAlgo(priv crypto.Signer) x509.SignatureAlgorithm {
-	switch pub := priv.Public().(type) {
+// SignerAlgo returns an X.509 signature algorithm corresponding to
+// the crypto.Hash provided from a crypto.Signer.
+func SignerAlgo(priv crypto.Signer, h crypto.Hash) x509.SignatureAlgorithm {
+	switch priv.Public().(type) {
 	case *rsa.PublicKey:
-		bitLength := pub.N.BitLen()
-		switch {
-		case bitLength >= 4096:
+		switch h {
+		case crypto.SHA512:
 			return x509.SHA512WithRSA
-		case bitLength >= 3072:
+		case crypto.SHA384:
 			return x509.SHA384WithRSA
-		case bitLength >= 2048:
+		case crypto.SHA256:
 			return x509.SHA256WithRSA
 		default:
 			return x509.SHA1WithRSA
 		}
 	case *ecdsa.PublicKey:
-		switch pub.Curve {
-		case elliptic.P521():
+		switch h {
+		case crypto.SHA512:
 			return x509.ECDSAWithSHA512
-		case elliptic.P384():
+		case crypto.SHA384:
 			return x509.ECDSAWithSHA384
-		case elliptic.P256():
+		case crypto.SHA256:
 			return x509.ECDSAWithSHA256
 		default:
 			return x509.ECDSAWithSHA1
 		}
 	default:
 		return x509.UnknownSignatureAlgorithm
-	}
-}
-
-// LoadClientCertificate load key/certificate from pem files
-func LoadClientCertificate(certFile string, keyFile string) (*tls.Certificate, error) {
-	if certFile != "" && keyFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			log.Critical("Unable to read client certificate from file: %s or key from file: %s", certFile, keyFile)
-			return nil, err
-		}
-		log.Debug("Client certificate loaded ")
-		return &cert, nil
-	}
-	return nil, nil
-}
-
-// CreateTLSConfig creates a tls.Config object from certs and roots
-func CreateTLSConfig(remoteCAs *x509.CertPool, cert *tls.Certificate) *tls.Config {
-	var certs []tls.Certificate
-	if cert != nil {
-		certs = []tls.Certificate{*cert}
-	}
-	return &tls.Config{
-		Certificates: certs,
-		RootCAs:      remoteCAs,
 	}
 }

@@ -6,6 +6,7 @@
 package log
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -44,12 +45,12 @@ var Level = LevelInfo
 //
 // SyslogWriter is satisfied by *syslog.Writer.
 type SyslogWriter interface {
-	Debug(string)
-	Info(string)
-	Warning(string)
-	Err(string)
-	Crit(string)
-	Emerg(string)
+	Debug(string) error
+	Info(string) error
+	Warning(string) error
+	Err(string) error
+	Crit(string) error
+	Emerg(string) error
 }
 
 // syslogWriter stores the SetLogger() parameter.
@@ -62,22 +63,33 @@ func SetLogger(logger SyslogWriter) {
 	syslogWriter = logger
 }
 
+func init() {
+	// Only define loglevel flag once.
+	if flag.Lookup("loglevel") == nil {
+		flag.IntVar(&Level, "loglevel", LevelInfo, "Log level (0 = DEBUG, 5 = FATAL)")
+	}
+}
+
 func print(l int, msg string) {
 	if l >= Level {
 		if syslogWriter != nil {
+			var err error
 			switch l {
 			case LevelDebug:
-				syslogWriter.Debug(msg)
+				err = syslogWriter.Debug(msg)
 			case LevelInfo:
-				syslogWriter.Info(msg)
+				err = syslogWriter.Info(msg)
 			case LevelWarning:
-				syslogWriter.Warning(msg)
+				err = syslogWriter.Warning(msg)
 			case LevelError:
-				syslogWriter.Err(msg)
+				err = syslogWriter.Err(msg)
 			case LevelCritical:
-				syslogWriter.Crit(msg)
+				err = syslogWriter.Crit(msg)
 			case LevelFatal:
-				syslogWriter.Emerg(msg)
+				err = syslogWriter.Emerg(msg)
+			}
+			if err != nil {
+				log.Printf("Unable to write syslog: %v for msg: %s\n", err, msg)
 			}
 		} else {
 			log.Printf("[%s] %s", levelPrefix[l], msg)

@@ -1,5 +1,5 @@
-hash: d54937ae5d8c83b2e1ade66c1333267e1ca2ff054914099774cd712b2b5c9aae
-updated: 2016-11-10T14:03:54.341389035+01:00
+hash: b12661e20f1fa2fe9594685a6f6843b53df0c1091f818fe20bfe16cb886336b7
+updated: 2016-11-16T16:09:26.508956166+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -8,6 +8,8 @@ imports:
   subpackages:
   - compute/metadata
   - internal
+- name: github.com/aokoli/goutils
+  version: 9c37978a95bd5c709a15883b6242714ea6709e64
 - name: github.com/auth0/go-jwt-middleware
   version: f3f7de3b9e394e3af3b88e1b9457f6f71d1ae0ac
 - name: github.com/Azure/go-ansiterm
@@ -21,7 +23,7 @@ imports:
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/cloudflare/cfssl
-  version: cf43e7ea8a406fdef189459716efff42ba926774
+  version: db0d0650b6496bfe8061ec56a92edd32d8e75c30
   subpackages:
   - auth
   - certdb
@@ -172,6 +174,8 @@ imports:
   subpackages:
   - jsonpb
   - proto
+  - ptypes/any
+  - ptypes/timestamp
 - name: github.com/google/cadvisor
   version: a726d13de8cb32860e73d72a78dc8e0124267709
   subpackages:
@@ -217,7 +221,7 @@ imports:
   - validate
   - version
 - name: github.com/google/certificate-transparency
-  version: 0f6e3d1d1ba4d03fdaab7cd716f36255c2e48341
+  version: 6e5648d13b43cdde25cc8274b87675230ffefbd6
   repo: https://github.com/google/certificate-transparency
   subpackages:
   - go
@@ -258,18 +262,21 @@ imports:
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
-- name: github.com/kubernetes/helm
-  version: f8037c83c647b56d9ef42d0d5254e5fc563e3048
-  subpackages:
-  - pkg/kube
 - name: github.com/magiconair/properties
   version: 0723e352fa358f9322c938cc2dadda874e9151a9
+- name: github.com/Masterminds/semver
+  version: 808ed7761c233af2de3f9729a041d68c62527f3a
+- name: github.com/Masterminds/sprig
+  version: 8f797f5b23118d8fe846c4296b0ad55044201b14
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
 - name: github.com/mitchellh/mapstructure
   version: f3009df150dadf309fdee4a54ed65c124afad715
+- name: github.com/mreiferson/go-httpclient
+  version: 63fe23f7434723dc904c901043af07931f293c47
+  repo: https://github.com/mreiferson/go-httpclient
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
@@ -291,6 +298,8 @@ imports:
   - model
 - name: github.com/prometheus/procfs
   version: 454a56f35412459b5e684fd5ec0f9211b94f002a
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/Sirupsen/logrus
   version: 51fe59aca108dc5680109e7b2051cbdcfa5a253c
 - name: github.com/spf13/afero
@@ -300,13 +309,15 @@ imports:
 - name: github.com/spf13/cast
   version: 2580bc98dc0e62908119e4737030cc2fdfc45e4c
 - name: github.com/spf13/cobra
-  version: 6a8bd97bdb1fc0d08a83459940498ea49d3e8c93
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/jwalterweatherman
   version: 33c24e77fb80341fe7130ee7c594256ff08ccc46
 - name: github.com/spf13/pflag
   version: 1560c1005499d61b80f865c04d39ca7505bf7f0b
 - name: github.com/spf13/viper
   version: 651d9d916abc3c3d6a91a12549495caba5edffd2
+- name: github.com/technosophos/moniker
+  version: 9f956786b91d9786ca11aa5be6104542fa911546
 - name: github.com/tent/http-link-go
   version: ac974c61c2f990f4115b119354b5e0b47550e888
 - name: github.com/ugorji/go
@@ -322,13 +333,15 @@ imports:
   - pkcs12/internal/rc2
   - ssh
 - name: golang.org/x/net
-  version: 3f122ce3dbbe488b7e6a8bdb26f41edec852a40b
+  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
   - context/ctxhttp
   - http2
   - http2/hpack
+  - internal/timeseries
   - lex/httplex
+  - trace
   - websocket
 - name: golang.org/x/oauth2
   version: 3c3a985cb79f52a3190fbc056984415ca6763d01
@@ -366,6 +379,17 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
+- name: google.golang.org/grpc
+  version: 231b4cfea0e79843053a33f5fe90bd4d84b23cd3
+  subpackages:
+  - codes
+  - credentials
+  - grpclog
+  - internal
+  - metadata
+  - naming
+  - peer
+  - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/logfmt.v0
@@ -442,6 +466,24 @@ imports:
   - 1.4/tools/clientcmd/api
   - 1.4/tools/metrics
   - 1.4/transport
+- name: k8s.io/helm
+  version: f8037c83c647b56d9ef42d0d5254e5fc563e3048
+  subpackages:
+  - pkg/chartutil
+  - pkg/engine
+  - pkg/ignore
+  - pkg/kube
+  - pkg/proto/hapi/chart
+  - pkg/proto/hapi/release
+  - pkg/proto/hapi/services
+  - pkg/proto/hapi/version
+  - pkg/releaseutil
+  - pkg/storage
+  - pkg/storage/driver
+  - pkg/tiller
+  - pkg/tiller/environment
+  - pkg/timeconv
+  - pkg/version
 - name: k8s.io/kubernetes
   version: 5a0a696437ad35c133c0c8493f7e9d22b0f9b81b
   subpackages:
