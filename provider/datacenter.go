@@ -89,17 +89,17 @@ type Datacenters struct {
 		ProviderType string `yaml:"-"` // e.g "aws", "digitalocean"
 
 		// Metainformation
-		Location string
-		Country  string
-		Private  bool
+		Location string `yaml:"location"`
+		Country  string `yaml:"country"`
+		Private  bool   `yaml:"private"`
 
 		// Routing information
-		Region    string
-		Zone      string
-		Exactname string
+		Region    string `yaml:"region,omitempty"`
+		Zone      string `yaml:"zone,omitempty"`
+		Exactname string `yaml:"exact-name"`
 
-		CustomerPatches []flag.Flags // Patches that are applied to customer clusters.
-		SeedPatches     []flag.Flags // Patches that are applied to seed clusters.
+		CustomerPatches []flag.Flags `yaml:"customer-patches,omitempty"` // Patches that are applied to customer clusters.
+		SeedPatches     []flag.Flags `yaml:"seed-patches,omitempty"`     // Patches that are applied to seed clusters.
 
 		Network struct {
 			Flannel struct {
