@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/kubermatic/api/provider/drivers/flag"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -78,4 +80,38 @@ func DatacentersMeta(path string) (map[string]DatacenterMeta, error) {
 	}
 
 	return dcs.Datacenters, nil
+}
+
+// Datacenters describes all running datacenters.
+type Datacenters struct {
+	// Provider are all seed datacenters. Each key is the name of a datacenter provider.
+	Provider map[string]struct {
+		ProviderType string `yaml:"-"` // e.g "aws", "digitalocean"
+
+		// Metainformation
+		Location string
+		Country  string
+		Private  bool
+
+		// Routing information
+		Region    string
+		Zone      string
+		Exactname string
+
+		CustomerPatches []flag.Flags // Patches that are applied to customer clusters.
+		SeedPatches     []flag.Flags // Patches that are applied to seed clusters.
+
+		Network struct {
+			Flannel struct {
+				CIDR string `yaml:"cidr"`
+			} `yaml:"flannel"`
+		} `yaml:"network"`
+
+		ApiserverSSH struct {
+			Private string `yaml:"private"`
+			Public  string `yaml:"public"`
+		} `yaml:"apiserverSSH"`
+
+		UniqueID string `yaml:"-"`
+	}
 }
