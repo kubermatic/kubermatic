@@ -1,5 +1,5 @@
-hash: aeb2a1ed8067c206b4c648a41f03f6457675e50f05c047cff8befc3d7e020951
-updated: 2016-10-31T16:39:17.997952187+01:00
+hash: 19aff0913d1cc21190ed02b878d2727f55d485ecbbb3e07e231ab29689917bc5
+updated: 2016-11-17T11:26:38.850488704+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -67,6 +67,8 @@ imports:
   subpackages:
   - digest
   - reference
+- name: github.com/docker/machine
+  version: ed849a7922357ad39fb1e0f452ffd6915964b2c5
 - name: github.com/emicklei/go-restful
   version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
