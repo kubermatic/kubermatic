@@ -304,7 +304,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	// Create an instance of our TPR
 	addon := &api.ClusterAddon{
 		Metadata: kapi.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s", cluster, addonName),
+			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
 		},
 		Name:  addonName,
 		Phase: api.PendingAddonStatusPhase,

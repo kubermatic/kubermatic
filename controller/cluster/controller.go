@@ -239,7 +239,10 @@ func NewController(
 			AddFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)
 				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
-				cc.addonManager.Install(addon.Name)
+				err := cc.addonManager.Install(addon.Name)
+				if err != nil {
+					glog.Error(err)
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)

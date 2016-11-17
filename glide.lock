@@ -1,5 +1,5 @@
 hash: b12661e20f1fa2fe9594685a6f6843b53df0c1091f818fe20bfe16cb886336b7
-updated: 2016-11-16T16:09:26.508956166+01:00
+updated: 2016-11-17T10:06:44.032994588+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -328,7 +328,15 @@ imports:
 - name: golang.org/x/crypto
   version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
+  - cast5
   - curve25519
+  - openpgp
+  - openpgp/armor
+  - openpgp/clearsign
+  - openpgp/elgamal
+  - openpgp/errors
+  - openpgp/packet
+  - openpgp/s2k
   - pkcs12
   - pkcs12/internal/rc2
   - ssh
@@ -469,15 +477,21 @@ imports:
 - name: k8s.io/helm
   version: f8037c83c647b56d9ef42d0d5254e5fc563e3048
   subpackages:
+  - cmd/helm/downloader
+  - cmd/helm/helmpath
+  - cmd/helm/resolver
   - pkg/chartutil
   - pkg/engine
+  - pkg/helm
   - pkg/ignore
   - pkg/kube
   - pkg/proto/hapi/chart
   - pkg/proto/hapi/release
   - pkg/proto/hapi/services
   - pkg/proto/hapi/version
+  - pkg/provenance
   - pkg/releaseutil
+  - pkg/repo
   - pkg/storage
   - pkg/storage/driver
   - pkg/tiller

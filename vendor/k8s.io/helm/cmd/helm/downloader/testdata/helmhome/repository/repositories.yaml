@@ -1,6 +1,0 @@
-apiVersion: v1
-repositories:
-  - name: testing
-    url: "http://example.com"
-  - name: kubernetes-charts
-    url: "http://example.com/charts"

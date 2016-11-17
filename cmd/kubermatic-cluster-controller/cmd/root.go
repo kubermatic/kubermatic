@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/kubermatic/api/addons"
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
@@ -30,7 +31,6 @@ import (
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/wait"
-	"github.com/kubermatic/api/addons"
 )
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
