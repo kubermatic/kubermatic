@@ -3,6 +3,7 @@ package provider
 import (
 	"bytes"
 	"hash/fnv"
+	"io/ioutil"
 
 	"github.com/kubermatic/api/provider/drivers/flag"
 
@@ -72,6 +73,8 @@ func (d *Datacenters) init() error {
 	return nil
 }
 
+// UnmarshalYAML takes a binary yaml file and parses it into a Datacenters struct,
+// containing all drivers.
 func UnmarshalYAML(data []byte) (dcs *Datacenters, err error) {
 	err = yaml.Unmarshal(data, dcs)
 	if err != nil {
@@ -79,4 +82,13 @@ func UnmarshalYAML(data []byte) (dcs *Datacenters, err error) {
 	}
 	err = dcs.init()
 	return
+}
+
+// ParseDatacenterFile parses a file containing seed datacenter information from it's filepath
+func ParseDatacenterFile(filepath string) (*Datacenters, error) {
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	return UnmarshalYAML(data)
 }
