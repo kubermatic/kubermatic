@@ -1,86 +1,13 @@
 package provider
 
 import (
-	"bufio"
-	"io/ioutil"
-	"os"
+	"bytes"
+	"hash/fnv"
 
 	"github.com/kubermatic/api/provider/drivers/flag"
 
 	yaml "gopkg.in/yaml.v2"
 )
-
-// DigitaloceanSpec describes a digital ocean datacenter
-type DigitaloceanSpec struct {
-	Region string `yaml:"region"`
-}
-
-// BringYourOwnSpec describes a datacenter our of bring your own nodes
-type BringYourOwnSpec struct {
-}
-
-// SeedSpec describes a seed in the given datacenter.
-type SeedSpec struct {
-	Digitalocean struct {
-		SSHKeys []string `yaml:"sshKeys"`
-	} `yaml:"digitalocean"`
-	BringYourOwn struct {
-		PrivateIntf string `yaml:"privateInterface"`
-	} `yaml:"bringyourown"`
-
-	Network struct {
-		Flannel struct {
-			CIDR string `yaml:"cidr"`
-		} `yaml:"flannel"`
-	} `yaml:"network"`
-
-	ApiserverSSH struct {
-		Private string `yaml:"private"`
-		Public  string `yaml:"public"`
-	} `yaml:"apiserverSSH"`
-}
-
-// DatacenterSpec describes mutually points to provider datacenter spec
-type DatacenterSpec struct {
-	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
-	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
-
-	Seed SeedSpec `yaml:"seed"`
-}
-
-// DatacenterMeta describes a Kubermatic datacenter.
-type DatacenterMeta struct {
-	Location string         `yaml:"location"`
-	Country  string         `yaml:"country"`
-	Spec     DatacenterSpec `yaml:"spec"`
-	Private  bool           `yaml:"private"`
-}
-
-// datacentersMeta describes a number of Kubermatic datacenters.
-type datacentersMeta struct {
-	Datacenters map[string]DatacenterMeta `yaml:"datacenters"`
-}
-
-// DatacentersMeta loads datacenter metadata from the given path.
-func DatacentersMeta(path string) (map[string]DatacenterMeta, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
-	if err != nil {
-		return nil, err
-	}
-
-	dcs := datacentersMeta{}
-	err = yaml.Unmarshal(bytes, &dcs)
-	if err != nil {
-		return nil, err
-	}
-
-	return dcs.Datacenters, nil
-}
 
 // Datacenters describes all running datacenters.
 type Datacenters struct {
@@ -114,4 +41,42 @@ type Datacenters struct {
 
 		UniqueID string `yaml:"-"`
 	}
+}
+
+func (d *Datacenters) init() error {
+	var buf *bytes.Buffer
+	var err error
+	hash := fnv.New32a()
+	for name, provider := range d.Provider {
+		provider.ProviderType = name
+		_, err = buf.WriteString(provider.Exactname)
+		if err != nil {
+			return err
+		}
+		_, err = buf.WriteString(provider.Location)
+		if err != nil {
+			return err
+		}
+		_, err = buf.WriteString(provider.Country)
+		if err != nil {
+			return err
+		}
+		_, err = buf.WriteString(provider.ProviderType)
+		if err != nil {
+			return err
+		}
+		provider.UniqueID = string(hash.Sum(buf.Bytes()))
+		buf.Reset()
+		hash.Reset()
+	}
+	return nil
+}
+
+func UnmarshalYAML(data []byte) (dcs *Datacenters, err error) {
+	err = yaml.Unmarshal(data, dcs)
+	if err != nil {
+		return nil, err
+	}
+	err = dcs.init()
+	return
 }
