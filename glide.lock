@@ -1,5 +1,5 @@
 hash: 8bbb86cf5fd7103f3e16bf387bf9623546df2030697e57338b8f3893c3a69afc
-updated: 2016-11-21T12:27:16.235563515+01:00
+updated: 2016-11-21T16:15:22.745474418+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -665,7 +665,6 @@ imports:
   - plugin/pkg/client/auth
   - plugin/pkg/client/auth/gcp
   - plugin/pkg/client/auth/oidc
-  - staging/src/k8s.io/client-go/1.4/_vendor/github.com/golang/glog
   - third_party/forked/golang/json
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
