@@ -1,6 +1,7 @@
 package api
 
 import (
+	"flag"
 	"time"
 )
 
@@ -15,59 +16,18 @@ type Metadata struct {
 	User        string            `json:"-"`
 }
 
-// DigitaloceanNodeSpec specifies a digital ocean node.
-type DigitaloceanNodeSpec struct {
-	Type    string   `json:"type"`
-	Size    string   `json:"size"`
-	SSHKeys []string `json:"sshKeys,omitempty"`
-}
-
-// BringYourOwnNodeSpec specifies a bring your own node
-type BringYourOwnNodeSpec struct {
-}
-
-// FakeNodeSpec specifies a fake node.
-type FakeNodeSpec struct {
-	Type string `json:"type"`
-	OS   string `json:"os"`
-}
-
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
-	DC           string                `json:"dc"`
-	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
-	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
+	// DC is a pointer to a specific Datacenet
+	DC string `json:"dc"`
+
+	Patches []flag.Flag `json:"patches_node"`
 }
 
 // NodeStatus stores status informations about a node.
 type NodeStatus struct {
 	Hostname  string            `json:"hostname"`
 	Addresses map[string]string `json:"addresses"`
-}
-
-// Node is the object representing a cluster node.
-type Node struct {
-	Metadata Metadata   `json:"metadata"`
-	Spec     NodeSpec   `json:"spec"`
-	Status   NodeStatus `json:"status,omitempty"`
-}
-
-// DigitaloceanCloudSpec specifies access data to digital ocean.
-type DigitaloceanCloudSpec struct {
-	Token   string   `json:"token"`
-	SSHKeys []string `json:"sshKeys"`
-}
-
-// BringYourOwnCloudSpec specifies access data for a bring your own cluster.
-type BringYourOwnCloudSpec struct {
-	PrivateIntf   string  `json:"privateInterface"`
-	ClientKeyCert KeyCert `json:"clientKeyCert"`
-}
-
-// FakeCloudSpec specifies access data for a fake cloud.
-type FakeCloudSpec struct {
-	Token string `json:"token,omitempty"`
 }
 
 // FlannelNetworkSpec specifies a deployed flannel network.
@@ -82,11 +42,11 @@ type NetworkSpec struct {
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {
-	DC           string                 `json:"dc"`
-	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
-	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	Network      NetworkSpec            `json:"-"`
+	DC string `json:"dc"`
+
+	Patches []flag.Flag `json:"patches_credentials"`
+
+	Network NetworkSpec `json:"-"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -129,10 +89,8 @@ const (
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
 
-type (
-	// Bytes stores a byte slices and ecnodes as base64 in JSON.
-	Bytes []byte
-)
+// Bytes stores a byte slices and ecnodes as base64 in JSON.
+type Bytes []byte
 
 // KeyCert is a pair of key and cert.
 type KeyCert struct {
@@ -171,6 +129,13 @@ type ClusterAddress struct {
 	Token   string `json:"token"`
 }
 
+// DatacenterSpec specifies the data for a datacenter.
+type DatacenterSpec struct {
+	Country  string `json:"country,omitempty"`
+	Location string `json:"location,omitempty"`
+	Provider string `json:"provider,omitempty"`
+}
+
 // Cluster is the object representating a cluster.
 type Cluster struct {
 	Metadata Metadata        `json:"metadata"`
@@ -179,27 +144,16 @@ type Cluster struct {
 	Status   ClusterStatus   `json:"status,omitempty"`
 }
 
-// DigitialoceanDatacenterSpec specifies a data center of digital ocean.
-type DigitialoceanDatacenterSpec struct {
-	Region string `json:"region"`
-}
-
-// BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
-type BringYourOwnDatacenterSpec struct {
-}
-
-// DatacenterSpec specifies the data for a datacenter.
-type DatacenterSpec struct {
-	Country      string                       `json:"country,omitempty"`
-	Location     string                       `json:"location,omitempty"`
-	Provider     string                       `json:"provider,omitempty"`
-	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
-}
-
 // Datacenter is the object representing a Kubernetes infra datacenter.
 type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
 	Seed     bool           `json:"seed,omitempty"`
+}
+
+// Node is the object representing a cluster node.
+type Node struct {
+	Metadata Metadata   `json:"metadata"`
+	Spec     NodeSpec   `json:"spec"`
+	Status   NodeStatus `json:"status,omitempty"`
 }
