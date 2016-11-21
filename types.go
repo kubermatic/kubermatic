@@ -1,8 +1,9 @@
 package api
 
 import (
-	"flag"
 	"time"
+
+	"github.com/kubermatic/api/provider/drivers/flag"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -21,7 +22,7 @@ type NodeSpec struct {
 	// DC is a pointer to a specific Datacenet
 	DC string `json:"dc"`
 
-	Patches []flag.Flag `json:"patches_node"`
+	Patches []flag.Flags `json:"patches_node"`
 }
 
 // NodeStatus stores status informations about a node.
@@ -44,7 +45,7 @@ type NetworkSpec struct {
 type CloudSpec struct {
 	DC string `json:"dc"`
 
-	Patches []flag.Flag `json:"patches_credentials"`
+	Patches []flag.Flags `json:"patches_credentials"`
 
 	Network NetworkSpec `json:"-"`
 }
