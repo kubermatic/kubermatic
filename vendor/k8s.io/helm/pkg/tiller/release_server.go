@@ -45,10 +45,10 @@ import (
 
 // releaseNameMaxLen is the maximum length of a release name.
 //
-// This is designed to accommodate the usage of release name in the 'name:'
-// field of Kubernetes resources. Many of those fields are limited to 24
-// characters in length. See https://github.com/kubernetes/helm/issues/1071
-const releaseNameMaxLen = 14
+// As of Kubernetes 1.4, the max limit on a name is 63 chars. We reserve 10 for
+// charts to add data. Effectively, that gives us 53 chars.
+// See https://github.com/kubernetes/helm/issues/1528
+const releaseNameMaxLen = 53
 
 // NOTESFILE_SUFFIX that we want to treat special. It goes through the templating engine
 // but it's not a yaml file (resource) hence can't have hooks, etc. And the user actually
@@ -70,10 +70,12 @@ var (
 // ListDefaultLimit is the default limit for number of items returned in a list.
 var ListDefaultLimit int64 = 512
 
+// ReleaseServer implements the server-side gRPC endpoint for the HAPI services.
 type ReleaseServer struct {
 	env *environment.Environment
 }
 
+// NewReleaseServer creates a new release server.
 func NewReleaseServer(env *environment.Environment) *ReleaseServer {
 	return &ReleaseServer{
 		env: env,
@@ -89,6 +91,7 @@ func getVersion(c ctx.Context) string {
 	return ""
 }
 
+// ListReleases lists the releases found by the server.
 func (s *ReleaseServer) ListReleases(req *services.ListReleasesRequest, stream services.ReleaseService_ListReleasesServer) error {
 	if !checkClientVersion(stream.Context()) {
 		return errIncompatibleVersion
@@ -191,6 +194,7 @@ func filterReleases(filter string, rels []*release.Release) ([]*release.Release,
 	return matches, nil
 }
 
+// GetVersion sends the server version.
 func (s *ReleaseServer) GetVersion(c ctx.Context, req *services.GetVersionRequest) (*services.GetVersionResponse, error) {
 	v := version.GetVersionProto()
 	return &services.GetVersionResponse{Version: v}, nil
@@ -201,6 +205,7 @@ func checkClientVersion(c ctx.Context) bool {
 	return version.IsCompatible(v, version.Version)
 }
 
+// GetReleaseStatus gets the status information for a named release.
 func (s *ReleaseServer) GetReleaseStatus(c ctx.Context, req *services.GetReleaseStatusRequest) (*services.GetReleaseStatusResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion
@@ -256,6 +261,7 @@ func (s *ReleaseServer) GetReleaseStatus(c ctx.Context, req *services.GetRelease
 	return statusResp, nil
 }
 
+// GetReleaseContent gets all of the stored information for the given release.
 func (s *ReleaseServer) GetReleaseContent(c ctx.Context, req *services.GetReleaseContentRequest) (*services.GetReleaseContentResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion
@@ -273,6 +279,7 @@ func (s *ReleaseServer) GetReleaseContent(c ctx.Context, req *services.GetReleas
 	return &services.GetReleaseContentResponse{Release: rel}, err
 }
 
+// UpdateRelease takes an existing release and new information, and upgrades the release.
 func (s *ReleaseServer) UpdateRelease(c ctx.Context, req *services.UpdateReleaseRequest) (*services.UpdateReleaseResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion
@@ -404,6 +411,7 @@ func (s *ReleaseServer) prepareUpdate(req *services.UpdateReleaseRequest) (*rele
 	return currentRelease, updatedRelease, nil
 }
 
+// RollbackRelease rolls back to a previous version of the given release.
 func (s *ReleaseServer) RollbackRelease(c ctx.Context, req *services.RollbackReleaseRequest) (*services.RollbackReleaseResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion
@@ -587,6 +595,7 @@ func (s *ReleaseServer) engine(ch *chart.Chart) environment.Engine {
 	return renderer
 }
 
+// InstallRelease installs a release and stores the release record.
 func (s *ReleaseServer) InstallRelease(c ctx.Context, req *services.InstallReleaseRequest) (*services.InstallReleaseResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion
@@ -595,7 +604,14 @@ func (s *ReleaseServer) InstallRelease(c ctx.Context, req *services.InstallRelea
 	rel, err := s.prepareRelease(req)
 	if err != nil {
 		log.Printf("Failed install prepare step: %s", err)
-		return nil, err
+		res := &services.InstallReleaseResponse{Release: rel}
+
+		// On dry run, append the manifest contents to a failed release. This is
+		// a stop-gap until we can revisit an error backchannel post-2.0.
+		if req.DryRun && strings.HasPrefix(err.Error(), "YAML parse error") {
+			err = fmt.Errorf("%s\n%s", err, rel.Manifest)
+		}
+		return res, err
 	}
 
 	res, err := s.performRelease(rel, req)
@@ -625,7 +641,24 @@ func (s *ReleaseServer) prepareRelease(req *services.InstallReleaseRequest) (*re
 
 	hooks, manifestDoc, notesTxt, err := s.renderResources(req.Chart, valuesToRender)
 	if err != nil {
-		return nil, err
+		// Return a release with partial data so that client can show debugging
+		// information.
+		rel := &release.Release{
+			Name:      name,
+			Namespace: req.Namespace,
+			Chart:     req.Chart,
+			Config:    req.Values,
+			Info: &release.Info{
+				FirstDeployed: ts,
+				LastDeployed:  ts,
+				Status:        &release.Status{Code: release.Status_UNKNOWN},
+			},
+			Version: 0,
+		}
+		if manifestDoc != nil {
+			rel.Manifest = manifestDoc.String()
+		}
+		return rel, err
 	}
 
 	// Store a release.
@@ -708,7 +741,18 @@ func (s *ReleaseServer) renderResources(ch *chart.Chart, values chartutil.Values
 	if err != nil {
 		// By catching parse errors here, we can prevent bogus releases from going
 		// to Kubernetes.
-		return nil, nil, "", err
+		//
+		// We return the files as a big blob of data to help the user debug parser
+		// errors.
+		b := bytes.NewBuffer(nil)
+		for name, content := range files {
+			if len(strings.TrimSpace(content)) == 0 {
+				continue
+			}
+			b.WriteString("\n---\n# Source: " + name + "\n")
+			b.WriteString(content)
+		}
+		return nil, b, "", err
 	}
 
 	// Aggregate all valid manifests into one big doc.
@@ -855,6 +899,7 @@ func (s *ReleaseServer) purgeReleases(rels ...*release.Release) error {
 	return nil
 }
 
+// UninstallRelease deletes all of the resources associated with this release, and marks the release DELETED.
 func (s *ReleaseServer) UninstallRelease(c ctx.Context, req *services.UninstallReleaseRequest) (*services.UninstallReleaseResponse, error) {
 	if !checkClientVersion(c) {
 		return nil, errIncompatibleVersion

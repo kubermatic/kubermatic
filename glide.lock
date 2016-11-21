@@ -1,5 +1,5 @@
-hash: b12661e20f1fa2fe9594685a6f6843b53df0c1091f818fe20bfe16cb886336b7
-updated: 2016-11-17T10:06:44.032994588+01:00
+hash: 8bbb86cf5fd7103f3e16bf387bf9623546df2030697e57338b8f3893c3a69afc
+updated: 2016-11-21T12:27:16.235563515+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -475,7 +475,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/helm
-  version: f8037c83c647b56d9ef42d0d5254e5fc563e3048
+  version: 51bdad42756dfaf3234f53ef3d3cb6bcd94144c2
   subpackages:
   - cmd/helm/downloader
   - cmd/helm/helmpath
@@ -665,6 +665,7 @@ imports:
   - plugin/pkg/client/auth
   - plugin/pkg/client/auth/gcp
   - plugin/pkg/client/auth/oidc
+  - staging/src/k8s.io/client-go/1.4/_vendor/github.com/golang/glog
   - third_party/forked/golang/json
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
