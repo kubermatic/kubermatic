@@ -234,6 +234,9 @@ type ClusterAddon struct {
 	Metadata             api.ObjectMeta `json:"metadata"`
 	Name                 string         `json:"name"`
 	Phase                AddonPhase     `json:"phase"`
+	Version              int32
+	Deployed             time.Time
+	ReleaseName          string
 }
 
 // ClusterAddonList specifies a list of cluster addons

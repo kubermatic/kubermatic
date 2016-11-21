@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"io"
 	"k8s.io/helm/cmd/helm/downloader"
@@ -19,18 +20,16 @@ import (
 	"k8s.io/helm/pkg/tiller/environment"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	"k8s.io/kubernetes/staging/src/k8s.io/client-go/1.4/_vendor/github.com/golang/glog"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
 	stableRepository    = "stable"
 	stableRepositoryURL = "http://storage.googleapis.com/kubernetes-charts"
-)
 
-const (
 	localRepoIndexFilePath = "index.yaml"
 )
 
@@ -81,10 +80,10 @@ type HelmAddonManager struct {
 }
 
 // Install installs a given addon to the cluster
-func (a *HelmAddonManager) Install(addon *api.ClusterAddon) error {
+func (a *HelmAddonManager) Install(addon *api.ClusterAddon) (*api.ClusterAddon, error) {
 	c, err := getChart(fmt.Sprintf("stable/%s", addon.Name), "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req := services.InstallReleaseRequest{}
@@ -93,13 +92,17 @@ func (a *HelmAddonManager) Install(addon *api.ClusterAddon) error {
 	req.Values = &chart.Config{Raw: ""}
 	ctx := helm.NewContext()
 
-	_, err = a.tiller.InstallRelease(ctx, &req)
+	res, err := a.tiller.InstallRelease(ctx, &req)
 
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
-	return nil
+	addon.Version = res.Release.Version
+	addon.Deployed = time.Unix(res.Release.Info.GetFirstDeployed().Seconds, 0)
+	addon.ReleaseName = res.Release.Name
+
+	return addon, nil
 }
 
 // ListReleases lists all installed releases on the cluster
@@ -108,17 +111,26 @@ func (a *HelmAddonManager) ListReleases() error {
 }
 
 // Delete will delete a installed addon from the luster
-func (a *HelmAddonManager) Delete(rlsName string) error {
+func (a *HelmAddonManager) Delete(addon *api.ClusterAddon) error {
+	req := &services.UninstallReleaseRequest{}
+	req.Name = addon.ReleaseName
+	ctx := helm.NewContext()
+
+	_, err := a.tiller.UninstallRelease(ctx, req)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// UpdateRelease will update a installed addon in the cluster
-func (a *HelmAddonManager) UpdateRelease(rlsName string) error {
+// Update will update a installed addon in the cluster
+func (a *HelmAddonManager) Update(addon *api.ClusterAddon) error {
 	return nil
 }
 
-// RollbackRelease will rollback a release to the previous release
-func (a *HelmAddonManager) RollbackRelease(rlsName string) error {
+// Rollback will rollback a release to the previous release
+func (a *HelmAddonManager) Rollback(addon *api.ClusterAddon) error {
 	return nil
 }
 

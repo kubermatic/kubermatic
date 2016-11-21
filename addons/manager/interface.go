@@ -7,8 +7,8 @@ import (
 // AddonManager represents a addon manager
 type AddonManager interface {
 	ListReleases() error
-	Install(addon *api.ClusterAddon) error
-	Delete(rlsName string) error
-	UpdateRelease(rlsName string) error
-	RollbackRelease(rlsName string) error
+	Install(addon *api.ClusterAddon) (*api.ClusterAddon, error)
+	Delete(addon *api.ClusterAddon) error
+	Update(addon *api.ClusterAddon) error
+	Rollback(addon *api.ClusterAddon) error
 }

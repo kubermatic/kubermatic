@@ -237,16 +237,54 @@ func NewController(
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+				var phase api.AddonPhase
 				addon := obj.(*api.ClusterAddon)
-				err := cc.addonManager.Install(addon)
+
+				if addon.Phase != api.PendingAddonStatusPhase {
+					return
+				}
+
+				glog.V(4).Infof("Installing addon %s", addon.Name)
+
+				addon, err := cc.addonManager.Install(addon)
+				if err != nil {
+					glog.Error(err)
+					phase = api.FailedAddonStatusPhase
+				} else {
+					phase = api.RunningAddonStatusPhase
+				}
+
+				addon.Phase = phase
+
+				err = cc.tprClient.
+					Put().
+					Resource("clusteraddons").
+					Namespace(addon.Metadata.GetNamespace()).
+					Name(addon.Metadata.Name).
+					Body(addon).
+					Do().
+					Into(addon)
 				if err != nil {
 					glog.Error(err)
 				}
 			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				newAddon := newObj.(*api.ClusterAddon)
+				oldAddon := oldObj.(*api.ClusterAddon)
+
+				glog.V(4).Infof("Detected update on addon %s", newAddon.Metadata.Name)
+				if newAddon.Phase != oldAddon.Phase {
+					glog.V(4).Infof("Phase change for %s, from %s to %s", newAddon.Metadata.Name, oldAddon.Phase, newAddon.Phase)
+				}
+			},
 			DeleteFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)
-				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
-				//Tell helm now to remove the plugin in the cluster
+				glog.V(4).Infof("Deleting addon %s", addon.Metadata.Name)
+				err := cc.addonManager.Delete(addon)
+
+				if err != nil {
+					glog.Error(err)
+				}
 			},
 		},
 	)
