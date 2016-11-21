@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kubermatic/api/addons"
+	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
@@ -81,7 +81,7 @@ var RootCmd = &cobra.Command{
 				nil,
 			)
 
-			am, err := addons.NewAddonManager(clientConfig)
+			am, err := manager.NewHelmAddonManager(clientConfig)
 			if err != nil {
 				log.Fatal("failed to initialize addon manager: " + err.Error())
 			}

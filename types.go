@@ -109,6 +109,8 @@ type ClusterHealth struct {
 
 // ClusterPhase is the life cycle phase of a cluster.
 type ClusterPhase string
+
+// AddonPhase is the life cycle phase of a add on.
 type AddonPhase string
 
 const (
@@ -133,11 +135,17 @@ const (
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 
-	PendingAddonStatusPhase   AddonPhase = "Pending"
-	LaunchingAddonStatusPhase AddonPhase = "Launching"
-	FailedAddonStatusPhase    AddonPhase = "Failed"
-	DeletingAddonStatusPhase  AddonPhase = "Deleting"
-	RunningAddonStatusPhase   AddonPhase = "Running"
+	// PendingAddonStatusPhase means that the cluster controller hasn't picked the addon up
+	PendingAddonStatusPhase AddonPhase = "Pending"
+
+	// FailedAddonStatusPhase means that the cluster controller failed to install the add on
+	FailedAddonStatusPhase AddonPhase = "Failed"
+
+	// DeletingAddonStatusPhase means that the add on should be deleted by the cluster controller
+	DeletingAddonStatusPhase AddonPhase = "Deleting"
+
+	// RunningAddonStatusPhase means that the add on is up and running
+	RunningAddonStatusPhase AddonPhase = "Running"
 )
 
 type (
@@ -215,6 +223,7 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
+// ClusterAddonRequest specifies an request coming from the frontend to install a add on
 type ClusterAddonRequest struct {
 	Name string `json:"name"`
 }

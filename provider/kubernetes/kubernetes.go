@@ -288,18 +288,10 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 }
 
 func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
-	var resultAddon api.ClusterAddon
-
 	_, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
 	}
-
-	err = p.tprClient.Get().
-		Resource("clusteraddons").
-		Namespace(cluster).
-		Name(addonName).
-		Do().Into(&resultAddon)
 
 	// Create an instance of our TPR
 	addon := &api.ClusterAddon{
@@ -314,7 +306,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	err = p.tprClient.
 		Post().
 		Resource("clusteraddons").
-		Namespace(cluster).
+		Namespace(fmt.Sprintf("cluster-%s", cluster)).
 		Body(addon).
 		Do().
 		Into(&result)

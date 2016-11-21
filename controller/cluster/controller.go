@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/addons"
+	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
@@ -46,7 +46,7 @@ type clusterController struct {
 	dc                  string
 	client              *client.Client
 	tprClient           *client.Client
-	addonManager        addons.Interface
+	addonManager        manager.AddonManager
 	queue               *workqueue.Type // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
@@ -87,7 +87,7 @@ func NewController(
 	dc string,
 	client *client.Client,
 	tprClient *client.Client,
-	am *addons.AddonManager,
+	am manager.AddonManager,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -238,8 +238,7 @@ func NewController(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				addon := obj.(*api.ClusterAddon)
-				glog.V(4).Infof("Metadata.name: %s", addon.Metadata.Name)
-				err := cc.addonManager.Install(addon.Name)
+				err := cc.addonManager.Install(addon)
 				if err != nil {
 					glog.Error(err)
 				}
