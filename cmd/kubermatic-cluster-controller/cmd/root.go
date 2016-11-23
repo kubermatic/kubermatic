@@ -26,9 +26,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/util/wait"
+	"k8s.io/client-go/1.5/tools/clientcmd"
 )
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
@@ -82,7 +82,7 @@ var RootCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			client, err := client.New(cfg)
+			client, err := kubernetes.NewForConfig(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}

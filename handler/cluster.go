@@ -11,7 +11,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
 )
 
 func newClusterEndpoint(
@@ -153,10 +153,10 @@ type newClusterReq struct {
 	cluster api.Cluster
 }
 
-func decodeNewClusterReq(r *http.Request) (interface{}, error) {
+func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req newClusterReq
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -173,10 +173,10 @@ type clustersReq struct {
 	dcReq
 }
 
-func decodeClustersReq(r *http.Request) (interface{}, error) {
+func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req clustersReq
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -190,10 +190,10 @@ type clusterReq struct {
 	cluster string
 }
 
-func decodeClusterReq(r *http.Request) (interface{}, error) {
+func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req clusterReq
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -210,10 +210,10 @@ type setCloudReq struct {
 	cloud    api.CloudSpec
 }
 
-func decodeSetCloudReq(r *http.Request) (interface{}, error) {
+func decodeSetCloudReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req setCloudReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -241,10 +241,10 @@ type deleteClusterReq struct {
 	cluster string
 }
 
-func decodeDeleteClusterReq(r *http.Request) (interface{}, error) {
+func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteClusterReq
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}

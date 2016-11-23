@@ -10,10 +10,10 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/util/rand"
+	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
+	"k8s.io/client-go/1.5/pkg/apis/rbac"
+	"k8s.io/client-go/1.5/pkg/util/rand"
+	"k8s.io/client-go/1.5/rest"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)
@@ -28,7 +28,7 @@ type seedProvider struct {
 func NewSeedProvider(
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	cfgs map[string]restclient.Config,
+	cfgs map[string]rest.Config,
 	secrets *Secrets,
 ) provider.KubernetesProvider {
 	seeds := map[string]*api.Cluster{}

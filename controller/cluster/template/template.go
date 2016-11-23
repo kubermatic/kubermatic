@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	texttemplate "text/template"
 
-	"k8s.io/kubernetes/pkg/util/yaml"
+	"k8s.io/client-go/1.5/pkg/util/yaml"
 )
 
 // Template holds the actual cluster template

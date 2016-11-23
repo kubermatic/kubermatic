@@ -8,14 +8,15 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kapi "k8s.io/kubernetes/pkg/api"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/util/rand"
+	"k8s.io/client-go/1.5/kubernetes"
+	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
+	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/pkg/apis/rbac"
+	"k8s.io/client-go/1.5/pkg/fields"
+	"k8s.io/client-go/1.5/pkg/labels"
+	"k8s.io/client-go/1.5/pkg/util/rand"
+	"k8s.io/client-go/1.5/rest"
+	kapi "k8s.io/client-go/1.5/pkg/api"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -25,7 +26,7 @@ const (
 )
 
 type kubernetesProvider struct {
-	client *client.Client
+	client *kubernetes.Clientset
 
 	mu  sync.Mutex
 	cps map[string]provider.CloudProvider
@@ -34,11 +35,11 @@ type kubernetesProvider struct {
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
-	clientConfig *restclient.Config,
+	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	dev bool,
 ) provider.KubernetesProvider {
-	client, err := client.New(clientConfig)
+	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,8 +77,8 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		}
 	}
 
-	ns := &kapi.Namespace{
-		ObjectMeta: kapi.ObjectMeta{
+	ns := &v1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
 			Name:        NamespaceName(user.Name, cluster),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
@@ -111,14 +112,15 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 
 	c, err = UnmarshalCluster(p.cps, ns)
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
+		o := kapi.DeleteOptions{}
+		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &o)
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *kapi.Namespace, error) {
+func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -156,7 +158,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 
 		var c *api.Cluster
-		var ns *kapi.Namespace
+		var ns *v1.Namespace
 		c, ns, err = p.clusterAndNS(user, cluster)
 		if err != nil {
 			return nil, err
@@ -232,6 +234,6 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	if err != nil {
 		return err
 	}
-
-	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
+	o := kapi.DeleteOptions{}
+	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &o)
 }

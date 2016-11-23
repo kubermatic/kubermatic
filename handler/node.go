@@ -112,10 +112,10 @@ type nodesReq struct {
 	clusterReq
 }
 
-func decodeNodesReq(r *http.Request) (interface{}, error) {
+func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +130,10 @@ type createNodesReq struct {
 	Spec      api.NodeSpec `json:"spec"`
 }
 
-func decodeCreateNodesReq(r *http.Request) (interface{}, error) {
+func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createNodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -151,10 +151,10 @@ type nodeReq struct {
 	uid string
 }
 
-func decodeNodeReq(r *http.Request) (interface{}, error) {
+func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodeReq
 
-	cr, err := decodeNodesReq(r)
+	cr, err := decodeNodesReq(c, r)
 	if err != nil {
 		return nil, err
 	}

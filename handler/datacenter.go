@@ -90,7 +90,7 @@ type dcsReq struct {
 	userReq
 }
 
-func decodeDatacentersReq(r *http.Request) (interface{}, error) {
+func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcsReq
 
 	ur, err := decodeUserReq(r)
@@ -107,7 +107,7 @@ type dcReq struct {
 	dc string
 }
 
-func decodeDcReq(r *http.Request) (interface{}, error) {
+func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcReq
 
 	dr, err := decodeUserReq(r)

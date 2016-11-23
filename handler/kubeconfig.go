@@ -9,8 +9,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
+	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
+	"k8s.io/client-go/1.5/tools/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(
@@ -34,26 +34,26 @@ func kubeconfigEndpoint(
 		}
 
 		id := fmt.Sprintf("%s-%s", req.dc, c.Metadata.Name)
-		cfg := capi.Config{
+		cfg := v1.Config{
 			Kind:           "Config",
 			APIVersion:     "v1",
 			CurrentContext: id,
-			Clusters: []capi.NamedCluster{capi.NamedCluster{
+			Clusters: []v1.NamedCluster{v1.NamedCluster{
 				Name: id,
-				Cluster: capi.Cluster{
+				Cluster: v1.Cluster{
 					Server: c.Address.URL,
 				},
 			}},
-			Contexts: []capi.NamedContext{capi.NamedContext{
+			Contexts: []v1.NamedContext{v1.NamedContext{
 				Name: id,
-				Context: capi.Context{
+				Context: v1.Context{
 					Cluster:  id,
 					AuthInfo: id,
 				},
 			}},
-			AuthInfos: []capi.NamedAuthInfo{capi.NamedAuthInfo{
+			AuthInfos: []v1.NamedAuthInfo{v1.NamedAuthInfo{
 				Name: id,
-				AuthInfo: capi.AuthInfo{
+				AuthInfo: v1.AuthInfo{
 					Token: c.Address.Token,
 				},
 			}},
@@ -67,10 +67,10 @@ type kubeconfigReq struct {
 	clusterReq
 }
 
-func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
+func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req kubeconfigReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +79,11 @@ func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func encodeKubeconfig(w http.ResponseWriter, response interface{}) (err error) {
+func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
 
-	cfg := response.(*capi.Config)
+	cfg := response.(*v1.Config)
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {
