@@ -139,10 +139,9 @@ func (t *Transport) initConnPool() {
 // ClientConn is the state of a single HTTP/2 client connection to an
 // HTTP/2 server.
 type ClientConn struct {
-	t         *Transport
-	tconn     net.Conn             // usually *tls.Conn, except specialized impls
-	tlsState  *tls.ConnectionState // nil only for specialized impls
-	singleUse bool                 // whether being used for a single http.Request
+	t        *Transport
+	tconn    net.Conn             // usually *tls.Conn, except specialized impls
+	tlsState *tls.ConnectionState // nil only for specialized impls
 
 	// readLoop goroutine fields:
 	readerDone chan struct{} // closed on error
@@ -154,7 +153,6 @@ type ClientConn struct {
 	inflow       flow       // peer's conn-level flow control
 	closed       bool
 	goAway       *GoAwayFrame             // if non-nil, the GoAwayFrame we received
-	goAwayDebug  string                   // goAway frame's debug data, retained as a string
 	streams      map[uint32]*clientStream // client-initiated
 	nextStreamID uint32
 	bw           *bufio.Writer
@@ -496,17 +494,7 @@ func (t *Transport) NewClientConn(c net.Conn) (*ClientConn, error) {
 func (cc *ClientConn) setGoAway(f *GoAwayFrame) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
-
-	old := cc.goAway
 	cc.goAway = f
-
-	// Merge the previous and current GoAway error frames.
-	if cc.goAwayDebug == "" {
-		cc.goAwayDebug = string(f.DebugData())
-	}
-	if old != nil && old.ErrCode != ErrCodeNo {
-		cc.goAway.ErrCode = old.ErrCode
-	}
 }
 
 func (cc *ClientConn) CanTakeNewRequest() bool {
@@ -516,9 +504,6 @@ func (cc *ClientConn) CanTakeNewRequest() bool {
 }
 
 func (cc *ClientConn) canTakeNewRequestLocked() bool {
-	if cc.singleUse && cc.nextStreamID > 1 {
-		return false
-	}
 	return cc.goAway == nil && !cc.closed &&
 		int64(len(cc.streams)+1) < int64(cc.maxConcurrentStreams) &&
 		cc.nextStreamID < 2147483647
@@ -1175,19 +1160,6 @@ func (cc *ClientConn) readLoop() {
 	}
 }
 
-// GoAwayError is returned by the Transport when the server closes the
-// TCP connection after sending a GOAWAY frame.
-type GoAwayError struct {
-	LastStreamID uint32
-	ErrCode      ErrCode
-	DebugData    string
-}
-
-func (e GoAwayError) Error() string {
-	return fmt.Sprintf("http2: server sent GOAWAY and closed the connection; LastStreamID=%v, ErrCode=%v, debug=%q",
-		e.LastStreamID, e.ErrCode, e.DebugData)
-}
-
 func (rl *clientConnReadLoop) cleanup() {
 	cc := rl.cc
 	defer cc.tconn.Close()
@@ -1198,18 +1170,10 @@ func (rl *clientConnReadLoop) cleanup() {
 	// TODO: also do this if we've written the headers but not
 	// gotten a response yet.
 	err := cc.readerErr
-	cc.mu.Lock()
 	if err == io.EOF {
-		if cc.goAway != nil {
-			err = GoAwayError{
-				LastStreamID: cc.goAway.LastStreamID,
-				ErrCode:      cc.goAway.ErrCode,
-				DebugData:    cc.goAwayDebug,
-			}
-		} else {
-			err = io.ErrUnexpectedEOF
-		}
+		err = io.ErrUnexpectedEOF
 	}
+	cc.mu.Lock()
 	for _, cs := range rl.activeRes {
 		cs.bufPipe.CloseWithError(err)
 	}
@@ -1227,7 +1191,7 @@ func (rl *clientConnReadLoop) cleanup() {
 
 func (rl *clientConnReadLoop) run() error {
 	cc := rl.cc
-	rl.closeWhenIdle = cc.t.disableKeepAlives() || cc.singleUse
+	rl.closeWhenIdle = cc.t.disableKeepAlives()
 	gotReply := false // ever saw a reply
 	for {
 		f, err := cc.fr.ReadFrame()
