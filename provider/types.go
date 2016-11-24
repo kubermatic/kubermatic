@@ -1,18 +1,9 @@
 package provider
 
 import (
-	"fmt"
-
 	"golang.org/x/net/context"
 
 	"github.com/kubermatic/api"
-)
-
-// Constants defining known cloud providers.
-const (
-	FakeCloudProvider         = "fake"
-	DigitaloceanCloudProvider = "digitalocean"
-	BringYourOwnCloudProvider = "bringyourown"
 )
 
 // User represents an API user that is used for authentication.
@@ -49,93 +40,4 @@ type KubernetesProvider interface {
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 	Clusters(user User) ([]*api.Cluster, error)
 	DeleteCluster(user User, cluster string) error
-}
-
-// ClusterCloudProviderName returns the provider name for the given CloudSpec.
-func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
-	}
-	return clouds[0], nil
-}
-
-// ClusterCloudProvider returns the provider for the given cluster where
-// one of Cluster.Spec.Cloud.* is set.
-func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (string, CloudProvider, error) {
-	name, err := ClusterCloudProviderName(c.Spec.Cloud)
-	if err != nil {
-		return "", nil, err
-	}
-	if name == "" {
-		return "", nil, nil
-	}
-
-	cp, found := cps[name]
-	if !found {
-		return "", nil, fmt.Errorf("unsupported cloud provider %q", name)
-	}
-
-	return name, cp, nil
-}
-
-// NodeCloudProviderName returns the provider name for the given node where
-// one of NodeSpec.Cloud.* is set.
-func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
-	}
-	return clouds[0], nil
-}
-
-// DatacenterCloudProviderName returns the provider name for the given Datacenter.
-func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
-	}
-	return clouds[0], nil
 }
