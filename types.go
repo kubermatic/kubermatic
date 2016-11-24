@@ -2,9 +2,9 @@ package api
 
 import (
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/meta"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"time"
-	"k8s.io/kubernetes/pkg/api/meta"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
