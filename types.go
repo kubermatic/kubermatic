@@ -6,64 +6,6 @@ import (
 	"github.com/kubermatic/api/provider/drivers/flag"
 )
 
-// Metadata is an object storing common metadata for persistable objects.
-type Metadata struct {
-	Name     string `json:"name"`
-	Revision string `json:"revision,omitempty"`
-	UID      string `json:"uid,omitempty"`
-
-	// private fields
-	Annotations map[string]string `json:"-"`
-	User        string            `json:"-"`
-}
-
-// NodeSpec mutually stores data of a cloud specific node.
-type NodeSpec struct {
-	// DC is a pointer to a specific Datacenet
-	DC string `json:"dc"`
-
-	Patches []flag.Flags `json:"patches_node"`
-}
-
-// NodeStatus stores status informations about a node.
-type NodeStatus struct {
-	Hostname  string            `json:"hostname"`
-	Addresses map[string]string `json:"addresses"`
-}
-
-// FlannelNetworkSpec specifies a deployed flannel network.
-type FlannelNetworkSpec struct {
-	CIDR string
-}
-
-// NetworkSpec specifies the deployed network.
-type NetworkSpec struct {
-	Flannel FlannelNetworkSpec
-}
-
-// CloudSpec mutually stores access data to a cloud provider.
-type CloudSpec struct {
-	DC string `json:"dc"`
-
-	Patches []flag.Flags `json:"patches_credentials"`
-
-	Network NetworkSpec `json:"-"`
-}
-
-// ClusterHealthStatus stores health information of the components of a cluster.
-type ClusterHealthStatus struct {
-	Apiserver  bool   `json:"apiserver"`
-	Scheduler  bool   `json:"scheduler"`
-	Controller bool   `json:"controller"`
-	Etcd       []bool `json:"etcd"`
-}
-
-// ClusterHealth stores health information of a cluster and the timestamp of the last change.
-type ClusterHealth struct {
-	ClusterHealthStatus `json:",inline"`
-	LastTransitionTime  time.Time `json:"lastTransitionTime"`
-}
-
 // ClusterPhase is the life cycle phase of a cluster.
 type ClusterPhase string
 
@@ -89,6 +31,67 @@ const (
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
+
+// Metadata is an object storing common metadata for persistable objects.
+type Metadata struct {
+	Name     string `json:"name"`
+	Revision string `json:"revision,omitempty"`
+	UID      string `json:"uid,omitempty"`
+
+	// private fields
+	Annotations map[string]string `json:"-"`
+	User        string            `json:"-"`
+}
+
+// NodeSpec mutually stores data of a cloud specific node.
+type NodeSpec struct {
+	// Dc is a reference to a datacenter which contains the information for the provider type.
+	// It refers to github.com/kubermatic/provider.Datacenter.ExactName
+	DcID string `json:"dc_id"`
+
+	Patches flag.Flags `json:"patches_node"`
+}
+
+// NodeStatus stores status informations about a node.
+type NodeStatus struct {
+	Hostname  string            `json:"hostname"`
+	Addresses map[string]string `json:"addresses"`
+}
+
+// FlannelNetworkSpec specifies a deployed flannel network.
+type FlannelNetworkSpec struct {
+	CIDR string `json:"-" yaml:"cidr"`
+}
+
+// NetworkSpec specifies the deployed network.
+type NetworkSpec struct {
+	Flannel FlannelNetworkSpec `json:"-" yaml:"flannel"`
+}
+
+// CloudSpec mutually stores access data to a cloud provider.
+type CloudSpec struct {
+	// Dc is a reference to a datacenter which contains the information for the provider type.
+	// It refers to github.com/kubermatic/provider.Datacenter.ExactName
+	DcID string `json:"dc_id"`
+
+	Patches flag.Flags `json:"patches_credentials"`
+
+	Network NetworkSpec `json:"-"`
+}
+
+// ClusterHealthStatus stores health information of the components of a cluster.
+type ClusterHealthStatus struct {
+	Apiserver  bool   `json:"apiserver"`
+	Scheduler  bool   `json:"scheduler"`
+	Controller bool   `json:"controller"`
+	Etcd       []bool `json:"etcd"`
+}
+
+// ClusterHealth stores health information of a cluster and the timestamp of the last change.
+type ClusterHealth struct {
+	ClusterHealthStatus `json:",inline"`
+	LastTransitionTime  time.Time `json:"lastTransitionTime"`
+}
 
 // Bytes stores a byte slices and ecnodes as base64 in JSON.
 type Bytes []byte
@@ -117,8 +120,8 @@ type ClusterStatus struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud             *CloudSpec `json:"cloud,omitempty"`
 	HumanReadableName string     `json:"humanReadableName"`
+	Cloud             *CloudSpec `json:"cloud,omitempty"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
@@ -132,10 +135,27 @@ type ClusterAddress struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Country  string `json:"country,omitempty"`
-	Location string `json:"location,omitempty"`
-	Provider string `json:"provider,omitempty"`
+	// DriverType refers to a registered provider in github.com/kubermatic/provider/drivers
+	DriverType string `json:"provider" yaml:"-"`
+
+	Country  string `json:"country,omitempty" yaml:"country"`
+	Location string `json:"location,omitempty" yaml:"location"`
+
+	// Routing information
+	Region    string `json:"-" yaml:"region,omitempty"`
+	Zone      string `json:"-" yaml:"zone,omitempty"`
+	ExactName string `json:"-" yaml:"ExactName"`
+
+	CustomerPatches flag.Flags `json:"-" yaml:"customer-patches,omitempty"` // Patches that are applied to customer clusters.
+	SeedPatches     flag.Flags `json:"-" yaml:"seed-patches,omitempty"`     // Patches that are applied to seed clusters.
+
+	Private bool `json:"-" yaml:"private"`
 }
+
+/* Cluster, Datacenter and Node are all Serializeable units which represent the
+state of a Cluster, Datacenter or node. The inner spec flieds are for creating
+or bootstrapping a component. They contain user defined information which
+weren't marshaled before. */
 
 // Cluster is the object representating a cluster.
 type Cluster struct {
@@ -149,7 +169,8 @@ type Cluster struct {
 type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
-	Seed     bool           `json:"seed,omitempty"`
+
+	Seed bool `json:"seed,omitempty"`
 }
 
 // Node is the object representing a cluster node.
