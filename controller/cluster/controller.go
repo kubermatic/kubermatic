@@ -246,11 +246,12 @@ func NewController(
 
 				glog.V(4).Infof("Installing addon %s", addon.Name)
 
-				addon, err := cc.addonManager.Install(addon)
+				installedAddon, err := cc.addonManager.Install(addon)
 				if err != nil {
 					glog.Error(err)
 					phase = api.FailedAddonStatusPhase
 				} else {
+					addon = installedAddon
 					phase = api.RunningAddonStatusPhase
 				}
 

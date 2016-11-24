@@ -1,11 +1,10 @@
 package api
 
 import (
-	"encoding/json"
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/meta"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"time"
+	"k8s.io/kubernetes/pkg/api/meta"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -223,11 +222,6 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
-// ClusterAddonRequest specifies an request coming from the frontend to install a add on
-type ClusterAddonRequest struct {
-	Name string `json:"name"`
-}
-
 // ClusterAddon specifies a cluster addon
 type ClusterAddon struct {
 	unversioned.TypeMeta `json:",inline"`
@@ -265,32 +259,4 @@ func (el *ClusterAddonList) GetObjectKind() unversioned.ObjectKind {
 //GetListMeta returns the list object metadata
 func (el *ClusterAddonList) GetListMeta() unversioned.List {
 	return &el.Metadata
-}
-
-// Code below is a needed workaround, see: https://github.com/kubernetes/client-go/issues/8
-type clusterAddonListCopy ClusterAddonList
-type clusterAddonCopy ClusterAddon
-
-//UnmarshalJSON doe a json.Unmarshal. Needed for kubernetes
-func (e *ClusterAddon) UnmarshalJSON(data []byte) error {
-	tmp := clusterAddonCopy{}
-	err := json.Unmarshal(data, &tmp)
-	if err != nil {
-		return err
-	}
-	tmp2 := ClusterAddon(tmp)
-	*e = tmp2
-	return nil
-}
-
-//UnmarshalJSON doe a json.Unmarshal. Needed for kubernetes
-func (el *ClusterAddonList) UnmarshalJSON(data []byte) error {
-	tmp := clusterAddonListCopy{}
-	err := json.Unmarshal(data, &tmp)
-	if err != nil {
-		return err
-	}
-	tmp2 := ClusterAddonList(tmp)
-	*el = tmp2
-	return nil
 }
