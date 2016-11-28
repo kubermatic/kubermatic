@@ -246,7 +246,7 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 
 // marshalClusterCloud returns annotations to persist Spec.Cloud
 func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (annotations map[string]string, err error) {
-	cloudAs, err := cp.Marshal(c.Spec.Cloud)
+	cloudAs, err := cp.MarshalCloudSpec(c.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, annotations
 	}
 
 	var err error
-	spec, err := cp.Unmarshal(cloudAs)
+	spec, err := cp.UnmarshalCloudSpec(cloudAs)
 	if err != nil {
 		return nil, err
 	}

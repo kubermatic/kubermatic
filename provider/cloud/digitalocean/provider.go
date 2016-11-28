@@ -35,7 +35,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
+func (do *digitalocean) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
@@ -43,7 +43,7 @@ func (do *digitalocean) Marshal(cloud *api.CloudSpec) (map[string]string, error)
 	return as, nil
 }
 
-func (do *digitalocean) Unmarshal(annotations map[string]string) (*api.CloudSpec, error) {
+func (do *digitalocean) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		Digitalocean: &api.DigitaloceanCloudSpec{
 			SSHKeys: []string{},

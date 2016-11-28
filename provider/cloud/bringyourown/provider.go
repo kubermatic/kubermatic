@@ -25,7 +25,7 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (b *bringyourown) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
+func (b *bringyourown) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		privateIntfAnnotationKey: cloud.BringYourOwn.PrivateIntf,
 	}
@@ -39,7 +39,7 @@ func (b *bringyourown) Marshal(cloud *api.CloudSpec) (map[string]string, error) 
 	return as, nil
 }
 
-func (b *bringyourown) Unmarshal(as map[string]string) (*api.CloudSpec, error) {
+func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		BringYourOwn: &api.BringYourOwnCloudSpec{
 			PrivateIntf: as[privateIntfAnnotationKey],

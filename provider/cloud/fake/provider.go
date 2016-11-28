@@ -21,14 +21,14 @@ func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{}
 }
 
-func (p *fakeCloudProvider) Marshal(cloud *api.CloudSpec) (map[string]string, error) {
+func (p *fakeCloudProvider) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{}
 	as[tokenAnnotationKey] = cloud.Fake.Token
 
 	return as, nil
 }
 
-func (p *fakeCloudProvider) Unmarshal(as map[string]string) (*api.CloudSpec, error) {
+func (p *fakeCloudProvider) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		Fake: &api.FakeCloudSpec{},
 	}
