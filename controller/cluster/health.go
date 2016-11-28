@@ -2,10 +2,9 @@ package cluster
 
 import (
 	"github.com/kubermatic/api"
-	"k8s.io/client-go/1.5/pkg/labels"
-	"k8s.io/client-go/1.5/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/1.5/tools/cache"
-	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/labels"
 )
 
 const (
@@ -14,11 +13,7 @@ const (
 
 func (cc *clusterController) healthyDep(dep *v1beta1.Deployment) (bool, error) {
 	replicas := dep.Spec.Replicas
-	var pods []*v1.Pod
-	err := cache.ListAllByNamespace(cc.podStore, dep.Namespace, labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels)), func(m interface{}) {
-		pods = append(pods, m.(*v1.Pod))
-	})
-
+	pods, err := cc.podStore.List(labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels)))
 	if err != nil {
 		return false, err
 	}

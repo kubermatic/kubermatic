@@ -10,20 +10,20 @@ import (
 	"github.com/kubermatic/api/controller"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
-	"k8s.io/client-go/1.5/kubernetes"
-	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
-	kapi "k8s.io/client-go/1.5/pkg/api"
-	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/labels"
-	"k8s.io/client-go/1.5/pkg/runtime"
-	"k8s.io/client-go/1.5/pkg/types"
-	uruntime "k8s.io/client-go/1.5/pkg/util/runtime"
-	"k8s.io/client-go/1.5/pkg/util/wait"
-	"k8s.io/client-go/1.5/pkg/watch"
-	"k8s.io/client-go/1.5/tools/cache"
-	"k8s.io/client-go/1.5/tools/record"
-	"k8s.io/client-go/1.5/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	kapi "k8s.io/client-go/pkg/api"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/types"
+	uruntime "k8s.io/client-go/pkg/util/runtime"
+	"k8s.io/client-go/pkg/util/wait"
+	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 	launchTimeout                  = 5 * time.Minute
 
 	workerPeriod        = time.Second
-	QueueResyncPeriod   = 10 * time.Millisecond
+	queueResyncPeriod   = 10 * time.Millisecond
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
@@ -55,7 +55,7 @@ type clusterController struct {
 	nsStore      cache.Store
 
 	podController *cache.Controller
-	podStore      cache.Indexer
+	podStore      cache.StoreToPodLister
 
 	depController *cache.Controller
 	depStore      cache.Indexer
@@ -89,7 +89,7 @@ func NewController(
 	cc := &clusterController{
 		dc:                  dc,
 		client:              client,
-		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil}),
+		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
@@ -115,11 +115,11 @@ func NewController(
 
 	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels))
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels)).String()
 				return cc.client.Namespaces().List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Namespaces().Watch(options)
 			},
 		},
@@ -148,12 +148,12 @@ func NewController(
 		"namespace": cache.IndexFunc(cache.MetaNamespaceIndexFunc),
 	}
 
-	cc.podStore, cc.podController = cache.NewIndexerInformer(
+	cc.podStore.Indexer, cc.podController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.Pods(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Pods(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -165,10 +165,10 @@ func NewController(
 
 	cc.depStore, cc.depController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.Deployments(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Deployments(kapi.NamespaceAll).Watch(options)
 			},
 		},
@@ -179,10 +179,10 @@ func NewController(
 	)
 	cc.secretStore, cc.secretController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.Secrets(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Secrets(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -194,10 +194,10 @@ func NewController(
 
 	cc.serviceStore, cc.serviceController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.Services(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Services(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -209,10 +209,10 @@ func NewController(
 
 	cc.ingressStore, cc.ingressController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.Extensions().Ingresses(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Extensions().Ingresses(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -326,7 +326,10 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 	obj, exists, err := cc.nsStore.GetByKey(key)
 	if err != nil {
 		glog.Infof("Unable to retrieve namespace %q from store: %v", key, err)
-		cc.queue.Add(key)
+		addErr := cc.queue.Add(key)
+		if addErr != nil {
+			glog.Infof("Unable to add namespace %q to queue: %v", key, addErr)
+		}
 		return err
 	}
 	if !exists {
@@ -405,11 +408,15 @@ func (cc *clusterController) enqueue(ns *v1.Namespace) {
 		return
 	}
 
-	cc.queue.Add(key)
+	err = cc.queue.Add(key)
+	if err != nil {
+		glog.Errorf("Unable to add namespace %q to queue: %v", key, err)
+		return
+	}
 }
 
 func (cc *clusterController) worker() {
-	nsKey, err := cc.queue.Pop(func(nsKey interface{}) error{
+	nsKey, err := cc.queue.Pop(func(nsKey interface{}) error {
 		return nil
 	})
 
@@ -423,7 +430,6 @@ func (cc *clusterController) worker() {
 	if err != nil {
 		glog.Errorf("Error syncing cluster with key %s: %v", nsKey.(string), err)
 	}
-
 
 }
 
@@ -457,7 +463,12 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
-	go wait.Until(func() { cc.queue.Resync() }, QueueResyncPeriod, stopCh)
+	go wait.Until(func() {
+		err := cc.queue.Resync()
+		if err != nil {
+			glog.Errorf("Error syncing queue: %v", err)
+		}
+	}, queueResyncPeriod, stopCh)
 
 	<-stopCh
 

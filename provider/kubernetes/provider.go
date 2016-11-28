@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api/provider"
-	"k8s.io/client-go/1.5/rest"
-	"k8s.io/client-go/1.5/tools/clientcmd"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // Providers creates KubernetesProviders for each context in the kubeconfig

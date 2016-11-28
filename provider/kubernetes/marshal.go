@@ -10,7 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (

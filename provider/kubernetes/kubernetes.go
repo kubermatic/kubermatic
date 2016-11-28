@@ -8,15 +8,14 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	"k8s.io/client-go/1.5/kubernetes"
-	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/apis/rbac"
-	"k8s.io/client-go/1.5/pkg/fields"
-	"k8s.io/client-go/1.5/pkg/labels"
-	"k8s.io/client-go/1.5/pkg/util/rand"
-	"k8s.io/client-go/1.5/rest"
-	kapi "k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/kubernetes"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/util/rand"
+	"k8s.io/client-go/rest"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -112,8 +111,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 
 	c, err = UnmarshalCluster(p.cps, ns)
 	if err != nil {
-		o := kapi.DeleteOptions{}
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &o)
+		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
 		return nil, err
 	}
 
@@ -205,10 +203,10 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	nsList, err := p.client.Namespaces().List(kapi.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
 		RoleLabelKey: ClusterRoleLabel,
 		userLabelKey: LabelUser(user.Name),
-	})), FieldSelector: fields.Everything()})
+	})).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}
@@ -234,6 +232,5 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	if err != nil {
 		return err
 	}
-	o := kapi.DeleteOptions{}
-	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &o)
+	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
 }

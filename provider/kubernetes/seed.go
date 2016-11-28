@@ -10,10 +10,10 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
-	"k8s.io/client-go/1.5/pkg/apis/rbac"
-	"k8s.io/client-go/1.5/pkg/util/rand"
-	"k8s.io/client-go/1.5/rest"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/util/rand"
+	"k8s.io/client-go/rest"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)

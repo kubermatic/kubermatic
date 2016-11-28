@@ -9,8 +9,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
-	"k8s.io/client-go/1.5/tools/clientcmd/api/v1"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(

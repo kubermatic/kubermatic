@@ -11,7 +11,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/client-go/1.5/pkg/api/errors"
+	kerrors "k8s.io/client-go/pkg/api/errors"
 )
 
 func newClusterEndpoint(

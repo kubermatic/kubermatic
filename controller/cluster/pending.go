@@ -23,9 +23,8 @@ import (
 	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
-	kapi "k8s.io/client-go/1.5/pkg/api"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -200,8 +199,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 				continue
 			}
 
-			o := kapi.DeleteOptions{}
-			err = cc.client.Secrets(ns).Delete(s, &o)
+			err = cc.client.Secrets(ns).Delete(s, &v1.DeleteOptions{})
 			if err != nil {
 				return nil, err
 			}
