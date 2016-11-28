@@ -166,7 +166,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			Image:             image,
 			Size:              nSpec.Size,
 			PrivateNetworking: true,
-			SSHKeys:           dropletKeys(nSpec.SSHKeyNames),
+			SSHKeys:           dropletKeys(nSpec.SSHKeyFingerprints),
 			Name:              dropletName,
 			UserData:          buf.String(),
 		}

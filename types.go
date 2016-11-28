@@ -23,9 +23,10 @@ type DigitaloceanNodeSpec struct {
 	Type string `json:"type"`
 	// Size is the size of the node (DigitalOcean node type).
 	Size string `json:"size"`
-	// SSHKeyNames represent the fingerprints of the keys.
-	// Digitalocean utilizes the fingerprints to identify SSHKeys stored at digitalocean.
-	SSHKeyNames []string `json:"sshKeys,omitempty"`
+	// SSHKeyFingerprints  represent the fingerprints of the keys.
+	// DigitalOcean utilizes the fingerprints to identify public
+	// SSHKeys stored within the DigitalOcean platform.
+	SSHKeyFingerprints []string `json:"sshKeys,omitempty"`
 }
 
 // BringYourOwnNodeSpec specifies a bring your own node
