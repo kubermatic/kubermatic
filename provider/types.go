@@ -23,9 +23,9 @@ type User struct {
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
-	PrepareCloudSpec(*api.Cluster) error
-	CreateAnnotations(*api.CloudSpec) (map[string]string, error)
-	Cloud(annotations map[string]string) (*api.CloudSpec, error)
+	InitializeCloudSpec(*api.Cluster) error
+	MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error)
+	UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error)
 }
 
 // NodeProvider declares methods for creating/listing nodes.
@@ -44,10 +44,19 @@ type CloudProvider interface {
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
+	// NewCluster creates a cluster for the provided user using the given ClusterSpec.
 	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
+
+	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
+
+	// SetCloud updates CloudSpec settings on the given cluster for the given user
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
+
+	// Cluster returns all clusters for a given user.
 	Clusters(user User) ([]*api.Cluster, error)
+
+	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
 }
 
