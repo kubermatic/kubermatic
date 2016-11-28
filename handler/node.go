@@ -58,9 +58,9 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 		}
 
 		// Metalinter is buggy due to a bug see: https://github.com/golang/linter/issues/46
-		clusterKubernetesURL := fmt.Sprintf(c.Address.URL + "/api/v1/nodes")
+		urlKubernetes := fmt.Sprintf(c.Address.URL + "/api/v1/nodes")
 		hCl := &http.Client{}
-		hReq, err := http.NewRequest("GET", clusterKubernetesURL, nil)
+		hReq, err := http.NewRequest("GET", urlKubernetes, nil)
 		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
 		if err != nil {
 			return []byte{}, nil
@@ -95,9 +95,9 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 			return nil, err
 		}
 
-		clusterKubernetesURL := fmt.Sprintf(c.Address.URL + fmt.Sprintf("/api/v1/nodes/%s", req.uid))
+		urlKubernetes := fmt.Sprintf(c.Address.URL + fmt.Sprintf("/api/v1/nodes/%s", req.uid))
 		hCl := &http.Client{}
-		hReq, err := http.NewRequest("GET", clusterKubernetesURL, nil)
+		hReq, err := http.NewRequest("GET", urlKubernetes, nil)
 		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
 		if err != nil {
 			return []byte{}, nil
