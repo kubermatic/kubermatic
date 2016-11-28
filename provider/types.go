@@ -45,7 +45,7 @@ type CloudProvider interface {
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
 	// NewCluster creates a cluster for the provided user using the given ClusterSpec.
-	NewCluster(user User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error)
+	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)

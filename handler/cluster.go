@@ -30,7 +30,7 @@ func newClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.NewCluster(req.user, req.cluster.Metadata.Name, &req.cluster.Spec)
+		c, err := kp.NewCluster(req.user, &req.cluster.Spec)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				return nil, NewConflict("cluster", req.dc, req.cluster.Spec.HumanReadableName)
