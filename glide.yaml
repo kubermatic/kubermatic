@@ -1,7 +1,7 @@
 package: github.com/kubermatic/api
 import:
 - package: k8s.io/client-go
-  version: ~1.5
+  version: master
 - package: github.com/auth0/go-jwt-middleware
 - package: github.com/digitalocean/godo
   version: c3a2aad75d576aed8f14dcaea896e40eff83dd18
