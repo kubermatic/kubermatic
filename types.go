@@ -19,9 +19,9 @@ type Metadata struct {
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
 type DigitaloceanNodeSpec struct {
-	// Type specifies the type of the image used to create the node.
+	// Type specifies the name of the image used to create the node.
 	Type string `json:"type"`
-	// Size is the size of the node.
+	// Size is the size of the node (DigitalOcean node type).
 	Size string `json:"size"`
 	// SSHKeyNames represent the fingerprints of the keys.
 	// Digitalocean utilizes the fingerprints to identify SSHKeys stored at digitalocean.
