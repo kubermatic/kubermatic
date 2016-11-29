@@ -70,6 +70,12 @@ func (d *Datacenters) init() error {
 			bufsum.Reset()
 			hash.Reset()
 
+			if dup, exsists := d.driversByID[provider.ID]; exsists {
+				err = fmt.Errorf(`a datacenter with the id %q already exsists.
+				It has the values %v.
+				It's duplicate has %v`, provider.ID, provider, old)
+				panic(err)
+			}
 			d.driversByID[provider.ID] = provider
 		}
 	}
