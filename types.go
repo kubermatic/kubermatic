@@ -129,6 +129,11 @@ type ClusterAddress struct {
 	Token   string `json:"token"`
 }
 
+/* Cluster, DatacenterSpec and Node are all Serializeable units which represent the
+state of a Cluster, Datacenter or node. The inner spec flieds are for creating
+or bootstrapping a component. They contain user defined information which
+weren't marshaled before. */
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	// DriverType refers to a registered provider in github.com/kubermatic/provider/drivers
@@ -147,11 +152,6 @@ type DatacenterSpec struct {
 
 	Private bool `json:"-" yaml:"private"`
 }
-
-/* Cluster, Datacenter and Node are all Serializeable units which represent the
-state of a Cluster, Datacenter or node. The inner spec flieds are for creating
-or bootstrapping a component. They contain user defined information which
-weren't marshaled before. */
 
 // Cluster is the object representating a cluster.
 type Cluster struct {
