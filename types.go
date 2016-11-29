@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/kubermatic/api/provider/drivers"
 	"github.com/kubermatic/api/provider/drivers/flag"
 )
 
@@ -74,6 +75,7 @@ type CloudSpec struct {
 	// It refers to github.com/kubermatic/provider.Datacenter.ExactName
 	DcID string `json:"dc_id"`
 
+	// Patches respresent information used.
 	Patches flag.Flags `json:"patches_credentials"`
 
 	Network NetworkSpec `json:"-"`
@@ -159,23 +161,26 @@ weren't marshaled before. */
 
 // Cluster is the object representating a cluster.
 type Cluster struct {
-	Metadata Metadata        `json:"metadata"`
-	Spec     ClusterSpec     `json:"spec"`
-	Address  *ClusterAddress `json:"address,omitempty"`
-	Status   ClusterStatus   `json:"status,omitempty"`
+	Metadata Metadata `json:"metadata"`
+
+	Spec    ClusterSpec     `json:"spec"`
+	Address *ClusterAddress `json:"address,omitempty"`
+	Status  ClusterStatus   `json:"status,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
 type Datacenter struct {
-	Metadata Metadata       `json:"metadata"`
-	Spec     DatacenterSpec `json:"spec"`
+	Metadata Metadata `json:"metadata"`
 
-	Seed bool `json:"seed,omitempty"`
+	Spec DatacenterSpec `json:"spec"`
+	Seed bool           `json:"seed,omitempty"`
 }
 
 // Node is the object representing a cluster node.
 type Node struct {
-	Metadata Metadata   `json:"metadata"`
-	Spec     NodeSpec   `json:"spec"`
-	Status   NodeStatus `json:"status,omitempty"`
+	Metadata Metadata `json:"metadata"`
+
+	Spec     NodeSpec               `json:"spec"`
+	Instance drivers.DriverInstance `json:"driver_data"`
+	Status   NodeStatus             `json:"status,omitempty"`
 }
