@@ -53,12 +53,6 @@ type NodeSpec struct {
 	Patches flag.Flags `json:"patches_node"`
 }
 
-// NodeStatus stores status informations about a node.
-type NodeStatus struct {
-	Hostname  string            `json:"hostname"`
-	Addresses map[string]string `json:"addresses"`
-}
-
 // FlannelNetworkSpec specifies a deployed flannel network.
 type FlannelNetworkSpec struct {
 	CIDR string `json:"-" yaml:"cidr"`
@@ -180,7 +174,6 @@ type Datacenter struct {
 type Node struct {
 	Metadata Metadata `json:"metadata"`
 
-	Spec     NodeSpec               `json:"spec"`
-	Instance drivers.DriverInstance `json:"driver_data"`
-	Status   NodeStatus             `json:"status,omitempty"`
+	Spec   NodeSpec               `json:"spec"`
+	Status drivers.DriverInstance `json:"status,omitempty"`
 }
