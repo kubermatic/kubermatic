@@ -138,9 +138,9 @@ type DatacenterSpec struct {
 	Location string `json:"location,omitempty" yaml:"location"`
 
 	// Routing information
-	Region    string `json:"-" yaml:"region,omitempty"`
-	Zone      string `json:"-" yaml:"zone,omitempty"`
-	ExactName string `json:"-" yaml:"ExactName"`
+	Region        string `json:"region,omitempty" yaml:"region,omitempty"`
+	Zone          string `json:"zone,omitempty" yaml:"zone,omitempty"`
+	DisplayedName string `json:"name,omitempty" yaml:"displayed-name,omitempty"`
 
 	CustomerPatches flag.Flags `json:"-" yaml:"customer-patches,omitempty"` // Patches that are applied to customer clusters.
 	SeedPatches     flag.Flags `json:"-" yaml:"seed-patches,omitempty"`     // Patches that are applied to seed clusters.
