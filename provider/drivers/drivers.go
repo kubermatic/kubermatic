@@ -15,55 +15,40 @@ type Driver interface {
 	drivers.Driver
 }
 
-// auxDriverInstance for isolation.
-type auxDriverInstance struct {
+// DriverInstance is a instanciated Driver, which can be serialized over json.
+type DriverInstance struct {
 	Driver     `json:"driver"`
 	DriverType string `json:"driver_type"`
 }
 
-func newAux(d *DriverInstance) *auxDriverInstance {
-	return &auxDriverInstance{
-		Driver:     d.Driver,
-		DriverType: d.driverType,
-	}
-}
-
-// DriverInstance is a instanciated Driver, which can be serialized over json.
-type DriverInstance struct {
-	Driver
-	driverType string
-}
-
-// MarshalJSON marshales a struct into JSON.
-func (d *DriverInstance) MarshalJSON() ([]byte, error) {
-	return json.Marshal(newAux(d))
-}
-
 // UnmarshalJSON unmarshals from JSON.
 func (d *DriverInstance) UnmarshalJSON(b []byte) error {
-	var nameHolder struct {
-		DriverType string `json:"driver_type"`
-	}
+	var (
+		nameHolder struct {
+			DriverType string `json:"driver_type"`
+		}
+		driverHolder struct {
+			Driver `json:"driver"`
+		}
+	)
 
 	if err := json.Unmarshal(b, &nameHolder); err != nil {
 		return err
 	}
 
-	// This creates a driver in the root dir but overwrites it
-	// It can be higly dangerous when used with untrusted json.
 	emptyDriverInstance, err := AvaliableDrivers.getEmptyDriver("", "")
 	if err != nil {
 		return err
 	}
-	aux := auxDriverInstance{Driver: emptyDriverInstance}
 
-	if err = json.Unmarshal(b, &aux); err != nil {
+	driverHolder.Driver = emptyDriverInstance
+	if err = json.Unmarshal(b, &driverHolder); err != nil {
 		return err
 	}
 
 	*d = DriverInstance{
-		Driver:     aux.Driver,
-		driverType: aux.DriverType,
+		Driver:     driverHolder.Driver,
+		DriverType: nameHolder.DriverType,
 	}
 	return nil
 }
