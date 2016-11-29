@@ -2,6 +2,7 @@ package provider
 
 import (
 	"bytes"
+	"fmt"
 	"hash/fnv"
 	"io/ioutil"
 
@@ -30,6 +31,8 @@ type Datacenter struct {
 type Datacenters struct {
 	// Provider are all seed datacenters. Each key is the name of a datacenter provider.
 	Drivers map[string][]Datacenter `yaml:"driver"`
+
+	driversByID map[string]Datacenter `yaml:"-"`
 }
 
 // init creates the uid for each DC which is used by the computer.
@@ -66,14 +69,20 @@ func (d *Datacenters) init() error {
 
 			bufsum.Reset()
 			hash.Reset()
+
+			d.driversByID[provider.ID] = provider
 		}
 	}
 	return nil
 }
 
 // ByID returns a datacenter by it's ID.
-func (d *Datacenters) ByID(id string) *Datacenter {
-
+func (d *Datacenters) ByID(id string) (Datacenter, error) {
+	d, ok := d.driversByID[id]
+	if !ok {
+		return nil, fmt.Errorf("couldn't find a datacenter with the id %q", id)
+	}
+	return d, nil
 }
 
 // UnmarshalYAML takes a binary yaml file and parses it into a Datacenters struct,
