@@ -162,14 +162,6 @@ type Cluster struct {
 	Status  ClusterStatus   `json:"status,omitempty"`
 }
 
-// Datacenter is the object representing a Kubernetes infra datacenter.
-type Datacenter struct {
-	Metadata Metadata `json:"metadata"`
-
-	Spec DatacenterSpec `json:"spec"`
-	Seed bool           `json:"seed,omitempty"`
-}
-
 // Node is the object representing a cluster node.
 type Node struct {
 	Metadata Metadata `json:"metadata"`
