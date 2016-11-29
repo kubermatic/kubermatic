@@ -41,29 +41,39 @@ func (d *Datacenters) init() error {
 	for name, providers := range d.Drivers {
 		for _, provider := range providers {
 			provider.DriverType = name
+
 			_, err = bufsum.WriteString(provider.Metainfo.ExactName)
 			if err != nil {
 				return err
 			}
+
 			_, err = bufsum.WriteString(provider.Metainfo.Location)
 			if err != nil {
 				return err
 			}
+
 			_, err = bufsum.WriteString(provider.Metainfo.Country)
 			if err != nil {
 				return err
 			}
+
 			_, err = bufsum.WriteString(provider.Metainfo.DriverType)
 			if err != nil {
 				return err
 			}
 
 			provider.ID = base64.URLEncoding.EncodeToString(hash.Sum(bufsum.Bytes()))
+
 			bufsum.Reset()
 			hash.Reset()
 		}
 	}
 	return nil
+}
+
+// ByID returns a datacenter by it's ID.
+func (d *Datacenters) ByID(id string) *Datacenter {
+
 }
 
 // UnmarshalYAML takes a binary yaml file and parses it into a Datacenters struct,
