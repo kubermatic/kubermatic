@@ -56,12 +56,6 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
-	// check that the TLS secret is available
-	err = cc.launchingCheckTLSSecret(c)
-	if err != nil {
-		return nil, err
-	}
-
 	// check that the ingress is available
 	err = cc.launchingCheckIngress(c)
 	if err != nil {
@@ -336,39 +330,6 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 	return c, nil
 }
 
-func (cc *clusterController) launchingCheckTLSSecret(c *api.Cluster) error {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	key := fmt.Sprintf("%s/%s", ns, "apiserver-tls")
-	_, exists, err := cc.secretStore.GetByKey(key)
-	if err != nil {
-		return err
-	}
-	if exists {
-		glog.V(6).Infof("Skipping already existing secret %q", key)
-		return nil
-	}
-
-	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, "apiserver-tls-secret.yaml"))
-	if err != nil {
-		return err
-	}
-
-	var secret kapi.Secret
-	err = t.Execute(nil, &secret)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = cc.client.Secrets(ns).Create(&secret)
-	if err != nil {
-		return err
-	}
-
-	cc.recordClusterEvent(c, "launching", "Created secret %q", key)
-	return nil
-}
-
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	loadFile := func(s string) (*extensions.Ingress, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-ingress.yaml"))
@@ -397,7 +358,6 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	}
 
 	ingress := map[string]func(s string) (*extensions.Ingress, error){
-		"https": loadFile,
 		"sniff": loadFile,
 	}
 
