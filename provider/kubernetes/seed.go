@@ -41,7 +41,7 @@ func NewSeedProvider(
 			Spec: api.ClusterSpec{
 				HumanReadableName: dcName,
 				Cloud: &api.CloudSpec{
-					DC: dcName,
+					DatacenterName: dcName,
 					Network: api.NetworkSpec{
 						Flannel: api.FlannelNetworkSpec{
 							CIDR: flannelCIDRADefault,
