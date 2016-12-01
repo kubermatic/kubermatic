@@ -38,7 +38,6 @@ const (
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
-	etcdURLFormat       = "etcd-%s"
 )
 
 type clusterController struct {
@@ -48,7 +47,6 @@ type clusterController struct {
 	recorder            record.EventRecorder
 	masterResourcesPath string
 	externalURL         string
-	etcdURL             string
 	overwriteHost       string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *framework.Controller
@@ -97,7 +95,6 @@ func NewController(
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
-		etcdURL:             fmt.Sprintf(etcdURLFormat, externalURL),
 		dev:                 dev,
 		overwriteHost:       overwriteHost,
 	}
