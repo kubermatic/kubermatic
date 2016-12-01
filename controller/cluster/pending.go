@@ -62,6 +62,12 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return nil, err
 	}
 
+	// check that all pcv's are available
+	err = cc.launchingCheckPvcs(c)
+	if err != nil {
+		return nil, err
+	}
+
 	// check that all deployments are available
 	err = cc.launchingCheckDeployments(c)
 	if err != nil {
@@ -472,6 +478,58 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
+	}
+
+	return nil
+}
+
+func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+
+	loadFile := func(s string) (*kapi.PersistentVolumeClaim, error) {
+		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-pvc.yaml"))
+		if err != nil {
+			return nil, err
+		}
+
+		var pvc kapi.PersistentVolumeClaim
+		data := struct {
+			ClusterName string
+		}{
+			ClusterName: c.Metadata.Name,
+		}
+		err = t.Execute(data, &pvc)
+		return &pvc, err
+	}
+
+	pvcs := map[string]func(s string) (*kapi.PersistentVolumeClaim, error){
+		"etcd":        loadFile,
+		"etcd-public": loadFile,
+	}
+
+	for s, gen := range pvcs {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.pvcStore.GetByKey(key)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			glog.V(6).Infof("Skipping already existing pvc %q", key)
+			continue
+		}
+
+		pvc, err := gen(s)
+		if err != nil {
+			return err
+		}
+
+		_, err = cc.client.PersistentVolumeClaims(ns).Create(pvc)
+		if err != nil {
+			return err
+		}
+
+		cc.recordClusterEvent(c, "launching", "Created pvc %q", s)
 	}
 
 	return nil

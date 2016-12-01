@@ -69,6 +69,9 @@ type clusterController struct {
 	ingressController *framework.Controller
 	ingressStore      cache.Indexer
 
+	pvcController *framework.Controller
+	pvcStore      cache.Indexer
+
 	// non-thread safe:
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -216,6 +219,21 @@ func NewController(
 			},
 		},
 		&extensions.Ingress{},
+		fullResyncPeriod,
+		framework.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.pvcStore, cc.pvcController = framework.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).Watch(options)
+			},
+		},
+		&kapi.PersistentVolumeClaim{},
 		fullResyncPeriod,
 		framework.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -448,6 +466,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.secretController.Run(wait.NeverStop)
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
+	go cc.pvcController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -469,5 +488,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.secretController.HasSynced() &&
 		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
-		cc.ingressController.HasSynced()
+		cc.ingressController.HasSynced() &&
+		cc.pvcController.HasSynced()
 }
