@@ -369,7 +369,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	for s, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, s)
+		key := fmt.Sprintf("%s/%s-ingress", ns, s)
 		_, exists, err := cc.ingressStore.GetByKey(key)
 		if err != nil {
 			return err
