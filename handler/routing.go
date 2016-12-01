@@ -109,36 +109,36 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(b.authenticated(b.deleteNodeHandler()))
+		Handler(r.authenticated(r.deleteNodeHandler()))
 
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(b.authenticated(b.getKubernetesNodesHandler()))
+		Handler(r.authenticated(r.getKubernetesNodesHandler()))
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/node/{node}").
-		Handler(b.authenticated(b.getKubernetesNodeInfoHandler()))
+		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
 }
 
-func (b Routing) getKubernetesNodesHandler() http.Handler {
+func (r Routing) getKubernetesNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		kubernetesNodesEndpoint(b.kps),
+		r.ctx,
+		kubernetesNodesEndpoint(r.kubernetesProviders),
 		decodeNodesReq,
 		encodeText,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
 
-func (b Routing) getKubernetesNodeInfoHandler() http.Handler {
+func (r Routing) getKubernetesNodeInfoHandler() http.Handler {
 	return httptransport.NewServer(
-		b.ctx,
-		kubernetesNodeInfoEndpoint(b.kps),
+		r.ctx,
+		kubernetesNodeInfoEndpoint(r.kubernetesProviders),
 		decodeNodeReq,
 		encodeText,
-		httptransport.ServerErrorLogger(b.logger),
+		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
 }
