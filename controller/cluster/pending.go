@@ -97,7 +97,7 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 	var err error
 	c.Status.RootCA.Cert, _, c.Status.RootCA.Key, err = initca.New(&rootCAReq)
 	if err != nil {
-		return nil, fmt.Errorf("error creating root-ca: %v", err)
+		return nil, fmt.Errorf("failed to create root-ca: %v", err)
 	}
 
 	return c, nil
@@ -107,12 +107,12 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 	createApiserverAuth := func(t *template.Template) (*api.Cluster, *kapi.Secret, error) {
 		saKey, err := createServiceAccountKey()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
 		}
 
 		asKC, err := c.CreateKeyCert("10.10.0.1")
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
 		data := struct {
@@ -136,7 +136,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 		etcdURL := strings.Split(u.Host, ":")[0]
 		etcdKC, err := c.CreateKeyCert(etcdURL)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
 		data := struct {
@@ -154,7 +154,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 	createApiserverSSH := func(t *template.Template) (*api.Cluster, *kapi.Secret, error) {
 		kc, err := createSSHKeyCert()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
 		}
 
 		data := struct {
@@ -212,12 +212,12 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 
 		changedC, secret, err := gen(t)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
 		_, err = cc.client.Secrets(ns).Create(secret)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create secret for %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
@@ -272,11 +272,11 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 	secret, err := generateTokenUsers()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate token users: %v", err)
 	}
 	_, err = cc.client.Secrets(ns).Create(secret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create secret for token user: %v", err)
 	}
 	cc.recordClusterEvent(c, "launching", "Created secret %q", key)
 	return c, nil
@@ -316,12 +316,12 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 
 		services, err := gen(s)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
 
 		_, err = cc.client.Services(ns).Create(services)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create service %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created service %q", s)
@@ -380,12 +380,12 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 		}
 		ingress, err := gen(s)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
 		_, err = cc.client.Ingress(ns).Create(ingress)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create ingress %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created ingress")
@@ -469,12 +469,12 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 
 		dep, err := gen(s)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
 		_, err = cc.client.Deployments(ns).Create(dep)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
@@ -521,12 +521,12 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 
 		pvc, err := gen(s)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to generate pvc %s: %v", s, err)
 		}
 
 		_, err = cc.client.PersistentVolumeClaims(ns).Create(pvc)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create pvc %s; %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created pvc %q", s)
