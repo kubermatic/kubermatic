@@ -1,12 +1,13 @@
 package cluster
 
 import (
+	"reflect"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"reflect"
-	"time"
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
