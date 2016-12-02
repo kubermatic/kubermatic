@@ -38,10 +38,11 @@ func kubeconfigEndpoint(
 			Kind:           "Config",
 			APIVersion:     "v1",
 			CurrentContext: id,
-			Clusters: []capi.NamedCluster{capi.NamedCluster{
+			Clusters: []capi.NamedCluster{{
 				Name: id,
 				Cluster: capi.Cluster{
 					Server: c.Address.URL,
+					CertificateAuthorityData: c.Status.RootCA.Cert,
 				},
 			}},
 			Contexts: []capi.NamedContext{capi.NamedContext{
