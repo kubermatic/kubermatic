@@ -38,7 +38,6 @@ const (
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
-	etcdURLFormat       = "etcd-%s"
 )
 
 type clusterController struct {
@@ -48,7 +47,6 @@ type clusterController struct {
 	recorder            record.EventRecorder
 	masterResourcesPath string
 	externalURL         string
-	etcdURL             string
 	overwriteHost       string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
@@ -68,6 +66,9 @@ type clusterController struct {
 
 	ingressController *cache.Controller
 	ingressStore      cache.Indexer
+
+	pvcController *framework.Controller
+	pvcStore      cache.Indexer
 
 	// non-thread safe:
 	mu         sync.Mutex
@@ -94,7 +95,6 @@ func NewController(
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
-		etcdURL:             fmt.Sprintf(etcdURLFormat, externalURL),
 		dev:                 dev,
 		overwriteHost:       overwriteHost,
 	}
@@ -219,6 +219,21 @@ func NewController(
 		&v1beta1.Ingress{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.pvcStore, cc.pvcController = framework.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).Watch(options)
+			},
+		},
+		&kapi.PersistentVolumeClaim{},
+		fullResyncPeriod,
+		framework.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
@@ -455,6 +470,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.secretController.Run(wait.NeverStop)
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
+	go cc.pvcController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -481,5 +497,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.secretController.HasSynced() &&
 		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
-		cc.ingressController.HasSynced()
+		cc.ingressController.HasSynced() &&
+		cc.pvcController.HasSynced()
 }

@@ -33,7 +33,7 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 				Spec: api.ClusterSpec{
 					HumanReadableName: "sttts",
 					Cloud: &api.CloudSpec{
-						DC: "fake-fra1",
+						DatacenterName: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
 							Token: "983475982374895723958",
 						},

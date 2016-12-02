@@ -12,11 +12,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+const jwtRolesKeyAdmin = "admin"
+
 func datacentersEndpoint(
 	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
+	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(dcsReq)
 
@@ -25,7 +28,7 @@ func datacentersEndpoint(
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
-			if _, isAdmin := req.user.Roles["admin"]; dc.Private && !isAdmin {
+			if _, isAdmin := req.user.Roles[jwtRolesKeyAdmin]; dc.Private && !isAdmin {
 				glog.V(7).Infof("Hiding dc %q for non-admin user", dcName, req.user.Name)
 				continue
 			}
@@ -64,7 +67,7 @@ func datacenterEndpoint(
 			return nil, NewNotFound("datacenter", req.dc)
 		}
 
-		if _, isAdmin := req.user.Roles["admin"]; dc.Private && !isAdmin {
+		if _, isAdmin := req.user.Roles[jwtRolesKeyAdmin]; dc.Private && !isAdmin {
 			return nil, NewNotFound("datacenter", req.dc)
 		}
 

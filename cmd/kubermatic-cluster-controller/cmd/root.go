@@ -33,7 +33,6 @@ import (
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
 var dev bool
-
 var viperWhiteList = []string{
 	"v",
 }
@@ -45,30 +44,38 @@ var RootCmd = &cobra.Command{
 	Long:  `Cluster controller... Needs better description`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if masterResources == "" {
+
+		fmt.Println("master-resources: " + viper.GetString("master-resources"))
+		fmt.Println("datacenters: " + viper.GetString("datacenters"))
+		fmt.Println("kubeconfig: " + viper.GetString("kubeconfig"))
+		fmt.Println("external-url: " + viper.GetString("external-url"))
+		fmt.Println("dev: ", viper.GetBool("dev"))
+		fmt.Println("overwrite-host: " + viper.GetString("overwrite-host"))
+
+		if viper.GetString("master-resources") == "" {
 			print("master-resources path is undefined\n\n")
 			os.Exit(1)
 		}
 
 		// load list of datacenters
 		dcs := map[string]provider.DatacenterMeta{}
-		if dcFile != "" {
+		if viper.GetString("datacenters") != "" {
 			var err error
-			dcs, err = provider.DatacentersMeta(dcFile)
+			dcs, err = provider.DatacentersMeta(viper.GetString("datacenters"))
 			if err != nil {
-				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", dcFile, err))
+				log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", viper.GetString("datacenters"), err))
 			}
 		}
 
 		// create controller for each context
-		clientcmdConfig, err := clientcmd.LoadFromFile(kubeConfig)
+		clientcmdConfig, err := clientcmd.LoadFromFile(viper.GetString("kubeconfig"))
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		for ctx := range clientcmdConfig.Contexts {
 			// create kube client
-			clientcmdConfig, err := clientcmd.LoadFromFile(kubeConfig)
+			clientcmdConfig, err := clientcmd.LoadFromFile(viper.GetString("kubeconfig"))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -90,7 +97,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, cps, masterResources, externalURL, dev, overwriteHost,
+				ctx, client, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
 			)
 			if err != nil {
 				log.Fatal(err)

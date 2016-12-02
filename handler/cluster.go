@@ -84,8 +84,8 @@ func setCloudEndpoint(
 				return nil, fmt.Errorf("invalid cloud provider %q", req.provider)
 			}
 
-			if _, found := dcs[req.cloud.DC]; !found {
-				return nil, fmt.Errorf("invalid node datacenter %q", req.cloud.DC)
+			if _, found := dcs[req.cloud.DatacenterName]; !found {
+				return nil, fmt.Errorf("invalid node datacenter %q", req.cloud.DatacenterName)
 			}
 
 			// TODO(sttts): add cloud credential smoke test
@@ -229,7 +229,7 @@ func decodeSetCloudReq(c context.Context, r *http.Request) (interface{}, error) 
 	}
 
 	if req.provider != "" && req.provider != provider.BringYourOwnCloudProvider &&
-		req.cloud.DC == "" {
+		req.cloud.DatacenterName == "" {
 		return nil, errors.New("dc cannot be empty when a cloud provider is set")
 	}
 
