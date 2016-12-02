@@ -484,13 +484,13 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	loadFile := func(s string) (*kapi.PersistentVolumeClaim, error) {
+	loadFile := func(s string) (*v1.PersistentVolumeClaim, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-pvc.yaml"))
 		if err != nil {
 			return nil, err
 		}
 
-		var pvc kapi.PersistentVolumeClaim
+		var pvc v1.PersistentVolumeClaim
 		data := struct {
 			ClusterName string
 		}{
@@ -500,7 +500,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 		return &pvc, err
 	}
 
-	pvcs := map[string]func(s string) (*kapi.PersistentVolumeClaim, error){
+	pvcs := map[string]func(s string) (*v1.PersistentVolumeClaim, error){
 		"etcd":        loadFile,
 		"etcd-public": loadFile,
 	}

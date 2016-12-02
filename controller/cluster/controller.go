@@ -67,7 +67,7 @@ type clusterController struct {
 	ingressController *cache.Controller
 	ingressStore      cache.Indexer
 
-	pvcController *framework.Controller
+	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
 	// non-thread safe:
@@ -222,18 +222,18 @@ func NewController(
 		namespaceIndexer,
 	)
 
-	cc.pvcStore, cc.pvcController = framework.NewIndexerInformer(
+	cc.pvcStore, cc.pvcController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).Watch(options)
 			},
 		},
 		&kapi.PersistentVolumeClaim{},
 		fullResyncPeriod,
-		framework.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
 
