@@ -63,31 +63,17 @@ deployment-update:
         filename: ca.pem
         overwrite: true
         content: $CERTIFICATE_AUTHORITY
-    - create-file:
-        name: Create admin.pem
-        filename: admin.pem
-        overwrite: true
-        content: $CLIENT_CERTIFICATE
-    - create-file:
-        name: Create admin-key.pem
-        filename: admin-key.pem
-        overwrite: true
-        content: $CLIENT_KEY
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        client-certificate: admin.pem
-        client-key: admin-key.pem
         command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=api
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        client-certificate: admin.pem
-        client-key: admin-key.pem
         command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
 
 push-latest-image:
@@ -120,21 +106,11 @@ rollback-api:
         name: Create ca.pem
         filename: ca.pem
         content: $CERTIFICATE_AUTHORITY
-    - create-file:
-        name: Create admin.pem
-        filename: admin.pem
-        content: $CLIENT_CERTIFICATE
-    - create-file:
-        name: Create admin-key.pem
-        filename: admin-key.pem
-        content: $CLIENT_KEY
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        client-certificate: admin.pem
-        client-key: admin-key.pem
         command: rollout undo deployment/kubermatic-api-v1 --namespace=api
 
 rollback-cluster-controller:
@@ -148,19 +124,9 @@ rollback-cluster-controller:
         name: Create ca.pem
         filename: ca.pem
         content: $CERTIFICATE_AUTHORITY
-    - create-file:
-        name: Create admin.pem
-        filename: admin.pem
-        content: $CLIENT_CERTIFICATE
-    - create-file:
-        name: Create admin-key.pem
-        filename: admin-key.pem
-        content: $CLIENT_KEY
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        client-certificate: admin.pem
-        client-key: admin-key.pem
         command: rollout undo deployment/kubermatic-api-v1 --namespace=control
