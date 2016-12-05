@@ -110,7 +110,11 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
 		}
 
-		asKC, err := c.CreateKeyCert("10.10.0.1")
+		u, err := url.Parse(c.Address.URL)
+		if err != nil {
+			return nil, nil, err
+		}
+		asKC, err := c.CreateKeyCert(u.Host)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
