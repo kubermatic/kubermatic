@@ -88,6 +88,12 @@ func createClient(ccfg *capi.Config) (*kclient.Client, error) {
 	return client, nil
 }
 
+func kubeClientFromCluster(dc string, c *api.Cluster) (*kclient.Client, error) {
+	config := getKubeConfig(dc, c)
+	client, err := createClient(&config)
+	return client, err
+}
+
 func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodesReq)
