@@ -3,9 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
+	kapi "k8s.io/kubernetes/pkg/api"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 
@@ -94,41 +94,41 @@ func kubeClientFromCluster(dc string, c *api.Cluster) (*kclient.Client, error) {
 	return client, err
 }
 
+func nodesClientFromDC(
+	dc string,
+	cluster string,
+	user provider.User,
+	kps map[string]provider.KubernetesProvider,
+) (kclient.NodeInterface, error) {
+	// Get dc info
+	kp, found := kps[dc]
+	if !found {
+		return nil, NewBadRequest("unknown kubernetes datacenter %q", dc)
+	}
+
+	// Get cluster from dc
+	c, err := kp.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kubeClientFromCluster(dc, c)
+	if err != nil {
+		return nil, err
+	}
+	return client.Nodes(), nil
+}
+
 func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodesReq)
 
-		// Get dc info
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		// Get cluster from dc
-		c, err := kp.Cluster(req.user, req.cluster)
+		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
 		if err != nil {
 			return nil, err
 		}
-
-		// Metalinter is buggy due to a bug see: https://github.com/golang/linter/issues/46
-		urlKubernetes := fmt.Sprintf(c.Address.URL + "/api/v1/nodes")
-		hCl := &http.Client{}
-		hReq, err := http.NewRequest("GET", urlKubernetes, nil)
-		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
-		if err != nil {
-			return []byte{}, nil
-		}
-
-		hReq = hReq.WithContext(ctx)
-		res, err := hCl.Do(hReq)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("bad response, got :%d", res.StatusCode)
-		}
-
-		return res.Body, nil
+		// TODO(realfake): Which options ?
+		return nodes.List(kapi.ListOptions{})
 	}
 }
 
@@ -136,36 +136,11 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeReq)
 
-		// Get dc info
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		// Get cluster from dc
-		c, err := kp.Cluster(req.user, req.cluster)
+		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
 		if err != nil {
 			return nil, err
 		}
-
-		urlKubernetes := fmt.Sprintf(c.Address.URL + fmt.Sprintf("/api/v1/nodes/%s", req.uid))
-		hCl := &http.Client{}
-		hReq, err := http.NewRequest("GET", urlKubernetes, nil)
-		hReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.Address.Token))
-		if err != nil {
-			return []byte{}, nil
-		}
-
-		hReq = hReq.WithContext(ctx)
-		res, err := hCl.Do(hReq)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("bad response, got :%d", res.StatusCode)
-		}
-
-		return res.Body, nil
+		return nodes.Get(req.uid)
 	}
 }
 
