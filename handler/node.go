@@ -63,6 +63,9 @@ func createClient(ccfg *capi.Config) (*kclient.Client, error) {
 
 	// Create config from textual config representation.
 	clientcmdConfig, err := clientcmd.Load(ycfg)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(ccfg.Contexts) < 1 {
 		return nil, errors.New("provided Config doesn't have any contexts")
