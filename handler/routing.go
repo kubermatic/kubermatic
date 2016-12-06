@@ -126,7 +126,7 @@ func (r Routing) getKubernetesNodesHandler() http.Handler {
 		r.ctx,
 		kubernetesNodesEndpoint(r.kubernetesProviders),
 		decodeNodesReq,
-		encodeText,
+		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
@@ -137,7 +137,7 @@ func (r Routing) getKubernetesNodeInfoHandler() http.Handler {
 		r.ctx,
 		kubernetesNodeInfoEndpoint(r.kubernetesProviders),
 		decodeNodeReq,
-		encodeText,
+		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
