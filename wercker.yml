@@ -25,7 +25,7 @@ build:
           git describe --tags |tee VERSION
           gometalinter --install
           mkdir -p "$WERCKER_CACHE_DIR/glide"
-          go get github.com/Masterminds/glide
+          go get -u github.com/Masterminds/glide
     - script:
         name: build and test
         code: |
