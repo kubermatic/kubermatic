@@ -24,6 +24,14 @@ build:
           # go get github.com/mattn/goveralls
           git describe --tags |tee VERSION
           gometalinter --install
+          go get -u github.com/Masterminds/glide
+    - script:
+        name: install dependencies
+        code: |
+          GLIDE_HOME="$WERCKER_CACHE_DIR/glide/"
+          echo "GLIDE_HOME = $GLIDE_HOME"
+          mkdir -p $GLIDE_HOME
+          glide --home $GLIDE_HOME install --strip-vendor
     - script:
         name: build and test
         code: |

@@ -20,14 +20,17 @@ $ ln -s ../../kubermatic/nodes/digitalocean/template/coreos/ coreos
 
 ## Dependencies
 
-How to update the Glide/vendor dependencies with a new Kubernetes version:
+### Install dependencies
 
-Update the vendored sources in Kubermatic:
-```
-$ ./glide-update.sh
+```bash
+glide install --strip-vendor
 ```
 
-Finally commit the vendored changes.
+### Update dependencies
+
+```bash
+glide update --strip-vendor
+```
 
 ## Building locally
 
