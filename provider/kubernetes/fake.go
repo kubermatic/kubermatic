@@ -6,6 +6,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/util/rand"
 	"sync"
 	"time"
 )
@@ -32,7 +33,7 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 				Spec: api.ClusterSpec{
 					HumanReadableName: "sttts",
 					Cloud: &api.CloudSpec{
-						DC: "fake-fra1",
+						DatacenterName: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
 							Token: "983475982374895723958",
 						},
@@ -72,7 +73,7 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -81,6 +82,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, cluster string, 
 		return nil, err
 	}
 
+	cluster := rand.String(9)
 	if _, found := p.clusters[cluster]; found {
 		return nil, fmt.Errorf("cluster %s already exists", cluster)
 	}

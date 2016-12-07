@@ -96,7 +96,7 @@ func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
 	return *vRes.Vpc.VpcId, err
 }
 
-func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
+func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (a *aws) PrepareCloudSpec(cluster *api.Cluster) error {
 	return nil
 }
 
-func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string, err error) {
+func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
@@ -131,7 +131,7 @@ func (*aws) CreateAnnotations(cs *api.CloudSpec) (annotations map[string]string,
 	}, nil
 }
 
-func (*aws) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
+func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	spec := &api.CloudSpec{
 		AWS: &api.AWSCloudSpec{
 			SSHKeys: []string{},
@@ -168,7 +168,7 @@ func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpe
 		return errors.New("No AWS template was found")
 	}
 	data := ktemplate.Data{
-		DC:                node.DC,
+		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
 		SSHAuthorizedKeys: clusterState.Spec.Cloud.GetAWS().SSHKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
@@ -186,9 +186,9 @@ func (a *aws) userData(buf *bytes.Buffer, instanceName string, node *api.NodeSpe
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
-	dc, ok := a.datacenters[node.DC]
+	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", node.DC)
+		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
 	}
 	if node.AWS.Type == "" {
 		return nil, nil
@@ -226,7 +226,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:     sdk.Int64(1),
 			InstanceType: sdk.String(node.AWS.Type),
 			Placement: &ec2.Placement{
-				AvailabilityZone: sdk.String(node.DC),
+				AvailabilityZone: sdk.String(node.DatacenterName),
 			},
 			KeyName:           sdk.String(node.AWS.SSHKeyName),
 			UserData:          sdk.String(buf.String()),
@@ -312,9 +312,9 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
 	config := sdk.NewConfig()
-	dc, found := a.datacenters[cluster.Spec.Cloud.DC]
+	dc, found := a.datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DC)
+		return nil, fmt.Errorf("can't find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	config = config.WithRegion(dc.Spec.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
@@ -339,7 +339,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 			},
 		},
 		Spec: api.NodeSpec{
-			DC: (*instance.Placement.AvailabilityZone)[:len(*instance.Placement.AvailabilityZone)-1],
+			DatacenterName: (*instance.Placement.AvailabilityZone)[:len(*instance.Placement.AvailabilityZone)-1],
 			AWS: &api.AWSNodeSpec{
 				Type: *instance.InstanceType,
 			},

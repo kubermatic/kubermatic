@@ -15,6 +15,7 @@ import (
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/util/rand"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -49,7 +50,7 @@ func NewKubernetesProvider(
 	}
 }
 
-func (p *kubernetesProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	// call cluster before lock is taken
 	cs, err := p.Clusters(user)
 	if err != nil {
@@ -61,13 +62,13 @@ func (p *kubernetesProvider) NewCluster(user provider.User, cluster string, spec
 
 	// sanity checks for a fresh cluster
 	switch {
-	case cluster == "":
-		return nil, kerrors.NewBadRequest("cluster name is required")
 	case user.Name == "":
 		return nil, kerrors.NewBadRequest("cluster user is required")
 	case spec.HumanReadableName == "":
 		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
 	}
+
+	cluster := rand.String(9)
 
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
@@ -167,7 +168,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 			return nil, err
 		}
 
-		err = prov.PrepareCloudSpec(c)
+		err = prov.InitializeCloudSpec(c)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",

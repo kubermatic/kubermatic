@@ -13,6 +13,7 @@ import (
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/client/restclient"
+	"k8s.io/kubernetes/pkg/util/rand"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)
@@ -40,7 +41,7 @@ func NewSeedProvider(
 			Spec: api.ClusterSpec{
 				HumanReadableName: dcName,
 				Cloud: &api.CloudSpec{
-					DC: dcName,
+					DatacenterName: dcName,
 					Network: api.NetworkSpec{
 						Flannel: api.FlannelNetworkSpec{
 							CIDR: flannelCIDRADefault,
@@ -136,7 +137,9 @@ func NewSeedProvider(
 	}
 }
 
-func (p *seedProvider) NewCluster(user provider.User, cluster string, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *seedProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
+	cluster := rand.String(9)
+
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
 		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
