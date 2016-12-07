@@ -15,7 +15,10 @@ import (
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/selection"
 	"k8s.io/kubernetes/pkg/util/rand"
+	"k8s.io/kubernetes/pkg/util/sets"
+	"strconv"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -50,6 +53,25 @@ func NewKubernetesProvider(
 	}
 }
 
+func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
+	for {
+		port := rand.IntnRange(30000, 32767)
+		sel := labels.NewSelector()
+		set := sets.NewString(strconv.Itoa(port))
+		req, err := labels.NewRequirement("node-port", selection.Equals, set)
+		if err != nil {
+			return 0, err
+		}
+		sel = sel.Add(*req)
+		nsList, err := p.client.Namespaces().List(kapi.ListOptions{LabelSelector: sel})
+		if err != nil {
+			return 0, err
+		}
+		if len(nsList.Items) == 0 {
+			return port, nil
+		}
+	}
+}
 func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	// call cluster before lock is taken
 	cs, err := p.Clusters(user)
@@ -83,6 +105,10 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			Labels:      map[string]string{},
 		},
 	}
+	nodePort, err := p.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
@@ -93,6 +119,9 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		Status: api.ClusterStatus{
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
+		},
+		Address: &api.ClusterAddress{
+			NodePort: nodePort,
 		},
 	}
 	if p.dev {
@@ -110,6 +139,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	}
 
 	c, err = UnmarshalCluster(p.cps, ns)
+
 	if err != nil {
 		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
 		return nil, err

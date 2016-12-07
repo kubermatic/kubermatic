@@ -255,10 +255,8 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 			},
 		}
 
-		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL),
-			Token: trimmedToken64,
-		}
+		c.Address.URL = fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+		c.Address.Token = trimmedToken64
 
 		return &secret, nil
 	}
@@ -294,7 +292,14 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		}
 
 		var service kapi.Service
-		err = t.Execute(nil, &service)
+
+		data := struct {
+			SecurePort int
+		}{
+			SecurePort: c.Address.NodePort,
+		}
+
+		err = t.Execute(data, &service)
 		return &service, err
 	}
 
@@ -417,7 +422,10 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	}
 
 	loadApiserver := func(s string) (*extensions.Deployment, error) {
-		var data struct{ AdvertiseAddress string }
+		var data struct {
+			AdvertiseAddress string
+			SecurePort       int
+		}
 		if cc.overwriteHost == "" {
 			u, err := url.Parse(c.Address.URL)
 			if err != nil {
@@ -431,6 +439,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		} else {
 			data.AdvertiseAddress = cc.overwriteHost
 		}
+		data.SecurePort = c.Address.NodePort
 
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
 		if err != nil {
