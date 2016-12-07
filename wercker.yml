@@ -31,11 +31,7 @@ build:
           GLIDE_HOME="$WERCKER_CACHE_DIR/glide"
           echo "GLIDE_HOME = $GLIDE_HOME"
           mkdir -p $GLIDE_HOME
-          ls -la $GLIDE_HOME
-          ls -la $WERCKER_CACHE_DIR
           glide --home $GLIDE_HOME install --strip-vendor
-          ls -la $GLIDE_HOME
-          ls -la $WERCKER_CACHE_DIR
     - script:
         name: build and test
         code: |
