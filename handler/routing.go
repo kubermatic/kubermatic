@@ -110,6 +110,37 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("DELETE").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.authenticated(r.deleteNodeHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
+		Handler(r.authenticated(r.getKubernetesNodesHandler()))
+	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/node/{node}").
+		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
+}
+
+func (r Routing) getKubernetesNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		kubernetesNodesEndpoint(r.kubernetesProviders),
+		decodeNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) getKubernetesNodeInfoHandler() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		kubernetesNodeInfoEndpoint(r.kubernetesProviders),
+		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 // datacentersHandler serves a list of datacenters.
