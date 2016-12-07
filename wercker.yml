@@ -29,7 +29,7 @@ build:
     - script:
         name: build and test
         code: |
-          glide install --strip-vendor --home "$WERCKER_CACHE_DIR/glide"
+          glide --home "$WERCKER_CACHE_DIR/glide" install --strip-vendor
           CGO_ENABLED=0 GOBUILD="go install" make
     - script:
         name: copy to deployment directory
