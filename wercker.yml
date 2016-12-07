@@ -24,9 +24,12 @@ build:
           # go get github.com/mattn/goveralls
           git describe --tags |tee VERSION
           gometalinter --install
+          mkdir -p "$WERCKER_CACHE_DIR/glide"
+          go get github.com/Masterminds/glide
     - script:
         name: build and test
         code: |
+          glide install --strip-vendor --home "$WERCKER_CACHE_DIR/glide"
           CGO_ENABLED=0 GOBUILD="go install" make
     - script:
         name: copy to deployment directory
