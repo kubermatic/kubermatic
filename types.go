@@ -26,7 +26,7 @@ type DigitaloceanNodeSpec struct {
 	// SSHKeyFingerprints  represent the fingerprints of the keys.
 	// DigitalOcean utilizes the fingerprints to identify public
 	// SSHKeys stored within the DigitalOcean platform.
-	SSHKeyFingerprints []string `json:"sshKeys,omitempty"`
+	SSHKeyFingerprints []string `json:"sshKeyFingerprints,omitempty"`
 }
 
 // BringYourOwnNodeSpec specifies a bring your own node
