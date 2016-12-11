@@ -77,7 +77,7 @@ type DigitaloceanCloudSpec struct {
 	SSHKeys []string `json:"sshKeys"`
 }
 
-// AWSCloudSpec specifies access data to digital ocean.
+// AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
 	AccessKeyID     string   `json:"access_key_id"`
 	SecretAccessKey string   `json:"secret_access_key"`
