@@ -123,7 +123,7 @@ func (r Routing) Register(mux *mux.Router) {
 
 	mux.
 		Methods("GET").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/node/{node}").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
 		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
 }
 
