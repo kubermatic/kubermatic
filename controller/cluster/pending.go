@@ -114,7 +114,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 		if err != nil {
 			return nil, nil, err
 		}
-		asKC, err := c.CreateKeyCert(u.Host)
+		asKC, err := c.CreateKeyCert(u.Host, []string{u.Host, "10.10.10.1"})
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
@@ -138,7 +138,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 			return nil, nil, err
 		}
 		etcdURL := strings.Split(u.Host, ":")[0]
-		etcdKC, err := c.CreateKeyCert(etcdURL)
+		etcdKC, err := c.CreateKeyCert(etcdURL, []string{})
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
