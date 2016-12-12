@@ -6,13 +6,15 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	capi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 func nodesEndpoint(
@@ -45,11 +47,10 @@ func nodesEndpoint(
 }
 
 // createClient generates a client from a kube config.
-func createClient(ccfg *v1.Config) (*kubernetes.Clientset, error) {
-
+func createClient(ccfg capi.Config) (*kubernetes.Clientset, error) {
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(
 		ccfg,
-		ccfg.Contexts[0].Name,
+		ccfg.CurrentContext,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
@@ -60,13 +61,16 @@ func createClient(ccfg *v1.Config) (*kubernetes.Clientset, error) {
 	}
 
 	c, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return c, nil
 }
 
 func kubeClientFromCluster(dc string, c *api.Cluster) (*kubernetes.Clientset, error) {
 	config := getKubeConfig(dc, c)
-	client, err := createClient(&config)
+	client, err := createClient(config)
 	return client, err
 }
 
@@ -75,7 +79,7 @@ func nodesClientFromDC(
 	cluster string,
 	user provider.User,
 	kps map[string]provider.KubernetesProvider,
-) (v1.NodeInterface, error) {
+) (corev1.NodeInterface, error) {
 	// Get dc info
 	kp, found := kps[dc]
 	if !found {
@@ -104,7 +108,7 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 			return nil, err
 		}
 		// TODO(realfake): Which options ?
-		return nodes.List(v1.ListOptions{}), nil
+		return nodes.List(v1.ListOptions{})
 	}
 }
 
@@ -116,7 +120,7 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 		if err != nil {
 			return nil, err
 		}
-		return nodes.Get(req.uid), nil
+		return nodes.Get(req.uid)
 	}
 }
 

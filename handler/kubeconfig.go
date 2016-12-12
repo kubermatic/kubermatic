@@ -11,36 +11,33 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	capi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func getKubeConfig(dc string, c *api.Cluster) v1.Config {
+func getKubeConfig(dc string, c *api.Cluster) capi.Config {
 	id := fmt.Sprintf("%s-%s", dc, c.Metadata.Name)
-	return v1.Config{
+	cfg := capi.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: id,
-		Clusters: []v1.NamedCluster{{
-			Name: id,
-			Cluster: v1.Cluster{
+		Clusters: map[string]*capi.Cluster{
+			id: {
 				Server: c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
-			},
-		}},
-		Contexts: []v1.NamedContext{v1.NamedContext{
-			Name: id,
-			Context: v1.Context{
+			}},
+		Contexts: map[string]*capi.Context{
+			id: {
 				Cluster:  id,
 				AuthInfo: id,
-			},
-		}},
-		AuthInfos: []v1.NamedAuthInfo{v1.NamedAuthInfo{
-			Name: id,
-			AuthInfo: v1.AuthInfo{
+			}},
+		AuthInfos: map[string]*capi.AuthInfo{
+			id: {
 				Token: c.Address.Token,
-			},
-		}},
+			}},
 	}
+	cfg.CurrentContext = id
+
+	return cfg
 }
 
 func kubeconfigEndpoint(
@@ -89,7 +86,7 @@ func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
 
-	cfg := response.(*v1.Config)
+	cfg := response.(*capi.Config)
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {
