@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kapi "k8s.io/kubernetes/pkg/api"
+	"strconv"
 )
 
 const (
@@ -40,6 +41,7 @@ const (
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
 	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
+	nodePortLabel               = annotationPrefix + "node-port"       // kubermatic.io/etcd-url
 	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
 	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
 	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
@@ -116,15 +118,20 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		c.Metadata.Annotations[k] = v
 	}
 
+	c.Address = &api.ClusterAddress{}
+
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
 		token, _ := ns.Annotations[tokenAnnotation]
-		etcdPort, _ := ns.Annotations[etcdURLAnnotation]
-		c.Address = &api.ClusterAddress{
-			URL:     url,
-			Token:   token,
-			EtcdURL: etcdPort,
-		}
+		etcdURL, _ := ns.Annotations[etcdURLAnnotation]
+		c.Address.URL = url
+		c.Address.Token = token
+		c.Address.EtcdURL = etcdURL
+	}
+
+	if nodePort, found := ns.Labels[nodePortLabel]; found {
+		iNodePort, _ := strconv.ParseInt(nodePort, 10, 0)
+		c.Address.NodePort = int(iNodePort)
 	}
 
 	// decode the cloud spec from annotations
@@ -190,6 +197,10 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 
 		if c.Address.EtcdURL != "" {
 			ns.Annotations[etcdURLAnnotation] = c.Address.EtcdURL
+		}
+
+		if c.Address.NodePort != 0 {
+			ns.Labels[nodePortLabel] = strconv.Itoa(c.Address.NodePort)
 		}
 	}
 
