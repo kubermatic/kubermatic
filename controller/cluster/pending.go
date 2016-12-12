@@ -110,7 +110,11 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
 		}
 
-		asKC, err := c.CreateKeyCert("10.10.0.1")
+		u, err := url.Parse(c.Address.URL)
+		if err != nil {
+			return nil, nil, err
+		}
+		asKC, err := c.CreateKeyCert(u.Host, []string{u.Host, "10.10.10.1"})
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
@@ -134,7 +138,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 			return nil, nil, err
 		}
 		etcdURL := strings.Split(u.Host, ":")[0]
-		etcdKC, err := c.CreateKeyCert(etcdURL)
+		etcdKC, err := c.CreateKeyCert(etcdURL, []string{})
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 		}
@@ -251,10 +255,8 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 			},
 		}
 
-		c.Address = &api.ClusterAddress{
-			URL:   fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL),
-			Token: trimmedToken64,
-		}
+		c.Address.URL = fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+		c.Address.Token = trimmedToken64
 
 		return &secret, nil
 	}
@@ -290,7 +292,15 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		}
 
 		var service v1.Service
-		err = t.Execute(nil, &service)
+
+		data := struct {
+			SecurePort int
+		}{
+			SecurePort: c.Address.NodePort,
+		}
+
+		err = t.Execute(data, &service)
+
 		return &service, err
 	}
 
@@ -413,7 +423,11 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	}
 
 	loadApiserver := func(s string) (*extensions1beta1.Deployment, error) {
-		var data struct{ AdvertiseAddress string }
+		var data struct {
+			AdvertiseAddress string
+			SecurePort       int
+		}
+
 		if cc.overwriteHost == "" {
 			u, err := url.Parse(c.Address.URL)
 			if err != nil {
@@ -427,6 +441,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		} else {
 			data.AdvertiseAddress = cc.overwriteHost
 		}
+		data.SecurePort = c.Address.NodePort
 
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
 		if err != nil {

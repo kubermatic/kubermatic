@@ -26,7 +26,7 @@ type DigitaloceanNodeSpec struct {
 	// SSHKeyFingerprints  represent the fingerprints of the keys.
 	// DigitalOcean utilizes the fingerprints to identify public
 	// SSHKeys stored within the DigitalOcean platform.
-	SSHKeyFingerprints []string `json:"sshKeys,omitempty"`
+	SSHKeyFingerprints []string `json:"sshKeyFingerprints,omitempty"`
 }
 
 // BringYourOwnNodeSpec specifies a bring your own node
@@ -184,9 +184,10 @@ type ClusterSpec struct {
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL     string `json:"url"`
-	EtcdURL string `json:"etcdURL"`
-	Token   string `json:"token"`
+	URL      string `json:"url"`
+	EtcdURL  string `json:"etcdURL"`
+	Token    string `json:"token"`
+	NodePort int    `json:"nodePort"`
 }
 
 // Cluster is the object representating a cluster.

@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
+
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
@@ -37,6 +41,82 @@ func nodesEndpoint(
 		}
 
 		return cp.Nodes(ctx, c)
+	}
+}
+
+// createClient generates a client from a kube config.
+func createClient(ccfg *v1.Config) (*kubernetes.Clientset, error) {
+
+	clientConfig := clientcmd.NewNonInteractiveClientConfig(
+		ccfg,
+		ccfg.Contexts[0].Name,
+		&clientcmd.ConfigOverrides{},
+		nil,
+	)
+
+	cfg, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := kubernetes.NewForConfig(cfg)
+
+	return c, nil
+}
+
+func kubeClientFromCluster(dc string, c *api.Cluster) (*kubernetes.Clientset, error) {
+	config := getKubeConfig(dc, c)
+	client, err := createClient(&config)
+	return client, err
+}
+
+func nodesClientFromDC(
+	dc string,
+	cluster string,
+	user provider.User,
+	kps map[string]provider.KubernetesProvider,
+) (v1.NodeInterface, error) {
+	// Get dc info
+	kp, found := kps[dc]
+	if !found {
+		return nil, NewBadRequest("unknown kubernetes datacenter %q", dc)
+	}
+
+	// Get cluster from dc
+	c, err := kp.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kubeClientFromCluster(dc, c)
+	if err != nil {
+		return nil, err
+	}
+	return client.Nodes(), nil
+}
+
+func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodesReq)
+
+		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		if err != nil {
+			return nil, err
+		}
+		// TODO(realfake): Which options ?
+		return nodes.List(v1.ListOptions{}), nil
+	}
+}
+
+func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeReq)
+
+		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		if err != nil {
+			return nil, err
+		}
+		return nodes.Get(req.uid), nil
 	}
 }
 

@@ -85,7 +85,7 @@ func NewSeedProvider(
 				PrivateIntf: dc.Spec.Seed.BringYourOwn.PrivateIntf,
 			}
 			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
+				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
 				if err != nil {
 					log.Fatalf("failed to create a client ca for seed dc %q", dcName)
 				}

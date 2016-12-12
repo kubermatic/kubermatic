@@ -13,7 +13,7 @@ import (
 )
 
 // CreateKeyCert creates a private/publich RSA key pair with 2048 bits and the given CN.
-func (c *Cluster) CreateKeyCert(cn string) (*KeyCert, error) {
+func (c *Cluster) CreateKeyCert(cn string, hosts []string) (*KeyCert, error) {
 	// create key and csr
 	req := csr.CertificateRequest{
 		CN: cn,
@@ -22,6 +22,11 @@ func (c *Cluster) CreateKeyCert(cn string) (*KeyCert, error) {
 			S: 2048,
 		},
 	}
+
+	if len(hosts) > 0 {
+		req.Hosts = hosts
+	}
+
 	gen := csr.Generator{
 		Validator: func(req *csr.CertificateRequest) error {
 			return nil

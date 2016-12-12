@@ -7,3 +7,4 @@
 .kubeconfig
 secrets.yaml
 template/coreos
+vendor

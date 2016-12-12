@@ -7,11 +7,41 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
+
+func getKubeConfig(dc string, c *api.Cluster) v1.Config {
+	id := fmt.Sprintf("%s-%s", dc, c.Metadata.Name)
+	return v1.Config{
+		Kind:           "Config",
+		APIVersion:     "v1",
+		CurrentContext: id,
+		Clusters: []v1.NamedCluster{{
+			Name: id,
+			Cluster: v1.Cluster{
+				Server: c.Address.URL,
+				CertificateAuthorityData: c.Status.RootCA.Cert,
+			},
+		}},
+		Contexts: []v1.NamedContext{v1.NamedContext{
+			Name: id,
+			Context: v1.Context{
+				Cluster:  id,
+				AuthInfo: id,
+			},
+		}},
+		AuthInfos: []v1.NamedAuthInfo{v1.NamedAuthInfo{
+			Name: id,
+			AuthInfo: v1.AuthInfo{
+				Token: c.Address.Token,
+			},
+		}},
+	}
+}
 
 func kubeconfigEndpoint(
 	kps map[string]provider.KubernetesProvider,
@@ -33,31 +63,7 @@ func kubeconfigEndpoint(
 			return nil, err
 		}
 
-		id := fmt.Sprintf("%s-%s", req.dc, c.Metadata.Name)
-		cfg := v1.Config{
-			Kind:           "Config",
-			APIVersion:     "v1",
-			CurrentContext: id,
-			Clusters: []v1.NamedCluster{v1.NamedCluster{
-				Name: id,
-				Cluster: v1.Cluster{
-					Server: c.Address.URL,
-				},
-			}},
-			Contexts: []v1.NamedContext{v1.NamedContext{
-				Name: id,
-				Context: v1.Context{
-					Cluster:  id,
-					AuthInfo: id,
-				},
-			}},
-			AuthInfos: []v1.NamedAuthInfo{v1.NamedAuthInfo{
-				Name: id,
-				AuthInfo: v1.AuthInfo{
-					Token: c.Address.Token,
-				},
-			}},
-		}
+		cfg := getKubeConfig(req.dc, c)
 
 		return &cfg, nil
 	}
