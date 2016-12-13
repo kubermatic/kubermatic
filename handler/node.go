@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	kapi "k8s.io/kubernetes/pkg/api"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 func nodesEndpoint(
@@ -43,41 +41,26 @@ func nodesEndpoint(
 	}
 }
 
-func nodesClientFromDC(
-	dc string,
-	cluster string,
-	user provider.User,
-	kps map[string]provider.KubernetesProvider,
-) (kclient.NodeInterface, error) {
-	// Get dc info
-	kp, found := kps[dc]
-	if !found {
-		return nil, NewBadRequest("unknown kubernetes datacenter %q", dc)
-	}
-
-	// Get cluster from dc
-	c, err := kp.Cluster(user, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := c.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	return client.Nodes(), nil
-}
-
 func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodesReq)
 
-		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
-		// TODO(realfake): Which options ?
-		return nodes.List(kapi.ListOptions{})
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().List(kapi.ListOptions{})
 	}
 }
 
@@ -85,11 +68,22 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeReq)
 
-		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
-		return nodes.Get(req.uid)
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().Get(req.uid)
 	}
 }
 
