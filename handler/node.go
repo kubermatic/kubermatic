@@ -2,20 +2,16 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 
-	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
 )
 
 func nodesEndpoint(
@@ -47,56 +43,6 @@ func nodesEndpoint(
 	}
 }
 
-// createClient generates a client from a kube config.
-func createClient(ccfg *capi.Config) (*kclient.Client, error) {
-
-	// Marshal to byte stream.
-	jcfg, err := json.Marshal(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	ycfg, err := yaml.JSONToYAML(jcfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create config from textual config representation.
-	clientcmdConfig, err := clientcmd.Load(ycfg)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(ccfg.Contexts) < 1 {
-		return nil, errors.New("provided Config doesn't have any contexts")
-	}
-	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		*clientcmdConfig,
-		ccfg.Contexts[0].Name,
-		&clientcmd.ConfigOverrides{},
-		nil,
-	)
-
-	cfg, err := clientConfig.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create client.
-	client, err := kclient.New(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-func kubeClientFromCluster(dc string, c *api.Cluster) (*kclient.Client, error) {
-	config := getKubeConfig(dc, c)
-	client, err := createClient(&config)
-	return client, err
-}
-
 func nodesClientFromDC(
 	dc string,
 	cluster string,
@@ -115,7 +61,7 @@ func nodesClientFromDC(
 		return nil, err
 	}
 
-	client, err := kubeClientFromCluster(dc, c)
+	client, err := c.GetClient()
 	if err != nil {
 		return nil, err
 	}
