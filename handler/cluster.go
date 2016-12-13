@@ -153,7 +153,10 @@ func deleteClusterEndpoint(
 		}
 
 		for _, node := range nodes {
-			cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+			err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		err = kp.DeleteCluster(req.user, req.cluster)
