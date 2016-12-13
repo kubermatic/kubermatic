@@ -2,43 +2,15 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	capi "k8s.io/client-go/tools/clientcmd/api"
 )
-
-func getKubeConfig(dc string, c *api.Cluster) capi.Config {
-	id := fmt.Sprintf("%s-%s", dc, c.Metadata.Name)
-	cfg := capi.Config{
-		Kind:           "Config",
-		APIVersion:     "v1",
-		CurrentContext: id,
-		Clusters: map[string]*capi.Cluster{
-			id: {
-				Server: c.Address.URL,
-				CertificateAuthorityData: c.Status.RootCA.Cert,
-			}},
-		Contexts: map[string]*capi.Context{
-			id: {
-				Cluster:  id,
-				AuthInfo: id,
-			}},
-		AuthInfos: map[string]*capi.AuthInfo{
-			id: {
-				Token: c.Address.Token,
-			}},
-	}
-	cfg.CurrentContext = id
-
-	return cfg
-}
 
 func kubeconfigEndpoint(
 	kps map[string]provider.KubernetesProvider,
@@ -59,9 +31,7 @@ func kubeconfigEndpoint(
 			}
 			return nil, err
 		}
-
-		cfg := getKubeConfig(req.dc, c)
-
+		cfg := c.GetKubeconfig()
 		return &cfg, nil
 	}
 }

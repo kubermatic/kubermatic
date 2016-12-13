@@ -4,17 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	capi "k8s.io/client-go/tools/clientcmd/api"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/pkg/api/v1"
+	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 func nodesEndpoint(
@@ -46,69 +41,26 @@ func nodesEndpoint(
 	}
 }
 
-// createClient generates a client from a kube config.
-func createClient(ccfg capi.Config) (*kubernetes.Clientset, error) {
-	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		ccfg,
-		ccfg.CurrentContext,
-		&clientcmd.ConfigOverrides{},
-		nil,
-	)
-
-	cfg, err := clientConfig.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func kubeClientFromCluster(dc string, c *api.Cluster) (*kubernetes.Clientset, error) {
-	config := getKubeConfig(dc, c)
-	client, err := createClient(config)
-	return client, err
-}
-
-func nodesClientFromDC(
-	dc string,
-	cluster string,
-	user provider.User,
-	kps map[string]provider.KubernetesProvider,
-) (corev1.NodeInterface, error) {
-	// Get dc info
-	kp, found := kps[dc]
-	if !found {
-		return nil, NewBadRequest("unknown kubernetes datacenter %q", dc)
-	}
-
-	// Get cluster from dc
-	c, err := kp.Cluster(user, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := kubeClientFromCluster(dc, c)
-	if err != nil {
-		return nil, err
-	}
-	return client.Nodes(), nil
-}
-
 func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodesReq)
 
-		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
-		// TODO(realfake): Which options ?
-		return nodes.List(v1.ListOptions{})
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().List(kapi.ListOptions{})
 	}
 }
 
@@ -116,11 +68,22 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeReq)
 
-		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
-		return nodes.Get(req.uid)
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().Get(req.uid)
 	}
 }
 
