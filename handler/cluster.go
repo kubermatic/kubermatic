@@ -136,7 +136,30 @@ func deleteClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		err := kp.DeleteCluster(req.user, req.cluster)
+		//Delete all nodes in the cluster
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
+		if err != nil {
+			return nil, err
+		}
+
+		nodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, node := range nodes {
+			err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		err = kp.DeleteCluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
