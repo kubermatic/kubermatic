@@ -147,15 +147,18 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		nodes, err := cp.Nodes(ctx, c)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, node := range nodes {
-			err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+		//Only try to delete the nodes if the cluster has a cloud provider configured
+		if cp != nil {
+			nodes, err := cp.Nodes(ctx, c)
 			if err != nil {
 				return nil, err
+			}
+
+			for _, node := range nodes {
+				err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
