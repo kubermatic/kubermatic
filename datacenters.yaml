@@ -14,14 +14,14 @@ datacenters:
         region: us-central1-c
       seed:
         bringyourown:
-  aws-west-2:
+  aws-us-west-2:
     location: Oregon
     country: US
     provider: aws
     spec:
       aws:
         ami: ami-d0e54eb0
-        region: aws-west-2
+        region: us-west-2
       seed:
         digitalocean:
           sshKeys:
