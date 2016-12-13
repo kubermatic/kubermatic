@@ -9,7 +9,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 func nodesEndpoint(
@@ -60,7 +60,7 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 			return nil, err
 		}
 
-		return client.Nodes().List(kapi.ListOptions{})
+		return client.Nodes().List(v1.ListOptions{})
 	}
 }
 
