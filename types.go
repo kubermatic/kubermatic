@@ -1,6 +1,12 @@
 package api
 
 import (
+	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
+
+	"encoding/json"
+	"github.com/ghodss/yaml"
 	"time"
 )
 
@@ -196,6 +202,74 @@ type Cluster struct {
 	Spec     ClusterSpec     `json:"spec"`
 	Address  *ClusterAddress `json:"address,omitempty"`
 	Status   ClusterStatus   `json:"status,omitempty"`
+}
+
+// GetKubeconfig returns a kubeconfig to connect to the cluster
+func (c *Cluster) GetKubeconfig() capi.Config {
+	return capi.Config{
+		Kind:           "Config",
+		APIVersion:     "v1",
+		CurrentContext: c.Metadata.Name,
+		Clusters: []capi.NamedCluster{{
+			Name: c.Metadata.Name,
+			Cluster: capi.Cluster{
+				Server: c.Address.URL,
+				CertificateAuthorityData: c.Status.RootCA.Cert,
+			},
+		}},
+		Contexts: []capi.NamedContext{{
+			Name: c.Metadata.Name,
+			Context: capi.Context{
+				Cluster:  c.Metadata.Name,
+				AuthInfo: c.Metadata.Name,
+			},
+		}},
+		AuthInfos: []capi.NamedAuthInfo{{
+			Name: c.Metadata.Name,
+			AuthInfo: capi.AuthInfo{
+				Token: c.Address.Token,
+			},
+		}},
+	}
+}
+
+// GetClient returns a kubernetes client which speaks to the cluster
+func (c *Cluster) GetClient() (*kclient.Client, error) {
+	ccfg := c.GetKubeconfig()
+
+	// Marshal to byte stream.
+	jcfg, err := json.Marshal(ccfg)
+	if err != nil {
+		return nil, err
+	}
+
+	ycfg, err := yaml.JSONToYAML(jcfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create config from textual config representation.
+	clientcmdConfig, err := clientcmd.Load(ycfg)
+	if err != nil {
+		return nil, err
+	}
+
+	clientConfig := clientcmd.NewNonInteractiveClientConfig(
+		*clientcmdConfig,
+		ccfg.Contexts[0].Name,
+		&clientcmd.ConfigOverrides{},
+		nil,
+	)
+	cfg, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	client, err := kclient.New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // DigitialoceanDatacenterSpec specifies a data center of digital ocean.
