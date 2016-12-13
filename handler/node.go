@@ -113,6 +113,16 @@ func deleteNodeEndpoint(
 			return []*api.Node{}, nil
 		}
 
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		err = client.Nodes().Delete(req.uid)
+		if err != nil {
+			return nil, err
+		}
+
 		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
 	}
 }
