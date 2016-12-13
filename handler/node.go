@@ -122,6 +122,20 @@ func nodesClientFromDC(
 	return client.Nodes(), nil
 }
 
+func kubernetesDeleteNode(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeReq)
+
+		nodes, err := nodesClientFromDC(req.dc, req.cluster, req.user, kps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = nodes.Delete(req.uid)
+		return nil, err
+	}
+}
+
 func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodesReq)

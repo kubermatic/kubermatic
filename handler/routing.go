@@ -119,6 +119,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
 		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
+
+	mux.
+		Methods("DELETE").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
+		Handler(r.authenticated(r.deleteKubernetesNodeHandler()))
 }
 
 func (r Routing) getKubernetesNodesHandler() http.Handler {
@@ -136,6 +141,17 @@ func (r Routing) getKubernetesNodeInfoHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
 		kubernetesNodeInfoEndpoint(r.kubernetesProviders),
+		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) deleteKubernetesNodeHandler() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		kubernetesDeleteNode(r.kubernetesProviders),
 		decodeNodeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
