@@ -203,7 +203,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		id := provider.ShortUID(5)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
 
-		clientKC, err := cluster.CreateKeyCert(instanceName)
+		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
 		if err != nil {
 			return createdNodes, err
 		}
