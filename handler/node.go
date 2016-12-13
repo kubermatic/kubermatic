@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 )
 
 func nodesEndpoint(
@@ -83,7 +84,7 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 			return nil, err
 		}
 
-		return client.Nodes().Get(req.uid)
+		return client.Nodes().Get(req.uid, metav1.GetOptions{})
 	}
 }
 

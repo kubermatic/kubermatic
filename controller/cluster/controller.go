@@ -16,6 +16,7 @@ import (
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/types"
@@ -267,7 +268,7 @@ func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
 	ns := kprovider.NamespaceName(newC.Metadata.User, newC.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
-		oldNS, err := cc.client.Namespaces().Get(ns)
+		oldNS, err := cc.client.Namespaces().Get(ns, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

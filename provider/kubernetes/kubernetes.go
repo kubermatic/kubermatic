@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/labels"
@@ -151,7 +152,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster))
+	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster), metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
