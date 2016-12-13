@@ -1,11 +1,9 @@
 package api
 
 import (
-	"encoding/json"
-	"github.com/ghodss/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"time"
 )
 
@@ -204,58 +202,34 @@ type Cluster struct {
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() v1.Config {
-	return v1.Config{
+func (c *Cluster) GetKubeconfig() api.Config {
+	cfg := api.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: c.Metadata.Name,
-		Clusters: []v1.NamedCluster{{
-			Name: c.Metadata.Name,
-			Cluster: v1.Cluster{
-				Server: c.Address.URL,
-				CertificateAuthorityData: c.Status.RootCA.Cert,
-			},
+		Clusters: map[string]*api.Cluster{c.Metadata.Name: {
+			Server: c.Address.URL,
+			CertificateAuthorityData: c.Status.RootCA.Cert,
 		}},
-		Contexts: []v1.NamedContext{{
-			Name: c.Metadata.Name,
-			Context: v1.Context{
-				Cluster:  c.Metadata.Name,
-				AuthInfo: c.Metadata.Name,
-			},
+		Contexts: map[string]*api.Context{c.Metadata.Name: {
+			Cluster:  c.Metadata.Name,
+			AuthInfo: c.Metadata.Name,
 		}},
-		AuthInfos: []v1.NamedAuthInfo{{
-			Name: c.Metadata.Name,
-			AuthInfo: v1.AuthInfo{
-				Token: c.Address.Token,
-			},
+		AuthInfos: map[string]*api.AuthInfo{c.Metadata.Name: {
+			Token: c.Address.Token,
 		}},
 	}
+	cfg.CurrentContext = c.Metadata.Name
+
+	return cfg
 }
 
 // GetClient returns a kubernetes client which speaks to the cluster
 func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
 	ccfg := c.GetKubeconfig()
-
-	// Marshal to byte stream.
-	jcfg, err := json.Marshal(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	ycfg, err := yaml.JSONToYAML(jcfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create config from textual config representation.
-	clientcmdConfig, err := clientcmd.Load(ycfg)
-	if err != nil {
-		return nil, err
-	}
-
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		*clientcmdConfig,
-		ccfg.Contexts[0].Name,
+		ccfg,
+		ccfg.CurrentContext,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
