@@ -118,9 +118,15 @@ func deleteNodeEndpoint(
 			return nil, err
 		}
 
-		err = client.Nodes().Delete(req.uid)
-		if err != nil {
-			return nil, err
+		nodes, err := cp.Nodes(ctx, c)
+
+		for _, node := range nodes {
+			if node.Metadata.UID == req.uid {
+				err = client.Nodes().Delete(node.Status.Hostname)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
