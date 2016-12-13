@@ -1,5 +1,5 @@
 hash: 022574d231097f31f15445749116066460baf4faa1fb08be588657df4aa86f07
-updated: 2016-11-28T12:01:40.53304194+01:00
+updated: 2016-12-13T15:15:40.515957445+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -137,6 +137,8 @@ imports:
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
+- name: github.com/juju/ratelimit
+  version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
@@ -237,7 +239,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/client-go
-  version: 5d8c36c93cf544e3bde13caa4c6222b65753ec3c
+  version: 243d8a9cb66a51ad8676157f79e71033b4014a2a
   subpackages:
   - discovery
   - kubernetes
@@ -257,9 +259,7 @@ imports:
   - pkg/api/errors
   - pkg/api/install
   - pkg/api/meta
-  - pkg/api/meta/metatypes
   - pkg/api/resource
-  - pkg/api/unversioned
   - pkg/api/v1
   - pkg/api/validation/path
   - pkg/apimachinery
@@ -287,6 +287,8 @@ imports:
   - pkg/apis/extensions
   - pkg/apis/extensions/install
   - pkg/apis/extensions/v1beta1
+  - pkg/apis/meta/v1
+  - pkg/apis/meta/v1/unstructured
   - pkg/apis/policy
   - pkg/apis/policy/install
   - pkg/apis/policy/v1beta1
@@ -331,7 +333,6 @@ imports:
   - pkg/util/net
   - pkg/util/parsers
   - pkg/util/rand
-  - pkg/util/ratelimit
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/strategicpatch
