@@ -9,7 +9,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
-	capi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(
@@ -56,7 +56,7 @@ func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
 
-	cfg := response.(*capi.Config)
+	cfg := response.(*v1.Config)
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {

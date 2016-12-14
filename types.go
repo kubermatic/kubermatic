@@ -2,8 +2,10 @@ package api
 
 import (
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
+	cmdApi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 	"time"
 )
 
@@ -202,34 +204,45 @@ type Cluster struct {
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() api.Config {
-	cfg := api.Config{
+func (c *Cluster) GetKubeconfig() v1.Config {
+	return v1.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: c.Metadata.Name,
-		Clusters: map[string]*api.Cluster{c.Metadata.Name: {
-			Server: c.Address.URL,
-			CertificateAuthorityData: c.Status.RootCA.Cert,
+		Clusters: []v1.NamedCluster{{
+			Name: c.Metadata.Name,
+			Cluster: v1.Cluster{
+				Server: c.Address.URL,
+				CertificateAuthorityData: c.Status.RootCA.Cert,
+			},
 		}},
-		Contexts: map[string]*api.Context{c.Metadata.Name: {
-			Cluster:  c.Metadata.Name,
-			AuthInfo: c.Metadata.Name,
+		Contexts: []v1.NamedContext{{
+			Name: c.Metadata.Name,
+			Context: v1.Context{
+				Cluster:  c.Metadata.Name,
+				AuthInfo: c.Metadata.Name,
+			},
 		}},
-		AuthInfos: map[string]*api.AuthInfo{c.Metadata.Name: {
-			Token: c.Address.Token,
+		AuthInfos: []v1.NamedAuthInfo{{
+			Name: c.Metadata.Name,
+			AuthInfo: v1.AuthInfo{
+				Token: c.Address.Token,
+			},
 		}},
 	}
-	cfg.CurrentContext = c.Metadata.Name
-
-	return cfg
 }
 
 // GetClient returns a kubernetes client which speaks to the cluster
 func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
-	ccfg := c.GetKubeconfig()
+	v1cfg := c.GetKubeconfig()
+	apiCfg := cmdApi.Config{}
+	err := api.Scheme.Convert(v1cfg, apiCfg, nil)
+	if err != nil {
+		return nil, err
+	}
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		ccfg,
-		ccfg.CurrentContext,
+		apiCfg,
+		apiCfg.CurrentContext,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
