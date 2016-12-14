@@ -169,7 +169,7 @@ func (a *aws) userData(
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
 ) error {
-	fmt.Println("func userData")
+	glog.V(1).Infoln("func userData")
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
@@ -185,30 +185,30 @@ func (a *aws) userData(
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 	}
-	glog.V(5).Infof("%##v\n", data)
+	glog.V(1).Infof("%##v\n", data)
 
 	dir, err := ioutil.ReadDir("template/coreos/")
 	if err != nil {
 	}
-	fmt.Println(dir, err)
+	glog.V(1).Infoln(dir, err)
 	tpl, err := template.
 		New("cloud-config-node.yaml").
 		Funcs(ktemplate.FuncMap).
 		ParseFiles(tplPath)
 
-	glog.V(5).Infof("%##v\n%##v\n", tpl, err)
+	glog.V(1).Infof("%##v\n%##v\n", tpl, err)
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("========================AWS========================")
+	glog.V(1).Infoln("========================AWS========================")
 	return tpl.Execute(buf, data)
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
 
-	fmt.Println("func CreateNodes")
+	glog.V(1).Infoln("func CreateNodes")
 
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
@@ -217,7 +217,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if node.AWS.Type == "" {
 		return nil, nil
 	}
-	fmt.Println("Get Session")
+	glog.V(1).Infoln("Get Session")
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
@@ -226,22 +226,22 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		id := provider.ShortUID(5)
-		fmt.Println("Instance ID: " + id)
+		glog.V(1).Infoln("Instance ID: " + id)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
 
-		fmt.Println("Instance Name: " + instanceName)
-		fmt.Println("Creating Cert")
+		glog.V(1).Infoln("Instance Name: " + instanceName)
+		glog.V(1).Infoln("Creating Cert")
 
 		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
 		if err != nil {
 			return createdNodes, err
 		}
-		fmt.Println("Calling a.userData")
+		glog.V(1).Infoln("Calling a.userData")
 		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
-			fmt.Println("Error encountered with a.userData: " + err.Error())
+			glog.V(1).Infoln("Error encountered with a.userData: " + err.Error())
 			return createdNodes, err
 		}
-		fmt.Println("Generating netSpec")
+		glog.V(1).Infoln("Generating netSpec")
 
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
 			{
@@ -280,7 +280,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	fmt.Println("func Nodes")
+	glog.V(1).Infoln("func Nodes")
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 }
 
 func createNode(name string, instance *ec2.Instance) *api.Node {
-	fmt.Println("func createNode")
+	glog.V(1).Infoln("func createNode")
 
 	return &api.Node{
 		Metadata: api.Metadata{
