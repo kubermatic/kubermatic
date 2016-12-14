@@ -169,7 +169,7 @@ func (a *aws) userData(
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
 ) error {
-	fmt.Println("========================AWS========================")
+	fmt.Println("func userData")
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
@@ -208,7 +208,7 @@ func (a *aws) userData(
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
 
-	fmt.Println("Create nodes")
+	fmt.Println("func CreateNodes")
 
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
@@ -280,6 +280,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
+	fmt.Println("func Nodes")
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
@@ -356,6 +357,8 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 }
 
 func createNode(name string, instance *ec2.Instance) *api.Node {
+	fmt.Println("func createNode")
+
 	return &api.Node{
 		Metadata: api.Metadata{
 			// This looks weird but is correct
