@@ -119,6 +119,9 @@ func deleteNodeEndpoint(
 		}
 
 		nodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, node := range nodes {
 			if node.Metadata.UID == req.uid {
