@@ -2,9 +2,9 @@ package api
 
 import (
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdApi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd/api/latest"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 	"time"
 )
@@ -204,8 +204,8 @@ type Cluster struct {
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() v1.Config {
-	return v1.Config{
+func (c *Cluster) GetKubeconfig() *v1.Config {
+	return &v1.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: c.Metadata.Name,
@@ -235,14 +235,14 @@ func (c *Cluster) GetKubeconfig() v1.Config {
 // GetClient returns a kubernetes client which speaks to the cluster
 func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
 	v1cfg := c.GetKubeconfig()
-	apiCfg := cmdApi.Config{}
-	err := api.Scheme.Convert(v1cfg, apiCfg, nil)
+	oldCfg := &cmdApi.Config{}
+	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
 	if err != nil {
 		return nil, err
 	}
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		apiCfg,
-		apiCfg.CurrentContext,
+		*oldCfg,
+		v1cfg.Contexts[0].Name,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)

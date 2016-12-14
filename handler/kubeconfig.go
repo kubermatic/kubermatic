@@ -32,7 +32,7 @@ func kubeconfigEndpoint(
 			return nil, err
 		}
 		cfg := c.GetKubeconfig()
-		return &cfg, nil
+		return cfg, nil
 	}
 }
 
