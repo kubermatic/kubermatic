@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/util/rand"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/util/rand"
 	"sync"
 	"time"
 )

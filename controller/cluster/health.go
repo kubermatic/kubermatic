@@ -2,16 +2,16 @@ package cluster
 
 import (
 	"github.com/kubermatic/api"
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/labels"
 )
 
 const (
 	healthBar = 0.9
 )
 
-func (cc *clusterController) healthyDep(dep *extensions.Deployment) (bool, error) {
+func (cc *clusterController) healthyDep(dep *v1beta1.Deployment) (bool, error) {
 	replicas := dep.Spec.Replicas
 	pods, err := cc.podStore.List(labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels)))
 	if err != nil {
@@ -24,18 +24,18 @@ func (cc *clusterController) healthyDep(dep *extensions.Deployment) (bool, error
 		if p.DeletionTimestamp != nil {
 			continue
 		}
-		if p.Status.Phase != kapi.PodRunning {
+		if p.Status.Phase != v1.PodRunning {
 			continue
 		}
 		for _, c := range p.Status.Conditions {
-			if c.Type == kapi.PodReady && c.Status == kapi.ConditionTrue {
+			if c.Type == v1.PodReady && c.Status == v1.ConditionTrue {
 				healthyPods++
 				break
 			}
 		}
 	}
 
-	if float64(healthyPods) < healthBar*float64(replicas) {
+	if float64(healthyPods) < healthBar*float64(*replicas) {
 		return false, nil
 	}
 

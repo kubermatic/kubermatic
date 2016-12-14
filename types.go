@@ -1,13 +1,13 @@
 package api
 
 import (
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
-
-	"encoding/json"
-	"github.com/ghodss/yaml"
 	"time"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	cmdApi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd/api/latest"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -205,28 +205,28 @@ type Cluster struct {
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() capi.Config {
-	return capi.Config{
+func (c *Cluster) GetKubeconfig() *v1.Config {
+	return &v1.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: c.Metadata.Name,
-		Clusters: []capi.NamedCluster{{
+		Clusters: []v1.NamedCluster{{
 			Name: c.Metadata.Name,
-			Cluster: capi.Cluster{
+			Cluster: v1.Cluster{
 				Server: c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
-		Contexts: []capi.NamedContext{{
+		Contexts: []v1.NamedContext{{
 			Name: c.Metadata.Name,
-			Context: capi.Context{
+			Context: v1.Context{
 				Cluster:  c.Metadata.Name,
 				AuthInfo: c.Metadata.Name,
 			},
 		}},
-		AuthInfos: []capi.NamedAuthInfo{{
+		AuthInfos: []v1.NamedAuthInfo{{
 			Name: c.Metadata.Name,
-			AuthInfo: capi.AuthInfo{
+			AuthInfo: v1.AuthInfo{
 				Token: c.Address.Token,
 			},
 		}},
@@ -234,29 +234,16 @@ func (c *Cluster) GetKubeconfig() capi.Config {
 }
 
 // GetClient returns a kubernetes client which speaks to the cluster
-func (c *Cluster) GetClient() (*kclient.Client, error) {
-	ccfg := c.GetKubeconfig()
-
-	// Marshal to byte stream.
-	jcfg, err := json.Marshal(ccfg)
+func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
+	v1cfg := c.GetKubeconfig()
+	oldCfg := &cmdApi.Config{}
+	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	ycfg, err := yaml.JSONToYAML(jcfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create config from textual config representation.
-	clientcmdConfig, err := clientcmd.Load(ycfg)
-	if err != nil {
-		return nil, err
-	}
-
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		*clientcmdConfig,
-		ccfg.Contexts[0].Name,
+		*oldCfg,
+		v1cfg.Contexts[0].Name,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
@@ -264,7 +251,7 @@ func (c *Cluster) GetClient() (*kclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	client, err := kclient.New(cfg)
+	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
