@@ -62,10 +62,12 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 		datacenters: datacenters,
 	}
 
-	if parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath); err != nil {
-		p.tpl = parsed
+	parsed, err := template.New("cloud-config-node.yaml").Funcs(ktemplate.FuncMap).ParseFiles(tplPath)
+	if err != nil {
 		glog.Errorln("template not found:", err)
 	}
+	p.tpl = parsed
+
 	return p
 }
 
