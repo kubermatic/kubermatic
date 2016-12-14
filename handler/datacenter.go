@@ -66,10 +66,10 @@ type dcKeyListReq struct {
 	dcReq
 }
 
-func decodeDcKeyListRequest(r *http.Request) (interface{}, error) {
+func decodeDcKeyListRequest(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcKeyListReq
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
