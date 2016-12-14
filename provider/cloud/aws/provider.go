@@ -12,6 +12,7 @@ import (
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
+	"encoding/base64"
 	sdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -263,20 +264,13 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:      sdk.String(dc.Spec.AWS.AMI),
-			MaxCount:     sdk.Int64(1),
-			MinCount:     sdk.Int64(1),
-			InstanceType: sdk.String(node.AWS.Type),
-			Placement: &ec2.Placement{
-				AvailabilityZone: sdk.String(node.DatacenterName),
-			},
-			KeyName:           sdk.String(node.AWS.SSHKeyName),
-			UserData:          sdk.String(buf.String()),
+			ImageId:           sdk.String(dc.Spec.AWS.AMI),
+			MaxCount:          sdk.Int64(1),
+			MinCount:          sdk.Int64(1),
+			InstanceType:      sdk.String(node.AWS.Type),
+			KeyName:           sdk.String("henrik-kubermatic"),
+			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
 			NetworkInterfaces: netSpec,
-
-			// Not sure if it needs to be decaled two times
-			// or also in the NetworkInterfaces
-			SubnetId: sdk.String(cluster.Spec.Cloud.AWS.SubnetID),
 		}
 
 		newNode, err := launch(svc, instanceName, instanceRequest, cluster)
@@ -373,6 +367,16 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 func createNode(name string, instance *ec2.Instance) *api.Node {
 	fmt.Println("func createNode")
 
+	privateIp := ""
+	publicIp := ""
+	if instance.PrivateIpAddress != nil {
+		privateIp = *instance.PrivateIpAddress
+	}
+
+	if instance.PublicIpAddress != nil {
+		publicIp = *instance.PublicIpAddress
+	}
+
 	return &api.Node{
 		Metadata: api.Metadata{
 			// This looks weird but is correct
@@ -383,12 +387,12 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 			Addresses: map[string]string{
 				// Probably won't have one... VPC ?
 				// TODO: VPC rules ... NetworkInterfaces
-				"public":  *instance.PublicIpAddress,
-				"private": *instance.PrivateIpAddress,
+				"public":  publicIp,
+				"private": privateIp,
 			},
 		},
 		Spec: api.NodeSpec{
-			DatacenterName: (*instance.Placement.AvailabilityZone)[:len(*instance.Placement.AvailabilityZone)-1],
+			DatacenterName: *instance.Placement.AvailabilityZone,
 			AWS: &api.AWSNodeSpec{
 				Type: *instance.InstanceType,
 			},
@@ -426,6 +430,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		SourceDestCheck: &ec2.AttributeBooleanValue{
 			Value: sdk.Bool(true),
 		},
+		InstanceId: serverReq.Instances[0].InstanceId,
 	})
 	if err != nil {
 		return nil, err
