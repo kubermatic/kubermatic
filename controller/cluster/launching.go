@@ -4,11 +4,10 @@ import (
 	"reflect"
 	"time"
 
-	"k8s.io/kubernetes/pkg/apis/extensions"
-
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
@@ -35,7 +34,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	allHealthy := true
 
 	for _, obj := range deps {
-		dep := obj.(*extensions.Deployment)
+		dep := obj.(*v1beta1.Deployment)
 		role := dep.Spec.Selector.MatchLabels["role"]
 		depHealth, err := cc.healthyDep(dep)
 		if err != nil {

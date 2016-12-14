@@ -15,7 +15,7 @@ $ git clone git@github.com:kubermatic/config
 $ cd api
 $ ln -s ../config/api/datacenter-secrets.yaml secrets.yaml
 $ cd template
-$ ln -s ../../kubermatic/nodes/digitalocean/template/coreos/ coreos
+$ ln -s ../../config/nodes/digitalocean/template/coreos/ coreos
 ```
 
 ## Dependencies

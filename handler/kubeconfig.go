@@ -8,8 +8,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(
@@ -32,7 +32,7 @@ func kubeconfigEndpoint(
 			return nil, err
 		}
 		cfg := c.GetKubeconfig()
-		return &cfg, nil
+		return cfg, nil
 	}
 }
 
@@ -40,10 +40,10 @@ type kubeconfigReq struct {
 	clusterReq
 }
 
-func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
+func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req kubeconfigReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +52,11 @@ func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func encodeKubeconfig(w http.ResponseWriter, response interface{}) (err error) {
+func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
 
-	cfg := response.(*capi.Config)
+	cfg := response.(*v1.Config)
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {

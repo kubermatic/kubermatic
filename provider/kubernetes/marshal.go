@@ -4,14 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kapi "k8s.io/kubernetes/pkg/api"
-	"strconv"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -74,7 +74,7 @@ func cloudProviderAnnotationPrefix(name string) string {
 }
 
 // UnmarshalCluster decodes a Kubernetes namespace into a Kubermatic cluster.
-func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace) (*api.Cluster, error) {
+func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (*api.Cluster, error) {
 	phaseTS, err := time.Parse(time.RFC3339, ns.Annotations[phaseTimestampAnnotation])
 	if err != nil {
 		glog.Warningf(
@@ -164,7 +164,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 }
 
 // MarshalCluster updates a Kubernetes namespace from a Kubermatic cluster.
-func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *kapi.Namespace) (*kapi.Namespace, error) {
+func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v1.Namespace) (*v1.Namespace, error) {
 	// filter out old annotations in our domain
 	as := map[string]string{}
 	for k, v := range ns.Annotations {
@@ -296,8 +296,8 @@ func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, annotations
 }
 
 // ClusterPhase derives the cluster phase from the Kubernetes namespace.
-func ClusterPhase(ns *kapi.Namespace) api.ClusterPhase {
-	if ns.Status.Phase == kapi.NamespaceTerminating {
+func ClusterPhase(ns *v1.Namespace) api.ClusterPhase {
+	if ns.Status.Phase == v1.NamespaceTerminating {
 		return api.DeletingClusterStatusPhase
 	}
 
