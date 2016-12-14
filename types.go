@@ -1,12 +1,13 @@
 package api
 
 import (
+	"time"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdApi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
-	"time"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
