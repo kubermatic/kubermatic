@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"text/template"
 
+	"github.com/golang/glog"
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
@@ -163,6 +165,7 @@ func (a *aws) userData(
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
 ) error {
+	glog.V(5).Infoln("========================AWS========================")
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
@@ -178,14 +181,24 @@ func (a *aws) userData(
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 	}
+	glog.V(5).Infof("%##v\n", data)
 
+	dir, err := ioutil.ReadDir("template/coreos/")
+	if err != nil {
+	}
+	glog.V(5).Infoln(dir, err)
 	tpl, err := template.
 		New("cloud-config-node.yaml").
 		Funcs(ktemplate.FuncMap).
 		ParseFiles(tplPath)
+
+	glog.V(5).Infof("%##v\n%##v\n", tpl, err)
+
 	if err != nil {
 		return err
 	}
+
+	glog.V(5).Infoln("========================AWS========================")
 	return tpl.Execute(buf, data)
 }
 
