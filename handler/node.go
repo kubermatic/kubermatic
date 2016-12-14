@@ -10,7 +10,8 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 )
 
 func nodesEndpoint(
@@ -61,7 +62,7 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 			return nil, err
 		}
 
-		return client.Nodes().List(kapi.ListOptions{})
+		return client.Nodes().List(v1.ListOptions{})
 	}
 }
 
@@ -84,7 +85,7 @@ func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endp
 			return nil, err
 		}
 
-		return client.Nodes().Get(req.uid)
+		return client.Nodes().Get(req.uid, metav1.GetOptions{})
 	}
 }
 
@@ -112,6 +113,26 @@ func deleteNodeEndpoint(
 
 		if cp == nil {
 			return []*api.Node{}, nil
+		}
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		nodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		// HACK: This is dirty. We should correlate the Kubermatic UID to the Kubernetes Name somewhere...
+		for _, node := range nodes {
+			if node.Metadata.UID == req.uid {
+				err = client.Nodes().Delete(node.Status.Addresses["public"], &v1.DeleteOptions{})
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
@@ -165,10 +186,10 @@ type nodesReq struct {
 	clusterReq
 }
 
-func decodeNodesReq(r *http.Request) (interface{}, error) {
+func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -183,10 +204,10 @@ type createNodesReq struct {
 	Spec      api.NodeSpec `json:"spec"`
 }
 
-func decodeCreateNodesReq(r *http.Request) (interface{}, error) {
+func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createNodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -204,10 +225,10 @@ type nodeReq struct {
 	uid string
 }
 
-func decodeNodeReq(r *http.Request) (interface{}, error) {
+func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodeReq
 
-	cr, err := decodeNodesReq(r)
+	cr, err := decodeNodesReq(c, r)
 	if err != nil {
 		return nil, err
 	}

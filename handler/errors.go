@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	httptransport "github.com/go-kit/kit/transport/http"
+	"golang.org/x/net/context"
 )
 
 // HTTPError represents an HTTP server error.
@@ -45,9 +46,9 @@ func NewNotAuthorized() error {
 
 func defaultHTTPErrorEncoder() httptransport.ServerOption {
 	return httptransport.ServerErrorEncoder(
-		func(w http.ResponseWriter, err error) {
+		func(ctx context.Context, err error, w http.ResponseWriter) {
 			switch err.(type) {
-			case httptransport.BadRequestError:
+			case httptransport.Error:
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			case HTTPError:
 				http.Error(w, err.Error(), err.(HTTPError).code)

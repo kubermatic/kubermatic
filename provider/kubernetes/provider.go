@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api/provider"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // Providers creates KubernetesProviders for each context in the kubeconfig
@@ -27,7 +27,7 @@ func Providers(
 		return nil, err
 	}
 
-	cfgs := map[string]restclient.Config{}
+	cfgs := map[string]rest.Config{}
 	for ctx := range clientcmdConfig.Contexts {
 		clientconfig := clientcmd.NewNonInteractiveClientConfig(
 			*clientcmdConfig,
@@ -36,7 +36,7 @@ func Providers(
 			nil,
 		)
 
-		var cfg *restclient.Config
+		var cfg *rest.Config
 		cfg, err = clientconfig.ClientConfig()
 		if err != nil {
 			return nil, err
