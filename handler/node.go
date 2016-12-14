@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -124,16 +125,19 @@ func createNodesEndpoint(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
 
+		glog.V(1).Infoln("Get k8s provider")
 		kp, found := kps[req.dc]
 		if !found {
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
+		glog.V(1).Infoln("Get Cluster from username and clustername")
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
 
+		glog.V(1).Infoln("Get ClusterCloudProvider")
 		cpName, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
@@ -142,6 +146,7 @@ func createNodesEndpoint(
 			return nil, NewBadRequest("cannot create nodes without cloud provider")
 		}
 
+		glog.V(1).Infoln("Get NodeCloudProviderName")
 		npName, err := provider.NodeCloudProviderName(&req.Spec)
 		if err != nil {
 			return nil, err
@@ -151,6 +156,7 @@ func createNodesEndpoint(
 				cpName, npName)
 		}
 
+		glog.V(1).Infoln("Call create Nodes")
 		return cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
 	}
 }
