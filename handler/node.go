@@ -113,6 +113,26 @@ func deleteNodeEndpoint(
 			return []*api.Node{}, nil
 		}
 
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		nodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		// HACK: This is dirty. We should correlate the Kubermatic UID to the Kubernetes Name somewhere...
+		for _, node := range nodes {
+			if node.Metadata.UID == req.uid {
+				err = client.Nodes().Delete(node.Status.Addresses["public"])
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
 		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
 	}
 }
