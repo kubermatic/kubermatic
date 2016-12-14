@@ -84,6 +84,10 @@ func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
 				Key:   sdk.String(defaultKubermaticClusterNameTagKey),
 				Value: sdk.String(cluster.Metadata.Name),
 			},
+			{
+				Key:   sdk.String(awsFilterName),
+				Value: sdk.String(fmt.Sprintf("kubermatic-%s", cluster.Metadata.Name)),
+			},
 		},
 	}
 	_, err = svc.CreateTags(tReq)
