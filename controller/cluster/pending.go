@@ -24,7 +24,7 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
 	"k8s.io/client-go/pkg/api/v1"
-	extensions1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -347,12 +347,12 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	loadFile := func(s string) (*extensions1beta1.Ingress, error) {
+	loadFile := func(s string) (*extensionsv1beta1.Ingress, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-ingress.yaml"))
 		if err != nil {
 			return nil, err
 		}
-		var ingress extensions1beta1.Ingress
+		var ingress extensionsv1beta1.Ingress
 		data := struct {
 			DC          string
 			ClusterName string
@@ -371,7 +371,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 		return &ingress, err
 	}
 
-	ingress := map[string]func(s string) (*extensions1beta1.Ingress, error){
+	ingress := map[string]func(s string) (*extensionsv1beta1.Ingress, error){
 		"sniff": loadFile,
 	}
 
@@ -404,13 +404,13 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	loadFile := func(s string) (*extensions1beta1.Deployment, error) {
+	loadFile := func(s string) (*extensionsv1beta1.Deployment, error) {
 		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
 		if err != nil {
 			return nil, err
 		}
 
-		var dep extensions1beta1.Deployment
+		var dep extensionsv1beta1.Deployment
 		data := struct {
 			DC          string
 			ClusterName string
@@ -422,7 +422,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		return &dep, err
 	}
 
-	loadApiserver := func(s string) (*extensions1beta1.Deployment, error) {
+	loadApiserver := func(s string) (*extensionsv1beta1.Deployment, error) {
 		var data struct {
 			AdvertiseAddress string
 			SecurePort       int
@@ -448,12 +448,12 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			return nil, err
 		}
 
-		var dep extensions1beta1.Deployment
+		var dep extensionsv1beta1.Deployment
 		err = t.Execute(data, &dep)
 		return &dep, err
 	}
 
-	deps := map[string]func(s string) (*extensions1beta1.Deployment, error){
+	deps := map[string]func(s string) (*extensionsv1beta1.Deployment, error){
 		"etcd":               loadFile,
 		"etcd-public":        loadFile,
 		"apiserver":          loadApiserver,
@@ -469,7 +469,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	for s, gen := range deps {
 		exists := false
 		for _, obj := range existingDeps {
-			dep := obj.(*extensions1beta1.Deployment)
+			dep := obj.(*extensionsv1beta1.Deployment)
 			if role, found := dep.Spec.Selector.MatchLabels["role"]; found && role == s {
 				exists = true
 				break
