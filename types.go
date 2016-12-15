@@ -91,6 +91,7 @@ type AWSCloudSpec struct {
 	SSHKeys           []string `json:"sshKeys"`
 	SubnetID          string   `json:"subnet_id"`
 	InternetGatewayID string   `json:"internet_gateway_id"`
+	RouteTableID      string   `json:"route_table_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
