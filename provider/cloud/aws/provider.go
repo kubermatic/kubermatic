@@ -445,14 +445,11 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 
 	return &api.Node{
 		Metadata: api.Metadata{
-			// This looks weird but is correct
 			UID:  *instance.InstanceId,
-			Name: name,
+			Name: privateIP,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
-				// Probably won't have one... VPC ?
-				// TODO: VPC rules ... NetworkInterfaces
 				"public":  publicIP,
 				"private": privateIP,
 			},
