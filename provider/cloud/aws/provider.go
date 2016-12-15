@@ -446,7 +446,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 	return &api.Node{
 		Metadata: api.Metadata{
 			UID:  *instance.InstanceId,
-			Name: privateIP,
+			Name: name,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
@@ -479,6 +479,10 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 			{
 				Key:   sdk.String(defaultKubermaticClusterNameTagKey),
 				Value: sdk.String(cluster.Metadata.Name),
+			},
+			{
+				Key:   sdk.String(awsFilterName),
+				Value: sdk.String(name),
 			},
 		},
 	})
