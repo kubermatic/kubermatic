@@ -209,9 +209,6 @@ func (a *aws) userData(
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
-
-	glog.Info("Create nodes")
-
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
@@ -219,7 +216,6 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if node.AWS.Type == "" {
 		return nil, errors.New("no AWS node type specified")
 	}
-	glog.Info("Get Session")
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
@@ -228,23 +224,16 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		id := provider.ShortUID(5)
-		glog.Info("Instance ID: " + id)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
-
-		glog.Info("Instance Name: " + instanceName)
-		glog.Info("Creating Cert")
 
 		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
 		if err != nil {
 			return createdNodes, err
 		}
-		glog.Info("Calling a.userData")
+
 		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
-			glog.Info("Error encountered with a.userData: " + err.Error())
 			return createdNodes, err
 		}
-		glog.Info("Generating netSpec")
-
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
 			{
 				DeviceIndex:              sdk.Int64(0), // eth0
