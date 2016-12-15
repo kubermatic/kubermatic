@@ -43,6 +43,12 @@ build:
           cp -av alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
           cp datacenters.yaml "$WERCKER_OUTPUT_DIR/opt"
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
+  after-steps:
+    - install-packages:
+        packages: ruby
+    - wantedly/pretty-slack-notify:
+        webhook_url: $SLACK_WEBHOOK_URL
+        notify_on: "failed"
 
 push-hash-image:
     box: ubuntu:14.04
