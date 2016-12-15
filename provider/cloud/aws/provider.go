@@ -369,16 +369,19 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 		return nil, err
 	}
 
-	glog.Infoln(string(len(resp.Reservations)) + " Reservations Retrieved")
+	glog.Infof("%d Reservations Retrieved\n", len(resp.Reservations))
 
 	nodes := make([]*api.Node, 0, len(resp.Reservations))
 	for _, n := range resp.Reservations {
-		glog.Infoln(string(len(n.Instances)) + " Instances in reservation")
+		glog.Infof("%d instances in reservation %s\n", len(n.Instances), n.ReservationId)
 		for _, instance := range n.Instances {
 			var isOwner bool
 			var name string
+			glog.Infof("Instance Tags\n")
 			for _, tag := range instance.Tags {
+				glog.Infof("Tag: %s = %s\n", *tag.Key, *tag.Value)
 				if *tag.Key == defaultKubermaticClusterIDTagKey && *tag.Value == cluster.Metadata.Name {
+					glog.Infof("isOwner of instance %s\n", instance.String())
 					isOwner = true
 				}
 				if *tag.Key == awsFilterName {
