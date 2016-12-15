@@ -14,7 +14,7 @@ datacenters:
         region: us-central1-c
       seed:
         bringyourown:
-  aws-us-west-2:
+  us-west-2:
     location: Oregon
     country: US
     provider: aws
