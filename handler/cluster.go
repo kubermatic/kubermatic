@@ -147,7 +147,6 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		//Only try to delete the nodes if the cluster has a cloud provider configured
 		if cp != nil {
 			nodes, err := cp.Nodes(ctx, c)
 			if err != nil {
@@ -160,6 +159,11 @@ func deleteClusterEndpoint(
 					return nil, err
 				}
 			}
+
+			err = cp.CleanUp(c)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		err = kp.DeleteCluster(req.user, req.cluster)
@@ -170,7 +174,7 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		return struct{}{}, nil
+		return nil, nil
 	}
 }
 

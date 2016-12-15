@@ -41,6 +41,8 @@ type NodeProvider interface {
 type CloudProvider interface {
 	CloudSpecProvider
 	NodeProvider
+
+	CleanUp(*api.Cluster) error
 }
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.

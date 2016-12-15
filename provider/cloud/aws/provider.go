@@ -420,3 +420,31 @@ func makePointerSlice(stackSlice []string) []*string {
 	}
 	return pointerSlice
 }
+
+func (a *aws) CleanUp(c *api.Cluster) error {
+	svc, err := a.getSession(c)
+	if err != nil {
+		return err
+	}
+
+	//Delete VPC's in case theres one
+	if c.Spec.Cloud.AWS.VPCId != "" {
+		svcOut, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
+			VpcIds: []*string{sdk.String(c.Spec.Cloud.AWS.VPCId)},
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(svcOut.Vpcs) > 0 {
+			_, err := svc.DeleteVpc(&ec2.DeleteVpcInput{
+				VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}

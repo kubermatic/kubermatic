@@ -83,3 +83,7 @@ func (b *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.
 func (b *bringyourown) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	return errors.New("delete: unsupported operation")
 }
+
+func (b *bringyourown) CleanUp(c *api.Cluster) error {
+	return nil
+}

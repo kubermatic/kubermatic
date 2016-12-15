@@ -302,3 +302,7 @@ func dropletKeys(keys []string) []godo.DropletCreateSSHKey {
 
 	return dropletKeys
 }
+
+func (do *digitalocean) CleanUp(c *api.Cluster) error {
+	return nil
+}

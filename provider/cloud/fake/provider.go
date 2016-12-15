@@ -88,3 +88,7 @@ func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]
 func (p *fakeCloudProvider) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	return errors.New("delete: unsupported operation")
 }
+
+func (p *fakeCloudProvider) CleanUp(c *api.Cluster) error {
+	return nil
+}
