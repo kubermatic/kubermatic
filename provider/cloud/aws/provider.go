@@ -368,14 +368,14 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 func createNode(name string, instance *ec2.Instance) *api.Node {
 	fmt.Println("func createNode")
 
-	privateIp := ""
-	publicIp := ""
+	privateIP := ""
+	publicIP := ""
 	if instance.PrivateIpAddress != nil {
-		privateIp = *instance.PrivateIpAddress
+		privateIP = *instance.PrivateIpAddress
 	}
 
 	if instance.PublicIpAddress != nil {
-		publicIp = *instance.PublicIpAddress
+		publicIP = *instance.PublicIpAddress
 	}
 
 	return &api.Node{
@@ -388,8 +388,8 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 			Addresses: map[string]string{
 				// Probably won't have one... VPC ?
 				// TODO: VPC rules ... NetworkInterfaces
-				"public":  publicIp,
-				"private": privateIp,
+				"public":  publicIP,
+				"private": privateIP,
 			},
 		},
 		Spec: api.NodeSpec{
