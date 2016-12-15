@@ -45,7 +45,7 @@ const (
 )
 
 const (
-	tplPath = "template/coreos/aws--node.yaml"
+	tplPath = "template/coreos/aws-cloud-config-node.yaml"
 )
 
 var (
