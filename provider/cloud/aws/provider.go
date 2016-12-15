@@ -54,10 +54,6 @@ var (
 	defaultKubermaticClusterIDTagKey   = "kubermatic-cluster-id"
 )
 
-type aws struct {
-	datacenters map[string]provider.DatacenterMeta
-}
-
 // NewCloudProvider returns a new aws provider.
 func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
 	fmt.Println("func NewCloudProvider")
