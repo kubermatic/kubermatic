@@ -32,8 +32,8 @@ const (
 	secretAccessKeyAnnotationKey = "secret-access-key"
 	sshAnnotationKey             = "ssh-key"
 	subnetIDKey                  = "subnet-id"
-	vpcIdKey                     = "vpc_id"
-	internetGatewayIdKey         = "internet_gateway_id"
+	vpcIDKey                     = "vpc-id"
+	internetGatewayIDKey         = "internet-gateway-id"
 	awsKeyDelimiter              = ","
 )
 
@@ -150,10 +150,13 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	}
 
 	err = createTags(svc, vpc, gateway, subnet, cluster)
+	if err != nil {
+		return err
+	}
 
 	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
-	cluster.Spec.Cloud.AWS.InternetGatewayId = *gateway.InternetGatewayId
+	cluster.Spec.Cloud.AWS.InternetGatewayID = *gateway.InternetGatewayId
 
 	return nil
 }
@@ -164,8 +167,8 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, 
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
 		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimiter),
 		subnetIDKey:                  cs.AWS.SubnetID,
-		vpcIdKey:                     cs.AWS.VPCId,
-		internetGatewayIdKey:         cs.AWS.InternetGatewayId,
+		vpcIDKey:                     cs.AWS.VPCId,
+		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
 	}, nil
 }
 
@@ -188,11 +191,11 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no subnet ID found")
 	}
 
-	if spec.AWS.VPCId, ok = annotations[vpcIdKey]; !ok {
+	if spec.AWS.VPCId, ok = annotations[vpcIDKey]; !ok {
 		return nil, errors.New("no vpc ID found")
 	}
 
-	if spec.AWS.InternetGatewayId, ok = annotations[internetGatewayIdKey]; !ok {
+	if spec.AWS.InternetGatewayID, ok = annotations[internetGatewayIDKey]; !ok {
 		return nil, errors.New("no internet gateway ID found")
 	}
 
@@ -453,7 +456,7 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 	}
 
 	_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
-		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayId),
+		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 		VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
 	})
 	if err != nil {
@@ -468,7 +471,7 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 	}
 
 	_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
-		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayId),
+		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 	})
 	if err != nil {
 		return err

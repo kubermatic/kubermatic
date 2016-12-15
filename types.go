@@ -90,7 +90,7 @@ type AWSCloudSpec struct {
 	VPCId             string   `json:"vpc_id"`
 	SSHKeys           []string `json:"sshKeys"`
 	SubnetID          string   `json:"subnet_id"`
-	InternetGatewayId string   `json:"internet_gateway_id"`
+	InternetGatewayID string   `json:"internet_gateway_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
