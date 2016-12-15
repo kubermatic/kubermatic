@@ -32,15 +32,16 @@ const (
 	secretAccessKeyAnnotationKey = "secret-access-key"
 	sshAnnotationKey             = "ssh-key"
 	subnetIDKey                  = "subnet-id"
-	awsKeyDelimitor              = ","
+	vpcIdKey                     = "vpc_id"
+	internetGatewayIdKey         = "internet_gateway_id"
+	awsKeyDelimiter              = ","
 )
 
 const (
-	awsFilterName       = "Name"
-	awsFilterState      = "instance-state-name"
-	awsFilterRunning    = "running"
-	awsFilterPending    = "pending"
-	awsFilterDefaultVPC = "default-vpc"
+	awsFilterName    = "Name"
+	awsFilterState   = "instance-state-name"
+	awsFilterRunning = "running"
+	awsFilterPending = "pending"
 )
 
 const (
@@ -63,18 +64,51 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	}
 }
 
-func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
+func createVpc(svc *ec2.EC2, cluster *api.Cluster) (*ec2.Vpc, error) {
 	vReq := &ec2.CreateVpcInput{
 		CidrBlock:       sdk.String(VPCCidrBlock),
 		InstanceTenancy: sdk.String(ec2.TenancyDefault),
 	}
-	vRes, err := svc.CreateVpc(vReq)
+	vpcOut, err := svc.CreateVpc(vReq)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	tReq := &ec2.CreateTagsInput{
-		Resources: []*string{vRes.Vpc.VpcId},
+	return vpcOut.Vpc, nil
+}
+
+func createSubnet(svc *ec2.EC2, vpc *ec2.Vpc, cluster *api.Cluster) (*ec2.Subnet, error) {
+	sOut, err := svc.CreateSubnet(&ec2.CreateSubnetInput{
+		CidrBlock: sdk.String(SubnetCidrBlock),
+		VpcId:     vpc.VpcId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sOut.Subnet, nil
+}
+
+func createInternetGateway(svc *ec2.EC2, vpc *ec2.Vpc, cluster *api.Cluster) (*ec2.InternetGateway, error) {
+	igOut, err := svc.CreateInternetGateway(&ec2.CreateInternetGatewayInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = svc.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
+		InternetGatewayId: igOut.InternetGateway.InternetGatewayId,
+		VpcId:             vpc.VpcId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return igOut.InternetGateway, nil
+}
+
+func createTags(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet *ec2.Subnet, cluster *api.Cluster) error {
+	_, err := svc.CreateTags(&ec2.CreateTagsInput{
+		Resources: []*string{vpc.VpcId, subnet.SubnetId, gateway.InternetGatewayId},
 		Tags: []*ec2.Tag{
 			{
 				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
@@ -89,9 +123,9 @@ func setupVPC(svc *ec2.EC2, cluster *api.Cluster) (string, error) {
 				Value: sdk.String(fmt.Sprintf("kubermatic-%s", cluster.Metadata.Name)),
 			},
 		},
-	}
-	_, err = svc.CreateTags(tReq)
-	return *vRes.Vpc.VpcId, err
+	})
+
+	return err
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
@@ -100,22 +134,26 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
-	vpcID, err := setupVPC(svc, cluster)
+	vpc, err := createVpc(svc, cluster)
 	if err != nil {
 		return err
 	}
 
-	sReq := &ec2.CreateSubnetInput{
-		CidrBlock: sdk.String(SubnetCidrBlock),
-		VpcId:     sdk.String(vpcID),
-	}
-	sRes, err := svc.CreateSubnet(sReq)
+	subnet, err := createSubnet(svc, vpc, cluster)
 	if err != nil {
 		return err
 	}
 
-	cluster.Spec.Cloud.AWS.VPCId = vpcID
-	cluster.Spec.Cloud.AWS.SubnetID = *sRes.Subnet.SubnetId
+	gateway, err := createInternetGateway(svc, vpc, cluster)
+	if err != nil {
+		return err
+	}
+
+	err = createTags(svc, vpc, gateway, subnet, cluster)
+
+	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
+	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
+	cluster.Spec.Cloud.AWS.InternetGatewayId = *gateway.InternetGatewayId
 
 	return nil
 }
@@ -124,8 +162,10 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, 
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
-		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimitor),
+		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimiter),
 		subnetIDKey:                  cs.AWS.SubnetID,
+		vpcIdKey:                     cs.AWS.VPCId,
+		internetGatewayIdKey:         cs.AWS.InternetGatewayId,
 	}, nil
 }
 
@@ -144,18 +184,26 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no secret key found")
 	}
 
+	if spec.AWS.SubnetID, ok = annotations[subnetIDKey]; !ok {
+		return nil, errors.New("no subnet ID found")
+	}
+
+	if spec.AWS.VPCId, ok = annotations[vpcIdKey]; !ok {
+		return nil, errors.New("no vpc ID found")
+	}
+
+	if spec.AWS.InternetGatewayId, ok = annotations[internetGatewayIdKey]; !ok {
+		return nil, errors.New("no internet gateway ID found")
+	}
+
 	sshKeys, ok := annotations[secretAccessKeyAnnotationKey]
 	if !ok {
 		return nil, errors.New("ssh keys found")
 	}
-	for _, key := range strings.Split(sshKeys, awsKeyDelimitor) {
+	for _, key := range strings.Split(sshKeys, awsKeyDelimiter) {
 		if len(key) > 0 {
 			spec.AWS.SSHKeys = append(spec.AWS.SSHKeys, key)
 		}
-	}
-
-	if spec.AWS.SubnetID, ok = annotations[subnetIDKey]; !ok {
-		return nil, errors.New("no subnet ID found")
 	}
 
 	return spec, nil
@@ -398,52 +446,39 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 	return createNode(name, serverReq.Instances[0]), nil
 }
 
-func getDefaultVPCId(client *ec2.EC2) (string, error) {
-	output, err := client.DescribeAccountAttributes(&ec2.DescribeAccountAttributesInput{})
-	if err != nil {
-		return "", err
-	}
-
-	for _, attribute := range output.AccountAttributes {
-		if *attribute.AttributeName == awsFilterDefaultVPC {
-			return *attribute.AttributeValues[0].AttributeValue, nil
-		}
-	}
-
-	return "", errors.New("No default-vpc attribute")
-}
-
-func makePointerSlice(stackSlice []string) []*string {
-	pointerSlice := []*string{}
-	for i := range stackSlice {
-		pointerSlice = append(pointerSlice, &stackSlice[i])
-	}
-	return pointerSlice
-}
-
 func (a *aws) CleanUp(c *api.Cluster) error {
 	svc, err := a.getSession(c)
 	if err != nil {
 		return err
 	}
 
-	//Delete VPC's in case theres one
-	if c.Spec.Cloud.AWS.VPCId != "" {
-		svcOut, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
-			VpcIds: []*string{sdk.String(c.Spec.Cloud.AWS.VPCId)},
-		})
-		if err != nil {
-			return err
-		}
+	_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayId),
+		VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
+	})
+	if err != nil {
+		return err
+	}
 
-		if len(svcOut.Vpcs) > 0 {
-			_, err := svc.DeleteVpc(&ec2.DeleteVpcInput{
-				VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
-			})
-			if err != nil {
-				return err
-			}
-		}
+	_, err = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
+		SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+		InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayId),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
+		VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil

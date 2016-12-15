@@ -85,11 +85,12 @@ type DigitaloceanCloudSpec struct {
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID     string   `json:"access_key_id"`
-	SecretAccessKey string   `json:"secret_access_key"`
-	VPCId           string   `json:"vpc_id"`
-	SSHKeys         []string `json:"sshKeys"`
-	SubnetID        string   `json:"subnet_id"`
+	AccessKeyID       string   `json:"access_key_id"`
+	SecretAccessKey   string   `json:"secret_access_key"`
+	VPCId             string   `json:"vpc_id"`
+	SSHKeys           []string `json:"sshKeys"`
+	SubnetID          string   `json:"subnet_id"`
+	InternetGatewayId string   `json:"internet_gateway_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
