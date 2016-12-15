@@ -126,10 +126,7 @@ func deleteNodeEndpoint(
 
 		for _, node := range nodes {
 			if node.Metadata.UID == req.uid {
-				err = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
-				if err != nil {
-					return nil, err
-				}
+				_ = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
 			}
 		}
 
