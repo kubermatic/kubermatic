@@ -45,7 +45,7 @@ const (
 )
 
 const (
-	tplPath = "template/coreos/aws-cloud-config-node.yaml"
+	tplPath = "template/coreos/aws--node.yaml"
 )
 
 var (
@@ -237,7 +237,7 @@ func (a *aws) userData(
 	}
 
 	tpl, err := template.
-		New("cloud-config-node.yaml").
+		New("aws-cloud-config-node.yaml").
 		Funcs(ktemplate.FuncMap).
 		ParseFiles(tplPath)
 	if err != nil {
