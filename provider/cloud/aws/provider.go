@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/golang/glog"
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
@@ -333,10 +334,15 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
+
+	glog.Infoln("Getting session")
+
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
 	}
+	glog.Infoln("Session Retrieved")
+	glog.Infoln("Building Instance params")
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{{
@@ -349,13 +355,19 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 		}},
 	}
 
+	glog.Infoln("Instance Params built")
+	glog.Infoln("Describing Instances")
+
 	resp, err := svc.DescribeInstances(params)
 	if err != nil {
 		return nil, err
 	}
 
+	glog.Infoln(string(len(resp.Reservations)) + " Reservations Retrieved")
+
 	nodes := make([]*api.Node, 0, len(resp.Reservations))
 	for _, n := range resp.Reservations {
+		glog.Infoln(string(len(n.Instances)) + " Instances in reservation")
 		for _, instance := range n.Instances {
 			var isOwner bool
 			var name string
@@ -368,6 +380,8 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 				}
 			}
 			if isOwner {
+				glog.Infoln("Adding node " + instance.String())
+
 				nodes = append(nodes, createNode(name, instance))
 			}
 		}
