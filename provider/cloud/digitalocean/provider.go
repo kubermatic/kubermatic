@@ -143,9 +143,9 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		}
 
 		tpl, err := template.
-			New("cloud-config-node.yaml").
+			New("do-cloud-config-node.yaml").
 			Funcs(ktemplate.FuncMap).
-			ParseFiles("template/coreos/cloud-config-node.yaml")
+			ParseFiles("template/coreos/do-cloud-config-node.yaml")
 
 		if err != nil {
 			return created, err
