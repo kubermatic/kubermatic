@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"encoding/base64"
+
 	sdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -226,7 +227,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
 	}
 	if node.AWS.Type == "" {
-		return nil, nil
+		return nil, errors.New("no AWS node type specified")
 	}
 	fmt.Println("Get Session")
 	svc, err := a.getSession(cluster)
