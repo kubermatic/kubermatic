@@ -124,10 +124,9 @@ func deleteNodeEndpoint(
 			return nil, err
 		}
 
-		// HACK: This is dirty. We should correlate the Kubermatic UID to the Kubernetes Name somewhere...
 		for _, node := range nodes {
 			if node.Metadata.UID == req.uid {
-				err = client.Nodes().Delete(node.Status.Addresses["public"], &v1.DeleteOptions{})
+				err = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
 				if err != nil {
 					return nil, err
 				}
