@@ -107,24 +107,30 @@ func createInternetGateway(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.InternetGateway, er
 	return igOut.InternetGateway, nil
 }
 
-func createRouteTable(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.RouteTable, error) {
-	rtOut, err := svc.CreateRouteTable(&ec2.CreateRouteTableInput{
-		VpcId: vpc.VpcId,
+func addRoute(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.RouteTable, error) {
+	rtOut, err := svc.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
+		},
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if len(rtOut.RouteTables) != 1 {
+		return nil, errors.New("Could not find main RouteTable")
 	}
 
 	_, err = svc.CreateRoute(&ec2.CreateRouteInput{
 		GatewayId:            gateway.InternetGatewayId,
 		DestinationCidrBlock: sdk.String("0.0.0.0/0"),
-		RouteTableId:         rtOut.RouteTable.RouteTableId,
+		RouteTableId:         rtOut.RouteTables[0].RouteTableId,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return rtOut.RouteTable, nil
+	return rtOut.RouteTables[0], nil
 }
 
 func createTags(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet *ec2.Subnet, routeTable *ec2.RouteTable, cluster *api.Cluster) error {
@@ -173,7 +179,7 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	}
 	cluster.Spec.Cloud.AWS.InternetGatewayID = *gateway.InternetGatewayId
 
-	routeTable, err := createRouteTable(svc, vpc, gateway)
+	routeTable, err := addRoute(svc, vpc, gateway)
 	if err != nil {
 		return err
 	}
