@@ -480,43 +480,45 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 	return createNode(name, serverReq.Instances[0]), nil
 }
 
-func (a *aws) CleanUp(c *api.Cluster) error {
+func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 	svc, err := a.getSession(c)
 	if err != nil {
 		return err
 	}
 
+	// alive tests for living instaces
 	alive := func() (bool, error) {
-		ress, err := svc.DescribeInstances(&ec2.DescribeInstancesInput{})
-		if err != nil {
+		ress, erre := svc.DescribeInstances(&ec2.DescribeInstancesInput{
+			Filters: []*ec2.Filter{{
+				Name:   sdk.String("tag-value"),
+				Values: []*string{sdk.String(c.Metadata.UID)},
+			}},
+		})
+		if erre != nil {
 			return true, err
 		}
 
+		// Look for living instaces
 		for _, res := range ress.Reservations {
-			for _, group := range res.Groups {
-				if string(*group.GroupName) == defaultKubermaticClusterIDTagKey && group.GoString() == c.Metadata.UID {
-					return true, nil
-				}
+			if len(res.Instances) > 0 {
+				return true, nil
 			}
 		}
 		return false, nil
 	}
 
-	done := make(chan error, 1)
-	//TODO(relfake): Use context
-	go func() {
-		for retrys := 0; retrys < 15; retrys++ {
-			alive, err := alive()
-			if err != nil {
-				done <- err
-			}
-			if !alive {
-				done <- nil
-				continue
-			}
-			time.Sleep(time.Second * 45)
+	// Wait for nodes to terminatle
+	for {
+		instancesAlive, erre := alive()
+		if erre != nil {
+			return erre
 		}
-	}()
+		if !instancesAlive {
+			break
+		}
+		time.Sleep(time.Second * 45)
+	}
+
 	if c.Spec.Cloud.AWS.RouteTableID != "" {
 		_, err = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
 			RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
@@ -554,13 +556,6 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 		}
 	}
 
-	// Wait for sync
-	select {
-	case err := <-done:
-		if err != nil {
-			return err
-		}
-	}
 	if c.Spec.Cloud.AWS.VPCId != "" {
 		_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
 			VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
@@ -569,5 +564,10 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
 		}
 	}
+	return nil
+}
+
+func (a *aws) CleanUp(c *api.Cluster) error {
+	go a.doCleanUpAWS(c)
 	return nil
 }
