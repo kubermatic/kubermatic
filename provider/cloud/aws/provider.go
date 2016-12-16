@@ -161,7 +161,7 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 	return sgOut.SecurityGroups[0], nil
 }
 
-func getAcl(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
+func getACL(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
 	aOut, err := svc.DescribeNetworkAcls(&ec2.DescribeNetworkAclsInput{
 		Filters: []*ec2.Filter{
 			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
@@ -239,7 +239,7 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
-	acl, err := getAcl(svc, vpc)
+	acl, err := getACL(svc, vpc)
 	if err != nil {
 		return err
 	}
