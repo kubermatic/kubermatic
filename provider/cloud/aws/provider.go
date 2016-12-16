@@ -133,9 +133,54 @@ func addRoute(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.Ro
 	return rtOut.RouteTables[0], nil
 }
 
-func createTags(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet *ec2.Subnet, routeTable *ec2.RouteTable, cluster *api.Cluster) error {
+func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
+	sgOut, err := svc.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sgOut.SecurityGroups) != 1 {
+		return nil, errors.New("Could not find main SecurityGroup")
+	}
+
+	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		CidrIp:     sdk.String("0.0.0.0/0"),
+		FromPort:   sdk.Int64(22),
+		ToPort:     sdk.Int64(22),
+		GroupId:    sgOut.SecurityGroups[0].GroupId,
+		IpProtocol: sdk.String("-1"),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sgOut.SecurityGroups[0], nil
+}
+
+func getAcl(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
+	aOut, err := svc.DescribeNetworkAcls(&ec2.DescribeNetworkAclsInput{
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(aOut.NetworkAcls) != 1 {
+		return nil, errors.New("Could not find main NetworkACL")
+	}
+
+	return aOut.NetworkAcls[0], nil
+}
+
+func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet *ec2.Subnet, routeTable *ec2.RouteTable, securityGroup *ec2.SecurityGroup, acl *ec2.NetworkAcl) error {
 	_, err := svc.CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{vpc.VpcId, subnet.SubnetId, gateway.InternetGatewayId, routeTable.RouteTableId},
+		Resources: []*string{vpc.VpcId, subnet.SubnetId, gateway.InternetGatewayId, routeTable.RouteTableId, securityGroup.GroupId, acl.NetworkAclId},
 		Tags: []*ec2.Tag{
 			{
 				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
@@ -189,7 +234,17 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	}
 	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 
-	err = createTags(svc, vpc, gateway, subnet, routeTable, cluster)
+	securityGroup, err := addSecurityRule(svc, vpc)
+	if err != nil {
+		return err
+	}
+
+	acl, err := getAcl(svc, vpc)
+	if err != nil {
+		return err
+	}
+
+	err = createTags(svc, cluster, vpc, gateway, subnet, routeTable, securityGroup, acl)
 	if err != nil {
 		return err
 	}
