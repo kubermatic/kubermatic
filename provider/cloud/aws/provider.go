@@ -237,7 +237,7 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no route table ID found")
 	}
 
-	sshKeys, ok := annotations[secretAccessKeyAnnotationKey]
+	sshKeys, ok := annotations[sshAnnotationKey]
 	if !ok {
 		return nil, errors.New("ssh keys found")
 	}
