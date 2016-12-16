@@ -30,7 +30,7 @@ const (
 const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
-	sshKeyFingerprintKey         = "ssh-key-fingerprint"
+	sshKeyNameKey                = "ssh-key-fingerprint"
 	subnetIDKey                  = "subnet-id"
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
@@ -192,11 +192,11 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	return nil
 }
 
-func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, err error) {
+func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
-		sshKeyFingerprintKey:         cs.AWS.SSHKeyFingerprint,
+		sshKeyNameKey:                cs.AWS.SSHKeyName,
 		subnetIDKey:                  cs.AWS.SubnetID,
 		vpcIDKey:                     cs.AWS.VPCId,
 		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
@@ -233,7 +233,7 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no route table ID found")
 	}
 
-	if spec.AWS.SSHKeyFingerprint, ok = annotations[sshKeyFingerprintKey]; !ok {
+	if spec.AWS.SSHKeyName, ok = annotations[sshKeyNameKey]; !ok {
 		return nil, errors.New("no route table ID found")
 	}
 
@@ -316,7 +316,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
-			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyFingerprint),
+			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
 			NetworkInterfaces: netSpec,
 		}
 

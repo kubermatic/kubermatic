@@ -87,7 +87,7 @@ type AWSCloudSpec struct {
 	AccessKeyID       string `json:"access_key_id"`
 	SecretAccessKey   string `json:"secret_access_key"`
 	VPCId             string `json:"vpc_id"`
-	SSHKeyFingerprint string `json:"ssh_key_fingerprint"`
+	SSHKeyName        string `json:"ssh_key_name"`
 	SubnetID          string `json:"subnet_id"`
 	InternetGatewayID string `json:"internet_gateway_id"`
 	RouteTableID      string `json:"route_table_id"`
