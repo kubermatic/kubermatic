@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 	"text/template"
 	"time"
 
@@ -32,12 +31,11 @@ const (
 const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
-	sshAnnotationKey             = "ssh-key"
+	sshKeyNameKey                = "ssh-key-fingerprint"
 	subnetIDKey                  = "subnet-id"
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
 	routeTableIDKey              = "route-table-id"
-	awsKeyDelimiter              = ","
 )
 
 const (
@@ -195,11 +193,11 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	return nil
 }
 
-func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, err error) {
+func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
-		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimiter),
+		sshKeyNameKey:                cs.AWS.SSHKeyName,
 		subnetIDKey:                  cs.AWS.SubnetID,
 		vpcIDKey:                     cs.AWS.VPCId,
 		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
@@ -209,9 +207,7 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, 
 
 func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	spec := &api.CloudSpec{
-		AWS: &api.AWSCloudSpec{
-			SSHKeys: []string{},
-		},
+		AWS: &api.AWSCloudSpec{},
 	}
 	var ok bool
 	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
@@ -238,14 +234,8 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no route table ID found")
 	}
 
-	sshKeys, ok := annotations[secretAccessKeyAnnotationKey]
-	if !ok {
-		return nil, errors.New("ssh keys found")
-	}
-	for _, key := range strings.Split(sshKeys, awsKeyDelimiter) {
-		if len(key) > 0 {
-			spec.AWS.SSHKeys = append(spec.AWS.SSHKeys, key)
-		}
+	if spec.AWS.SSHKeyName, ok = annotations[sshKeyNameKey]; !ok {
+		return nil, errors.New("no route table ID found")
 	}
 
 	return spec, nil
@@ -262,7 +252,7 @@ func (a *aws) userData(
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: clusterState.Spec.Cloud.GetAWS().SSHKeys,
+		SSHAuthorizedKeys: []string{},
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -326,8 +316,8 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
-			KeyName:           sdk.String("jason-loodse"),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
+			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
 			NetworkInterfaces: netSpec,
 		}
 
@@ -342,15 +332,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-
-	glog.Infoln("Getting session")
-
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return nil, err
 	}
-	glog.Infoln("Session Retrieved")
-	glog.Infoln("Building Instance params")
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{{
@@ -363,27 +348,18 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 		}},
 	}
 
-	glog.Infoln("Instance Params built")
-	glog.Infoln("Describing Instances")
-
 	resp, err := svc.DescribeInstances(params)
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Infof("%d Reservations Retrieved\n", len(resp.Reservations))
-
 	nodes := make([]*api.Node, 0, len(resp.Reservations))
 	for _, n := range resp.Reservations {
-		glog.Infof("%d instances in reservation %s\n", len(n.Instances), *n.ReservationId)
 		for _, instance := range n.Instances {
 			var isOwner bool
 			var name string
-			glog.Infof("Instance Tags\n")
 			for _, tag := range instance.Tags {
-				glog.Infof("Tag: %s = %s\n", *tag.Key, *tag.Value)
 				if *tag.Key == defaultKubermaticClusterIDTagKey && *tag.Value == cluster.Metadata.UID {
-					glog.Infof("isOwner of instance %s\n", instance.String())
 					isOwner = true
 				}
 				if *tag.Key == awsFilterName {
@@ -391,8 +367,6 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 				}
 			}
 			if isOwner {
-				glog.Infoln("Adding node " + instance.String())
-
 				nodes = append(nodes, createNode(name, instance))
 			}
 		}
@@ -544,28 +518,40 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 		}
 	}()
 	if c.Spec.Cloud.AWS.RouteTableID != "" {
-		_, _ = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
+		_, err = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
 			RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete RouteTable %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RouteTableID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.InternetGatewayID != "" && c.Spec.Cloud.AWS.VPCId != "" {
-		_, _ = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+		_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
 			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 			VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to detach InternetGateway %s from VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.SubnetID != "" {
-		_, _ = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
+		_, err = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
 			SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete Subnet %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SubnetID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.InternetGatewayID != "" {
-		_, _ = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete InternetGateway %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Metadata.Name, err)
+		}
 	}
 
 	// Wait for sync
@@ -576,9 +562,12 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 		}
 	}
 	if c.Spec.Cloud.AWS.VPCId != "" {
-		_, _ = svc.DeleteVpc(&ec2.DeleteVpcInput{
+		_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
 			VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		}
 	}
 	return nil
 }

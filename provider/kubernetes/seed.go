@@ -120,7 +120,7 @@ func NewSeedProvider(
 				AccessKeyID:     awsLogin.AccessKeyID,
 				SecretAccessKey: awsLogin.SecretAccessKey,
 				VPCId:           vpcID,
-				SSHKeys:         dc.Spec.Seed.AWS.SSHKeys,
+				SSHKeyName:      dc.Spec.Seed.AWS.SSHKeyName,
 				SubnetID:        sID,
 			}
 

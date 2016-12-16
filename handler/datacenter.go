@@ -104,11 +104,6 @@ func datacenterKeyEndpoint(
 		sess := ec2.New(session.New(config))
 		// Begin describing key pairs.
 		keys, err := sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
-		println("1")
-		println(keys.String())
-		println(keys.GoString())
-		println(keys)
-		println("2")
 		return keys, err
 	}
 }

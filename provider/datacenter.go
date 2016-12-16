@@ -32,7 +32,7 @@ type SeedSpec struct {
 		PrivateIntf string `yaml:"privateInterface"`
 	} `yaml:"bringyourown"`
 	AWS struct {
-		SSHKeys []string `yaml:"sshKeys"`
+		SSHKeyName string `yaml:"ssh_key_fingerprint"`
 	} `yaml:"aws"`
 
 	Network struct {
