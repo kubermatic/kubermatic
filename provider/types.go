@@ -13,6 +13,7 @@ const (
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
+	AWSCloudProvider          = "aws"
 )
 
 // User represents an API user that is used for authentication.
@@ -40,6 +41,8 @@ type NodeProvider interface {
 type CloudProvider interface {
 	CloudSpecProvider
 	NodeProvider
+
+	CleanUp(*api.Cluster) error
 }
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
@@ -66,6 +69,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 		return "", nil
 	}
 	clouds := []string{}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
 	}
@@ -116,6 +122,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
 	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
@@ -139,6 +148,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

@@ -14,12 +14,21 @@ type KeyCert struct {
 	Cert string `yaml:"cert"`
 }
 
+// AWSLogin is the AWSLogin for the seed cluster.
+type AWSLogin struct {
+	AccessKeyID     string `yaml:"access-key-id"`
+	SecretAccessKey string `yaml:"secret-access-key"`
+}
+
 // Secrets keeps cloud provider secrets, e.g. to create seed nodes.
 type Secrets struct {
-	Tokens       map[string]string  `yaml:"tokens"`
-	RootCAs      map[string]KeyCert `yaml:"root-cas"`
-	Certificates map[string]KeyCert `yaml:"certificates"`
-	ApiserverSSH map[string]string  `yaml:"apiserverSSH"`
+	Login        map[string]AWSLogin `yaml:"aws-login"`
+	VPCId        map[string]string   `yaml:"default-vpc-id"`
+	SubnetID     map[string]string   `yaml:"vpc-default-subnet-id"`
+	Tokens       map[string]string   `yaml:"tokens"`
+	RootCAs      map[string]KeyCert  `yaml:"root-cas"`
+	Certificates map[string]KeyCert  `yaml:"certificates"`
+	ApiserverSSH map[string]string   `yaml:"apiserverSSH"`
 }
 
 // LoadSecrets loads secrets from the given path.
@@ -45,6 +54,9 @@ func LoadSecrets(path string) (*Secrets, error) {
 	}
 	if secrets.RootCAs == nil {
 		secrets.RootCAs = map[string]KeyCert{}
+	}
+	if secrets.Login == nil {
+		secrets.Login = map[string]AWSLogin{}
 	}
 
 	return &secrets, nil

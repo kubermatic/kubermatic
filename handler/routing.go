@@ -112,13 +112,30 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticated(r.deleteNodeHandler()))
 
 	mux.
+		Methods("POST").
+		Path("/api/v1/ext/{dc}/keys").
+		Handler(r.authenticated(r.getAWSKeyHandler()))
+
+	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
 		Handler(r.authenticated(r.getKubernetesNodesHandler()))
+
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
 		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
+}
+
+func (r Routing) getAWSKeyHandler() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		datacenterKeyEndpoint(r.datacenters),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 func (r Routing) getKubernetesNodesHandler() http.Handler {

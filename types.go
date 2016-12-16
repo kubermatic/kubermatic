@@ -45,6 +45,11 @@ type FakeNodeSpec struct {
 	OS   string `json:"os"`
 }
 
+// AWSNodeSpec specifies an aws node.
+type AWSNodeSpec struct {
+	Type string `jason:"type"`
+}
+
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
 	// DatacenterName contains the name of the datacenter the node is located in.
@@ -53,6 +58,7 @@ type NodeSpec struct {
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
+	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 }
 
 // NodeStatus stores status informations about a node.
@@ -74,6 +80,17 @@ type DigitaloceanCloudSpec struct {
 	Token string `json:"token"`
 	// SSHKeys are SSH keys used in the cloud-init generation to deploy to nodes.
 	SSHKeys []string `json:"sshKeys"`
+}
+
+// AWSCloudSpec specifies access data to Amazon Web Services.
+type AWSCloudSpec struct {
+	AccessKeyID       string `json:"access_key_id"`
+	SecretAccessKey   string `json:"secret_access_key"`
+	VPCId             string `json:"vpc_id"`
+	SSHKeyName        string `json:"ssh_key_name"`
+	SubnetID          string `json:"subnet_id"`
+	InternetGatewayID string `json:"internet_gateway_id"`
+	RouteTableID      string `json:"route_table_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -110,6 +127,7 @@ type CloudSpec struct {
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
+	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -268,6 +286,11 @@ type DigitialoceanDatacenterSpec struct {
 type BringYourOwnDatacenterSpec struct {
 }
 
+// AWSDatacenterSpec specifies a data center of Amazon Web Services.
+type AWSDatacenterSpec struct {
+	Region string `json:"region"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Country      string                       `json:"country,omitempty"`
@@ -275,6 +298,7 @@ type DatacenterSpec struct {
 	Provider     string                       `json:"provider,omitempty"`
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
+	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.

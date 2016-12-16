@@ -23,3 +23,11 @@ func (spec *CloudSpec) GetBringYourOwn() *BringYourOwnCloudSpec {
 	}
 	return spec.BringYourOwn
 }
+
+// GetAWS return the aws cloud spec.
+func (spec *CloudSpec) GetAWS() *AWSCloudSpec {
+	if spec == nil {
+		return nil
+	}
+	return spec.AWS
+}

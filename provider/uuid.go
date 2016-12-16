@@ -19,7 +19,7 @@ func UUID() (string, error) {
 }
 
 const (
-	alphabet64 = "ABCDEFGHIJKLMNOPQRSTUVWXZYabcdefghijklmnopqrstuvwxyz01234567890"
+	alphabet64 = "abcdefghijklmnopqrstuvwxyz01234567890"
 )
 
 // ShortUID generates a non-cryptographic random string in base62.

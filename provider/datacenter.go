@@ -13,6 +13,12 @@ type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
 }
 
+// AWSSpec describes a digital ocean datacenter
+type AWSSpec struct {
+	Region string `yaml:"region"`
+	AMI    string `yaml:"ami"`
+}
+
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
 type BringYourOwnSpec struct {
 }
@@ -25,6 +31,9 @@ type SeedSpec struct {
 	BringYourOwn struct {
 		PrivateIntf string `yaml:"privateInterface"`
 	} `yaml:"bringyourown"`
+	AWS struct {
+		SSHKeyName string `yaml:"ssh_key_fingerprint"`
+	} `yaml:"aws"`
 
 	Network struct {
 		Flannel struct {
@@ -42,6 +51,7 @@ type SeedSpec struct {
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
+	AWS          *AWSSpec          `yaml:"aws"`
 
 	Seed SeedSpec `yaml:"seed"`
 }

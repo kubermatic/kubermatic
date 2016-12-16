@@ -75,7 +75,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
-			Name: privateIP,
+			Name: d.Name,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
@@ -143,9 +143,9 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		}
 
 		tpl, err := template.
-			New("cloud-config-node.yaml").
+			New("do-cloud-config-node.yaml").
 			Funcs(ktemplate.FuncMap).
-			ParseFiles("template/coreos/cloud-config-node.yaml")
+			ParseFiles("template/coreos/do-cloud-config-node.yaml")
 
 		if err != nil {
 			return created, err
@@ -301,4 +301,8 @@ func dropletKeys(keys []string) []godo.DropletCreateSSHKey {
 	}
 
 	return dropletKeys
+}
+
+func (do *digitalocean) CleanUp(c *api.Cluster) error {
+	return nil
 }
