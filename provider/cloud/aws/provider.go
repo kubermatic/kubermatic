@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/golang/glog"
 	ktemplate "github.com/kubermatic/api/template"
@@ -511,6 +512,37 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 		return err
 	}
 
+	alive := func() (bool, error) {
+		ress, err := svc.DescribeInstances(&ec2.DescribeInstancesInput{})
+		if err != nil {
+			return true, err
+		}
+
+		for _, res := range ress.Reservations {
+			for _, group := range res.Groups {
+				if string(*group.GroupName) == defaultKubermaticClusterIDTagKey && group.GoString() == c.Metadata.UID {
+					return true, nil
+				}
+			}
+		}
+		return false, nil
+	}
+
+	done := make(chan error, 1)
+	//TODO(relfake): Use context
+	go func() {
+		for retrys := 0; retrys < 15; retrys++ {
+			alive, err := alive()
+			if err != nil {
+				done <- err
+			}
+			if !alive {
+				done <- nil
+				continue
+			}
+			time.Sleep(time.Second * 45)
+		}
+	}()
 	if c.Spec.Cloud.AWS.RouteTableID != "" {
 		_, _ = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
 			RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
@@ -536,11 +568,17 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 		})
 	}
 
+	// Wait for sync
+	select {
+	case err := <-done:
+		if err != nil {
+			return err
+		}
+	}
 	if c.Spec.Cloud.AWS.VPCId != "" {
 		_, _ = svc.DeleteVpc(&ec2.DeleteVpcInput{
 			VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
 		})
 	}
-
 	return nil
 }
