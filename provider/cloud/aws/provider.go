@@ -30,13 +30,11 @@ const (
 const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
-	sshKeysAnnotationKey         = "ssh-keys"
 	sshKeyFingerprintKey         = "ssh-key-fingerprint"
 	subnetIDKey                  = "subnet-id"
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
 	routeTableIDKey              = "route-table-id"
-	keyDelimiter                 = ","
 )
 
 const (
