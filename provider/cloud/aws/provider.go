@@ -326,6 +326,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
+			KeyName:           sdk.String("jason-loodse"),
 			NetworkInterfaces: netSpec,
 		}
 
