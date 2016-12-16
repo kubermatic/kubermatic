@@ -156,6 +156,10 @@ func createTags(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
+	if cluster.Spec.Cloud.AWS.VPCId != "" {
+		return nil
+	}
+
 	svc, err := a.getSession(cluster)
 	if err != nil {
 		return err
