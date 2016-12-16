@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/golang/glog"
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
 
