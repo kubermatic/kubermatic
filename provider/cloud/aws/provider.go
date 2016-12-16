@@ -488,19 +488,29 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 
 	// alive tests for living instaces
 	alive := func() (bool, error) {
-		ress, erre := svc.DescribeInstances(&ec2.DescribeInstancesInput{
+		resp, err := svc.DescribeInstances(&ec2.DescribeInstancesInput{
 			Filters: []*ec2.Filter{{
 				Name:   sdk.String("tag-value"),
 				Values: []*string{sdk.String(c.Metadata.UID)},
-			}},
+			},
+				{
+					Name: sdk.String("instance-state-name"),
+					Values: []*string{
+						sdk.String(ec2.InstanceStateNamePending),
+						sdk.String(ec2.InstanceStateNameRunning),
+						sdk.String(ec2.InstanceStateNameShuttingDown),
+						sdk.String(ec2.InstanceStateNameStopping),
+						sdk.String(ec2.InstanceStateNameStopped),
+					},
+				}},
 		})
-		if erre != nil {
+		if err != nil {
 			return true, err
 		}
 
 		// Look for living instaces
-		for _, res := range ress.Reservations {
-			if len(res.Instances) > 0 {
+		for _, reservation := range resp.Reservations {
+			if len(reservation.Instances) > 0 {
 				return true, nil
 			}
 		}
@@ -509,9 +519,9 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 
 	// Wait for nodes to terminatle
 	for {
-		instancesAlive, erre := alive()
-		if erre != nil {
-			return erre
+		instancesAlive, err := alive()
+		if err != nil {
+			return err
 		}
 		if !instancesAlive {
 			break
@@ -568,6 +578,6 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 }
 
 func (a *aws) CleanUp(c *api.Cluster) error {
-	go a.doCleanUpAWS(c)
+	go func() { _ = a.doCleanUpAWS(c) }()
 	return nil
 }
