@@ -299,6 +299,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	var createdNodes []*api.Node
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
+		buf.Reset()
 		id := provider.ShortUID(5)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
 
