@@ -325,7 +325,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
-			KeyName:           sdk.String("jason-loodse"),
+			KeyName:           sdk.String("Henrik"),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
 			NetworkInterfaces: netSpec,
 		}
@@ -512,34 +512,49 @@ func (a *aws) CleanUp(c *api.Cluster) error {
 	}
 
 	if c.Spec.Cloud.AWS.RouteTableID != "" {
-		_, _ = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
+		_, err = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
 			RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete RouteTable %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RouteTableID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.InternetGatewayID != "" && c.Spec.Cloud.AWS.VPCId != "" {
-		_, _ = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+		_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
 			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 			VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to detach InternetGateway %s from VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.SubnetID != "" {
-		_, _ = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
+		_, err = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
 			SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete Subnet %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SubnetID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.InternetGatewayID != "" {
-		_, _ = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete InternetGateway %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.VPCId != "" {
-		_, _ = svc.DeleteVpc(&ec2.DeleteVpcInput{
+		_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
 			VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
 		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		}
 	}
 
 	return nil
