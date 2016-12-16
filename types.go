@@ -47,8 +47,7 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type       string `jason:"type"`
-	SSHKeyName string `json:"sshKeys,omitempty"`
+	Type string `jason:"type"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
@@ -85,13 +84,13 @@ type DigitaloceanCloudSpec struct {
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID       string   `json:"access_key_id"`
-	SecretAccessKey   string   `json:"secret_access_key"`
-	VPCId             string   `json:"vpc_id"`
-	SSHKeys           []string `json:"sshKeys"`
-	SubnetID          string   `json:"subnet_id"`
-	InternetGatewayID string   `json:"internet_gateway_id"`
-	RouteTableID      string   `json:"route_table_id"`
+	AccessKeyID       string `json:"access_key_id"`
+	SecretAccessKey   string `json:"secret_access_key"`
+	VPCId             string `json:"vpc_id"`
+	SSHKeyFingerprint string `json:"ssh_key_fingerprint"`
+	SubnetID          string `json:"subnet_id"`
+	InternetGatewayID string `json:"internet_gateway_id"`
+	RouteTableID      string `json:"route_table_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

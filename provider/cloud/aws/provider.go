@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/golang/glog"
@@ -31,12 +30,13 @@ const (
 const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
-	sshAnnotationKey             = "ssh-key"
+	sshKeysAnnotationKey         = "ssh-keys"
+	sshKeyFingerprintKey         = "ssh-key-fingerprint"
 	subnetIDKey                  = "subnet-id"
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
 	routeTableIDKey              = "route-table-id"
-	awsKeyDelimiter              = ","
+	keyDelimiter                 = ","
 )
 
 const (
@@ -198,7 +198,7 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, 
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
 		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
-		sshAnnotationKey:             strings.Join(cs.AWS.SSHKeys, awsKeyDelimiter),
+		sshKeyFingerprintKey:         cs.AWS.SSHKeyFingerprint,
 		subnetIDKey:                  cs.AWS.SubnetID,
 		vpcIDKey:                     cs.AWS.VPCId,
 		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
@@ -208,9 +208,7 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, 
 
 func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	spec := &api.CloudSpec{
-		AWS: &api.AWSCloudSpec{
-			SSHKeys: []string{},
-		},
+		AWS: &api.AWSCloudSpec{},
 	}
 	var ok bool
 	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
@@ -237,14 +235,8 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 		return nil, errors.New("no route table ID found")
 	}
 
-	sshKeys, ok := annotations[sshAnnotationKey]
-	if !ok {
-		return nil, errors.New("ssh keys found")
-	}
-	for _, key := range strings.Split(sshKeys, awsKeyDelimiter) {
-		if len(key) > 0 {
-			spec.AWS.SSHKeys = append(spec.AWS.SSHKeys, key)
-		}
+	if spec.AWS.SSHKeyFingerprint, ok = annotations[sshKeyFingerprintKey]; !ok {
+		return nil, errors.New("no route table ID found")
 	}
 
 	return spec, nil
@@ -261,7 +253,7 @@ func (a *aws) userData(
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: clusterState.Spec.Cloud.GetAWS().SSHKeys,
+		SSHAuthorizedKeys: []string{},
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -326,7 +318,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
-			KeyName:           sdk.String("jason-loodse"),
+			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyFingerprint),
 			NetworkInterfaces: netSpec,
 		}
 

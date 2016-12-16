@@ -117,11 +117,11 @@ func NewSeedProvider(
 			}
 
 			c.Spec.Cloud.AWS = &api.AWSCloudSpec{
-				AccessKeyID:     awsLogin.AccessKeyID,
-				SecretAccessKey: awsLogin.SecretAccessKey,
-				VPCId:           vpcID,
-				SSHKeys:         dc.Spec.Seed.AWS.SSHKeys,
-				SubnetID:        sID,
+				AccessKeyID:       awsLogin.AccessKeyID,
+				SecretAccessKey:   awsLogin.SecretAccessKey,
+				VPCId:             vpcID,
+				SSHKeyFingerprint: dc.Spec.Seed.AWS.SSHKeyFingerprint,
+				SubnetID:          sID,
 			}
 
 		default:
