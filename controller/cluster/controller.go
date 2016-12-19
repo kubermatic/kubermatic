@@ -12,7 +12,6 @@ import (
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	kapi "k8s.io/client-go/pkg/api"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -167,10 +166,10 @@ func NewController(
 	cc.depStore, cc.depController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.Deployments(kapi.NamespaceAll).List(options)
+				return cc.client.Deployments(v1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.Deployments(kapi.NamespaceAll).Watch(options)
+				return cc.client.Deployments(v1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1beta1.Deployment{},
@@ -226,13 +225,13 @@ func NewController(
 	cc.pvcStore, cc.pvcController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).List(options)
+				return cc.client.PersistentVolumeClaims(v1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.PersistentVolumeClaims(kapi.NamespaceAll).Watch(options)
+				return cc.client.PersistentVolumeClaims(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&kapi.PersistentVolumeClaim{},
+		&v1.PersistentVolumeClaim{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
