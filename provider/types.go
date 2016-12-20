@@ -13,6 +13,7 @@ const (
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
+	AWSCloudProvider          = "aws"
 )
 
 // User represents an API user that is used for authentication.
@@ -23,9 +24,9 @@ type User struct {
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
-	PrepareCloudSpec(*api.Cluster) error
-	CreateAnnotations(*api.CloudSpec) (map[string]string, error)
-	Cloud(annotations map[string]string) (*api.CloudSpec, error)
+	InitializeCloudSpec(*api.Cluster) error
+	MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error)
+	UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error)
 }
 
 // NodeProvider declares methods for creating/listing nodes.
@@ -40,14 +41,25 @@ type NodeProvider interface {
 type CloudProvider interface {
 	CloudSpecProvider
 	NodeProvider
+
+	CleanUp(*api.Cluster) error
 }
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
+	// NewCluster creates a cluster for the provided user using the given ClusterSpec.
 	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
+
+	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
+
+	// SetCloud updates CloudSpec settings on the given cluster for the given user
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
+
+	// Cluster returns all clusters for a given user.
 	Clusters(user User) ([]*api.Cluster, error)
+
+	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
 	CreateAddon(user User, cluster string, addonName string) (*api.ClusterAddon, error)
 }
@@ -58,6 +70,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 		return "", nil
 	}
 	clouds := []string{}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
 	}
@@ -108,6 +123,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
 	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
+	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
@@ -131,6 +149,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, DigitaloceanCloudProvider)
+	}
+	if spec.AWS != nil {
+		clouds = append(clouds, AWSCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

@@ -3,22 +3,22 @@ package kubernetes
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kapi "k8s.io/kubernetes/pkg/api"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/serializer"
-	"k8s.io/kubernetes/pkg/util/rand"
+	"k8s.io/client-go/kubernetes"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/selection"
+	"k8s.io/client-go/pkg/util/rand"
+	"k8s.io/client-go/rest"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -28,8 +28,8 @@ const (
 )
 
 type kubernetesProvider struct {
-	client    *kclient.Client
-	tprClient *kclient.Client
+	tprClient *kubernetes.Clientset
+	client *kubernetes.Clientset
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
@@ -82,12 +82,11 @@ func NewTprClient(clientConfig *restclient.Config) *kclient.Client {
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
-	clientConfig *restclient.Config,
+	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	dev bool,
 ) provider.KubernetesProvider {
-
-	client, err := kclient.New(clientConfig)
+	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,6 +100,25 @@ func NewKubernetesProvider(
 	}
 }
 
+func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
+	for {
+		port := rand.IntnRange(30000, 32767)
+		sel := labels.NewSelector()
+		portString := strconv.Itoa(port)
+		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})
+		if err != nil {
+			return 0, err
+		}
+		sel = sel.Add(*req)
+		nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: sel.String()})
+		if err != nil {
+			return 0, err
+		}
+		if len(nsList.Items) == 0 {
+			return port, nil
+		}
+	}
+}
 func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	// call cluster before lock is taken
 	cs, err := p.Clusters(user)
@@ -127,12 +145,16 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		}
 	}
 
-	ns := &kapi.Namespace{
-		ObjectMeta: kapi.ObjectMeta{
+	ns := &v1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
 			Name:        NamespaceName(user.Name, cluster),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
+	}
+	nodePort, err := p.GetFreeNodePort()
+	if err != nil {
+		return nil, err
 	}
 
 	c := &api.Cluster{
@@ -144,6 +166,9 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		Status: api.ClusterStatus{
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
+		},
+		Address: &api.ClusterAddress{
+			NodePort: nodePort,
 		},
 	}
 	if p.dev {
@@ -161,19 +186,20 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	}
 
 	c, err = UnmarshalCluster(p.cps, ns)
+
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
+		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *kapi.Namespace, error) {
+func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster))
+	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster), metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
@@ -207,7 +233,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 
 		var c *api.Cluster
-		var ns *kapi.Namespace
+		var ns *v1.Namespace
 		c, ns, err = p.clusterAndNS(user, cluster)
 		if err != nil {
 			return nil, err
@@ -219,7 +245,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 			return nil, err
 		}
 
-		err = prov.PrepareCloudSpec(c)
+		err = prov.InitializeCloudSpec(c)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
@@ -254,10 +280,10 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	nsList, err := p.client.Namespaces().List(kapi.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
 		RoleLabelKey: ClusterRoleLabel,
 		userLabelKey: LabelUser(user.Name),
-	})), FieldSelector: fields.Everything()})
+	})).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +309,7 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	if err != nil {
 		return err
 	}
-
-	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster))
+	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
 }
 
 func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {

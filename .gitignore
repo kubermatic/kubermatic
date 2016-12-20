@@ -3,6 +3,8 @@
 /kubermatic-cluster-controller
 .env
 .idea
+*.iml*
 .kubeconfig
 secrets.yaml
 template/coreos
+vendor

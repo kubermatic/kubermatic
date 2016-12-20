@@ -15,19 +15,22 @@ $ git clone git@github.com:kubermatic/config
 $ cd api
 $ ln -s ../config/api/datacenter-secrets.yaml secrets.yaml
 $ cd template
-$ ln -s ../../kubermatic/nodes/digitalocean/template/coreos/ coreos
+$ ln -s ../../config/nodes/digitalocean/template/coreos/ coreos
 ```
 
 ## Dependencies
 
-How to update the Glide/vendor dependencies with a new Kubernetes version:
+### Install dependencies
 
-Update the vendored sources in Kubermatic:
-```
-$ ./glide-update.sh
+```bash
+glide install --strip-vendor
 ```
 
-Finally commit the vendored changes.
+### Update dependencies
+
+```bash
+glide update --strip-vendor
+```
 
 ## Building locally
 

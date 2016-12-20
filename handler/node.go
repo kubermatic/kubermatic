@@ -9,6 +9,8 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 )
 
 func nodesEndpoint(
@@ -40,6 +42,52 @@ func nodesEndpoint(
 	}
 }
 
+func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodesReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().List(v1.ListOptions{})
+	}
+}
+
+func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return client.Nodes().Get(req.uid, metav1.GetOptions{})
+	}
+}
+
 func deleteNodeEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
@@ -64,6 +112,22 @@ func deleteNodeEndpoint(
 
 		if cp == nil {
 			return []*api.Node{}, nil
+		}
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		nodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, node := range nodes {
+			if node.Metadata.UID == req.uid {
+				_ = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
+			}
 		}
 
 		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
@@ -112,10 +176,10 @@ type nodesReq struct {
 	clusterReq
 }
 
-func decodeNodesReq(r *http.Request) (interface{}, error) {
+func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +194,10 @@ type createNodesReq struct {
 	Spec      api.NodeSpec `json:"spec"`
 }
 
-func decodeCreateNodesReq(r *http.Request) (interface{}, error) {
+func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createNodesReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -151,10 +215,10 @@ type nodeReq struct {
 	uid string
 }
 
-func decodeNodeReq(r *http.Request) (interface{}, error) {
+func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req nodeReq
 
-	cr, err := decodeNodesReq(r)
+	cr, err := decodeNodesReq(c, r)
 	if err != nil {
 		return nil, err
 	}

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/util/rand"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/util/rand"
 	"sync"
 	"time"
 )
@@ -33,7 +33,7 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 				Spec: api.ClusterSpec{
 					HumanReadableName: "sttts",
 					Cloud: &api.CloudSpec{
-						DC: "fake-fra1",
+						DatacenterName: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
 							Token: "983475982374895723958",
 						},

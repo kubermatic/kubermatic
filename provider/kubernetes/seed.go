@@ -10,10 +10,10 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/util/rand"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/util/rand"
+	"k8s.io/client-go/rest"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)
@@ -28,7 +28,7 @@ type seedProvider struct {
 func NewSeedProvider(
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	cfgs map[string]restclient.Config,
+	cfgs map[string]rest.Config,
 	secrets *Secrets,
 ) provider.KubernetesProvider {
 	seeds := map[string]*api.Cluster{}
@@ -41,7 +41,7 @@ func NewSeedProvider(
 			Spec: api.ClusterSpec{
 				HumanReadableName: dcName,
 				Cloud: &api.CloudSpec{
-					DC: dcName,
+					DatacenterName: dcName,
 					Network: api.NetworkSpec{
 						Flannel: api.FlannelNetworkSpec{
 							CIDR: flannelCIDRADefault,
@@ -85,7 +85,7 @@ func NewSeedProvider(
 				PrivateIntf: dc.Spec.Seed.BringYourOwn.PrivateIntf,
 			}
 			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
+				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
 				if err != nil {
 					log.Fatalf("failed to create a client ca for seed dc %q", dcName)
 				}
@@ -94,11 +94,34 @@ func NewSeedProvider(
 		case provider.DigitaloceanCloudProvider:
 			token, found := secrets.Tokens[dcName]
 			if !found {
-				log.Fatalf("cannot find dc %q in secret tokens", dcName)
+				log.Fatalf("cannot find aws-login in dc %q", dcName)
 			}
 			c.Spec.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   token,
 				SSHKeys: dc.Spec.Seed.Digitalocean.SSHKeys,
+			}
+		case provider.AWSCloudProvider:
+			awsLogin, ok := secrets.Login[dcName]
+			if !ok {
+				log.Fatalf("cannot find aws-login in dc %q", dcName)
+			}
+
+			vpcID, ok := secrets.VPCId[dcName]
+			if !ok {
+				log.Fatalf("cannot find vpc-default-id in dc %q", dcName)
+			}
+
+			sID, ok := secrets.SubnetID[dcName]
+			if !ok {
+				log.Fatalf("cannot find vpc-default-subnet-id in dc %q", dcName)
+			}
+
+			c.Spec.Cloud.AWS = &api.AWSCloudSpec{
+				AccessKeyID:     awsLogin.AccessKeyID,
+				SecretAccessKey: awsLogin.SecretAccessKey,
+				VPCId:           vpcID,
+				SSHKeyName:      dc.Spec.Seed.AWS.SSHKeyName,
+				SubnetID:        sID,
 			}
 
 		default:

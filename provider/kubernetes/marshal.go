@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -40,6 +41,7 @@ const (
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
 	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
+	nodePortLabel               = annotationPrefix + "node-port"       // kubermatic.io/etcd-url
 	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
 	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
 	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
@@ -72,7 +74,7 @@ func cloudProviderAnnotationPrefix(name string) string {
 }
 
 // UnmarshalCluster decodes a Kubernetes namespace into a Kubermatic cluster.
-func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace) (*api.Cluster, error) {
+func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (*api.Cluster, error) {
 	phaseTS, err := time.Parse(time.RFC3339, ns.Annotations[phaseTimestampAnnotation])
 	if err != nil {
 		glog.Warningf(
@@ -116,15 +118,20 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 		c.Metadata.Annotations[k] = v
 	}
 
+	c.Address = &api.ClusterAddress{}
+
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
 		token, _ := ns.Annotations[tokenAnnotation]
-		etcdPort, _ := ns.Annotations[etcdURLAnnotation]
-		c.Address = &api.ClusterAddress{
-			URL:     url,
-			Token:   token,
-			EtcdURL: etcdPort,
-		}
+		etcdURL, _ := ns.Annotations[etcdURLAnnotation]
+		c.Address.URL = url
+		c.Address.Token = token
+		c.Address.EtcdURL = etcdURL
+	}
+
+	if nodePort, found := ns.Labels[nodePortLabel]; found {
+		iNodePort, _ := strconv.ParseInt(nodePort, 10, 0)
+		c.Address.NodePort = int(iNodePort)
 	}
 
 	// decode the cloud spec from annotations
@@ -157,7 +164,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *kapi.Namespace)
 }
 
 // MarshalCluster updates a Kubernetes namespace from a Kubermatic cluster.
-func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *kapi.Namespace) (*kapi.Namespace, error) {
+func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v1.Namespace) (*v1.Namespace, error) {
 	// filter out old annotations in our domain
 	as := map[string]string{}
 	for k, v := range ns.Annotations {
@@ -190,6 +197,10 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 
 		if c.Address.EtcdURL != "" {
 			ns.Annotations[etcdURLAnnotation] = c.Address.EtcdURL
+		}
+
+		if c.Address.NodePort != 0 {
+			ns.Labels[nodePortLabel] = strconv.Itoa(c.Address.NodePort)
 		}
 	}
 
@@ -245,48 +256,48 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *k
 }
 
 // marshalClusterCloud returns annotations to persist Spec.Cloud
-func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (map[string]string, error) {
-	cloudAs, err := cp.CreateAnnotations(c.Spec.Cloud)
+func marshalClusterCloud(cpName string, cp provider.CloudProvider, c *api.Cluster) (annotations map[string]string, err error) {
+	cloudAs, err := cp.MarshalCloudSpec(c.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
 
 	prefix := cloudProviderAnnotationPrefix(cpName)
-	as := make(map[string]string, len(cloudAs))
+	annotations = make(map[string]string, len(cloudAs))
 	for k, v := range cloudAs {
-		as[prefix+k] = v
+		annotations[prefix+k] = v
 	}
 
-	as[providerAnnotation] = cpName
-	as[cloudDCAnnotation] = c.Spec.Cloud.DC
+	annotations[providerAnnotation] = cpName
+	annotations[cloudDCAnnotation] = c.Spec.Cloud.DatacenterName
 
-	return as, nil
+	return annotations, nil
 }
 
 // unmarshalClusterCloud sets the Spec.Cloud field according to the annotations.
-func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, as map[string]string) (*api.CloudSpec, error) {
+func unmarshalClusterCloud(cpName string, cp provider.CloudProvider, annotations map[string]string) (*api.CloudSpec, error) {
 	prefix := cloudProviderAnnotationPrefix(cpName)
 	cloudAs := map[string]string{}
-	for k, v := range as {
+	for k, v := range annotations {
 		if strings.HasPrefix(k, prefix) {
 			cloudAs[k[len(prefix):]] = v
 		}
 	}
 
 	var err error
-	spec, err := cp.Cloud(cloudAs)
+	spec, err := cp.UnmarshalCloudSpec(cloudAs)
 	if err != nil {
 		return nil, err
 	}
-	spec.DC = as[cloudDCAnnotation]
+	spec.DatacenterName = annotations[cloudDCAnnotation]
 	spec.Network.Flannel.CIDR = flannelCIDRADefault
 
 	return spec, nil
 }
 
 // ClusterPhase derives the cluster phase from the Kubernetes namespace.
-func ClusterPhase(ns *kapi.Namespace) api.ClusterPhase {
-	if ns.Status.Phase == kapi.NamespaceTerminating {
+func ClusterPhase(ns *v1.Namespace) api.ClusterPhase {
+	if ns.Status.Phase == v1.NamespaceTerminating {
 		return api.DeletingClusterStatusPhase
 	}
 

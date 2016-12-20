@@ -35,7 +35,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (do *digitalocean) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		tokenAnnotationKey:  cloud.Digitalocean.Token,
 		sshKeysAnnotionsKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
@@ -43,7 +43,7 @@ func (do *digitalocean) CreateAnnotations(cloud *api.CloudSpec) (map[string]stri
 	return as, nil
 }
 
-func (do *digitalocean) Cloud(annotations map[string]string) (*api.CloudSpec, error) {
+func (do *digitalocean) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		Digitalocean: &api.DigitaloceanCloudSpec{
 			SSHKeys: []string{},
@@ -75,7 +75,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
-			Name: privateIP,
+			Name: d.Name,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
@@ -84,7 +84,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 			},
 		},
 		Spec: api.NodeSpec{
-			DC: dc,
+			DatacenterName: dc,
 			Digitalocean: &api.DigitaloceanNodeSpec{
 				Type: d.Image.Slug,
 				Size: d.Size.Slug,
@@ -95,13 +95,10 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	return &n, nil
 }
 
-func (do *digitalocean) CreateNodes(
-	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec, instances int,
-) ([]*api.Node, error) {
-	dc, found := do.dcs[spec.DC]
+func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int) ([]*api.Node, error) {
+	dc, found := do.dcs[spec.DatacenterName]
 	if !found || dc.Spec.Digitalocean == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", spec.DC)
+		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
 	}
 
 	if spec.Digitalocean.Type != "" {
@@ -122,15 +119,16 @@ func (do *digitalocean) CreateNodes(
 
 		glog.V(2).Infof("dropletName %q", dropletName)
 
-		clientKC, err := cluster.CreateKeyCert(dropletName)
+		clientKC, err := cluster.CreateKeyCert(dropletName, []string{})
 		if err != nil {
 			return created, err
 		}
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
 		data := ktemplate.Data{
-			DC:                spec.DC,
-			ClusterName:       cluster.Metadata.Name,
+			DC:          spec.DatacenterName,
+			ClusterName: cluster.Metadata.Name,
+			//
 			SSHAuthorizedKeys: cSpec.SSHKeys,
 			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
@@ -145,9 +143,9 @@ func (do *digitalocean) CreateNodes(
 		}
 
 		tpl, err := template.
-			New("cloud-config-node.yaml").
+			New("do-cloud-config-node.yaml").
 			Funcs(ktemplate.FuncMap).
-			ParseFiles("template/coreos/cloud-config-node.yaml")
+			ParseFiles("template/coreos/do-cloud-config-node.yaml")
 
 		if err != nil {
 			return created, err
@@ -168,7 +166,7 @@ func (do *digitalocean) CreateNodes(
 			Image:             image,
 			Size:              nSpec.Size,
 			PrivateNetworking: true,
-			SSHKeys:           dropletKeys(nSpec.SSHKeys),
+			SSHKeys:           dropletKeys(nSpec.SSHKeyFingerprints),
 			Name:              dropletName,
 			UserData:          buf.String(),
 		}
@@ -178,7 +176,7 @@ func (do *digitalocean) CreateNodes(
 			return created, err
 		}
 
-		n, err := node(cluster.Spec.Cloud.DC, droplet)
+		n, err := node(cluster.Spec.Cloud.DatacenterName, droplet)
 		if err != nil {
 			return created, err
 		}
@@ -189,7 +187,7 @@ func (do *digitalocean) CreateNodes(
 	return created, nil
 }
 
-func (do *digitalocean) PrepareCloudSpec(c *api.Cluster) error {
+func (do *digitalocean) InitializeCloudSpec(c *api.Cluster) error {
 	return nil
 }
 
@@ -274,7 +272,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 			continue
 		}
 
-		n, err := node(cluster.Spec.Cloud.DC, &d)
+		n, err := node(cluster.Spec.Cloud.DatacenterName, &d)
 		if err != nil {
 			glog.Error(err)
 			continue
@@ -303,4 +301,8 @@ func dropletKeys(keys []string) []godo.DropletCreateSSHKey {
 	}
 
 	return dropletKeys
+}
+
+func (do *digitalocean) CleanUp(c *api.Cluster) error {
+	return nil
 }

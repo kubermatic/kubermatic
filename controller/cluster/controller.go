@@ -11,21 +11,20 @@ import (
 	"github.com/kubermatic/api/controller"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
-	kapi "k8s.io/kubernetes/pkg/api"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/client/cache"
-	"k8s.io/kubernetes/pkg/client/record"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
-	kcontroller "k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/types"
-	uruntime "k8s.io/kubernetes/pkg/util/runtime"
-	"k8s.io/kubernetes/pkg/util/wait"
-	"k8s.io/kubernetes/pkg/util/workqueue"
-	"k8s.io/kubernetes/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/types"
+	uruntime "k8s.io/client-go/pkg/util/runtime"
+	"k8s.io/client-go/pkg/util/wait"
+	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -36,22 +35,21 @@ const (
 	launchTimeout                  = 5 * time.Minute
 
 	workerPeriod        = time.Second
+	queueResyncPeriod   = 10 * time.Millisecond
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
-	etcdURLFormat       = "etcd-%s"
 )
 
 type clusterController struct {
 	dc                  string
-	client              *client.Client
 	tprClient           *client.Client
 	addonManager        manager.AddonManager
-	queue               *workqueue.Type // of namespace keys
+	client              *kubernetes.Clientset
+	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
 	masterResourcesPath string
 	externalURL         string
-	etcdURL             string
 	overwriteHost       string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
@@ -75,6 +73,9 @@ type clusterController struct {
 	addonController *cache.Controller
 	addonStore      cache.Store
 
+	pvcController *cache.Controller
+	pvcStore      cache.Indexer
+
 	// non-thread safe:
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -85,9 +86,9 @@ type clusterController struct {
 // NewController creates a cluster controller.
 func NewController(
 	dc string,
-	client *client.Client,
 	tprClient *client.Client,
 	am manager.AddonManager,
+	client *kubernetes.Clientset,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -99,20 +100,21 @@ func NewController(
 		client:              client,
 		tprClient:           tprClient,
 		addonManager:        am,
-		queue:               workqueue.New(),
+		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
-		etcdURL:             fmt.Sprintf(etcdURLFormat, externalURL),
 		dev:                 dev,
 		overwriteHost:       overwriteHost,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cc.recorder = eventBroadcaster.NewRecorder(kapi.EventSource{Component: "clustermanager"})
+	cc.recorder = eventBroadcaster.NewRecorder(v1.EventSource{Component: "clustermanager"})
 	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(cc.client.Events(""))
+	e := cc.client.Events("")
+	es := corev1.EventSinkImpl{Interface: e}
+	eventBroadcaster.StartRecordingToSink(&es)
 
 	nsLabels := map[string]string{
 		kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
@@ -123,29 +125,29 @@ func NewController(
 
 	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels))
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels)).String()
 				return cc.client.Namespaces().List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.Namespaces().Watch(options)
 			},
 		},
-		&kapi.Namespace{},
+		&v1.Namespace{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				ns := obj.(*kapi.Namespace)
+				ns := obj.(*v1.Namespace)
 				glog.V(4).Infof("Adding cluster %q", ns.Name)
 				cc.enqueue(ns)
 			},
 			UpdateFunc: func(old, cur interface{}) {
-				ns := cur.(*kapi.Namespace)
+				ns := cur.(*v1.Namespace)
 				glog.V(4).Infof("Updating cluster %q", ns.Name)
 				cc.enqueue(ns)
 			},
 			DeleteFunc: func(obj interface{}) {
-				ns := obj.(*kapi.Namespace)
+				ns := obj.(*v1.Namespace)
 				glog.V(4).Infof("Deleting cluster %q", ns.Name)
 				cc.enqueue(ns)
 			},
@@ -158,14 +160,14 @@ func NewController(
 
 	cc.podStore.Indexer, cc.podController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.Pods(kapi.NamespaceAll).List(options)
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Pods(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.Pods(kapi.NamespaceAll).Watch(options)
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.Pods(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&kapi.Pod{},
+		&v1.Pod{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -173,14 +175,14 @@ func NewController(
 
 	cc.depStore, cc.depController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.Deployments(kapi.NamespaceAll).List(options)
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Deployments(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.Deployments(kapi.NamespaceAll).Watch(options)
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.Deployments(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&extensions.Deployment{},
+		&v1beta1.Deployment{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -188,14 +190,14 @@ func NewController(
 
 	cc.secretStore, cc.secretController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).List(options)
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Secrets(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.Secrets(kapi.NamespaceAll).Watch(options)
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.Secrets(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&kapi.Secret{},
+		&v1.Secret{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -203,14 +205,14 @@ func NewController(
 
 	cc.serviceStore, cc.serviceController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.Services(kapi.NamespaceAll).List(options)
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Services(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.Services(kapi.NamespaceAll).Watch(options)
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.Services(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&kapi.Service{},
+		&v1.Service{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -218,14 +220,29 @@ func NewController(
 
 	cc.ingressStore, cc.ingressController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
-				return cc.client.Extensions().Ingress(kapi.NamespaceAll).List(options)
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Extensions().Ingresses(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-				return cc.client.Extensions().Ingress(kapi.NamespaceAll).Watch(options)
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.Extensions().Ingresses(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&extensions.Ingress{},
+		&v1beta1.Ingress{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.pvcStore, cc.pvcController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.PersistentVolumeClaims(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.PersistentVolumeClaims(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&v1.PersistentVolumeClaim{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -293,40 +310,40 @@ func NewController(
 	return cc, nil
 }
 
-func (cc *clusterController) recordClusterPhaseChange(ns *kapi.Namespace, newPhase api.ClusterPhase) {
-	ref := &kapi.ObjectReference{
+func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase api.ClusterPhase) {
+	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
 		Name:      ns.Name,
 		UID:       types.UID(ns.Name),
 		Namespace: ns.Name,
 	}
 	glog.V(2).Infof("Recording phase change %s event message for namespace %s", string(newPhase), ns.Name)
-	cc.recorder.Eventf(ref, kapi.EventTypeNormal, string(newPhase), "Cluster phase is now: %s", newPhase)
+	cc.recorder.Eventf(ref, v1.EventTypeNormal, string(newPhase), "Cluster phase is now: %s", newPhase)
 }
 
 func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
 	nsName := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	ref := &kapi.ObjectReference{
+	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
 		Name:      nsName,
 		UID:       types.UID(nsName),
 		Namespace: nsName,
 	}
 	glog.V(4).Infof("Recording event for namespace %q: %s", nsName, fmt.Sprintf(msg, args...))
-	cc.recorder.Eventf(ref, kapi.EventTypeNormal, reason, msg, args)
+	cc.recorder.Eventf(ref, v1.EventTypeNormal, reason, msg, args)
 }
 
 func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
 	ns := kprovider.NamespaceName(newC.Metadata.User, newC.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
-		oldNS, err := cc.client.Namespaces().Get(ns)
+		oldNS, err := cc.client.Namespaces().Get(ns, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		// update with latest cluster state
-		newNS, err := func() (*kapi.Namespace, error) {
+		newNS, err := func() (*v1.Namespace, error) {
 			cc.mu.Lock()
 			defer cc.mu.Unlock()
 			return kprovider.MarshalCluster(cc.cps, newC, oldNS)
@@ -394,14 +411,17 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 	obj, exists, err := cc.nsStore.GetByKey(key)
 	if err != nil {
 		glog.Infof("Unable to retrieve namespace %q from store: %v", key, err)
-		cc.queue.Add(key)
+		addErr := cc.queue.Add(key)
+		if addErr != nil {
+			glog.Infof("Unable to add namespace %q to queue: %v", key, addErr)
+		}
 		return err
 	}
 	if !exists {
 		glog.V(3).Infof("Namespace %q has been deleted", key)
 		return nil
 	}
-	ns := obj.(*kapi.Namespace)
+	ns := obj.(*v1.Namespace)
 	if !cc.controllersHaveSynced() {
 		// Sleep so we give the pod reflector goroutine a chance to run.
 		time.Sleep(namespaceStoreSyncedPollPeriod)
@@ -461,43 +481,46 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 	return nil
 }
 
-func (cc *clusterController) enqueue(ns *kapi.Namespace) {
-	cc.mu.Lock()
-	defer cc.mu.Unlock()
-
+func (cc *clusterController) enqueue(ns *v1.Namespace) {
 	if !cc.dev && ns.Labels[kprovider.DevLabelKey] == kprovider.DevLabelValue {
 		glog.V(5).Infof("Skipping dev cluster %q", ns.Name)
 		return
 	}
 
-	key, err := kcontroller.KeyFunc(ns)
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(ns)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", ns, err)
 		return
 	}
 
-	cc.queue.Add(key)
+	err = cc.queue.Add(key)
+	if err != nil {
+		glog.Errorf("Unable to add namespace %q to queue: %v", key, err)
+		return
+	}
 }
 
 func (cc *clusterController) worker() {
-	for {
-		func() {
-			nsKey, quit := cc.queue.Get()
-			if quit {
-				return
-			}
-			defer cc.queue.Done(nsKey)
-			err := cc.syncClusterNamespace(nsKey.(string))
-			if err != nil {
-				glog.Errorf("Error syncing cluster with key %s: %v", nsKey.(string), err)
-			}
-		}()
+	nsKey, err := cc.queue.Pop(func(nsKey interface{}) error {
+		return nil
+	})
+
+	if err != nil {
+		glog.Errorf("Worker failed to proccess key %s: %v - will be requeued", nsKey.(string), err)
+	} else {
+		glog.V(4).Infof("Worker proccessed key %s", nsKey.(string))
 	}
+
+	err = cc.syncClusterNamespace(nsKey.(string))
+	if err != nil {
+		glog.Errorf("Error syncing cluster with key %s: %v", nsKey.(string), err)
+	}
+
 }
 
 func (cc *clusterController) syncInPhase(phase api.ClusterPhase) {
 	for _, obj := range cc.nsStore.List() {
-		ns := obj.(*kapi.Namespace)
+		ns := obj.(*v1.Namespace)
 		if v, found := ns.Labels[kprovider.RoleLabelKey]; !found || v != kprovider.ClusterRoleLabel {
 			continue
 		}
@@ -518,6 +541,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
 	go cc.addonController.Run(wait.NeverStop)
+	go cc.pvcController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -526,11 +550,16 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() {
+		err := cc.queue.Resync()
+		if err != nil {
+			glog.Errorf("Error syncing queue: %v", err)
+		}
+	}, queueResyncPeriod, stopCh)
 
 	<-stopCh
 
 	glog.Info("Shutting down cluster controller")
-	cc.queue.ShutDown()
 }
 
 func (cc *clusterController) controllersHaveSynced() bool {
@@ -540,5 +569,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced() &&
-		cc.addonController.HasSynced()
+		cc.addonController.HasSynced() &&
+		cc.pvcController.HasSynced()
 }

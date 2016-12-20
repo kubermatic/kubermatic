@@ -25,7 +25,7 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (b *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]string, error) {
+func (b *bringyourown) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
 	as := map[string]string{
 		privateIntfAnnotationKey: cloud.BringYourOwn.PrivateIntf,
 	}
@@ -39,7 +39,7 @@ func (b *bringyourown) CreateAnnotations(cloud *api.CloudSpec) (map[string]strin
 	return as, nil
 }
 
-func (b *bringyourown) Cloud(as map[string]string) (*api.CloudSpec, error) {
+func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec, error) {
 	c := api.CloudSpec{
 		BringYourOwn: &api.BringYourOwnCloudSpec{
 			PrivateIntf: as[privateIntfAnnotationKey],
@@ -64,9 +64,9 @@ func (b *bringyourown) CreateNodes(
 	return nil, errors.New("not implemented")
 }
 
-func (b *bringyourown) PrepareCloudSpec(c *api.Cluster) error {
+func (b *bringyourown) InitializeCloudSpec(c *api.Cluster) error {
 	if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-		clientCA, err := c.CreateKeyCert("seed-etcd-client-ca")
+		clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
 		if err != nil {
 			return fmt.Errorf("failed to create a client ca for cluster %q", c.Metadata.Name)
 		}
@@ -82,4 +82,8 @@ func (b *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.
 
 func (b *bringyourown) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	return errors.New("delete: unsupported operation")
+}
+
+func (b *bringyourown) CleanUp(c *api.Cluster) error {
+	return nil
 }

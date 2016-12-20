@@ -2,15 +2,14 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
-	capi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/v1"
+	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func kubeconfigEndpoint(
@@ -32,34 +31,8 @@ func kubeconfigEndpoint(
 			}
 			return nil, err
 		}
-
-		id := fmt.Sprintf("%s-%s", req.dc, c.Metadata.Name)
-		cfg := capi.Config{
-			Kind:           "Config",
-			APIVersion:     "v1",
-			CurrentContext: id,
-			Clusters: []capi.NamedCluster{capi.NamedCluster{
-				Name: id,
-				Cluster: capi.Cluster{
-					Server: c.Address.URL,
-				},
-			}},
-			Contexts: []capi.NamedContext{capi.NamedContext{
-				Name: id,
-				Context: capi.Context{
-					Cluster:  id,
-					AuthInfo: id,
-				},
-			}},
-			AuthInfos: []capi.NamedAuthInfo{capi.NamedAuthInfo{
-				Name: id,
-				AuthInfo: capi.AuthInfo{
-					Token: c.Address.Token,
-				},
-			}},
-		}
-
-		return &cfg, nil
+		cfg := c.GetKubeconfig()
+		return cfg, nil
 	}
 }
 
@@ -67,10 +40,10 @@ type kubeconfigReq struct {
 	clusterReq
 }
 
-func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
+func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req kubeconfigReq
 
-	cr, err := decodeClusterReq(r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +52,11 @@ func decodeKubeconfigReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func encodeKubeconfig(w http.ResponseWriter, response interface{}) (err error) {
+func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
 
-	cfg := response.(*capi.Config)
+	cfg := response.(*v1.Config)
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {
