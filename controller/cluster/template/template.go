@@ -15,8 +15,8 @@ type Template struct {
 
 // ParseFiles creates a new template for the given filenames
 // and parses the template definitions from the named files.
-func ParseFiles(filenames ...string) (*Template, error) {
-	tpl, err := texttemplate.ParseFiles(filenames...)
+func ParseFiles(filenames string) (*Template, error) {
+	tpl, err := texttemplate.ParseFiles(filenames)
 	return &Template{tpl}, err
 }
 
