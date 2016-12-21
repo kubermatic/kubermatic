@@ -157,7 +157,7 @@ func purge() error {
 	for _, cluster := range clusters {
 		func(cl api.Cluster) {
 			done <- struct{}{}
-			deleteCluster(cluster, client)
+			log.Println(deleteCluster(cluster, client))
 			<-done
 		}(cluster)
 	}
