@@ -157,7 +157,7 @@ func purge() error {
 	for _, cluster := range clusters {
 		func(cl api.Cluster) {
 			done <- struct{}{}
-
+			deleteCluster(cluster, client)
 			<-done
 		}(cluster)
 	}
@@ -175,12 +175,17 @@ func main() {
 		printError()
 	}
 
+	var err error
 	switch os.Args[1] {
 	case "up":
-		up(50, 0)
+		err = up(50, 0)
 	case "purge":
-		log.Println(purge())
+		err = purge()
 	default:
 		printError()
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
