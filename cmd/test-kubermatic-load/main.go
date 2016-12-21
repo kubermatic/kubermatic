@@ -13,10 +13,10 @@ import (
 	"github.com/kubermatic/api"
 )
 
-var jwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDgyMzQyNTQzLCJpYXQiOjE0ODIzMDY1NDN9.s_brI18ZCfJ8rzbA1B_WB7zHfDI_IBDItF57EAAQcIg"
+var jwt = flag.String("jwt", "", "The String of the Authorization: header")
 
 func setAuth(r *http.Request) {
-	r.Header.Add("Authorization", jwt)
+	r.Header.Add("Authorization", *jwt)
 }
 
 func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error {
@@ -176,6 +176,11 @@ func main() {
 
 	if len(os.Args) < 2 {
 		printError()
+	}
+
+	if *jwt == "" {
+		log.Printf("Please specify a jwt flag")
+		os.Exit(1)
 	}
 
 	var err error
