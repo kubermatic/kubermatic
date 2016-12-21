@@ -63,6 +63,9 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 		}
 		setAuth(req)
 		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
 		var clusterState api.Cluster
 		if err = json.NewDecoder(resp.Body).Decode(&clusterState); err != nil {
 			return err
