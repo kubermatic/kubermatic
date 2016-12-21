@@ -13,10 +13,14 @@ import (
 	"github.com/kubermatic/api"
 )
 
-var jwt = flag.String("jwt", "", "The String of the Authorization: header")
+var (
+	jwtFlag         = flag.String("jwt", "", "The String of the Authorization: header")
+	maxNodesFlag    = flag.Int("nodes", 0, "Spcifies the amount of nodes to create in one cluster (nodes*clusters)")
+	maxClustersFlag = flag.Int("clusters", 0, "Spcifies the amount of clusters to deploy")
+)
 
 func setAuth(r *http.Request) {
-	r.Header.Add("Authorization", *jwt)
+	r.Header.Add("Authorization", *jwtFlag)
 }
 
 func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error {
@@ -178,7 +182,7 @@ func main() {
 		printError()
 	}
 
-	if *jwt == "" {
+	if *jwtFlag == "" {
 		log.Printf("Please specify a jwt flag")
 		os.Exit(1)
 	}
@@ -186,7 +190,7 @@ func main() {
 	var err error
 	switch os.Args[1] {
 	case "up":
-		err = up(50, 0)
+		err = up(*maxClustersFlag, *maxNodesFlag)
 	case "purge":
 		err = purge()
 	default:
