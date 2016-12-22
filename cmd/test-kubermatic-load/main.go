@@ -19,6 +19,7 @@ var (
 	maxNodesFlag    = flag.Int("nodes", 0, "Spcifies the amount of nodes to create in one cluster (nodes*clusters)")
 	maxClustersFlag = flag.Int("clusters", 0, "Spcifies the amount of clusters to deploy")
 	dcFlag          = flag.String("datacenter", "master", "use this to specify a datacenter")
+	maxAsyncFlag    = flag.Int("max-async", 10, "Spcifies the amount of request running at the same time")
 )
 
 func setAuth(r *http.Request) {
@@ -107,7 +108,7 @@ func up(maxClusters, maxNodes int) error {
 
 	waitAll := sync.WaitGroup{}
 	waitAll.Add(maxClusters)
-	done := make(chan struct{}, 30)
+	done := make(chan struct{}, *maxAsyncFlag)
 	for i := 0; i < maxClusters; i++ {
 		log.Printf("started worker-%d", i)
 		go func(x int) {
@@ -179,7 +180,7 @@ func purge() error {
 		return err
 	}
 
-	done := make(chan struct{}, 30)
+	done := make(chan struct{}, *maxAsyncFlag)
 	for _, cluster := range clusters {
 		func(cl api.Cluster) {
 			done <- struct{}{}
