@@ -107,7 +107,7 @@ func up(maxClusters, maxNodes int) error {
 
 	waitAll := sync.WaitGroup{}
 	waitAll.Add(maxClusters)
-	done := make(chan struct{}, 1)
+	done := make(chan struct{}, 30)
 	for i := 0; i < maxClusters; i++ {
 		log.Printf("started worker-%d", i)
 		go func(x int) {
