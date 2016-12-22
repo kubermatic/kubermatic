@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kubermatic/api"
@@ -99,44 +100,59 @@ func deleteCluster(cluster api.Cluster, client *http.Client) error {
 func up(maxClusters, maxNodes int) error {
 	client := &http.Client{}
 
+	log.Printf("Creating %d clusters with %d nodes inside in total %d nodes",
+		maxClusters, maxNodes, maxNodes*maxClusters)
+
+	waitAll := sync.WaitGroup{}
+	waitAll.Add(maxClusters)
 	done := make(chan struct{}, 30)
 	for i := 0; i < maxClusters; i++ {
-		// Get clusters list
+		log.Printf("started worker-%d", i)
 		go func(x int) {
-			done <- struct{}{}
-			log.Printf("request-%d", x)
-			req, err := http.NewRequest("POST", "https://dev.kubermatic.io/api/v1/dc/master/cluster",
-				strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, x)))
-			if err != nil {
-			}
-			setAuth(req)
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Println(err)
+			inner := func() {
+				done <- struct{}{}
+				log.Printf("request-%d", x)
+				req, err := http.NewRequest("POST", "https://dev.kubermatic.io/api/v1/dc/master/cluster",
+					strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, x)))
+				if err != nil {
+					<-done
+					return
+				}
+				setAuth(req)
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Println(err)
+					<-done
+					return
+				}
+
+				var cluster api.Cluster
+				if err = json.NewDecoder(resp.Body).Decode(&cluster); err != nil {
+					log.Println(err)
+					<-done
+					return
+				}
 				<-done
-				return
-			}
 
-			var cluster api.Cluster
-			if err = json.NewDecoder(resp.Body).Decode(&cluster); err != nil {
-				log.Println(err)
-				<-done
-				return
-			}
-			<-done
+				if err = waitNS(i, cluster, client); err != nil {
+					log.Println(err)
+					return
+				}
 
-			if err = waitNS(i, cluster, client); err != nil {
-				return
+				if err = createProvider(cluster, client); err != nil {
+					log.Println(err)
+					return
+				}
+				if err = createNodes(maxNodes, cluster, client); err != nil {
+					log.Println(err)
+					return
+				}
 			}
-
-			if err = createProvider(cluster, client); err != nil {
-				return
-			}
-			if err = createNodes(maxNodes, cluster, client); err != nil {
-				return
-			}
+			inner()
+			waitAll.Done()
 		}(i)
 	}
+	waitAll.Wait()
 	return nil
 }
 
