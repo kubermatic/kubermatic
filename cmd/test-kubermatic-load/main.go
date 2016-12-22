@@ -76,7 +76,7 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 		if err = json.NewDecoder(resp.Body).Decode(&clusterState); err != nil {
 			return err
 		}
-		if clusterState.Address.URL != "" {
+		if clusterState.Address.URL != "" && clusterState.Status.Phase == api.RunningClusterStatusPhase {
 			break
 		}
 		log.Println("Waiting for NS to get created ....")
