@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -73,8 +75,10 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 			return err
 		}
 
+		data, _ := ioutil.ReadAll(resp.Body)
 		var clusterState api.Cluster
-		if err = json.NewDecoder(resp.Body).Decode(&clusterState); err != nil {
+		if err = json.NewDecoder(bytes.NewReader(data)).Decode(&clusterState); err != nil {
+			log.Println(string(data))
 			return err
 		}
 		if clusterState.Address.URL != "" && clusterState.Status.Phase == api.RunningClusterStatusPhase {
@@ -129,8 +133,10 @@ func up(maxClusters, maxNodes int) error {
 					return
 				}
 
+				data, _ := ioutil.ReadAll(resp.Body)
 				var cluster api.Cluster
-				if err = json.NewDecoder(resp.Body).Decode(&cluster); err != nil {
+				if err = json.NewDecoder(bytes.NewReader(data)).Decode(&cluster); err != nil {
+					log.Println(string(data))
 					log.Println(err)
 					<-done
 					return
