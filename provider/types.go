@@ -61,6 +61,8 @@ type KubernetesProvider interface {
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
+
+	// CreateAddon creates an addon-tpr
 	CreateAddon(user User, cluster string, addonName string) (*api.ClusterAddon, error)
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
@@ -17,12 +16,14 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/types"
 	uruntime "k8s.io/client-go/pkg/util/runtime"
 	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 )
@@ -43,8 +44,7 @@ const (
 
 type clusterController struct {
 	dc                  string
-	tprClient           *client.Client
-	addonManager        manager.AddonManager
+	tprClient           rest.Interface
 	client              *kubernetes.Clientset
 	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
@@ -86,9 +86,8 @@ type clusterController struct {
 // NewController creates a cluster controller.
 func NewController(
 	dc string,
-	tprClient *client.Client,
-	am manager.AddonManager,
 	client *kubernetes.Clientset,
+	tprClient rest.Interface,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -99,7 +98,6 @@ func NewController(
 		dc:                  dc,
 		client:              client,
 		tprClient:           tprClient,
-		addonManager:        am,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
@@ -254,37 +252,37 @@ func NewController(
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				var phase api.AddonPhase
-				addon := obj.(*api.ClusterAddon)
-
-				if addon.Phase != api.PendingAddonStatusPhase {
-					return
-				}
-
-				glog.V(4).Infof("Installing addon %s", addon.Name)
-
-				installedAddon, err := cc.addonManager.Install(addon)
-				if err != nil {
-					glog.Error(err)
-					phase = api.FailedAddonStatusPhase
-				} else {
-					addon = installedAddon
-					phase = api.RunningAddonStatusPhase
-				}
-
-				addon.Phase = phase
-
-				err = cc.tprClient.
-					Put().
-					Resource("clusteraddons").
-					Namespace(addon.Metadata.GetNamespace()).
-					Name(addon.Metadata.Name).
-					Body(addon).
-					Do().
-					Into(addon)
-				if err != nil {
-					glog.Error(err)
-				}
+				//var phase api.AddonPhase
+				//addon := obj.(*api.ClusterAddon)
+				//
+				//if addon.Phase != api.PendingAddonStatusPhase {
+				//	return
+				//}
+				//
+				//glog.V(4).Infof("Installing addon %s", addon.Name)
+				//
+				//installedAddon, err := cc.addonManager.Install(addon)
+				//if err != nil {
+				//	glog.Error(err)
+				//	phase = api.FailedAddonStatusPhase
+				//} else {
+				//	addon = installedAddon
+				//	phase = api.RunningAddonStatusPhase
+				//}
+				//
+				//addon.Phase = phase
+				//
+				//err = cc.tprClient.
+				//	Put().
+				//	Resource("clusteraddons").
+				//	Namespace(addon.Metadata.GetNamespace()).
+				//	Name(addon.Metadata.Name).
+				//	Body(addon).
+				//	Do().
+				//	Into(addon)
+				//if err != nil {
+				//	glog.Error(err)
+				//}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				newAddon := newObj.(*api.ClusterAddon)
@@ -296,13 +294,13 @@ func NewController(
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				addon := obj.(*api.ClusterAddon)
-				glog.V(4).Infof("Deleting addon %s", addon.Metadata.Name)
-				err := cc.addonManager.Delete(addon)
-
-				if err != nil {
-					glog.Error(err)
-				}
+				//addon := obj.(*api.ClusterAddon)
+				//glog.V(4).Infof("Deleting addon %s", addon.Metadata.Name)
+				//err := cc.addonManager.Delete(addon)
+				//
+				//if err != nil {
+				//	glog.Error(err)
+				//}
 			},
 		},
 	)

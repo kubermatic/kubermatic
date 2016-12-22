@@ -10,12 +10,16 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/kubernetes"
+	kapi "k8s.io/client-go/pkg/api"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
 	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/runtime/schema"
+	"k8s.io/client-go/pkg/runtime/serializer"
 	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
@@ -28,25 +32,25 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient *kubernetes.Clientset
-	client *kubernetes.Clientset
+	tprClient rest.Interface
+	client    *kubernetes.Clientset
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
 	dev    bool
-	config *restclient.Config
+	config *rest.Config
 }
 
 //RegisterTprs register's our own ThirdPartyResources
-func RegisterTprs(gv unversioned.GroupVersion) {
+func RegisterTprs(gv schema.GroupVersion) {
 	schemeBuilder := runtime.NewSchemeBuilder(
 		func(scheme *runtime.Scheme) error {
 			scheme.AddKnownTypes(
 				gv,
 				&api.ClusterAddon{},
 				&api.ClusterAddonList{},
-				&kapi.ListOptions{},
-				&kapi.DeleteOptions{},
+				&v1.ListOptions{},
+				&v1.DeleteOptions{},
 			)
 			return nil
 		})
@@ -58,26 +62,26 @@ func RegisterTprs(gv unversioned.GroupVersion) {
 }
 
 //NewTprClient returns a client which is meant for our own ThirdPartyResources
-func NewTprClient(clientConfig *restclient.Config) *kclient.Client {
+func NewTprClient(clientConfig *rest.Config) rest.Interface {
 	config := *clientConfig
 
-	groupversion := unversioned.GroupVersion{
+	groupversion := schema.GroupVersion{
 		Group:   "kubermatic.io",
 		Version: "v1",
 	}
 	RegisterTprs(groupversion)
 
 	config.GroupVersion = &groupversion
-	config.APIPath = "/apis/kubermatic.io"
+	config.APIPath = "/apis"
 	config.ContentType = runtime.ContentTypeJSON
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: kapi.Codecs}
 
-	client, err := kclient.New(&config)
+	tprclient, err := rest.RESTClientFor(&config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return client
+	return tprclient
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -320,7 +324,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 
 	// Create an instance of our TPR
 	addon := &api.ClusterAddon{
-		Metadata: kapi.ObjectMeta{
+		Metadata: v1.ObjectMeta{
 			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
 		},
 		Name:  addonName,

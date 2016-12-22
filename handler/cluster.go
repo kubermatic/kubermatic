@@ -313,15 +313,14 @@ type createAddonRequest struct {
 	cluster   string
 }
 
-func decodeCreateAddonRequest(r *http.Request) (interface{}, error) {
+func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {
 	var req createAddonRequest
 
-	dr, err := decodeDcReq(r)
+	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.dcReq = dr.(dcReq)
-
 	req.cluster = mux.Vars(r)["cluster"]
 
 	var addon struct {

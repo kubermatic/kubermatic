@@ -20,7 +20,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
@@ -28,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/client-go/kubernetes"
+	kkubernetes "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -88,16 +87,11 @@ var RootCmd = &cobra.Command{
 				nil,
 			)
 
-			am, err := manager.NewHelmAddonManager(clientConfig)
-			if err != nil {
-				log.Fatal("failed to initialize addon manager: " + err.Error())
-			}
-
 			cfg, err := clientConfig.ClientConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
-			client, err := kubernetes.NewForConfig(cfg)
+			client, err := kkubernetes.NewForConfig(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -302,7 +302,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 func (r Routing) createAddonHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		createAddonEndpoint(r.kps, r.cps),
+		createAddonEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

@@ -2,9 +2,16 @@ package manager
 
 import (
 	"fmt"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	"k8s.io/helm/cmd/helm/downloader"
 	"k8s.io/helm/cmd/helm/helmpath"
 	"k8s.io/helm/pkg/chartutil"
@@ -18,12 +25,9 @@ import (
 	"k8s.io/helm/pkg/storage/driver"
 	"k8s.io/helm/pkg/tiller"
 	"k8s.io/helm/pkg/tiller/environment"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
+	kclientcmd "k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	kcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
+	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/latest"
 )
 
 const (
@@ -34,7 +38,7 @@ const (
 )
 
 // NewHelmAddonManager returns a addon manager instance for the given kubeconfig based on the helm package manager
-func NewHelmAddonManager(config clientcmd.ClientConfig) (AddonManager, error) {
+func NewHelmAddonManager(config *cmdv1.Config) (AddonManager, error) {
 	err := ensureHome(helmpath.Home("/tmp"), os.Stdout)
 	if err != nil {
 		return nil, err
@@ -50,28 +54,37 @@ func NewHelmAddonManager(config clientcmd.ClientConfig) (AddonManager, error) {
 }
 
 // getTiller returns an instance of the tiller for the given kubeconfig
-func getTiller(config clientcmd.ClientConfig) (*tiller.ReleaseServer, error) {
+func getTiller(v1cfg *cmdv1.Config) (*tiller.ReleaseServer, error) {
+	oldCfg := &kcmdapi.Config{}
+	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
+	if err != nil {
+		return nil, err
+	}
+	cfg := kclientcmd.NewNonInteractiveClientConfig(
+		*oldCfg,
+		v1cfg.Contexts[0].Name,
+		&kclientcmd.ConfigOverrides{},
+		nil,
+	)
+
 	e := engine.New()
 	var ey environment.EngineYard = map[string]environment.Engine{environment.GoTplEngine: e}
 
-	helmKubeClient := kube.Client{
-		Factory:               util.NewFactory(config),
-		IncludeThirdPartyAPIs: true,
-	}
+	helmKubeClient := kube.New(kclientcmd.ClientConfig(cfg))
 
 	env := &environment.Environment{
 		EngineYard: ey,
 		Releases:   storage.Init(driver.NewMemory()),
-		KubeClient: &helmKubeClient,
+		KubeClient: helmKubeClient,
 	}
 
-	c, err := env.KubeClient.APIClient()
+	clientset, err := helmKubeClient.ClientSet()
 	if err != nil {
 		return nil, err
 	}
-	env.Releases = storage.Init(driver.NewConfigMaps(c.ConfigMaps(environment.TillerNamespace)))
+	env.Releases = storage.Init(driver.NewConfigMaps(clientset.Core().ConfigMaps(environment.TillerNamespace)))
 
-	return tiller.NewReleaseServer(env), nil
+	return tiller.NewReleaseServer(env, clientset), nil
 }
 
 // HelmAddonManager represents a addon manager based on kubernetes/helm
