@@ -178,7 +178,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) < 2 {
+	if len(flag.Args()) < 1 {
 		printError()
 	}
 
@@ -188,7 +188,7 @@ func main() {
 	}
 
 	var err error
-	switch os.Args[1] {
+	switch flag.Arg(0) {
 	case "up":
 		err = up(*maxClustersFlag, *maxNodesFlag)
 	case "purge":
