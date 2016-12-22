@@ -18,6 +18,7 @@ var (
 	jwtFlag         = flag.String("jwt", "", "The String of the Authorization: header")
 	maxNodesFlag    = flag.Int("nodes", 0, "Spcifies the amount of nodes to create in one cluster (nodes*clusters)")
 	maxClustersFlag = flag.Int("clusters", 0, "Spcifies the amount of clusters to deploy")
+	dcFlag          = flag.String("datacenter", "master", "use this to specify a datacenter")
 )
 
 func setAuth(r *http.Request) {
@@ -28,7 +29,7 @@ func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error 
 	if nodeCount < 1 {
 		return nil
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/master/cluster/%s/node", cluster.Metadata.Name),
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/%s/node", cluster.Metadata.Name),
 		strings.NewReader(fmt.Sprintf(`{"instances":%d,"spec":{"digitalocean":{"sshKeys":["80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0"],"size":"512mb"},"dc":"do-ams2"}}`, nodeCount)))
 	if err != nil {
 		return err
@@ -42,7 +43,7 @@ func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error 
 }
 
 func createProvider(cluster api.Cluster, client *http.Client) error {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/master/cluster/%s/cloud", cluster.Metadata.Name),
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/%s/cloud", cluster.Metadata.Name),
 		strings.NewReader(`{"dc":"do-ams2","digitalocean":{"sshKeys":["80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0"],"token":"0f76d511c5f5c8730b18d588a07cd56aa78fc8a6ddabbc168eceaaa9c7a12892"}}`))
 
 	if err != nil {
@@ -61,7 +62,7 @@ func createProvider(cluster api.Cluster, client *http.Client) error {
 
 func waitNS(id int, cl api.Cluster, client *http.Client) error {
 	for {
-		req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/master/cluster/"+cl.Metadata.Name,
+		req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name,
 			strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, id)))
 		if err != nil {
 			return err
@@ -85,7 +86,7 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 
 func deleteCluster(cluster api.Cluster, client *http.Client) error {
 	log.Printf("Deleting %q\n", cluster.Metadata.Name)
-	req, err := http.NewRequest("DELETE", "https://dev.kubermatic.io/api/v1/dc/master/cluster/"+cluster.Metadata.Name, nil)
+	req, err := http.NewRequest("DELETE", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cluster.Metadata.Name, nil)
 	if err != nil {
 		return err
 	}
@@ -105,14 +106,14 @@ func up(maxClusters, maxNodes int) error {
 
 	waitAll := sync.WaitGroup{}
 	waitAll.Add(maxClusters)
-	done := make(chan struct{}, 30)
+	done := make(chan struct{}, 1)
 	for i := 0; i < maxClusters; i++ {
 		log.Printf("started worker-%d", i)
 		go func(x int) {
 			inner := func() {
 				done <- struct{}{}
 				log.Printf("request-%d", x)
-				req, err := http.NewRequest("POST", "https://dev.kubermatic.io/api/v1/dc/master/cluster",
+				req, err := http.NewRequest("POST", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster",
 					strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, x)))
 				if err != nil {
 					<-done
@@ -160,7 +161,7 @@ func purge() error {
 	client := &http.Client{}
 
 	// Get clusters list
-	req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/master/cluster", nil)
+	req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster", nil)
 	if err != nil {
 		return err
 	}
