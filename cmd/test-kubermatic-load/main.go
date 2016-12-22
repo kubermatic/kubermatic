@@ -62,8 +62,7 @@ func createProvider(cluster api.Cluster, client *http.Client) error {
 
 func waitNS(id int, cl api.Cluster, client *http.Client) error {
 	for {
-		req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name,
-			strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, id)))
+		req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name, nil)
 		if err != nil {
 			return err
 		}
@@ -72,6 +71,7 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 		if err != nil {
 			return err
 		}
+
 		var clusterState api.Cluster
 		if err = json.NewDecoder(resp.Body).Decode(&clusterState); err != nil {
 			return err
@@ -79,7 +79,8 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 		if clusterState.Address.URL != "" {
 			break
 		}
-		time.Sleep(time.Millisecond * 100)
+		log.Println("Waiting for NS to get created ....")
+		time.Sleep(time.Second * 10)
 	}
 	return nil
 }
@@ -134,6 +135,7 @@ func up(maxClusters, maxNodes int) error {
 					return
 				}
 				<-done
+				log.Printf("Created Cluster \"test-%d\"\n", x)
 
 				if err = waitNS(i, cluster, client); err != nil {
 					log.Println(err)
