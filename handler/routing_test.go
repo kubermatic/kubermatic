@@ -1,25 +1,21 @@
 package handler
 
 import (
-	"fmt"
-
-	"github.com/gorilla/mux"
-)
-
-import (
 	"context"
 	"encoding/base64"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
-	"io/ioutil"
-	"strings"
 )
 
 var jwtSecret = "super secret auth key nobody will guess"
@@ -47,11 +43,16 @@ func createTestEndpoint() http.Handler {
 	return router
 }
 
-func getTokenStr() string {
+func getTokenStr(admin bool) string {
+	roles := []interface{}{}
+	if admin {
+		roles = append(roles, "admin")
+	}
+
 	data := jwt.MapClaims{
 		"sub": "Thomas Tester",
 		"app_metadata": map[string]interface{}{
-			"roles": []interface{}{},
+			"roles": roles,
 		},
 	}
 
@@ -65,13 +66,13 @@ func getTokenStr() string {
 	return tokenStr
 }
 
-func authenticateHeader(req *http.Request) {
-	tokenStr := getTokenStr()
-	req.Header.Add("Authorization", "bearer " + tokenStr)
+func authenticateHeader(req *http.Request, admin bool) {
+	tokenStr := getTokenStr(admin)
+	req.Header.Add("Authorization", "bearer "+tokenStr)
 }
 
-func authenticateQuery(req *http.Request) {
-	tokenStr := getTokenStr()
+func authenticateQuery(req *http.Request, admin bool) {
+	tokenStr := getTokenStr(admin)
 	q := req.URL.Query()
 	q.Add("token", tokenStr)
 	req.URL.RawQuery = q.Encode()

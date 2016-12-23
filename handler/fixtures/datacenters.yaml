@@ -29,3 +29,12 @@ datacenters:
       aws:
         ami: ami-d0e54eb0
         region: us-west-2
+  eu-central-1:
+    location: Frankfurt
+    country: DE
+    provider: aws
+    private: true
+    spec:
+      aws:
+        ami: ami-d0e54eb0
+        region: eu-central-1

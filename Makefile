@@ -14,7 +14,7 @@ $(CMD):
 build: $(CMD)
 
 test:
-	go test -v $$(go list ./... | grep -v /vendor/)
+	go test $$(go list ./... | grep -v /vendor/)
 
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
