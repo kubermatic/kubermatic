@@ -29,6 +29,14 @@ datacenters:
       aws:
         ami: ami-d0e54eb0
         region: us-west-2
+  fake-1:
+    location: Oregon
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-d0e54eb0
+        region: us-west-2
   eu-central-1:
     location: Frankfurt
     country: DE

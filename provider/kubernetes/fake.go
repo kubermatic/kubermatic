@@ -2,27 +2,28 @@ package kubernetes
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/util/rand"
-	"sync"
-	"time"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
 
 type kubernetesFakeProvider struct {
 	mu       sync.Mutex
-	clusters map[string]api.Cluster // by name
+	clusters map[string]*api.Cluster // by name
 	cps      map[string]provider.CloudProvider
 }
 
 // NewKubernetesFakeProvider creates a new kubernetes provider object
 func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
 	return &kubernetesFakeProvider{
-		clusters: map[string]api.Cluster{
+		clusters: map[string]*api.Cluster{
 			"234jkh24234g": {
 				Metadata: api.Metadata{
 					Name:     "234jkh24234g",
@@ -87,7 +88,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 		return nil, fmt.Errorf("cluster %s already exists", cluster)
 	}
 
-	c := api.Cluster{
+	c := &api.Cluster{
 		Metadata: api.Metadata{
 			Name:     cluster,
 			Revision: "0",
@@ -97,7 +98,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 	}
 
 	p.clusters[cluster] = c
-	return &c, nil
+	return c, nil
 }
 
 func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
@@ -109,7 +110,7 @@ func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*a
 
 	c := p.clusters[cluster]
 
-	return &c, nil
+	return c, nil
 }
 
 func (p *kubernetesFakeProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
@@ -127,7 +128,7 @@ func (p *kubernetesFakeProvider) Clusters(user provider.User) ([]*api.Cluster, e
 
 	cs := make([]*api.Cluster, 0, len(p.clusters))
 	for _, c := range p.clusters {
-		cs = append(cs, &c)
+		cs = append(cs, c)
 	}
 
 	return cs, nil
