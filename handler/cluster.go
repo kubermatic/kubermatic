@@ -139,6 +139,9 @@ func deleteClusterEndpoint(
 		//Delete all nodes in the cluster
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			}
 			return nil, err
 		}
 
