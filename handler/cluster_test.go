@@ -46,6 +46,32 @@ func TestNewClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestNewClusterEndpointNotExistingDC(t *testing.T) {
+	reqObj := &api.Cluster{
+		Spec: api.ClusterSpec{
+			HumanReadableName: "test-cluster",
+		},
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/dc/testtest/cluster", encodeReq(t, reqObj))
+	authenticateHeader(req, false)
+
+	res := httptest.NewRecorder()
+	e := createTestEndpoint()
+	e.ServeHTTP(res, req)
+
+	if res.Code != 400 {
+		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		return
+	}
+
+	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	if res.Body.String() != exp {
+		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
+	}
+}
+
 func TestClustersEndpoint(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster", nil)
 	authenticateHeader(req, false)
