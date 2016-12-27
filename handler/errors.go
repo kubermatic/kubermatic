@@ -49,9 +49,15 @@ func defaultHTTPErrorEncoder() httptransport.ServerOption {
 		func(ctx context.Context, err error, w http.ResponseWriter) {
 			switch err.(type) {
 			case httptransport.Error:
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			case HTTPError:
-				http.Error(w, err.Error(), err.(HTTPError).code)
+				httpError := err.(httptransport.Error)
+
+				switch httpError.Err.(type) {
+				case HTTPError:
+					http.Error(w, err.Error(), httpError.Err.(HTTPError).code)
+				default:
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				}
+
 			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}

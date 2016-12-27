@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	"sort"
 )
 
 const jwtRolesKeyAdmin = "admin"
@@ -29,7 +30,13 @@ func datacentersEndpoint(
 		req := request.(dcsReq)
 
 		adcs := make([]api.Datacenter, 0, len(kps))
-		for dcName := range dcs {
+		var keys []string
+		for k := range dcs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, dcName := range keys {
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 

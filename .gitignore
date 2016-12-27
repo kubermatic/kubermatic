@@ -8,3 +8,4 @@
 secrets.yaml
 template/coreos
 vendor
+!handler/fixtures/*
