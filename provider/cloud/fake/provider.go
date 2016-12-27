@@ -2,10 +2,12 @@ package fake
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	"k8s.io/client-go/pkg/util/rand"
 )
 
 const (
@@ -14,11 +16,15 @@ const (
 
 var _ provider.CloudProvider = (*fakeCloudProvider)(nil)
 
-type fakeCloudProvider struct{}
+type fakeCloudProvider struct {
+	nodes map[string]*api.Node
+}
 
 // NewCloudProvider creates a new fake cloud provider
 func NewCloudProvider() provider.CloudProvider {
-	return &fakeCloudProvider{}
+	return &fakeCloudProvider{
+		nodes: map[string]*api.Node{},
+	}
 }
 
 func (p *fakeCloudProvider) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
@@ -48,7 +54,22 @@ func (p *fakeCloudProvider) CreateNodes(
 	spec *api.NodeSpec,
 	instances int,
 ) ([]*api.Node, error) {
-	return nil, errors.New("not implemented")
+	var ns []*api.Node
+
+	for i := 0; i < instances; i++ {
+		n := &api.Node{
+			Metadata: api.Metadata{
+				UID:  rand.String(4),
+				Name: rand.String(8),
+			},
+			Spec: *spec,
+		}
+
+		p.nodes[n.Metadata.UID] = n
+		ns = append(ns, n)
+	}
+
+	return ns, nil
 }
 
 func (p *fakeCloudProvider) InitializeCloudSpec(c *api.Cluster) error {
@@ -56,38 +77,28 @@ func (p *fakeCloudProvider) InitializeCloudSpec(c *api.Cluster) error {
 }
 
 func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	nodes := []*api.Node{
-		&api.Node{
-			Metadata: api.Metadata{
-				Name: "server1",
-			},
-			Spec: api.NodeSpec{
-				DatacenterName: "fake-fra1",
-				Fake: &api.FakeNodeSpec{
-					Type: "standard-1",
-					OS:   "CoreOS alpha 1234",
-				},
-			},
-		},
-		&api.Node{
-			Metadata: api.Metadata{
-				Name: "server2",
-			},
-			Spec: api.NodeSpec{
-				DatacenterName: "fake-fra1",
-				Fake: &api.FakeNodeSpec{
-					Type: "standard-1",
-					OS:   "CoreOS alpha 1234",
-				},
-			},
-		},
+	var ns []*api.Node
+
+	for _, n := range p.nodes {
+		ns = append(ns, n)
 	}
-	return nodes, nil
+
+	return ns, nil
 }
 
 func (p *fakeCloudProvider) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	// @apinnecke: Removed error throwing to make code testable
 	//return errors.New("delete: unsupported operation")
+
+	for _, u := range UIDs {
+		_, found := p.nodes[u]
+		if !found {
+			return fmt.Errorf("Node %q not found.", u)
+		}
+
+		delete(p.nodes, u)
+	}
+
 	return nil
 }
 
