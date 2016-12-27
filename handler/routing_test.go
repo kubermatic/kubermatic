@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -95,6 +97,15 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, file string
 	if r != b {
 		t.Fatalf("Expected response body to be '%s', got '%s'", r, b)
 	}
+}
+
+func encodeReq(t *testing.T, req interface{}) *bytes.Reader {
+	b, err := json.Marshal(&req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return bytes.NewReader(b)
 }
 
 func TestUpRoute(t *testing.T) {
