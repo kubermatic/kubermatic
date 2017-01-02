@@ -4,10 +4,6 @@ import (
 	"time"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/meta"
-	"k8s.io/client-go/pkg/api/v1"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/runtime/schema"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
@@ -151,9 +147,6 @@ type ClusterHealth struct {
 // ClusterPhase is the life cycle phase of a cluster.
 type ClusterPhase string
 
-// AddonPhase is the life cycle phase of a add on.
-type AddonPhase string
-
 const (
 	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
 	UnknownClusterStatusPhase ClusterPhase = "Unknown"
@@ -175,18 +168,6 @@ const (
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
-
-	// PendingAddonStatusPhase means that the cluster controller hasn't picked the addon up
-	PendingAddonStatusPhase AddonPhase = "Pending"
-
-	// FailedAddonStatusPhase means that the cluster controller failed to install the add on
-	FailedAddonStatusPhase AddonPhase = "Failed"
-
-	// DeletingAddonStatusPhase means that the add on should be deleted by the cluster controller
-	DeletingAddonStatusPhase AddonPhase = "Deleting"
-
-	// RunningAddonStatusPhase means that the add on is up and running
-	RunningAddonStatusPhase AddonPhase = "Running"
 )
 
 type (
@@ -334,43 +315,4 @@ type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
 	Seed     bool           `json:"seed,omitempty"`
-}
-
-// ClusterAddon specifies a cluster addon
-type ClusterAddon struct {
-	metav1.TypeMeta `json:",inline"`
-	Metadata        v1.ObjectMeta `json:"metadata"`
-	Name            string        `json:"name"`
-	Phase           AddonPhase    `json:"phase"`
-	Version         int32
-	Deployed        time.Time
-	ReleaseName     string
-}
-
-// ClusterAddonList specifies a list of cluster addons
-type ClusterAddonList struct {
-	metav1.TypeMeta `json:",inline"`
-	Metadata        metav1.ListMeta `json:"metadata"`
-
-	Items []ClusterAddon `json:"items"`
-}
-
-//GetObjectKind returns the object typemeta information
-func (e *ClusterAddon) GetObjectKind() schema.ObjectKind {
-	return &e.TypeMeta
-}
-
-//GetObjectMeta returns the object metadata
-func (e *ClusterAddon) GetObjectMeta() meta.Object {
-	return &e.Metadata
-}
-
-//GetObjectKind returns the object typemeta information
-func (el *ClusterAddonList) GetObjectKind() schema.ObjectKind {
-	return &el.TypeMeta
-}
-
-//GetListMeta returns the list object metadata
-func (el *ClusterAddonList) GetListMeta() metav1.List {
-	return &el.Metadata
 }

@@ -1,14 +1,14 @@
 package manager
 
 import (
-	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 )
 
 // AddonManager represents a addon manager
 type AddonManager interface {
 	ListReleases() error
-	Install(addon *api.ClusterAddon) (*api.ClusterAddon, error)
-	Delete(addon *api.ClusterAddon) error
-	Update(addon *api.ClusterAddon) error
-	Rollback(addon *api.ClusterAddon) error
+	Install(addon *extensions.ClusterAddon) (*extensions.ClusterAddon, error)
+	Delete(addon *extensions.ClusterAddon) error
+	Update(addon *extensions.ClusterAddon) error
+	Rollback(addon *extensions.ClusterAddon) error
 }

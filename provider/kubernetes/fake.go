@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
@@ -150,6 +151,6 @@ func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]st
 	return []string{}, nil
 }
 
-func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
+func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
 	return nil, nil
 }

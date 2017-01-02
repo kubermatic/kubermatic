@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/kubermatic/api/controller/cluster"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
-	"github.com/kubermatic/api/provider/kubernetes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -95,7 +95,10 @@ var RootCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			tprClient := kubernetes.NewTprClient(cfg)
+			tprClient, err := extensions.WrapClientsetWithExtensions(cfg)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			// start controller
 			cps := cloud.Providers(dcs)

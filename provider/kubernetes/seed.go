@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
@@ -194,6 +195,6 @@ func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 	return errors.New("not implemented")
 }
 
-func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
+func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
 	return nil, nil
 }

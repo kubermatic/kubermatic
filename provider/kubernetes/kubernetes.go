@@ -8,18 +8,15 @@ import (
 	"time"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/kubernetes"
-	kapi "k8s.io/client-go/pkg/api"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
 	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/labels"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/runtime/schema"
-	"k8s.io/client-go/pkg/runtime/serializer"
 	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
@@ -32,56 +29,13 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient rest.Interface
+	tprClient extensions.Clientset
 	client    *kubernetes.Clientset
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
 	dev    bool
 	config *rest.Config
-}
-
-//RegisterTprs register's our own ThirdPartyResources
-func RegisterTprs(gv schema.GroupVersion) {
-	schemeBuilder := runtime.NewSchemeBuilder(
-		func(scheme *runtime.Scheme) error {
-			scheme.AddKnownTypes(
-				gv,
-				&api.ClusterAddon{},
-				&api.ClusterAddonList{},
-				&v1.ListOptions{},
-				&v1.DeleteOptions{},
-			)
-			return nil
-		})
-	err := schemeBuilder.AddToScheme(kapi.Scheme)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-//NewTprClient returns a client which is meant for our own ThirdPartyResources
-func NewTprClient(clientConfig *rest.Config) rest.Interface {
-	config := *clientConfig
-
-	groupversion := schema.GroupVersion{
-		Group:   "kubermatic.io",
-		Version: "v1",
-	}
-	RegisterTprs(groupversion)
-
-	config.GroupVersion = &groupversion
-	config.APIPath = "/apis"
-	config.ContentType = runtime.ContentTypeJSON
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: kapi.Codecs}
-
-	tprclient, err := rest.RESTClientFor(&config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tprclient
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -95,10 +49,15 @@ func NewKubernetesProvider(
 		log.Fatal(err)
 	}
 
+	trpClient, err := extensions.WrapClientsetWithExtensions(clientConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &kubernetesProvider{
 		cps:       cps,
 		client:    client,
-		tprClient: NewTprClient(clientConfig),
+		tprClient: trpClient,
 		dev:       dev,
 		config:    clientConfig,
 	}
@@ -313,35 +272,36 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	if err != nil {
 		return err
 	}
+
+	list, err := p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).List(v1.ListOptions{LabelSelector: labels.Everything().String()})
+	if err != nil {
+		return err
+	}
+	for _, item := range list.Items {
+		err = p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).Delete(item.Metadata.Name, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
 }
 
-func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*api.ClusterAddon, error) {
+func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
 	_, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create an instance of our TPR
-	addon := &api.ClusterAddon{
+	addon := &extensions.ClusterAddon{
 		Metadata: v1.ObjectMeta{
 			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
 		},
 		Name:  addonName,
-		Phase: api.PendingAddonStatusPhase,
+		DC:    cluster,
+		Phase: extensions.PendingAddonStatusPhase,
 	}
 
-	var result api.ClusterAddon
-	err = p.tprClient.
-		Post().
-		Resource("clusteraddons").
-		Namespace(fmt.Sprintf("cluster-%s", cluster)).
-		Body(addon).
-		Do().
-		Into(&result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }

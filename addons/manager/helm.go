@@ -2,15 +2,14 @@ package manager
 
 import (
 	"fmt"
-
-	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
+	"github.com/kubermatic/api/extensions"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	"k8s.io/helm/cmd/helm/downloader"
 	"k8s.io/helm/cmd/helm/helmpath"
@@ -27,7 +26,6 @@ import (
 	"k8s.io/helm/pkg/tiller/environment"
 	kclientcmd "k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	kcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api/latest"
 )
 
 const (
@@ -55,14 +53,30 @@ func NewHelmAddonManager(config *cmdv1.Config) (AddonManager, error) {
 
 // getTiller returns an instance of the tiller for the given kubeconfig
 func getTiller(v1cfg *cmdv1.Config) (*tiller.ReleaseServer, error) {
-	oldCfg := &kcmdapi.Config{}
-	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
-	if err != nil {
-		return nil, err
+	ctx := v1cfg.Contexts[0].Name
+	oldCfg := kcmdapi.Config{
+		Clusters: map[string]*kcmdapi.Cluster{
+			ctx: {
+				Server: v1cfg.Clusters[0].Cluster.Server,
+				CertificateAuthorityData: v1cfg.Clusters[0].Cluster.CertificateAuthorityData,
+			},
+		},
+		AuthInfos: map[string]*kcmdapi.AuthInfo{
+			ctx: {
+				Token: v1cfg.AuthInfos[0].AuthInfo.Token,
+			},
+		},
+		CurrentContext: ctx,
+		Contexts: map[string]*kcmdapi.Context{
+			ctx: {
+				Cluster:  ctx,
+				AuthInfo: ctx,
+			},
+		},
 	}
 	cfg := kclientcmd.NewNonInteractiveClientConfig(
-		*oldCfg,
-		v1cfg.Contexts[0].Name,
+		oldCfg,
+		ctx,
 		&kclientcmd.ConfigOverrides{},
 		nil,
 	)
@@ -93,7 +107,7 @@ type HelmAddonManager struct {
 }
 
 // Install installs a given addon to the cluster
-func (a *HelmAddonManager) Install(addon *api.ClusterAddon) (*api.ClusterAddon, error) {
+func (a *HelmAddonManager) Install(addon *extensions.ClusterAddon) (*extensions.ClusterAddon, error) {
 	c, err := getChart(fmt.Sprintf("stable/%s", addon.Name), "")
 	if err != nil {
 		return nil, err
@@ -101,7 +115,7 @@ func (a *HelmAddonManager) Install(addon *api.ClusterAddon) (*api.ClusterAddon, 
 
 	req := services.InstallReleaseRequest{}
 	req.Chart = c
-	req.Namespace = addon.Metadata.Namespace
+	req.Namespace = "kube-system"
 	req.Values = &chart.Config{Raw: ""}
 	ctx := helm.NewContext()
 
@@ -124,7 +138,7 @@ func (a *HelmAddonManager) ListReleases() error {
 }
 
 // Delete will delete a installed addon from the luster
-func (a *HelmAddonManager) Delete(addon *api.ClusterAddon) error {
+func (a *HelmAddonManager) Delete(addon *extensions.ClusterAddon) error {
 	req := &services.UninstallReleaseRequest{}
 	req.Name = addon.ReleaseName
 	ctx := helm.NewContext()
@@ -138,12 +152,12 @@ func (a *HelmAddonManager) Delete(addon *api.ClusterAddon) error {
 }
 
 // Update will update a installed addon in the cluster
-func (a *HelmAddonManager) Update(addon *api.ClusterAddon) error {
+func (a *HelmAddonManager) Update(addon *extensions.ClusterAddon) error {
 	return nil
 }
 
 // Rollback will rollback a release to the previous release
-func (a *HelmAddonManager) Rollback(addon *api.ClusterAddon) error {
+func (a *HelmAddonManager) Rollback(addon *extensions.ClusterAddon) error {
 	return nil
 }
 
