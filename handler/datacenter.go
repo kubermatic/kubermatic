@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -15,7 +16,6 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	"sort"
 )
 
 const jwtRolesKeyAdmin = "admin"
@@ -103,14 +103,19 @@ func datacenterKeyEndpoint(
 			return nil, NewBadRequest("not aws", req.dc)
 		}
 
-		// Create aws ec2 client.
-		config := aws.NewConfig()
-		config = config.WithRegion(dc.Spec.AWS.Region)
-		// TODO(realfake): Implement token for AWS.
-		config = config.WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
+		config := aws.NewConfig().
+			WithMaxRetries(10).
+			WithRegion(dc.Spec.AWS.Region).
+			WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
 		sess := ec2.New(session.New(config))
-		// Begin describing key pairs.
 		keys, err := sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
+
+		//Empty slices are getting marshaled to null...
+		//We always want to return an array to the frontend!
+		if len(keys.KeyPairs) == 0 {
+			keys.KeyPairs = make([]*ec2.KeyPairInfo, 0)
+		}
+
 		return keys, err
 	}
 }

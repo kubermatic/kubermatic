@@ -372,7 +372,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	}
 
 	ingress := map[string]func(s string) (*extensionsv1beta1.Ingress, error){
-		"sniff": loadFile,
+		"k8sniff": loadFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
