@@ -35,6 +35,8 @@ const (
 	maxUpdateRetries               = 5
 	launchTimeout                  = 5 * time.Minute
 
+	maxAddonInstallAttempts = 3
+
 	workerPeriod        = time.Second
 	queueResyncPeriod   = 10 * time.Millisecond
 	pendingSyncPeriod   = 10 * time.Second
@@ -313,9 +315,10 @@ func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
 
 	installedAddon, err := addonManager.Install(addon)
 	if err != nil {
+		glog.Errorf("failed to install plugin: %v", err)
 		addon.Attempt++
-		if addon.Attempt >= 3 {
-			glog.Error(err)
+		if addon.Attempt >= maxAddonInstallAttempts {
+			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
 			phase = extensions.FailedAddonStatusPhase
 		}
 	} else {

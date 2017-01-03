@@ -137,7 +137,7 @@ func (a *HelmAddonManager) ListReleases() error {
 	return nil
 }
 
-// Delete will delete a installed addon from the luster
+// Delete will delete a installed addon from the cluster
 func (a *HelmAddonManager) Delete(addon *extensions.ClusterAddon) error {
 	req := &services.UninstallReleaseRequest{}
 	req.Name = addon.ReleaseName
