@@ -14,9 +14,11 @@ import (
 	"encoding/base64"
 
 	sdk "github.com/aws/aws-sdk-go/aws"
+
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 )
@@ -198,6 +200,89 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 	})
 
 	return err
+}
+
+func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
+	params := &iam.CreateInstanceProfileInput{
+		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
+	}
+	_, err := svc.CreateInstanceProfile(params)
+	if err != nil {
+		return err
+	}
+
+	params2 := &iam.CreatePolicyInput{
+		PolicyDocument: sdk.String(`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::kubernetes-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ec2:Describe*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ec2:AttachVolume",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ec2:DetachVolume",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["route53:*"],
+      "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "*"
+    }
+  ]
+}`), // Required
+		PolicyName: sdk.String("kubermatic-policy"), // Required
+	}
+	_, err = svc.CreatePolicy(params2)
+	if err != nil {
+		return err
+	}
+
+	params3 := &iam.CreateRoleInput{
+		AssumeRolePolicyDocument: sdk.String(`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com"},
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}`), // Required
+		RoleName: sdk.String("kubermatic-role"), // Required
+	}
+	_, err = svc.CreateRole(params3)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
