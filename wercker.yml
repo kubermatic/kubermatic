@@ -90,7 +90,7 @@ deployment-update:
         certificate-authority: ca.pem
         command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
 
-push-dev-image:
+push-image:
     box: ubuntu:14.04
     steps:
     - script:
@@ -104,7 +104,7 @@ push-dev-image:
         username: $USERNAME
         password: $PASSWORD
         email: stefan.schimanski@gmail.com
-        tag: dev
+        tag: $PUSH_TAG
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
