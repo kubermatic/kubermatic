@@ -270,15 +270,6 @@ func NewController(
 					cc.syncAddon(newAddon)
 				}
 			},
-			DeleteFunc: func(obj interface{}) {
-				//addon := obj.(*extensions.ClusterAddon)
-				//glog.V(4).Infof("Deleting addon %s", addon.Metadata.Name)
-				//err := cc.addonManager.Delete(addon)
-				//
-				//if err != nil {
-				//	glog.Error(err)
-				//}
-			},
 		},
 	)
 
@@ -304,6 +295,11 @@ func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
 	cluster, err := kprovider.UnmarshalCluster(cc.cps, ns)
 	if err != nil {
 		glog.Errorf("failed to unmarshal cluster(ns) %s during addon-install: %v", addon.Metadata.Namespace, err)
+		return
+	}
+
+	if cluster.Status.Phase != api.RunningClusterStatusPhase {
+		glog.Errorf("Postponed addon install. cluster %s is not ready", addon.Metadata.Namespace, err)
 		return
 	}
 
