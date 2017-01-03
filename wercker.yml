@@ -98,7 +98,7 @@ push-image:
           tar -xvjf alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
-        name: push to docker hub as dev
+        name: push to docker hub as $PUSH_TAG
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
         cmd: /kubermatic-api
         username: $USERNAME
