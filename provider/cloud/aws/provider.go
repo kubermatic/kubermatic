@@ -203,9 +203,9 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 }
 
 func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
-	kubermaticPolicyName := fmt.Sprintf("kubermatic-policy-%s", cluster.Metadata.UID)
-	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", cluster.Metadata.UID)
-	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.UID)
+	kubermaticPolicyName := fmt.Sprintf("kubermatic-policy-%s", cluster.Metadata.Name)
+	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", cluster.Metadata.Name)
+	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)
 	paramsPolicy := &iam.CreatePolicyInput{
 		PolicyDocument: sdk.String(`{
   "Version": "2012-10-17",
