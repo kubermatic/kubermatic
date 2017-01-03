@@ -491,6 +491,9 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
 			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
 			NetworkInterfaces: netSpec,
+			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
+				Name: sdk.String(fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)),
+			},
 		}
 
 		newNode, err := launch(svc, instanceName, instanceRequest, cluster)
