@@ -203,15 +203,7 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 }
 
 func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
-	params := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
-	}
-	_, err := svc.CreateInstanceProfile(params)
-	if err != nil {
-		return err
-	}
-
-	params2 := &iam.CreatePolicyInput{
+	paramsPolicy := &iam.CreatePolicyInput{
 		PolicyDocument: sdk.String(`{
   "Version": "2012-10-17",
   "Statement": [
@@ -259,12 +251,14 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 }`), // Required
 		PolicyName: sdk.String("kubermatic-policy"), // Required
 	}
-	_, err = svc.CreatePolicy(params2)
+	policyResp, err := svc.CreatePolicy(paramsPolicy)
 	if err != nil {
 		return err
 	}
 
-	params3 := &iam.CreateRoleInput{
+	policyArn := *policyResp.Policy.Arn
+
+	paramsRole := &iam.CreateRoleInput{
 		AssumeRolePolicyDocument: sdk.String(`{
   "Version": "2012-10-17",
   "Statement": [
@@ -277,12 +271,36 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 }`), // Required
 		RoleName: sdk.String("kubermatic-role"), // Required
 	}
-	_, err = svc.CreateRole(params3)
+	_, err = svc.CreateRole(paramsRole)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	// Attach policy to role
+	paramsAttachPolicy := &iam.AttachRolePolicyInput{
+		PolicyArn: sdk.String(policyArn),         // Required
+		RoleName:  sdk.String("kubermatic-role"), // Required
+	}
+	_, err = svc.AttachRolePolicy(paramsAttachPolicy)
+	if err != nil {
+		return err
+	}
+
+	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
+		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
+	}
+	_, err = svc.CreateInstanceProfile(paramsInstanceProfile)
+	if err != nil {
+		return err
+	}
+
+	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
+		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
+		RoleName:            sdk.String("kubermatic-role"),             // Required
+	}
+	_, err = svc.AddRoleToInstanceProfile(paramsAddRole)
+
+	return err
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
