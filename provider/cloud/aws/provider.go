@@ -308,7 +308,7 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return nil
 	}
 
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return err
 	}
@@ -445,7 +445,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if node.AWS.Type == "" {
 		return nil, errors.New("no AWS node type specified")
 	}
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +494,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +537,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 }
 
 func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return err
 	}
@@ -555,7 +555,7 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	return err
 }
 
-func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
+func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
 	config := sdk.NewConfig()
 	dc, found := a.datacenters[cluster.Spec.Cloud.DatacenterName]
@@ -566,7 +566,23 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
-	return ec2.New(session.New(config)), nil
+	return session.New(config), nil
+}
+
+func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
+	sess, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return ec2.New(sess), nil
+}
+
+func (a *aws) getIAMclient(cluster *api.Cluster) (*iam.IAM, error) {
+	sess, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return iam.New(sess), nil
 }
 
 func createNode(name string, instance *ec2.Instance) *api.Node {
@@ -643,7 +659,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 }
 
 func (a *aws) doCleanUpAWS(c *api.Cluster) error {
-	svc, err := a.getSession(c)
+	svc, err := a.getEC2client(c)
 	if err != nil {
 		return err
 	}
