@@ -203,6 +203,9 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 }
 
 func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
+	kubermaticPolicyName := fmt.Sprintf("kubermatic-policy-%s", cluster.Metadata.UID)
+	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", cluster.Metadata.UID)
+	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.UID)
 	paramsPolicy := &iam.CreatePolicyInput{
 		PolicyDocument: sdk.String(`{
   "Version": "2012-10-17",
@@ -249,7 +252,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
     }
   ]
 }`), // Required
-		PolicyName: sdk.String("kubermatic-policy"), // Required
+		PolicyName: sdk.String(kubermaticPolicyName), // Required
 	}
 	policyResp, err := svc.CreatePolicy(paramsPolicy)
 	if err != nil {
@@ -269,7 +272,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
     }
   ]
 }`), // Required
-		RoleName: sdk.String("kubermatic-role"), // Required
+		RoleName: sdk.String(kubermaticRoleName), // Required
 	}
 	_, err = svc.CreateRole(paramsRole)
 	if err != nil {
@@ -278,8 +281,8 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 
 	// Attach policy to role
 	paramsAttachPolicy := &iam.AttachRolePolicyInput{
-		PolicyArn: sdk.String(policyArn),         // Required
-		RoleName:  sdk.String("kubermatic-role"), // Required
+		PolicyArn: sdk.String(policyArn),          // Required
+		RoleName:  sdk.String(kubermaticRoleName), // Required
 	}
 	_, err = svc.AttachRolePolicy(paramsAttachPolicy)
 	if err != nil {
@@ -287,7 +290,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 	}
 
 	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
+		InstanceProfileName: sdk.String(kubermaticInstanceProfileName), // Required
 	}
 	_, err = svc.CreateInstanceProfile(paramsInstanceProfile)
 	if err != nil {
@@ -295,8 +298,8 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 	}
 
 	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
-		InstanceProfileName: sdk.String("kubermatic-instance-profile"), // Required
-		RoleName:            sdk.String("kubermatic-role"),             // Required
+		InstanceProfileName: sdk.String(kubermaticInstanceProfileName), // Required
+		RoleName:            sdk.String(kubermaticRoleName),            // Required
 	}
 	_, err = svc.AddRoleToInstanceProfile(paramsAddRole)
 
