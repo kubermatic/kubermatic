@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: test
+    server: https://1.2.3.4
+  name: master
+contexts:
+- context:
+    cluster: master
+    user: master
+  name: master
+current-context: master
+kind: Config
+preferences: {}
+users:
+- name: master
+  user:
+    password: secret
+    username: admin
