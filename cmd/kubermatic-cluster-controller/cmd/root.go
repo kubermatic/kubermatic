@@ -21,12 +21,13 @@ import (
 	"os"
 
 	"github.com/kubermatic/api/controller/cluster"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/client-go/kubernetes"
+	kkubernetes "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -85,11 +86,16 @@ var RootCmd = &cobra.Command{
 				&clientcmd.ConfigOverrides{},
 				nil,
 			)
+
 			cfg, err := clientConfig.ClientConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
-			client, err := kubernetes.NewForConfig(cfg)
+			client, err := kkubernetes.NewForConfig(cfg)
+			if err != nil {
+				log.Fatal(err)
+			}
+			tprClient, err := extensions.WrapClientsetWithExtensions(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -97,7 +103,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
+				ctx, client, tprClient, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
 			)
 			if err != nil {
 				log.Fatal(err)

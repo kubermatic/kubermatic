@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/kubernetes"
 	kerrors "k8s.io/client-go/pkg/api/errors"
@@ -28,11 +29,13 @@ const (
 )
 
 type kubernetesProvider struct {
-	client *kubernetes.Clientset
+	tprClient extensions.Clientset
+	client    *kubernetes.Clientset
 
-	mu  sync.Mutex
-	cps map[string]provider.CloudProvider
-	dev bool
+	mu     sync.Mutex
+	cps    map[string]provider.CloudProvider
+	dev    bool
+	config *rest.Config
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -46,10 +49,17 @@ func NewKubernetesProvider(
 		log.Fatal(err)
 	}
 
+	trpClient, err := extensions.WrapClientsetWithExtensions(clientConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &kubernetesProvider{
-		cps:    cps,
-		client: client,
-		dev:    dev,
+		cps:       cps,
+		client:    client,
+		tprClient: trpClient,
+		dev:       dev,
+		config:    clientConfig,
 	}
 }
 
@@ -262,5 +272,36 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	if err != nil {
 		return err
 	}
+
+	list, err := p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).List(v1.ListOptions{LabelSelector: labels.Everything().String()})
+	if err != nil {
+		return err
+	}
+	for _, item := range list.Items {
+		err = p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).Delete(item.Metadata.Name, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
+}
+
+func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
+	_, err := p.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create an instance of our TPR
+	addon := &extensions.ClusterAddon{
+		Metadata: v1.ObjectMeta{
+			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
+		},
+		Name:  addonName,
+		DC:    cluster,
+		Phase: extensions.PendingAddonStatusPhase,
+	}
+
+	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }

@@ -7,7 +7,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/kubernetes"
@@ -33,6 +35,8 @@ const (
 	maxUpdateRetries               = 5
 	launchTimeout                  = 5 * time.Minute
 
+	maxAddonInstallAttempts = 3
+
 	workerPeriod        = time.Second
 	queueResyncPeriod   = 10 * time.Millisecond
 	pendingSyncPeriod   = 10 * time.Second
@@ -42,6 +46,7 @@ const (
 
 type clusterController struct {
 	dc                  string
+	tprClient           extensions.Clientset
 	client              *kubernetes.Clientset
 	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
@@ -67,6 +72,9 @@ type clusterController struct {
 	ingressController *cache.Controller
 	ingressStore      cache.Indexer
 
+	addonController *cache.Controller
+	addonStore      cache.Store
+
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
@@ -81,6 +89,7 @@ type clusterController struct {
 func NewController(
 	dc string,
 	client *kubernetes.Clientset,
+	tprClient extensions.Clientset,
 	cps map[string]provider.CloudProvider,
 	masterResourcesPath string,
 	externalURL string,
@@ -90,6 +99,7 @@ func NewController(
 	cc := &clusterController{
 		dc:                  dc,
 		client:              client,
+		tprClient:           tprClient,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		inProgress:          map[string]struct{}{},
@@ -177,6 +187,7 @@ func NewController(
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
 	)
+
 	cc.secretStore, cc.secretController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
@@ -237,9 +248,91 @@ func NewController(
 		namespaceIndexer,
 	)
 
+	cc.addonStore, cc.addonController = cache.NewInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.tprClient.ClusterAddons(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.tprClient.ClusterAddons(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&extensions.ClusterAddon{},
+		1*time.Minute,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				addon := obj.(*extensions.ClusterAddon)
+				cc.syncAddon(addon)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				newAddon := newObj.(*extensions.ClusterAddon)
+
+				glog.V(4).Infof("Detected update on addon %s", newAddon.Metadata.Name)
+				if newAddon.Phase == extensions.PendingAddonStatusPhase {
+					cc.syncAddon(newAddon)
+				}
+			},
+		},
+	)
+
 	return cc, nil
 }
 
+func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
+	var phase extensions.AddonPhase
+	if addon.Phase != extensions.PendingAddonStatusPhase {
+		return
+	}
+
+	obj, exists, err := cc.nsStore.GetByKey(addon.Metadata.Namespace)
+	if !exists {
+		glog.Errorf("Namespace for cluster %s does not exist", addon.Metadata.Namespace)
+		return
+	}
+	if err != nil {
+		glog.Errorf("failed to get namespace for %s: : %v", addon.Metadata.Namespace, err)
+		return
+	}
+	ns := obj.(*v1.Namespace)
+	cluster, err := kprovider.UnmarshalCluster(cc.cps, ns)
+	if err != nil {
+		glog.Errorf("failed to unmarshal cluster(ns) %s during addon-install: %v", addon.Metadata.Namespace, err)
+		return
+	}
+
+	if cluster.Status.Phase != api.RunningClusterStatusPhase {
+		glog.Errorf("Postponed addon install. cluster %s is not ready", addon.Metadata.Namespace, err)
+		return
+	}
+
+	glog.V(4).Infof("Installing addon %s", addon.Name)
+
+	addonManager, err := manager.NewHelmAddonManager(cluster.GetKubeconfig())
+	if err != nil {
+		glog.Errorf("failed to create addonManager:%s", addon.Metadata.Namespace, err)
+		return
+	}
+
+	installedAddon, err := addonManager.Install(addon)
+	if err != nil {
+		glog.Errorf("failed to install plugin: %v", err)
+		addon.Attempt++
+		if addon.Attempt >= maxAddonInstallAttempts {
+			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
+			phase = extensions.FailedAddonStatusPhase
+		}
+	} else {
+		addon = installedAddon
+		phase = extensions.RunningAddonStatusPhase
+	}
+
+	addon.Phase = phase
+
+	addon, err = cc.tprClient.ClusterAddons(addon.Metadata.GetNamespace()).Update(addon)
+	if err != nil {
+		glog.Error(err)
+	}
+}
 func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase api.ClusterPhase) {
 	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
@@ -470,6 +563,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.secretController.Run(wait.NeverStop)
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
+	go cc.addonController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
@@ -498,5 +592,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.depController.HasSynced() &&
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced() &&
+		cc.addonController.HasSynced() &&
 		cc.pvcController.HasSynced()
 }

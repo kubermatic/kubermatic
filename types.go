@@ -5,9 +5,9 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	cmdApi "k8s.io/client-go/tools/clientcmd/api"
+	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -187,7 +187,7 @@ type SecretKeyCert struct {
 	Cert Bytes `json:"cert"`
 }
 
-// ClusterStatus stores status informations about a cluster.
+// ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	LastTransitionTime time.Time      `json:"lastTransitionTime"`
 	Phase              ClusterPhase   `json:"phase,omitempty"`
@@ -214,7 +214,7 @@ type ClusterAddress struct {
 	NodePort int    `json:"nodePort"`
 }
 
-// Cluster is the object representating a cluster.
+// Cluster is the object representing a cluster.
 type Cluster struct {
 	Metadata Metadata        `json:"metadata"`
 	Spec     ClusterSpec     `json:"spec"`
@@ -223,53 +223,62 @@ type Cluster struct {
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() *v1.Config {
-	return &v1.Config{
+func (c *Cluster) GetKubeconfig() *cmdv1.Config {
+	return &cmdv1.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		CurrentContext: c.Metadata.Name,
-		Clusters: []v1.NamedCluster{{
+		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
-			Cluster: v1.Cluster{
+			Cluster: cmdv1.Cluster{
 				Server: c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
-		Contexts: []v1.NamedContext{{
+		Contexts: []cmdv1.NamedContext{{
 			Name: c.Metadata.Name,
-			Context: v1.Context{
+			Context: cmdv1.Context{
 				Cluster:  c.Metadata.Name,
 				AuthInfo: c.Metadata.Name,
 			},
 		}},
-		AuthInfos: []v1.NamedAuthInfo{{
+		AuthInfos: []cmdv1.NamedAuthInfo{{
 			Name: c.Metadata.Name,
-			AuthInfo: v1.AuthInfo{
+			AuthInfo: cmdv1.AuthInfo{
 				Token: c.Address.Token,
 			},
 		}},
 	}
 }
 
-// GetClient returns a kubernetes client which speaks to the cluster
-func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
+func (c *Cluster) getClientConfig() (clientcmd.ClientConfig, error) {
 	v1cfg := c.GetKubeconfig()
-	oldCfg := &cmdApi.Config{}
+	oldCfg := &cmdapi.Config{}
 	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
 	if err != nil {
 		return nil, err
 	}
-	clientConfig := clientcmd.NewNonInteractiveClientConfig(
+	return clientcmd.NewNonInteractiveClientConfig(
 		*oldCfg,
 		v1cfg.Contexts[0].Name,
 		&clientcmd.ConfigOverrides{},
 		nil,
-	)
-	cfg, err := clientConfig.ClientConfig()
+	), nil
+}
+
+// GetClient returns a kubernetes client which speaks to the cluster
+func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
+	cfg, err := c.getClientConfig()
 	if err != nil {
 		return nil, err
 	}
-	client, err := kubernetes.NewForConfig(cfg)
+
+	ccfg, err := cfg.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kubernetes.NewForConfig(ccfg)
 	if err != nil {
 		return nil, err
 	}

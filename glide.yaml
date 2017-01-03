@@ -24,3 +24,5 @@ import:
 - package: github.com/spf13/cobra
 - package: github.com/cloudflare/cfssl
 - package: github.com/spf13/viper
+- package: k8s.io/helm
+  version: ~2.1.0

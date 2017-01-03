@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 )
 
 // Constants defining known cloud providers.
@@ -61,6 +62,9 @@ type KubernetesProvider interface {
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
+
+	// CreateAddon creates an addon ThirdPartyResource
+	CreateAddon(user User, cluster string, addonName string) (*extensions.ClusterAddon, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
