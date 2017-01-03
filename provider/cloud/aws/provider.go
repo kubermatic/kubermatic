@@ -357,9 +357,9 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
-	createInstanceProfile(svcIAM, cluster)
+	err = createInstanceProfile(svcIAM, cluster)
 
-	return nil
+	return err
 }
 
 func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
