@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -134,7 +135,7 @@ func (a *HelmAddonManager) Install(addon *extensions.ClusterAddon) (*extensions.
 
 // ListReleases lists all installed releases on the cluster
 func (a *HelmAddonManager) ListReleases() error {
-	return nil
+	return errors.New("not implemented")
 }
 
 // Delete will delete a installed addon from the cluster
@@ -153,12 +154,12 @@ func (a *HelmAddonManager) Delete(addon *extensions.ClusterAddon) error {
 
 // Update will update a installed addon in the cluster
 func (a *HelmAddonManager) Update(addon *extensions.ClusterAddon) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 // Rollback will rollback a release to the previous release
 func (a *HelmAddonManager) Rollback(addon *extensions.ClusterAddon) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 // getChart will download and return a chart for the given name
