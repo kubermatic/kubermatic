@@ -352,6 +352,13 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
+	svcIAM, err := a.getIAMclient(cluster)
+	if err != nil {
+		return err
+	}
+
+	createInstanceProfile(svcIAM, cluster)
+
 	return nil
 }
 
