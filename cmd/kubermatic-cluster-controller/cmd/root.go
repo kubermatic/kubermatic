@@ -103,7 +103,7 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, tprClient, cps, masterResources, externalURL, dev, overwriteHost,
+				ctx, client, tprClient, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
 			)
 			if err != nil {
 				log.Fatal(err)
