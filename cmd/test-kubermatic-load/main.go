@@ -200,6 +200,7 @@ func up(maxClusters, maxNodes int) error {
 
 			// Execute inner and sync
 			inner()
+			waitAll.Done()
 		}(i)
 	}
 
@@ -231,15 +232,20 @@ func purge() error {
 
 	// Same pattern as in up
 	done := make(chan struct{}, *maxAsyncFlag)
+	waitAll := sync.WaitGroup{}
+	waitAll.Add(len(clusters))
 	for _, cluster := range clusters {
-		func(cl api.Cluster) {
+		go func(cl api.Cluster) {
 			// Place ticket
 			done <- struct{}{}
 			log.Println(deleteCluster(cl, client))
 			// Remove ticket
 			<-done
+			waitAll.Done()
 		}(cluster)
 	}
+	// Wait for all workers
+	waitAll.Wait()
 	return nil
 }
 
