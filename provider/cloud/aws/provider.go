@@ -218,9 +218,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.
 	{
 	    "Effect": "Allow",
 	    "Action": [
-		"ec2:Describe*",
-		"ec2:AttachVolume",
-		"ec2:DetachVolume",
+		"ec2:*",
 		"route53:*",
 		"ecr:GetAuthorizationToken",
 		"ecr:BatchCheckLayerAvailability",
