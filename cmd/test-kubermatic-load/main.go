@@ -201,7 +201,7 @@ func purge() error {
 func main() {
 	flag.Parse()
 	printError := func() {
-		log.Printf("Wrong usage usage.\n\n\t %s [up|purge]\n\n", os.Args[0])
+		log.Printf("Wrong usage. Use:\n\n\t %s [up|purge]\n\n", os.Args[0])
 		os.Exit(1)
 	}
 
