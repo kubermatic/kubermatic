@@ -2,25 +2,22 @@ package aws
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"text/template"
 	"time"
 
-	"github.com/golang/glog"
-	ktemplate "github.com/kubermatic/api/template"
-	"golang.org/x/net/context"
-
-	"encoding/base64"
-
 	sdk "github.com/aws/aws-sdk-go/aws"
-
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	ktemplate "github.com/kubermatic/api/template"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -38,6 +35,9 @@ const (
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
 	routeTableIDKey              = "route-table-id"
+	roleNameKey                  = "role-name"
+	instanceProfileNameKey       = "instance-profile-name"
+	policyNameKey                = "policy-name"
 )
 
 const (
@@ -202,7 +202,7 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 	return err
 }
 
-func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
+func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.Policy, *iam.InstanceProfile, error) {
 	kubermaticPolicyName := fmt.Sprintf("kubermatic-policy-%s", cluster.Metadata.Name)
 	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", cluster.Metadata.Name)
 	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)
@@ -265,7 +265,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 	}
 	policyResp, err := svc.CreatePolicy(paramsPolicy)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 
 	policyArn := *policyResp.Policy.Arn
@@ -283,9 +283,9 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 }`), // Required
 		RoleName: sdk.String(kubermaticRoleName), // Required
 	}
-	_, err = svc.CreateRole(paramsRole)
+	rOut, err := svc.CreateRole(paramsRole)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 
 	// Attach policy to role
@@ -295,15 +295,15 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 	}
 	_, err = svc.AttachRolePolicy(paramsAttachPolicy)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 
 	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
 		InstanceProfileName: sdk.String(kubermaticInstanceProfileName), // Required
 	}
-	_, err = svc.CreateInstanceProfile(paramsInstanceProfile)
+	cipOut, err := svc.CreateInstanceProfile(paramsInstanceProfile)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 
 	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
@@ -312,7 +312,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) error {
 	}
 	_, err = svc.AddRoleToInstanceProfile(paramsAddRole)
 
-	return err
+	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, err
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
@@ -369,9 +369,15 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
-	err = createInstanceProfile(svcIAM, cluster)
+	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
+	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 
-	return err
+	return nil
 }
 
 func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
@@ -383,6 +389,9 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		vpcIDKey:                     cs.AWS.VPCId,
 		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
 		routeTableIDKey:              cs.AWS.RouteTableID,
+		roleNameKey:                  cs.AWS.RoleName,
+		instanceProfileNameKey:       cs.AWS.InstanceProfileName,
+		policyNameKey:                cs.AWS.PolicyName,
 	}, nil
 }
 
@@ -417,6 +426,18 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 
 	if spec.AWS.SSHKeyName, ok = annotations[sshKeyNameKey]; !ok {
 		return nil, errors.New("no route table ID found")
+	}
+
+	if spec.AWS.RoleName, ok = annotations[roleNameKey]; !ok {
+		return nil, errors.New("no role ID found")
+	}
+
+	if spec.AWS.InstanceProfileName, ok = annotations[instanceProfileNameKey]; !ok {
+		return nil, errors.New("no instance profile ID found")
+	}
+
+	if spec.AWS.PolicyName, ok = annotations[policyNameKey]; !ok {
+		return nil, errors.New("no policy name found")
 	}
 
 	return spec, nil
@@ -774,6 +795,102 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
 		}
 	}
+
+	svcIAM, err := a.getIAMclient(c)
+	if err != nil {
+		return err
+	}
+
+	if c.Spec.Cloud.AWS.RoleName != "" && c.Spec.Cloud.AWS.InstanceProfileName != "" {
+		_, err := svcIAM.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+			RoleName:            sdk.String(c.Spec.Cloud.AWS.RoleName),
+			InstanceProfileName: sdk.String(c.Spec.Cloud.AWS.InstanceProfileName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.InstanceProfileName != "" {
+		_, err := svcIAM.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: &c.Spec.Cloud.AWS.InstanceProfileName})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+		}
+	}
+	if c.Spec.Cloud.AWS.RoleName != "" && c.Spec.Cloud.AWS.PolicyName != "" {
+		_, err := svcIAM.DetachRolePolicy(&iam.DetachRolePolicyInput{
+			RoleName:  sdk.String(c.Spec.Cloud.AWS.RoleName),
+			PolicyArn: sdk.String(c.Spec.Cloud.AWS.PolicyName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.RoleName != "" {
+		_, err := svcIAM.DeleteRole(&iam.DeleteRoleInput{RoleName: &c.Spec.Cloud.AWS.RoleName})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.PolicyName != "" {
+		_, err := svcIAM.DeletePolicy(&iam.DeletePolicyInput{
+			PolicyArn: sdk.String(c.Spec.Cloud.AWS.PolicyName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+		}
+	}
+
 	return nil
 }
 
