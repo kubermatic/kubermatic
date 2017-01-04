@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	jwtFlag             = flag.String("jwt", "", "The String of the Authorization: header")
-	maxNodesFlag        = flag.Int("nodes", 0, "Spcifies the amount of nodes to create in one cluster (nodes*clusters)")
-	maxClustersFlag     = flag.Int("clusters", 0, "Spcifies the amount of clusters to deploy")
-	dcFlag              = flag.String("datacenter", "master", "use this to specify a datacenter")
-	maxAsyncFlag        = flag.Int("max-async", 10, "Spcifies the amount of request running at the same time")
+	jwtFlag             = flag.String("jwt-auth", "", "The String of the authorization header")
+	maxNodesFlag        = flag.Int("node-count", 0, "The amount of nodes to create in one cluster (node-count*cluster-count)")
+	maxClustersFlag     = flag.Int("cluster-count", 0, "The amount of clusters to deploy")
+	dcFlag              = flag.String("datacenter-name", "master", "The master dc")
+	maxAsyncFlag        = flag.Int("max-workers", 10, "The amount of request running at the same time")
 	retryNSIntervalFlag = flag.Int64("ns-retry-interval", 10, "The amout of time until a NS alive request is send again")
 )
 
