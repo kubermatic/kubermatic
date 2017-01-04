@@ -2,23 +2,22 @@ package aws
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"text/template"
 	"time"
 
-	"github.com/golang/glog"
-	ktemplate "github.com/kubermatic/api/template"
-	"golang.org/x/net/context"
-
-	"encoding/base64"
-
 	sdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	ktemplate "github.com/kubermatic/api/template"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -36,6 +35,9 @@ const (
 	vpcIDKey                     = "vpc-id"
 	internetGatewayIDKey         = "internet-gateway-id"
 	routeTableIDKey              = "route-table-id"
+	roleNameKey                  = "role-name"
+	instanceProfileNameKey       = "instance-profile-name"
+	policyNameKey                = "policy-name"
 )
 
 const (
@@ -200,12 +202,99 @@ func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.I
 	return err
 }
 
+func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.Policy, *iam.InstanceProfile, error) {
+	kubermaticPolicyName := fmt.Sprintf("kubermatic-policy-%s", cluster.Metadata.Name)
+	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", cluster.Metadata.Name)
+	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)
+	paramsPolicy := &iam.CreatePolicyInput{
+		PolicyDocument: sdk.String(`{
+   "Version": "2012-10-17",
+    "Statement": [
+	{
+	    "Effect": "Allow",
+	    "Action": "s3:*",
+	    "Resource": "arn:aws:s3:::kubernetes-*"
+	},
+	{
+	    "Effect": "Allow",
+	    "Action": [
+		"ec2:Describe*",
+		"ec2:AttachVolume",
+		"ec2:DetachVolume",
+		"route53:*",
+		"ecr:GetAuthorizationToken",
+		"ecr:BatchCheckLayerAvailability",
+		"ecr:GetDownloadUrlForLayer",
+		"ecr:GetRepositoryPolicy",
+		"ecr:DescribeRepositories",
+		"ecr:ListImages",
+		"ecr:BatchGetImage",
+		"elasticloadbalancing:*"
+	    ],
+	    "Resource": "*"
+	}
+    ]
+}`), // Required
+		PolicyName: sdk.String(kubermaticPolicyName), // Required
+	}
+	policyResp, err := svc.CreatePolicy(paramsPolicy)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	policyArn := *policyResp.Policy.Arn
+
+	paramsRole := &iam.CreateRoleInput{
+		AssumeRolePolicyDocument: sdk.String(`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com"},
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}`), // Required
+		RoleName: sdk.String(kubermaticRoleName), // Required
+	}
+	rOut, err := svc.CreateRole(paramsRole)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Attach policy to role
+	paramsAttachPolicy := &iam.AttachRolePolicyInput{
+		PolicyArn: sdk.String(policyArn),          // Required
+		RoleName:  sdk.String(kubermaticRoleName), // Required
+	}
+	_, err = svc.AttachRolePolicy(paramsAttachPolicy)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
+		InstanceProfileName: sdk.String(kubermaticInstanceProfileName), // Required
+	}
+	cipOut, err := svc.CreateInstanceProfile(paramsInstanceProfile)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
+		InstanceProfileName: sdk.String(kubermaticInstanceProfileName), // Required
+		RoleName:            sdk.String(kubermaticRoleName),            // Required
+	}
+	_, err = svc.AddRoleToInstanceProfile(paramsAddRole)
+
+	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, err
+}
+
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	if cluster.Spec.Cloud.AWS.VPCId != "" {
 		return nil
 	}
 
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return err
 	}
@@ -249,6 +338,19 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
+	svcIAM, err := a.getIAMclient(cluster)
+	if err != nil {
+		return err
+	}
+
+	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
+	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+
 	return nil
 }
 
@@ -261,6 +363,9 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		vpcIDKey:                     cs.AWS.VPCId,
 		internetGatewayIDKey:         cs.AWS.InternetGatewayID,
 		routeTableIDKey:              cs.AWS.RouteTableID,
+		roleNameKey:                  cs.AWS.RoleName,
+		instanceProfileNameKey:       cs.AWS.InstanceProfileName,
+		policyNameKey:                cs.AWS.PolicyName,
 	}, nil
 }
 
@@ -295,6 +400,18 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 
 	if spec.AWS.SSHKeyName, ok = annotations[sshKeyNameKey]; !ok {
 		return nil, errors.New("no route table ID found")
+	}
+
+	if spec.AWS.RoleName, ok = annotations[roleNameKey]; !ok {
+		return nil, errors.New("no role ID found")
+	}
+
+	if spec.AWS.InstanceProfileName, ok = annotations[instanceProfileNameKey]; !ok {
+		return nil, errors.New("no instance profile ID found")
+	}
+
+	if spec.AWS.PolicyName, ok = annotations[policyNameKey]; !ok {
+		return nil, errors.New("no policy name found")
 	}
 
 	return spec, nil
@@ -342,7 +459,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if node.AWS.Type == "" {
 		return nil, errors.New("no AWS node type specified")
 	}
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -378,6 +495,9 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
 			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
 			NetworkInterfaces: netSpec,
+			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
+				Name: sdk.String(fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)),
+			},
 		}
 
 		newNode, err := launch(svc, instanceName, instanceRequest, cluster)
@@ -391,7 +511,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 }
 
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +554,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 }
 
 func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
-	svc, err := a.getSession(cluster)
+	svc, err := a.getEC2client(cluster)
 	if err != nil {
 		return err
 	}
@@ -452,7 +572,7 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	return err
 }
 
-func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
+func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
 	awsSpec := cluster.Spec.Cloud.GetAWS()
 	config := sdk.NewConfig()
 	dc, found := a.datacenters[cluster.Spec.Cloud.DatacenterName]
@@ -463,7 +583,23 @@ func (a *aws) getSession(cluster *api.Cluster) (*ec2.EC2, error) {
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
-	return ec2.New(session.New(config)), nil
+	return session.New(config), nil
+}
+
+func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
+	sess, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return ec2.New(sess), nil
+}
+
+func (a *aws) getIAMclient(cluster *api.Cluster) (*iam.IAM, error) {
+	sess, err := a.getSession(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return iam.New(sess), nil
 }
 
 func createNode(name string, instance *ec2.Instance) *api.Node {
@@ -540,7 +676,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 }
 
 func (a *aws) doCleanUpAWS(c *api.Cluster) error {
-	svc, err := a.getSession(c)
+	svc, err := a.getEC2client(c)
 	if err != nil {
 		return err
 	}
@@ -633,6 +769,54 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
 		}
 	}
+
+	svcIAM, err := a.getIAMclient(c)
+	if err != nil {
+		return err
+	}
+
+	if c.Spec.Cloud.AWS.RoleName != "" && c.Spec.Cloud.AWS.InstanceProfileName != "" {
+		_, err := svcIAM.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+			RoleName:            sdk.String(c.Spec.Cloud.AWS.RoleName),
+			InstanceProfileName: sdk.String(c.Spec.Cloud.AWS.InstanceProfileName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to remove role %s from instance profile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.InstanceProfileName != "" {
+		_, err := svcIAM.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: &c.Spec.Cloud.AWS.InstanceProfileName})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete InstanceProfile %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InstanceProfileName, c.Metadata.Name, err)
+		}
+	}
+	if c.Spec.Cloud.AWS.RoleName != "" && c.Spec.Cloud.AWS.PolicyName != "" {
+		_, err := svcIAM.DetachRolePolicy(&iam.DetachRolePolicyInput{
+			RoleName:  sdk.String(c.Spec.Cloud.AWS.RoleName),
+			PolicyArn: sdk.String(c.Spec.Cloud.AWS.PolicyName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to detach role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.RoleName != "" {
+		_, err := svcIAM.DeleteRole(&iam.DeleteRoleInput{RoleName: &c.Spec.Cloud.AWS.RoleName})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete Role %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RoleName, c.Metadata.Name, err)
+		}
+	}
+
+	if c.Spec.Cloud.AWS.PolicyName != "" {
+		_, err := svcIAM.DeletePolicy(&iam.DeletePolicyInput{
+			PolicyArn: sdk.String(c.Spec.Cloud.AWS.PolicyName),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete role policy %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.PolicyName, c.Metadata.Name, err)
+		}
+	}
+
 	return nil
 }
 
