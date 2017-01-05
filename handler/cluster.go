@@ -139,6 +139,9 @@ func deleteClusterEndpoint(
 		//Delete all nodes in the cluster
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			}
 			return nil, err
 		}
 
@@ -175,6 +178,28 @@ func deleteClusterEndpoint(
 		}
 
 		return nil, nil
+	}
+}
+
+func createAddonEndpoint(
+	kps map[string]provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(createAddonRequest)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		addon, err := kp.CreateAddon(req.user, req.cluster, req.addonName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return addon, nil
 	}
 }
 
@@ -281,6 +306,34 @@ func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 	req.dcReq = dr.(dcReq)
 
 	req.cluster = mux.Vars(r)["cluster"]
+
+	return req, nil
+}
+
+type createAddonRequest struct {
+	dcReq
+	addonName string
+	cluster   string
+}
+
+func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {
+	var req createAddonRequest
+
+	dr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.dcReq = dr.(dcReq)
+	req.cluster = mux.Vars(r)["cluster"]
+
+	var addon struct {
+		Name string `json:"addonName"`
+	}
+
+	if err = json.NewDecoder(r.Body).Decode(&addon); err != nil {
+		return nil, err
+	}
+	req.addonName = addon.Name
 
 	return req, nil
 }

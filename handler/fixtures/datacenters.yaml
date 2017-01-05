@@ -1,0 +1,48 @@
+datacenters:
+  master:
+    location: US-Central
+    country: US
+    provider: Loodse
+    spec:
+      bringyourown:
+        region: US
+      seed:
+        bringyourown:
+  do-ams2:
+    location: Amsterdam
+    country: NL
+    spec:
+      digitalocean:
+        region: ams2
+  us-east-1a:
+    location: US East (N. Virginia)
+    country: US
+    spec:
+      aws:
+        region: us-east-1
+        ami: ami-442d7721 # HVM image - Will run on small instances too
+  us-west-2:
+    location: Oregon
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-d0e54eb0
+        region: us-west-2
+  fake-1:
+    location: Oregon
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-d0e54eb0
+        region: us-west-2
+  eu-central-1:
+    location: Frankfurt
+    country: DE
+    provider: aws
+    private: true
+    spec:
+      aws:
+        ami: ami-d0e54eb0
+        region: eu-central-1

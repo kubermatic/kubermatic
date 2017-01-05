@@ -1,19 +1,8 @@
 package cluster
 
 import (
-	"bytes"
-	"crypto/rand"
-	crand "crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/pem"
 	"fmt"
-	"net"
-	"net/url"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/cloudflare/cfssl/csr"
@@ -22,7 +11,6 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/provider/kubernetes"
-	"golang.org/x/crypto/ssh"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -104,82 +92,7 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 }
 
 func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, error) {
-	createApiserverAuth := func(t *template.Template) (*api.Cluster, *v1.Secret, error) {
-		saKey, err := createServiceAccountKey()
-		if err != nil {
-			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
-		}
-
-		u, err := url.Parse(c.Address.URL)
-		if err != nil {
-			return nil, nil, err
-		}
-		asKC, err := c.CreateKeyCert(u.Host, []string{u.Host, "10.10.10.1"})
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
-		}
-
-		data := struct {
-			ApiserverKey, ApiserverCert, RootCACert, ServiceAccountKey string
-		}{
-			ApiserverKey:      asKC.Key.Base64(),
-			ApiserverCert:     asKC.Cert.Base64(),
-			RootCACert:        c.Status.RootCA.Cert.Base64(),
-			ServiceAccountKey: saKey.Base64(),
-		}
-		var secret v1.Secret
-		err = t.Execute(data, &secret)
-		return nil, &secret, err
-	}
-
-	createEtcdAuth := func(t *template.Template) (*api.Cluster, *v1.Secret, error) {
-		u, err := url.Parse(c.Address.EtcdURL)
-		if err != nil {
-			return nil, nil, err
-		}
-		etcdURL := strings.Split(u.Host, ":")[0]
-		etcdKC, err := c.CreateKeyCert(etcdURL, []string{})
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
-		}
-
-		data := struct {
-			EtcdKey, EtcdCert, RootCACert string
-		}{
-			RootCACert: c.Status.RootCA.Cert.Base64(),
-			EtcdKey:    etcdKC.Key.Base64(),
-			EtcdCert:   etcdKC.Cert.Base64(),
-		}
-		var secret v1.Secret
-		err = t.Execute(data, &secret)
-		return nil, &secret, err
-	}
-
-	createApiserverSSH := func(t *template.Template) (*api.Cluster, *v1.Secret, error) {
-		kc, err := createSSHKeyCert()
-		if err != nil {
-			return nil, nil, fmt.Errorf("error creating service account key: %v", err)
-		}
-
-		data := struct {
-			Key, Cert string
-		}{
-			Key:  kc.Key.Base64(),
-			Cert: kc.Cert.Base64(),
-		}
-		var secret v1.Secret
-		err = t.Execute(data, &secret)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		glog.Warningf("####################### %v ###############", len(kc.Cert))
-		c.Status.ApiserverSSH = string(kc.Cert)
-
-		return c, &secret, nil
-	}
-
-	secrets := map[string]func(t *template.Template) (*api.Cluster, *v1.Secret, error){
+	secrets := map[string]func(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error){
 		"apiserver-auth":   createApiserverAuth,
 		"apiserver-ssh":    createApiserverSSH,
 		"etcd-public-auth": createEtcdAuth,
@@ -203,7 +116,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 				continue
 			}
 
-			err = cc.client.Secrets(ns).Delete(s, &v1.DeleteOptions{})
+			err = cc.client.CoreV1().Secrets(ns).Delete(s, &v1.DeleteOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -214,12 +127,12 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 			return nil, err
 		}
 
-		changedC, secret, err := gen(t)
+		changedC, secret, err := gen(cc, c, t)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
-		_, err = cc.client.Secrets(ns).Create(secret)
+		_, err = cc.client.CoreV1().Secrets(ns).Create(secret)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create secret for %s: %v", s, err)
 		}
@@ -235,31 +148,6 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 }
 
 func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Cluster, error) {
-	generateTokenUsers := func() (*v1.Secret, error) {
-		rawToken := make([]byte, 64)
-		_, err := crand.Read(rawToken)
-		if err != nil {
-			return nil, err
-		}
-		token := sha256.Sum256(rawToken)
-		token64 := base64.URLEncoding.EncodeToString(token[:])
-		trimmedToken64 := strings.TrimRight(token64, "=")
-
-		secret := v1.Secret{
-			ObjectMeta: v1.ObjectMeta{
-				Name: "token-users",
-			},
-			Type: v1.SecretTypeOpaque,
-			Data: map[string][]byte{
-				"file": []byte(fmt.Sprintf("%s,admin,admin", trimmedToken64)),
-			},
-		}
-
-		c.Address.URL = fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
-		c.Address.Token = trimmedToken64
-
-		return &secret, nil
-	}
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	key := fmt.Sprintf("%s/token-users", ns)
@@ -272,11 +160,11 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 		return nil, nil
 	}
 
-	secret, err := generateTokenUsers()
+	secret, err := generateTokenUsers(cc, c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token users: %v", err)
 	}
-	_, err = cc.client.Secrets(ns).Create(secret)
+	_, err = cc.client.CoreV1().Secrets(ns).Create(secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret for token user: %v", err)
 	}
@@ -285,30 +173,11 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 }
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
-	loadFile := func(s string) (*v1.Service, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-service.yaml"))
-		if err != nil {
-			return nil, err
-		}
-
-		var service v1.Service
-
-		data := struct {
-			SecurePort int
-		}{
-			SecurePort: c.Address.NodePort,
-		}
-
-		err = t.Execute(data, &service)
-
-		return &service, err
-	}
-
-	services := map[string]func(s string) (*v1.Service, error){
-		"etcd":             loadFile,
-		"etcd-public":      loadFile,
-		"apiserver":        loadFile,
-		"apiserver-public": loadFile,
+	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
+		"etcd":             loadServiceFile,
+		"etcd-public":      loadServiceFile,
+		"apiserver":        loadServiceFile,
+		"apiserver-public": loadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -324,12 +193,12 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 			continue
 		}
 
-		services, err := gen(s)
+		services, err := gen(cc, c, s)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
 
-		_, err = cc.client.Services(ns).Create(services)
+		_, err = cc.client.CoreV1().Services(ns).Create(services)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create service %s: %v", s, err)
 		}
@@ -347,32 +216,8 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	loadFile := func(s string) (*extensionsv1beta1.Ingress, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-ingress.yaml"))
-		if err != nil {
-			return nil, err
-		}
-		var ingress extensionsv1beta1.Ingress
-		data := struct {
-			DC          string
-			ClusterName string
-			ExternalURL string
-		}{
-			DC:          cc.dc,
-			ClusterName: c.Metadata.Name,
-			ExternalURL: cc.externalURL,
-		}
-		err = t.Execute(data, &ingress)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return &ingress, err
-	}
-
-	ingress := map[string]func(s string) (*extensionsv1beta1.Ingress, error){
-		"sniff": loadFile,
+	ingress := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Ingress, error){
+		"k8sniff": loadIngressFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -386,12 +231,12 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 			glog.V(6).Infof("Skipping already existing ingress %q", key)
 			return nil
 		}
-		ingress, err := gen(s)
+		ingress, err := gen(cc, c, s)
 		if err != nil {
 			return fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
-		_, err = cc.client.Ingresses(ns).Create(ingress)
+		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
 		if err != nil {
 			return fmt.Errorf("failed to create ingress %s: %v", s, err)
 		}
@@ -404,61 +249,12 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	loadFile := func(s string) (*extensionsv1beta1.Deployment, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
-		if err != nil {
-			return nil, err
-		}
-
-		var dep extensionsv1beta1.Deployment
-		data := struct {
-			DC          string
-			ClusterName string
-		}{
-			DC:          cc.dc,
-			ClusterName: c.Metadata.Name,
-		}
-		err = t.Execute(data, &dep)
-		return &dep, err
-	}
-
-	loadApiserver := func(s string) (*extensionsv1beta1.Deployment, error) {
-		var data struct {
-			AdvertiseAddress string
-			SecurePort       int
-		}
-
-		if cc.overwriteHost == "" {
-			u, err := url.Parse(c.Address.URL)
-			if err != nil {
-				return nil, err
-			}
-			addrs, err := net.LookupHost(u.Host)
-			if err != nil {
-				return nil, err
-			}
-			data.AdvertiseAddress = addrs[0]
-		} else {
-			data.AdvertiseAddress = cc.overwriteHost
-		}
-		data.SecurePort = c.Address.NodePort
-
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
-		if err != nil {
-			return nil, err
-		}
-
-		var dep extensionsv1beta1.Deployment
-		err = t.Execute(data, &dep)
-		return &dep, err
-	}
-
-	deps := map[string]func(s string) (*extensionsv1beta1.Deployment, error){
-		"etcd":               loadFile,
-		"etcd-public":        loadFile,
+	deps := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error){
+		"etcd":               loadDeploymentFile,
+		"etcd-public":        loadDeploymentFile,
 		"apiserver":          loadApiserver,
-		"controller-manager": loadFile,
-		"scheduler":          loadFile,
+		"controller-manager": loadDeploymentFile,
+		"scheduler":          loadDeploymentFile,
 	}
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
@@ -480,12 +276,12 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(s)
+		dep, err := gen(cc, c, s)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
-		_, err = cc.client.Deployments(ns).Create(dep)
+		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
 			return fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
@@ -499,25 +295,9 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	loadFile := func(s string) (*v1.PersistentVolumeClaim, error) {
-		t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-pvc.yaml"))
-		if err != nil {
-			return nil, err
-		}
-
-		var pvc v1.PersistentVolumeClaim
-		data := struct {
-			ClusterName string
-		}{
-			ClusterName: c.Metadata.Name,
-		}
-		err = t.Execute(data, &pvc)
-		return &pvc, err
-	}
-
-	pvcs := map[string]func(s string) (*v1.PersistentVolumeClaim, error){
-		"etcd":        loadFile,
-		"etcd-public": loadFile,
+	pvcs := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.PersistentVolumeClaim, error){
+		"etcd":        loadPVCFile,
+		"etcd-public": loadPVCFile,
 	}
 
 	for s, gen := range pvcs {
@@ -532,12 +312,12 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 			continue
 		}
 
-		pvc, err := gen(s)
+		pvc, err := gen(cc, c, s)
 		if err != nil {
 			return fmt.Errorf("failed to generate pvc %s: %v", s, err)
 		}
 
-		_, err = cc.client.PersistentVolumeClaims(ns).Create(pvc)
+		_, err = cc.client.CoreV1().PersistentVolumeClaims(ns).Create(pvc)
 		if err != nil {
 			return fmt.Errorf("failed to create pvc %s; %v", s, err)
 		}
@@ -546,38 +326,4 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	}
 
 	return nil
-}
-
-func createServiceAccountKey() (api.Bytes, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	saKey := x509.MarshalPKCS1PrivateKey(priv)
-	block := pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: saKey,
-	}
-	return api.Bytes(pem.EncodeToMemory(&block)), nil
-}
-
-func createSSHKeyCert() (*api.KeyCert, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
-	privBuf := bytes.Buffer{}
-	err = pem.Encode(&privBuf, privateKeyPEM)
-	if err != nil {
-		return nil, err
-	}
-
-	pub, err := ssh.NewPublicKey(&priv.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-	return &api.KeyCert{privBuf.Bytes(), ssh.MarshalAuthorizedKey(pub)}, nil
 }

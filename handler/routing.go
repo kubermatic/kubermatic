@@ -125,6 +125,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
 		Handler(r.authenticated(r.getKubernetesNodeInfoHandler()))
+
+	mux.
+		Methods("POST").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
+		Handler(r.authenticated(r.createAddonHandler()))
 }
 
 func (r Routing) getAWSKeyHandler() http.Handler {
@@ -288,6 +293,17 @@ func (r Routing) deleteNodeHandler() http.Handler {
 		r.ctx,
 		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) createAddonHandler() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		createAddonEndpoint(r.kubernetesProviders, r.cloudProviders),
+		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),

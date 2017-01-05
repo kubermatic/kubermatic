@@ -15,6 +15,7 @@ func StatusOK(res http.ResponseWriter, _ *http.Request) {
 }
 
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
 }
 

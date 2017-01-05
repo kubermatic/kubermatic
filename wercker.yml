@@ -90,25 +90,21 @@ deployment-update:
         certificate-authority: ca.pem
         command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
 
-push-latest-image:
+push-image:
     box: ubuntu:14.04
     steps:
-    # - script:
-    #     code: |
-    #       apt-get update
-    #       apt-get install -y ca-certificates
     - script:
         code: |
           tar -xvjf alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
-        name: push to docker hub as latest
+        name: push to docker hub as $PUSH_TAG
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
         cmd: /kubermatic-api
         username: $USERNAME
         password: $PASSWORD
         email: stefan.schimanski@gmail.com
-        tag: latest
+        tag: $PUSH_TAG
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
