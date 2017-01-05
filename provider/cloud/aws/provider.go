@@ -156,6 +156,18 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 		GroupId:    sgOut.SecurityGroups[0].GroupId,
 		IpProtocol: sdk.String("-1"),
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		FromPort:   sdk.Int64(0),
+		ToPort:     sdk.Int64(65535),
+		GroupId:    sgOut.SecurityGroups[0].GroupId,
+		IpProtocol: sdk.String("-1"),
+	})
+
 	if err != nil {
 		return nil, err
 	}
