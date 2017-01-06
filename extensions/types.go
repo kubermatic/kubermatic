@@ -73,7 +73,6 @@ type ClusterAddon struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 	Name            string           `json:"name"`
-	DC              string           `json:"dc"`
 	Phase           AddonPhase       `json:"phase"`
 	Version         int32
 	Deployed        time.Time
