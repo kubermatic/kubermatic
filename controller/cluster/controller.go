@@ -35,7 +35,8 @@ const (
 	maxUpdateRetries               = 5
 	launchTimeout                  = 5 * time.Minute
 
-	maxAddonInstallAttempts = 3
+	maxAddonInstallAttempts   = 3
+	waitBetweenInstallAttempt = 30 * time.Second
 
 	workerPeriod        = time.Second
 	queueResyncPeriod   = 10 * time.Millisecond
@@ -280,38 +281,29 @@ func NewController(
 
 func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 	storeAddon, exists, err := cc.addonStore.GetByKey(fmt.Sprintf("%s/%s", a.Metadata.Namespace, a.Metadata.Name))
-	if !exists {
-		glog.Errorf("Addon %s not found in store", a.Metadata.Name)
-		return
-	}
-	if err != nil {
-		glog.Errorf("failed to get addon %s from store: %v", a.Metadata.Name, err)
-		return
-	}
-	if storeAddon == nil {
-		glog.Errorf("addon %s in store is nil", a.Metadata.Name)
+	if !exists || err != nil || storeAddon == nil{
+		glog.Errorf("could not fetch addon %s from store: %v", a.Metadata.Name, err)
 		return
 	}
 
 	addon := storeAddon.(*extensions.ClusterAddon)
-
 	if addon.Phase != extensions.PendingAddonStatusPhase {
 		return
 	}
 
-	obj, exists, err := cc.nsStore.GetByKey(addon.Metadata.Namespace)
+	obj, exists, err := cc.nsStore.GetByKey(a.Metadata.Namespace)
 	if !exists {
-		glog.Errorf("Namespace for cluster %s does not exist", addon.Metadata.Namespace)
+		glog.Errorf("Namespace for cluster %s does not exist", a.Metadata.Namespace)
 		return
 	}
 	if err != nil {
-		glog.Errorf("failed to get namespace for %s: : %v", addon.Metadata.Namespace, err)
+		glog.Errorf("failed to get namespace for %s: : %v", a.Metadata.Namespace, err)
 		return
 	}
 	ns := obj.(*v1.Namespace)
 	cluster, err := kprovider.UnmarshalCluster(cc.cps, ns)
 	if err != nil {
-		glog.Errorf("failed to unmarshal cluster(ns) %s during addon-install: %v", addon.Metadata.Namespace, err)
+		glog.Errorf("failed to unmarshal cluster(ns) %s during addon-install: %v", a.Metadata.Namespace, err)
 		return
 	}
 
@@ -320,9 +312,25 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 	}
 
 	if cluster.Status.Phase != api.RunningClusterStatusPhase {
-		glog.Errorf("Postponed addon install. cluster %s is not ready", addon.Metadata.Namespace, err)
+		glog.Infof("Postponed addon install. cluster %s is not ready", a.Metadata.Namespace, err)
 		return
 	}
+
+	addon.Phase = extensions.InstallingAddonStatusPhase
+	addon, err = cc.tprClient.ClusterAddons(addon.Metadata.GetNamespace()).Update(addon)
+	if err != nil {
+		glog.Error(err)
+	}
+	defer func () {
+		//Release lock in case something bad happened
+		if addon.Phase == extensions.InstallingAddonStatusPhase{
+			addon.Phase = extensions.PendingAddonStatusPhase
+			addon, err = cc.tprClient.ClusterAddons(addon.Metadata.GetNamespace()).Update(addon)
+			if err != nil {
+				glog.Error(err)
+			}
+		}
+	}()
 
 	glog.V(4).Infof("Installing addon %s", addon.Name)
 
@@ -332,15 +340,20 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		return
 	}
 
-	addon, err = addonManager.Install(addon)
+	installedAddon, err := addonManager.Install(addon)
 	if err != nil {
 		glog.Errorf("failed to install plugin: %v", err)
 		addon.Attempt++
 		if addon.Attempt >= maxAddonInstallAttempts {
 			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
 			addon.Phase = extensions.FailedAddonStatusPhase
+		} else {
+			time.Sleep(waitBetweenInstallAttempt)
+			addon.Phase = extensions.PendingAddonStatusPhase
+
 		}
 	} else {
+		addon = installedAddon
 		addon.Phase = extensions.RunningAddonStatusPhase
 	}
 
