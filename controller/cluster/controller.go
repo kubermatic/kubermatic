@@ -281,7 +281,7 @@ func NewController(
 
 func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 	storeAddon, exists, err := cc.addonStore.GetByKey(fmt.Sprintf("%s/%s", a.Metadata.Namespace, a.Metadata.Name))
-	if !exists || err != nil || storeAddon == nil{
+	if !exists || err != nil || storeAddon == nil {
 		glog.Errorf("could not fetch addon %s from store: %v", a.Metadata.Name, err)
 		return
 	}
@@ -321,9 +321,9 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 	if err != nil {
 		glog.Error(err)
 	}
-	defer func () {
+	defer func() {
 		//Release lock in case something bad happened
-		if addon.Phase == extensions.InstallingAddonStatusPhase{
+		if addon.Phase == extensions.InstallingAddonStatusPhase {
 			addon.Phase = extensions.PendingAddonStatusPhase
 			addon, err = cc.tprClient.ClusterAddons(addon.Metadata.GetNamespace()).Update(addon)
 			if err != nil {
