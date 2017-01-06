@@ -270,7 +270,7 @@ func NewController(
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				newAddon := newObj.(*extensions.ClusterAddon)
-				glog.V(4).Infof("Detected update on addon %s", newAddon.Metadata.Name)
+				glog.V(8).Infof("Detected update on addon %s/%s", newAddon.Metadata.Namespace, newAddon.Metadata.Name)
 				cc.syncAddon(newAddon)
 			},
 		},
@@ -312,7 +312,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 	}
 
 	if cluster.Status.Phase != api.RunningClusterStatusPhase {
-		glog.Infof("Postponed addon install. cluster %s is not ready", a.Metadata.Namespace, err)
+		glog.Infof("Postponed addon install. cluster %s is not ready", a.Metadata.Namespace)
 		return
 	}
 

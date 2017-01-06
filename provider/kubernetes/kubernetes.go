@@ -300,7 +300,6 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 			Name: fmt.Sprintf("addon-%s-%s", strings.Replace(addonName, "/", "", -1), rand.String(4)),
 		},
 		Name:  addonName,
-		DC:    cluster,
 		Phase: extensions.PendingAddonStatusPhase,
 	}
 
