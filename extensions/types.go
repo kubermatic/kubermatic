@@ -58,6 +58,9 @@ const (
 	// PendingAddonStatusPhase means that the cluster controller hasn't picked the addon up
 	PendingAddonStatusPhase AddonPhase = "Pending"
 
+	// InstallingAddonStatusPhase means that the cluster controller has picked the addon up
+	InstallingAddonStatusPhase AddonPhase = "Installing"
+
 	// FailedAddonStatusPhase means that the cluster controller failed to install the add on
 	FailedAddonStatusPhase AddonPhase = "Failed"
 
