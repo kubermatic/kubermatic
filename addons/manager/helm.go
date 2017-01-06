@@ -37,7 +37,7 @@ const (
 )
 
 // NewHelmAddonManager returns a addon manager instance for the given kubeconfig based on the helm package manager
-func NewHelmAddonManager(config *cmdv1.Config) (AddonManager, error) {
+func NewHelmAddonManager(config *cmdv1.Config, addonResourcesPath string) (AddonManager, error) {
 	err := ensureHome(helmpath.Home("/tmp"), os.Stdout)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,8 @@ func NewHelmAddonManager(config *cmdv1.Config) (AddonManager, error) {
 		return nil, err
 	}
 	return &HelmAddonManager{
-		tiller: t,
+		tiller:             t,
+		addonResourcesPath: addonResourcesPath,
 	}, nil
 }
 
@@ -104,12 +105,13 @@ func getTiller(v1cfg *cmdv1.Config) (*tiller.ReleaseServer, error) {
 
 // HelmAddonManager represents a addon manager based on kubernetes/helm
 type HelmAddonManager struct {
-	tiller *tiller.ReleaseServer
+	tiller             *tiller.ReleaseServer
+	addonResourcesPath string
 }
 
 // Install installs a given addon to the cluster
 func (a *HelmAddonManager) Install(addon *extensions.ClusterAddon) (*extensions.ClusterAddon, error) {
-	c, err := getChart(fmt.Sprintf("stable/%s", addon.Name), "")
+	c, err := getChart(addon.Name, "", a.addonResourcesPath)
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +165,24 @@ func (a *HelmAddonManager) Rollback(addon *extensions.ClusterAddon) error {
 }
 
 // getChart will download and return a chart for the given name
-func getChart(name, version string) (*chart.Chart, error) {
+func getChart(name, version string, addonResourcesPath string) (*chart.Chart, error) {
 	name = strings.TrimSpace(name)
 	version = strings.TrimSpace(version)
+
+	localChartPath := fmt.Sprintf("%s/%s", addonResourcesPath, name)
+	if fi, err := os.Stat(localChartPath); err == nil {
+		abs, err := filepath.Abs(localChartPath)
+		if err != nil {
+			return nil, err
+		}
+		if fi.IsDir() {
+			return chartutil.LoadDir(abs)
+		}
+
+		return chartutil.Load(abs)
+	}
+
+	glog.Infof("could not find chart %s locally, will try to download it", name)
 
 	dl := downloader.ChartDownloader{
 		HelmHome: helmpath.Home("/tmp"),

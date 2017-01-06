@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
+	"strings"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -296,7 +297,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	// Create an instance of our TPR
 	addon := &extensions.ClusterAddon{
 		Metadata: v1.ObjectMeta{
-			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
+			Name: fmt.Sprintf("addon-%s-%s", strings.Replace(addonName, "/", "", -1), rand.String(4)),
 		},
 		Name:  addonName,
 		DC:    cluster,
