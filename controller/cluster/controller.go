@@ -53,6 +53,7 @@ type clusterController struct {
 	masterResourcesPath string
 	externalURL         string
 	overwriteHost       string
+	addonResourcesPath  string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
 	nsStore      cache.Store
@@ -95,6 +96,7 @@ func NewController(
 	externalURL string,
 	dev bool,
 	overwriteHost string,
+	addonResourcesPath string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
 		dc:                  dc,
@@ -107,6 +109,7 @@ func NewController(
 		externalURL:         externalURL,
 		dev:                 dev,
 		overwriteHost:       overwriteHost,
+		addonResourcesPath:  addonResourcesPath,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -266,11 +269,8 @@ func NewController(
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				newAddon := newObj.(*extensions.ClusterAddon)
-
 				glog.V(4).Infof("Detected update on addon %s", newAddon.Metadata.Name)
-				if newAddon.Phase == extensions.PendingAddonStatusPhase {
-					cc.syncAddon(newAddon)
-				}
+				cc.syncAddon(newAddon)
 			},
 		},
 	)
@@ -278,8 +278,23 @@ func NewController(
 	return cc, nil
 }
 
-func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
-	var phase extensions.AddonPhase
+func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
+	storeAddon, exists, err := cc.addonStore.GetByKey(fmt.Sprintf("%s/%s", a.Metadata.Namespace, a.Metadata.Name))
+	if !exists {
+		glog.Errorf("Addon %s not found in store", a.Metadata.Name)
+		return
+	}
+	if err != nil {
+		glog.Errorf("failed to get addon %s from store: %v", a.Metadata.Name, err)
+		return
+	}
+	if storeAddon == nil {
+		glog.Errorf("addon %s in store is nil", a.Metadata.Name)
+		return
+	}
+
+	addon := storeAddon.(*extensions.ClusterAddon)
+
 	if addon.Phase != extensions.PendingAddonStatusPhase {
 		return
 	}
@@ -300,6 +315,10 @@ func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
 		return
 	}
 
+	if cluster.Spec.Dev != cc.dev {
+		return
+	}
+
 	if cluster.Status.Phase != api.RunningClusterStatusPhase {
 		glog.Errorf("Postponed addon install. cluster %s is not ready", addon.Metadata.Namespace, err)
 		return
@@ -307,26 +326,23 @@ func (cc *clusterController) syncAddon(addon *extensions.ClusterAddon) {
 
 	glog.V(4).Infof("Installing addon %s", addon.Name)
 
-	addonManager, err := manager.NewHelmAddonManager(cluster.GetKubeconfig())
+	addonManager, err := manager.NewHelmAddonManager(cluster.GetKubeconfig(), cc.addonResourcesPath)
 	if err != nil {
 		glog.Errorf("failed to create addonManager:%s", addon.Metadata.Namespace, err)
 		return
 	}
 
-	installedAddon, err := addonManager.Install(addon)
+	addon, err = addonManager.Install(addon)
 	if err != nil {
 		glog.Errorf("failed to install plugin: %v", err)
 		addon.Attempt++
 		if addon.Attempt >= maxAddonInstallAttempts {
 			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
-			phase = extensions.FailedAddonStatusPhase
+			addon.Phase = extensions.FailedAddonStatusPhase
 		}
 	} else {
-		addon = installedAddon
-		phase = extensions.RunningAddonStatusPhase
+		addon.Phase = extensions.RunningAddonStatusPhase
 	}
-
-	addon.Phase = phase
 
 	addon, err = cc.tprClient.ClusterAddons(addon.Metadata.GetNamespace()).Update(addon)
 	if err != nil {
