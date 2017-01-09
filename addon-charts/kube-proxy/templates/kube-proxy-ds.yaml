@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: kube-proxy
+  namespace: kube-system
+  labels:
+    k8s-app: kube-proxy
+    version: v1
+spec:
+  hostNetwork: true
+  containers:
+  - name: proxy
+    image: {{.Values.kubeproxy_image | quote }}
+    command: [
+      "/hyperkube",
+      "proxy",
+      "--master={{.APIServerURL}}",
+      "--kubeconfig=/var/run/kubelet/kubeconfig",
+      "--v=2"
+    ]
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /var/run/kubelet/kubeconfig
+      name: kubeconfig
+      readOnly: true
+    - mountPath: /etc/ssl/etcd/root-ca.crt
+      name: root-ca
+      readOnly: true
+  volumes:
+  - name: kubeconfig
+    hostPath:
+      path: /var/run/kubelet/kubeconfig
+  - name: root-ca
+    hostPath:
+      path: /etc/ssl/etcd/root-ca.crt
