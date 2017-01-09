@@ -21,8 +21,8 @@ var (
 	maxNodesFlag        = flag.Int("node-count", 0, "The amount of nodes to create in one cluster (node-count*cluster-count)")
 	maxClustersFlag     = flag.Int("cluster-count", 0, "The amount of clusters to deploy")
 	dcFlag              = flag.String("datacenter-name", "master", "The master dc")
-	maxAsyncFlag        = flag.Int("max-workers", 10, "The amount of request running at the same time")
-	retryNSIntervalFlag = flag.Int64("ns-retry-interval", 10, "The amout of time until a NS alive request is send again")
+	maxAsyncFlag        = flag.Int("max-workers", 10, "The amount of maximum concurrent requests")
+	retryNSIntervalFlag = flag.Int64("ns-retry-interval", 10, "The duration in seconds to wait between namespace alive requests")
 )
 
 // setAuth sets the jwt token int a requests Authorization header field
