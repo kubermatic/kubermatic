@@ -154,7 +154,7 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 		FromPort:   sdk.Int64(22),
 		ToPort:     sdk.Int64(22),
 		GroupId:    sgOut.SecurityGroups[0].GroupId,
-		IpProtocol: sdk.String("-1"),
+		IpProtocol: sdk.String("tcp"),
 	})
 
 	if err != nil {
@@ -162,10 +162,23 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 	}
 
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		FromPort:   sdk.Int64(0),
-		ToPort:     sdk.Int64(65535),
-		GroupId:    sgOut.SecurityGroups[0].GroupId,
-		IpProtocol: sdk.String("-1"),
+		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
+		FromPort:                sdk.Int64(0),
+		ToPort:                  sdk.Int64(65535),
+		GroupId:                 sgOut.SecurityGroups[0].GroupId,
+		IpProtocol:              sdk.String("udp"),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
+		GroupId:                 sgOut.SecurityGroups[0].GroupId,
+		FromPort:                sdk.Int64(0),
+		ToPort:                  sdk.Int64(254),
+		IpProtocol:              sdk.String("icmp"),
 	})
 
 	if err != nil {
