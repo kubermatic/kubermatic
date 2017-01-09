@@ -1,0 +1,30 @@
+# Default values for skydns.
+# This is a YAML-formatted file
+replicas: 1
+version: v17
+color: FFFF66
+k8sapp: kube-dns
+kubedns_image: "gcr.io/google_containers/kubedns-amd64:1.9"
+kubedns_cpu_lim: 100m
+kubedns_mem_lim: 200Mi
+kubedns_cpu_req: 100m
+kubedns_mem_req: 100Mi
+healthz_image: "gcr.io/google_containers/exechealthz-amd64:1.2"
+healthz_cpu_lim: 10m
+healthz_mem_lim: 20Mi
+healthz_cpu_req: 10m
+healthz_mem_req: 20Mi
+healthz_port: 8080
+healthz_delay: 60
+healthz_timeout: 5
+healthz_success_thresh: 1
+healthz_failure_thresh: 5
+readiness_port: 8081
+readiness_delay: 30
+readiness_timeout: 5
+dnsmasq_image: "gcr.io/google_containers/kube-dnsmasq-amd64:1.4"
+dnsmasq_port: 53
+dnsmasq_metrics_images: "gcr.io/google_containers/dnsmasq-metrics-amd64:1.0"
+dnsmasq_metrics__mem_req: 10Mi
+dns_domain: cluster.local
+cluster_ip: 10.10.10.10
