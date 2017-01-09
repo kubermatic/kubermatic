@@ -342,7 +342,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 
 	installedAddon, err := addonManager.Install(addon)
 	if err != nil {
-		glog.Errorf("failed to install plugin: %v", err)
+		glog.Errorf("failed to install plugin %s for cluster %s: %v", addon.Name, cluster.Metadata.Name, err)
 		addon.Attempt++
 		if addon.Attempt >= maxAddonInstallAttempts {
 			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
