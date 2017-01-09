@@ -175,6 +175,7 @@ func getChart(name, version string, addonResourcesPath string) (*chart.Chart, er
 		if err != nil {
 			return nil, err
 		}
+		glog.Infof("found chart locally %s", abs)
 		if fi.IsDir() {
 			return chartutil.LoadDir(abs)
 		}
@@ -182,7 +183,7 @@ func getChart(name, version string, addonResourcesPath string) (*chart.Chart, er
 		return chartutil.Load(abs)
 	}
 
-	glog.Infof("could not find chart %s locally '%s' , will try to download it", name, localChartPath)
+	glog.Infof("could not find chart %s locally '%s', will try to download it", name, localChartPath)
 
 	dl := downloader.ChartDownloader{
 		HelmHome: helmpath.Home("/tmp"),
