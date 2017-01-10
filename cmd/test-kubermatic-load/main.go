@@ -71,7 +71,7 @@ func createProvider(cluster api.Cluster, client *http.Client) error {
 }
 
 // waitNS waits for the Namespace to get created.
-func waitNS(id int, cl api.Cluster, client *http.Client) error {
+func waitNS(cl api.Cluster, client *http.Client) error {
 	for {
 		req, err := http.NewRequest("GET", "https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name, nil)
 		if err != nil {
@@ -181,7 +181,7 @@ func up(maxClusters, maxNodes int) error {
 				log.Printf("Created Cluster \"test-%d\"\n", x)
 
 				// wait for NS to not get errors when setting the cloud provider
-				if err = waitNS(i, cluster, client); err != nil {
+				if err = waitNS(cluster, client); err != nil {
 					log.Println(err)
 					return
 				}
@@ -262,7 +262,7 @@ func main() {
 	}
 
 	if *jwtFlag == "" {
-		log.Printf("Please specify a jwt flag")
+		log.Println("Please specify a jwt flag")
 		os.Exit(1)
 	}
 
