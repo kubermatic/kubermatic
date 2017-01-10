@@ -23,6 +23,7 @@ var (
 	dcFlag              = flag.String("datacenter-name", "master", "The master dc")
 	maxAsyncFlag        = flag.Int("max-workers", 10, "The amount of maximum concurrent requests")
 	retryNSIntervalFlag = flag.Int64("ns-retry-interval", 10, "The duration in seconds to wait between namespace alive requests")
+	domainFlag = flag.String("domain","dev.kubermatic.io","The domain to api is running on")
 )
 
 // setAuth sets the jwt token int a requests Authorization header field
@@ -38,7 +39,7 @@ func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error 
 	}
 
 	// Create node request
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/%s/node", cluster.Metadata.Name),
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster/%s/node", cluster.Metadata.Name),
 		// The sshKeys are fix.
 		strings.NewReader(fmt.Sprintf(`{"instances":%d,"spec":{"digitalocean":{"sshKeys":["80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0"],"size":"512mb"},"dc":"do-ams2"}}`, nodeCount)))
 	if err != nil {
@@ -54,7 +55,7 @@ func createNodes(nodeCount int, cluster api.Cluster, client *http.Client) error 
 // createProvider creates a new Cloud Provider for a cluster.
 // This should only be called after the NS is created.
 func createProvider(cluster api.Cluster, client *http.Client) error {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/%s/cloud", cluster.Metadata.Name),
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster/%s/cloud", cluster.Metadata.Name),
 		strings.NewReader(`{"dc":"do-ams2","digitalocean":{"sshKeys":["80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0"],"token":"0f76d511c5f5c8730b18d588a07cd56aa78fc8a6ddabbc168eceaaa9c7a12892"}}`))
 	if err != nil {
 		return err
@@ -72,7 +73,7 @@ func createProvider(cluster api.Cluster, client *http.Client) error {
 // waitNS waits for the Namespace to get created.
 func waitNS(id int, cl api.Cluster, client *http.Client) error {
 	for {
-		req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name, nil)
+		req, err := http.NewRequest("GET", "https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster/"+cl.Metadata.Name, nil)
 		if err != nil {
 			return err
 		}
@@ -108,7 +109,7 @@ func waitNS(id int, cl api.Cluster, client *http.Client) error {
 // deleteCluster deletes all clusters for a given user
 func deleteCluster(cluster api.Cluster, client *http.Client) error {
 	log.Printf("Deleting %q\n", cluster.Metadata.Name)
-	req, err := http.NewRequest("DELETE", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster/"+cluster.Metadata.Name, nil)
+	req, err := http.NewRequest("DELETE", "https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster/"+cluster.Metadata.Name, nil)
 	if err != nil {
 		return err
 	}
@@ -152,7 +153,7 @@ func up(maxClusters, maxNodes int) error {
 				log.Printf("request-%d", x)
 
 				// Create cluster request the clustername will be "test-{number}"
-				req, err := http.NewRequest("POST", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster",
+				req, err := http.NewRequest("POST", "https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster",
 					strings.NewReader(fmt.Sprintf(`{"spec":{"humanReadableName":"test-%d"}}`, x)))
 				if err != nil {
 					<-done
@@ -214,7 +215,7 @@ func purge() error {
 	client := &http.Client{}
 
 	// Get clusters list
-	req, err := http.NewRequest("GET", "https://dev.kubermatic.io/api/v1/dc/"+*dcFlag+"/cluster", nil)
+	req, err := http.NewRequest("GET", "https://"+*domainFlag+"/api/v1/dc/"+*dcFlag+"/cluster", nil)
 	if err != nil {
 		return err
 	}
