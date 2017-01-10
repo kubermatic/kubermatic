@@ -33,4 +33,4 @@ Flag|Optional|Default|Description
 `-datacenter-name`   | Yes | `"master"`           | `"The master dc"`
 `-max-workers`       | Yes | `10`                 | `"The amount of maximum concurrent requests"`
 `-ns-retry-interval` | Yes | `10`                 | `"The duration in seconds to wait between namespace alive requests"`
-`-domain`            | Yes | `dev.kubermatic.io"` | `"The domain to api is running on"`
+`-domain`            | Yes | `"dev.kubermatic.io"` | `"The domain to api is running on"`
