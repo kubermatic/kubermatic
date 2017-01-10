@@ -23,7 +23,7 @@ var (
 	dcFlag              = flag.String("datacenter-name", "master", "The master dc")
 	maxAsyncFlag        = flag.Int("max-workers", 10, "The amount of maximum concurrent requests")
 	retryNSIntervalFlag = flag.Int64("ns-retry-interval", 10, "The duration in seconds to wait between namespace alive requests")
-	domainFlag = flag.String("domain","dev.kubermatic.io","The domain to api is running on")
+	domainFlag          = flag.String("domain", "dev.kubermatic.io", "The domain to api is running on")
 )
 
 // setAuth sets the jwt token int a requests Authorization header field
