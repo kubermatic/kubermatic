@@ -163,6 +163,7 @@ func up(maxClusters, maxNodes int) error {
 
 				resp, err := client.Do(req)
 				// Remove ticket
+				time.Sleep(40 * time.Second)
 				<-done
 				if err != nil {
 					log.Println(err)
