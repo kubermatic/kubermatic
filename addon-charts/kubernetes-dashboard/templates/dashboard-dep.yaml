@@ -6,7 +6,7 @@ metadata:
   name: kubernetes-dashboard
   namespace: kube-system
 spec:
-  replicas: {{.Values.replicas | quote }}
+  replicas: 1
   selector:
     matchLabels:
       app: kubernetes-dashboard
