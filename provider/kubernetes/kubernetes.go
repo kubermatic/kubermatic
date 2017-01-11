@@ -248,26 +248,30 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 }
 
 func (p *kubernetesProvider) ApplyCloudProvider(cluster *api.Cluster, ns *v1.Namespace) error {
-	dep, err := p.client.Deployments(ns.Name).Get("controller-manager-v1", metav1.GetOptions{})
-	if err != nil {
+	if cluster.Spec.Cloud.GetAWS() != nil {
+		dep, err := p.client.Deployments(ns.Name).Get("controller-manager-v1", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		container := dep.Spec.Template.Spec.Containers[0]
+		container.Env = append(
+			dep.Spec.Template.Spec.Containers[0].Env,
+			v1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID},
+			v1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey},
+			v1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCId},
+			v1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone},
+		)
+
+		container.Command = append(
+			dep.Spec.Template.Spec.Containers[0].Command,
+			"--cloud-provider=aws",
+		)
+		dep.Spec.Template.Spec.Containers[0] = container
+		dep, err = p.client.Deployments(ns.Name).Update(dep)
 		return err
 	}
-	container := dep.Spec.Template.Spec.Containers[0]
-	container.Env = append(
-		dep.Spec.Template.Spec.Containers[0].Env,
-		v1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID},
-		v1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey},
-		v1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCId},
-		v1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone},
-	)
 
-	container.Command = append(
-		dep.Spec.Template.Spec.Containers[0].Command,
-		"--cloud-provider=aws",
-	)
-	dep.Spec.Template.Spec.Containers[0] = container
-	dep, err = p.client.Deployments(ns.Name).Update(dep)
-	return err
+	return nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
