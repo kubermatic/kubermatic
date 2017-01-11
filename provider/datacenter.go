@@ -17,6 +17,7 @@ type DigitaloceanSpec struct {
 type AWSSpec struct {
 	Region string `yaml:"region"`
 	AMI    string `yaml:"ami"`
+	Zone   string `yaml:"zone"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
