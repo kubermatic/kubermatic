@@ -636,17 +636,13 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 	for _, n := range resp.Reservations {
 		for _, instance := range n.Instances {
 			var isOwner bool
-			var name string
 			for _, tag := range instance.Tags {
 				if *tag.Key == defaultKubermaticClusterIDTagKey && *tag.Value == cluster.Metadata.UID {
 					isOwner = true
 				}
-				if *tag.Key == awsFilterName {
-					name = *tag.Value
-				}
 			}
 			if isOwner {
-				nodes = append(nodes, createNode(name, instance))
+				nodes = append(nodes, createNode(instance))
 			}
 		}
 	}
@@ -702,7 +698,7 @@ func (a *aws) getIAMclient(cluster *api.Cluster) (*iam.IAM, error) {
 	return iam.New(sess), nil
 }
 
-func createNode(name string, instance *ec2.Instance) *api.Node {
+func createNode(instance *ec2.Instance) *api.Node {
 
 	privateIP := ""
 	publicIP := ""
@@ -717,7 +713,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 	return &api.Node{
 		Metadata: api.Metadata{
 			UID:  *instance.InstanceId,
-			Name: name,
+			Name: *instance.PrivateDnsName,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
@@ -772,7 +768,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		return nil, err
 	}
 
-	return createNode(name, serverReq.Instances[0]), nil
+	return createNode(serverReq.Instances[0]), nil
 }
 
 func (a *aws) doCleanUpAWS(c *api.Cluster) error {
