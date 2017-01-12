@@ -16,7 +16,7 @@ The final authentication string is `"Bearer <token>"`, this string will be passe
 $ ./test-kubermatic-load -jwt-auth="...." -datacenter-name="cluster1" -cluster-count=10 up
 ```
 This command creates 10 clusters.
-*You can only run one load test. After you run it once you have to ourge your clusters*
+*Once the load test is complete you will need to initiate the cleanup manually*
 
 ### Cleanup:
 ```bash
