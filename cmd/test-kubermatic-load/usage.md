@@ -7,10 +7,15 @@ $ go build
 ```
 
 ### Run:
-#### Get the jwt:
-To get our authentication token we need to login under https://dev.kubermatic.io.
+
+#### Get the JSON Web Token:
+To get our authentication token we need to login to the master seed cluster that you want to test.
 In the Chrome LocalStorage in the developer windows, we copy the value of the field `token`.
 The final authentication string is `"Bearer <token>"`, this string will be passed with the `-jwt-auth` flag every time we call the script.
+
+#### Get Datacenter
+You need to select a seed cluster from the datacenters.yaml in the cluster you want to test. Use the `name` variable for the datacenter in the `-datacenter-name` flag
+
 #### Execute script:
 ```bash
 $ ./test-kubermatic-load -jwt-auth="...." -datacenter-name="cluster1" -cluster-count=10 up
