@@ -10,12 +10,6 @@ Spec:
 ```
 ####Results:
 After roughly 160-170 cluster creations the first servers started to fail.
-####Observations:
-* The dashboard/api displays most clusters as healthy.
-Manual verification shows most those clusters could not be started due to hardware limitations.
-It was therefore not possible to connect to the cluster with the generated kubeconfig.
-* The cluster controller is down / is not getting scheduled
-* k8sniff is running
 ####Reason:
 The master kubernetes server (hosted by Google) could not keep up with creating new pods.
 Due to this the clusters switched after 5 min from `Pending` to `Failing`.
@@ -26,10 +20,22 @@ Due to this the clusters switched after 5 min from `Pending` to `Failing`.
 * Self hosted kubernetes
 
 ## Second test
-Spec:
-
-```bash
-```
+* 150 Clusters over time
 ####Results:
+After roughly 130-140 cluster creations the first servers started to fail.
+####Observations:
+* The dashboard/api displays most clusters as healthy.
+Manual verification shows most those clusters could not be started due to hardware limitations.
+It was therefore not possible to connect to the cluster with the generated kubeconfig.
+```kubectl --kubeconfig ~/Downloads/kubeconfig get ns
+The connection to the server gqm0b0vnj.us-central1.staging.kubermatic.io was refused - did you specify the right host or port?
+``` 
+* k8s is constantly dieing (25 times)
+* 
 ####Reason:
+* The cluster is to small
 ####Fixes:
+* Increase the time until a cluster is marked `Failing`
+* Pre create clusters
+* Create quotas
+* Self hosted kubernetes
