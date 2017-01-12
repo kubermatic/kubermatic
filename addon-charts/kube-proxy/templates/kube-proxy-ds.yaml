@@ -27,7 +27,7 @@ spec:
           mountPath: /etc/ssl/etcd/root-ca.crt
           readOnly: true
         - name: kubeconfig
-          mountPath: /var/run/kubelet/kubeconfig
+          mountPath: /etc/kubernetes/kubeconfig
           readOnly: true
       volumes:
       - name: kubeconfig
