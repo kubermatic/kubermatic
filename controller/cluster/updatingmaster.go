@@ -25,6 +25,7 @@ func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Clu
 			c.Spec.TargetMasterVersion = c.Status.LastDeployedMasterVersion
 			c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
 		}
+		return c, nil
 	}
 
 	return c, nil
