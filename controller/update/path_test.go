@@ -1,9 +1,11 @@
 package cluster
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/kubermatic/api"
+
 )
 
 func TestPathSearch_Search(t *testing.T) {
@@ -38,6 +40,25 @@ func TestPathSearch_Search(t *testing.T) {
 				From: "1.5.*",
 				To:   "1.5.4",
 			},
+			{
+				From: "1.5.3",
+				To:   "1.5.4",
+			},
 		},
 	)
+
+	p, err := search.Search("1.5.2", "1.5.4")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	versions := []string{"1.5.2"}
+	for _, vu := range p {
+		versions = append(versions, vu.To)
+	}
+
+	expected := []string{"1.5.2", "1.5.3", "1.5.4"}
+	if !reflect.DeepEqual(versions, expected) {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, versions)
+	}
 }
