@@ -15,7 +15,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/controller/template"
 	"golang.org/x/crypto/ssh"
 	"k8s.io/client-go/pkg/api/v1"
 )
