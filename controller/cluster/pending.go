@@ -9,6 +9,7 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/resources"
 	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider/kubernetes"
@@ -180,8 +181,8 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":             templates.loadServiceFile,
-		"etcd-public":      temloadServiceFile,
+		"etcd":             loadServiceFile,
+		"etcd-public":      loadServiceFile,
 		"apiserver":        loadServiceFile,
 		"apiserver-public": loadServiceFile,
 	}
@@ -255,12 +256,15 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(c *api.Cluster, masterResourcesPath, overwriteHost, dc, s string) (*extensionsv1beta1.Deployment, error){
-		"etcd":               loadDeploymentFile,
-		"etcd-public":        loadDeploymentFile,
-		"apiserver":          loadApiserver,
-		"controller-manager": loadDeploymentFile,
-		"scheduler":          loadDeploymentFile,
+	// HACK: intermediate code
+	v := api.MasterVersion{}
+
+	deps := map[string]func(c *api.Cluster, v api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error){
+		"etcd":               resources.LoadDeploymentFile,
+		"etcd-public":        resources.LoadDeploymentFile,
+		"apiserver":          resources.LoadApiserver,
+		"controller-manager": resources.LoadDeploymentFile,
+		"scheduler":          resources.LoadDeploymentFile,
 	}
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
@@ -282,7 +286,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(c, cc.masterResourcesPath, cc.overwriteHost, cc.dc, s)
+		dep, err := gen(c, v, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
