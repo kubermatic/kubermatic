@@ -68,7 +68,7 @@ func TestDijkstraGraph(t *testing.T) {
 	// Connect E to F
 	connect(vE, vF, 1)
 
-	expPath := []*vertex{/* vA, */vB, vF} // starting node is missing intentionally
+	expPath := []*vertex{ /* vA, */ vB, vF} // starting node is missing intentionally
 
 	path, err := dijkstra.ShortestPath(vA, vF)
 	if err != nil {

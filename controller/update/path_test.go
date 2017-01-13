@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"testing"
+
 	"github.com/kubermatic/api"
 )
 

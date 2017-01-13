@@ -62,11 +62,11 @@ func ShortestPath(start, end Node) ([]NodeEdge, error) {
 
 	path := []NodeEdge{{Node: end}}
 	for next := prev[end]; next != nil; next = prev[next.Node] {
-		path[len(path) - 1].Edge = next.Edge
+		path[len(path)-1].Edge = next.Edge
 		path = append(path, *next)
 	}
 	// throw away first node, it has not edge
-	path = path[0:len(path) - 1]
+	path = path[0 : len(path)-1]
 
 	// Reverse path
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
