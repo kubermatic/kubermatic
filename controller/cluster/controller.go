@@ -43,6 +43,7 @@ const (
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
+	updatingSyncPeriod  = 5 * time.Second
 )
 
 type clusterController struct {
@@ -345,7 +346,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		glog.Errorf("failed to install plugin %s for cluster %s: %v", addon.Name, cluster.Metadata.Name, err)
 		addon.Attempt++
 		if addon.Attempt >= maxAddonInstallAttempts {
-			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
+			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", maxAddonInstallAttempts, err)
 			addon.Phase = extensions.FailedAddonStatusPhase
 		} else {
 			time.Sleep(waitBetweenInstallAttempt)
@@ -362,6 +363,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		glog.Error(err)
 	}
 }
+
 func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase api.ClusterPhase) {
 	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
@@ -501,6 +503,8 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 		changedC, err = cc.syncLaunchingCluster(c)
 	case api.RunningClusterStatusPhase:
 		changedC, err = cc.syncRunningCluster(c)
+	case api.UpdatingMasterClusterStatusPhase:
+		changedC, err = cc.syncUpdatingClusterMaster(c)
 	default:
 		glog.V(5).Infof("Ignoring cluster %q in phase %q", c.Metadata.Name, c.Status.Phase)
 	}
@@ -602,6 +606,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(api.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
 	go wait.Until(func() {
 		err := cc.queue.Resync()
 		if err != nil {
