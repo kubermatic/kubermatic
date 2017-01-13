@@ -2,6 +2,7 @@ package version
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -42,18 +43,19 @@ func loadVersions(path string) (map[string]*api.MasterVersion, error) {
 //upgrade path
 
 //get latest version
-func LatestVersion() *api.MasterVersion {
+func LatestVersion() (*api.MasterVersion, error) {
 	vers, err := loadVersions("path")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	for _, ver := range vers {
 		if ver.Latest {
-			return *ver
+			return ver, nil
 		}
 	}
 
-	return nil
+	err = fmt.Errorf("Could not locate latest version")
+	return nil, err
 
 }
