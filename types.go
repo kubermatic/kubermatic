@@ -183,6 +183,31 @@ const (
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
+
+	// UpdatingClusterStatusPhase means that the cluster controller is updating the cluster.
+	UpdatingMasterClusterStatusPhase ClusterPhase = "UpdatingMaster"
+
+	// UpdatingClusterStatusPhase means that the cluster controller is updating the cluster.
+	UpdatingNodesClusterStatusPhase ClusterPhase = "UpdatingNodes"
+)
+
+type MasterUpdatePhase string
+
+const (
+	// StartMasterUpdatePhase means that the cluster controller is updating etcd.
+	StartMasterUpdatePhase MasterUpdatePhase = "Starting"
+
+	// EtcdMasterUpdatePhase means that the cluster controller is waiting for etcd and updating the API server.
+	EtcdMasterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
+
+	// APIServerMasterUpdatePhase means that the cluster controller is waiting for the apiserver and updating the controllers.
+	APIServerMasterUpdatePhase MasterUpdatePhase = "WaitAPIReady"
+
+	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
+	WaitControllersMasterUpdatePhase MasterUpdatePhase = "WaitControllersReady"
+
+	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
+	FinishMasterUpdatePhase MasterUpdatePhase = "Finished"
 )
 
 type (
@@ -204,9 +229,11 @@ type SecretKeyCert struct {
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastTransitionTime time.Time      `json:"lastTransitionTime"`
-	Phase              ClusterPhase   `json:"phase,omitempty"`
-	Health             *ClusterHealth `json:"health,omitempty"`
+	LastTransitionTime        time.Time         `json:"lastTransitionTime"`
+	Phase                     ClusterPhase      `json:"phase,omitempty"`
+	Health                    *ClusterHealth    `json:"health,omitempty"`
+	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
+	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
 
 	RootCA       SecretKeyCert `json:"rootCA"`
 	ApiserverSSH string        `json:"apiserverSSH"`
@@ -216,7 +243,8 @@ type ClusterStatus struct {
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 	// HumanReadableName is the cluster name provided by the user
-	HumanReadableName string `json:"humanReadableName"`
+	HumanReadableName   string `json:"humanReadableName"`
+	TargetMasterVersion string `json:"targetMasterVersion"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
@@ -330,4 +358,35 @@ type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
 	Seed     bool           `json:"seed,omitempty"`
+}
+
+type MasterVersion struct {
+	Name, Id                 string
+	Latest                   bool
+	AllowedNodeVersions      []string
+	etcdDeploymentYaml       string
+	apiserverDeploymentYaml  string
+	controllerDeploymentYaml string
+	schedulerDeploymentYaml  string
+}
+
+type NodeVersion struct {
+	Name, Id string
+	Latest   bool
+}
+
+type MasterUpdate struct {
+	From, To                   string
+	Automatic, RollbackAllowed bool
+	Enabled                    bool
+	Visable                    bool
+	Promote                    bool
+}
+
+type NodeUpdate struct {
+	From, To                   string
+	Automatic, RollbackAllowed bool
+	Enabled                    bool
+	Visable                    bool
+	Promote                    bool
 }
