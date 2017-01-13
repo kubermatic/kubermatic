@@ -54,8 +54,8 @@ func loadIngressFile(cc *clusterController, c *api.Cluster, s string) (*extensio
 	return &ingress, err
 }
 
-func loadDeploymentFile(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error) {
-	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
+func loadDeploymentFile(c *api.Cluster, masterResourcesPath, overwriteHost, dc, s string) (*extensionsv1beta1.Deployment, error) {
+	t, err := template.ParseFiles(path.Join(masterResourcesPath, s+"-dep.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -65,14 +65,14 @@ func loadDeploymentFile(cc *clusterController, c *api.Cluster, s string) (*exten
 		DC          string
 		ClusterName string
 	}{
-		DC:          cc.dc,
+		DC:          dc,
 		ClusterName: c.Metadata.Name,
 	}
 	err = t.Execute(data, &dep)
 	return &dep, err
 }
 
-func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error) {
+func loadApiserver(c *api.Cluster, masterResourcesPath, overwriteHost, dc, s string) (*extensionsv1beta1.Deployment, error) {
 	var data struct {
 		AdvertiseAddress string
 		SecurePort       int
@@ -89,11 +89,11 @@ func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensions
 		}
 		data.AdvertiseAddress = addrs[0]
 	} else {
-		data.AdvertiseAddress = cc.overwriteHost
+		data.AdvertiseAddress = overwriteHost
 	}
 	data.SecurePort = c.Address.NodePort
 
-	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-dep.yaml"))
+	t, err := template.ParseFiles(path.Join(masterResourcesPath, s+"-dep.yaml"))
 	if err != nil {
 		return nil, err
 	}

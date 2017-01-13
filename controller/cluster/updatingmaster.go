@@ -16,7 +16,7 @@ func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Clu
 		return c, nil
 	}
 
-	if c.Status.LastTransitionTime+clusterUpdateTimeout > time.Now() {
+	if time.Now().After(c.Status.LastTransitionTime.Add(clusterUpdateTimeout)) {
 		if c.Status.LastDeployedMasterVersion == c.Spec.TargetMasterVersion {
 			// Rollback failed, fail cluster
 			c.Status.Phase = api.FailedClusterStatusPhase

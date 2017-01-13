@@ -184,29 +184,30 @@ const (
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 
-	// UpdatingClusterStatusPhase means that the cluster controller is updating the cluster.
+	// UpdatingMasterClusterStatusPhase means that the cluster controller is updating the master components of the cluster.
 	UpdatingMasterClusterStatusPhase ClusterPhase = "UpdatingMaster"
 
-	// UpdatingClusterStatusPhase means that the cluster controller is updating the cluster.
+	// UpdatingNodesClusterStatusPhase means that the cluster controller is updating the nodes of the cluster.
 	UpdatingNodesClusterStatusPhase ClusterPhase = "UpdatingNodes"
 )
 
+// MasterUpdatePhase represents the current master update phase.
 type MasterUpdatePhase string
 
 const (
-	// StartMasterUpdatePhase means that the cluster controller is updating etcd.
+	// StartMasterUpdatePhase means that the update controller is updating etcd.
 	StartMasterUpdatePhase MasterUpdatePhase = "Starting"
 
-	// EtcdMasterUpdatePhase means that the cluster controller is waiting for etcd and updating the API server.
+	// EtcdMasterUpdatePhase means that the update controller is waiting for etcd and updating the API server.
 	EtcdMasterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
 
-	// APIServerMasterUpdatePhase means that the cluster controller is waiting for the apiserver and updating the controllers.
+	// APIServerMasterUpdatePhase means that the update controller is waiting for the apiserver and updating the controllers.
 	APIServerMasterUpdatePhase MasterUpdatePhase = "WaitAPIReady"
 
-	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
-	WaitControllersMasterUpdatePhase MasterUpdatePhase = "WaitControllersReady"
+	// ControllersMasterUpdatePhase means that the update controller is waiting for the controllers.
+	ControllersMasterUpdatePhase MasterUpdatePhase = "WaitControllersReady"
 
-	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
+	// FinishMasterUpdatePhase means that the update controller has finished the update.
 	FinishMasterUpdatePhase MasterUpdatePhase = "Finished"
 )
 
@@ -360,8 +361,9 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
+// MasterVersion is the object representing a Kubernetes Master version.
 type MasterVersion struct {
-	Name, Id                 string
+	Name, ID                 string
 	Latest                   bool
 	AllowedNodeVersions      []string
 	etcdDeploymentYaml       string
@@ -370,8 +372,9 @@ type MasterVersion struct {
 	schedulerDeploymentYaml  string
 }
 
+// NodeVersion is the object representing a Kubernetes Kubelet version.
 type NodeVersion struct {
-	Name, Id string
+	Name, ID string
 	Latest   bool
 }
 
