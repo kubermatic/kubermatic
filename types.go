@@ -366,10 +366,12 @@ type MasterVersion struct {
 	Name, ID                 string
 	Latest                   bool
 	AllowedNodeVersions      []string
-	etcdDeploymentYaml       string
-	apiserverDeploymentYaml  string
-	controllerDeploymentYaml string
-	schedulerDeploymentYaml  string
+	EtcdDeploymentYaml       string
+	EtcdPublicDeploymentYaml string
+	ApiserverDeploymentYaml  string
+	ControllerDeploymentYaml string
+	SchedulerDeploymentYaml  string
+	Values                   map[string]string
 }
 
 // NodeVersion is the object representing a Kubernetes Kubelet version.
