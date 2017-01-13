@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/kubermatic/api"
-
 )
 
 func TestPathSearch_Search(t *testing.T) {
