@@ -1,4 +1,4 @@
-package cluster
+package version
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/update/dijkstra"
+	"github.com/kubermatic/api/controller/version/dijkstra"
 )
 
 type PathSearch struct {

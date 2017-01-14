@@ -11,7 +11,7 @@ import (
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func LoadDeploymentFile(c *api.Cluster, v api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error) {
+func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, v.EtcdDeploymentYaml))
 	if err != nil {
 		return nil, err
@@ -21,18 +21,24 @@ func LoadDeploymentFile(c *api.Cluster, v api.MasterVersion, masterResourcesPath
 	data := struct {
 		DC          string
 		ClusterName string
+		Version     *api.MasterVersion
 	}{
 		DC:          dc,
 		ClusterName: c.Metadata.Name,
+		Version:     v,
 	}
 	err = t.Execute(data, &dep)
 	return &dep, err
 }
 
-func LoadApiserver(c *api.Cluster, v api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error) {
-	var data struct {
+func LoadApiserver(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error) {
+	data := struct {
 		AdvertiseAddress string
 		SecurePort       int
+		Version          *api.MasterVersion
+	}{
+		SecurePort: c.Address.NodePort,
+		Version:    v,
 	}
 
 	if overwriteHost == "" {
@@ -48,7 +54,6 @@ func LoadApiserver(c *api.Cluster, v api.MasterVersion, masterResourcesPath, ove
 	} else {
 		data.AdvertiseAddress = overwriteHost
 	}
-	data.SecurePort = c.Address.NodePort
 
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, v.ApiserverDeploymentYaml))
 	if err != nil {

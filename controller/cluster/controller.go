@@ -26,6 +26,8 @@ import (
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"github.com/kubermatic/api/controller/version"
+	"github.com/kubermatic/api/controller/update"
 )
 
 const (
@@ -81,11 +83,17 @@ type clusterController struct {
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
+	cps      map[string]provider.CloudProvider
+	dev      bool
+
+	updateController *update.UpdateController
+	versions map[string]*api.MasterVersion
+	updates  []api.MasterUpdate
+	latestVersion *api.MasterVersion
+
 	// non-thread safe:
 	mu         sync.Mutex
-	cps        map[string]provider.CloudProvider
 	inProgress map[string]struct{} // in progress clusters
-	dev        bool
 }
 
 // NewController creates a cluster controller.
@@ -94,6 +102,8 @@ func NewController(
 	client kubernetes.Interface,
 	tprClient extensions.Clientset,
 	cps map[string]provider.CloudProvider,
+	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
 	dev bool,
@@ -106,12 +116,25 @@ func NewController(
 		tprClient:           tprClient,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
+		updates:             updates,
+		versions:            versions,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
 		dev:                 dev,
 		overwriteHost:       overwriteHost,
 		addonResourcesPath:  addonResourcesPath,
+	}
+
+	var err error
+	cc.latestVersion, err = version.LatestVersion(versions)
+	cc.updateController = &update.UpdateController{
+		Client: cc.client,
+		MasterResourcesPath: cc.masterResourcesPath,
+		OverwriteHost: cc.overwriteHost,
+		DC: cc.dc,
+		Versions: cc.versions,
+		Updates: cc.updates,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()

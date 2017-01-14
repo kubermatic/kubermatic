@@ -6,17 +6,16 @@ import (
 	"github.com/kubermatic/api"
 )
 
-const clusterUpdateTimeout = time.Minute * 30
+const UpdateTimeout = time.Minute * 30
 
 func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Cluster, error) {
-
 	if c.Status.MasterUpdatePhase == api.FinishMasterUpdatePhase {
 		c.Status.MasterUpdatePhase = ""
 		c.Status.Phase = api.RunningClusterStatusPhase
 		return c, nil
 	}
 
-	if time.Now().After(c.Status.LastTransitionTime.Add(clusterUpdateTimeout)) {
+	if time.Now().After(c.Status.LastTransitionTime.Add(UpdateTimeout)) {
 		if c.Status.LastDeployedMasterVersion == c.Spec.TargetMasterVersion {
 			// Rollback failed, fail cluster
 			c.Status.Phase = api.FailedClusterStatusPhase
@@ -28,5 +27,5 @@ func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Clu
 		return c, nil
 	}
 
-	return c, nil
+	return cc.updateController.Sync(c)
 }

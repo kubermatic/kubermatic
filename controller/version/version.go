@@ -2,18 +2,16 @@ package version
 
 import (
 	"bufio"
-	"fmt"
 	"io/ioutil"
 	"os"
-
-	"github.com/kubermatic/api"
+	"errors"
 
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/kubermatic/api"
 )
 
-//load yaml
-func loadVersions(path string) (map[string]*api.MasterVersion, error) {
-
+func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -37,25 +35,14 @@ func loadVersions(path string) (map[string]*api.MasterVersion, error) {
 	}
 
 	return verMap, nil
-
 }
 
-//upgrade path
-
-//get latest version
-func LatestVersion() (*api.MasterVersion, error) {
-	vers, err := loadVersions("path")
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ver := range vers {
+func LatestVersion(versions map[string]*api.MasterVersion) (*api.MasterVersion, error) {
+	for _, ver := range versions {
 		if ver.Latest {
 			return ver, nil
 		}
 	}
 
-	err = fmt.Errorf("Could not locate latest version")
-	return nil, err
-
+	return nil, errors.New("latest version not found")
 }

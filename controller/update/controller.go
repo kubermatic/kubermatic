@@ -1,4 +1,4 @@
-package cluster
+package update
 
 import (
 	"fmt"
@@ -14,14 +14,18 @@ type UpdateController struct {
 	MasterResourcesPath string
 	OverwriteHost       string
 	DC                  string
-	Versions            map[string]api.MasterVersion
+	Versions            map[string]*api.MasterVersion
+	Updates             []api.MasterUpdate
 }
 
-func (u *UpdateController) doUpdate(c *api.Cluster) (*api.Cluster, error) {
+func (u *UpdateController) Sync(c *api.Cluster) (*api.Cluster, error) {
 
 	switch c.Status.MasterUpdatePhase {
 	case api.StartMasterUpdatePhase:
-		return u.updateEtcd(c)
+		c, err := u.updateEtcd(c)
+		if err != nil {
+
+		}
 	case api.EtcdMasterUpdatePhase:
 		//wait for etcd, update api server
 	case api.APIServerMasterUpdatePhase:
@@ -36,8 +40,10 @@ func (u *UpdateController) doUpdate(c *api.Cluster) (*api.Cluster, error) {
 }
 
 func (u *UpdateController) updateEtcd(c *api.Cluster) (*api.Cluster, error) {
-
-	v := u.Versions[c.Spec.TargetMasterVersion]
+	v, found := u.Versions[c.Spec.TargetMasterVersion]
+	if !found {
+		return nil, fmt.Errorf("unknown target master version %q", c.Spec.TargetMasterVersion)
+	}
 
 	etcdDep, err := resources.LoadDeploymentFile(c, v, u.MasterResourcesPath, u.OverwriteHost, u.DC)
 	if err != nil {
@@ -46,7 +52,7 @@ func (u *UpdateController) updateEtcd(c *api.Cluster) (*api.Cluster, error) {
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	_, err = u.Client.ExtensionsV1beta1().Deployments(ns).Create(etcdDep)
+	_, err = u.Client.ExtensionsV1beta1().Deployments(ns).Update(etcdDep)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create deployment for etcd: %v", err)
 	}
@@ -54,5 +60,4 @@ func (u *UpdateController) updateEtcd(c *api.Cluster) (*api.Cluster, error) {
 	c.Status.MasterUpdatePhase = api.EtcdMasterUpdatePhase
 
 	return c, nil
-
 }

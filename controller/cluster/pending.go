@@ -256,10 +256,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	// HACK: intermediate code
-	v := api.MasterVersion{}
-
-	deps := map[string]func(c *api.Cluster, v api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error){
+	deps := map[string]func(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error){
 		"etcd":               resources.LoadDeploymentFile,
 		"etcd-public":        resources.LoadDeploymentFile,
 		"apiserver":          resources.LoadApiserver,
@@ -286,7 +283,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(c, v, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
+		dep, err := gen(c, cc.latestVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
