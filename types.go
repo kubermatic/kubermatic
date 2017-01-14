@@ -363,15 +363,16 @@ type Datacenter struct {
 
 // MasterVersion is the object representing a Kubernetes Master version.
 type MasterVersion struct {
-	Name, ID                 string
-	Default                  bool
-	AllowedNodeVersions      []string
-	EtcdDeploymentYaml       string
-	EtcdPublicDeploymentYaml string
-	ApiserverDeploymentYaml  string
-	ControllerDeploymentYaml string
-	SchedulerDeploymentYaml  string
-	Values                   map[string]string
+	Name                     string            `json:"name,omitempty"`
+	ID                       string            `json:"id,omitempty"`
+	Default                  bool              `json:"default,omitempty"`
+	AllowedNodeVersions      []string          `json:"-"`
+	EtcdDeploymentYaml       string            `json:"-"`
+	EtcdPublicDeploymentYaml string            `json:"-"`
+	ApiserverDeploymentYaml  string            `json:"-"`
+	ControllerDeploymentYaml string            `json:"-"`
+	SchedulerDeploymentYaml  string            `json:"-"`
+	Values                   map[string]string `json:"-"`
 }
 
 // NodeVersion is the object representing a Kubernetes Kubelet version.

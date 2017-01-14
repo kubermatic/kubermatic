@@ -30,21 +30,24 @@ const (
 	// namePrefix is the prefix string of every cluster namespace name.
 	namePrefix = "cluster"
 
-	urlAnnotation               = annotationPrefix + "url"             // kubermatic.io/url
-	tokenAnnotation             = annotationPrefix + "token"           // kubermatic.io/token
-	customAnnotationPrefix      = annotationPrefix + "annotation-"     // kubermatic.io/annotation-
-	cloudAnnotationPrefix       = annotationPrefix + "cloud-provider-" // kubermatic.io/cloud-provider-
-	providerAnnotation          = annotationPrefix + "cloud-provider"  // kubermatic.io/cloud-provider
-	cloudDCAnnotation           = annotationPrefix + "cloud-dc"        // kubermatic.io/cloud-dc
-	phaseTimestampAnnotation    = annotationPrefix + "phase-ts"        // kubermatic.io/phase-ts
-	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
-	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
-	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
-	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
-	nodePortLabel               = annotationPrefix + "node-port"       // kubermatic.io/etcd-url
-	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
-	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
-	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
+	urlAnnotation                       = annotationPrefix + "url"                         // kubermatic.io/url
+	tokenAnnotation                     = annotationPrefix + "token"                       // kubermatic.io/token
+	customAnnotationPrefix              = annotationPrefix + "annotation-"                 // kubermatic.io/annotation-
+	cloudAnnotationPrefix               = annotationPrefix + "cloud-provider-"             // kubermatic.io/cloud-provider-
+	providerAnnotation                  = annotationPrefix + "cloud-provider"              // kubermatic.io/cloud-provider
+	cloudDCAnnotation                   = annotationPrefix + "cloud-dc"                    // kubermatic.io/cloud-dc
+	phaseTimestampAnnotation            = annotationPrefix + "phase-ts"                    // kubermatic.io/phase-ts
+	healthAnnotation                    = annotationPrefix + "health"                      // kubermatic.io/health
+	userAnnotation                      = annotationPrefix + "user"                        // kubermatic.io/user
+	humanReadableNameAnnotation         = annotationPrefix + "name"                        // kubermatic.io/name
+	etcdURLAnnotation                   = annotationPrefix + "etcd-url"                    // kubermatic.io/etcd-url
+	nodePortLabel                       = annotationPrefix + "node-port"                   // kubermatic.io/etcd-url
+	rootCAKeyAnnotation                 = annotationPrefix + "root-ca-key"                 // kubermatic.io/root-ca-key
+	rootCACertAnnotation                = annotationPrefix + "root-ca-cert"                // kubermatic.io/root-cert
+	apiserverPubSSHAnnotation           = annotationPrefix + "ssh-pub"                     // kubermatic.io/ssh-pub
+	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deplyoed-master-verion" // kubermatic.io/last-deplyoed-master-verion
+	MasterUpdatePhaseAnnotation         = annotationPrefix + "master-update-phase"         // kubermatic.io/master-update-phase
+	MasterVersionAnnotation             = annotationPrefix + "master-version"              // kubermatic.io/master-verion
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
@@ -96,11 +99,14 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: ns.Annotations[humanReadableNameAnnotation],
+			MasterVersion:     ns.Annotations[MasterVersionAnnotation],
 			Dev:               ns.Labels[DevLabelKey] == DevLabelValue,
 		},
 		Status: api.ClusterStatus{
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
+			LastDeployedMasterVersion: ns.Annotations[LastDeployedMasterVersionAnnotation],
+			MasterUpdatePhase:         api.ClusterStatus.MasterUpdatePhase(ns.Annotations[MasterUpdatePhaseAnnotation]),
 			RootCA: api.SecretKeyCert{
 				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
 				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
@@ -233,6 +239,9 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
+	ns.Annotations[MasterVersionAnnotation] = c.Spec.MasterVersion
+	ns.Annotations[MasterUpdatePhaseAnnotation] = string(c.Status.MasterUpdatePhase)
+	ns.Annotations[LastDeployedMasterVersionAnnotation] = c.Status.LastDeployedMasterVersion
 	if c.Status.RootCA.Key != nil {
 		ns.Annotations[rootCAKeyAnnotation] = c.Status.RootCA.Key.Base64()
 	}
