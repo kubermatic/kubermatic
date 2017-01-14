@@ -86,7 +86,7 @@ type clusterController struct {
 	cps      map[string]provider.CloudProvider
 	dev      bool
 
-	updateController      *update.UpdateController
+	updateController      *update.Controller
 	versions              map[string]*api.MasterVersion
 	updates               []api.MasterUpdate
 	defaultMasterVersion  *api.MasterVersion
@@ -126,24 +126,6 @@ func NewController(
 		overwriteHost:       overwriteHost,
 		addonResourcesPath:  addonResourcesPath,
 	}
-
-	var err error
-	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
-	cc.updateController = &update.UpdateController{
-		Client: cc.client,
-		MasterResourcesPath: cc.masterResourcesPath,
-		OverwriteHost: cc.overwriteHost,
-		DC: cc.dc,
-		Versions: cc.versions,
-		Updates: cc.updates,
-	}
-	automaticUpdates := []*api.MasterUpdate{}
-	for _, u := range cc.updates {
-		if u.Automatic {
-			automaticUpdates = append(automaticUpdates, u)
-		}
-	}
-	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates)
 
 	eventBroadcaster := record.NewBroadcaster()
 	cc.recorder = eventBroadcaster.NewRecorder(v1.EventSource{Component: "clustermanager"})
@@ -307,6 +289,26 @@ func NewController(
 			},
 		},
 	)
+
+	// setup update controller
+	var err error
+	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
+	cc.updateController = &update.Controller{
+		Client: cc.client,
+		MasterResourcesPath: cc.masterResourcesPath,
+		OverwriteHost: cc.overwriteHost,
+		DC: cc.dc,
+		Versions: cc.versions,
+		Updates: cc.updates,
+		DepStore: cc.depStore,
+	}
+	automaticUpdates := []*api.MasterUpdate{}
+	for _, u := range cc.updates {
+		if u.Automatic {
+			automaticUpdates = append(automaticUpdates, u)
+		}
+	}
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates)
 
 	return cc, nil
 }

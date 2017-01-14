@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubermatic/api/controller/update/dijkstra"
+	"github.com/kubermatic/api/controller/version/dijkstra"
 )
 
 // dijkstra.Node implementation

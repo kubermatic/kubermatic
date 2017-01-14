@@ -7,8 +7,10 @@ import (
 	"errors"
 
 	yaml "gopkg.in/yaml.v2"
+	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/api"
+	"github.com/golang/glog"
 )
 
 func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
@@ -45,4 +47,54 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 	}
 
 	return nil, errors.New("latest version not found")
+}
+
+func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterUpdate, error) {
+	type ToUpdate struct{
+		to *semver.Version
+		update *api.MasterUpdate
+	}
+	tos := []*ToUpdate{}
+	semverFrom, err := semver.NewVersion(from)
+	if err != nil {
+		return err
+	}
+	for _, u := range updates {
+		if !u.Automatic {
+			continue
+		}
+		uFrom, err := semver.NewConstraint(u.From)
+		if err != nil {
+			glog.Warningf("ignoring update %q -> %q with invalid target version", u.From, u.To)
+			continue
+		}
+		if !uFrom.Check(semverFrom) {
+			continue
+		}
+
+		semverTo, err := semver.NewVersion(u.To)
+		if err != nil {
+			glog.Warningf("ignoring update %q -> %q with invalid source version", u.From, u.To)
+			continue
+		}
+		if semverFrom.LessThan(semverTo) {
+			tos = append(tos, &ToUpdate{
+				to: semverTo,
+				update: u,
+			})
+		}
+	}
+
+	if len(tos) == 0 {
+		return nil, nil
+	}
+
+	best := tos[0]
+	for _, dest := range tos[1:] {
+		if best.to.LessThan(dest.to) {
+			best = dest
+		}
+	}
+
+	return best.update, nil
 }

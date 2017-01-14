@@ -1,7 +1,7 @@
 package: github.com/kubermatic/api
 import:
 - package: k8s.io/client-go
-  version: master
+  version: 24a02a6d7d2c9a21b12a3eb35c71c784e63825f4
 - package: github.com/auth0/go-jwt-middleware
 - package: github.com/digitalocean/godo
   version: c3a2aad75d576aed8f14dcaea896e40eff83dd18
@@ -26,3 +26,5 @@ import:
 - package: github.com/spf13/viper
 - package: k8s.io/helm
   version: ~2.1.0
+- package: github.com/Masterminds/semver
+  version: ~1.2.2

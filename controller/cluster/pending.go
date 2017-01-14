@@ -59,9 +59,9 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all deployments are available
-	err = cc.launchingCheckDeployments(c)
+	changedC, err = cc.launchingCheckDeployments(c)
 	if err != nil {
-		return nil, err
+		return changedC, err
 	}
 
 	err = cc.launchingCheckDefaultPlugins(c)
@@ -256,19 +256,6 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error){
-		"etcd":               resources.LoadDeploymentFile,
-		"etcd-public":        resources.LoadDeploymentFile,
-		"apiserver":          resources.LoadApiserver,
-		"controller-manager": resources.LoadDeploymentFile,
-		"scheduler":          resources.LoadDeploymentFile,
-	}
-
-	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
-	if err != nil {
-		return nil, err
-	}
-
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
@@ -278,10 +265,23 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 		c.Status.Phase = api.FailedClusterStatusPhase
 		glog.Warningf("Unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
 		cc.recordClusterEvent(c, "launching", "Failed to create new cluster %q due to unknown master version %q", c.Metadata.Name, c.Spec.MasterVersion)
-		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion))
+		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
 	}
 
-	for s, gen := range deps {
+	deps := map[string]string{
+		"etcd":               masterVersion.EtcdDeploymentYaml,
+		"etcd-public":        masterVersion.EtcdPublicDeploymentYaml,
+		"apiserver":          masterVersion.ApiserverDeploymentYaml,
+		"controller-manager": masterVersion.ControllerDeploymentYaml,
+		"scheduler":          masterVersion.SchedulerDeploymentYaml,
+	}
+
+	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
+	if err != nil {
+		return nil, err
+	}
+
+	for s, yamlFile := range deps {
 		exists := false
 		for _, obj := range existingDeps {
 			dep := obj.(*extensionsv1beta1.Deployment)
@@ -295,7 +295,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 			continue
 		}
 
-		dep, err := gen(c, masterVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc, yamlFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}

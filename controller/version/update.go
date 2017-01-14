@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io/ioutil"
 	"os"
-	"errors"
 
 	yaml "gopkg.in/yaml.v2"
 

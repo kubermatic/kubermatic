@@ -1,5 +1,5 @@
-hash: ccc4d92ae4995fba0e58d5a3680059cd218d858a02f2bde8fa7a656470c9ebe5
-updated: 2016-12-20T10:55:37.285886782+01:00
+hash: faa20266a1e9b7a22ed876e4a61b7d9243b804271b22f7597cb8574d7f0f904a
+updated: 2017-01-14T16:39:37.919774881+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -9,7 +9,7 @@ imports:
 - name: github.com/aokoli/goutils
   version: 9c37978a95bd5c709a15883b6242714ea6709e64
 - name: github.com/auth0/go-jwt-middleware
-  version: 731fd2f34fda4c4a7c22816f2167e2d310cb1e42
+  version: f3f7de3b9e394e3af3b88e1b9457f6f71d1ae0ac
 - name: github.com/aws/aws-sdk-go
   version: c924893c38ecc04b18d7aab8a7aa561cb8b4c4cc
   subpackages:
@@ -26,14 +26,15 @@ imports:
   - aws/request
   - aws/session
   - private/endpoints
-  - private/protocol
   - private/protocol/ec2query
+  - private/protocol/query
   - private/protocol/query/queryutil
   - private/protocol/rest
   - private/protocol/xml/xmlutil
   - private/signer/v4
   - private/waiter
   - service/ec2
+  - service/iam
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
   subpackages:
@@ -41,7 +42,7 @@ imports:
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/cloudflare/cfssl
-  version: db0d0650b6496bfe8061ec56a92edd32d8e75c30
+  version: 6689808d58e76953d878fc623b1298032cf39911
   subpackages:
   - auth
   - certdb
@@ -135,7 +136,7 @@ imports:
 - name: github.com/exponent-io/jsonpath
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/fsnotify/fsnotify
-  version: bd2828f9f176e52d7222e565abb2d338d3f3c103
+  version: f12c6236fe7b5cf6bcf30e5935d08cb079d78334
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
@@ -186,16 +187,18 @@ imports:
   - ptypes/any
   - ptypes/timestamp
 - name: github.com/google/certificate-transparency
-  version: 6e5648d13b43cdde25cc8274b87675230ffefbd6
+  version: 32acc4216ea1f20eca97a1cdbc72b73af9e27d20
   repo: https://github.com/google/certificate-transparency
   subpackages:
   - go
   - go/asn1
   - go/client
+  - go/jsonclient
+  - go/tls
   - go/x509
   - go/x509/pkix
 - name: github.com/google/go-querystring
-  version: 2a60fc2ba6c19de80291203597d752e9ba58e4c0
+  version: 9235644dd9e52eeae6fa48efd539fdc351a0af53
   subpackages:
   - query
 - name: github.com/google/gofuzz
@@ -234,7 +237,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
-  version: 0723e352fa358f9322c938cc2dadda874e9151a9
+  version: 61b492c03cf472e0c6419be5899b8e0dc28b1b88
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -244,20 +247,17 @@ imports:
 - name: github.com/Masterminds/semver
   version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
-  version: 1e60e4ce482a1e2c7b9c9be667535ef152e04300
+  version: 69011c0cd9b4d2e0733c4d9e2c8e2a5a0d0a2f2f
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/mitchellh/mapstructure
-  version: f3009df150dadf309fdee4a54ed65c124afad715
-- name: github.com/mreiferson/go-httpclient
-  version: 63fe23f7434723dc904c901043af07931f293c47
-  repo: https://github.com/mreiferson/go-httpclient
+  version: 740c764bc6149d3f1806231418adb9f52c11bcbf
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
   version: df1e16fde7fc330a0ca68167c23bf7ed6ac31d6d
 - name: github.com/pelletier/go-toml
-  version: 45932ad32dfdd20826f5671da37a5f3ce9f26a8d
+  version: 0049ab3dc4c4c70a9eee23087437b69c0dde2130
 - name: github.com/pkg/errors
   version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pkg/sftp
@@ -276,15 +276,15 @@ imports:
   - mem
   - sftp
 - name: github.com/spf13/cast
-  version: 2580bc98dc0e62908119e4737030cc2fdfc45e4c
+  version: e31f36ffc91a2ba9ddb72a4b6a607ff9b3d3cb63
 - name: github.com/spf13/cobra
-  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+  version: 1dd5ff2e11b6dca62fdcb275eb804b94607d8b06
 - name: github.com/spf13/jwalterweatherman
   version: 33c24e77fb80341fe7130ee7c594256ff08ccc46
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/spf13/viper
-  version: 651d9d916abc3c3d6a91a12549495caba5edffd2
+  version: 5ed0fc31f7f453625df314d8e66b9791e8d13003
 - name: github.com/technosophos/moniker
   version: 9f956786b91d9786ca11aa5be6104542fa911546
 - name: github.com/tent/http-link-go
@@ -294,10 +294,12 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 1f22c0103821b9390939b6776727195525381532
+  version: 9a6f0a01987842989747adff311d80750ba25530
   subpackages:
   - cast5
   - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
   - openpgp
   - openpgp/armor
   - openpgp/clearsign
@@ -310,7 +312,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
+  version: 3f122ce3dbbe488b7e6a8bdb26f41edec852a40b
   subpackages:
   - context
   - context/ctxhttp
@@ -373,7 +375,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/client-go
-  version: 5fe6fc56cb38d04ef4af601a03599c984229dea2
+  version: 24a02a6d7d2c9a21b12a3eb35c71c784e63825f4
   subpackages:
   - discovery
   - kubernetes
@@ -492,7 +494,7 @@ imports:
   - tools/record
   - transport
 - name: k8s.io/helm
-  version: b7b648456ba15d3d190bb84b36a4bc9c41067cf3
+  version: 5cbc48fb305ca4bf68c26eb8d2a7eb363227e973
   subpackages:
   - cmd/helm/downloader
   - cmd/helm/helmpath
@@ -516,7 +518,7 @@ imports:
   - pkg/timeconv
   - pkg/version
 - name: k8s.io/kubernetes
-  version: 5f332aab13e58173f85fd204a2c77731f7a2573f
+  version: b5f9d56cab78ccaad2b726223ba8be5802026f0b
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install

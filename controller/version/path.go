@@ -3,6 +3,7 @@ package version
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/api"
@@ -12,6 +13,7 @@ import (
 type UpdatePathSearch struct {
 	updates []*api.MasterUpdate
 	nodes   map[string]*node
+	matcher Matcher
 }
 
 type node struct {
@@ -36,10 +38,55 @@ func (e *edge) Weight() float64 {
 	return 1.0
 }
 
-func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.MasterUpdate) *UpdatePathSearch {
+type Matcher interface {
+	Match(pattern string, version string) bool
+	Lower(a, b string) bool
+}
+
+type SemverMatcher struct{}
+
+func (m SemverMatcher) Match(pattern string, version string) bool {
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		glog.Warningf("invalid version %q: %v", version, err)
+		return false
+	}
+
+	matches, err := semver.NewConstraint(pattern)
+	if err != nil {
+		glog.Warningf("invalid semver pattern %q: %v", pattern, err)
+		return false
+	}
+
+	return matches.Check(v)
+}
+
+func (m SemverMatcher) Lower(a, b string) bool {
+	v1, err := semver.NewVersion(a)
+	if err != nil {
+		glog.Warningf("invalid version %q: %v", a, err)
+		return false
+	}
+
+	v2, err := semver.NewVersion(b)
+	if err != nil {
+		glog.Warningf("invalid version %q: %v", b, err)
+		return false
+	}
+
+	return v1.Compare(v2) == -1
+}
+
+type EqualityMatcher struct{}
+
+func (m EqualityMatcher) Match(pattern string, version string) bool { return pattern == version }
+func (m EqualityMatcher) Lower(a, b string) bool                    { return a < b }
+
+func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.MasterUpdate, matcher Matcher) *UpdatePathSearch {
 	result := &UpdatePathSearch{
 		updates: updates,
 		nodes:   map[string]*node{},
+		matcher: matcher,
 	}
 
 	for id, v := range versions {
@@ -47,19 +94,29 @@ func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.
 	}
 
 	for _, u := range updates {
-		from, found := result.nodes[u.From]
-		if !found {
-			glog.Warningf("Source version %q not found for update %q -> %q", u.From, u.From, u.To)
-			continue
+		froms := []*node{}
+		for id, v := range result.nodes {
+			if matcher.Match(u.From, id) {
+				froms = append(froms, v)
+			}
 		}
 
-		to, found := result.nodes[u.To]
-		if !found {
-			glog.Warningf("Destination version %q not found for update %q -> %q", u.To, u.From, u.To)
-			continue
+		tos := []*node{}
+		for id, v := range result.nodes {
+			if u.To == id {
+				tos = append(tos, v)
+			}
 		}
 
-		from.edges = append(from.edges, &edge{u, to})
+		for _, from := range froms {
+			for _, to := range tos {
+				if !matcher.Lower(from.version.ID, to.version.ID) {
+					continue
+				}
+
+				from.edges = append(from.edges, &edge{u, to})
+			}
+		}
 	}
 
 	return result
