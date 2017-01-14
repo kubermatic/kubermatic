@@ -7,9 +7,9 @@ import (
 	"github.com/golang/glog"
 
 	k "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/tools/cache"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/resources"
@@ -23,7 +23,7 @@ type Controller struct {
 	DC                  string
 	Versions            map[string]*api.MasterVersion
 	Updates             []api.MasterUpdate
-	DepStore      	    cache.Indexer
+	DepStore            cache.Indexer
 }
 
 func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
@@ -113,5 +113,5 @@ func (u *Controller) waitForDeployments(c *api.Cluster, names []string, fallback
 
 // healthyDep is true if >= 90% of the expected pods are ready
 func healthyDep(dep *v1beta1.Deployment) bool {
-	return float64(*dep.Spec.Replicas - dep.Status.UpdatedReplicas) >= 0.9 * float64(*dep.Spec.Replicas)
+	return float64(*dep.Spec.Replicas-dep.Status.UpdatedReplicas) >= 0.9*float64(*dep.Spec.Replicas)
 }

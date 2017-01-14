@@ -2,15 +2,15 @@ package version
 
 import (
 	"bufio"
+	"errors"
 	"io/ioutil"
 	"os"
-	"errors"
 
-	yaml "gopkg.in/yaml.v2"
 	"github.com/Masterminds/semver"
+	yaml "gopkg.in/yaml.v2"
 
-	"github.com/kubermatic/api"
 	"github.com/golang/glog"
+	"github.com/kubermatic/api"
 )
 
 func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
@@ -50,8 +50,8 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 }
 
 func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterUpdate, error) {
-	type ToUpdate struct{
-		to *semver.Version
+	type ToUpdate struct {
+		to     *semver.Version
 		update *api.MasterUpdate
 	}
 	tos := []*ToUpdate{}
@@ -79,7 +79,7 @@ func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterU
 		}
 		if semverFrom.LessThan(semverTo) {
 			tos = append(tos, &ToUpdate{
-				to: semverTo,
+				to:     semverTo,
 				update: u,
 			})
 		}

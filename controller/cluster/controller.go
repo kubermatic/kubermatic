@@ -9,6 +9,8 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller"
+	"github.com/kubermatic/api/controller/update"
+	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
@@ -26,8 +28,6 @@ import (
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-	"github.com/kubermatic/api/controller/version"
-	"github.com/kubermatic/api/controller/update"
 )
 
 const (
@@ -83,8 +83,8 @@ type clusterController struct {
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
-	cps      map[string]provider.CloudProvider
-	dev      bool
+	cps map[string]provider.CloudProvider
+	dev bool
 
 	updateController      *update.Controller
 	versions              map[string]*api.MasterVersion
@@ -294,13 +294,13 @@ func NewController(
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
 	cc.updateController = &update.Controller{
-		Client: cc.client,
+		Client:              cc.client,
 		MasterResourcesPath: cc.masterResourcesPath,
-		OverwriteHost: cc.overwriteHost,
-		DC: cc.dc,
-		Versions: cc.versions,
-		Updates: cc.updates,
-		DepStore: cc.depStore,
+		OverwriteHost:       cc.overwriteHost,
+		DC:                  cc.dc,
+		Versions:            cc.versions,
+		Updates:             cc.updates,
+		DepStore:            cc.depStore,
 	}
 	automaticUpdates := []*api.MasterUpdate{}
 	for _, u := range cc.updates {
