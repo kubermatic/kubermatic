@@ -8,7 +8,7 @@ import (
 )
 
 func TestPathSearch_Search(t *testing.T) {
-	search := NewPathSearch(
+	search := NewUpdatePathSearch(
 		[]*api.MasterVersion{
 			{
 				ID: "1.5.1",

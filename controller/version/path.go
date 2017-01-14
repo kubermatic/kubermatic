@@ -9,7 +9,7 @@ import (
 	"github.com/kubermatic/api/controller/version/dijkstra"
 )
 
-type PathSearch struct {
+type UpdatePathSearch struct {
 	updates []*api.MasterUpdate
 	nodes   map[string]*node
 }
@@ -36,14 +36,14 @@ func (e *edge) Weight() float64 {
 	return 1.0
 }
 
-func NewPathSearch(versions []*api.MasterVersion, updates []*api.MasterUpdate) *PathSearch {
-	result := &PathSearch{
+func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.MasterUpdate) *UpdatePathSearch {
+	result := &UpdatePathSearch{
 		updates: updates,
 		nodes:   map[string]*node{},
 	}
 
-	for _, v := range versions {
-		result.nodes[v.ID] = &node{version: v}
+	for id, v := range versions {
+		result.nodes[id] = &node{version: v}
 	}
 
 	for _, u := range updates {
@@ -65,7 +65,7 @@ func NewPathSearch(versions []*api.MasterVersion, updates []*api.MasterUpdate) *
 	return result
 }
 
-func (s *PathSearch) Search(from, to string) ([]*api.MasterUpdate, error) {
+func (s *UpdatePathSearch) Search(from, to string) ([]*api.MasterUpdate, error) {
 	fromNode, found := s.nodes[from]
 	if !found {
 		return nil, fmt.Errorf("source version %q not found", from)

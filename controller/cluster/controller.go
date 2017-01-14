@@ -86,10 +86,11 @@ type clusterController struct {
 	cps      map[string]provider.CloudProvider
 	dev      bool
 
-	updateController *update.UpdateController
-	versions map[string]*api.MasterVersion
-	updates  []api.MasterUpdate
-	latestVersion *api.MasterVersion
+	updateController      *update.UpdateController
+	versions              map[string]*api.MasterVersion
+	updates               []api.MasterUpdate
+	defaultMasterVersion  *api.MasterVersion
+	automaticUpdateSearch *version.UpdatePathSearch
 
 	// non-thread safe:
 	mu         sync.Mutex
@@ -127,7 +128,7 @@ func NewController(
 	}
 
 	var err error
-	cc.latestVersion, err = version.LatestVersion(versions)
+	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
 	cc.updateController = &update.UpdateController{
 		Client: cc.client,
 		MasterResourcesPath: cc.masterResourcesPath,
@@ -136,6 +137,13 @@ func NewController(
 		Versions: cc.versions,
 		Updates: cc.updates,
 	}
+	automaticUpdates := []*api.MasterUpdate{}
+	for _, u := range cc.updates {
+		if u.Automatic {
+			automaticUpdates = append(automaticUpdates, u)
+		}
+	}
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates)
 
 	eventBroadcaster := record.NewBroadcaster()
 	cc.recorder = eventBroadcaster.NewRecorder(v1.EventSource{Component: "clustermanager"})

@@ -253,7 +253,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	deps := map[string]func(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc string) (*extensionsv1beta1.Deployment, error){
@@ -266,7 +266,19 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	if c.Spec.MasterVersion == "" {
+		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
+	}
+	masterVersion, found := cc.versions[c.Spec.MasterVersion]
+	if !found {
+		c.Status.LastTransitionTime = time.Now()
+		c.Status.Phase = api.FailedClusterStatusPhase
+		glog.Warningf("Unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		cc.recordClusterEvent(c, "launching", "Failed to create new cluster %q due to unknown master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion))
 	}
 
 	for s, gen := range deps {
@@ -283,20 +295,20 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(c, cc.latestVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
+		dep, err := gen(c, masterVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc)
 		if err != nil {
-			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
-			return fmt.Errorf("failed to create deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {

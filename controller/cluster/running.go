@@ -26,6 +26,10 @@ func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, e
 		glog.V(5).Infof("Cluster %q not healthy: %+v", c.Metadata.Name, c.Status.Health)
 	} else {
 		glog.V(6).Infof("Cluster %q is healthy", c.Metadata.Name)
+
+		if c.Spec.MasterVersion != "" {
+
+		}
 	}
 
 	return nil, nil

@@ -37,9 +37,9 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 	return verMap, nil
 }
 
-func LatestVersion(versions map[string]*api.MasterVersion) (*api.MasterVersion, error) {
+func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVersion, error) {
 	for _, ver := range versions {
-		if ver.Latest {
+		if ver.Default {
 			return ver, nil
 		}
 	}

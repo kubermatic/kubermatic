@@ -40,9 +40,9 @@ func (u *UpdateController) Sync(c *api.Cluster) (*api.Cluster, error) {
 }
 
 func (u *UpdateController) updateEtcd(c *api.Cluster) (*api.Cluster, error) {
-	v, found := u.Versions[c.Spec.TargetMasterVersion]
+	v, found := u.Versions[c.Spec.MasterVersion]
 	if !found {
-		return nil, fmt.Errorf("unknown target master version %q", c.Spec.TargetMasterVersion)
+		return nil, fmt.Errorf("unknown target master version %q", c.Spec.MasterVersion)
 	}
 
 	etcdDep, err := resources.LoadDeploymentFile(c, v, u.MasterResourcesPath, u.OverwriteHost, u.DC)
