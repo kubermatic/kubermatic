@@ -4,7 +4,7 @@
 
 Due to the big dependency tree derived from Kubernetes it is strongly recommended to set up a separate `GOPATH` environment for Kubermatic:
 
-```
+```bash
 $ mkdir $HOME/src/kubermatic
 $ cd $HOME/src/kubermatic
 $ export GOPATH=$PWD
@@ -14,8 +14,14 @@ $ git clone git@github.com:kubermatic/api
 $ git clone git@github.com:kubermatic/config
 $ cd api
 $ ln -s ../config/api/datacenter-secrets.yaml secrets.yaml
-$ cd template
-$ ln -s ../../config/nodes/digitalocean/template/coreos/ coreos
+
+mkdir -p template/coreos
+pushd template/coreos
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/arptables.service arptables.service
+ln -s ../../../config/api/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/floating-ip.service floating-ip.service
+popd
 ```
 
 ## Dependencies

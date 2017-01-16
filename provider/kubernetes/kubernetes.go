@@ -7,6 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"bytes"
+	"strings"
+	"text/template"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
@@ -20,7 +24,6 @@ import (
 	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
-	"strings"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -254,9 +257,14 @@ func (p *kubernetesProvider) ApplyCloudProvider(cluster *api.Cluster, ns *v1.Nam
 		if err != nil {
 			return err
 		}
+
+		if err := p.ensureAWSConfigMapExists(cluster, ns); err != nil {
+			return err
+		}
+
 		container := dep.Spec.Template.Spec.Containers[0]
 		container.Env = append(
-			dep.Spec.Template.Spec.Containers[0].Env,
+			container.Env,
 			v1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID},
 			v1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey},
 			v1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCId},
@@ -264,15 +272,93 @@ func (p *kubernetesProvider) ApplyCloudProvider(cluster *api.Cluster, ns *v1.Nam
 		)
 
 		container.Command = append(
-			dep.Spec.Template.Spec.Containers[0].Command,
+			container.Command,
 			"--cloud-provider=aws",
+			"--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
 		)
+
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			v1.VolumeMount{
+				Name:      "aws-cloud-config",
+				MountPath: "/etc/kubermatic/aws",
+				ReadOnly:  true,
+			},
+		)
+
 		dep.Spec.Template.Spec.Containers[0] = container
+
+		dep.Spec.Template.Spec.Volumes = append(
+			dep.Spec.Template.Spec.Volumes,
+			v1.Volume{
+				Name: "aws-cloud-config",
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "aws-cloud-config",
+						},
+					},
+				},
+			},
+		)
+
 		dep, err = p.client.Deployments(ns.Name).Update(dep)
 		return err
 	}
 
 	return nil
+}
+func (p *kubernetesProvider) ensureAWSConfigMapExists(c *api.Cluster, ns *v1.Namespace) (err error) {
+
+	err = p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
+	if err != nil && !kerrors.IsNotFound(err) {
+		return err
+	}
+
+	conf, err := p.getAWSCloudConfig(c)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(&v1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "aws-cloud-config",
+		},
+		Data: map[string]string{
+			"aws-cloud-config": conf,
+		},
+	})
+	return err
+}
+
+func (p *kubernetesProvider) getAWSCloudConfig(c *api.Cluster) (string, error) {
+	tmpl, err := template.New("cloud-config").Parse(`
+[global]
+zone={{.Zone}}
+kubernetesclustertag={{.Name}}
+disablesecuritygroupingress=false
+disablestrictzonecheck=true
+
+`)
+	if err != nil {
+		return "", err
+	}
+
+	var config bytes.Buffer
+
+	vars := &struct {
+		Name string
+		Zone string
+	}{
+		Name: c.Metadata.Name,
+		Zone: c.Spec.Cloud.AWS.AvailabilityZone,
+	}
+	err = tmpl.Execute(&config, vars)
+	if err != nil {
+		return "", err
+	}
+
+	return config.String(), nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
