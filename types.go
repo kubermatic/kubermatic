@@ -337,8 +337,8 @@ type AWSDatacenterSpec struct {
 	Region string `json:"region"`
 }
 
-// BareMetalSpec specifies a generic bare metal datacenter.
-type BareMetalSpec struct {
+// BareMetalDatacenterSpec specifies a generic bare metal datacenter.
+type BareMetalDatacenterSpec struct {
 }
 
 // DatacenterSpec specifies the data for a datacenter.
@@ -349,7 +349,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
-	BareMetal    *BareMetalSpec               `json:"bare_metal,omitempty"`
+	BareMetal    *BareMetalDatacenterSpec     `json:"bare_metal,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
