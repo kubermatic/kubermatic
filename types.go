@@ -39,6 +39,14 @@ type DigitaloceanNodeSpec struct {
 type BringYourOwnNodeSpec struct {
 }
 
+// BareMetalNodeSpec specifies a node instanciated by the bare-metal-provider
+type BareMetalNodeSpec struct {
+	ID     string `json:"id"`
+	Memory int    `json:"memory"`
+	Space  int    `json:"space"`
+	CPUs   []CPU  `json:"cpus"`
+}
+
 // FakeNodeSpec specifies a fake node.
 type FakeNodeSpec struct {
 	Type string `json:"type"`
@@ -59,6 +67,7 @@ type NodeSpec struct {
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
+	BareMetal    *BareMetalNodeSpec    `json:"bare_metal,omitempty"`
 }
 
 // NodeStatus stores status informations about a node.
@@ -114,6 +123,13 @@ type BringYourOwnCloudSpec struct {
 	ClientKeyCert KeyCert `json:"clientKeyCert"`
 }
 
+// BareMetalCloudSpec specifies access to a bare metal datacenter
+type BareMetalCloudSpec struct {
+	Name         string `json:"name"`
+	ApiServerUrl string `json:"apiserver_url"`
+	KubeConfig   string `json:"kube_config"`
+}
+
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
@@ -143,6 +159,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
+	BareMetal    *BareMetalCloudSpec    `json:"bare_metal,omitempty"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -200,6 +217,11 @@ type KeyCert struct {
 type SecretKeyCert struct {
 	Key  Bytes `json:"-"`
 	Cert Bytes `json:"cert"`
+}
+
+type CPU struct {
+	Cores     int     `json:"cores"`
+	Frequency float64 `json:"frequency"`
 }
 
 // ClusterStatus stores status information about a cluster.
@@ -315,6 +337,10 @@ type AWSDatacenterSpec struct {
 	Region string `json:"region"`
 }
 
+// BareMetalSpec specifies a generic bare metal datacenter.
+type BareMetalSpec struct {
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Country      string                       `json:"country,omitempty"`
@@ -323,6 +349,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
+	BareMetal    *BareMetalSpec               `json:"bare_metal,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
