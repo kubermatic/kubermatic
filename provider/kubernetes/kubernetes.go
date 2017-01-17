@@ -332,10 +332,12 @@ func (p *kubernetesProvider) ensureAWSConfigMapExists(c *api.Cluster, ns *v1.Nam
 }
 
 func (p *kubernetesProvider) getAWSCloudConfig(c *api.Cluster) (string, error) {
+	// KubernetesClusterTag needs to be empty for AWS to find the correct subnets. Otherwise the kubernetes
+	// cloud provider would filter for the tag which currently isn't set
 	tmpl, err := template.New("cloud-config").Parse(`
 [global]
 zone={{.Zone}}
-kubernetesclustertag={{.Name}}
+kubernetesclustertag=
 disablesecuritygroupingress=false
 disablestrictzonecheck=true
 
@@ -347,10 +349,8 @@ disablestrictzonecheck=true
 	var config bytes.Buffer
 
 	vars := &struct {
-		Name string
 		Zone string
 	}{
-		Name: c.Metadata.Name,
 		Zone: c.Spec.Cloud.AWS.AvailabilityZone,
 	}
 	err = tmpl.Execute(&config, vars)
