@@ -9,6 +9,8 @@ import (
 
 	"strings"
 
+	"bytes"
+
 	"github.com/kubermatic/api"
 	"golang.org/x/net/context"
 )
@@ -32,8 +34,46 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	panic("implement me")
 }
 
-func (*baremetal) CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error) {
-	panic("implement me")
+func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
+	url := path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", cl.Metadata.Name))
+	var nodes []*api.Node
+	data, err := json.Marshal(struct {
+		Number int `json:"number"`
+	}{num})
+	if err != nil {
+		return nodes, err
+	}
+
+	resp, err := http.Post(url, appJSON, bytes.NewReader(data))
+	if err != nil {
+		return nodes, err
+	}
+
+	var createdNodes []api.BareMetalNodeSpec
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(resp.Body)
+	if err != nil {
+		return nodes, err
+	}
+	for _, n := range createdNodes {
+		createdNode := &api.Node{
+			Metadata: api.Metadata{
+				UID:  n.ID,
+				Name: n.ID,
+			},
+			Status: api.NodeStatus{
+				Addresses: map[string]string{
+					"public": n.RemoteAddress,
+				},
+			},
+			Spec: api.NodeSpec{
+				DatacenterName: cl.Spec.Cloud.DatacenterName,
+				BareMetal:      &n,
+			},
+		}
+		nodes = append(nodes, createdNode)
+	}
+	return nodes, nil
 }
 
 func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error) {
