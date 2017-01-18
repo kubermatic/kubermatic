@@ -106,6 +106,7 @@ type AWSCloudSpec struct {
 	PolicyName          string      `json:"policy"`
 	InstanceProfileName string      `json:"instance_profile_name"`
 	AvailabilityZone    string      `json:"availability_zone"`
+	SecurityGroupID     string      `json:"security_group_id"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
