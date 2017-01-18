@@ -179,8 +179,9 @@ func addRoute(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.Ro
 
 func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGroup, error) {
 	csgOut, err := svc.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-		VpcId:     vpc.VpcId,
-		GroupName: sdk.String(name),
+		VpcId:       vpc.VpcId,
+		GroupName:   sdk.String(name),
+		Description: sdk.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
 	})
 	if err != nil {
 		return nil, err
