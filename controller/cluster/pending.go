@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -58,6 +59,11 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 
 	// check that all deployments are available
 	err = cc.launchingCheckDeployments(c)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cc.launchingCheckDefaultPlugins(c)
 	if err != nil {
 		return nil, err
 	}
@@ -323,6 +329,44 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created pvc %q", s)
+	}
+
+	return nil
+}
+
+func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	defaultPlugins := map[string]string{
+		"heapster":            "heapster",
+		"kubedns":             "kubedns",
+		"kubeproxy":           "kube-proxy",
+		"kubernetesdashboard": "kubernetes-dashboard",
+	}
+
+	for safeName, name := range defaultPlugins {
+		metaName := fmt.Sprintf("addon-default-%s", safeName)
+		_, exists, err := cc.addonStore.GetByKey(fmt.Sprintf("%s/%s", ns, metaName))
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			glog.V(6).Infof("Skipping already existing default addon %q", metaName)
+			continue
+		}
+
+		addon := &extensions.ClusterAddon{
+			Metadata: v1.ObjectMeta{
+				Name: metaName,
+			},
+			Name:  name,
+			Phase: extensions.PendingAddonStatusPhase,
+		}
+
+		_, err = cc.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(addon)
+		if err != nil {
+			return fmt.Errorf("failed to create default addon third-party-resource %s; %v", name, err)
+		}
 	}
 
 	return nil

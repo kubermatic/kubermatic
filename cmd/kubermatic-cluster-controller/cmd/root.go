@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost, addonResources string
 var dev bool
 var viperWhiteList = []string{
 	"v",
@@ -103,7 +103,15 @@ var RootCmd = &cobra.Command{
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
-				ctx, client, tprClient, cps, viper.GetString("master-resources"), viper.GetString("external-url"), viper.GetBool("dev"), viper.GetString("overwrite-host"),
+				ctx,
+				client,
+				tprClient,
+				cps,
+				viper.GetString("master-resources"),
+				viper.GetString("external-url"),
+				viper.GetBool("dev"),
+				viper.GetString("overwrite-host"),
+				viper.GetString("addon-resources"),
 			)
 			if err != nil {
 				log.Fatal(err)
@@ -134,6 +142,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
 	RootCmd.PersistentFlags().StringVar(&overwriteHost, "overwrite-host", "", "If set it will not do a hostlookup and will force the given host on all clustes. This is mostly used to run one static cluster.")
+	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {

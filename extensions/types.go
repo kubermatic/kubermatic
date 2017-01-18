@@ -58,11 +58,11 @@ const (
 	// PendingAddonStatusPhase means that the cluster controller hasn't picked the addon up
 	PendingAddonStatusPhase AddonPhase = "Pending"
 
+	// InstallingAddonStatusPhase means that the cluster controller has picked the addon up
+	InstallingAddonStatusPhase AddonPhase = "Installing"
+
 	// FailedAddonStatusPhase means that the cluster controller failed to install the add on
 	FailedAddonStatusPhase AddonPhase = "Failed"
-
-	// DeletingAddonStatusPhase means that the add on should be deleted by the cluster controller
-	DeletingAddonStatusPhase AddonPhase = "Deleting"
 
 	// RunningAddonStatusPhase means that the add on is up and running
 	RunningAddonStatusPhase AddonPhase = "Running"
@@ -73,7 +73,6 @@ type ClusterAddon struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 	Name            string           `json:"name"`
-	DC              string           `json:"dc"`
 	Phase           AddonPhase       `json:"phase"`
 	Version         int32
 	Deployed        time.Time

@@ -1,0 +1,15 @@
+# Default values for kubedash.
+# This is a YAML-formatted file.
+replicas: 1
+version: v1.2.0
+app_name: heapster
+image: gcr.io/google_containers/heapster
+metrics_cpu: 80m
+metrics_memory: 140Mi
+nanny_memory: 90Mi
+base_metrics_cpu: 80m
+metrics_cpu_per_node: 0.5m
+base_metrics_memory: 140Mi
+metrics_memory_per_node: 4Mi
+heapster_nanny_image: gcr.io/google_containers/addon-resizer
+heapster_nanny_version: 1.6

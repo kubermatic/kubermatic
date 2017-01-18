@@ -327,7 +327,7 @@ func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, 
 	req.cluster = mux.Vars(r)["cluster"]
 
 	var addon struct {
-		Name string `json:"addonName"`
+		Name string `json:"name"`
 	}
 
 	if err = json.NewDecoder(r.Body).Decode(&addon); err != nil {

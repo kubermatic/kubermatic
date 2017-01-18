@@ -1,0 +1,4 @@
+# Default values for kubedash.
+# This is a YAML-formatted file.
+replicas: 1
+dashboard_image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.0

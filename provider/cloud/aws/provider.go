@@ -38,6 +38,7 @@ const (
 	roleNameKey                  = "role-name"
 	instanceProfileNameKey       = "instance-profile-name"
 	policyNameKey                = "policy-name"
+	availabilityZoneKey          = "availability-zone"
 )
 
 const (
@@ -67,6 +68,24 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	}
 }
 
+func getDefaultVpc(svc *ec2.EC2) (*ec2.Vpc, error) {
+	vpcOut, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("isDefault"), Values: []*string{sdk.String("true")}},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(vpcOut.Vpcs) != 1 {
+		return nil, errors.New("unable not find default vpc")
+	}
+
+	return vpcOut.Vpcs[0], nil
+}
+
 func createVpc(svc *ec2.EC2) (*ec2.Vpc, error) {
 	vReq := &ec2.CreateVpcInput{
 		CidrBlock:       sdk.String(VPCCidrBlock),
@@ -78,6 +97,28 @@ func createVpc(svc *ec2.EC2) (*ec2.Vpc, error) {
 	}
 
 	return vpcOut.Vpc, nil
+}
+
+func getDefaultSubnet(svc *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
+	sOut, err := svc.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: sdk.String("availability-zone"), Values: []*string{sdk.String(zone)},
+			},
+			{
+				Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sOut.Subnets) != 1 {
+		return nil, errors.New("unable not find default subnet")
+	}
+
+	return sOut.Subnets[0], nil
 }
 
 func createSubnet(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.Subnet, error) {
@@ -205,9 +246,9 @@ func getACL(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
 	return aOut.NetworkAcls[0], nil
 }
 
-func createTags(svc *ec2.EC2, cluster *api.Cluster, vpc *ec2.Vpc, gateway *ec2.InternetGateway, subnet *ec2.Subnet, routeTable *ec2.RouteTable, securityGroup *ec2.SecurityGroup, acl *ec2.NetworkAcl) error {
+func createTags(svc *ec2.EC2, cluster *api.Cluster, resources []*string) error {
 	_, err := svc.CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{vpc.VpcId, subnet.SubnetId, gateway.InternetGatewayId, routeTable.RouteTableId, securityGroup.GroupId, acl.NetworkAclId},
+		Resources: resources,
 		Tags: []*ec2.Tag{
 			{
 				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
@@ -243,9 +284,7 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.
 	{
 	    "Effect": "Allow",
 	    "Action": [
-		"ec2:Describe*",
-		"ec2:AttachVolume",
-		"ec2:DetachVolume",
+		"ec2:*",
 		"route53:*",
 		"ecr:GetAuthorizationToken",
 		"ecr:BatchCheckLayerAvailability",
@@ -314,7 +353,50 @@ func createInstanceProfile(svc *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.
 	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, err
 }
 
-func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
+func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
+	if cluster.Spec.Cloud.AWS.VPCId != "" {
+		return nil
+	}
+
+	svc, err := a.getEC2client(cluster)
+	if err != nil {
+		return err
+	}
+
+	vpc, err := getDefaultVpc(svc)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
+
+	dc, ok := a.datacenters[cluster.Spec.Cloud.DatacenterName]
+	if !ok {
+		return fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
+	}
+	subnet, err := getDefaultSubnet(svc, vpc, dc.Spec.AWS.Zone)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
+	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
+
+	svcIAM, err := a.getIAMclient(cluster)
+	if err != nil {
+		return err
+	}
+
+	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
+	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+
+	return nil
+}
+
+func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 	if cluster.Spec.Cloud.AWS.VPCId != "" {
 		return nil
 	}
@@ -335,6 +417,7 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
+	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
 	gateway, err := createInternetGateway(svc, vpc)
 	if err != nil {
@@ -358,7 +441,7 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 		return err
 	}
 
-	err = createTags(svc, cluster, vpc, gateway, subnet, routeTable, securityGroup, acl)
+	err = createTags(svc, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroup.GroupId, acl.NetworkAclId})
 	if err != nil {
 		return err
 	}
@@ -379,6 +462,18 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	return nil
 }
 
+func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
+	glog.Infof("using init cloud spec mode: %s", cluster.Spec.Cloud.AWS.InitMode)
+	switch cluster.Spec.Cloud.AWS.InitMode {
+	case api.AWSInitUseDefaults:
+		return a.InitializeCloudSpecWithDefault(cluster)
+	case api.AWSInitCreateVpc:
+		return a.InitializeCloudSpecWithCreate(cluster)
+	default:
+		return a.InitializeCloudSpecWithDefault(cluster)
+	}
+}
+
 func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 	return map[string]string{
 		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
@@ -391,6 +486,7 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		roleNameKey:                  cs.AWS.RoleName,
 		instanceProfileNameKey:       cs.AWS.InstanceProfileName,
 		policyNameKey:                cs.AWS.PolicyName,
+		availabilityZoneKey:          cs.AWS.AvailabilityZone,
 	}, nil
 }
 
@@ -437,6 +533,10 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 
 	if spec.AWS.PolicyName, ok = annotations[policyNameKey]; !ok {
 		return nil, errors.New("no policy name found")
+	}
+
+	if spec.AWS.AvailabilityZone, ok = annotations[availabilityZoneKey]; !ok {
+		return nil, errors.New("no availability zone found")
 	}
 
 	return spec, nil
@@ -561,17 +661,13 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 	for _, n := range resp.Reservations {
 		for _, instance := range n.Instances {
 			var isOwner bool
-			var name string
 			for _, tag := range instance.Tags {
 				if *tag.Key == defaultKubermaticClusterIDTagKey && *tag.Value == cluster.Metadata.UID {
 					isOwner = true
 				}
-				if *tag.Key == awsFilterName {
-					name = *tag.Value
-				}
 			}
 			if isOwner {
-				nodes = append(nodes, createNode(name, instance))
+				nodes = append(nodes, createNode(instance))
 			}
 		}
 	}
@@ -627,7 +723,7 @@ func (a *aws) getIAMclient(cluster *api.Cluster) (*iam.IAM, error) {
 	return iam.New(sess), nil
 }
 
-func createNode(name string, instance *ec2.Instance) *api.Node {
+func createNode(instance *ec2.Instance) *api.Node {
 
 	privateIP := ""
 	publicIP := ""
@@ -642,7 +738,7 @@ func createNode(name string, instance *ec2.Instance) *api.Node {
 	return &api.Node{
 		Metadata: api.Metadata{
 			UID:  *instance.InstanceId,
-			Name: name,
+			Name: *instance.PrivateDnsName,
 		},
 		Status: api.NodeStatus{
 			Addresses: map[string]string{
@@ -697,7 +793,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		return nil, err
 	}
 
-	return createNode(name, serverReq.Instances[0]), nil
+	return createNode(serverReq.Instances[0]), nil
 }
 
 func (a *aws) doCleanUpAWS(c *api.Cluster) error {
@@ -706,7 +802,7 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 		return err
 	}
 
-	// alive tests for living instaces
+	// alive tests for living instances
 	alive := func() (bool, error) {
 		resp, err := svc.DescribeInstances(&ec2.DescribeInstancesInput{
 			Filters: []*ec2.Filter{{
@@ -749,49 +845,51 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 		time.Sleep(time.Second * 45)
 	}
 
-	if c.Spec.Cloud.AWS.RouteTableID != "" {
-		_, err = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
-			RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
-		})
-		if err != nil {
-			glog.V(2).Infof("Failed to delete RouteTable %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RouteTableID, c.Metadata.Name, err)
+	if c.Spec.Cloud.AWS.InitMode == api.AWSInitCreateVpc {
+		if c.Spec.Cloud.AWS.RouteTableID != "" {
+			_, err = svc.DeleteRouteTable(&ec2.DeleteRouteTableInput{
+				RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
+			})
+			if err != nil {
+				glog.V(2).Infof("Failed to delete RouteTable %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RouteTableID, c.Metadata.Name, err)
+			}
 		}
-	}
 
-	if c.Spec.Cloud.AWS.InternetGatewayID != "" && c.Spec.Cloud.AWS.VPCId != "" {
-		_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
-			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
-			VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
-		})
-		if err != nil {
-			glog.V(2).Infof("Failed to detach InternetGateway %s from VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		if c.Spec.Cloud.AWS.InternetGatewayID != "" && c.Spec.Cloud.AWS.VPCId != "" {
+			_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+				InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
+				VpcId:             sdk.String(c.Spec.Cloud.AWS.VPCId),
+			})
+			if err != nil {
+				glog.V(2).Infof("Failed to detach InternetGateway %s from VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+			}
 		}
-	}
 
-	if c.Spec.Cloud.AWS.SubnetID != "" {
-		_, err = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
-			SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
-		})
-		if err != nil {
-			glog.V(2).Infof("Failed to delete Subnet %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SubnetID, c.Metadata.Name, err)
+		if c.Spec.Cloud.AWS.SubnetID != "" {
+			_, err = svc.DeleteSubnet(&ec2.DeleteSubnetInput{
+				SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
+			})
+			if err != nil {
+				glog.V(2).Infof("Failed to delete Subnet %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SubnetID, c.Metadata.Name, err)
+			}
 		}
-	}
 
-	if c.Spec.Cloud.AWS.InternetGatewayID != "" {
-		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
-			InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
-		})
-		if err != nil {
-			glog.V(2).Infof("Failed to delete InternetGateway %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Metadata.Name, err)
+		if c.Spec.Cloud.AWS.InternetGatewayID != "" {
+			_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+				InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
+			})
+			if err != nil {
+				glog.V(2).Infof("Failed to delete InternetGateway %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Metadata.Name, err)
+			}
 		}
-	}
 
-	if c.Spec.Cloud.AWS.VPCId != "" {
-		_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
-			VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
-		})
-		if err != nil {
-			glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+		if c.Spec.Cloud.AWS.VPCId != "" {
+			_, err = svc.DeleteVpc(&ec2.DeleteVpcInput{
+				VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
+			})
+			if err != nil {
+				glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
+			}
 		}
 	}
 

@@ -38,6 +38,9 @@ check: gofmt gometalinter
 clean:
 	rm -f $(CMD)
 
+install:
+	glide install --strip-vendor
+
 docker: $(CMD)
 	@if [ "$$GOOS" != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
 	docker build -t $(REPO) .

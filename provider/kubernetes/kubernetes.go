@@ -7,6 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"bytes"
+	"strings"
+	"text/template"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
@@ -210,12 +214,20 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = prov.InitializeCloudSpec(c)
 		if err != nil {
+			return nil, err
+		}
+
+		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
 				provName,
 				c.Metadata.Name,
 				err,
 			)
+		}
+		err = p.ApplyCloudProvider(c, ns)
+		if err != nil {
+			return nil, err
 		}
 
 		ns, err = MarshalCluster(p.cps, c, ns)
@@ -237,6 +249,116 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 	}
 	return nil, err
+}
+
+func (p *kubernetesProvider) ApplyCloudProvider(cluster *api.Cluster, ns *v1.Namespace) error {
+	if cluster.Spec.Cloud.GetAWS() != nil {
+		dep, err := p.client.Deployments(ns.Name).Get("controller-manager-v1", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		if err := p.ensureAWSConfigMapExists(cluster, ns); err != nil {
+			return err
+		}
+
+		container := dep.Spec.Template.Spec.Containers[0]
+		container.Env = append(
+			container.Env,
+			v1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID},
+			v1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey},
+			v1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCId},
+			v1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone},
+		)
+
+		container.Command = append(
+			container.Command,
+			"--cloud-provider=aws",
+			"--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
+		)
+
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			v1.VolumeMount{
+				Name:      "aws-cloud-config",
+				MountPath: "/etc/kubermatic/aws",
+				ReadOnly:  true,
+			},
+		)
+
+		dep.Spec.Template.Spec.Containers[0] = container
+
+		dep.Spec.Template.Spec.Volumes = append(
+			dep.Spec.Template.Spec.Volumes,
+			v1.Volume{
+				Name: "aws-cloud-config",
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "aws-cloud-config",
+						},
+					},
+				},
+			},
+		)
+
+		dep, err = p.client.Deployments(ns.Name).Update(dep)
+		return err
+	}
+
+	return nil
+}
+func (p *kubernetesProvider) ensureAWSConfigMapExists(c *api.Cluster, ns *v1.Namespace) (err error) {
+
+	err = p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
+	if err != nil && !kerrors.IsNotFound(err) {
+		return err
+	}
+
+	conf, err := p.getAWSCloudConfig(c)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(&v1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "aws-cloud-config",
+		},
+		Data: map[string]string{
+			"aws-cloud-config": conf,
+		},
+	})
+	return err
+}
+
+func (p *kubernetesProvider) getAWSCloudConfig(c *api.Cluster) (string, error) {
+	// KubernetesClusterTag needs to be empty for AWS to find the correct subnets. Otherwise the kubernetes
+	// cloud provider would filter for the tag which currently isn't set
+	tmpl, err := template.New("cloud-config").Parse(`
+[global]
+zone={{.Zone}}
+kubernetesclustertag=
+disablesecuritygroupingress=false
+disablestrictzonecheck=true
+
+`)
+	if err != nil {
+		return "", err
+	}
+
+	var config bytes.Buffer
+
+	vars := &struct {
+		Zone string
+	}{
+		Zone: c.Spec.Cloud.AWS.AvailabilityZone,
+	}
+	err = tmpl.Execute(&config, vars)
+	if err != nil {
+		return "", err
+	}
+
+	return config.String(), nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
@@ -296,10 +418,9 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	// Create an instance of our TPR
 	addon := &extensions.ClusterAddon{
 		Metadata: v1.ObjectMeta{
-			Name: fmt.Sprintf("addon-%s-%s", addonName, rand.String(4)),
+			Name: fmt.Sprintf("addon-%s-%s", strings.Replace(addonName, "/", "", -1), rand.String(4)),
 		},
 		Name:  addonName,
-		DC:    cluster,
 		Phase: extensions.PendingAddonStatusPhase,
 	}
 
