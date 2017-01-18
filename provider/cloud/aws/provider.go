@@ -376,11 +376,11 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
-	securityGroupId, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
+	securityGroupID, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupId
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 
 	svcIAM, err := a.getIAMclient(cluster)
 	if err != nil {
@@ -433,18 +433,18 @@ func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 	}
 	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 
-	securityGroupId, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
+	securityGroupID, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupId
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 
 	acl, err := getACL(svc, vpc)
 	if err != nil {
 		return err
 	}
 
-	err = createTags(svc, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroupId, acl.NetworkAclId})
+	err = createTags(svc, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroupID, acl.NetworkAclId})
 	if err != nil {
 		return err
 	}
