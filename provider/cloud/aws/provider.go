@@ -39,6 +39,7 @@ const (
 	instanceProfileNameKey       = "instance-profile-name"
 	policyNameKey                = "policy-name"
 	availabilityZoneKey          = "availability-zone"
+	securityGroupIDKey           = "security-group-id-Key"
 )
 
 const (
@@ -176,20 +177,25 @@ func addRoute(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.Ro
 	return rtOut.RouteTables[0], nil
 }
 
-func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
+func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGroup, error) {
+	csgOut, err := svc.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
+		VpcId:     vpc.VpcId,
+		GroupName: sdk.String(name),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	sgOut, err := svc.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
-			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
+			{Name: sdk.String("group-id"), Values: []*string{csgOut.GroupId}},
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(sgOut.SecurityGroups) != 1 {
-		return nil, errors.New("Could not find main SecurityGroup")
-	}
-
+	// Allow SSH from everywhere
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		CidrIp:     sdk.String("0.0.0.0/0"),
 		FromPort:   sdk.Int64(22),
@@ -197,11 +203,11 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 		GroupId:    sgOut.SecurityGroups[0].GroupId,
 		IpProtocol: sdk.String("tcp"),
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
+	// Allow UDP within the security group
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
 		FromPort:                sdk.Int64(0),
@@ -209,19 +215,18 @@ func addSecurityRule(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.SecurityGroup, error) {
 		GroupId:                 sgOut.SecurityGroups[0].GroupId,
 		IpProtocol:              sdk.String("udp"),
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
+	// Allow ICMP within the security group
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
 		GroupId:                 sgOut.SecurityGroups[0].GroupId,
-		FromPort:                sdk.Int64(0),
-		ToPort:                  sdk.Int64(254),
+		FromPort:                sdk.Int64(-1),
+		ToPort:                  sdk.Int64(-1),
 		IpProtocol:              sdk.String("icmp"),
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +385,12 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
+	securityGroup, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
+	if err != nil {
+		return err
+	}
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroup.GroupId
+
 	svcIAM, err := a.getIAMclient(cluster)
 	if err != nil {
 		return err
@@ -431,10 +442,11 @@ func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 	}
 	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 
-	securityGroup, err := addSecurityRule(svc, vpc)
+	securityGroup, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
 	if err != nil {
 		return err
 	}
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroup.GroupId
 
 	acl, err := getACL(svc, vpc)
 	if err != nil {
@@ -487,6 +499,7 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		instanceProfileNameKey:       cs.AWS.InstanceProfileName,
 		policyNameKey:                cs.AWS.PolicyName,
 		availabilityZoneKey:          cs.AWS.AvailabilityZone,
+		securityGroupIDKey:           cs.AWS.SecurityGroupID,
 	}, nil
 }
 
@@ -538,6 +551,7 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 	if spec.AWS.AvailabilityZone, ok = annotations[availabilityZoneKey]; !ok {
 		return nil, errors.New("no availability zone found")
 	}
+	spec.AWS.SecurityGroupID, _ = annotations[securityGroupIDKey]
 
 	return spec, nil
 }
@@ -843,6 +857,15 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 			break
 		}
 		time.Sleep(time.Second * 45)
+	}
+
+	if c.Spec.Cloud.AWS.SecurityGroupID != "" {
+		_, err := svc.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
+			GroupId: sdk.String(c.Spec.Cloud.AWS.SecurityGroupID),
+		})
+		if err != nil {
+			glog.V(2).Infof("Failed to delete security group %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SecurityGroupID, c.Metadata.Name, err)
+		}
 	}
 
 	if c.Spec.Cloud.AWS.InitMode == api.AWSInitCreateVpc {
