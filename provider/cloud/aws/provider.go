@@ -39,7 +39,7 @@ const (
 	instanceProfileNameKey       = "instance-profile-name"
 	policyNameKey                = "policy-name"
 	availabilityZoneKey          = "availability-zone"
-	securityGroupIDKey           = "security-group-id-Key"
+	securityGroupIDKey           = "custom-security-group-id-Key"
 )
 
 const (
@@ -177,20 +177,12 @@ func addRoute(svc *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.Ro
 	return rtOut.RouteTables[0], nil
 }
 
-func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGroup, error) {
+func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*string, error) {
+	newSecurityGroupName := fmt.Sprintf("kubermatic-%s", name)
 	csgOut, err := svc.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       vpc.VpcId,
-		GroupName:   sdk.String(name),
+		GroupName:   sdk.String(newSecurityGroupName),
 		Description: sdk.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	sgOut, err := svc.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		Filters: []*ec2.Filter{
-			{Name: sdk.String("group-id"), Values: []*string{csgOut.GroupId}},
-		},
 	})
 	if err != nil {
 		return nil, err
@@ -201,7 +193,7 @@ func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGro
 		CidrIp:     sdk.String("0.0.0.0/0"),
 		FromPort:   sdk.Int64(22),
 		ToPort:     sdk.Int64(22),
-		GroupId:    sgOut.SecurityGroups[0].GroupId,
+		GroupId:    csgOut.GroupId,
 		IpProtocol: sdk.String("tcp"),
 	})
 	if err != nil {
@@ -210,11 +202,10 @@ func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGro
 
 	// Allow UDP within the security group
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
-		FromPort:                sdk.Int64(0),
-		ToPort:                  sdk.Int64(65535),
-		GroupId:                 sgOut.SecurityGroups[0].GroupId,
-		IpProtocol:              sdk.String("udp"),
+		FromPort:   sdk.Int64(0),
+		ToPort:     sdk.Int64(65535),
+		GroupId:    csgOut.GroupId,
+		IpProtocol: sdk.String("udp"),
 	})
 	if err != nil {
 		return nil, err
@@ -222,17 +213,16 @@ func addSecurityGroup(svc *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGro
 
 	// Allow ICMP within the security group
 	_, err = svc.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		SourceSecurityGroupName: sgOut.SecurityGroups[0].GroupName,
-		GroupId:                 sgOut.SecurityGroups[0].GroupId,
-		FromPort:                sdk.Int64(-1),
-		ToPort:                  sdk.Int64(-1),
-		IpProtocol:              sdk.String("icmp"),
+		GroupId:    csgOut.GroupId,
+		FromPort:   sdk.Int64(-1),
+		ToPort:     sdk.Int64(-1),
+		IpProtocol: sdk.String("icmp"),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return sgOut.SecurityGroups[0], nil
+	return csgOut.GroupId, nil
 }
 
 func getACL(svc *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
@@ -386,11 +376,11 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
-	securityGroup, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
+	securityGroupId, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroup.GroupId
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupId
 
 	svcIAM, err := a.getIAMclient(cluster)
 	if err != nil {
@@ -443,18 +433,18 @@ func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 	}
 	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 
-	securityGroup, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
+	securityGroupId, err := addSecurityGroup(svc, vpc, cluster.Metadata.Name)
 	if err != nil {
 		return err
 	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroup.GroupId
+	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupId
 
 	acl, err := getACL(svc, vpc)
 	if err != nil {
 		return err
 	}
 
-	err = createTags(svc, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroup.GroupId, acl.NetworkAclId})
+	err = createTags(svc, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroupId, acl.NetworkAclId})
 	if err != nil {
 		return err
 	}
@@ -808,6 +798,15 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		return nil, err
 	}
 
+	// Change to our security group
+	_, err = client.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
+		InstanceId: serverReq.Instances[0].InstanceId,
+		Groups:     []*string{sdk.String(cluster.Spec.Cloud.AWS.SecurityGroupID)},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return createNode(serverReq.Instances[0]), nil
 }
 
@@ -848,7 +847,7 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 		return false, nil
 	}
 
-	// Wait for nodes to terminatle
+	// Wait for nodes to terminate
 	for {
 		instancesAlive, err := alive()
 		if err != nil {
@@ -861,7 +860,7 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 	}
 
 	if c.Spec.Cloud.AWS.SecurityGroupID != "" {
-		_, err := svc.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
+		_, err = svc.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
 			GroupId: sdk.String(c.Spec.Cloud.AWS.SecurityGroupID),
 		})
 		if err != nil {
