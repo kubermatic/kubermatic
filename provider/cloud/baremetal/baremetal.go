@@ -1,16 +1,15 @@
 package baremetal
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"path"
-
 	"strings"
 
-	"bytes"
-
+	"github.com/ghodss/yaml"
 	"github.com/kubermatic/api"
 	"golang.org/x/net/context"
 )
@@ -22,8 +21,32 @@ const appJSON = "application/json"
 type baremetal struct {
 }
 
-func (*baremetal) InitializeCloudSpec(*api.Cluster) error {
-	panic("implement me")
+func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
+	cfg := cl.GetKubeconfig()
+
+	jcfg, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	ycfg, err := yaml.JSONToYAML(jcfg)
+	if err != nil {
+		return err
+	}
+	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
+		Name:         cl.Metadata.Name,
+		ApiServerUrl: cl.Address.URL,
+		KubeConfig:   string(ycfg),
+	}
+
+	url := path.Join(serviceURL, "/clusters")
+	data, err := json.Marshal(cl.Spec.Cloud.BareMetal)
+	if err != nil {
+		return err
+	}
+
+	http.Post(url, appJSON, bytes.NewReader(data))
+	return nil
 }
 
 func (*baremetal) MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error) {
