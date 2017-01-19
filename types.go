@@ -68,7 +68,7 @@ type NodeSpec struct {
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
-	BareMetal    *BareMetalNodeSpec    `json:"bare_metal,omitempty"`
+	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 }
 
 // NodeStatus stores status informations about a node.
@@ -159,7 +159,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
-	BareMetal    *BareMetalCloudSpec    `json:"bare_metal,omitempty"`
+	BareMetal    *BareMetalCloudSpec    `json:"baremetal,omitempty"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -350,7 +350,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
-	BareMetal    *BareMetalDatacenterSpec     `json:"bare_metal,omitempty"`
+	BareMetal    *BareMetalDatacenterSpec     `json:"baremetal,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
