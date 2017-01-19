@@ -59,7 +59,27 @@ func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]s
 }
 
 func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	panic("implement me")
+	var cl *api.CloudSpec
+
+	url, ok := annotations["apiserver_url"]
+	if !ok {
+		return nil, errors.New("couldn't find key")
+	}
+	cl.BareMetal.ApiServerUrl = url
+
+	name, ok := annotations["name"]
+	if !ok {
+		return nil, errors.New("couldn't find key")
+	}
+	cl.BareMetal.Name = name
+
+	kubeconfig, ok := annotations["kubeconfig"]
+	if !ok {
+		return nil, errors.New("couldn't find key")
+	}
+	cl.BareMetal.KubeConfig = kubeconfig
+
+	return cl, nil
 }
 
 func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
