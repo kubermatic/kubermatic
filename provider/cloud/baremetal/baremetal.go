@@ -15,7 +15,6 @@ import (
 )
 
 const serviceURL = "baremetal-provider.api.svc.cluster.local"
-const uuidSize = 10
 const appJSON = "application/json"
 
 type baremetal struct {
@@ -109,8 +108,8 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 	for _, n := range createdNodes {
 		createdNode := &api.Node{
 			Metadata: api.Metadata{
-				UID:  n.ID,
 				Name: n.ID,
+				UID:  n.ID,
 			},
 			Status: api.NodeStatus{
 				Addresses: map[string]string{
@@ -144,8 +143,8 @@ func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error)
 		uid := strings.Split(b.ID, "-")[2]
 		node := &api.Node{
 			Metadata: api.Metadata{
-				UID:  uid,
 				Name: b.ID,
+				UID:  b.ID,
 			},
 			Status: api.NodeStatus{
 				// TODO(realfake): Probably spec is wrong?
@@ -174,7 +173,7 @@ func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []strin
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("got status code %d from baremetal service"))
+			return fmt.Errorf("got status code %d from baremetal service delting node", resp.Status)
 		}
 	}
 	return nil
@@ -191,7 +190,7 @@ func (b *baremetal) CleanUp(cl *api.Cluster) error {
 		// Node UID name pattern = "%s"
 		// Not shown in the customer dashboard ?
 		// TODO(realfake): Adopt Node UID naming pattern
-		UIDs = append(UIDs, n.Metadata.UID)
+		UIDs = append(UIDs, n.Metadata.Name)
 	}
 	return b.DeleteNodes(context.Background(), cl, UIDs)
 }
