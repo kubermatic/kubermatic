@@ -127,7 +127,7 @@ type BringYourOwnCloudSpec struct {
 // BareMetalCloudSpec specifies access to a bare metal datacenter
 type BareMetalCloudSpec struct {
 	Name         string `json:"name"`
-	ApiServerUrl string `json:"apiserver_url"`
+	ApiServerURL string `json:"apiserver_url"`
 	KubeConfig   string `json:"kube_config"`
 }
 
@@ -220,6 +220,7 @@ type SecretKeyCert struct {
 	Cert Bytes `json:"cert"`
 }
 
+// CPU represents the CPU resources available on a node
 type CPU struct {
 	Cores     int     `json:"cores"`
 	Frequency float64 `json:"frequency"`
