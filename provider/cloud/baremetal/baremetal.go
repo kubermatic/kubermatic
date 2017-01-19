@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path"
 
@@ -70,8 +71,14 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 	if err != nil {
 		return nodes, err
 	}
+
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("error creating node got status %d", resp.StatusCode)
+		var body []byte
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error creating node got status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var createdNodes []api.BareMetalNodeSpec
