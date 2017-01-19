@@ -127,7 +127,7 @@ type BringYourOwnCloudSpec struct {
 // BareMetalCloudSpec specifies access to a bare metal datacenter
 type BareMetalCloudSpec struct {
 	Name         string `json:"name"`
-	ApiServerURL string `json:"apiserver_url"`
+	APIServerURL string `json:"apiserver_url"`
 	KubeConfig   string `json:"kube_config"`
 }
 

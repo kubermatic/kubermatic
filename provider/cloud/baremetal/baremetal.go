@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/ghodss/yaml"
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"golang.org/x/net/context"
 )
@@ -33,7 +34,7 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 	}
 	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
 		Name:         cl.Metadata.Name,
-		ApiServerURL: cl.Address.URL,
+		APIServerURL: cl.Address.URL,
 		KubeConfig:   string(ycfg),
 	}
 
@@ -43,13 +44,16 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 		return err
 	}
 
-	http.Post(url, appJSON, bytes.NewReader(data))
+	_, err = http.Post(url, appJSON, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]string, err error) {
 	annotations = map[string]string{
-		"apiserver_url": cls.BareMetal.ApiServerURL,
+		"apiserver_url": cls.BareMetal.APIServerURL,
 		"name":          cls.BareMetal.Name,
 		"kubeconfig":    cls.BareMetal.KubeConfig,
 	}
@@ -63,7 +67,7 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	if !ok {
 		return nil, errors.New("couldn't find key")
 	}
-	cl.BareMetal.ApiServerURL = url
+	cl.BareMetal.APIServerURL = url
 
 	name, ok := annotations["name"]
 	if !ok {
@@ -99,7 +103,14 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 	}
 
 	var createdNodes []api.BareMetalNodeSpec
-	defer resp.Body.Close()
+
+	defer func(r *http.Response) {
+		err = r.Body.Close()
+		if err != nil {
+			glog.Error(err)
+		}
+	}(resp)
+
 	err = json.NewDecoder(resp.Body).Decode(resp.Body)
 	if err != nil {
 		return nodes, err
