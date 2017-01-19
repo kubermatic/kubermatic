@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"golang.org/x/net/context"
@@ -21,21 +20,8 @@ type baremetal struct {
 }
 
 func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
-	cfg := cl.GetKubeconfig()
-
-	jcfg, err := json.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-
-	ycfg, err := yaml.JSONToYAML(jcfg)
-	if err != nil {
-		return err
-	}
 	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
-		Name:         cl.Metadata.Name,
-		APIServerURL: cl.Address.URL,
-		KubeConfig:   string(ycfg),
+		Name: cl.Metadata.Name,
 	}
 
 	url := path.Join(serviceURL, "/clusters")
@@ -53,9 +39,7 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 
 func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]string, err error) {
 	annotations = map[string]string{
-		"apiserver_url": cls.BareMetal.APIServerURL,
-		"name":          cls.BareMetal.Name,
-		"kubeconfig":    cls.BareMetal.KubeConfig,
+		"name": cls.BareMetal.Name,
 	}
 	return annotations, nil
 }
@@ -63,23 +47,11 @@ func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]s
 func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
 	var cl *api.CloudSpec
 
-	url, ok := annotations["apiserver_url"]
-	if !ok {
-		return nil, errors.New("couldn't find key")
-	}
-	cl.BareMetal.APIServerURL = url
-
 	name, ok := annotations["name"]
 	if !ok {
-		return nil, errors.New("couldn't find key")
+		return nil, errors.New("Couldn't find key 'name' while unmarshalling CloudSpec")
 	}
 	cl.BareMetal.Name = name
-
-	kubeconfig, ok := annotations["kubeconfig"]
-	if !ok {
-		return nil, errors.New("couldn't find key")
-	}
-	cl.BareMetal.KubeConfig = kubeconfig
 
 	return cl, nil
 }
