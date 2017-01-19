@@ -43,11 +43,11 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 	Cluster := struct {
 		Name         string `json:"name"`
 		APIServerURL string `json:"apiserver_url"`
-		KubeConfig   string `json:"kube_config"`
+		Kubeconfig   string `json:"kubeconfig"`
 	}{
 		Name:         cl.Metadata.Name,
 		APIServerURL: cl.Address.URL,
-		KubeConfig:   string(ycfg),
+		Kubeconfig:   string(ycfg),
 	}
 
 	data, err := json.Marshal(Cluster)
