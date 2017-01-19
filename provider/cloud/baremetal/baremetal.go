@@ -96,6 +96,9 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 	if err != nil {
 		return nodes, err
 	}
+	if resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("error creating node got status %d", resp.StatusCode)
+	}
 
 	var createdNodes []api.BareMetalNodeSpec
 	defer resp.Body.Close()
