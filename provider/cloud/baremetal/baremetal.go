@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"golang.org/x/net/context"
@@ -21,12 +22,35 @@ type baremetal struct {
 }
 
 func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
+	cfg := cl.GetKubeconfig()
+
+	jcfg, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	ycfg, err := yaml.JSONToYAML(jcfg)
+	if err != nil {
+		return err
+	}
+
 	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
 		Name: cl.Metadata.Name,
 	}
 
 	url := path.Join(serviceURL, "/clusters")
-	data, err := json.Marshal(cl.Spec.Cloud.BareMetal)
+
+	Cluster := struct {
+		Name         string `json:"name"`
+		APIServerURL string `json:"apiserver_url"`
+		KubeConfig   string `json:"kube_config"`
+	}{
+		Name:         cl.Metadata.Name,
+		APIServerURL: cl.Address.URL,
+		KubeConfig:   string(ycfg),
+	}
+
+	data, err := json.Marshal(Cluster)
 	if err != nil {
 		return err
 	}
