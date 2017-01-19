@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/kubermatic/api"
@@ -34,7 +33,7 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 	}
 	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
 		Name:         cl.Metadata.Name,
-		ApiServerUrl: cl.Address.URL,
+		ApiServerURL: cl.Address.URL,
 		KubeConfig:   string(ycfg),
 	}
 
@@ -50,7 +49,7 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 
 func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]string, err error) {
 	annotations = map[string]string{
-		"apiserver_url": cls.BareMetal.ApiServerUrl,
+		"apiserver_url": cls.BareMetal.ApiServerURL,
 		"name":          cls.BareMetal.Name,
 		"kubeconfig":    cls.BareMetal.KubeConfig,
 	}
@@ -64,7 +63,7 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	if !ok {
 		return nil, errors.New("couldn't find key")
 	}
-	cl.BareMetal.ApiServerUrl = url
+	cl.BareMetal.ApiServerURL = url
 
 	name, ok := annotations["name"]
 	if !ok {
@@ -140,15 +139,13 @@ func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error)
 
 	var nodes []*api.Node
 	for _, b := range bareNodes {
-		uid := strings.Split(b.ID, "-")[2]
+		//uid := strings.Split(b.ID, "-")[2]
 		node := &api.Node{
 			Metadata: api.Metadata{
 				Name: b.ID,
 				UID:  b.ID,
 			},
 			Status: api.NodeStatus{
-				// TODO(realfake): Probably spec is wrong?
-				// Do we need those ?
 				Addresses: map[string]string{},
 			},
 			Spec: api.NodeSpec{
@@ -173,7 +170,7 @@ func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []strin
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("got status code %d from baremetal service delting node", resp.Status)
+			return fmt.Errorf("got status code %s from baremetal service delting node", resp.Status)
 		}
 	}
 	return nil
