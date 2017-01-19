@@ -55,6 +55,14 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/").
 		HandlerFunc(StatusOK)
+	mux.
+		Methods("GET").
+		Path("/healthz").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods("GET").
+		Path("/api/healthz").
+		HandlerFunc(StatusOK)
 
 	mux.
 		Methods("GET").
