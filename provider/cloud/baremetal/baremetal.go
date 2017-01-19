@@ -49,8 +49,13 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 	return nil
 }
 
-func (*baremetal) MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error) {
-	panic("implement me")
+func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]string, err error) {
+	annotations = map[string]string{
+		"apiserver_url": cls.BareMetal.ApiServerUrl,
+		"name":          cls.BareMetal.Name,
+		"kubeconfig":    cls.BareMetal.KubeConfig,
+	}
+	return annotations, nil
 }
 
 func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
