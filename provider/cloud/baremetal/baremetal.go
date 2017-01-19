@@ -125,8 +125,8 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 				UID:  n.ID,
 			},
 			Status: api.NodeStatus{
-				Addresses: map[string]string{
-					"public": n.RemoteAddress,
+				Addresses: api.NodeAddresses{
+					Public: n.RemoteAddress,
 				},
 			},
 			Spec: api.NodeSpec{
@@ -160,7 +160,7 @@ func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error)
 				UID:  b.ID,
 			},
 			Status: api.NodeStatus{
-				Addresses: map[string]string{},
+				Addresses: api.NodeAddresses{},
 			},
 			Spec: api.NodeSpec{
 				DatacenterName: cl.Spec.Cloud.DatacenterName,

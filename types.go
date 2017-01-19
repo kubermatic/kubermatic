@@ -73,8 +73,14 @@ type NodeSpec struct {
 
 // NodeStatus stores status informations about a node.
 type NodeStatus struct {
-	Hostname  string            `json:"hostname"`
-	Addresses map[string]string `json:"addresses"`
+	Hostname  string        `json:"hostname"`
+	Addresses NodeAddresses `json:"addresses"`
+}
+
+// NodeAddresses stores the IP addresses associated with a node
+type NodeAddresses struct {
+	Public  string `json:"public"`
+	Private string `json:"private"`
 }
 
 // Node is the object representing a cluster node.
