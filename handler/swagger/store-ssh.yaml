@@ -1,0 +1,78 @@
+swagger: '2.0'
+info:
+  version: "1.0"
+  title: Kubermatic Store SSH keys
+paths:
+  /api/v1/clusters/{cluster}/keys:
+    get:
+      description: List all ssh keys for a cluster
+      parameters:
+        - name: cluster
+          in: path
+          required: true
+          description: Cluster Name
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              "$ref": "#/definitions/key"
+    post:
+      description: Create a new SSH key
+      parameters:
+        - name: body
+          in: body
+          required: true
+          description: Key information
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              public_key:
+                type: string
+        - name: cluster
+          in: path
+          required: true
+          description: Cluster Name
+          type: string
+      responses:
+        201:
+          description: SSH key created
+          schema:
+            "$ref": "#/definitions/key"
+        400:
+          description: Key is not valid
+  /api/v1/clusters/{cluster}/keys/{fingerprint}:
+    delete:
+      description: Delete a key
+      parameters:
+        - name: fingerprint
+          in: path
+          required: true
+          description: ID of the fingerprint
+          type: string
+        - name: cluster
+          in: path
+          required: true
+          description: Name of the cluster
+          type: string
+      responses:
+        200:
+          description: Key deleted
+        400:
+          description: Key does not exsist
+
+definitions:
+  key:
+    type: object
+    properties:
+      name:
+        type: string
+      fingerprint:
+        # The fingerprint is send without colons
+        type: string
+      public_key:
+        type: string
