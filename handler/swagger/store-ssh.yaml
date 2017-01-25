@@ -3,15 +3,9 @@ info:
   version: "1.0"
   title: Kubermatic Store SSH keys
 paths:
-  /api/v1/clusters/{cluster}/keys:
+  /api/v1/keys:
     get:
-      description: List all ssh keys for a cluster
-      parameters:
-        - name: cluster
-          in: path
-          required: true
-          description: Cluster Name
-          type: string
+      description: List all ssh keys for a user
       responses:
         200:
           description: Success
@@ -33,11 +27,6 @@ paths:
                 type: string
               public_key:
                 type: string
-        - name: cluster
-          in: path
-          required: true
-          description: Cluster Name
-          type: string
       responses:
         201:
           description: SSH key created
@@ -45,7 +34,7 @@ paths:
             "$ref": "#/definitions/key"
         400:
           description: Key is not valid
-  /api/v1/clusters/{cluster}/keys/{fingerprint}:
+  /api/v1/keys/{fingerprint}:
     delete:
       description: Delete a key
       parameters:
@@ -54,17 +43,11 @@ paths:
           required: true
           description: ID of the fingerprint
           type: string
-        - name: cluster
-          in: path
-          required: true
-          description: Name of the cluster
-          type: string
       responses:
         200:
           description: Key deleted
         400:
           description: Key does not exsist
-
 definitions:
   key:
     type: object
