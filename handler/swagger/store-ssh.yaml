@@ -3,7 +3,7 @@ info:
   version: "1.0"
   title: Kubermatic Store SSH keys
 paths:
-  /api/v1/keys:
+  /api/v1/ssh-keys:
     get:
       description: List all ssh keys for a user
       responses:
@@ -34,7 +34,7 @@ paths:
             "$ref": "#/definitions/key"
         400:
           description: Key is not valid
-  /api/v1/keys/{fingerprint}:
+  /api/v1/ssh-keys/{fingerprint}:
     delete:
       description: Delete a key
       parameters:
