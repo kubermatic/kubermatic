@@ -107,3 +107,23 @@ func (el *ClusterAddonList) GetObjectKind() schema.ObjectKind {
 func (el *ClusterAddonList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
+
+// SSHKey specifies a users SSHKey
+type SSHKey struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Name        string `json:"name"`
+	Fingerprint string `json:"fingerprint"`
+	PublicKey   string `json:"public_key"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (sk *SSHKey) GetObjectKind() schema.ObjectKind {
+	return &sk.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (sk *SSHKey) GetListMeta() metav1.List {
+	return &sk.Metadata
+}
