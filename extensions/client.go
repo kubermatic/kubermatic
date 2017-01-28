@@ -55,6 +55,14 @@ func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	}
 }
 
+//  SSHKeyTPR returns an interface to interact with SSHKey
+func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
+	return &SSHKeyTPRClient{
+		client: w.Client,
+		user:   user,
+	}
+}
+
 // ClusterAddonsInterface is an interface to interact with ClusterAddons
 type ClusterAddonsInterface interface {
 	Create(*ClusterAddon) (*ClusterAddon, error)
@@ -145,4 +153,22 @@ type SSHKeyTPRInterface interface {
 	Create(*SSHKey) (*SSHKey, error)
 	List() ([]*SSHKey, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
+}
+
+// SSHKeyTPRClient is an implementation of SSHKeyTPRInterface to work with stored SSH keys
+type SSHKeyTPRClient struct {
+	client rest.Interface
+	user   string
+}
+
+func (s *SSHKeyTPRClient) Create(*SSHKey) (*SSHKey, error) {
+	panic("implement me")
+}
+
+func (s *SSHKeyTPRClient) List() ([]*SSHKey, error) {
+	panic("implement me")
+}
+
+func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
+	panic("implement me")
 }
