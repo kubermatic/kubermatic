@@ -161,8 +161,22 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) Create(*SSHKey) (*SSHKey, error) {
-	panic("implement me")
+func (s *SSHKeyTPRClient) injectUserLabel(sk *SSHKey) {
+	sk.Metadata.SetLabels(map[string]string{
+		"user": s.user,
+	})
+}
+
+func (s *SSHKeyTPRClient) Create(sk *SSHKey) (*SSHKey, error) {
+	var result SSHKey
+	s.injectUserLabel(sk)
+	err := s.client.Post().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		Body(sk).
+		Do().
+		Into(&result)
+	return &result, err
 }
 
 func (s *SSHKeyTPRClient) List() ([]*SSHKey, error) {

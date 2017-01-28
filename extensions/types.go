@@ -18,6 +18,11 @@ const (
 	Version string = "v1"
 )
 
+const (
+	SSHKeyTPRName      string = "ssh-key-tpr"
+	SSHKeyTPRNamespace string = "default"
+)
+
 var (
 	// SchemeGroupVersion is the combination of group name and version for the kubernetes client
 	SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
