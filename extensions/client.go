@@ -140,3 +140,9 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 		Into(result)
 	return
 }
+
+type SSHKeyTPRInterface interface {
+	Create(*SSHKey) (*SSHKey, error)
+	List() ([]*SSHKey, error)
+	Delete(fingerprint string, options *v1.DeleteOptions) error
+}
