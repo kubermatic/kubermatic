@@ -26,7 +26,6 @@ func WrapClientsetWithExtensions(config *rest.Config) (*WrappedClientset, error)
 func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 	config.APIPath = "/apis"
 	config.ContentConfig = rest.ContentConfig{
-
 		GroupVersion: &schema.GroupVersion{
 			Group:   GroupName,
 			Version: Version,
@@ -34,6 +33,7 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 		NegotiatedSerializer: serializer.DirectCodecFactory{CodecFactory: kapi.Codecs},
 		ContentType:          runtime.ContentTypeJSON,
 	}
+
 	return rest.RESTClientFor(config)
 }
 
