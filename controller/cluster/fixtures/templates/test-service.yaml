@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiserver
+  annotations:
+    kubernetes.io/k8sniff-tcp-proxy-port: "{{.SecurePort}}"
+spec:
+  type: ClusterIP
+  ports:
+    - name: secure
+      port: {{.SecurePort}}
+      protocol: TCP
+    - name: insecure
+      port: 8888
+      protocol: TCP
+  selector:
+    role: apiserver
