@@ -12,19 +12,27 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
 
 const (
 	appJSON        = "application/json"
-	serviceURL     = "baremetal-provider.api.svc.cluster.local"
 	clusterNameKey = "bm-cluster-name"
 )
 
 type baremetal struct {
+	datacenters map[string]provider.DatacenterMeta
 }
 
-func (*baremetal) InitializeCloudSpec(c *api.Cluster) error {
+// NewCloudProvider returns a new bare-metal provider.
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
+	return &baremetal{
+		datacenters: datacenters,
+	}
+}
+
+func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 	cfg := c.GetKubeconfig()
 
 	jcfg, err := json.Marshal(cfg)
@@ -41,7 +49,7 @@ func (*baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		Name: c.Metadata.Name,
 	}
 
-	url := path.Join(serviceURL, "/clusters")
+	url := path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, "/clusters")
 
 	Cluster := struct {
 		Name         string `json:"name"`
@@ -89,8 +97,8 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	return cs, nil
 }
 
-func (*baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
-	url := path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
+func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
+	url := path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
 	var nodes []*api.Node
 	data, err := json.Marshal(struct {
 		Number int `json:"number"`
@@ -143,8 +151,8 @@ func (*baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSp
 	return nodes, nil
 }
 
-func (*baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
-	resp, err := http.Get(path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
+func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
+	resp, err := http.Get(path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
 	if err != nil {
 		return nil, err
 	}

@@ -15,6 +15,7 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
+	BareMetalCloudProvider    = "bare-metal"
 )
 
 // User represents an API user that is used for authentication.
