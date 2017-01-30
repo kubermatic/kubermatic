@@ -55,3 +55,15 @@ func TestTemplate_ExecuteFailsWithInvalidContent(t *testing.T) {
 		t.Errorf("Expected to get an yaml mapping error, instead got: %s", err.Error())
 	}
 }
+
+func TestTemplate_ExecuteFailsWithNotExistingFile(t *testing.T) {
+	path := "fixtures/not-existing.yml"
+	_, err := texttemplate.ParseFiles(path)
+	if err == nil {
+		t.Fatal("Expected to get an error, got nil")
+	}
+
+	if err.Error() != "open fixtures/not-existing.yml: no such file or directory" {
+		t.Fatalf("Expected to get no such file or directory, got %q", err.Error())
+	}
+}

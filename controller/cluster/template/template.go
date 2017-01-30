@@ -17,7 +17,11 @@ type Template struct {
 // and parses the template definitions from the named files.
 func ParseFiles(filenames string) (*Template, error) {
 	tpl, err := texttemplate.ParseFiles(filenames)
-	return &Template{tpl}, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &Template{tpl}, nil
 }
 
 // Execute applies a parsed template to the specified data object,
