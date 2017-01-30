@@ -140,6 +140,11 @@ type CloudSpec struct {
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 
+	User   string `json:"user"`
+	Secret string `json:"secret"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`

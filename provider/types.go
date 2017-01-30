@@ -49,12 +49,17 @@ type CloudProvider interface {
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
 	// NewCluster creates a cluster for the provided user using the given ClusterSpec.
+	// Deprecated in favor of NewClusterWithCloud
 	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
+
+	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec and given CloudSpec.
+	NewClusterWithCloud(user User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
 
 	// SetCloud updates CloudSpec settings on the given cluster for the given user
+	// Deprecated in favor of NewClusterWithCloud
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 
 	// Cluster returns all clusters for a given user.
@@ -72,6 +77,11 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
+
+	if spec.Name != "" {
+		return spec.Name, nil
+	}
+
 	clouds := []string{}
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
