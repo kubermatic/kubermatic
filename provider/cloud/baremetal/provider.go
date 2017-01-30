@@ -3,6 +3,7 @@ package baremetal
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -57,10 +58,15 @@ func (*baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		return err
 	}
 
-	_, err = http.Post(url, appJSON, bytes.NewReader(data))
+	resp, err := http.Post(url, appJSON, bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != http.StatusCreated {
+		glog.Errorf("Got bad response from bare-metal provider during cluster creation: %s", getLogableResponse(resp))
+		return errors.New("provider returned not successful status code")
+	}
+
 	return nil
 }
 
@@ -99,12 +105,8 @@ func (*baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSp
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		var body []byte
-		body, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("Error creating node: Status %d: %s", resp.StatusCode, string(body))
+		glog.Errorf("Got bad response from bare-metal provider during node creation: %s", getLogableResponse(resp))
+		return nodes, errors.New("provider returned not successful status code")
 	}
 
 	var createdNodes []api.BareMetalNodeSpec
@@ -174,8 +176,8 @@ func (*baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) 
 }
 
 func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []string) error {
+	client := &http.Client{}
 	for _, uid := range UIDs {
-		client := &http.Client{}
 		req, err := http.NewRequest(http.MethodDelete, path.Join(fmt.Sprintf("/clusters/%s/nodes/%s", cl.Metadata.Name, uid)), nil)
 		if err != nil {
 			return err
@@ -185,24 +187,36 @@ func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []strin
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("got status code %s from baremetal service delting node", resp.Status)
+			glog.Errorf("Got bad response from bare-metal provider during delete node: %s", getLogableResponse(resp))
+			return errors.New("provider returned not successful status code")
 		}
 	}
 	return nil
 }
 
 func (b *baremetal) CleanUp(cl *api.Cluster) error {
-	nodes, err := b.Nodes(context.Background(), cl)
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodDelete, path.Join(fmt.Sprintf("/clusters/%s", cl.Metadata.Name)), nil)
 	if err != nil {
 		return err
 	}
-
-	var UIDs []string
-	for _, n := range nodes {
-		// Node UID name pattern = "%s"
-		// Not shown in the customer dashboard ?
-		// TODO(realfake): Adopt Node UID naming pattern
-		UIDs = append(UIDs, n.Metadata.Name)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
 	}
-	return b.DeleteNodes(context.Background(), cl, UIDs)
+	if resp.StatusCode != http.StatusOK {
+		glog.Errorf("Got bad response from bare-metal provider during cleanup: %s", getLogableResponse(resp))
+		return errors.New("provider returned not successful status code")
+	}
+	return nil
+}
+
+func getLogableResponse(r *http.Response) string {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		glog.Errorf("failed to get body from response: %v", err)
+		return ""
+	}
+
+	return fmt.Sprintf("StatusCode=%d, Body=%d", r.StatusCode, string(body))
 }
