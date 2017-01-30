@@ -67,6 +67,54 @@ func TestLoadDeploymentFile(t *testing.T) {
 	checkTestResult(t, "test-dep-result", res)
 }
 
+func TestLoadDeploymentFileControllerManagerExists(t *testing.T) {
+	cc := &clusterController{
+		masterResourcesPath: "./fixtures/templates/",
+		dc:                  "asdf-de-1",
+	}
+	c := &api.Cluster{
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				Name: "aws",
+			},
+		},
+		Metadata: api.Metadata{
+			Name: "de-test-01",
+		},
+	}
+
+	res, err := loadDeploymentFileControllerManager(cc, c, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkTestResult(t, "test-aws-dep-result", res)
+}
+
+func TestLoadDeploymentFileControllerManagerNotExists(t *testing.T) {
+	cc := &clusterController{
+		masterResourcesPath: "./fixtures/templates/",
+		dc:                  "asdf-de-1",
+	}
+	c := &api.Cluster{
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				Name: "gcp",
+			},
+		},
+		Metadata: api.Metadata{
+			Name: "de-test-01",
+		},
+	}
+
+	res, err := loadDeploymentFileControllerManager(cc, c, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkTestResult(t, "test-dep-result", res)
+}
+
 func TestLoadPVCFile(t *testing.T) {
 	cc := &clusterController{
 		masterResourcesPath: "./fixtures/templates/",
@@ -98,6 +146,30 @@ func TestLoadApiserverFile(t *testing.T) {
 	}
 
 	checkTestResult(t, "test-api-server-dep-result", res)
+}
+
+func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
+	cc := &clusterController{
+		masterResourcesPath: "./fixtures/templates/",
+		overwriteHost:       "localhost",
+	}
+	c := &api.Cluster{
+		Address: &api.ClusterAddress{
+			NodePort: 1234,
+		},
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				Region: "eu-central-1",
+			},
+		},
+	}
+
+	res, err := loadAwsCloudConfigConfigMap(cc, c, "aws-cloud-config")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkTestResult(t, "aws-cloud-config-cm-result", res)
 }
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {

@@ -1,0 +1,6 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: example-config
+data:
+  aws-cloud-config: "{{.Conf}}"
