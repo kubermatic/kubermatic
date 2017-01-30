@@ -3,7 +3,6 @@ package baremetal
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,14 +14,17 @@ import (
 	"golang.org/x/net/context"
 )
 
-const serviceURL = "baremetal-provider.api.svc.cluster.local"
-const appJSON = "application/json"
+const (
+	appJSON        = "application/json"
+	serviceURL     = "baremetal-provider.api.svc.cluster.local"
+	clusterNameKey = "bm-cluster-name"
+)
 
 type baremetal struct {
 }
 
-func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
-	cfg := cl.GetKubeconfig()
+func (*baremetal) InitializeCloudSpec(c *api.Cluster) error {
+	cfg := c.GetKubeconfig()
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {
@@ -34,8 +36,8 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 		return err
 	}
 
-	cl.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
-		Name: cl.Metadata.Name,
+	c.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
+		Name: c.Metadata.Name,
 	}
 
 	url := path.Join(serviceURL, "/clusters")
@@ -45,8 +47,8 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 		APIServerURL string `json:"apiserver_url"`
 		Kubeconfig   string `json:"kubeconfig"`
 	}{
-		Name:         cl.Metadata.Name,
-		APIServerURL: cl.Address.URL,
+		Name:         c.Metadata.Name,
+		APIServerURL: c.Address.URL,
 		Kubeconfig:   string(ycfg),
 	}
 
@@ -62,27 +64,27 @@ func (*baremetal) InitializeCloudSpec(cl *api.Cluster) error {
 	return nil
 }
 
-func (*baremetal) MarshalCloudSpec(cls *api.CloudSpec) (annotations map[string]string, err error) {
+func (*baremetal) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	annotations = map[string]string{
-		"name": cls.BareMetal.Name,
+		"name": cs.BareMetal.Name,
 	}
 	return annotations, nil
 }
 
 func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	var cl *api.CloudSpec
+	var cs *api.CloudSpec
 
-	name, ok := annotations["name"]
+	name, ok := annotations[clusterNameKey]
 	if !ok {
-		return nil, errors.New("Couldn't find key 'name' while unmarshalling CloudSpec")
+		return nil, fmt.Errorf("Couldn't find key %q while unmarshalling CloudSpec", clusterNameKey)
 	}
-	cl.BareMetal.Name = name
+	cs.BareMetal.Name = name
 
-	return cl, nil
+	return cs, nil
 }
 
-func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
-	url := path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", cl.Metadata.Name))
+func (*baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
+	url := path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
 	var nodes []*api.Node
 	data, err := json.Marshal(struct {
 		Number int `json:"number"`
@@ -130,7 +132,7 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 				},
 			},
 			Spec: api.NodeSpec{
-				DatacenterName: cl.Spec.Cloud.DatacenterName,
+				DatacenterName: c.Spec.Cloud.DatacenterName,
 				BareMetal:      &n,
 			},
 		}
@@ -139,8 +141,8 @@ func (*baremetal) CreateNodes(ctx context.Context, cl *api.Cluster, _ *api.NodeS
 	return nodes, nil
 }
 
-func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error) {
-	resp, err := http.Get(path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", cl.Metadata.Name)))
+func (*baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
+	resp, err := http.Get(path.Join(serviceURL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,6 @@ func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error)
 
 	var nodes []*api.Node
 	for _, b := range bareNodes {
-		//uid := strings.Split(b.ID, "-")[2]
 		node := &api.Node{
 			Metadata: api.Metadata{
 				Name: b.ID,
@@ -163,7 +164,7 @@ func (*baremetal) Nodes(_ context.Context, cl *api.Cluster) ([]*api.Node, error)
 				Addresses: api.NodeAddresses{},
 			},
 			Spec: api.NodeSpec{
-				DatacenterName: cl.Spec.Cloud.DatacenterName,
+				DatacenterName: c.Spec.Cloud.DatacenterName,
 				BareMetal:      b,
 			},
 		}
