@@ -1,0 +1,66 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apiserver-v5
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: apiserver
+        release: v1.5.1
+        version: v1
+    spec:
+      containers:
+      - name: apiserver
+        image: gcr.io/google_containers/hyperkube:v1.5.1
+        command: [ "/hyperkube", "apiserver",
+            "--insecure-bind-address=0.0.0.0",
+            "--advertise-address={{.AdvertiseAddress}}",
+            "--secure-port={{.SecurePort}}",
+            "--kubernetes-service-node-port={{.SecurePort}}",
+            "--insecure-port=8888",
+            "--external-hostname=apiserver",
+            "--etcd-servers=http://etcd:2379",
+            "--storage-backend=etcd3",
+            "--admission-control=NamespaceLifecycle,LimitRanger,SecurityContextDeny,ServiceAccount,ResourceQuota",
+            "--authorization-mode=AlwaysAllow",
+            "--token-auth-file=/var/run/kubernetes/token-users/file",
+            "--service-account-key-file=/var/run/kubernetes/auth/service-account.key",
+            "--service-cluster-ip-range=10.10.10.0/24",
+            "--service-node-port-range=30000-32767",
+            "--allow-privileged",
+            "--tls-cert-file=/var/run/kubernetes/auth/apiserver.crt",
+            "--tls-private-key-file=/var/run/kubernetes/auth/apiserver.key",
+            "--client-ca-file=/var/run/kubernetes/auth/root-ca.crt",
+            "--ssh-user=apiserver",
+            "--ssh-keyfile=/var/run/kubernetes/ssh/id-rsa",
+            "--v=4" ]
+        resources:
+          limits:
+            memory: 200Mi
+        ports:
+        - containerPort: 443
+          hostPort: {{.SecurePort}}
+        - containerPort: 8888
+        volumeMounts:
+        - name: auth
+          mountPath: /var/run/kubernetes/auth
+          readOnly: true
+        - name: token-users
+          mountPath: /var/run/kubernetes/token-users
+          readOnly: true
+        - name: ssh
+          mountPath: /var/run/kubernetes/ssh
+          readOnly: true
+      volumes:
+      - name: auth
+        secret:
+          secretName: apiserver-auth
+      - name: token-users
+        secret:
+          secretName: token-users
+      - name: ssh
+        secret:
+          secretName: apiserver-ssh
+          defaultMode: 0400

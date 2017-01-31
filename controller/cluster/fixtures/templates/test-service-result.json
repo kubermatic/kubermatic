@@ -1,0 +1,1 @@
+{"kind":"Service","apiVersion":"v1","metadata":{"name":"apiserver","creationTimestamp":null,"annotations":{"kubernetes.io/k8sniff-tcp-proxy-port":"1234"}},"spec":{"ports":[{"name":"secure","protocol":"TCP","port":1234,"targetPort":0},{"name":"insecure","protocol":"TCP","port":8888,"targetPort":0}],"selector":{"role":"apiserver"},"type":"ClusterIP"},"status":{"loadBalancer":{}}}
