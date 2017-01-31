@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	SSHKeyTPRName      string = "ssh-key-tpr"
+	SSHKeyTPRName      string = "usersshkeys"
 	SSHKeyTPRNamespace string = "default"
 )
 
