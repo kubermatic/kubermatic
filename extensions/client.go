@@ -55,7 +55,7 @@ func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	}
 }
 
-//  SSHKeyTPR returns an interface to interact with SSHKey
+//  SSHKeyTPR returns an interface to interact with UserSSHKey
 func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	return &SSHKeyTPRClient{
 		client: w.Client,
@@ -150,8 +150,8 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 }
 
 type SSHKeyTPRInterface interface {
-	Create(*SSHKey) (*SSHKey, error)
-	List() ([]*SSHKey, error)
+	Create(*UserSSHKey) (*UserSSHKey, error)
+	List() ([]*UserSSHKey, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
 }
 
@@ -161,14 +161,14 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) injectUserLabel(sk *SSHKey) {
+func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
 	sk.Metadata.SetLabels(map[string]string{
 		"user": s.user,
 	})
 }
 
-func (s *SSHKeyTPRClient) Create(sk *SSHKey) (*SSHKey, error) {
-	var result SSHKey
+func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	var result UserSSHKey
 	s.injectUserLabel(sk)
 	err := s.client.Post().
 		Namespace(SSHKeyTPRNamespace).
@@ -179,8 +179,8 @@ func (s *SSHKeyTPRClient) Create(sk *SSHKey) (*SSHKey, error) {
 	return &result, err
 }
 
-func (s *SSHKeyTPRClient) List() ([]*SSHKey, error) {
 	panic("implement me")
+func (s *SSHKeyTPRClient) List() ([]*UserSSHKey, error) {
 }
 
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
