@@ -1,6 +1,8 @@
 package extensions
 
 import (
+	"fmt"
+
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/runtime"
@@ -179,10 +181,36 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 	return &result, err
 }
 
-	panic("implement me")
 func (s *SSHKeyTPRClient) List() ([]*UserSSHKey, error) {
+	opts := v1.ListOptions{}
+	opts.LabelSelector = fmt.Sprintf("user=%s", s.user)
+	var result UserSSHKeyList
+	err := s.client.Get().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Do().
+		Into(result)
+	if err != nil {
+		return nil, err
+	}
+	var result_keys []*UserSSHKey
+	for _, k := range result.Items {
+		result_keys = append(result_keys, &k)
+	}
+	return result_keys, err
+
 }
 
+// Delete takes name of the ssh and deletes it. Returns an error if one occurs.
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
-	panic("implement me")
+	// Implement get name of fingerprint
+	var name string
+	return s.client.Delete().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRNamespace).
+		Name(name).
+		Body(v1.NewDeleteOptions(60)).
+		Do().
+		Error()
 }

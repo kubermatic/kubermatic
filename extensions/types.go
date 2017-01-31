@@ -36,6 +36,7 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddon{},
 		&ClusterAddonList{},
 		&UserSSHKey{},
+		&UserSSHKeyList{},
 		&apiv1.ListOptions{},
 		&apiv1.DeleteOptions{},
 	)
@@ -132,4 +133,22 @@ func (sk *UserSSHKey) GetObjectKind() schema.ObjectKind {
 //GetListMeta returns the list object metadata
 func (sk *UserSSHKey) GetListMeta() metav1.List {
 	return &sk.Metadata
+}
+
+// UserSSHKeyList specifies a users UserSSHKey
+type UserSSHKeyList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []UserSSHKey `json:"items"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (kl *UserSSHKeyList) GetObjectKind() schema.ObjectKind {
+	return &kl.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (kl *UserSSHKeyList) GetListMeta() metav1.List {
+	return &kl.Metadata
 }
