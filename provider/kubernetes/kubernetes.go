@@ -1,15 +1,14 @@
 package kubernetes
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strconv"
-	"sync"
-	"time"
-
-	"bytes"
 	"strings"
+	"sync"
 	"text/template"
+	"time"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
