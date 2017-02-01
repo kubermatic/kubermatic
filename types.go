@@ -47,7 +47,7 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type string `jason:"type"`
+	Type string `json:"type"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
@@ -139,6 +139,11 @@ type CloudSpec struct {
 	DatacenterName string `json:"dc"`
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
+
+	User   string `json:"user"`
+	Secret string `json:"secret"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`

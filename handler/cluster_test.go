@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bytes"
+
 	"github.com/kubermatic/api"
 )
 
@@ -25,7 +27,8 @@ func TestNewClusterEndpoint(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %s", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %s", res.Code)
 	}
 
 	var c api.Cluster
@@ -46,6 +49,51 @@ func TestNewClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestNewClusterEndpointV2(t *testing.T) {
+	body := []byte("{\"cloud\":{\"user\":\"secret\",\"secret\":\"evenmoresecret\",\"name\":\"fake\",\"region\":\"fake-1\"},\"spec\":{\"humanReadableName\":\"test-1\"},\"sshKeys\":[\"test\"]}")
+
+	req := httptest.NewRequest("POST", "/api/v1/cluster", bytes.NewReader(body))
+	authenticateHeader(req, false)
+
+	res := httptest.NewRecorder()
+	e := createTestEndpoint()
+	e.ServeHTTP(res, req)
+
+	if res.Code != 200 {
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %s", res.Code)
+	}
+
+	var c api.Cluster
+	if err := json.Unmarshal(res.Body.Bytes(), &c); err != nil {
+		t.Error(res.Body.String())
+		t.Error(err)
+		return
+	}
+
+	if c.Metadata.UID == "" {
+		t.Error("Expected cluster UID to be filled, got nil.")
+	}
+	if c.Metadata.Name == "" {
+		t.Error("Expected cluster name to be filled, got nil.")
+	}
+	if c.Spec.HumanReadableName != "test-1" {
+		t.Errorf("Expected cluster name to be %s, got %s.", "test-1", c.Spec.HumanReadableName)
+	}
+	if c.Spec.Cloud == nil {
+		t.Fatal("Expected Cluster.Spec.Cloud to be filled, got nil")
+	}
+	if c.Spec.Cloud == nil {
+		t.Fatal("Expected Cluster.Spec.Cloud to be filled, got nil")
+	}
+	if c.Spec.Cloud.Fake == nil {
+		t.Fatal("Expected Cluster.Spec.Cloud.Fake to be filled, got nil")
+	}
+	if c.Spec.Cloud.Fake.Token != "evenmoresecret" {
+		t.Fatalf("Expected Cluster.Spec.Cloud.Fake to be \"evenmoresecret\", got %q", c.Spec.Cloud.Fake.Token)
+	}
+}
+
 func TestNewClusterEndpointNotExistingDC(t *testing.T) {
 	reqObj := &api.Cluster{
 		Spec: api.ClusterSpec{
@@ -61,12 +109,13 @@ func TestNewClusterEndpointNotExistingDC(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -82,7 +131,8 @@ func TestClustersEndpoint(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -116,7 +166,8 @@ func TestClustersEndpointWithACreatedCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -153,7 +204,8 @@ func TestClusterEndpoint(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -180,12 +232,13 @@ func TestClusterEndpointNotExistingDC(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -201,12 +254,13 @@ func TestClusterEndpointNotExistingCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 404 {
-		t.Errorf("Expected status code to be 404, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 404, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -226,7 +280,8 @@ func TestSetCloudEndpointBringYourOwn(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -257,12 +312,13 @@ func TestSetCloudEndpointBringYourOwnNotExistingDC(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -282,12 +338,13 @@ func TestSetCloudEndpointBringYourOwnNotExistingCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 404 {
-		t.Errorf("Expected status code to be 404, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 404, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -308,7 +365,8 @@ func TestSetCloudEndpointAWS(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -340,12 +398,13 @@ func TestSetCloudEndpointAWSNotExistingDC(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -366,12 +425,13 @@ func TestSetCloudEndpointAWSNotExistingCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 404 {
-		t.Errorf("Expected status code to be 404, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 404, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -391,7 +451,8 @@ func TestDeleteCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -411,12 +472,13 @@ func TestDeleteClusterNotExistingDC(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -436,12 +498,13 @@ func TestDeleteClusterNotExistingCluster(t *testing.T) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 404 {
-		t.Errorf("Expected status code to be 404, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 404, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
 
-	exp := "Do: cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -461,7 +524,8 @@ func createTestCluster(t *testing.T, e http.Handler) (*api.Cluster, error) {
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
+		t.Error(res.Body.String())
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return nil, fmt.Errorf("Expected status code to be 200, got %d", res.Code)
 	}

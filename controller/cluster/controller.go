@@ -80,6 +80,9 @@ type clusterController struct {
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
+	cmController *cache.Controller
+	cmStore      cache.Indexer
+
 	// non-thread safe:
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -244,6 +247,21 @@ func NewController(
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				return cc.client.CoreV1().PersistentVolumeClaims(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&v1.PersistentVolumeClaim{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.cmStore, cc.cmController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().ConfigMaps(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().ConfigMaps(v1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1.PersistentVolumeClaim{},
@@ -594,6 +612,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.ingressController.Run(wait.NeverStop)
 	go cc.addonController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
+	go cc.cmController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -622,5 +641,6 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced() &&
 		cc.addonController.HasSynced() &&
-		cc.pvcController.HasSynced()
+		cc.pvcController.HasSynced() &&
+		cc.cmController.HasSynced()
 }

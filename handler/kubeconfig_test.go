@@ -57,7 +57,7 @@ func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 		return
 	}
 
-	exp := "Do: unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\"\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -78,7 +78,7 @@ func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
 		return
 	}
 
-	exp := "Do: cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
