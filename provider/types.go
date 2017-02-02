@@ -3,10 +3,9 @@ package provider
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
+	"golang.org/x/net/context"
 )
 
 // Constants defining known cloud providers.
@@ -95,6 +94,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
+	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

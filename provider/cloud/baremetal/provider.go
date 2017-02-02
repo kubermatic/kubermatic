@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
@@ -49,8 +48,6 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		Name: c.Metadata.Name,
 	}
 
-	url := path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, "/clusters")
-
 	Cluster := struct {
 		Name         string `json:"name"`
 		APIServerURL string `json:"apiserver_url"`
@@ -66,7 +63,7 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		return err
 	}
 
-	resp, err := http.Post(url, appJSON, bytes.NewReader(data))
+	resp, err := http.Post(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+"/clusters", appJSON, bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -80,13 +77,13 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 
 func (*baremetal) MarshalCloudSpec(cs *api.CloudSpec) (annotations map[string]string, err error) {
 	annotations = map[string]string{
-		"name": cs.BareMetal.Name,
+		clusterNameKey: cs.BareMetal.Name,
 	}
 	return annotations, nil
 }
 
 func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	var cs *api.CloudSpec
+	cs := api.CloudSpec{BareMetal: &api.BareMetalCloudSpec{}}
 
 	name, ok := annotations[clusterNameKey]
 	if !ok {
@@ -94,11 +91,11 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	}
 	cs.BareMetal.Name = name
 
-	return cs, nil
+	return &cs, nil
 }
 
 func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
-	url := path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
+	url := b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL + fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)
 	var nodes []*api.Node
 	data, err := json.Marshal(struct {
 		Number int `json:"number"`
@@ -152,7 +149,7 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 }
 
 func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
-	resp, err := http.Get(path.Join(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
+	resp, err := http.Get(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL + fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -183,10 +180,10 @@ func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error
 	return nodes, nil
 }
 
-func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []string) error {
+func (b *baremetal) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	client := &http.Client{}
 	for _, uid := range UIDs {
-		req, err := http.NewRequest(http.MethodDelete, path.Join(fmt.Sprintf("/clusters/%s/nodes/%s", cl.Metadata.Name, uid)), nil)
+		req, err := http.NewRequest(http.MethodDelete, b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+fmt.Sprintf("/clusters/%s/nodes/%s", c.Metadata.Name, uid), nil)
 		if err != nil {
 			return err
 		}
@@ -202,9 +199,9 @@ func (*baremetal) DeleteNodes(ctx context.Context, cl *api.Cluster, UIDs []strin
 	return nil
 }
 
-func (b *baremetal) CleanUp(cl *api.Cluster) error {
+func (b *baremetal) CleanUp(c *api.Cluster) error {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodDelete, path.Join(fmt.Sprintf("/clusters/%s", cl.Metadata.Name)), nil)
+	req, err := http.NewRequest(http.MethodDelete, b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+fmt.Sprintf("/clusters/%s", c.Metadata.Name), nil)
 	if err != nil {
 		return err
 	}
