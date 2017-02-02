@@ -65,6 +65,19 @@ type NodeSpec struct {
 type NodeStatus struct {
 	Hostname  string            `json:"hostname"`
 	Addresses map[string]string `json:"addresses"`
+
+	CPU      int64         `json:"cpu,omitempty"`
+	Memory   string        `json:"memory,omitempty"`
+	Versions *NodeVersions `json:"versions,omitempty"`
+}
+
+type NodeVersions struct {
+	OS                   string `json:"os,omitempty"`
+	ContainerRuntime     string `json:"containerRuntime,omitempty"`
+	ContainerRuntimeType string `json:"containerRuntime_type,omitempty"`
+	Kubelet              string `json:"kubelet,omitempty"`
+	KubeProxy            string `json:"kubeproxy,omitempty"`
+	Kernel               string `json:"kernel,omitempty"`
 }
 
 // Node is the object representing a cluster node.
@@ -140,10 +153,10 @@ type CloudSpec struct {
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 
-	User   string `json:"user"`
-	Secret string `json:"secret"`
-	Name   string `json:"name"`
-	Region string `json:"region"`
+	User   string `json:"user,omitempty"`
+	Secret string `json:"secret,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Region string `json:"region,omitempty"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
@@ -162,7 +175,7 @@ type ClusterHealthStatus struct {
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`
-	LastTransitionTime  time.Time `json:"lastTransitionTime"`
+	LastTransitionTime time.Time `json:"lastTransitionTime"`
 }
 
 // ClusterPhase is the life cycle phase of a cluster.
@@ -252,7 +265,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
 			Cluster: cmdv1.Cluster{
-				Server: c.Address.URL,
+				Server:                   c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
