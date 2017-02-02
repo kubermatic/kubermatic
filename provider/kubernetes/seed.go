@@ -138,6 +138,10 @@ func NewSeedProvider(
 	}
 }
 
+func (p *seedProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
+	return p.NewCluster(user, spec)
+}
+
 func (p *seedProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	cluster := rand.String(9)
 

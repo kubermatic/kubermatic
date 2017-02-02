@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
 
+
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/kubernetes"
@@ -85,6 +89,111 @@ func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 		}
 	}
 }
+
+func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
+	var err error
+
+	// call cluster before lock is taken
+	cs, err := p.Clusters(user)
+	if err != nil {
+		return nil, err
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// sanity checks for a fresh cluster
+	switch {
+	case user.Name == "":
+		return nil, kerrors.NewBadRequest("cluster user is required")
+	case spec.HumanReadableName == "":
+		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
+	}
+
+	clusterName := rand.String(9)
+
+	for _, c := range cs {
+		if c.Spec.HumanReadableName == spec.HumanReadableName {
+			return nil, kerrors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
+		}
+	}
+
+	ns := &v1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
+			Name:        NamespaceName(user.Name, clusterName),
+			Annotations: map[string]string{},
+			Labels:      map[string]string{},
+		},
+	}
+	nodePort, err := p.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
+
+	c := &api.Cluster{
+		Metadata: api.Metadata{
+			User: user.Name,
+			Name: clusterName,
+		},
+		Spec: api.ClusterSpec{
+			HumanReadableName: spec.HumanReadableName,
+			Dev:               spec.Dev,
+			Cloud:             cloud,
+		},
+		Status: api.ClusterStatus{
+			LastTransitionTime: time.Now(),
+			Phase:              api.PendingClusterStatusPhase,
+		},
+		Address: &api.ClusterAddress{
+			NodePort: nodePort,
+		},
+	}
+	if p.dev {
+		c.Spec.Dev = true
+	}
+
+	prov, found := p.cps[cloud.Name]
+	if !found {
+		return nil, fmt.Errorf("Unable to find provider %s for cluster %s", c.Spec.Cloud.Name, c.Metadata.Name)
+	}
+
+	err = prov.InitializeCloudSpec(c)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"cannot set %s cloud config for cluster %q: %v",
+			cloud.Name,
+			c.Metadata.Name,
+			err,
+		)
+	}
+
+	ns, err = MarshalCluster(p.cps, c, ns)
+	if err != nil {
+		return nil, err
+	}
+	ns, err = p.client.Namespaces().Create(ns)
+	if err != nil {
+		return nil, err
+	}
+
+	// ensure the NS is deleted when any error occurs
+	defer func(ns *v1.Namespace, prov provider.CloudProvider, c *api.Cluster, err error) {
+		if err != nil {
+			_ = prov.CleanUp(c)
+			_ = p.client.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &v1.DeleteOptions{})
+		}
+	}(ns, prov, c, err)
+
+	return UnmarshalCluster(p.cps, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+// Deprecated in favor of NewClusterWithCloud
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	// call cluster before lock is taken
 	cs, err := p.Clusters(user)
@@ -103,7 +212,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
 	}
 
-	cluster := rand.String(9)
+	clusterName := rand.String(9)
 
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
@@ -113,7 +222,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 
 	ns := &v1.Namespace{
 		ObjectMeta: v1.ObjectMeta{
-			Name:        NamespaceName(user.Name, cluster),
+			Name:        NamespaceName(user.Name, clusterName),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
@@ -126,7 +235,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c := &api.Cluster{
 		Metadata: api.Metadata{
 			User: user.Name,
-			Name: cluster,
+			Name: clusterName,
 		},
 		Spec: *spec,
 		Status: api.ClusterStatus{
@@ -154,7 +263,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c, err = UnmarshalCluster(p.cps, ns)
 
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
+		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, clusterName), &v1.DeleteOptions{})
 		return nil, err
 	}
 
@@ -191,6 +300,8 @@ func (p *kubernetesProvider) Cluster(user provider.User, cluster string) (*api.C
 	return c, err
 }
 
+// Deprecated in favor of NewClusterWithCloud
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
 	var err error
 	for r := updateRetries; r >= 0; r-- {
@@ -213,10 +324,6 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = prov.InitializeCloudSpec(c)
 		if err != nil {
-			return nil, err
-		}
-
-		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
 				provName,
@@ -224,6 +331,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 				err,
 			)
 		}
+
 		err = p.ApplyCloudProvider(c, ns)
 		if err != nil {
 			return nil, err
@@ -250,114 +358,61 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 	return nil, err
 }
 
-func (p *kubernetesProvider) ApplyCloudProvider(cluster *api.Cluster, ns *v1.Namespace) error {
-	if cluster.Spec.Cloud.GetAWS() != nil {
-		dep, err := p.client.Deployments(ns.Name).Get("controller-manager-v1", metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		if err := p.ensureAWSConfigMapExists(cluster, ns); err != nil {
-			return err
-		}
-
-		container := dep.Spec.Template.Spec.Containers[0]
-		container.Env = append(
-			container.Env,
-			v1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID},
-			v1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey},
-			v1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCId},
-			v1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone},
-		)
-
-		container.Command = append(
-			container.Command,
-			"--cloud-provider=aws",
-			"--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
-		)
-
-		container.VolumeMounts = append(
-			container.VolumeMounts,
-			v1.VolumeMount{
-				Name:      "aws-cloud-config",
-				MountPath: "/etc/kubermatic/aws",
-				ReadOnly:  true,
-			},
-		)
-
-		dep.Spec.Template.Spec.Containers[0] = container
-
-		dep.Spec.Template.Spec.Volumes = append(
-			dep.Spec.Template.Spec.Volumes,
-			v1.Volume{
-				Name: "aws-cloud-config",
-				VolumeSource: v1.VolumeSource{
-					ConfigMap: &v1.ConfigMapVolumeSource{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: "aws-cloud-config",
-						},
-					},
-				},
-			},
-		)
-
-		dep, err = p.client.Deployments(ns.Name).Update(dep)
-		return err
+// Deprecated at V2 of create cluster endpoint
+// this is a super dirty hack to load the AWS cloud config from the cluster controller's templates
+// please don't punish the dev for adding this method =[ since it's copied over from load_files.go
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
+func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
+	var conf bytes.Buffer
+	cfgt, err := template.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
-}
-func (p *kubernetesProvider) ensureAWSConfigMapExists(c *api.Cluster, ns *v1.Namespace) (err error) {
+	if err := cfgt.Execute(struct{ Zone string }{Zone: c.Spec.Cloud.Region}, &conf); err != nil {
+		return nil, err
+	}
 
-	err = p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
+	file := "/opt/master-files/aws-cloud-config-cm.yaml"
+	if p := os.Getenv("MASTER_RESSOURCES"); p != "" {
+		file = path.Join(p, "aws-cloud-config-cm.yaml")
+	}
+	t, err := template.ParseFiles(file)
+	if err != nil {
+		return nil, err
+	}
+
+	var cm v1.ConfigMap
+	data := struct {
+		Conf string
+	}{
+		Conf: conf.String(),
+	}
+	err = t.Execute(data, &cm)
+	return &cm, err
+}
+
+// Deprecated at V2 of create cluster endpoint
+// this is a super hack and dirty hack to load the AWS cloud config from the cluster controller's templates
+// to create the config map by hand for now.
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
+func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace) error {
+	if c.Spec.Cloud.GetAWS() == nil {
+		return nil
+	}
+
+	err := p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
 
-	conf, err := p.getAWSCloudConfig(c)
+	cm, err := loadAwsCloudConfigConfigMap(c)
 	if err != nil {
 		return err
 	}
 
-	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(&v1.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
-			Name: "aws-cloud-config",
-		},
-		Data: map[string]string{
-			"aws-cloud-config": conf,
-		},
-	})
+	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(cm)
 	return err
-}
-
-func (p *kubernetesProvider) getAWSCloudConfig(c *api.Cluster) (string, error) {
-	// KubernetesClusterTag needs to be empty for AWS to find the correct subnets. Otherwise the kubernetes
-	// cloud provider would filter for the tag which currently isn't set
-	tmpl, err := template.New("cloud-config").Parse(`
-[global]
-zone={{.Zone}}
-kubernetesclustertag=
-disablesecuritygroupingress=false
-disablestrictzonecheck=true
-
-`)
-	if err != nil {
-		return "", err
-	}
-
-	var config bytes.Buffer
-
-	vars := &struct {
-		Zone string
-	}{
-		Zone: c.Spec.Cloud.AWS.AvailabilityZone,
-	}
-	err = tmpl.Execute(&config, vars)
-	if err != nil {
-		return "", err
-	}
-
-	return config.String(), nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
