@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -281,7 +280,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
 			Cluster: cmdv1.Cluster{
-				Server: fmt.Sprintf("%s:8443", c.Address.URL),
+				Server: c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
