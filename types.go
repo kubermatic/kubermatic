@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -56,7 +57,7 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type string `jason:"type"`
+	Type string `json:"type"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
@@ -160,6 +161,11 @@ type CloudSpec struct {
 	DatacenterName string `json:"dc"`
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
+
+	User   string `json:"user"`
+	Secret string `json:"secret"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
@@ -275,7 +281,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
 			Cluster: cmdv1.Cluster{
-				Server: c.Address.URL,
+				Server: fmt.Sprintf("%s:8443", c.Address.URL),
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},

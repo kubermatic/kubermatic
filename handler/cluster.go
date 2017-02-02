@@ -14,6 +14,67 @@ import (
 	kerrors "k8s.io/client-go/pkg/api/errors"
 )
 
+func newClusterEndpointV2(
+	kps map[string]provider.KubernetesProvider,
+	dcs map[string]provider.DatacenterMeta,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(newClusterReqV2)
+
+		if req.Cloud == nil {
+			return nil, NewBadRequest("no cloud spec given")
+		}
+
+		dc, found := dcs[req.Cloud.Region]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.Cloud.Region)
+		}
+
+		kp, found := kps[dc.Seed]
+		if !found {
+			return nil, NewBadRequest("unknown datacenter %q", dc.Seed)
+		}
+
+		switch req.Cloud.Name {
+		case provider.AWSCloudProvider:
+			req.Cloud.AWS = &api.AWSCloudSpec{
+				AccessKeyID:     req.Cloud.User,
+				SecretAccessKey: req.Cloud.Secret,
+				// @todo
+				SSHKeyName: req.SSHKeys[0],
+			}
+			break
+		case provider.DigitaloceanCloudProvider:
+			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
+				Token:   req.Cloud.Secret,
+				SSHKeys: req.SSHKeys,
+			}
+			break
+		case provider.FakeCloudProvider:
+			req.Cloud.Fake = &api.FakeCloudSpec{
+				Token: req.Cloud.Secret,
+			}
+		case provider.BringYourOwnCloudProvider:
+			req.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
+			// @TODO
+			}
+		}
+
+		req.Cloud.DatacenterName = req.Cloud.Region
+		c, err := kp.NewClusterWithCloud(req.user, req.Spec, req.Cloud)
+		if err != nil {
+			if kerrors.IsAlreadyExists(err) {
+				return nil, NewConflict("cluster", req.Cloud.Region, req.Spec.HumanReadableName)
+			}
+			return nil, err
+		}
+
+		return c, nil
+	}
+}
+
+// Deprecated at V2 of create cluster endpoint
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 func newClusterEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
@@ -66,6 +127,8 @@ func clusterEndpoint(
 	}
 }
 
+// Deprecated at V2 of create cluster endpoint
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 func setCloudEndpoint(
 	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
@@ -203,11 +266,15 @@ func createAddonEndpoint(
 	}
 }
 
+// Deprecated at V2 of create cluster endpoint
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 type newClusterReq struct {
 	dcReq
 	cluster api.Cluster
 }
 
+// Deprecated at V2 of create cluster endpoint
+// @TODO Remove with https://github.com/kubermatic/api/issues/220
 func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req newClusterReq
 
@@ -218,6 +285,29 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 	req.dcReq = dr.(dcReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.cluster); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+type newClusterReqV2 struct {
+	userReq
+	Cloud   *api.CloudSpec   `json:"cloud"`
+	Spec    *api.ClusterSpec `json:"spec"`
+	SSHKeys []string         `json:"sshKeys"`
+}
+
+func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
+	var req newClusterReqV2
+
+	ur, err := decodeUserReq(r)
+	if err != nil {
+		return nil, err
+	}
+	req.userReq = ur.(userReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
 
