@@ -8,6 +8,7 @@ import (
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"fmt"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -247,7 +248,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
 			Cluster: cmdv1.Cluster{
-				Server: c.Address.URL,
+				Server: fmt.Sprintf("%s:8443", c.Address.URL),
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
