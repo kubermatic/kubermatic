@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -8,7 +9,6 @@ import (
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
-	"fmt"
 )
 
 // Metadata is an object storing common metadata for persistable objects.
