@@ -58,7 +58,7 @@ func TestCreateApiserverAuth(t *testing.T) {
 	_, cc := newTestController()
 	cl := &api.Cluster{
 		Address: &api.ClusterAddress{
-			URL: "https://asdf.test-de-01.kubermatic.io",
+			URL: "https://asdf.test-de-01.kubermatic.io:8443",
 		},
 		Metadata: api.Metadata{
 			Name: "asdf",
