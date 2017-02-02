@@ -9,9 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
-
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
