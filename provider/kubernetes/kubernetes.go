@@ -285,7 +285,8 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 		return nil, nil, err
 	}
 
-	if c.Metadata.User != user.Name {
+	_, isAdmin := user.Roles["admin"]
+	if c.Metadata.User != user.Name && !isAdmin {
 		// don't return Forbidden, not NotFound to obfuscate the existence
 		return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
@@ -417,10 +418,15 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+	l := map[string]string{
 		RoleLabelKey: ClusterRoleLabel,
-		userLabelKey: LabelUser(user.Name),
-	})).String(), FieldSelector: fields.Everything().String()})
+	}
+
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		l[userLabelKey] = LabelUser(user.Name)
+	}
+
+	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}
