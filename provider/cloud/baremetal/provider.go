@@ -3,7 +3,6 @@ package baremetal
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -36,12 +35,12 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal kubeconfig to json: %v", err)
 	}
 
 	ycfg, err := yaml.JSONToYAML(jcfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to convert kubeconfig from json to yaml: %v", err)
 	}
 
 	c.Spec.Cloud.BareMetal = &api.BareMetalCloudSpec{
@@ -60,16 +59,15 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 
 	data, err := json.Marshal(Cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal cluster: %v", err)
 	}
 
 	resp, err := http.Post(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+"/clusters", appJSON, bytes.NewReader(data))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create cluster provider: %v", err)
 	}
 	if resp.StatusCode != http.StatusCreated {
-		glog.Errorf("Got bad response from bare-metal provider during cluster creation: %s", getLogableResponse(resp))
-		return errors.New("provider returned not successful status code")
+		return fmt.Errorf("got unexpected status code from bare-metal provider during cluster creation: %s", getLogableResponse(resp, ""))
 	}
 
 	return nil
@@ -87,7 +85,7 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 
 	name, ok := annotations[clusterNameKey]
 	if !ok {
-		return nil, fmt.Errorf("Couldn't find key %q while unmarshalling CloudSpec", clusterNameKey)
+		return nil, fmt.Errorf("couldn't find key %q in annotations while unmarshalling CloudSpec", clusterNameKey)
 	}
 	cs.BareMetal.Name = name
 
@@ -101,17 +99,16 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 		Number int `json:"number"`
 	}{num})
 	if err != nil {
-		return nodes, err
+		return nodes, fmt.Errorf("failed to marshal request: %v", err)
 	}
 
 	resp, err := http.Post(url, appJSON, bytes.NewReader(data))
 	if err != nil {
-		return nodes, err
+		return nodes, fmt.Errorf("failed sending request: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		glog.Errorf("Got bad response from bare-metal provider during node creation: %s", getLogableResponse(resp))
-		return nodes, errors.New("provider returned not successful status code")
+		return nodes, fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusCreated, getLogableResponse(resp, ""))
 	}
 
 	var createdNodes []api.BareMetalNodeSpec
@@ -119,13 +116,13 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 	defer func(r *http.Response) {
 		err = r.Body.Close()
 		if err != nil {
-			glog.Error(err)
+			glog.Errorf("failed to close response body: %v", err)
 		}
 	}(resp)
 
 	err = json.NewDecoder(resp.Body).Decode(resp.Body)
 	if err != nil {
-		return nodes, err
+		return nodes, fmt.Errorf("failed to decode response body: %v. response: %s", err, getLogableResponse(resp, ""))
 	}
 	for _, n := range createdNodes {
 		createdNode := &api.Node{
@@ -151,28 +148,33 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
 	resp, err := http.Get(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL + fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed sending request: %v", err)
 	}
 
-	var bareNodes []*api.BareMetalNodeSpec
-	err = json.NewDecoder(resp.Body).Decode(bareNodes)
+	var providerNodes []api.BareMetalNodeSpec
+
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed reading body from response: %v", err)
+	}
+	err = json.Unmarshal(body, &providerNodes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response body: %v. response: %s", err, getLogableResponse(resp, string(body)))
 	}
 
 	var nodes []*api.Node
-	for _, b := range bareNodes {
+	for _, pn := range providerNodes {
 		node := &api.Node{
 			Metadata: api.Metadata{
-				Name: b.ID,
-				UID:  b.ID,
+				Name: pn.ID,
+				UID:  pn.ID,
 			},
 			Status: api.NodeStatus{
 				Addresses: api.NodeAddresses{},
 			},
 			Spec: api.NodeSpec{
 				DatacenterName: c.Spec.Cloud.DatacenterName,
-				BareMetal:      b,
+				BareMetal:      &pn,
 			},
 		}
 		nodes = append(nodes, node)
@@ -185,15 +187,14 @@ func (b *baremetal) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []stri
 	for _, uid := range UIDs {
 		req, err := http.NewRequest(http.MethodDelete, b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+fmt.Sprintf("/clusters/%s/nodes/%s", c.Metadata.Name, uid), nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed creating request: %v", err)
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed sending request: %v", err)
 		}
 		if resp.StatusCode != http.StatusOK {
-			glog.Errorf("Got bad response from bare-metal provider during delete node: %s", getLogableResponse(resp))
-			return errors.New("provider returned not successful status code")
+			return fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusOK, getLogableResponse(resp, ""))
 		}
 	}
 	return nil
@@ -203,25 +204,27 @@ func (b *baremetal) CleanUp(c *api.Cluster) error {
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodDelete, b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL+fmt.Sprintf("/clusters/%s", c.Metadata.Name), nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating request: %v", err)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed sending request: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		glog.Errorf("Got bad response from bare-metal provider during cleanup: %s", getLogableResponse(resp))
-		return errors.New("provider returned not successful status code")
+		return fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusOK, getLogableResponse(resp, ""))
 	}
 	return nil
 }
 
-func getLogableResponse(r *http.Response) string {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		glog.Errorf("failed to get body from response: %v", err)
-		return ""
+func getLogableResponse(r *http.Response, body string) string {
+	if body == "" {
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			glog.Errorf("failed to get body from response: %v", err)
+			return ""
+		}
+		body = string(b)
 	}
 
-	return fmt.Sprintf("StatusCode=%d, Body=%d", r.StatusCode, string(body))
+	return fmt.Sprintf("%s %s %d %s", r.Request.Method, r.Request.URL.String(), r.StatusCode, body)
 }
