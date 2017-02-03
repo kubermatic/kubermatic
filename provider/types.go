@@ -145,6 +145,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -168,6 +171,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
+	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
