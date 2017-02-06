@@ -93,7 +93,7 @@ func (p *fakeCloudProvider) DeleteNodes(ctx context.Context, c *api.Cluster, UID
 	for _, u := range UIDs {
 		_, found := p.nodes[u]
 		if !found {
-			return fmt.Errorf("Node %q not found.", u)
+			return fmt.Errorf("node %q not found", u)
 		}
 
 		delete(p.nodes, u)
