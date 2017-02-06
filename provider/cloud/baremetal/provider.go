@@ -67,7 +67,7 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		return fmt.Errorf("failed to marshal cluster: %v", err)
 	}
 
-	resp, err := http.Post(b.getUrl(c, "/clusters"), appJSON, bytes.NewReader(data))
+	resp, err := http.Post(b.getURL(c, "/clusters"), appJSON, bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("failed to create cluster provider: %v", err)
 	}
@@ -106,7 +106,7 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 		return nodes, fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	resp, err := http.Post(b.getUrl(c, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)), appJSON, bytes.NewReader(data))
+	resp, err := http.Post(b.getURL(c, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)), appJSON, bytes.NewReader(data))
 	if err != nil {
 		return nodes, fmt.Errorf("failed sending request: %v", err)
 	}
@@ -150,7 +150,7 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 }
 
 func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error) {
-	resp, err := http.Get(b.getUrl(c, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
+	resp, err := http.Get(b.getURL(c, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name)))
 	if err != nil {
 		return nil, fmt.Errorf("failed sending request: %v", err)
 	}
@@ -189,7 +189,7 @@ func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error
 func (b *baremetal) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
 	client := &http.Client{}
 	for _, uid := range UIDs {
-		req, err := http.NewRequest(http.MethodDelete, b.getUrl(c, fmt.Sprintf("/clusters/%s/nodes/%s", c.Metadata.Name, uid)), nil)
+		req, err := http.NewRequest(http.MethodDelete, b.getURL(c, fmt.Sprintf("/clusters/%s/nodes/%s", c.Metadata.Name, uid)), nil)
 		if err != nil {
 			return fmt.Errorf("failed creating request: %v", err)
 		}
@@ -206,7 +206,7 @@ func (b *baremetal) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []stri
 
 func (b *baremetal) CleanUp(c *api.Cluster) error {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodDelete, b.getUrl(c, fmt.Sprintf("/clusters/%s", c.Metadata.Name)), nil)
+	req, err := http.NewRequest(http.MethodDelete, b.getURL(c, fmt.Sprintf("/clusters/%s", c.Metadata.Name)), nil)
 	if err != nil {
 		return fmt.Errorf("failed creating request: %v", err)
 	}
@@ -233,7 +233,7 @@ func getLogableResponse(r *http.Response, body string) string {
 	return fmt.Sprintf("%s %s %d %s", r.Request.Method, r.Request.URL.String(), r.StatusCode, body)
 }
 
-func (b *baremetal) getUrl(c *api.Cluster, p string) string {
+func (b *baremetal) getURL(c *api.Cluster, p string) string {
 	u, _ := url.Parse(b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal.URL)
 	u.Path = p
 	return u.String()
