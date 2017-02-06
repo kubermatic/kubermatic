@@ -82,13 +82,13 @@ deployment-update:
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=api
+        command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=control
+        command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
 
 push-image:
     box: ubuntu:14.04
