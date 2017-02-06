@@ -153,7 +153,7 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 
 type SSHKeyTPRInterface interface {
 	Create(*UserSSHKey) (*UserSSHKey, error)
-	List() ([]*UserSSHKey, error)
+	List() (UserSSHKeyList, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
 }
 
@@ -181,7 +181,7 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 	return &result, err
 }
 
-func (s *SSHKeyTPRClient) List() ([]*UserSSHKey, error) {
+func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
 	opts.LabelSelector = fmt.Sprintf("user=%s", s.user)
 	var result UserSSHKeyList
@@ -191,14 +191,7 @@ func (s *SSHKeyTPRClient) List() ([]*UserSSHKey, error) {
 		VersionedParams(&opts, kapi.ParameterCodec).
 		Do().
 		Into(result)
-	if err != nil {
-		return nil, err
-	}
-	var result_keys []*UserSSHKey
-	for _, k := range result.Items {
-		result_keys = append(result_keys, &k)
-	}
-	return result_keys, err
+	return result, err
 
 }
 
