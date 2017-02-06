@@ -42,6 +42,7 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 // Clientset is an interface to work with extensions
 type Clientset interface {
 	ClusterAddons(ns string) ClusterAddonsInterface
+	SSHKeyTPR(user string) SSHKeyTPRInterface
 }
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
