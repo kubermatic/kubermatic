@@ -72,7 +72,7 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		return fmt.Errorf("failed to create cluster provider: %v", err)
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("got unexpected status code from bare-metal provider during cluster creation: %s", getLogableResponse(resp, ""))
+		return fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusCreated, getLogableResponse(resp, ""))
 	}
 
 	return nil
