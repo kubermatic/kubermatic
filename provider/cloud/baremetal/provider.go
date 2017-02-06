@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"encoding/base64"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
@@ -59,7 +60,7 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 	}{
 		Name:         c.Metadata.Name,
 		APIServerURL: c.Address.URL,
-		Kubeconfig:   string(ycfg),
+		Kubeconfig:   base64.StdEncoding.EncodeToString(ycfg),
 	}
 
 	data, err := json.Marshal(Cluster)
