@@ -138,6 +138,52 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
 		Handler(r.authenticated(r.createAddonHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/ssh-keys").
+		Handler(r.authenticated(r.listSSHKeys()))
+	mux.
+		Methods("POST").
+		Path("/api/v1/ssh-keys").
+		Handler(r.authenticated(r.createSSHKey()))
+	mux.
+		Methods("DELETE").
+		Path("/api/v1/ssh-keys/{fingerprint}").
+		Handler(r.authenticated(r.deleteSSHKey()))
+}
+
+func (r Routing) listSSHKeys() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		listSSHKeyEndpoint(r.datacenters),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) createSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		createSSHKeyEndpoint(r.datacenters),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) deleteSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		deleteSSHKeyEndpoint(r.datacenters),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 func (r Routing) getAWSKeyHandler() http.Handler {
