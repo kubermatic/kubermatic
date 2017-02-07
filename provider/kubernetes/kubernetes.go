@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	gotemplate "text/template"
 	"time"
 
 	"github.com/kubermatic/api"
@@ -363,12 +364,12 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
 func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	var conf bytes.Buffer
-	cfgt, err := template.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
+	cfgt, err := gotemplate.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws cloud config template: %v", err)
 	}
 
-	if err := cfgt.Execute(struct{ Zone string }{Zone: c.Spec.Cloud.Region}, &conf); err != nil {
+	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
 		return nil, fmt.Errorf("failed to execute aws cloud config template: %v", err)
 	}
 
