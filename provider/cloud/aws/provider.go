@@ -345,8 +345,11 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 		RoleName:            sdk.String(kubermaticRoleName),            // Required
 	}
 	_, err = client.AddRoleToInstanceProfile(paramsAddRole)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
+	}
 
-	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
+	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, nil
 }
 
 func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
