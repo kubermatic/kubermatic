@@ -365,11 +365,11 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	var conf bytes.Buffer
 	cfgt, err := template.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load aws cloud config template: %v", err)
 	}
 
 	if err := cfgt.Execute(struct{ Zone string }{Zone: c.Spec.Cloud.Region}, &conf); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute aws cloud config template: %v", err)
 	}
 
 	file := "/opt/master-files/aws-cloud-config-cm.yaml"
@@ -378,7 +378,7 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	}
 	t, err := template.ParseFiles(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
 	}
 
 	var cm v1.ConfigMap
@@ -388,7 +388,10 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 		Conf: conf.String(),
 	}
 	err = t.Execute(data, &cm)
-	return &cm, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse config-map for aws cloud config: %v", err)
+	}
+	return &cm, nil
 }
 
 // Deprecated at V2 of create cluster endpoint
@@ -402,15 +405,18 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 
 	err := p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
-		return err
+		return fmt.Errorf("failed to delete existing config-map for aws cloud config: %v", err)
 	}
 
 	cm, err := loadAwsCloudConfigConfigMap(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
 	}
 
 	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(cm)
+	if err != nil {
+		return fmt.Errorf("failed to create config-map with aws cloud config")
+	}
 	return err
 }
 
