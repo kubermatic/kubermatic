@@ -145,7 +145,7 @@ func createInternetGateway(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.InternetGateway,
 		VpcId:             vpc.VpcId,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to attach internetgateway %s to vpc %s: %v", *igOut.InternetGateway.InternetGatewayId, *vpc.VpcId, err)
+		return nil, fmt.Errorf("failed to attach internetgateway %q to vpc %q: %v", *igOut.InternetGateway.InternetGatewayId, *vpc.VpcId, err)
 	}
 
 	return igOut.InternetGateway, nil
