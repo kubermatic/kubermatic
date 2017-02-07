@@ -473,11 +473,23 @@ func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
 	glog.Infof("using init cloud spec mode: %s (default=use-defaults)", cluster.Spec.Cloud.AWS.InitMode)
 	switch cluster.Spec.Cloud.AWS.InitMode {
 	case api.AWSInitUseDefaults:
-		return fmt.Errorf("failed to initialize cloud provider with default components: %v", a.InitializeCloudSpecWithDefault(cluster))
+		err := a.InitializeCloudSpecWithDefault(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
+		}
+		return nil
 	case api.AWSInitCreateVpc:
-		return fmt.Errorf("failed to initialize cloud provider with creating components: %v", a.InitializeCloudSpecWithCreate(cluster))
+		err := a.InitializeCloudSpecWithCreate(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with creating components: %v", err)
+		}
+		return nil
 	default:
-		return fmt.Errorf("failed to initialize cloud provider with default components: %v", a.InitializeCloudSpecWithDefault(cluster))
+		err := a.InitializeCloudSpecWithDefault(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
+		}
+		return nil
 	}
 }
 
