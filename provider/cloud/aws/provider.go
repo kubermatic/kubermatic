@@ -746,9 +746,9 @@ func createNode(instance *ec2.Instance) *api.Node {
 			Name: *instance.PrivateDnsName,
 		},
 		Status: api.NodeStatus{
-			Addresses: map[string]string{
-				"public":  publicIP,
-				"private": privateIP,
+			Addresses: api.NodeAddresses{
+				Public:  publicIP,
+				Private: privateIP,
 			},
 		},
 		Spec: api.NodeSpec{

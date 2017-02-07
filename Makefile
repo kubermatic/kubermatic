@@ -27,7 +27,7 @@ gometalinter:
 		--vendor \
 		--cyclo-over=13 \
 		--tests \
-		--deadline=120s \
+		--deadline=600s \
 		--dupl-threshold=53 \
 		--concurrency=2 \
 		--disable=gotype --disable=aligncheck --disable=unconvert --disable=structcheck --disable=interfacer --disable=deadcode --disable=gocyclo --disable=dupl --disable=gosimple --disable=gas --disable=vet --disable=vetshadow\
