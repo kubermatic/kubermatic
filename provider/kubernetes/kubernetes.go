@@ -379,7 +379,7 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	}
 	t, err := template.ParseFiles(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
+		return nil, err
 	}
 
 	var cm v1.ConfigMap
@@ -390,7 +390,7 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	}
 	err = t.Execute(data, &cm)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config-map for aws cloud config: %v", err)
+		return nil, fmt.Errorf("failed to put aws-cloud-config into config-map: Data=%q: %v", data.Conf, err)
 	}
 	return &cm, nil
 }
