@@ -324,6 +324,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = prov.InitializeCloudSpec(c)
 		if err != nil {
+			prov.CleanUp(c)
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
 				provName,
@@ -334,6 +335,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = p.ApplyCloudProvider(c, ns)
 		if err != nil {
+			prov.CleanUp(c)
 			return nil, err
 		}
 
@@ -364,19 +366,24 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
 func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	var conf bytes.Buffer
-	cfgt, err := gotemplate.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
+
+	masterPath := os.Getenv("MASTER_RESSOURCES")
+	if masterPath == "" {
+		masterPath = "/opt/master-files"
+	}
+
+	file := path.Join(masterPath, "aws-cloud-config.cfg")
+	cfgt, err := gotemplate.ParseFiles(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load aws cloud config template: %v", err)
+		return nil, err
 	}
 
 	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
 		return nil, fmt.Errorf("failed to execute aws cloud config template: %v", err)
 	}
 
-	file := "/opt/master-files/aws-cloud-config-cm.yaml"
-	if p := os.Getenv("MASTER_RESSOURCES"); p != "" {
-		file = path.Join(p, "aws-cloud-config-cm.yaml")
-	}
+	file = path.Join(masterPath, "aws-cloud-config-cm.yaml")
+
 	t, err := template.ParseFiles(file)
 	if err != nil {
 		return nil, err
