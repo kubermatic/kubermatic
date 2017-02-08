@@ -3,6 +3,7 @@ package template
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	texttemplate "text/template"
 
 	"k8s.io/client-go/pkg/util/yaml"
@@ -15,10 +16,10 @@ type Template struct {
 
 // ParseFiles creates a new template for the given filenames
 // and parses the template definitions from the named files.
-func ParseFiles(filenames string) (*Template, error) {
-	tpl, err := texttemplate.ParseFiles(filenames)
+func ParseFiles(filename string) (*Template, error) {
+	tpl, err := texttemplate.ParseFiles(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse %q: %v", filename, err)
 	}
 
 	return &Template{tpl}, nil
@@ -29,16 +30,16 @@ func ParseFiles(filenames string) (*Template, error) {
 func (t *Template) Execute(data, v interface{}) error {
 	var buf bytes.Buffer
 	if err := t.tpl.Execute(&buf, data); err != nil {
-		return err
+		return fmt.Errorf("failed executing template: %v", err)
 	}
 
 	jsonBytes, err := yaml.ToJSON(buf.Bytes())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed converting yaml to json: %v", err)
 	}
 
 	if err := json.Unmarshal(jsonBytes, &v); err != nil {
-		return err
+		return fmt.Errorf("failed unmarshaling: %v", err)
 	}
 
 	return nil
