@@ -71,7 +71,7 @@ func NewKubernetesProvider(
 
 func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 	for {
-		port := rand.IntnRange(50000, 52767)
+		port := rand.IntnRange(12000, 14767)
 		sel := labels.NewSelector()
 		portString := strconv.Itoa(port)
 		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})
