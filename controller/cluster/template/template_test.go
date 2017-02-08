@@ -51,7 +51,7 @@ func TestTemplate_ExecuteFailsWithInvalidContent(t *testing.T) {
 
 	if err := tpl.Execute(source, result); err == nil {
 		t.Error("Execute finished without returning an error on an invalid file")
-	} else if err.Error() != "yaml: line 1: mapping values are not allowed in this context" {
+	} else if err.Error() != "failed converting yaml to json: yaml: line 1: mapping values are not allowed in this context" {
 		t.Errorf("Expected to get an yaml mapping error, instead got: %s", err.Error())
 	}
 }
