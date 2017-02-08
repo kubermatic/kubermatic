@@ -35,11 +35,11 @@ func (t *Template) Execute(data, v interface{}) error {
 
 	jsonBytes, err := yaml.ToJSON(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("failed converting yaml to json Data=%s: %v", string(buf.Bytes()), err)
+		return fmt.Errorf("failed converting yaml to json: %v", err)
 	}
 
 	if err := json.Unmarshal(jsonBytes, &v); err != nil {
-		return fmt.Errorf("failed unmarshaling Data=%s: %v", string(jsonBytes), err)
+		return fmt.Errorf("failed unmarshaling: %v", err)
 	}
 
 	return nil
