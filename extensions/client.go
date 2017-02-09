@@ -191,7 +191,7 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 		Resource(SSHKeyTPRName).
 		VersionedParams(&opts, kapi.ParameterCodec).
 		Do().
-		Into(result)
+		Into(&result)
 	return result, err
 
 }
