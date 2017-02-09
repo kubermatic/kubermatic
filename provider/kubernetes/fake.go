@@ -154,3 +154,15 @@ func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]st
 func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
 	return nil, nil
 }
+
+func (p *kubernetesFakeProvider) CreateUserSSHKey(publicKey, fingerprint, name string, user provider.User) (*extensions.UserSSHKey, error) {
+	panic("Not implemented")
+}
+
+func (p *kubernetesFakeProvider) DeleteUserSSHKey(user provider.User, fingerprint string) error {
+	panic("Not implemented")
+}
+
+func (p *kubernetesFakeProvider) ListUserSSHKeys(user provider.User) (extensions.UserSSHKeyList, error) {
+	panic("Not implemented")
+}
