@@ -53,9 +53,9 @@ func defaultHTTPErrorEncoder() httptransport.ServerOption {
 
 				switch httpError.Err.(type) {
 				case HTTPError:
-					http.Error(w, err.Error(), httpError.Err.(HTTPError).code)
+					http.Error(w, httpError.Err.Error(), httpError.Err.(HTTPError).code)
 				default:
-					http.Error(w, err.Error(), http.StatusBadRequest)
+					http.Error(w, httpError.Err.Error(), http.StatusBadRequest)
 				}
 
 			default:

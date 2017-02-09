@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -64,7 +65,12 @@ func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Temp
 	if err != nil {
 		return nil, nil, err
 	}
-	asKC, err := c.CreateKeyCert(u.Host, []string{u.Host, "10.10.10.1"})
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	asKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1"})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 	}
@@ -87,8 +93,12 @@ func createEtcdAuth(cc *clusterController, c *api.Cluster, t *template.Template)
 	if err != nil {
 		return nil, nil, err
 	}
-	etcdURL := strings.Split(u.Host, ":")[0]
-	etcdKC, err := c.CreateKeyCert(etcdURL, []string{})
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	etcdKC, err := c.CreateKeyCert(host, []string{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
 	}
@@ -149,7 +159,7 @@ func generateTokenUsers(cc *clusterController, c *api.Cluster) (*v1.Secret, erro
 		},
 	}
 
-	c.Address.URL = fmt.Sprintf("https://%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+	c.Address.URL = fmt.Sprintf("https://%s.%s.%s:8443", c.Metadata.Name, cc.dc, cc.externalURL)
 	c.Address.Token = trimmedToken64
 
 	return &secret, nil

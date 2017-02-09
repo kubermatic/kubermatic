@@ -80,6 +80,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticated(r.newClusterHandler()))
 
 	mux.
+		Methods("POST").
+		Path("/api/v1/cluster").
+		Handler(r.authenticated(r.newClusterHandlerV2()))
+
+	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticated(r.clustersHandler()))
@@ -251,6 +256,18 @@ func (r Routing) newClusterHandler() http.Handler {
 		r.ctx,
 		newClusterEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNewClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+// newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
+func (r Routing) newClusterHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		newClusterEndpointV2(r.kubernetesProviders, r.datacenters),
+		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),

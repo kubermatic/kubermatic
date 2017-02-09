@@ -38,6 +38,9 @@ func createTestEndpoint() http.Handler {
 		log.Fatal(err)
 	}
 
+	// override the default master k8s provider since it would be a "real" k8s provider, not a fake one.
+	kps["master"] = kubernetes.NewKubernetesFakeProvider("master", cps)
+
 	router := mux.NewRouter()
 	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)))
 	routing.Register(router)

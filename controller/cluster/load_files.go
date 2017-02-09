@@ -1,9 +1,14 @@
 package cluster
 
 import (
+	"bytes"
+	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"path"
+	"strings"
+	texttemplate "text/template"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
@@ -64,12 +69,27 @@ func loadDeploymentFile(cc *clusterController, c *api.Cluster, s string) (*exten
 	data := struct {
 		DC          string
 		ClusterName string
+		Cluster     *api.Cluster
 	}{
 		DC:          cc.dc,
 		ClusterName: c.Metadata.Name,
+		Cluster:     c,
 	}
 	err = t.Execute(data, &dep)
 	return &dep, err
+}
+
+func loadDeploymentFileControllerManager(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error) {
+	if nil == c.Spec.Cloud {
+		return loadDeploymentFile(cc, c, s)
+	}
+
+	file := path.Join(cc.masterResourcesPath, fmt.Sprintf("%s-%s-dep.yaml", s, strings.ToLower(c.Spec.Cloud.Name)))
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return loadDeploymentFile(cc, c, s)
+	}
+
+	return loadDeploymentFile(cc, c, fmt.Sprintf("%s-%s", s, strings.ToLower(c.Spec.Cloud.Name)))
 }
 
 func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error) {
@@ -83,7 +103,11 @@ func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensions
 		if err != nil {
 			return nil, err
 		}
-		addrs, err := net.LookupHost(u.Host)
+		host, _, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			return nil, err
+		}
+		addrs, err := net.LookupHost(host)
 		if err != nil {
 			return nil, err
 		}
@@ -117,4 +141,30 @@ func loadPVCFile(cc *clusterController, c *api.Cluster, s string) (*v1.Persisten
 	}
 	err = t.Execute(data, &pvc)
 	return &pvc, err
+}
+
+func loadAwsCloudConfigConfigMap(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error) {
+	var conf bytes.Buffer
+	cfgt, err := texttemplate.ParseFiles(path.Join(cc.masterResourcesPath, "aws-cloud-config.cfg"))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
+		return nil, err
+	}
+
+	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-cm.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	var cm v1.ConfigMap
+	data := struct {
+		Conf string
+	}{
+		Conf: conf.String(),
+	}
+	err = t.Execute(data, &cm)
+	return &cm, err
 }

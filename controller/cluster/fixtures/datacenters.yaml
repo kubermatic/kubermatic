@@ -10,31 +10,12 @@ datacenters:
         bringyourown:
   do-ams2:
     location: Amsterdam
-    seed: master
     country: NL
     spec:
       digitalocean:
         region: ams2
-  us-east-1a:
-    location: US East (N. Virginia)
-    seed: master
-    country: US
-    spec:
-      aws:
-        region: us-east-1
-        ami: ami-442d7721 # HVM image - Will run on small instances too
-  us-west-2:
-    location: Oregon
-    seed: master
-    country: US
-    provider: aws
-    spec:
-      aws:
-        ami: ami-d0e54eb0
-        region: us-west-2
   fake-1:
     location: Oregon
-    seed: master
     country: US
     provider: aws
     spec:
@@ -43,7 +24,6 @@ datacenters:
         region: us-west-2
   eu-central-1:
     location: Frankfurt
-    seed: master
     country: DE
     provider: aws
     private: true

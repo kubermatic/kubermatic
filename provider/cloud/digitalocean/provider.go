@@ -78,9 +78,9 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 			Name: d.Name,
 		},
 		Status: api.NodeStatus{
-			Addresses: map[string]string{
-				"public":  publicIP,
-				"private": privateIP,
+			Addresses: api.NodeAddresses{
+				Public:  publicIP,
+				Private: privateIP,
 			},
 		},
 		Spec: api.NodeSpec{

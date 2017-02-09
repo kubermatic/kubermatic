@@ -75,6 +75,15 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
+func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
+	c, err := p.NewCluster(user, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.SetCloud(user, c.Metadata.Name, cloud)
+}
+
 func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

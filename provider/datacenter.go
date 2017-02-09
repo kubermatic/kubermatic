@@ -24,6 +24,11 @@ type AWSSpec struct {
 type BringYourOwnSpec struct {
 }
 
+// BareMetalSpec describes a datacenter hosted on bare metal
+type BareMetalSpec struct {
+	URL string `yaml:"url"`
+}
+
 // SeedSpec describes a seed in the given datacenter.
 type SeedSpec struct {
 	Digitalocean struct {
@@ -55,6 +60,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
+	BareMetal    *BareMetalSpec    `yaml:"baremetal"`
 
 	Seed SeedSpec `yaml:"seed"`
 }
@@ -62,6 +68,7 @@ type DatacenterSpec struct {
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location string         `yaml:"location"`
+	Seed     string         `yaml:"seed"`
 	Country  string         `yaml:"country"`
 	Spec     DatacenterSpec `yaml:"spec"`
 	Private  bool           `yaml:"private"`
