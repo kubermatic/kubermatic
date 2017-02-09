@@ -427,13 +427,14 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }
 
-func (p *kubernetesProvider) CreateUserSSHKey(publicKey, fingerprint, name string, user *provider.User) (*extensions.UserSSHKey, error) {
+func (p *kubernetesProvider) CreateUserSSHKey(publicKey, fingerprint, name string, user provider.User) (*extensions.UserSSHKey, error) {
 	key := &extensions.UserSSHKey{
 		Metadata: v1.ObjectMeta{
 			Name: fmt.Sprintf("usersshkey-%s-%s", user.Name, fingerprint),
 		},
 		PublicKey:   publicKey,
 		Fingerprint: fingerprint,
+		Name:        name,
 	}
 
 	return p.tprClient.SSHKeyTPR(user.Name).Create(key)
@@ -443,6 +444,6 @@ func (p *kubernetesProvider) DeleteUserSSHKey(user provider.User, fingerprint st
 	return p.tprClient.SSHKeyTPR(user.Name).Delete(fingerprint, v1.NewDeleteOptions(100))
 }
 
-func (p *kubernetesProvider) ListUserSSHKeys(user provider.User) (*extensions.UserSSHKeyList, error) {
+func (p *kubernetesProvider) ListUserSSHKeys(user provider.User) (extensions.UserSSHKeyList, error) {
 	return p.tprClient.SSHKeyTPR(user.Name).List()
 }
