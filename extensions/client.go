@@ -58,7 +58,7 @@ func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	}
 }
 
-//  SSHKeyTPR returns an interface to interact with UserSSHKey
+// SSHKeyTPR returns an interface to interact with UserSSHKey
 func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	return &SSHKeyTPRClient{
 		client: w.Client,
@@ -152,6 +152,7 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 	return
 }
 
+// SSHKeyTPRInterface is the interface for an SSHTPR client
 type SSHKeyTPRInterface interface {
 	Create(*UserSSHKey) (*UserSSHKey, error)
 	List() (UserSSHKeyList, error)
@@ -170,6 +171,7 @@ func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
 	})
 }
 
+// Create saves an SSHKey into an tpr
 func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 	var result UserSSHKey
 	s.injectUserLabel(sk)
@@ -182,6 +184,7 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 	return &result, err
 }
 
+// List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
 	opts.LabelSelector = fmt.Sprintf("user=%s", s.user)
