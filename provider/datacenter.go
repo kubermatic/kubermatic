@@ -46,6 +46,8 @@ type SeedSpec struct {
 		Private string `yaml:"private"`
 		Public  string `yaml:"public"`
 	} `yaml:"apiserverSSH"`
+
+	MasterStore bool `yaml:"master_store"`
 }
 
 // DatacenterSpec describes mutually points to provider datacenter spec
