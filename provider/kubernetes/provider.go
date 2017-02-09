@@ -50,6 +50,10 @@ func Providers(
 			dev,
 		)
 		cfgs[ctx] = *cfg
+
+		if dc, ok := dcs[ctx]; ok && dc.Spec.Seed.MasterStore {
+			kps["masterStore"] = kps[ctx]
+		}
 	}
 
 	// load secrets
