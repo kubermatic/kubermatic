@@ -196,5 +196,17 @@ func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 }
 
 func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
-	return nil, nil
+	panic("Not implemented")
+}
+
+func (p *seedProvider) CreateUserSSHKey(publicKey, fingerprint, name string, user provider.User) (*extensions.UserSSHKey, error) {
+	panic("Not implemented")
+}
+
+func (p *seedProvider) DeleteUserSSHKey(user provider.User, fingerprint string) error {
+	panic("Not implemented")
+}
+
+func (p *seedProvider) ListUserSSHKeys(user provider.User) (extensions.UserSSHKeyList, error) {
+	panic("Not implemented")
 }
