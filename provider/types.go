@@ -70,15 +70,6 @@ type KubernetesProvider interface {
 
 	// CreateAddon creates an addon ThirdPartyResource
 	CreateAddon(user User, cluster string, addonName string) (*extensions.ClusterAddon, error)
-
-	// ListUserSSHKeys gives back a list object of users.
-	ListUserSSHKeys(user User) (extensions.UserSSHKeyList, error)
-
-	// DeleteUserSSHKey deltes a User's SSH key
-	DeleteUserSSHKey(user User, fingerprint string) error
-
-	// CreateUserSSHKey creates an SSH key for a User
-	CreateUserSSHKey(publicKey, fingerprint, name string, user User) (*extensions.UserSSHKey, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
