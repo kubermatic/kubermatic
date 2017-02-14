@@ -43,8 +43,6 @@ func createSSHKeyEndpoint(
 	kps map[string]provider.KubernetesProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var res extensions.UserSSHKey
-
 		req, ok := request.(createSSHKeyReq)
 		if !ok {
 			return nil, NewBadRequest("Bad parameters")
@@ -59,9 +57,7 @@ func createSSHKeyEndpoint(
 		}
 		fingerprint := ssh.FingerprintLegacyMD5(pubKey)
 
-		seed.CreateUserSSHKey(req.UserSSHKey.PublicKey, strings.Trim(fingerprint, ":"), req.UserSSHKey.Name, req.userReq.user)
-
-		return res, nil
+		return seed.CreateUserSSHKey(req.UserSSHKey.PublicKey, strings.Trim(fingerprint, ":"), req.UserSSHKey.Name, req.userReq.user)
 	}
 }
 
