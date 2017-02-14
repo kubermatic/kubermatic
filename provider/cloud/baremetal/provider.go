@@ -2,13 +2,14 @@ package baremetal
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
-	"encoding/base64"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
@@ -113,6 +114,9 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 	}
 
 	if resp.StatusCode != http.StatusCreated {
+		if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
+			return nodes, errors.New("not enough free nodes available")
+		}
 		return nodes, fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusCreated, getLogableResponse(resp, ""))
 	}
 
