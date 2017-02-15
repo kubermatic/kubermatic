@@ -11,7 +11,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/provider"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/api/v1"
@@ -43,7 +42,6 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 }
 
 func createSSHKeyEndpoint(
-	kps map[string]provider.KubernetesProvider,
 	clientset *extensions.WrappedClientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -97,7 +95,6 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 }
 
 func deleteSSHKeyEndpoint(
-	kps map[string]provider.KubernetesProvider,
 	clientset *extensions.WrappedClientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -131,7 +128,6 @@ func decodeListSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error
 }
 
 func listSSHKeyEndpoint(
-	kps map[string]provider.KubernetesProvider,
 	clientset *extensions.WrappedClientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {

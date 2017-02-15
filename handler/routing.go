@@ -172,7 +172,7 @@ func (r Routing) Register(mux *mux.Router) {
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		listSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
+		listSSHKeyEndpoint(r.clientset),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -183,7 +183,7 @@ func (r Routing) listSSHKeys() http.Handler {
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		createSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
+		createSSHKeyEndpoint(r.clientset),
 		decodeCreateSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -194,7 +194,7 @@ func (r Routing) createSSHKey() http.Handler {
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		deleteSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
+		deleteSSHKeyEndpoint(r.clientset),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
