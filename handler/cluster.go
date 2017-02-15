@@ -56,7 +56,7 @@ func newClusterEndpointV2(
 			}
 		case provider.BringYourOwnCloudProvider:
 			req.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
-			// @TODO
+				PrivateIntf: req.Cloud.BringYourOwn.PrivateIntf,
 			}
 		}
 
