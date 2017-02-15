@@ -115,6 +115,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticated(r.nodesHandler()))
 
 	mux.
+		Methods("GET").
+		Path("/api/v2/dc/{dc}/cluster/{cluster}/node").
+		Handler(r.authenticated(r.nodesHandlerV2()))
+
+	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticated(r.createNodesHandler()))
@@ -293,6 +298,18 @@ func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
 		nodesEndpoint(r.kubernetesProviders, r.cloudProviders),
+		decodeNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+// nodesHandlerV2 returns all nodes from a cluster
+func (r Routing) nodesHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		nodesEndpointV2(r.kubernetesProviders, r.cloudProviders),
 		decodeNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

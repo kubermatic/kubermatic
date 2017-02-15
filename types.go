@@ -73,12 +73,10 @@ type NodeSpec struct {
 
 // NodeStatus stores status information about a node.
 type NodeStatus struct {
-	Hostname  string        `json:"hostname"`
 	Addresses NodeAddresses `json:"addresses"`
-
-	CPU      int64         `json:"cpu,omitempty"`
-	Memory   string        `json:"memory,omitempty"`
-	Versions *NodeVersions `json:"versions,omitempty"`
+	CPU       int64         `json:"cpu,omitempty"`
+	Memory    string        `json:"memory,omitempty"`
+	Versions  *NodeVersions `json:"versions,omitempty"`
 }
 
 // NodeAddresses stores the IP addresses associated with a node
@@ -89,12 +87,11 @@ type NodeAddresses struct {
 
 // NodeVersions stores information about the node operating system
 type NodeVersions struct {
-	OS                   string `json:"os,omitempty"`
-	ContainerRuntime     string `json:"containerRuntime,omitempty"`
-	ContainerRuntimeType string `json:"containerRuntime_type,omitempty"`
-	Kubelet              string `json:"kubelet,omitempty"`
-	KubeProxy            string `json:"kubeproxy,omitempty"`
-	Kernel               string `json:"kernel,omitempty"`
+	OS               string `json:"os,omitempty"`
+	ContainerRuntime string `json:"container_runtime,omitempty"`
+	Kubelet          string `json:"kubelet,omitempty"`
+	KubeProxy        string `json:"kubeproxy,omitempty"`
+	Kernel           string `json:"kernel,omitempty"`
 }
 
 // Node is the object representing a cluster node.
