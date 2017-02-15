@@ -69,7 +69,7 @@ func createSSHKeyEndpoint(
 			Fingerprint: strings.Trim(fingerprint, ":"),
 			Name:        req.UserSSHKey.Name,
 		}
-		return c.Create(key), nil
+		return c.Create(key)
 	}
 }
 
