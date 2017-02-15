@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	gotemplate "text/template"
 	"time"
 
 	"github.com/kubermatic/api"
@@ -70,7 +71,7 @@ func NewKubernetesProvider(
 
 func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 	for {
-		port := rand.IntnRange(30000, 32767)
+		port := rand.IntnRange(12000, 14767)
 		sel := labels.NewSelector()
 		portString := strconv.Itoa(port)
 		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})
@@ -285,7 +286,8 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 		return nil, nil, err
 	}
 
-	if c.Metadata.User != user.Name {
+	_, isAdmin := user.Roles["admin"]
+	if c.Metadata.User != user.Name && !isAdmin {
 		// don't return Forbidden, not NotFound to obfuscate the existence
 		return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
@@ -322,6 +324,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = prov.InitializeCloudSpec(c)
 		if err != nil {
+			_ = prov.CleanUp(c)
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
 				provName,
@@ -332,6 +335,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = p.ApplyCloudProvider(c, ns)
 		if err != nil {
+			_ = prov.CleanUp(c)
 			return nil, err
 		}
 
@@ -362,19 +366,24 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
 func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 	var conf bytes.Buffer
-	cfgt, err := template.ParseFiles("/opt/master-files/aws-cloud-config.cfg")
+
+	masterPath := os.Getenv("MASTER_RESSOURCES")
+	if masterPath == "" {
+		masterPath = "/opt/master-files"
+	}
+
+	file := path.Join(masterPath, "aws-cloud-config.cfg")
+	cfgt, err := gotemplate.ParseFiles(file)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := cfgt.Execute(struct{ Zone string }{Zone: c.Spec.Cloud.Region}, &conf); err != nil {
-		return nil, err
+	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
+		return nil, fmt.Errorf("failed to execute aws cloud config template: %v", err)
 	}
 
-	file := "/opt/master-files/aws-cloud-config-cm.yaml"
-	if p := os.Getenv("MASTER_RESSOURCES"); p != "" {
-		file = path.Join(p, "aws-cloud-config-cm.yaml")
-	}
+	file = path.Join(masterPath, "aws-cloud-config-cm.yaml")
+
 	t, err := template.ParseFiles(file)
 	if err != nil {
 		return nil, err
@@ -387,7 +396,10 @@ func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
 		Conf: conf.String(),
 	}
 	err = t.Execute(data, &cm)
-	return &cm, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to put aws-cloud-config into config-map: Data=%q: %v", data.Conf, err)
+	}
+	return &cm, nil
 }
 
 // Deprecated at V2 of create cluster endpoint
@@ -401,15 +413,18 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 
 	err := p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
-		return err
+		return fmt.Errorf("failed to delete existing config-map for aws cloud config: %v", err)
 	}
 
 	cm, err := loadAwsCloudConfigConfigMap(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
 	}
 
 	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(cm)
+	if err != nil {
+		return fmt.Errorf("failed to create config-map with aws cloud config")
+	}
 	return err
 }
 
@@ -417,10 +432,15 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(map[string]string{
+	l := map[string]string{
 		RoleLabelKey: ClusterRoleLabel,
-		userLabelKey: LabelUser(user.Name),
-	})).String(), FieldSelector: fields.Everything().String()})
+	}
+
+	if _, isAdmin := user.Roles["admin"]; !isAdmin {
+		l[userLabelKey] = LabelUser(user.Name)
+	}
+
+	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}

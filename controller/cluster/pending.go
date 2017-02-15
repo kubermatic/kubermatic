@@ -216,7 +216,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		return nil, nil
 	}
 
-	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s:8443", c.Metadata.Name, cc.dc, cc.externalURL)
 
 	return c, nil
 }

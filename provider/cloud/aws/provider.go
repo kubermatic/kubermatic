@@ -77,7 +77,7 @@ func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list vpc's: %v", err)
 	}
 
 	if len(vpcOut.Vpcs) != 1 {
@@ -94,7 +94,7 @@ func createVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	}
 	vpcOut, err := client.CreateVpc(vReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create vpc on ec2: %v", err)
 	}
 
 	return vpcOut.Vpc, nil
@@ -112,7 +112,7 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list subnets: %v", err)
 	}
 
 	if len(sOut.Subnets) != 1 {
@@ -128,7 +128,7 @@ func createSubnet(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.Subnet, error) {
 		VpcId:     vpc.VpcId,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create subnet on ec2: %v", err)
 	}
 
 	return sOut.Subnet, nil
@@ -137,7 +137,7 @@ func createSubnet(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.Subnet, error) {
 func createInternetGateway(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.InternetGateway, error) {
 	igOut, err := client.CreateInternetGateway(&ec2.CreateInternetGatewayInput{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create internet gateway on ec2: %v", err)
 	}
 
 	_, err = client.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
@@ -145,7 +145,7 @@ func createInternetGateway(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.InternetGateway,
 		VpcId:             vpc.VpcId,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to attach internetgateway %q to vpc %q: %v", *igOut.InternetGateway.InternetGatewayId, *vpc.VpcId, err)
 	}
 
 	return igOut.InternetGateway, nil
@@ -158,7 +158,7 @@ func addRoute(client *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list route tables: %v", err)
 	}
 
 	if len(rtOut.RouteTables) != 1 {
@@ -171,7 +171,7 @@ func addRoute(client *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2
 		RouteTableId:         rtOut.RouteTables[0].RouteTableId,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create route: %v", err)
 	}
 
 	return rtOut.RouteTables[0], nil
@@ -185,7 +185,7 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 		Description: sdk.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create security group: %v", err)
 	}
 
 	// Allow SSH from everywhere
@@ -197,7 +197,7 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 		IpProtocol: sdk.String("tcp"),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to authorize security group ingress for ssh: %v", err)
 	}
 
 	// Allow UDP within the security group
@@ -208,7 +208,7 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 		IpProtocol: sdk.String("udp"),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to authorize security group ingress for udp: %v", err)
 	}
 
 	// Allow ICMP within the security group
@@ -219,7 +219,7 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 		IpProtocol: sdk.String("icmp"),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to authorize security group ingress for icmp: %v", err)
 	}
 
 	return csgOut.GroupId, nil
@@ -232,7 +232,7 @@ func getACL(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list Acls: %v", err)
 	}
 
 	if len(aOut.NetworkAcls) != 1 {
@@ -261,7 +261,7 @@ func createTags(client *ec2.EC2, cluster *api.Cluster, resources []*string) erro
 		},
 	})
 
-	return err
+	return fmt.Errorf("failed to create tags on ec2: %v", err)
 }
 
 func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.Policy, *iam.InstanceProfile, error) {
@@ -299,7 +299,7 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 	}
 	policyResp, err := client.CreatePolicy(paramsPolicy)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to create policy: %v", err)
 	}
 
 	policyArn := *policyResp.Policy.Arn
@@ -319,7 +319,7 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 	}
 	rOut, err := client.CreateRole(paramsRole)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to create role: %v", err)
 	}
 
 	// Attach policy to role
@@ -329,7 +329,7 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 	}
 	_, err = client.AttachRolePolicy(paramsAttachPolicy)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to attach role %q to policy %q: %v", kubermaticRoleName, policyArn, err)
 	}
 
 	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
@@ -337,7 +337,7 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 	}
 	cipOut, err := client.CreateInstanceProfile(paramsInstanceProfile)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to create instance profile: %v", err)
 	}
 
 	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
@@ -345,8 +345,11 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 		RoleName:            sdk.String(kubermaticRoleName),            // Required
 	}
 	_, err = client.AddRoleToInstanceProfile(paramsAddRole)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
+	}
 
-	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, err
+	return rOut.Role, policyResp.Policy, cipOut.InstanceProfile, nil
 }
 
 func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
@@ -356,12 +359,12 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 
 	client, err := a.getEC2client(cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get EC2 client: %v", err)
 	}
 
 	vpc, err := getDefaultVpc(client)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get default vpc: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
 
@@ -369,27 +372,28 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 	if !ok {
 		return fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
+
 	subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Zone)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get default subnet: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
 	securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add security group: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 
 	svcIAM, err := a.getIAMclient(cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get IAM client: %v", err)
 	}
 
 	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create instance profile: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
 	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
@@ -405,58 +409,58 @@ func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 
 	client, err := a.getEC2client(cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get EC2 client: %v", err)
 	}
 
 	vpc, err := createVpc(client)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create vpc: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
 
 	subnet, err := createSubnet(client, vpc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create subnet: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
 	gateway, err := createInternetGateway(client, vpc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create internet gateway: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.InternetGatewayID = *gateway.InternetGatewayId
 
 	routeTable, err := addRoute(client, vpc, gateway)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add route: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 
 	securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add security group: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 
 	acl, err := getACL(client, vpc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get acl: %v", err)
 	}
 
 	err = createTags(client, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroupID, acl.NetworkAclId})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create tags: %v", err)
 	}
 
 	svcIAM, err := a.getIAMclient(cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get iam client: %v", err)
 	}
 
 	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create instance profile: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
 	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
@@ -466,14 +470,26 @@ func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
-	glog.Infof("using init cloud spec mode: %s", cluster.Spec.Cloud.AWS.InitMode)
+	glog.Infof("using init cloud spec mode: %s (default=use-defaults)", cluster.Spec.Cloud.AWS.InitMode)
 	switch cluster.Spec.Cloud.AWS.InitMode {
 	case api.AWSInitUseDefaults:
-		return a.InitializeCloudSpecWithDefault(cluster)
+		err := a.InitializeCloudSpecWithDefault(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
+		}
+		return nil
 	case api.AWSInitCreateVpc:
-		return a.InitializeCloudSpecWithCreate(cluster)
+		err := a.InitializeCloudSpecWithCreate(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with creating components: %v", err)
+		}
+		return nil
 	default:
-		return a.InitializeCloudSpecWithDefault(cluster)
+		err := a.InitializeCloudSpecWithDefault(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
+		}
+		return nil
 	}
 }
 
@@ -576,7 +592,7 @@ func (a *aws) userData(
 		Funcs(ktemplate.FuncMap).
 		ParseFiles(tplPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse cloud config: %v", err)
 	}
 	return tpl.Execute(buf, data)
 }
@@ -591,7 +607,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	}
 	client, err := a.getEC2client(cluster)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
 	var createdNodes []*api.Node
 	var buf bytes.Buffer
@@ -602,11 +618,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 
 		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
 		if err != nil {
-			return createdNodes, err
+			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
 		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
-			return createdNodes, err
+			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
 			{
@@ -633,7 +649,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		newNode, err := launch(client, instanceName, instanceRequest, cluster)
 
 		if err != nil {
-			return createdNodes, err
+			return createdNodes, fmt.Errorf("failed to launch node: %v", err)
 		}
 		createdNodes = append(createdNodes, newNode)
 	}
@@ -643,7 +659,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
 	client, err := a.getEC2client(cluster)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get ec2 client: %v", err)
 	}
 
 	params := &ec2.DescribeInstancesInput{
@@ -659,7 +675,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 
 	resp, err := client.DescribeInstances(params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list instances: %v", err)
 	}
 
 	nodes := make([]*api.Node, 0, len(resp.Reservations))
@@ -682,7 +698,7 @@ func (a *aws) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, err
 func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []string) error {
 	client, err := a.getEC2client(cluster)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get ec2 client: %v", err)
 	}
 
 	awsInstanceIds := make([]*string, len(UIDs))
@@ -695,7 +711,10 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	}
 
 	_, err = client.TerminateInstances(terminateRequest)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to terminate instance: %v", err)
+	}
+	return nil
 }
 
 func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
@@ -715,7 +734,7 @@ func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
 func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
 	sess, err := a.getSession(cluster)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get aws session: %v", err)
 	}
 	return ec2.New(sess), nil
 }
@@ -723,7 +742,7 @@ func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
 func (a *aws) getIAMclient(cluster *api.Cluster) (*iam.IAM, error) {
 	sess, err := a.getSession(cluster)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get aws session: %v", err)
 	}
 	return iam.New(sess), nil
 }
@@ -746,9 +765,9 @@ func createNode(instance *ec2.Instance) *api.Node {
 			Name: *instance.PrivateDnsName,
 		},
 		Status: api.NodeStatus{
-			Addresses: map[string]string{
-				"public":  publicIP,
-				"private": privateIP,
+			Addresses: api.NodeAddresses{
+				Public:  publicIP,
+				Private: privateIP,
 			},
 		},
 		Spec: api.NodeSpec{
@@ -763,7 +782,7 @@ func createNode(instance *ec2.Instance) *api.Node {
 func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, cluster *api.Cluster) (*api.Node, error) {
 	serverReq, err := client.RunInstances(instance)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to run instance: %v", err)
 	}
 
 	_, err = client.CreateTags(&ec2.CreateTagsInput{
@@ -784,7 +803,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create tags: %v", err)
 	}
 
 	// Allow unchecked source/destination addresses for flannel
@@ -795,7 +814,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		InstanceId: serverReq.Instances[0].InstanceId,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to disable source/destination checking: %v", err)
 	}
 
 	// Change to our security group
@@ -804,7 +823,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 		Groups:     []*string{sdk.String(cluster.Spec.Cloud.AWS.SecurityGroupID)},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to attach instance to security group group: %v", err)
 	}
 
 	return createNode(serverReq.Instances[0]), nil
@@ -813,7 +832,7 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 	client, err := a.getEC2client(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get ec2 client: %v", err)
 	}
 
 	// alive tests for living instances

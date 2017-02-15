@@ -103,7 +103,11 @@ func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensions
 		if err != nil {
 			return nil, err
 		}
-		addrs, err := net.LookupHost(u.Host)
+		host, _, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			return nil, err
+		}
+		addrs, err := net.LookupHost(host)
 		if err != nil {
 			return nil, err
 		}

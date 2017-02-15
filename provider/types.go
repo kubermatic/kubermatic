@@ -3,10 +3,9 @@ package provider
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
+	"golang.org/x/net/context"
 )
 
 // Constants defining known cloud providers.
@@ -15,6 +14,7 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
+	BareMetalCloudProvider    = "baremetal"
 )
 
 // User represents an API user that is used for authentication.
@@ -95,6 +95,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -142,6 +145,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -165,6 +171,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
+	}
+	if spec.BareMetal != nil {
+		clouds = append(clouds, BareMetalCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
