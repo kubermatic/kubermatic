@@ -106,9 +106,9 @@ func deleteSSHKeyEndpoint(
 			return nil, NewBadRequest("Bad parameters")
 		}
 
-		seed := kps["master_store"]
+		c := clientset.SSHKeyTPR(req.user.Name)
 
-		return seed.DeleteUserSSHKey(req.user, req.fingerprint), nil
+		return nil, c.Delete(req.fingerprint, v1.NewDeleteOptions(100))
 	}
 }
 
