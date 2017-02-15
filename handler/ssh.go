@@ -14,6 +14,9 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
+	"k8s.io/client-go/pkg/api/v1"
+
+	"fmt"
 )
 
 type createSSHKeyReq struct {
@@ -49,7 +52,7 @@ func createSSHKeyEndpoint(
 			return nil, NewBadRequest("Bad parameters")
 		}
 
-		seed := kps["master_store"]
+		c := clientset.SSHKeyTPR(req.user.Name)
 
 		// calculate fingerprint
 		pubKey, err := ssh.ParsePublicKey([]byte(req.UserSSHKey.PublicKey))
@@ -58,7 +61,15 @@ func createSSHKeyEndpoint(
 		}
 		fingerprint := ssh.FingerprintLegacyMD5(pubKey)
 
-		return seed.CreateUserSSHKey(req.UserSSHKey.PublicKey, strings.Trim(fingerprint, ":"), req.UserSSHKey.Name, req.userReq.user)
+		key := &extensions.UserSSHKey{
+			Metadata: v1.ObjectMeta{
+				Name: fmt.Sprintf("usersshkey-%s-%s", req.user.Name, strings.Trim(fingerprint, ":")),
+			},
+			PublicKey:   req.UserSSHKey.PublicKey,
+			Fingerprint: strings.Trim(fingerprint, ":"),
+			Name:        req.UserSSHKey.Name,
+		}
+		return c.Create(key), nil
 	}
 }
 
