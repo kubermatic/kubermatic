@@ -140,8 +140,12 @@ func listSSHKeyEndpoint(
 			return nil, NewBadRequest("Bad parameters")
 		}
 
-		seed := kps["master_store"]
+		c := clientset.SSHKeyTPR(req.user.Name)
+		listing, err := c.List()
+		if err != nil {
+			return nil, err
+		}
 
-		return seed.ListUserSSHKeys(req.user)
+		return listing.Items, err
 	}
 }
