@@ -71,7 +71,7 @@ type NodeSpec struct {
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 }
 
-// NodeStatus stores status informations about a node.
+// NodeStatus stores status information about a node.
 type NodeStatus struct {
 	Hostname  string        `json:"hostname"`
 	Addresses NodeAddresses `json:"addresses"`
@@ -87,6 +87,7 @@ type NodeAddresses struct {
 	Private string `json:"private"`
 }
 
+// NodeVersions stores information about the node operating system
 type NodeVersions struct {
 	OS                   string `json:"os,omitempty"`
 	ContainerRuntime     string `json:"containerRuntime,omitempty"`
@@ -197,7 +198,7 @@ type ClusterHealthStatus struct {
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`
-	LastTransitionTime time.Time `json:"lastTransitionTime"`
+	LastTransitionTime  time.Time `json:"lastTransitionTime"`
 }
 
 // ClusterPhase is the life cycle phase of a cluster.
@@ -293,7 +294,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		Clusters: []cmdv1.NamedCluster{{
 			Name: c.Metadata.Name,
 			Cluster: cmdv1.Cluster{
-				Server:                   c.Address.URL,
+				Server: c.Address.URL,
 				CertificateAuthorityData: c.Status.RootCA.Cert,
 			},
 		}},
