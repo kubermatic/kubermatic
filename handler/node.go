@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -39,6 +40,74 @@ func nodesEndpoint(
 		}
 
 		return cp.Nodes(ctx, c)
+	}
+}
+
+func nodesEndpointV2(
+	kps map[string]provider.KubernetesProvider,
+	cps map[string]provider.CloudProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodesReq)
+
+		kp, found := kps[req.dc]
+		if !found {
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+		}
+
+		c, err := kp.Cluster(req.user, req.cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
+		if err != nil {
+			return nil, err
+		}
+		if cp == nil {
+			return []*api.Node{}, nil
+		}
+
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		cpNodes, err := cp.Nodes(ctx, c)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch nodes from cloud provider: %v", err)
+		}
+		knodes, err := client.Nodes().List(v1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch nodes from apiserver: %v", err)
+		}
+
+		getK8sNode := func(nodeName string) (*v1.Node, error) {
+			for _, knode := range knodes.Items {
+				if nodeName == knode.Name {
+					return &knode, nil
+				}
+			}
+			return nil, fmt.Errorf("node %q not found on apiserver", nodeName)
+		}
+
+		for i := range cpNodes {
+			k8node, err := getK8sNode(cpNodes[i].Metadata.Name)
+			if err == nil {
+				cpNodes[i].Status.Versions = &api.NodeVersions{
+					ContainerRuntime: k8node.Status.NodeInfo.ContainerRuntimeVersion,
+					Kernel:           k8node.Status.NodeInfo.KernelVersion,
+					Kubelet:          k8node.Status.NodeInfo.KubeletVersion,
+					KubeProxy:        k8node.Status.NodeInfo.KubeProxyVersion,
+					OS:               k8node.Status.NodeInfo.OSImage,
+				}
+
+				cpNodes[i].Status.CPU = k8node.Status.Allocatable.Cpu().Value()
+				cpNodes[i].Status.Memory = k8node.Status.Allocatable.Memory().String()
+			}
+		}
+
+		return cpNodes, nil
 	}
 }
 
