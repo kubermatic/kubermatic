@@ -7,8 +7,10 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	"k8s.io/client-go/rest"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -20,6 +22,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
+	clientset           *extensions.WrappedClientset
 }
 
 // NewRouting creates a new Routing.
@@ -37,7 +40,14 @@ func NewRouting(
 		authenticated = jwtMiddleware(jwtKey).Handler
 		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
-
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+	wrapped, err := extensions.WrapClientsetWithExtensions(config)
+	if err != nil {
+		panic(err.Error())
+	}
 	return Routing{
 		ctx:                 ctx,
 		authenticated:       authenticated,
@@ -46,6 +56,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
+		clientset:           wrapped,
 	}
 }
 
@@ -161,7 +172,7 @@ func (r Routing) Register(mux *mux.Router) {
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		listSSHKeyEndpoint(r.kubernetesProviders),
+		listSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -172,7 +183,7 @@ func (r Routing) listSSHKeys() http.Handler {
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		createSSHKeyEndpoint(r.kubernetesProviders),
+		createSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
 		decodeCreateSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -183,7 +194,7 @@ func (r Routing) createSSHKey() http.Handler {
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		deleteSSHKeyEndpoint(r.kubernetesProviders),
+		deleteSSHKeyEndpoint(r.kubernetesProviders, r.clientset),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
