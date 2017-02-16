@@ -711,7 +711,10 @@ func (a *aws) DeleteNodes(ctx context.Context, cluster *api.Cluster, UIDs []stri
 	}
 
 	_, err = client.TerminateInstances(terminateRequest)
-	return fmt.Errorf("failed to terminate instance: %v", err)
+	if err != nil {
+		return fmt.Errorf("failed to terminate instance: %v", err)
+	}
+	return nil
 }
 
 func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {

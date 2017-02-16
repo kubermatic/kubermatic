@@ -71,16 +71,27 @@ type NodeSpec struct {
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 }
 
-// NodeStatus stores status informations about a node.
+// NodeStatus stores status information about a node.
 type NodeStatus struct {
-	Hostname  string        `json:"hostname"`
 	Addresses NodeAddresses `json:"addresses"`
+	CPU       int64         `json:"cpu,omitempty"`
+	Memory    string        `json:"memory,omitempty"`
+	Versions  *NodeVersions `json:"versions,omitempty"`
 }
 
 // NodeAddresses stores the IP addresses associated with a node
 type NodeAddresses struct {
 	Public  string `json:"public"`
 	Private string `json:"private"`
+}
+
+// NodeVersions stores information about the node operating system
+type NodeVersions struct {
+	OS               string `json:"os,omitempty"`
+	ContainerRuntime string `json:"container_runtime,omitempty"`
+	Kubelet          string `json:"kubelet,omitempty"`
+	KubeProxy        string `json:"kubeproxy,omitempty"`
+	Kernel           string `json:"kernel,omitempty"`
 }
 
 // Node is the object representing a cluster node.
@@ -161,10 +172,10 @@ type CloudSpec struct {
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 
-	User   string `json:"user"`
-	Secret string `json:"secret"`
-	Name   string `json:"name"`
-	Region string `json:"region"`
+	User   string `json:"user,omitempty"`
+	Secret string `json:"secret,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Region string `json:"region,omitempty"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
