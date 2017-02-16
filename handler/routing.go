@@ -22,7 +22,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
-	clientset           *extensions.WrappedClientset
+	clientset           extensions.Clientset
 }
 
 // NewRouting creates a new Routing.

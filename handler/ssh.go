@@ -42,7 +42,7 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 }
 
 func createSSHKeyEndpoint(
-	clientset *extensions.WrappedClientset,
+	clientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createSSHKeyReq)
@@ -95,7 +95,7 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 }
 
 func deleteSSHKeyEndpoint(
-	clientset *extensions.WrappedClientset,
+	clientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteSSHKeyReq)
@@ -128,7 +128,7 @@ func decodeListSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error
 }
 
 func listSSHKeyEndpoint(
-	clientset *extensions.WrappedClientset,
+	clientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listSSHKeyReq)
