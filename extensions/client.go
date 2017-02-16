@@ -13,7 +13,7 @@ import (
 )
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
-func WrapClientsetWithExtensions(config *rest.Config) (*WrappedClientset, error) {
+func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
 	restConfig := &rest.Config{}
 	*restConfig = *config
 	c, err := extensionClient(restConfig)
