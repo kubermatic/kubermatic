@@ -411,21 +411,21 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 		return nil
 	}
 
-	err := p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete existing config-map for aws cloud config: %v", err)
-	}
-
 	cm, err := loadAwsCloudConfigConfigMap(c)
 	if err != nil {
 		return fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
 	}
 
+	err = p.client.CoreV1().ConfigMaps(ns.Name).Delete(cm.Name, &v1.DeleteOptions{})
+	if err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete existing config-map for aws cloud config: %v", err)
+	}
+
 	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(cm)
 	if err != nil {
-		return fmt.Errorf("failed to create config-map with aws cloud config")
+		return fmt.Errorf("failed to create config-map with aws cloud config: %v", err)
 	}
-	return err
+	return nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
