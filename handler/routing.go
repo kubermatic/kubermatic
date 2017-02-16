@@ -10,7 +10,6 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	"k8s.io/client-go/rest"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -33,20 +32,13 @@ func NewRouting(
 	cps map[string]provider.CloudProvider,
 	auth bool,
 	jwtKey string,
+	tprClientSet extensions.Clientset,
 ) Routing {
 	var authenticated = func(h http.Handler) http.Handler { return h }
 	var getAuthenticated = func(h http.Handler) http.Handler { return h }
 	if auth {
 		authenticated = jwtMiddleware(jwtKey).Handler
 		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
-	}
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err.Error())
-	}
-	wrapped, err := extensions.WrapClientsetWithExtensions(config)
-	if err != nil {
-		panic(err.Error())
 	}
 	return Routing{
 		ctx:                 ctx,
@@ -56,7 +48,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
-		clientset:           wrapped,
+		clientset:           tprClientSet,
 	}
 }
 

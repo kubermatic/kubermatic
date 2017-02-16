@@ -42,7 +42,7 @@ func createTestEndpoint() http.Handler {
 	kps["master"] = kubernetes.NewKubernetesFakeProvider("master", cps)
 
 	router := mux.NewRouter()
-	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)))
+	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)), nil)
 	routing.Register(router)
 
 	return router
