@@ -180,10 +180,9 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":             loadServiceFile,
-		"etcd-public":      loadServiceFile,
-		"apiserver":        loadServiceFile,
-		"apiserver-public": loadServiceFile,
+		"etcd":        loadServiceFile,
+		"etcd-public": loadServiceFile,
+		"apiserver":   loadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
