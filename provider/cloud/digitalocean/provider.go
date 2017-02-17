@@ -75,7 +75,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
-			Name: d.Name,
+			Name: publicIP,
 		},
 		Status: api.NodeStatus{
 			Addresses: api.NodeAddresses{
