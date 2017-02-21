@@ -81,7 +81,7 @@ func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Temp
 	}
 
 	data := struct {
-		ApiserverKey, ApiserverCert, RootCACert, RootCaKey, ServiceAccountKey, KubeletClientKey, KubeletClientCert string
+		ApiserverKey, ApiserverCert, RootCACert, ServiceAccountKey, KubeletClientKey, KubeletClientCert string
 	}{
 		ApiserverKey:      asKC.Key.Base64(),
 		ApiserverCert:     asKC.Cert.Base64(),
