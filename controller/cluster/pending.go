@@ -375,7 +375,6 @@ func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error 
 		"kubedns":             "kubedns",
 		"kubeproxy":           "kube-proxy",
 		"kubernetesdashboard": "kubernetes-dashboard",
-		"flannel":             "flannel",
 	}
 
 	for safeName, name := range defaultPlugins {
