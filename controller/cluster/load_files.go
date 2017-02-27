@@ -1,18 +1,17 @@
 package cluster
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"net/url"
 	"os"
 	"path"
 	"strings"
-	texttemplate "text/template"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -85,14 +84,18 @@ func loadDeploymentFileControllerManager(cc *clusterController, c *api.Cluster, 
 		return loadDeploymentFile(cc, c, s)
 	}
 
-	filename := fmt.Sprintf("%s-%s-dep.yaml", s, strings.ToLower(c.Spec.Cloud.Name))
+	cloud, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cloud provider name from cloud: %v", err)
+	}
+	filename := fmt.Sprintf("%s-%s-dep.yaml", s, strings.ToLower(cloud))
 	file := path.Join(cc.masterResourcesPath, filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		glog.Infof("No cloud provider specific deployment found for %q", filename)
 		return loadDeploymentFile(cc, c, s)
 	}
 
-	return loadDeploymentFile(cc, c, fmt.Sprintf("%s-%s", s, strings.ToLower(c.Spec.Cloud.Name)))
+	return loadDeploymentFile(cc, c, fmt.Sprintf("%s-%s", s, strings.ToLower(cloud)))
 }
 
 func loadApiserver(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error) {
@@ -147,27 +150,17 @@ func loadPVCFile(cc *clusterController, c *api.Cluster, s string) (*v1.Persisten
 }
 
 func loadAwsCloudConfigConfigMap(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error) {
-	var conf bytes.Buffer
-	cfgt, err := texttemplate.ParseFiles(path.Join(cc.masterResourcesPath, "aws-cloud-config.cfg"))
-	if err != nil {
-		return nil, err
+	cm := v1.ConfigMap{}
+	cm.Name = "aws-cloud-config"
+	cm.APIVersion = "v1"
+	cm.Data = map[string]string{
+		"aws-cloud-config": fmt.Sprintf(`
+[global]
+zone=%s
+kubernetesclustertag=
+disablesecuritygroupingress=false
+disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone),
 	}
+	return &cm, nil
 
-	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
-		return nil, err
-	}
-
-	t, err := template.ParseFiles(path.Join(cc.masterResourcesPath, s+"-cm.yaml"))
-	if err != nil {
-		return nil, err
-	}
-
-	var cm v1.ConfigMap
-	data := struct {
-		Conf string
-	}{
-		Conf: conf.String(),
-	}
-	err = t.Execute(data, &cm)
-	return &cm, err
 }

@@ -45,6 +45,11 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
+	err = cc.launchingCheckConfigMaps(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// check that the ingress is available
 	err = cc.launchingCheckIngress(c)
 	if err != nil {
@@ -305,7 +310,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	}
 
 	for s, gen := range cms {
-		key := fmt.Sprintf("%s/%s-pvc", ns, s)
+		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.cmStore.GetByKey(key)
 		if err != nil {
 			return err
