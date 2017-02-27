@@ -10,6 +10,7 @@ import (
 	"strings"
 	texttemplate "text/template"
 
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster/template"
 	"k8s.io/client-go/pkg/api/v1"
@@ -84,8 +85,10 @@ func loadDeploymentFileControllerManager(cc *clusterController, c *api.Cluster, 
 		return loadDeploymentFile(cc, c, s)
 	}
 
-	file := path.Join(cc.masterResourcesPath, fmt.Sprintf("%s-%s-dep.yaml", s, strings.ToLower(c.Spec.Cloud.Name)))
+	filename := fmt.Sprintf("%s-%s-dep.yaml", s, strings.ToLower(c.Spec.Cloud.Name))
+	file := path.Join(cc.masterResourcesPath, filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
+		glog.Infof("No cloud provider specific deployment found for %q", filename)
 		return loadDeploymentFile(cc, c, s)
 	}
 
