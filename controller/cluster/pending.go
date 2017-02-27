@@ -306,7 +306,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){}
-	if c.Spec.Cloud.AWS != nil {
+	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
 		cms["aws-cloud-config"] = loadAwsCloudConfigConfigMap
 	}
 
