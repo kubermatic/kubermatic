@@ -148,30 +148,6 @@ func TestLoadApiserverFile(t *testing.T) {
 	checkTestResult(t, "test-api-server-dep-result", res)
 }
 
-func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
-	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		overwriteHost:       "localhost",
-	}
-	c := &api.Cluster{
-		Address: &api.ClusterAddress{
-			NodePort: 1234,
-		},
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				Region: "eu-central-1",
-			},
-		},
-	}
-
-	res, err := loadAwsCloudConfigConfigMap(cc, c, "aws-cloud-config")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkTestResult(t, "aws-cloud-config-cm-result", res)
-}
-
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	exp, err := ioutil.ReadFile(filepath.Join("./fixtures/templates", resFile+".json"))
 	if err != nil {
