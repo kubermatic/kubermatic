@@ -45,6 +45,11 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
+	err = cc.launchingCheckConfigMaps(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// check that the ingress is available
 	err = cc.launchingCheckIngress(c)
 	if err != nil {
@@ -300,12 +305,13 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){
-		"aws-cloud-config": loadAwsCloudConfigConfigMap,
+	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){}
+	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
+		cms["aws-cloud-config"] = loadAwsCloudConfigConfigMap
 	}
 
 	for s, gen := range cms {
-		key := fmt.Sprintf("%s/%s-pvc", ns, s)
+		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.cmStore.GetByKey(key)
 		if err != nil {
 			return err
