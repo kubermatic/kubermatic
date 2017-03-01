@@ -237,7 +237,13 @@ func createNodesEndpoint(
 				cpName, npName)
 		}
 
-		return cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+		nodes := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+
+		for _, node := range nodes {
+			kp.CreateNode(req.user, req.cluster, node)
+		}
+
+		return nodes
 	}
 }
 
