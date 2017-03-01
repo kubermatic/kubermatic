@@ -71,6 +71,7 @@ type NodeSpec struct {
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 }
 
+// NodeCondition stores information about the node condition
 type NodeCondition struct {
 	Healthy     bool   `json:"healthy"`
 	Description string `json:"description"`

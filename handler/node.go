@@ -95,12 +95,12 @@ func nodesEndpointV2(
 		getNodeCondition := func(n *v1.Node) api.NodeCondition {
 			messages := []string{}
 			for _, d := range n.Status.Conditions {
-				if d.Type != v1.NodeReady {
+				if d.Status != v1.ConditionFalse && d.Type != v1.NodeReady {
 					messages = append(messages, d.Message)
 				}
 			}
 			return api.NodeCondition{
-				Healthy:     len(messages) != 0,
+				Healthy:     len(messages) == 0,
 				Description: strings.Join(messages, ", "),
 			}
 		}
@@ -119,6 +119,11 @@ func nodesEndpointV2(
 				cpNodes[i].Status.CPU = k8node.Status.Allocatable.Cpu().Value()
 				cpNodes[i].Status.Memory = k8node.Status.Allocatable.Memory().String()
 				cpNodes[i].Status.Condition = getNodeCondition(k8node)
+			} else {
+				cpNodes[i].Status.Condition = api.NodeCondition{
+					Healthy:     false,
+					Description: "The node did not joined the cluster so far",
+				}
 			}
 		}
 
