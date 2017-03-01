@@ -444,3 +444,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 
 	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }
+
+func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*api.Node, error) {
+	return nil, nil
+}
