@@ -133,7 +133,7 @@ func listSSHKeyEndpoint(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listSSHKeyReq)
 		if !ok {
-			return nil, NewBadRequest("Bad parameters")
+			return nil, NewBadRequest("Bad parameters, add user credentials")
 		}
 
 		c := clientset.SSHKeyTPR(req.user.Name)
