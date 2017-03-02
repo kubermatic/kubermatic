@@ -264,7 +264,7 @@ func NewController(
 				return cc.client.CoreV1().ConfigMaps(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&v1.PersistentVolumeClaim{},
+		&v1.ConfigMap{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,

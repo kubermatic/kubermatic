@@ -188,6 +188,18 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 		return nil, fmt.Errorf("failed to create security group: %v", err)
 	}
 
+	// Allow node-to-node communication
+	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		CidrIp:     vpc.CidrBlock,
+		FromPort:   sdk.Int64(0),
+		ToPort:     sdk.Int64(65535),
+		GroupId:    csgOut.GroupId,
+		IpProtocol: sdk.String("-1"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to authorize security group ingress for node-to-node communication: %v", err)
+	}
+
 	// Allow SSH from everywhere
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		CidrIp:     sdk.String("0.0.0.0/0"),
@@ -198,6 +210,18 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to authorize security group ingress for ssh: %v", err)
+	}
+
+	// Allow kubelet 10250 from everywhere
+	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		CidrIp:     sdk.String("0.0.0.0/0"),
+		FromPort:   sdk.Int64(10250),
+		ToPort:     sdk.Int64(10250),
+		GroupId:    csgOut.GroupId,
+		IpProtocol: sdk.String("tcp"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to authorize security group ingress for kubelet port 10250: %v", err)
 	}
 
 	// Allow UDP within the security group

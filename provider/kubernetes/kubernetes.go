@@ -1,19 +1,15 @@
 package kubernetes
 
 import (
-	"bytes"
 	"fmt"
 	"log"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
-	gotemplate "text/template"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/kubernetes"
@@ -361,48 +357,6 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 }
 
 // Deprecated at V2 of create cluster endpoint
-// this is a super dirty hack to load the AWS cloud config from the cluster controller's templates
-// please don't punish the dev for adding this method =[ since it's copied over from load_files.go
-// @TODO Remove with https://github.com/kubermatic/api/issues/220
-func loadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
-	var conf bytes.Buffer
-
-	masterPath := os.Getenv("MASTER_RESSOURCES")
-	if masterPath == "" {
-		masterPath = "/opt/master-files"
-	}
-
-	file := path.Join(masterPath, "aws-cloud-config.cfg")
-	cfgt, err := gotemplate.ParseFiles(file)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := cfgt.Execute(&conf, struct{ Zone string }{Zone: c.Spec.Cloud.Region}); err != nil {
-		return nil, fmt.Errorf("failed to execute aws cloud config template: %v", err)
-	}
-
-	file = path.Join(masterPath, "aws-cloud-config-cm.yaml")
-
-	t, err := template.ParseFiles(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var cm v1.ConfigMap
-	data := struct {
-		Conf string
-	}{
-		Conf: conf.String(),
-	}
-	err = t.Execute(data, &cm)
-	if err != nil {
-		return nil, fmt.Errorf("failed to put aws-cloud-config into config-map: Data=%q: %v", data.Conf, err)
-	}
-	return &cm, nil
-}
-
-// Deprecated at V2 of create cluster endpoint
 // this is a super hack and dirty hack to load the AWS cloud config from the cluster controller's templates
 // to create the config map by hand for now.
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
@@ -411,21 +365,13 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 		return nil
 	}
 
-	err := p.client.CoreV1().ConfigMaps(ns.Name).Delete("aws-cloud-config", &v1.DeleteOptions{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete existing config-map for aws cloud config: %v", err)
-	}
-
-	cm, err := loadAwsCloudConfigConfigMap(c)
+	err := p.client.Deployments(ns.Name).Delete("controller-manager-v1", &v1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to load config-map for aws cloud config: %v", err)
+		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
+	c.Status.Phase = api.PendingClusterStatusPhase
 
-	_, err = p.client.CoreV1().ConfigMaps(ns.Name).Create(cm)
-	if err != nil {
-		return fmt.Errorf("failed to create config-map with aws cloud config")
-	}
-	return err
+	return nil
 }
 
 func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
