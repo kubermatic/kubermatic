@@ -1,13 +1,13 @@
 package extensions
 
 import (
-	"fmt"
-
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/runtime/serializer"
+	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 )
@@ -187,14 +187,19 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 // List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
-	opts.LabelSelector = fmt.Sprintf("user=%s", s.user)
+	label, err := labels.NewRequirement("user", selection.Equals, []string{s.user})
+	if err != nil {
+		return UserSSHKeyList{}, err
+	}
 	var result UserSSHKeyList
-	err := s.client.Get().
+	err = s.client.Get().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
 		VersionedParams(&opts, kapi.ParameterCodec).
+		LabelsSelectorParam(labels.NewSelector().Add(*label)).
 		Do().
 		Into(&result)
+
 	return result, err
 
 }
