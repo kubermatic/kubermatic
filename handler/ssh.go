@@ -32,10 +32,11 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 		return nil, err
 	}
 	req.userReq = ur.(userReq)
+	req.UserSSHKey = &extensions.UserSSHKey{}
 
 	// Decode
 	if err = json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
-		return nil, err
+		return nil, NewBadRequest("Error parsing the input, got %q", err.Error())
 	}
 
 	return req, nil
