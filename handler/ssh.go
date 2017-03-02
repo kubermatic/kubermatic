@@ -114,7 +114,7 @@ type listSSHKeyReq struct {
 }
 
 func decodeListSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
-	var req deleteSSHKeyReq
+	var req listSSHKeyReq
 
 	// Decode user info
 	ur, err := decodeUserReq(r)
