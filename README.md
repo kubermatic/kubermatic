@@ -15,12 +15,12 @@ $ git clone git@github.com:kubermatic/config
 $ cd api
 $ ln -s ../config/api/datacenter-secrets.yaml secrets.yaml
 
-mkdir -p template/coreos
-pushd template/coreos
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/arptables.service arptables.service
-ln -s ../../../config/api/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/floating-ip.service floating-ip.service
+mkdir -p template/coreos &&
+pushd template/coreos &&
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/arptables.service arptables.service &&
+ln -s ../../../config/api/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
+ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/floating-ip.service floating-ip.service &&
 popd
 ```
 
