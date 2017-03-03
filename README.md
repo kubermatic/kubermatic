@@ -17,10 +17,10 @@ $ echo 'dummy: dummy' > secrets.yaml
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/arptables.service arptables.service &&
-ln -s ../../../config/api/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/floating-ip.service floating-ip.service &&
+ln -s ../../../config/provider/do/units/arptables.service arptables.service &&
+ln -s ../../../config/provider/do/units/cloud-config-node.yaml aws-cloud-config-node.yaml &&
+ln -s ../../../config/provider/do/units/cloud-config-node.yaml do-cloud-config-node.yaml &&
+ln -s ../../../config/provider/do/units/floating-ip.service floating-ip.service &&
 popd
 ```
 
