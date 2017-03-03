@@ -13,14 +13,12 @@ $ cd src/kubermatic
 $ git clone git@github.com:kubermatic/api
 $ git clone git@github.com:kubermatic/config
 $ cd api
-$ ln -s ../config/api/datacenter-secrets.yaml secrets.yaml
+$ echo 'dummy: dummy' > secrets.yaml
 
-mkdir -p template/coreos
-pushd template/coreos
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/arptables.service arptables.service
-ln -s ../../../config/api/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml
-ln -s ../../../config/api/static/nodes/digitalocean/template/coreos/floating-ip.service floating-ip.service
+mkdir -p template/coreos &&
+pushd template/coreos &&
+ln ../../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
+ln ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
 popd
 ```
 
@@ -49,18 +47,29 @@ Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depen
 Example for `kubermatic-api`
 
 ```
-make build CMD=kubermatic-api && ./kubermatic-api --v=7 \
- --jwt-key="RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc" \
---datacenters=datacenters.yaml --kubeconfig .kubeconfig --logtostderr
+make build CMD=kubermatic-api && ./kubermatic-api \
+--dev=1 \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+--datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
+--logtostderr \
+--v=8 \
+--address=127.0.0.1:8080 \
 ```
 
 and `kubermatic-cluster-controller`
 
 ```
 make build CMD=kubermatic-cluster-controller &&  \
- ./kubermatic-cluster-controller \
- -master-resources ../kubermatic/master \
-  --kubeconfig=.kubeconfig --v=7 --dev
+./kubermatic-cluster-controller \
+--datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+--dev=1 \
+--logtostderr=1 \
+--master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
+--v=4 \
+--addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
+--external-url=dev.kubermatic.io
 ```
 
 
