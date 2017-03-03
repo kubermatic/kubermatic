@@ -49,8 +49,8 @@ Example for `kubermatic-api`
 ```
 make build CMD=kubermatic-api && ./kubermatic-api \
 --dev=1 \
---kubeconfig=/home/henrik/work/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
---datacenters=/home/henrik/work/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+--datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
 --jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
 --logtostderr \
 --v=8 \
@@ -62,13 +62,13 @@ and `kubermatic-cluster-controller`
 ```
 make build CMD=kubermatic-cluster-controller &&  \
 ./kubermatic-cluster-controller \
---datacenters=/home/henrik/work/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---kubeconfig=/home/henrik/work/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+--datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
 --dev=1 \
 --logtostderr=1 \
---master-resources=/home/henrik/work/src/github.com/kubermatic/config/kubermatic/static/master \
+--master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
 --v=4 \
---addon-resources=/home/henrik/work/src/github.com/kubermatic/api/addon-charts \
+--addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
 --external-url=dev.kubermatic.io
 ```
 
