@@ -20,7 +20,7 @@ import (
 
 type createSSHKeyReq struct {
 	userReq
-	*extensions.UserSSHKey
+	*extensions.UserSecureShellKey
 }
 
 func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -32,10 +32,10 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 		return nil, err
 	}
 	req.userReq = ur.(userReq)
-	req.UserSSHKey = &extensions.UserSSHKey{}
+	req.UserSecureShellKey = &extensions.UserSecureShellKey{}
 
 	// Decode
-	if err = json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(req.UserSecureShellKey); err != nil {
 		return nil, NewBadRequest("Error parsing the input, got %q", err.Error())
 	}
 
@@ -54,19 +54,19 @@ func createSSHKeyEndpoint(
 		c := clientset.SSHKeyTPR(req.user.Name)
 
 		// calculate fingerprint
-		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(req.UserSSHKey.PublicKey))
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(req.UserSecureShellKey.PublicKey))
 		if err != nil {
 			return nil, NewBadRequest("Bad public key")
 		}
 		fingerprint := ssh.FingerprintLegacyMD5(pubKey)
 
-		key := &extensions.UserSSHKey{
+		key := &extensions.UserSecureShellKey{
 			Metadata: v1.ObjectMeta{
 				Name: fmt.Sprintf("usersshkey-%s-%s", req.user.Name, strings.Trim(fingerprint, ":")),
 			},
-			PublicKey:   req.UserSSHKey.PublicKey,
+			PublicKey:   req.UserSecureShellKey.PublicKey,
 			Fingerprint: strings.Trim(fingerprint, ":"),
-			Name:        req.UserSSHKey.Name,
+			Name:        req.UserSecureShellKey.Name,
 		}
 		return c.Create(key)
 	}

@@ -38,8 +38,8 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
-		&UserSSHKey{},
-		&UserSSHKeyList{},
+		&UserSecureShellKey{},
+		&UserSecureShellKeyList{},
 		&apiv1.ListOptions{},
 		&apiv1.DeleteOptions{},
 	)
@@ -118,8 +118,8 @@ func (el *ClusterAddonList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
 
-// UserSSHKey specifies a users UserSSHKey
-type UserSSHKey struct {
+// UserSecureShellKey specifies a users UserSecureShellKey
+type UserSecureShellKey struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 
@@ -129,29 +129,29 @@ type UserSSHKey struct {
 }
 
 //GetObjectKind returns the object typemeta information
-func (sk *UserSSHKey) GetObjectKind() schema.ObjectKind {
+func (sk *UserSecureShellKey) GetObjectKind() schema.ObjectKind {
 	return &sk.TypeMeta
 }
 
 //GetListMeta returns the list object metadata
-func (sk *UserSSHKey) GetListMeta() metav1.List {
+func (sk *UserSecureShellKey) GetListMeta() metav1.List {
 	return &sk.Metadata
 }
 
-// UserSSHKeyList specifies a users UserSSHKey
-type UserSSHKeyList struct {
+// UserSecureShellKeyList specifies a users UserSecureShellKey
+type UserSecureShellKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        metav1.ListMeta `json:"metadata"`
 
-	Items []UserSSHKey `json:"items"`
+	Items []UserSecureShellKey `json:"items"`
 }
 
 //GetObjectKind returns the object typemeta information
-func (kl *UserSSHKeyList) GetObjectKind() schema.ObjectKind {
+func (kl *UserSecureShellKeyList) GetObjectKind() schema.ObjectKind {
 	return &kl.TypeMeta
 }
 
 //GetListMeta returns the list object metadata
-func (kl *UserSSHKeyList) GetListMeta() metav1.List {
+func (kl *UserSecureShellKeyList) GetListMeta() metav1.List {
 	return &kl.Metadata
 }
