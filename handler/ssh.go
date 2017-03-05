@@ -54,7 +54,7 @@ func createSSHKeyEndpoint(
 		c := clientset.SSHKeyTPR(req.user.Name)
 
 		// calculate fingerprint
-		pubKey, err := ssh.ParsePublicKey([]byte(req.UserSSHKey.PublicKey))
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(req.UserSSHKey.PublicKey))
 		if err != nil {
 			return nil, NewBadRequest("Bad public key")
 		}
