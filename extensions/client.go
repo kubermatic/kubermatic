@@ -226,7 +226,7 @@ func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
 	return s.client.Delete().
 		Namespace(SSHKeyTPRNamespace).
-		Resource(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
 		Name(ConstructSerialKeyName(s.user, fingerprint)).
 		Body(v1.NewDeleteOptions(60)).
 		Do().
