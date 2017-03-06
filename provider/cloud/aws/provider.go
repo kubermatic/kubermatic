@@ -53,6 +53,10 @@ const (
 	tplPath = "template/coreos/aws-cloud-config-node.yaml"
 )
 
+const (
+	coreosProductID = "ryg425ue2hwnsok9ccfastg4"
+)
+
 var (
 	defaultKubermaticClusterNameTagKey = "kubermatic-cluster-name"
 	defaultKubermaticClusterIDTagKey   = "kubermatic-cluster-id"
@@ -638,7 +642,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	//This takes forever - when using the node controller we probably don't care anymore
 	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
 		Owners:  sdk.StringSlice([]string{"aws-marketplace"}),
-		Filters: []*ec2.Filter{{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{"ryg425ue2hwnsok9ccfastg4"})}},
+		Filters: []*ec2.Filter{{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{coreosProductID})}},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed get latest coreos image from ami marketplace: %v", err)
