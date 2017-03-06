@@ -71,12 +71,19 @@ type NodeSpec struct {
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 }
 
+// NodeCondition stores information about the node condition
+type NodeCondition struct {
+	Healthy     bool   `json:"healthy"`
+	Description string `json:"description"`
+}
+
 // NodeStatus stores status information about a node.
 type NodeStatus struct {
 	Addresses NodeAddresses `json:"addresses"`
-	CPU       int64         `json:"cpu,omitempty"`
-	Memory    string        `json:"memory,omitempty"`
-	Versions  *NodeVersions `json:"versions,omitempty"`
+	CPU       int64         `json:"cpu"`
+	Memory    string        `json:"memory"`
+	Versions  *NodeVersions `json:"versions"`
+	Condition NodeCondition `json:"condition"`
 }
 
 // NodeAddresses stores the IP addresses associated with a node
