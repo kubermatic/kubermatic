@@ -634,6 +634,17 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
 	var createdNodes []*api.Node
+
+	//This takes forever - when using the node controller we probably don't care anymore
+	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners:  sdk.StringSlice([]string{"aws-marketplace"}),
+		Filters: []*ec2.Filter{{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{"ryg425ue2hwnsok9ccfastg4"})}},
+	})
+	if len(out.Images) == 0 {
+		return createdNodes, errors.New("could not find coreos image on aws ami marketplace with product-code 'ryg425ue2hwnsok9ccfastg4'")
+	}
+	imageId := out.Images[0].ImageId
+
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		buf.Reset()
@@ -658,7 +669,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:           sdk.String(dc.Spec.AWS.AMI),
+			ImageId:           imageId,
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
