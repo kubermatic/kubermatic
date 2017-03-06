@@ -1,7 +1,8 @@
 package extensions
 
 import (
-	"encoding/base64"
+	"regexp"
+	"strings"
 
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -14,10 +15,12 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var replace = regexp.MustCompile(`[^a-z0-9]*`)
+
 // NormailzeUser is the base64 k8s compatible representation for a user
 func NormailzeUser(s string) string {
-	q := base64.StdEncoding.WithPadding(base64.NoPadding)
-	return q.EncodeToString([]byte(s))
+	s = strings.ToLower(s)
+	return replace.ReplaceAllString(s, "")
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
