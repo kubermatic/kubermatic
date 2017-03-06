@@ -87,7 +87,7 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 	req.userReq = ur.(userReq)
 
 	var ok bool
-	if req.fingerprint, ok = mux.Vars(r)["fingerprint"]; ok {
+	if req.fingerprint, ok = mux.Vars(r)["fingerprint"]; !ok {
 		return nil, errors.New("delte fingerprint needs a parameter 'fingerprint'")
 	}
 
