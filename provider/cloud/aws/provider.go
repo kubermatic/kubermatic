@@ -640,10 +640,13 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		Owners:  sdk.StringSlice([]string{"aws-marketplace"}),
 		Filters: []*ec2.Filter{{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{"ryg425ue2hwnsok9ccfastg4"})}},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed get latest coreos image from ami marketplace: %v", err)
+	}
 	if len(out.Images) == 0 {
 		return createdNodes, errors.New("could not find coreos image on aws ami marketplace with product-code 'ryg425ue2hwnsok9ccfastg4'")
 	}
-	imageId := out.Images[0].ImageId
+	imageID := out.Images[0].ImageId
 
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
@@ -669,7 +672,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:           imageId,
+			ImageId:           imageID,
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
