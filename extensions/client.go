@@ -228,7 +228,7 @@ func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) 
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
 		Name(ConstructSerialKeyName(s.user, fingerprint)).
-		Body(v1.NewDeleteOptions(60)).
+		Body(options).
 		Do().
 		Error()
 }
