@@ -14,8 +14,6 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/api/v1"
-
-	"fmt"
 )
 
 type createSSHKeyReq struct {
@@ -63,7 +61,7 @@ func createSSHKeyEndpoint(
 		key := &extensions.UserSecureShellKey{
 			Metadata: v1.ObjectMeta{
 				// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
-				Name: fmt.Sprintf("%s-%s", extensions.NormailzeUser(req.user.Name), strings.NewReplacer(":", "").Replace(fingerprint)),
+				Name: extensions.ConstructSerialKeyName(req.user.Name, fingerprint),
 			},
 			PublicKey:   req.UserSecureShellKey.PublicKey,
 			Fingerprint: strings.Trim(fingerprint, ":"),

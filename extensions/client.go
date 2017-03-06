@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 
+	"fmt"
+
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/labels"
@@ -21,6 +23,10 @@ var replace = regexp.MustCompile(`[^a-z0-9]*`)
 func NormailzeUser(s string) string {
 	s = strings.ToLower(s)
 	return replace.ReplaceAllString(s, "")
+}
+
+func ConstructSerialKeyName(username, fingerprint string) string {
+	return fmt.Sprintf("%s-%s", NormailzeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
@@ -217,12 +223,10 @@ func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 
 // Delete takes name of the ssh and deletes it. Returns an error if one occurs.
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
-	// Implement get name of fingerprint
-	var name string
 	return s.client.Delete().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRNamespace).
-		Name(name).
+		Name(ConstructSerialKeyName(s.user, fingerprint)).
 		Body(v1.NewDeleteOptions(60)).
 		Do().
 		Error()
