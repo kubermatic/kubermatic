@@ -198,7 +198,7 @@ func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, e
 // List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 	opts := v1.ListOptions{}
-	label, err := labels.NewRequirement("user", selection.Equals, []string{s.user})
+	label, err := labels.NewRequirement("user", selection.Equals, []string{NormailzeUser(s.user)})
 	if err != nil {
 		return UserSecureShellKeyList{}, err
 	}
