@@ -25,6 +25,7 @@ func NormailzeUser(s string) string {
 	return replace.ReplaceAllString(s, "")
 }
 
+// ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
 func ConstructSerialKeyName(username, fingerprint string) string {
 	return fmt.Sprintf("%s-%s", NormailzeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
 }
