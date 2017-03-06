@@ -20,7 +20,7 @@ const (
 
 const (
 	// SSHKeyTPRName is the names of the TPR storing SSH keys
-	SSHKeyTPRName string = "usersshkeies"
+	SSHKeyTPRName string = "usersecureshellkeies"
 
 	// SSHKeyTPRNamespace is the name of the namespace the TPR is created in
 	SSHKeyTPRNamespace string = "default"
