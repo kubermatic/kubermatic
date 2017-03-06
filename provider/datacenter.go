@@ -26,7 +26,9 @@ type BringYourOwnSpec struct {
 
 // BareMetalSpec describes a datacenter hosted on bare metal
 type BareMetalSpec struct {
-	URL string `yaml:"url"`
+	URL          string `yaml:"url"`
+	AuthUser     string `yaml:"auth-user"`
+	AuthPassword string `yaml:"auth-password"`
 }
 
 // SeedSpec describes a seed in the given datacenter.
