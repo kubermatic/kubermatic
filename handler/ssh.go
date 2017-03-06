@@ -62,7 +62,7 @@ func createSSHKeyEndpoint(
 
 		key := &extensions.UserSecureShellKey{
 			Metadata: v1.ObjectMeta{
-				Name: fmt.Sprintf("usersshkey-%s-%s", req.user.Name, strings.Trim(fingerprint, ":")),
+				Name: fmt.Sprintf("usersshkey-%s-%s", extensions.NormailzeUser(req.user.Name), strings.NewReplacer(":", "").Replace(fingerprint)),
 			},
 			PublicKey:   req.UserSecureShellKey.PublicKey,
 			Fingerprint: strings.Trim(fingerprint, ":"),

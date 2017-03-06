@@ -1,6 +1,8 @@
 package extensions
 
 import (
+	"encoding/base64"
+
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/labels"
@@ -11,6 +13,12 @@ import (
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 )
+
+// NormailzeUser is the base64 k8s compatible representation for a user
+func NormailzeUser(s string) string {
+	q := base64.StdEncoding.WithPadding(base64.NoPadding)
+	return q.EncodeToString([]byte(s))
+}
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
 func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
@@ -167,7 +175,7 @@ type SSHKeyTPRClient struct {
 
 func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSecureShellKey) {
 	sk.Metadata.SetLabels(map[string]string{
-		"user": s.user,
+		"user": NormailzeUser(s.user),
 	})
 }
 
