@@ -260,15 +260,6 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	//TODO: Resolve this
-	//deps := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error){
-	//	"etcd":               loadDeploymentFile,
-	//	"etcd-public":        loadDeploymentFile,
-	//	"apiserver":          loadApiserver,
-	//	"controller-manager": loadDeploymentFileControllerManager,
-	//	"scheduler":          loadDeploymentFile,
-	//}
-
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
@@ -289,7 +280,6 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
 	}
 
-
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
 		return nil, err
@@ -309,7 +299,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 			continue
 		}
 
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.overwriteHost, cc.dc, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}

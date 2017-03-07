@@ -20,22 +20,21 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-	kkubernetes "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd"
-
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	kkubernetes "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, overwriteHost, addonResources string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources string
 var dev bool
 var viperWhiteList = []string{
 	"v",
@@ -48,15 +47,6 @@ var RootCmd = &cobra.Command{
 	Long:  `Cluster controller... Needs better description`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-
-		fmt.Println("master-resources: " + viper.GetString("master-resources"))
-		fmt.Println("datacenters: " + viper.GetString("datacenters"))
-		fmt.Println("versions: " + viper.GetString("versions"))
-		fmt.Println("kubeconfig: " + viper.GetString("kubeconfig"))
-		fmt.Println("external-url: " + viper.GetString("external-url"))
-		fmt.Println("dev: ", viper.GetBool("dev"))
-		fmt.Println("overwrite-host: " + viper.GetString("overwrite-host"))
-
 		if viper.GetString("master-resources") == "" {
 			print("master-resources path is undefined\n\n")
 			os.Exit(1)
@@ -82,8 +72,8 @@ var RootCmd = &cobra.Command{
 			}
 		}
 
-		// load udpates
-		updates := []api.MasterVersion{}
+		// load updates
+		updates := []api.MasterUpdate{}
 		if path := viper.GetString("updates"); path != "" {
 			var err error
 			updates, err = version.LoadUpdates(path)
@@ -136,7 +126,6 @@ var RootCmd = &cobra.Command{
 				viper.GetString("master-resources"),
 				viper.GetString("external-url"),
 				viper.GetBool("dev"),
-				viper.GetString("overwrite-host"),
 				viper.GetString("addon-resources"),
 			)
 			if err != nil {
@@ -167,10 +156,9 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
-	RootCmd.PersistentFlags().StringVar(&overwriteHost, "overwrite-host", "", "If set it will not do a hostlookup and will force the given host on all clustes. This is mostly used to run one static cluster.")
 	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
-	RootCmd.PersistentFlags().StringVar(&dcFile, "versions", "versions.yaml", "The versions.yaml file path")
-	RootCmd.PersistentFlags().StringVar(&dcFile, "updates", "updates.yaml", "The updates.yaml file path")
+	RootCmd.PersistentFlags().StringVar(&versions, "versions", "versions.yaml", "The versions.yaml file path")
+	RootCmd.PersistentFlags().StringVar(&updates, "updates", "updates.yaml", "The updates.yaml file path")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {

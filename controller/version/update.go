@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/kubermatic/api"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func LoadUpdates(path string) ([]api.MasterUpdate, error) {
@@ -21,11 +20,16 @@ func LoadUpdates(path string) ([]api.MasterUpdate, error) {
 		return nil, err
 	}
 
-	updates := []api.MasterUpdate{}
-	err = yaml.Unmarshal(bytes, &updates)
+	s := struct {
+		Updates []api.MasterUpdate
+	}{
+		Updates: []api.MasterUpdate{},
+	}
+
+	err = yaml.Unmarshal(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
 
-	return updates, nil
+	return s.Updates, nil
 }

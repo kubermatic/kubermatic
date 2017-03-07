@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
 )
 
 func TestCreateServiceAccountKey(t *testing.T) {
@@ -91,6 +90,7 @@ func TestCreateApiserverAuth(t *testing.T) {
 }
 
 func readTestFile(path string) *template.Template {
+
 	temp, err := template.ParseFiles(path)
 	if err != nil {
 		panic(err)

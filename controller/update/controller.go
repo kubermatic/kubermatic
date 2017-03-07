@@ -5,15 +5,13 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-
+	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/resources"
+	"github.com/kubermatic/api/provider/kubernetes"
 	k "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/resources"
-	"github.com/kubermatic/api/provider/kubernetes"
 )
 
 type Controller struct {
@@ -69,7 +67,7 @@ func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 
 func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.MasterResourcesPath, u.OverwriteHost, u.DC, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.MasterResourcesPath, u.DC, yamlFile)
 		if err != nil {
 			return nil, err
 		}

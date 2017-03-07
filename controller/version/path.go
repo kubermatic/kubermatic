@@ -11,7 +11,7 @@ import (
 )
 
 type UpdatePathSearch struct {
-	updates []*api.MasterUpdate
+	updates []api.MasterUpdate
 	nodes   map[string]*node
 	matcher Matcher
 }
@@ -82,7 +82,7 @@ type EqualityMatcher struct{}
 func (m EqualityMatcher) Match(pattern string, version string) bool { return pattern == version }
 func (m EqualityMatcher) Lower(a, b string) bool                    { return a < b }
 
-func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.MasterUpdate, matcher Matcher) *UpdatePathSearch {
+func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []api.MasterUpdate, matcher Matcher) *UpdatePathSearch {
 	result := &UpdatePathSearch{
 		updates: updates,
 		nodes:   map[string]*node{},
@@ -114,7 +114,7 @@ func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []*api.
 					continue
 				}
 
-				from.edges = append(from.edges, &edge{u, to})
+				from.edges = append(from.edges, &edge{&u, to})
 			}
 		}
 	}

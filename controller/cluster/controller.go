@@ -56,7 +56,6 @@ type clusterController struct {
 	recorder            record.EventRecorder
 	masterResourcesPath string
 	externalURL         string
-	overwriteHost       string
 	addonResourcesPath  string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
@@ -111,7 +110,6 @@ func NewController(
 	masterResourcesPath string,
 	externalURL string,
 	dev bool,
-	overwriteHost string,
 	addonResourcesPath string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
@@ -126,7 +124,6 @@ func NewController(
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
 		dev:                 dev,
-		overwriteHost:       overwriteHost,
 		addonResourcesPath:  addonResourcesPath,
 	}
 
@@ -311,22 +308,24 @@ func NewController(
 	// setup update controller
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
+	if err != nil {
+		return nil, fmt.Errorf("could not get default master versoin: %v", err)
+	}
 	cc.updateController = &update.Controller{
 		Client:              cc.client,
 		MasterResourcesPath: cc.masterResourcesPath,
-		OverwriteHost:       cc.overwriteHost,
 		DC:                  cc.dc,
 		Versions:            cc.versions,
 		Updates:             cc.updates,
 		DepStore:            cc.depStore,
 	}
-	automaticUpdates := []*api.MasterUpdate{}
+	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {
 			automaticUpdates = append(automaticUpdates, u)
 		}
 	}
-	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates)
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.EqualityMatcher{})
 
 	return cc, nil
 }

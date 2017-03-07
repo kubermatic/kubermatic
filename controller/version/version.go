@@ -3,14 +3,14 @@ package version
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/Masterminds/semver"
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
@@ -24,15 +24,20 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 		return nil, err
 	}
 
-	vers := []api.MasterVersion{}
-	err = yaml.Unmarshal(bytes, &vers)
+	s := struct {
+		Versions []api.MasterVersion `yaml:"versions"`
+	}{
+		[]api.MasterVersion{},
+	}
+
+	err = yaml.Unmarshal(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
 
 	verMap := make(map[string]*api.MasterVersion)
 
-	for _, ver := range vers {
+	for _, ver := range s.Versions {
 		verMap[ver.ID] = &ver
 	}
 
@@ -49,7 +54,7 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 	return nil, errors.New("latest version not found")
 }
 
-func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterUpdate, error) {
+func BestAutomaticUpdate(from string, updates []api.MasterUpdate) (*api.MasterUpdate, error) {
 	type ToUpdate struct {
 		to     *semver.Version
 		update *api.MasterUpdate
@@ -57,7 +62,7 @@ func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterU
 	tos := []*ToUpdate{}
 	semverFrom, err := semver.NewVersion(from)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to create semver version: %v", err)
 	}
 	for _, u := range updates {
 		if !u.Automatic {
@@ -80,7 +85,7 @@ func BestAutomaticUpdate(from string, updates []*api.MasterUpdate) (*api.MasterU
 		if semverFrom.LessThan(semverTo) {
 			tos = append(tos, &ToUpdate{
 				to:     semverTo,
-				update: u,
+				update: &u,
 			})
 		}
 	}

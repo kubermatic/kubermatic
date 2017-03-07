@@ -31,15 +31,17 @@ func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, e
 		if c.Spec.MasterVersion != "" {
 			updateVersion, err := version.BestAutomaticUpdate(c.Spec.MasterVersion, cc.updates)
 			if err != nil {
-				nil, err
+				return nil, err
 			}
 
-			// start automatic update
-			c.Spec.MasterVersion = updateVersion.To
-			c.Status.Phase = api.UpdatingMasterClusterStatusPhase
-			c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
-			c.Status.LastTransitionTime = time.Now()
+			if updateVersion != nil {
+				// start automatic update
+				c.Spec.MasterVersion = updateVersion.To
+				c.Status.Phase = api.UpdatingMasterClusterStatusPhase
+				c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
+				c.Status.LastTransitionTime = time.Now()
 
+			}
 			return c, nil
 		}
 	}

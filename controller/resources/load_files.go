@@ -1,43 +1,48 @@
 package resources
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"path"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/template"
-
+	"github.com/kubermatic/api/provider"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, overwriteHost, dc, yamlFile string) (*extensionsv1beta1.Deployment, error) {
+func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*extensionsv1beta1.Deployment, error) {
+	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("could not identify cloud provider: %v", err)
+	}
 	data := struct {
 		DC               string
-		ClusterName      string
 		AdvertiseAddress string
-		SecurePort       int
+		Cluster          *api.Cluster
 		Version          *api.MasterVersion
+		CloudProvider    string
 	}{
-		DC:          dc,
-		ClusterName: c.Metadata.Name,
-		SecurePort:  c.Address.NodePort,
-		Version:     v,
+		DC:            dc,
+		Cluster:       c,
+		Version:       v,
+		CloudProvider: p,
 	}
 
-	if overwriteHost == "" {
-		u, err := url.Parse(c.Address.URL)
-		if err != nil {
-			return nil, err
-		}
-		addrs, err := net.LookupHost(u.Host)
-		if err != nil {
-			return nil, err
-		}
-		data.AdvertiseAddress = addrs[0]
-	} else {
-		data.AdvertiseAddress = overwriteHost
+	u, err := url.Parse(c.Address.URL)
+	if err != nil {
+		return nil, err
 	}
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return nil, err
+	}
+	data.AdvertiseAddress = addrs[0]
 
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, yamlFile))
 	if err != nil {

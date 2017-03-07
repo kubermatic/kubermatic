@@ -106,7 +106,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
 			LastDeployedMasterVersion: ns.Annotations[LastDeployedMasterVersionAnnotation],
-			MasterUpdatePhase:         api.ClusterStatus.MasterUpdatePhase(ns.Annotations[MasterUpdatePhaseAnnotation]),
+			MasterUpdatePhase:         api.MasterUpdatePhase(ns.Annotations[MasterUpdatePhaseAnnotation]),
 			RootCA: api.SecretKeyCert{
 				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
 				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
