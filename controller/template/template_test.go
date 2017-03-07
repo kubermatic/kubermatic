@@ -51,7 +51,19 @@ func TestTemplate_ExecuteFailsWithInvalidContent(t *testing.T) {
 
 	if err := tpl.Execute(source, result); err == nil {
 		t.Error("Execute finished without returning an error on an invalid file")
-	} else if err.Error() != "yaml: line 1: mapping values are not allowed in this context" {
+	} else if err.Error() != "failed converting yaml to json: yaml: line 1: mapping values are not allowed in this context" {
 		t.Errorf("Expected to get an yaml mapping error, instead got: %s", err.Error())
+	}
+}
+
+func TestTemplate_ExecuteFailsWithNotExistingFile(t *testing.T) {
+	path := "fixtures/not-existing.yml"
+	_, err := texttemplate.ParseFiles(path)
+	if err == nil {
+		t.Fatal("Expected to get an error, got nil")
+	}
+
+	if err.Error() != "open fixtures/not-existing.yml: no such file or directory" {
+		t.Fatalf("Expected to get no such file or directory, got %q", err.Error())
 	}
 }

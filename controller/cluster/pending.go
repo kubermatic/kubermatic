@@ -46,6 +46,11 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
+	err = cc.launchingCheckConfigMaps(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// check that the ingress is available
 	err = cc.launchingCheckIngress(c)
 	if err != nil {
@@ -181,10 +186,9 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":             loadServiceFile,
-		"etcd-public":      loadServiceFile,
-		"apiserver":        loadServiceFile,
-		"apiserver-public": loadServiceFile,
+		"etcd":        loadServiceFile,
+		"etcd-public": loadServiceFile,
+		"apiserver":   loadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -217,7 +221,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		return nil, nil
 	}
 
-	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s:8443", c.Metadata.Name, cc.dc, cc.externalURL)
 
 	return c, nil
 }
@@ -256,6 +260,15 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
+	//TODO: Resolve this
+	//deps := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error){
+	//	"etcd":               loadDeploymentFile,
+	//	"etcd-public":        loadDeploymentFile,
+	//	"apiserver":          loadApiserver,
+	//	"controller-manager": loadDeploymentFileControllerManager,
+	//	"scheduler":          loadDeploymentFile,
+	//}
+
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
@@ -275,6 +288,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 		"controller-manager": masterVersion.ControllerDeploymentYaml,
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
 	}
+
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
@@ -309,6 +323,42 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 	}
 
 	return nil, nil
+}
+
+func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+
+	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){}
+	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
+		cms["aws-cloud-config"] = loadAwsCloudConfigConfigMap
+	}
+
+	for s, gen := range cms {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.cmStore.GetByKey(key)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			glog.V(6).Infof("Skipping already existing cm %q", key)
+			continue
+		}
+
+		cm, err := gen(cc, c, s)
+		if err != nil {
+			return fmt.Errorf("failed to generate cm %s: %v", s, err)
+		}
+
+		_, err = cc.client.CoreV1().ConfigMaps(ns).Create(cm)
+		if err != nil {
+			return fmt.Errorf("failed to create cm %s; %v", s, err)
+		}
+
+		cc.recordClusterEvent(c, "launching", "Created cm %q", s)
+	}
+
+	return nil
 }
 
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {

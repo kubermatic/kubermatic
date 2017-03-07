@@ -1,5 +1,5 @@
-hash: faa20266a1e9b7a22ed876e4a61b7d9243b804271b22f7597cb8574d7f0f904a
-updated: 2017-01-14T16:39:37.919774881+01:00
+hash: a26c33d9ac0bcf75e4ed2ac787c622afd73c5b2e097524792b45e76bd0dea35e
+updated: 2017-02-13T16:08:04.815970501+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -27,14 +27,21 @@ imports:
   - aws/session
   - private/endpoints
   - private/protocol/ec2query
+  - private/protocol/json/jsonutil
+  - private/protocol/jsonrpc
   - private/protocol/query
   - private/protocol/query/queryutil
   - private/protocol/rest
+  - private/protocol/restxml
   - private/protocol/xml/xmlutil
   - private/signer/v4
   - private/waiter
+  - service/autoscaling
   - service/ec2
+  - service/ecr
+  - service/elb
   - service/iam
+  - service/route53
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
   subpackages:
@@ -42,7 +49,7 @@ imports:
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/cloudflare/cfssl
-  version: 6689808d58e76953d878fc623b1298032cf39911
+  version: db0d0650b6496bfe8061ec56a92edd32d8e75c30
   subpackages:
   - auth
   - certdb
@@ -187,18 +194,16 @@ imports:
   - ptypes/any
   - ptypes/timestamp
 - name: github.com/google/certificate-transparency
-  version: 32acc4216ea1f20eca97a1cdbc72b73af9e27d20
+  version: 6e5648d13b43cdde25cc8274b87675230ffefbd6
   repo: https://github.com/google/certificate-transparency
   subpackages:
   - go
   - go/asn1
   - go/client
-  - go/jsonclient
-  - go/tls
   - go/x509
   - go/x509/pkix
 - name: github.com/google/go-querystring
-  version: 9235644dd9e52eeae6fa48efd539fdc351a0af53
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
 - name: github.com/google/gofuzz
@@ -251,7 +256,10 @@ imports:
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/mitchellh/mapstructure
-  version: 740c764bc6149d3f1806231418adb9f52c11bcbf
+  version: db1efb556f84b25a0a13a04aad883943538ad2e0
+- name: github.com/mreiferson/go-httpclient
+  version: 63fe23f7434723dc904c901043af07931f293c47
+  repo: https://github.com/mreiferson/go-httpclient
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
@@ -278,7 +286,7 @@ imports:
 - name: github.com/spf13/cast
   version: e31f36ffc91a2ba9ddb72a4b6a607ff9b3d3cb63
 - name: github.com/spf13/cobra
-  version: 1dd5ff2e11b6dca62fdcb275eb804b94607d8b06
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/jwalterweatherman
   version: 33c24e77fb80341fe7130ee7c594256ff08ccc46
 - name: github.com/spf13/pflag
@@ -286,7 +294,7 @@ imports:
 - name: github.com/spf13/viper
   version: 5ed0fc31f7f453625df314d8e66b9791e8d13003
 - name: github.com/technosophos/moniker
-  version: 9f956786b91d9786ca11aa5be6104542fa911546
+  version: 4d1d2a7d4b69cee56dadb6a7634945f829154858
 - name: github.com/tent/http-link-go
   version: ac974c61c2f990f4115b119354b5e0b47550e888
 - name: github.com/ugorji/go
@@ -294,12 +302,10 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 9a6f0a01987842989747adff311d80750ba25530
+  version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
   - cast5
   - curve25519
-  - ed25519
-  - ed25519/internal/edwards25519
   - openpgp
   - openpgp/armor
   - openpgp/clearsign
@@ -312,7 +318,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 3f122ce3dbbe488b7e6a8bdb26f41edec852a40b
+  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
   - context/ctxhttp
@@ -375,22 +381,36 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/client-go
-  version: 24a02a6d7d2c9a21b12a3eb35c71c784e63825f4
+  version: 5fe6fc56cb38d04ef4af601a03599c984229dea2
   subpackages:
   - discovery
+  - discovery/fake
   - kubernetes
+  - kubernetes/fake
   - kubernetes/typed/apps/v1beta1
+  - kubernetes/typed/apps/v1beta1/fake
   - kubernetes/typed/authentication/v1beta1
+  - kubernetes/typed/authentication/v1beta1/fake
   - kubernetes/typed/authorization/v1beta1
+  - kubernetes/typed/authorization/v1beta1/fake
   - kubernetes/typed/autoscaling/v1
+  - kubernetes/typed/autoscaling/v1/fake
   - kubernetes/typed/batch/v1
+  - kubernetes/typed/batch/v1/fake
   - kubernetes/typed/batch/v2alpha1
+  - kubernetes/typed/batch/v2alpha1/fake
   - kubernetes/typed/certificates/v1alpha1
+  - kubernetes/typed/certificates/v1alpha1/fake
   - kubernetes/typed/core/v1
+  - kubernetes/typed/core/v1/fake
   - kubernetes/typed/extensions/v1beta1
+  - kubernetes/typed/extensions/v1beta1/fake
   - kubernetes/typed/policy/v1beta1
+  - kubernetes/typed/policy/v1beta1/fake
   - kubernetes/typed/rbac/v1alpha1
+  - kubernetes/typed/rbac/v1alpha1/fake
   - kubernetes/typed/storage/v1beta1
+  - kubernetes/typed/storage/v1beta1/fake
   - pkg/api
   - pkg/api/errors
   - pkg/api/install
@@ -484,6 +504,7 @@ imports:
   - plugin/pkg/client/auth/gcp
   - plugin/pkg/client/auth/oidc
   - rest
+  - testing
   - tools/auth
   - tools/cache
   - tools/clientcmd

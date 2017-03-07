@@ -205,12 +205,14 @@ func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
 		spec.Digitalocean = &api.DigitialoceanDatacenterSpec{
 			Region: dc.Spec.Digitalocean.Region,
 		}
-	case dc.Spec.BringYourOwn != nil:
-		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
 	case dc.Spec.AWS != nil:
 		spec.AWS = &api.AWSDatacenterSpec{
 			Region: dc.Spec.AWS.Region,
 		}
+	case dc.Spec.BringYourOwn != nil:
+		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
+	case dc.Spec.BareMetal != nil:
+		spec.BareMetal = &api.BareMetalDatacenterSpec{}
 	}
 
 	return spec, nil

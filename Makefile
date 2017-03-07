@@ -14,7 +14,7 @@ $(CMD):
 build: $(CMD)
 
 test:
-	go test $$(go list ./... | grep -v /vendor/)
+	go test -v $$(go list ./... | grep -v /vendor/)
 
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
@@ -27,7 +27,7 @@ gometalinter:
 		--vendor \
 		--cyclo-over=13 \
 		--tests \
-		--deadline=120s \
+		--deadline=600s \
 		--dupl-threshold=53 \
 		--concurrency=2 \
 		--disable=gotype --disable=aligncheck --disable=unconvert --disable=structcheck --disable=interfacer --disable=deadcode --disable=gocyclo --disable=dupl --disable=gosimple --disable=gas --disable=vet --disable=vetshadow\
@@ -37,6 +37,9 @@ check: gofmt gometalinter
 
 clean:
 	rm -f $(CMD)
+
+install:
+	glide install --strip-vendor
 
 docker: $(CMD)
 	@if [ "$$GOOS" != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi

@@ -55,6 +55,14 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/").
 		HandlerFunc(StatusOK)
+	mux.
+		Methods("GET").
+		Path("/healthz").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods("GET").
+		Path("/api/healthz").
+		HandlerFunc(StatusOK)
 
 	mux.
 		Methods("GET").
@@ -70,6 +78,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticated(r.newClusterHandler()))
+
+	mux.
+		Methods("POST").
+		Path("/api/v1/cluster").
+		Handler(r.authenticated(r.newClusterHandlerV2()))
 
 	mux.
 		Methods("GET").
@@ -100,6 +113,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticated(r.nodesHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v2/dc/{dc}/cluster/{cluster}/node").
+		Handler(r.authenticated(r.nodesHandlerV2()))
 
 	mux.
 		Methods("POST").
@@ -203,6 +221,18 @@ func (r Routing) newClusterHandler() http.Handler {
 	)
 }
 
+// newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
+func (r Routing) newClusterHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		newClusterEndpointV2(r.kubernetesProviders, r.datacenters),
+		decodeNewClusterReqV2,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
 // clusterHandler returns a cluster object.
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
@@ -268,6 +298,18 @@ func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
 		nodesEndpoint(r.kubernetesProviders, r.cloudProviders),
+		decodeNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+// nodesHandlerV2 returns all nodes from a cluster
+func (r Routing) nodesHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		nodesEndpointV2(r.kubernetesProviders, r.cloudProviders),
 		decodeNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
