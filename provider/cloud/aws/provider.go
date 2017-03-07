@@ -641,14 +641,17 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 
 	//This takes forever - when using the node controller we probably don't care anymore
 	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
-		Owners:  sdk.StringSlice([]string{"aws-marketplace"}),
-		Filters: []*ec2.Filter{{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{coreosProductID})}},
+		Owners: sdk.StringSlice([]string{"aws-marketplace"}),
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{coreosProductID})},
+			{Name: sdk.String("virtualization-type"), Values: sdk.StringSlice([]string{ec2.VirtualizationTypeHvm})},
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed get latest coreos image from ami marketplace: %v", err)
 	}
 	if len(out.Images) == 0 {
-		return createdNodes, errors.New("could not find coreos image on aws ami marketplace with product-code 'ryg425ue2hwnsok9ccfastg4'")
+		return createdNodes, fmt.Errorf("could not find coreos image on aws ami marketplace with product-code %q", coreosProductID)
 	}
 	imageID := out.Images[0].ImageId
 
