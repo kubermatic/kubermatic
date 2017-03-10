@@ -153,7 +153,7 @@ func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.Node
 		}
 	}(resp)
 
-	err = json.NewDecoder(resp.Body).Decode(resp.Body)
+	err = json.NewDecoder(resp.Body).Decode(&createdNodes)
 	if err != nil {
 		return nodes, fmt.Errorf("failed to decode response body: %v. response: %s", err, getLogableResponse(resp, ""))
 	}
