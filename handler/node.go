@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -91,6 +92,19 @@ func nodesEndpointV2(
 			return nil, fmt.Errorf("node %q not found on apiserver", nodeName)
 		}
 
+		getNodeCondition := func(n *v1.Node) api.NodeCondition {
+			messages := []string{}
+			for _, d := range n.Status.Conditions {
+				if d.Status != v1.ConditionFalse && d.Type != v1.NodeReady {
+					messages = append(messages, d.Message)
+				}
+			}
+			return api.NodeCondition{
+				Healthy:     len(messages) == 0,
+				Description: strings.Join(messages, ", "),
+			}
+		}
+
 		for i := range cpNodes {
 			k8node, err := getK8sNode(cpNodes[i].Metadata.Name)
 			if err == nil {
@@ -104,6 +118,12 @@ func nodesEndpointV2(
 
 				cpNodes[i].Status.CPU = k8node.Status.Allocatable.Cpu().Value()
 				cpNodes[i].Status.Memory = k8node.Status.Allocatable.Memory().String()
+				cpNodes[i].Status.Condition = getNodeCondition(k8node)
+			} else {
+				cpNodes[i].Status.Condition = api.NodeCondition{
+					Healthy:     false,
+					Description: "The node did not joined the cluster so far",
+				}
 			}
 		}
 
