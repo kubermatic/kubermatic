@@ -19,6 +19,14 @@ const (
 	Version string = "v1"
 )
 
+const (
+	// SSHKeyTPRName is the names of the TPR storing SSH keys
+	SSHKeyTPRName string = "usersecureshellkeies"
+
+	// SSHKeyTPRNamespace is the name of the namespace the TPR is created in
+	SSHKeyTPRNamespace string = "default"
+)
+
 var (
 	// SchemeGroupVersion is the combination of group name and version for the kubernetes client
 	SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
@@ -33,6 +41,8 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddonList{},
 		&Node{},
 		&NodeList{},
+		&UserSecureShellKey{},
+		&UserSecureShellKeyList{},
 		&apiv1.ListOptions{},
 		&apiv1.DeleteOptions{},
 	)
@@ -146,4 +156,42 @@ func (el *NodeList) GetObjectKind() schema.ObjectKind {
 // GetListMeta returns the list object metadata
 func (el *NodeList) GetListMeta() metav1.List {
 	return &el.Metadata
+}
+
+// UserSecureShellKey specifies a users UserSecureShellKey
+type UserSecureShellKey struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Name        string `json:"name"`
+	Fingerprint string `json:"fingerprint"`
+	PublicKey   string `json:"public_key"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (sk *UserSecureShellKey) GetObjectKind() schema.ObjectKind {
+	return &sk.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (sk *UserSecureShellKey) GetListMeta() metav1.List {
+	return &sk.Metadata
+}
+
+// UserSecureShellKeyList specifies a users UserSecureShellKey
+type UserSecureShellKeyList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []UserSecureShellKey `json:"items"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (kl *UserSecureShellKeyList) GetObjectKind() schema.ObjectKind {
+	return &kl.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (kl *UserSecureShellKeyList) GetListMeta() metav1.List {
+	return &kl.Metadata
 }

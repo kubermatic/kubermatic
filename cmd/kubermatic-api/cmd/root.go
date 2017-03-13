@@ -24,6 +24,7 @@ import (
 
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/handler"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
@@ -31,9 +32,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address string
+var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig string
 var dev, auth bool
 
 var viperWhiteList = []string{
@@ -68,9 +71,24 @@ var RootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		var config *rest.Config
+		if masterKubeconfig == "" {
+			config, err = rest.InClusterConfig()
+		} else {
+			config, err = clientcmd.BuildConfigFromFlags("", masterKubeconfig)
+		}
+		if err != nil {
+			panic(err.Error())
+		}
+
+		wrapped, err := extensions.WrapClientsetWithExtensions(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		// start server
 		ctx := context.Background()
-		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"))
+		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"), wrapped)
 		mux := mux.NewRouter()
 		r.Register(mux)
 		log.Println(fmt.Sprintf("Listening on %s", viper.GetString("address")))
@@ -98,6 +116,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&secretsFile, "secrets", "secrets.yaml", "The secrets.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&jwtKey, "jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	RootCmd.PersistentFlags().StringVar(&address, "address", ":8080", "The address to listen on")
+	RootCmd.PersistentFlags().StringVar(&masterKubeconfig, "master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("Unable to bind Command Line flags: %s\n", err)

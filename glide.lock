@@ -1,5 +1,5 @@
 hash: a26c33d9ac0bcf75e4ed2ac787c622afd73c5b2e097524792b45e76bd0dea35e
-updated: 2017-02-13T16:08:04.815970501+01:00
+updated: 2017-02-14T10:27:33.319720679+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -302,7 +302,7 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 1f22c0103821b9390939b6776727195525381532
+  version: 453249f01cfeb54c3d549ddb75ff152ca243f9d8
   subpackages:
   - cast5
   - curve25519
