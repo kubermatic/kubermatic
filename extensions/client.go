@@ -246,3 +246,79 @@ type NodesInterface interface {
 	Update(*Node) (*Node, error)
 	Delete(string, *v1.DeleteOptions) error
 }
+
+// NodesClient is an implementation of NodesInterface to work with Nodes
+type NodesClient struct {
+	client rest.Interface
+	ns     string
+}
+
+// Create makes a new node in the node TPR or returns an existing one with an error.
+func (c *NodesClient) Create(node *Node) (*Node, error) {
+	result := &Node{}
+	err := c.client.Post().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// List takes list options and returns a list of nodes.
+func (c *NodesClient) List(opts v1.ListOptions) (*NodeList, error) {
+	result := &NodeList{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Watch returns a watch.Interface that watches the requested node
+func (c *NodesClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	return c.client.Get().
+		Namespace(c.ns).
+		Prefix("watch").
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Watch()
+}
+
+// Update ..... updates a given node dahhh
+func (c *NodesClient) Update(node *Node) (*Node, error) {
+	result := &Node{}
+	err := c.client.Put().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(node.Metadata.Name).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Delete takes the name of a node and removes it from the TPR
+func (c *NodesClient) Delete(name string, options *v1.DeleteOptions) error {
+	return c.client.Delete().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Body(options).
+		Do().
+		Error()
+}
+
+// Get takes the name of a node and fetches it from the TPR.
+func (c *NodesClient) Get(name string) (*Node, error) {
+	result := &Node{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Do().
+		Into(result)
+	return result, err
+}
