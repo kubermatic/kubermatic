@@ -30,6 +30,8 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
+		&Node{},
+		&NodeList{},
 		&apiv1.ListOptions{},
 		&apiv1.DeleteOptions{},
 	)
