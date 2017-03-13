@@ -263,6 +263,7 @@ func createNodesEndpoint(
 		}
 
 		for _, node := range nodes {
+			node.Metadata.User = req.user.Name
 			_, err = kp.CreateNode(req.user, req.cluster, node)
 			if err != nil {
 				return nil, fmt.Errorf("Error creating NodeTPR with error %##v", err)
