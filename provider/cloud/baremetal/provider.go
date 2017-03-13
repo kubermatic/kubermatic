@@ -72,13 +72,15 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 	}
 
 	Cluster := struct {
-		Name         string `json:"name"`
-		APIServerURL string `json:"apiserver_url"`
-		Kubeconfig   string `json:"kubeconfig"`
+		Name               string `json:"name"`
+		APIServerURL       string `json:"apiserver_url"`
+		Kubeconfig         string `json:"kubeconfig"`
+		ApiserverSSHPubKey string `json:"apiserver_ssh_pub_key"`
 	}{
-		Name:         c.Metadata.Name,
-		APIServerURL: c.Address.URL,
-		Kubeconfig:   base64.StdEncoding.EncodeToString(ycfg),
+		Name:               c.Metadata.Name,
+		APIServerURL:       c.Address.URL,
+		Kubeconfig:         base64.StdEncoding.EncodeToString(ycfg),
+		ApiserverSSHPubKey: c.Status.ApiserverSSH,
 	}
 
 	data, err := json.Marshal(Cluster)
