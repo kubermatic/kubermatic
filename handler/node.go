@@ -259,13 +259,13 @@ func createNodesEndpoint(
 
 		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error creating node: %s", err.Error())
 		}
 
 		for _, node := range nodes {
 			_, err := kp.CreateNode(req.user, req.cluster, node)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Error creating NodeTPR with error %##v", err)
 			}
 		}
 
