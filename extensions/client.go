@@ -85,6 +85,14 @@ func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	}
 }
 
+// Nodes returns an interface to interact with Nodes
+func (w *WrappedClientset) Nodes(ns string) NodesInterface {
+	return &NodesClient{
+		client: w.Client,
+		ns:     ns,
+	}
+}
+
 // ClusterAddonsInterface is an interface to interact with ClusterAddons
 type ClusterAddonsInterface interface {
 	Create(*ClusterAddon) (*ClusterAddon, error)
