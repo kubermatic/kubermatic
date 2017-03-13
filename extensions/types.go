@@ -3,6 +3,7 @@ package extensions
 import (
 	"time"
 
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/meta"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apimachinery/announced"
@@ -114,6 +115,9 @@ func (el *ClusterAddonList) GetListMeta() metav1.List {
 type Node struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Spec   api.NodeSpec   `json:"spec"`
+	Status api.NodeStatus `json:"status,omitempty"`
 }
 
 // NodeList specifies a list of nodes
