@@ -455,7 +455,14 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 		Name:        node.Metadata.Name,
 		Annotations: node.Metadata.Annotations,
 	}
-	meta.Annotations["user"] = node.Metadata.User
+
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{
+			"user": node.Metadata.User,
+		}
+	} else {
+		meta.Annotations["user"] = node.Metadata.User
+	}
 
 	n := &extensions.Node{
 		Metadata: meta,
