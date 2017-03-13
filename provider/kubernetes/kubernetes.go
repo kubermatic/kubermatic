@@ -452,7 +452,7 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 	}
 
 	meta := v1.ObjectMeta{
-		Name:        node.Metadata.Name,
+		Name:        node.Metadata.UID,
 		Annotations: node.Metadata.Annotations,
 	}
 
