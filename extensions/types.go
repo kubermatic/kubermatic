@@ -107,3 +107,37 @@ func (el *ClusterAddonList) GetObjectKind() schema.ObjectKind {
 func (el *ClusterAddonList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
+
+// Node contains node information to be saved
+type Node struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+}
+
+// NodeList specifies a list of nodes
+type NodeList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []Node `json:"items"`
+}
+
+// GetObjectKind returns the object typemeta information
+func (e *Node) GetObjectKind() schema.ObjectKind {
+	return &e.TypeMeta
+}
+
+// GetObjectMeta returns the object metadata
+func (e *Node) GetObjectMeta() meta.Object {
+	return &e.Metadata
+}
+
+// GetObjectKind returns the object typemeta information
+func (el *NodeList) GetObjectKind() schema.ObjectKind {
+	return &el.TypeMeta
+}
+
+// GetListMeta returns the list object metadata
+func (el *NodeList) GetListMeta() metav1.List {
+	return &el.Metadata
+}
