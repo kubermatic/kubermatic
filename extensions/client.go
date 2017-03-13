@@ -236,3 +236,13 @@ func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) 
 		Do().
 		Error()
 }
+
+// NodesInterface is an interface to interact with Node TPRs
+type NodesInterface interface {
+	Create(*Node) (*Node, error)
+	Get(name string) (*Node, error)
+	List(v1.ListOptions) (*NodeList, error)
+	Watch(v1.ListOptions) (watch.Interface, error)
+	Update(*Node) (*Node, error)
+	Delete(string, *v1.DeleteOptions) error
+}
