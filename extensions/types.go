@@ -3,7 +3,7 @@ package extensions
 import (
 	"time"
 
-	"k8s.io/client-go/pkg/api"
+	apitypes "github.com/kubermatic/api"
 	"k8s.io/client-go/pkg/api/meta"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apimachinery/announced"
@@ -131,8 +131,8 @@ type Node struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 
-	Spec   api.NodeSpec   `json:"spec"`
-	Status api.NodeStatus `json:"status,omitempty"`
+	Spec   apitypes.NodeSpec   `json:"spec"`
+	Status apitypes.NodeStatus `json:"status,omitempty"`
 }
 
 // NodeList specifies a list of nodes
