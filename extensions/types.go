@@ -27,6 +27,11 @@ const (
 	SSHKeyTPRNamespace string = "default"
 )
 
+const (
+	// NodeTPRName is the names of the TPR storing Nodes
+	NodeTPRName string = "nodes"
+)
+
 var (
 	// SchemeGroupVersion is the combination of group name and version for the kubernetes client
 	SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
