@@ -19,15 +19,15 @@ import (
 
 var replace = regexp.MustCompile(`[^a-z0-9]*`)
 
-// NormailzeUser is the base64 k8s compatible representation for a user
-func NormailzeUser(s string) string {
+// NormalizeUser is the base64 k8s compatible representation for a user
+func NormalizeUser(s string) string {
 	s = strings.ToLower(s)
 	return replace.ReplaceAllString(s, "")
 }
 
 // ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
 func ConstructSerialKeyName(username, fingerprint string) string {
-	return fmt.Sprintf("%s-%s", NormailzeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
+	return fmt.Sprintf("%s-%s", NormalizeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
@@ -205,7 +205,7 @@ func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, e
 // List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 	opts := v1.ListOptions{}
-	label, err := labels.NewRequirement("user", selection.Equals, []string{NormailzeUser(s.user)})
+	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
 	if err != nil {
 		return UserSecureShellKeyList{}, err
 	}
