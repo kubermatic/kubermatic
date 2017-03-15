@@ -78,12 +78,12 @@ var RootCmd = &cobra.Command{
 			config, err = clientcmd.BuildConfigFromFlags("", masterKubeconfig)
 		}
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		wrapped, err := extensions.WrapClientsetWithExtensions(config)
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		// start server
