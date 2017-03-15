@@ -81,14 +81,14 @@ var RootCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		wrapped, err := extensions.WrapClientsetWithExtensions(config)
+		masterTPRClient, err := extensions.WrapClientsetWithExtensions(config)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
 		// start server
 		ctx := context.Background()
-		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"), wrapped)
+		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"), masterTPRClient)
 		mux := mux.NewRouter()
 		r.Register(mux)
 		log.Println(fmt.Sprintf("Listening on %s", viper.GetString("address")))
