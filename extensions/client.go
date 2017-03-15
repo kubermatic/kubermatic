@@ -184,9 +184,9 @@ type SSHKeyTPRClient struct {
 }
 
 func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSecureShellKey) {
-	sk.Metadata.SetLabels(map[string]string{
-		"user": NormailzeUser(s.user),
-	})
+	lbs := sk.Metadata.Labels
+	lbs["user"] = NormalizeUser(s.user)
+	sk.Metadata.SetLabels(lbs)
 }
 
 // Create saves an SSHKey into an tpr
