@@ -377,6 +377,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	defaultPlugins := map[string]string{
+		"flannelcni":          "flannel-cni",
 		"heapster":            "heapster",
 		"kubedns":             "kubedns",
 		"kubeproxy":           "kube-proxy",
