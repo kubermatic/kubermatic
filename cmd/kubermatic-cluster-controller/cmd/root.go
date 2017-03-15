@@ -182,9 +182,11 @@ func setFlagsUsingViper() {
 		// then to values from the config.yml
 		err := flag.Value.Set(viper.GetString(flag.Name))
 		if err != nil {
-			// ignore
-			_ = nil
+			// TODO: improve this!!!
+			// We have to do this because of the linter :(
+			flag.Changed = true
+		} else {
+			flag.Changed = true
 		}
-		flag.Changed = true
 	}
 }
