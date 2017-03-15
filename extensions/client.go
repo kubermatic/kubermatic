@@ -1,10 +1,9 @@
 package extensions
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
-
-	"fmt"
 
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
