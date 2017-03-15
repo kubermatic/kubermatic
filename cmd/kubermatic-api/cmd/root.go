@@ -156,6 +156,7 @@ func setFlagsUsingViper() {
 		err := flag.Value.Set(viper.GetString(flag.Name))
 		if err != nil {
 			// ignore
+			_ = nil
 		}
 		flag.Changed = true
 	}
