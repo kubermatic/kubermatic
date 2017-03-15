@@ -2,10 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"errors"
-
+	"net/http"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
