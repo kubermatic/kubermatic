@@ -21,7 +21,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
-	clientset           extensions.Clientset
+	masterTPRClient     extensions.Clientset
 }
 
 // NewRouting creates a new Routing.
@@ -48,7 +48,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
-		clientset:           tprClientSet,
+		masterTPRClient:     tprClientSet,
 	}
 }
 
@@ -169,7 +169,7 @@ func (r Routing) Register(mux *mux.Router) {
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		listSSHKeyEndpoint(r.clientset),
+		listSSHKeyEndpoint(r.masterTPRClient),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -180,7 +180,7 @@ func (r Routing) listSSHKeys() http.Handler {
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		createSSHKeyEndpoint(r.clientset),
+		createSSHKeyEndpoint(r.masterTPRClient),
 		decodeCreateSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -191,7 +191,7 @@ func (r Routing) createSSHKey() http.Handler {
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		deleteSSHKeyEndpoint(r.clientset),
+		deleteSSHKeyEndpoint(r.masterTPRClient),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
