@@ -182,7 +182,7 @@ func (r Routing) createSSHKey() http.Handler {
 		r.ctx,
 		createSSHKeyEndpoint(r.masterTPRClient),
 		decodeCreateSSHKeyReq,
-		encodeJSON,
+		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
 		defaultHTTPErrorEncoder(),
 	)
