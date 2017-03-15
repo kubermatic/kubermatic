@@ -225,7 +225,7 @@ func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 // Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
 
-	// BUG: remove this when delete options are allowed
+	// TODO: workaround, remove this when delete options are allowed
 	options = nil
 
 	return s.client.Delete().
