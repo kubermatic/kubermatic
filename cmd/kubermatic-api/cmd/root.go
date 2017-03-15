@@ -72,7 +72,7 @@ var RootCmd = &cobra.Command{
 		}
 
 		var config *rest.Config
-		if masterKubeconfig == "" {
+		if viper.GetString("master-kubeconfig") == "" {
 			config, err = rest.InClusterConfig()
 		} else {
 			config, err = clientcmd.BuildConfigFromFlags("", masterKubeconfig)
