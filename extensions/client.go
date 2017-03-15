@@ -75,7 +75,7 @@ func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	}
 }
 
-// SSHKeyTPR returns an interface to interact with UserSecureShellKey
+// SSHKeyTPR returns an interface to interact with UserSSHKey
 func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	return &SSHKeyTPRClient{
 		client: w.Client,
@@ -171,8 +171,8 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 
 // SSHKeyTPRInterface is the interface for an SSHTPR client
 type SSHKeyTPRInterface interface {
-	Create(*UserSecureShellKey) (*UserSecureShellKey, error)
-	List() (UserSecureShellKeyList, error)
+	Create(*UserSSHKey) (*UserSSHKey, error)
+	List() (UserSSHKeyList, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
 }
 
@@ -182,15 +182,15 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSecureShellKey) {
+func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
 	lbs := sk.Metadata.Labels
 	lbs["user"] = NormalizeUser(s.user)
 	sk.Metadata.SetLabels(lbs)
 }
 
 // Create saves an SSHKey into an tpr
-func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, error) {
-	var result UserSecureShellKey
+func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	var result UserSSHKey
 	s.injectUserLabel(sk)
 	err := s.client.Post().
 		Namespace(SSHKeyTPRNamespace).
@@ -202,13 +202,13 @@ func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, e
 }
 
 // List returns all SSHKey's for a given User
-func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
+func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
 	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
 	if err != nil {
-		return UserSecureShellKeyList{}, err
+		return UserSSHKeyList{}, err
 	}
-	var result UserSecureShellKeyList
+	var result UserSSHKeyList
 	err = s.client.Get().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).

@@ -38,11 +38,24 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
-		&UserSecureShellKey{},
-		&UserSecureShellKeyList{},
 		&apiv1.ListOptions{},
 		&apiv1.DeleteOptions{},
 	)
+	m := map[string]runtime.Object{
+		"UserSshKey":     &UserSSHKey{},
+		"UserSshKeyList": &UserSSHKeyList{},
+	}
+	for k, v := range m {
+		scheme.AddKnownTypeWithName(
+			schema.GroupVersionKind{
+				Group:   SchemeGroupVersion.Group,
+				Version: SchemeGroupVersion.Version,
+				Kind:    k,
+			},
+			v,
+		)
+	}
+
 	return nil
 }
 
@@ -118,8 +131,8 @@ func (el *ClusterAddonList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
 
-// UserSecureShellKey specifies a users UserSecureShellKey
-type UserSecureShellKey struct {
+// UserSSHKey specifies a users UserSSHKey
+type UserSSHKey struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 
@@ -129,29 +142,29 @@ type UserSecureShellKey struct {
 }
 
 //GetObjectKind returns the object typemeta information
-func (sk *UserSecureShellKey) GetObjectKind() schema.ObjectKind {
+func (sk *UserSSHKey) GetObjectKind() schema.ObjectKind {
 	return &sk.TypeMeta
 }
 
 //GetListMeta returns the list object metadata
-func (sk *UserSecureShellKey) GetListMeta() metav1.List {
+func (sk *UserSSHKey) GetListMeta() metav1.List {
 	return &sk.Metadata
 }
 
-// UserSecureShellKeyList specifies a users UserSecureShellKey
-type UserSecureShellKeyList struct {
+// UserSSHKeyList specifies a users UserSSHKey
+type UserSSHKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        metav1.ListMeta `json:"metadata"`
 
-	Items []UserSecureShellKey `json:"items"`
+	Items []UserSSHKey `json:"items"`
 }
 
 //GetObjectKind returns the object typemeta information
-func (kl *UserSecureShellKeyList) GetObjectKind() schema.ObjectKind {
+func (kl *UserSSHKeyList) GetObjectKind() schema.ObjectKind {
 	return &kl.TypeMeta
 }
 
 //GetListMeta returns the list object metadata
-func (kl *UserSecureShellKeyList) GetListMeta() metav1.List {
+func (kl *UserSSHKeyList) GetListMeta() metav1.List {
 	return &kl.Metadata
 }
