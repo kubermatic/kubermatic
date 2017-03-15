@@ -1,0 +1,3 @@
+# Default values for flannel-cni.
+# This is a YAML-formatted file.
+podCIDR: 172.17.0.0/16
