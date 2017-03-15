@@ -76,11 +76,15 @@ func (b *baremetal) InitializeCloudSpec(c *api.Cluster) error {
 		APIServerURL       string `json:"apiserver_url"`
 		Kubeconfig         string `json:"kubeconfig"`
 		ApiserverSSHPubKey string `json:"apiserver_ssh_pub_key"`
+		EtcdURL            string `json:"etcd_url"`
+		RootCACert         string `json:"root_ca_cert"`
 	}{
 		Name:               c.Metadata.Name,
 		APIServerURL:       c.Address.URL,
 		Kubeconfig:         base64.StdEncoding.EncodeToString(ycfg),
 		ApiserverSSHPubKey: c.Status.ApiserverSSH,
+		EtcdURL:            c.Address.EtcdURL,
+		RootCACert:         c.Status.RootCA.Cert.Base64(),
 	}
 
 	data, err := json.Marshal(Cluster)
@@ -124,58 +128,62 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 
 func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
 	var nodes []*api.Node
-	data, err := json.Marshal(struct {
-		Number int `json:"number"`
-	}{num})
-	if err != nil {
-		return nodes, fmt.Errorf("failed to marshal request: %v", err)
-	}
-	r, err := b.getAuthenticatedRequest(c, http.MethodPost, fmt.Sprintf("/clusters/%s/nodes", c.Metadata.Name), bytes.NewReader(data))
-	if err != nil {
-		return nodes, fmt.Errorf("failed to create cluster create request: %v", err)
-	}
-	resp, err := b.client.Do(r)
-	if err != nil {
-		return nodes, fmt.Errorf("failed sending request: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
-			return nodes, errors.New("not enough free nodes available")
-		}
-		return nodes, fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusCreated, getLogableResponse(resp, ""))
-	}
-
-	var createdNodes []api.BareMetalNodeSpec
-
-	defer func(r *http.Response) {
-		err = r.Body.Close()
+	for r := 0; r <= num; r++ {
+		clientKC, err := c.CreateKeyCert(provider.ShortUID(5), []string{})
 		if err != nil {
-			glog.Errorf("failed to close response body: %v", err)
+			return nodes, err
 		}
-	}(resp)
 
-	err = json.NewDecoder(resp.Body).Decode(&createdNodes)
-	if err != nil {
-		return nodes, fmt.Errorf("failed to decode response body: %v. response: %s", err, getLogableResponse(resp, ""))
-	}
-	for _, n := range createdNodes {
-		createdNode := &api.Node{
+		var createNodesReq = struct {
+			ClientKey  string `json:"client_key"`
+			ClientCert string `json:"client_cert"`
+		}{
+			ClientKey:  clientKC.Key.Base64(),
+			ClientCert: clientKC.Cert.Base64(),
+		}
+
+		data, err := json.Marshal(createNodesReq)
+		if err != nil {
+			return nodes, fmt.Errorf("failed to marshal create node request: %v", err)
+		}
+		r, err := b.getAuthenticatedRequest(c, http.MethodPost, fmt.Sprintf("/clusters/%s/add_node", c.Metadata.Name), bytes.NewReader(data))
+		if err != nil {
+			return nodes, fmt.Errorf("failed to create assign node request: %v", err)
+		}
+		resp, err := b.client.Do(r)
+		if err != nil {
+			return nodes, fmt.Errorf("failed sending assign nodes request: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusCreated {
+			if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
+				return nodes, errors.New("not enough free nodes available")
+			}
+			return nodes, fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusCreated, getLogableResponse(resp, ""))
+		}
+
+		var createdNode api.BareMetalNodeSpec
+		err = json.NewDecoder(resp.Body).Decode(&createdNode)
+		_ = resp.Close
+		if err != nil {
+			return nodes, fmt.Errorf("failed to decode response body: %v. response: %s", err, getLogableResponse(resp, ""))
+		}
+
+		nodes = append(nodes, &api.Node{
 			Metadata: api.Metadata{
-				Name: n.ID,
-				UID:  n.ID,
+				Name: createdNode.ID,
+				UID:  createdNode.ID,
 			},
 			Status: api.NodeStatus{
 				Addresses: api.NodeAddresses{
-					Public: n.RemoteAddress,
+					Public: createdNode.PublicIP,
 				},
 			},
 			Spec: api.NodeSpec{
 				DatacenterName: c.Spec.Cloud.DatacenterName,
-				BareMetal:      &n,
+				BareMetal:      &createdNode,
 			},
-		}
-		nodes = append(nodes, createdNode)
+		})
 	}
 	return nodes, nil
 }
