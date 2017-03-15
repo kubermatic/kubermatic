@@ -32,7 +32,7 @@ func NewRouting(
 	cps map[string]provider.CloudProvider,
 	auth bool,
 	jwtKey string,
-	tprClientSet extensions.Clientset,
+	masterTPRClient extensions.Clientset,
 ) Routing {
 	var authenticated = func(h http.Handler) http.Handler { return h }
 	var getAuthenticated = func(h http.Handler) http.Handler { return h }
@@ -48,7 +48,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
-		masterTPRClient:     tprClientSet,
+		masterTPRClient:     masterTPRClient,
 	}
 }
 
