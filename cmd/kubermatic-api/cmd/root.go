@@ -72,23 +72,23 @@ var RootCmd = &cobra.Command{
 		}
 
 		var config *rest.Config
-		if masterKubeconfig == "" {
+		if viper.GetString("master-kubeconfig") == "" {
 			config, err = rest.InClusterConfig()
 		} else {
 			config, err = clientcmd.BuildConfigFromFlags("", masterKubeconfig)
 		}
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
-		wrapped, err := extensions.WrapClientsetWithExtensions(config)
+		masterTPRClient, err := extensions.WrapClientsetWithExtensions(config)
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		// start server
 		ctx := context.Background()
-		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"), wrapped)
+		r := handler.NewRouting(ctx, dcs, kps, cps, viper.GetBool("auth"), viper.GetString("jwt-key"), masterTPRClient)
 		mux := mux.NewRouter()
 		r.Register(mux)
 		log.Println(fmt.Sprintf("Listening on %s", viper.GetString("address")))
@@ -155,8 +155,11 @@ func setFlagsUsingViper() {
 		// then to values from the config.yml
 		err := flag.Value.Set(viper.GetString(flag.Name))
 		if err != nil {
-			// ignore
+			// TODO: improve this!!!
+			// We have to do this because of the linter :(
+			flag.Changed = true
+		} else {
+			flag.Changed = true
 		}
-		flag.Changed = true
 	}
 }

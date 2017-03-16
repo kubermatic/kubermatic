@@ -1,10 +1,9 @@
 package extensions
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
-
-	"fmt"
 
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -19,15 +18,15 @@ import (
 
 var replace = regexp.MustCompile(`[^a-z0-9]*`)
 
-// NormailzeUser is the base64 k8s compatible representation for a user
-func NormailzeUser(s string) string {
+// NormalizeUser is the base64 k8s compatible representation for a user
+func NormalizeUser(s string) string {
 	s = strings.ToLower(s)
 	return replace.ReplaceAllString(s, "")
 }
 
 // ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
 func ConstructSerialKeyName(username, fingerprint string) string {
-	return fmt.Sprintf("%s-%s", NormailzeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
+	return fmt.Sprintf("%s-%s", NormalizeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
@@ -77,7 +76,7 @@ func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	}
 }
 
-// SSHKeyTPR returns an interface to interact with UserSecureShellKey
+// SSHKeyTPR returns an interface to interact with UserSSHKey
 func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	return &SSHKeyTPRClient{
 		client: w.Client,
@@ -181,8 +180,8 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 
 // SSHKeyTPRInterface is the interface for an SSHTPR client
 type SSHKeyTPRInterface interface {
-	Create(*UserSecureShellKey) (*UserSecureShellKey, error)
-	List() (UserSecureShellKeyList, error)
+	Create(*UserSSHKey) (*UserSSHKey, error)
+	List() (UserSSHKeyList, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
 }
 
@@ -192,15 +191,15 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSecureShellKey) {
-	sk.Metadata.SetLabels(map[string]string{
-		"user": NormailzeUser(s.user),
-	})
+func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
+	lbs := sk.Metadata.Labels
+	lbs["user"] = NormalizeUser(s.user)
+	sk.Metadata.SetLabels(lbs)
 }
 
 // Create saves an SSHKey into an tpr
-func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, error) {
-	var result UserSecureShellKey
+func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	var result UserSSHKey
 	s.injectUserLabel(sk)
 	err := s.client.Post().
 		Namespace(SSHKeyTPRNamespace).
@@ -212,13 +211,13 @@ func (s *SSHKeyTPRClient) Create(sk *UserSecureShellKey) (*UserSecureShellKey, e
 }
 
 // List returns all SSHKey's for a given User
-func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
+func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
-	label, err := labels.NewRequirement("user", selection.Equals, []string{NormailzeUser(s.user)})
+	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
 	if err != nil {
-		return UserSecureShellKeyList{}, err
+		return UserSSHKeyList{}, err
 	}
-	var result UserSecureShellKeyList
+	var result UserSSHKeyList
 	err = s.client.Get().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
@@ -233,15 +232,14 @@ func (s *SSHKeyTPRClient) List() (UserSecureShellKeyList, error) {
 
 // Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.
 func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
-
-	// BUG: remove this when delete options are allowed
-	options = nil
-
 	return s.client.Delete().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
 		Name(ConstructSerialKeyName(s.user, fingerprint)).
-		Body(options).
+		// TODO: workaround, remove this when delete options are allowed
+		// options = nil
+		//	Body(options).
+		Body(nil).
 		Do().
 		Error()
 }
