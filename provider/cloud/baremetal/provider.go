@@ -231,7 +231,7 @@ func (b *baremetal) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []stri
 		if err != nil {
 			return fmt.Errorf("failed sending request: %v", err)
 		}
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusNotFound && resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("got unexpected status code. Expected: %d Got: %s", http.StatusOK, getLogableResponse(resp, ""))
 		}
 	}
