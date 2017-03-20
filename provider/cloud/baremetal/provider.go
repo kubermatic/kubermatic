@@ -209,7 +209,9 @@ func (b *baremetal) Nodes(_ context.Context, c *api.Cluster) ([]*api.Node, error
 				UID:  pn.ID,
 			},
 			Status: api.NodeStatus{
-				Addresses: api.NodeAddresses{},
+				Addresses: api.NodeAddresses{
+					Public: pn.PublicIP,
+				},
 			},
 			Spec: api.NodeSpec{
 				DatacenterName: c.Spec.Cloud.DatacenterName,
