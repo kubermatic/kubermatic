@@ -257,10 +257,10 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error){
+	deps := map[string]func(cc *clusterController, c *api.Cluster, dc, app string) (*extensionsv1beta1.Deployment, error){
 		"etcd":               loadDeploymentFile,
-		"apiserver":          loadApiserver,
-		"controller-manager": loadDeploymentFileControllerManager,
+		"apiserver":          loadDeploymentFile,
+		"controller-manager": loadDeploymentFile,
 		"scheduler":          loadDeploymentFile,
 	}
 
@@ -283,7 +283,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(cc, c, s)
+		dep, err := gen(cc, c, cc.dc, s)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
