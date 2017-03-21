@@ -39,7 +39,6 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddon{},
 		&ClusterAddonList{},
 		&apiv1.ListOptions{},
-		&apiv1.DeleteOptions{},
 	)
 	m := map[string]runtime.Object{
 		"UserSshKey":     &UserSSHKey{},
