@@ -19,7 +19,7 @@ spec:
         - /bin/sh
         - -c
         - -x
-        - "NODE_NAME=$( cat /opt/node-name ) && /hyperkube proxy --kubeconfig=/etc/kubernetes/kubeconfig --hostname-override=$NODE_NAME --cluster-cidr=172.17.0.0/16"
+        - "NODE_NAME=$( cat /opt/node-name ) && /hyperkube proxy --kubeconfig=/etc/kubernetes/kubeconfig --hostname-override=$NODE_NAME --cluster-cidr=172.25.0.0/16"
         securityContext:
           privileged: true
         volumeMounts:
