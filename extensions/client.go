@@ -193,6 +193,9 @@ type SSHKeyTPRClient struct {
 
 func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
 	lbs := sk.Metadata.Labels
+	if lbs == nil {
+		lbs = map[string]string{}
+	}
 	lbs["user"] = NormalizeUser(s.user)
 	sk.Metadata.SetLabels(lbs)
 }
