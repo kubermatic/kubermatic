@@ -180,13 +180,7 @@ func setFlagsUsingViper() {
 		}
 		// Viper will give precedence first to calls to the Set command,
 		// then to values from the config.yml
-		err := flag.Value.Set(viper.GetString(flag.Name))
-		if err != nil {
-			// TODO: improve this!!!
-			// We have to do this because of the linter :(
-			flag.Changed = true
-		} else {
-			flag.Changed = true
-		}
+		_ = flag.Value.Set(viper.GetString(flag.Name))
+		flag.Changed = true
 	}
 }

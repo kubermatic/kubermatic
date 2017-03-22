@@ -104,9 +104,8 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 
 func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, error) {
 	secrets := map[string]func(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error){
-		"apiserver-auth":   createApiserverAuth,
-		"apiserver-ssh":    createApiserverSSH,
-		"etcd-public-auth": createEtcdAuth,
+		"apiserver-auth": createApiserverAuth,
+		"apiserver-ssh":  createApiserverSSH,
 	}
 
 	recreateSecrets := map[string]struct{}{}
@@ -185,9 +184,8 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":        loadServiceFile,
-		"etcd-public": loadServiceFile,
-		"apiserver":   loadServiceFile,
+		"etcd":      loadServiceFile,
+		"apiserver": loadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -259,11 +257,10 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Deployment, error){
+	deps := map[string]func(cc *clusterController, c *api.Cluster, dc, app string) (*extensionsv1beta1.Deployment, error){
 		"etcd":               loadDeploymentFile,
-		"etcd-public":        loadDeploymentFile,
-		"apiserver":          loadApiserver,
-		"controller-manager": loadDeploymentFileControllerManager,
+		"apiserver":          loadDeploymentFile,
+		"controller-manager": loadDeploymentFile,
 		"scheduler":          loadDeploymentFile,
 	}
 
@@ -286,7 +283,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(cc, c, s)
+		dep, err := gen(cc, c, cc.dc, s)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
@@ -342,8 +339,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	pvcs := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.PersistentVolumeClaim, error){
-		"etcd":        loadPVCFile,
-		"etcd-public": loadPVCFile,
+		"etcd": loadPVCFile,
 	}
 
 	for s, gen := range pvcs {
@@ -377,6 +373,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 	defaultPlugins := map[string]string{
+		"flannelcni":          "flannel-cni",
 		"heapster":            "heapster",
 		"kubedns":             "kubedns",
 		"kubeproxy":           "kube-proxy",

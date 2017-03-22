@@ -369,6 +369,11 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
+	err = p.client.Deployments(ns.Name).Delete("apiserver-v5", &v1.DeleteOptions{})
+	if err != nil {
+		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
+	}
+
 	c.Status.Phase = api.PendingClusterStatusPhase
 
 	return nil
