@@ -29,7 +29,7 @@ const (
 
 const (
 	// NodeTPRName is the names of the TPR storing Nodes
-	NodeTPRName string = "nodes"
+	NodeTPRName string = "clnodes"
 )
 
 var (
