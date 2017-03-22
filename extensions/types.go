@@ -44,8 +44,8 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
-		&Node{},
-		&NodeList{},
+		&ClNode{},
+		&ClNodeList{},
 		&apiv1.ListOptions{},
 	)
 	m := map[string]runtime.Object{
@@ -128,8 +128,8 @@ func (e *ClusterAddon) GetObjectMeta() meta.Object {
 	return &e.Metadata
 }
 
-// Node contains node information to be saved
-type Node struct {
+// ClNode contains node information to be saved
+type ClNode struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 
@@ -137,31 +137,31 @@ type Node struct {
 	Status apitypes.NodeStatus `json:"status,omitempty"`
 }
 
-// NodeList specifies a list of nodes
-type NodeList struct {
+// ClNodeList specifies a list of nodes
+type ClNodeList struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        metav1.ListMeta `json:"metadata"`
 
-	Items []Node `json:"items"`
+	Items []ClNode `json:"items"`
 }
 
 // GetObjectKind returns the object typemeta information
-func (e *Node) GetObjectKind() schema.ObjectKind {
+func (e *ClNode) GetObjectKind() schema.ObjectKind {
 	return &e.TypeMeta
 }
 
 // GetObjectMeta returns the object metadata
-func (e *Node) GetObjectMeta() meta.Object {
+func (e *ClNode) GetObjectMeta() meta.Object {
 	return &e.Metadata
 }
 
 // GetObjectKind returns the object typemeta information
-func (el *NodeList) GetObjectKind() schema.ObjectKind {
+func (el *ClNodeList) GetObjectKind() schema.ObjectKind {
 	return &el.TypeMeta
 }
 
 // GetListMeta returns the list object metadata
-func (el *NodeList) GetListMeta() metav1.List {
+func (el *ClNodeList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
 

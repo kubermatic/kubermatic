@@ -203,6 +203,6 @@ func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName
 	return nil, nil
 }
 
-func (p *seedProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.Node, error) {
+func (p *seedProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
 	return nil, nil
 }

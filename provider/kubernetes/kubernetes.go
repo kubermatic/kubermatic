@@ -450,7 +450,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }
 
-func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.Node, error) {
+func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
 	_, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
@@ -469,7 +469,7 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 		meta.Annotations["user"] = node.Metadata.User
 	}
 
-	n := &extensions.Node{
+	n := &extensions.ClNode{
 		Metadata: meta,
 		Status:   node.Status,
 		Spec:     node.Spec,

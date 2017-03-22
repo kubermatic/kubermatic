@@ -242,13 +242,13 @@ func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) 
 		Error()
 }
 
-// NodesInterface is an interface to interact with Node TPRs
+// NodesInterface is an interface to interact with ClNode TPRs
 type NodesInterface interface {
-	Create(*Node) (*Node, error)
-	Get(name string) (*Node, error)
-	List(v1.ListOptions) (*NodeList, error)
+	Create(*ClNode) (*ClNode, error)
+	Get(name string) (*ClNode, error)
+	List(v1.ListOptions) (*ClNodeList, error)
 	Watch(v1.ListOptions) (watch.Interface, error)
-	Update(*Node) (*Node, error)
+	Update(*ClNode) (*ClNode, error)
 	Delete(string, *v1.DeleteOptions) error
 }
 
@@ -259,8 +259,8 @@ type NodesClient struct {
 }
 
 // Create makes a new node in the node TPR or returns an existing one with an error.
-func (c *NodesClient) Create(node *Node) (*Node, error) {
-	result := &Node{}
+func (c *NodesClient) Create(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
 	err := c.client.Post().
 		Namespace(c.ns).
 		Resource(NodeTPRName).
@@ -271,8 +271,8 @@ func (c *NodesClient) Create(node *Node) (*Node, error) {
 }
 
 // List takes list options and returns a list of nodes.
-func (c *NodesClient) List(opts v1.ListOptions) (*NodeList, error) {
-	result := &NodeList{}
+func (c *NodesClient) List(opts v1.ListOptions) (*ClNodeList, error) {
+	result := &ClNodeList{}
 	err := c.client.Get().
 		Namespace(c.ns).
 		Resource(NodeTPRName).
@@ -293,8 +293,8 @@ func (c *NodesClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Update ..... updates a given node dahhh
-func (c *NodesClient) Update(node *Node) (*Node, error) {
-	result := &Node{}
+func (c *NodesClient) Update(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
 	err := c.client.Put().
 		Namespace(c.ns).
 		Resource(NodeTPRName).
@@ -317,8 +317,8 @@ func (c *NodesClient) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // Get takes the name of a node and fetches it from the TPR.
-func (c *NodesClient) Get(name string) (*Node, error) {
-	result := &Node{}
+func (c *NodesClient) Get(name string) (*ClNode, error) {
+	result := &ClNode{}
 	err := c.client.Get().
 		Namespace(c.ns).
 		Resource(NodeTPRName).
