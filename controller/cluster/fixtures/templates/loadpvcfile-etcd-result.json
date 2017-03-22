@@ -1,0 +1,1 @@
+{"kind":"PersistentVolumeClaim","apiVersion":"v1","metadata":{"name":"etcd-pvc","creationTimestamp":null,"annotations":{"volume.beta.kubernetes.io/storage-class":"generic"}},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}},"status":{}}

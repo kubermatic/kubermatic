@@ -237,9 +237,7 @@ func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) 
 		Resource(SSHKeyTPRName).
 		Name(ConstructSerialKeyName(s.user, fingerprint)).
 		// TODO: workaround, remove this when delete options are allowed
-		// options = nil
-		//	Body(options).
-		Body(nil).
+		Body(options).
 		Do().
 		Error()
 }
