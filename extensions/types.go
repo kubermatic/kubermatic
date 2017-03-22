@@ -3,6 +3,7 @@ package extensions
 import (
 	"time"
 
+	apitypes "github.com/kubermatic/api"
 	"k8s.io/client-go/pkg/api/meta"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apimachinery/announced"
@@ -26,6 +27,11 @@ const (
 	SSHKeyTPRNamespace string = "default"
 )
 
+const (
+	// NodeTPRName is the names of the TPR storing Nodes
+	NodeTPRName string = "nodes"
+)
+
 var (
 	// SchemeGroupVersion is the combination of group name and version for the kubernetes client
 	SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
@@ -38,6 +44,8 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
+		&Node{},
+		&NodeList{},
 		&apiv1.ListOptions{},
 	)
 	m := map[string]runtime.Object{
@@ -118,6 +126,43 @@ func (e *ClusterAddon) GetObjectKind() schema.ObjectKind {
 //GetObjectMeta returns the object metadata
 func (e *ClusterAddon) GetObjectMeta() meta.Object {
 	return &e.Metadata
+}
+
+// Node contains node information to be saved
+type Node struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Spec   apitypes.NodeSpec   `json:"spec"`
+	Status apitypes.NodeStatus `json:"status,omitempty"`
+}
+
+// NodeList specifies a list of nodes
+type NodeList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []Node `json:"items"`
+}
+
+// GetObjectKind returns the object typemeta information
+func (e *Node) GetObjectKind() schema.ObjectKind {
+	return &e.TypeMeta
+}
+
+// GetObjectMeta returns the object metadata
+func (e *Node) GetObjectMeta() meta.Object {
+	return &e.Metadata
+}
+
+// GetObjectKind returns the object typemeta information
+func (el *NodeList) GetObjectKind() schema.ObjectKind {
+	return &el.TypeMeta
+}
+
+// GetListMeta returns the list object metadata
+func (el *NodeList) GetListMeta() metav1.List {
+	return &el.Metadata
 }
 
 //GetObjectKind returns the object typemeta information

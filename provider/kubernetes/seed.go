@@ -202,3 +202,7 @@ func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
 	return nil, nil
 }
+
+func (p *seedProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.Node, error) {
+	return nil, nil
+}

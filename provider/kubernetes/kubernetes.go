@@ -449,3 +449,32 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 
 	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
 }
+
+func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.Node, error) {
+	_, err := p.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	meta := v1.ObjectMeta{
+		Name:        node.Metadata.UID,
+		Annotations: node.Metadata.Annotations,
+	}
+
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{
+			"user": node.Metadata.User,
+		}
+	} else {
+		meta.Annotations["user"] = node.Metadata.User
+	}
+
+	n := &extensions.Node{
+		Metadata: meta,
+		Status:   node.Status,
+		Spec:     node.Spec,
+	}
+
+	// TODO: Use propper cluster generator
+	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Create(n)
+}
