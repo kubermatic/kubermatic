@@ -60,6 +60,7 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 type Clientset interface {
 	ClusterAddons(ns string) ClusterAddonsInterface
 	SSHKeyTPR(user string) SSHKeyTPRInterface
+	Nodes(ns string) NodesInterface
 }
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
@@ -80,6 +81,14 @@ func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
 	return &SSHKeyTPRClient{
 		client: w.Client,
 		user:   user,
+	}
+}
+
+// Nodes returns an interface to interact with Nodes
+func (w *WrappedClientset) Nodes(ns string) NodesInterface {
+	return &NodesClient{
+		client: w.Client,
+		ns:     ns,
 	}
 }
 
@@ -184,9 +193,6 @@ type SSHKeyTPRClient struct {
 
 func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
 	lbs := sk.Metadata.Labels
-	if lbs == nil {
-		lbs = map[string]string{}
-	}
 	lbs["user"] = NormalizeUser(s.user)
 	sk.Metadata.SetLabels(lbs)
 }
@@ -230,7 +236,94 @@ func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) 
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
 		Name(ConstructSerialKeyName(s.user, fingerprint)).
+		// TODO: workaround, remove this when delete options are allowed
 		Body(options).
 		Do().
 		Error()
+}
+
+// NodesInterface is an interface to interact with ClNode TPRs
+type NodesInterface interface {
+	Create(*ClNode) (*ClNode, error)
+	Get(name string) (*ClNode, error)
+	List(v1.ListOptions) (*ClNodeList, error)
+	Watch(v1.ListOptions) (watch.Interface, error)
+	Update(*ClNode) (*ClNode, error)
+	Delete(string, *v1.DeleteOptions) error
+}
+
+// NodesClient is an implementation of NodesInterface to work with Nodes
+type NodesClient struct {
+	client rest.Interface
+	ns     string
+}
+
+// Create makes a new node in the node TPR or returns an existing one with an error.
+func (c *NodesClient) Create(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Post().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// List takes list options and returns a list of nodes.
+func (c *NodesClient) List(opts v1.ListOptions) (*ClNodeList, error) {
+	result := &ClNodeList{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Watch returns a watch.Interface that watches the requested node
+func (c *NodesClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	return c.client.Get().
+		Namespace(c.ns).
+		Prefix("watch").
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Watch()
+}
+
+// Update ..... updates a given node dahhh
+func (c *NodesClient) Update(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Put().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(node.Metadata.Name).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Delete takes the name of a node and removes it from the TPR
+func (c *NodesClient) Delete(name string, options *v1.DeleteOptions) error {
+	return c.client.Delete().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Body(options).
+		Do().
+		Error()
+}
+
+// Get takes the name of a node and fetches it from the TPR.
+func (c *NodesClient) Get(name string) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Do().
+		Into(result)
+	return result, err
 }
