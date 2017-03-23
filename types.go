@@ -264,11 +264,16 @@ type ClusterStatus struct {
 	ApiserverSSH string        `json:"apiserverSSH"`
 }
 
+// SSHKeyFingerprint represents a representation to a extensions.UserSSHKey
+type SSHKeyFingerprint string
+
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
+
+	SSHKeys []SSHKeyFingerprint `json:"ssh_fingerprints,omitempty"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
