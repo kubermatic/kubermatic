@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/util/rand"
+	"github.com/kubermatic/api/extensions"
 )
 
 const (
@@ -53,6 +54,7 @@ func (p *fakeCloudProvider) CreateNodes(
 	cluster *api.Cluster,
 	spec *api.NodeSpec,
 	instances int,
+	keys []extensions.UserSSHKey,
 ) ([]*api.Node, error) {
 	var ns []*api.Node
 
