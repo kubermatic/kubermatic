@@ -75,7 +75,7 @@ type KubernetesProvider interface {
 	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
 
 	// SetSSHKeys updates the keys of a cluster
-	SetSSHKeys(user User, cluster string, key []extensions.UserSSHKey) error
+	SetSSHKeys(user User, cluster string, keys []extensions.UserSSHKey) error
 
 	// DeleteSSHKey updates the keys of a cluster
 	DeleteSSHKey(user User, cluster string, key extensions.UserSSHKey) error
