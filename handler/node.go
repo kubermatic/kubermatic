@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/api/v1"
@@ -230,6 +231,7 @@ func deleteNodeEndpoint(
 func createNodesEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
+	clientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
@@ -257,11 +259,25 @@ func createNodesEndpoint(
 			return nil, err
 		}
 		if npName != cpName {
-			return nil, NewBadRequest("cluster cloud provider %q and node cloud provider %q do not match",
-				cpName, npName)
+			return nil, NewBadRequest("cluster cloud provider %q and node cloud provider %q do not match", cpName, npName)
 		}
 
-		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+		keys, err := clientset.SSHKeyTPR(req.user.Name).List()
+		if err != nil {
+			return nil, err
+		}
+
+		// Reduce list
+		var chosen []extensions.UserSSHKey
+		for _, key := range keys.Items {
+			for _, f := range c.Spec.SSHKeys {
+				if f.Equal(key.Fingerprint) {
+					chosen = append(chosen, key)
+				}
+			}
+		}
+
+		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances, chosen)
 		if err != nil {
 			return nil, err
 		}
