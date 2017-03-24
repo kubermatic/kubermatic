@@ -41,11 +41,11 @@ type BringYourOwnNodeSpec struct {
 
 // BareMetalNodeSpec specifies a node instanciated by the bare-metal-provider
 type BareMetalNodeSpec struct {
-	ID            string `json:"id"`
-	Memory        int    `json:"memory"`
-	Space         int    `json:"space"`
-	CPUs          []CPU  `json:"cpus"`
-	RemoteAddress string `json:"remote_address"`
+	ID       string `json:"id"`
+	Memory   int    `json:"memory"`
+	Space    int    `json:"space"`
+	CPUs     []CPU  `json:"cpus"`
+	PublicIP string `json:"public_ip"`
 }
 
 // FakeNodeSpec specifies a fake node.

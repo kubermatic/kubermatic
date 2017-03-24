@@ -3,6 +3,7 @@ package extensions
 import (
 	"time"
 
+	apitypes "github.com/kubermatic/api"
 	"k8s.io/client-go/pkg/api/meta"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apimachinery/announced"
@@ -18,6 +19,19 @@ const (
 	Version string = "v1"
 )
 
+const (
+	// SSHKeyTPRName is the names of the TPR storing SSH keys
+	SSHKeyTPRName string = "usersshkeies"
+
+	// SSHKeyTPRNamespace is the name of the namespace the TPR is created in
+	SSHKeyTPRNamespace string = "default"
+)
+
+const (
+	// NodeTPRName is the names of the TPR storing Nodes
+	NodeTPRName string = "clnodes"
+)
+
 var (
 	// SchemeGroupVersion is the combination of group name and version for the kubernetes client
 	SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
@@ -30,9 +44,25 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&ClusterAddon{},
 		&ClusterAddonList{},
+		&ClNode{},
+		&ClNodeList{},
 		&apiv1.ListOptions{},
-		&apiv1.DeleteOptions{},
 	)
+	m := map[string]runtime.Object{
+		"UserSshKey":     &UserSSHKey{},
+		"UserSshKeyList": &UserSSHKeyList{},
+	}
+	for k, v := range m {
+		scheme.AddKnownTypeWithName(
+			schema.GroupVersionKind{
+				Group:   SchemeGroupVersion.Group,
+				Version: SchemeGroupVersion.Version,
+				Kind:    k,
+			},
+			v,
+		)
+	}
+
 	return nil
 }
 
@@ -98,6 +128,43 @@ func (e *ClusterAddon) GetObjectMeta() meta.Object {
 	return &e.Metadata
 }
 
+// ClNode contains node information to be saved
+type ClNode struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Spec   apitypes.NodeSpec   `json:"spec"`
+	Status apitypes.NodeStatus `json:"status,omitempty"`
+}
+
+// ClNodeList specifies a list of nodes
+type ClNodeList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []ClNode `json:"items"`
+}
+
+// GetObjectKind returns the object typemeta information
+func (e *ClNode) GetObjectKind() schema.ObjectKind {
+	return &e.TypeMeta
+}
+
+// GetObjectMeta returns the object metadata
+func (e *ClNode) GetObjectMeta() meta.Object {
+	return &e.Metadata
+}
+
+// GetObjectKind returns the object typemeta information
+func (el *ClNodeList) GetObjectKind() schema.ObjectKind {
+	return &el.TypeMeta
+}
+
+// GetListMeta returns the list object metadata
+func (el *ClNodeList) GetListMeta() metav1.List {
+	return &el.Metadata
+}
+
 //GetObjectKind returns the object typemeta information
 func (el *ClusterAddonList) GetObjectKind() schema.ObjectKind {
 	return &el.TypeMeta
@@ -106,4 +173,42 @@ func (el *ClusterAddonList) GetObjectKind() schema.ObjectKind {
 //GetListMeta returns the list object metadata
 func (el *ClusterAddonList) GetListMeta() metav1.List {
 	return &el.Metadata
+}
+
+// UserSSHKey specifies a users UserSSHKey
+type UserSSHKey struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        apiv1.ObjectMeta `json:"metadata"`
+
+	Name        string `json:"name"`
+	Fingerprint string `json:"fingerprint"`
+	PublicKey   string `json:"public_key"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (sk *UserSSHKey) GetObjectKind() schema.ObjectKind {
+	return &sk.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (sk *UserSSHKey) GetListMeta() metav1.List {
+	return &sk.Metadata
+}
+
+// UserSSHKeyList specifies a users UserSSHKey
+type UserSSHKeyList struct {
+	metav1.TypeMeta `json:",inline"`
+	Metadata        metav1.ListMeta `json:"metadata"`
+
+	Items []UserSSHKey `json:"items"`
+}
+
+//GetObjectKind returns the object typemeta information
+func (kl *UserSSHKeyList) GetObjectKind() schema.ObjectKind {
+	return &kl.TypeMeta
+}
+
+//GetListMeta returns the list object metadata
+func (kl *UserSSHKeyList) GetListMeta() metav1.List {
+	return &kl.Metadata
 }

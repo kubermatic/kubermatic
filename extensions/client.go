@@ -1,17 +1,36 @@
 package extensions
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/runtime/serializer"
+	"k8s.io/client-go/pkg/selection"
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 )
 
+var replace = regexp.MustCompile(`[^a-z0-9]*`)
+
+// NormalizeUser is the base64 k8s compatible representation for a user
+func NormalizeUser(s string) string {
+	s = strings.ToLower(s)
+	return replace.ReplaceAllString(s, "")
+}
+
+// ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
+func ConstructSerialKeyName(username, fingerprint string) string {
+	return fmt.Sprintf("%s-%s", NormalizeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
+}
+
 // WrapClientsetWithExtensions returns a clientset to work with extensions
-func WrapClientsetWithExtensions(config *rest.Config) (*WrappedClientset, error) {
+func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
 	restConfig := &rest.Config{}
 	*restConfig = *config
 	c, err := extensionClient(restConfig)
@@ -26,7 +45,6 @@ func WrapClientsetWithExtensions(config *rest.Config) (*WrappedClientset, error)
 func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 	config.APIPath = "/apis"
 	config.ContentConfig = rest.ContentConfig{
-
 		GroupVersion: &schema.GroupVersion{
 			Group:   GroupName,
 			Version: Version,
@@ -34,12 +52,15 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 		NegotiatedSerializer: serializer.DirectCodecFactory{CodecFactory: kapi.Codecs},
 		ContentType:          runtime.ContentTypeJSON,
 	}
+
 	return rest.RESTClientFor(config)
 }
 
 // Clientset is an interface to work with extensions
 type Clientset interface {
 	ClusterAddons(ns string) ClusterAddonsInterface
+	SSHKeyTPR(user string) SSHKeyTPRInterface
+	Nodes(ns string) NodesInterface
 }
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
@@ -50,6 +71,22 @@ type WrappedClientset struct {
 // ClusterAddons returns an interface to interact with ClusterAddons
 func (w *WrappedClientset) ClusterAddons(ns string) ClusterAddonsInterface {
 	return &ClusterAddonsClient{
+		client: w.Client,
+		ns:     ns,
+	}
+}
+
+// SSHKeyTPR returns an interface to interact with UserSSHKey
+func (w *WrappedClientset) SSHKeyTPR(user string) SSHKeyTPRInterface {
+	return &SSHKeyTPRClient{
+		client: w.Client,
+		user:   user,
+	}
+}
+
+// Nodes returns an interface to interact with Nodes
+func (w *WrappedClientset) Nodes(ns string) NodesInterface {
+	return &NodesClient{
 		client: w.Client,
 		ns:     ns,
 	}
@@ -139,4 +176,157 @@ func (c *ClusterAddonsClient) Get(name string) (result *ClusterAddon, err error)
 		Do().
 		Into(result)
 	return
+}
+
+// SSHKeyTPRInterface is the interface for an SSHTPR client
+type SSHKeyTPRInterface interface {
+	Create(*UserSSHKey) (*UserSSHKey, error)
+	List() (UserSSHKeyList, error)
+	Delete(fingerprint string, options *v1.DeleteOptions) error
+}
+
+// SSHKeyTPRClient is an implementation of SSHKeyTPRInterface to work with stored SSH keys
+type SSHKeyTPRClient struct {
+	client rest.Interface
+	user   string
+}
+
+func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
+	lbs := sk.Metadata.Labels
+	if lbs == nil {
+		lbs = map[string]string{}
+	}
+	lbs["user"] = NormalizeUser(s.user)
+	sk.Metadata.SetLabels(lbs)
+}
+
+// Create saves an SSHKey into an tpr
+func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	var result UserSSHKey
+	s.injectUserLabel(sk)
+	err := s.client.Post().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		Body(sk).
+		Do().
+		Into(&result)
+	return &result, err
+}
+
+// List returns all SSHKey's for a given User
+func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
+	opts := v1.ListOptions{}
+	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
+	if err != nil {
+		return UserSSHKeyList{}, err
+	}
+	var result UserSSHKeyList
+	err = s.client.Get().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		LabelsSelectorParam(labels.NewSelector().Add(*label)).
+		Do().
+		Into(&result)
+
+	return result, err
+
+}
+
+// Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.
+func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
+	return s.client.Delete().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		Name(ConstructSerialKeyName(s.user, fingerprint)).
+		// TODO: workaround, remove this when delete options are allowed
+		Body(options).
+		Do().
+		Error()
+}
+
+// NodesInterface is an interface to interact with ClNode TPRs
+type NodesInterface interface {
+	Create(*ClNode) (*ClNode, error)
+	Get(name string) (*ClNode, error)
+	List(v1.ListOptions) (*ClNodeList, error)
+	Watch(v1.ListOptions) (watch.Interface, error)
+	Update(*ClNode) (*ClNode, error)
+	Delete(string, *v1.DeleteOptions) error
+}
+
+// NodesClient is an implementation of NodesInterface to work with Nodes
+type NodesClient struct {
+	client rest.Interface
+	ns     string
+}
+
+// Create makes a new node in the node TPR or returns an existing one with an error.
+func (c *NodesClient) Create(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Post().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// List takes list options and returns a list of nodes.
+func (c *NodesClient) List(opts v1.ListOptions) (*ClNodeList, error) {
+	result := &ClNodeList{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Watch returns a watch.Interface that watches the requested node
+func (c *NodesClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	return c.client.Get().
+		Namespace(c.ns).
+		Prefix("watch").
+		Resource(NodeTPRName).
+		VersionedParams(&opts, kapi.ParameterCodec).
+		Watch()
+}
+
+// Update ..... updates a given node dahhh
+func (c *NodesClient) Update(node *ClNode) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Put().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(node.Metadata.Name).
+		Body(node).
+		Do().
+		Into(result)
+	return result, err
+}
+
+// Delete takes the name of a node and removes it from the TPR
+func (c *NodesClient) Delete(name string, options *v1.DeleteOptions) error {
+	return c.client.Delete().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Body(options).
+		Do().
+		Error()
+}
+
+// Get takes the name of a node and fetches it from the TPR.
+func (c *NodesClient) Get(name string) (*ClNode, error) {
+	result := &ClNode{}
+	err := c.client.Get().
+		Namespace(c.ns).
+		Resource(NodeTPRName).
+		Name(name).
+		Do().
+		Into(result)
+	return result, err
 }

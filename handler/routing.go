@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
@@ -20,6 +21,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
+	masterTPRClient     extensions.Clientset
 }
 
 // NewRouting creates a new Routing.
@@ -30,6 +32,7 @@ func NewRouting(
 	cps map[string]provider.CloudProvider,
 	auth bool,
 	jwtKey string,
+	masterTPRClient extensions.Clientset,
 ) Routing {
 	var authenticated = func(h http.Handler) http.Handler { return h }
 	var getAuthenticated = func(h http.Handler) http.Handler { return h }
@@ -37,7 +40,6 @@ func NewRouting(
 		authenticated = jwtMiddleware(jwtKey).Handler
 		getAuthenticated = jwtGetMiddleware(jwtKey).Handler
 	}
-
 	return Routing{
 		ctx:                 ctx,
 		authenticated:       authenticated,
@@ -46,6 +48,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
+		masterTPRClient:     masterTPRClient,
 	}
 }
 
@@ -148,6 +151,52 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
 		Handler(r.authenticated(r.createAddonHandler()))
+
+	mux.
+		Methods("GET").
+		Path("/api/v1/ssh-keys").
+		Handler(r.authenticated(r.listSSHKeys()))
+	mux.
+		Methods("POST").
+		Path("/api/v1/ssh-keys").
+		Handler(r.authenticated(r.createSSHKey()))
+	mux.
+		Methods("DELETE").
+		Path("/api/v1/ssh-keys/{fingerprint}").
+		Handler(r.authenticated(r.deleteSSHKey()))
+}
+
+func (r Routing) listSSHKeys() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		listSSHKeyEndpoint(r.masterTPRClient),
+		decodeListSSHKeyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) createSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		createSSHKeyEndpoint(r.masterTPRClient),
+		decodeCreateSSHKeyReq,
+		createStatusResource(encodeJSON),
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
+}
+
+func (r Routing) deleteSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.ctx,
+		deleteSSHKeyEndpoint(r.masterTPRClient),
+		decodeDeleteSSHKeyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		defaultHTTPErrorEncoder(),
+	)
 }
 
 func (r Routing) getAWSKeyHandler() http.Handler {

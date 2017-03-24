@@ -2,10 +2,14 @@ package cluster
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"path"
+	"path/filepath"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/template"
+	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -51,6 +55,52 @@ func loadIngressFile(cc *clusterController, c *api.Cluster, s string) (*extensio
 	}
 
 	return &ingress, err
+}
+
+func loadDeploymentFile(cc *clusterController, c *api.Cluster, dc, app string) (*extensionsv1beta1.Deployment, error) {
+	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("could not identify cloud provider: %v", err)
+	}
+
+	pa, err := filepath.Abs(path.Join(cc.masterResourcesPath, app+"-dep.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := template.ParseFiles(pa)
+	if err != nil {
+		return nil, err
+	}
+
+	data := struct {
+		DC               string
+		AdvertiseAddress string
+		Cluster          *api.Cluster
+		CloudProvider    string
+	}{
+		DC:            dc,
+		Cluster:       c,
+		CloudProvider: p,
+	}
+
+	u, err := url.Parse(c.Address.URL)
+	if err != nil {
+		return nil, err
+	}
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return nil, err
+	}
+	data.AdvertiseAddress = addrs[0]
+
+	var dep extensionsv1beta1.Deployment
+	err = t.Execute(data, &dep)
+	return &dep, err
 }
 
 func loadPVCFile(cc *clusterController, c *api.Cluster, s string) (*v1.PersistentVolumeClaim, error) {

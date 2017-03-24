@@ -369,6 +369,11 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
+	err = p.client.Deployments(ns.Name).Delete("apiserver-v5", &v1.DeleteOptions{})
+	if err != nil {
+		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
+	}
+
 	c.Status.Phase = api.PendingClusterStatusPhase
 
 	return nil
@@ -443,4 +448,33 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 	}
 
 	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
+}
+
+func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
+	_, err := p.Cluster(user, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	meta := v1.ObjectMeta{
+		Name:        node.Metadata.UID,
+		Annotations: node.Metadata.Annotations,
+	}
+
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{
+			"user": node.Metadata.User,
+		}
+	} else {
+		meta.Annotations["user"] = node.Metadata.User
+	}
+
+	n := &extensions.ClNode{
+		Metadata: meta,
+		Status:   node.Status,
+		Spec:     node.Spec,
+	}
+
+	// TODO: Use propper cluster generator
+	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Create(n)
 }

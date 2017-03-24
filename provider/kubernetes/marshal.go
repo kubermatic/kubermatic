@@ -53,7 +53,7 @@ const (
 	nameLabelKey  = "name"
 	phaseLabelKey = "phase"
 
-	flannelCIDRADefault = "172.17.0.0/16"
+	flannelCIDRADefault = "172.25.0.0/16"
 )
 
 // NamespaceName create a namespace name for a given user and cluster.

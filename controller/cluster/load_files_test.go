@@ -8,144 +8,224 @@ import (
 	"testing"
 
 	"github.com/kubermatic/api"
+	"os"
 )
 
+func IsOnCi() bool {
+	_, err := os.Stat("../../../config/kubermatic/static/master/")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true
+		}
+		panic(err)
+	}
+
+	return false
+}
+
 func TestLoadServiceFile(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
 	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
+		masterResourcesPath: "../../../config/kubermatic/static/master/",
+		dc:                  "host2",
 	}
 	c := &api.Cluster{
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				BareMetal: &api.BareMetalCloudSpec{
+					Name: "test",
+				},
+			},
+		},
+		Metadata: api.Metadata{
+			Name: "de-test-01",
+		},
 		Address: &api.ClusterAddress{
-			NodePort: 1234,
+			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			NodePort: 13000,
 		},
 	}
 
-	res, err := loadServiceFile(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
+	svcs := map[string]string{
+		"etcd":      "loadservicefile-etcd-result",
+		"apiserver": "loadservicefile-apiserver-result",
 	}
 
-	checkTestResult(t, "test-service-result", res)
+	for s, r := range svcs {
+		res, err := loadServiceFile(cc, c, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }
 
 func TestLoadIngressFile(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
 	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		dc:                  "asdf-de-1",
-		externalURL:         "de.example.com",
+		masterResourcesPath: "../../../config/kubermatic/static/master/",
+		dc:                  "host2",
+		externalURL:         "int.kubermatic.io",
 	}
 	c := &api.Cluster{
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				BareMetal: &api.BareMetalCloudSpec{
+					Name: "test",
+				},
+			},
+		},
 		Metadata: api.Metadata{
-			Name: "de-test-01",
+			Name: "jh8j81chn",
+		},
+		Address: &api.ClusterAddress{
+			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			NodePort: 13000,
 		},
 	}
 
-	res, err := loadIngressFile(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
+	ing := map[string]string{
+		"k8sniff": "loadingressfile-k8sniff-result",
 	}
 
-	checkTestResult(t, "test-ingress-result", res)
+	for s, r := range ing {
+		res, err := loadIngressFile(cc, c, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
 	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		dc:                  "asdf-de-1",
-	}
-	c := &api.Cluster{
-		Metadata: api.Metadata{
-			Name: "de-test-01",
-		},
-	}
-
-	res, err := loadDeploymentFile(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkTestResult(t, "test-dep-result", res)
-}
-
-func TestLoadDeploymentFileControllerManagerExists(t *testing.T) {
-	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		dc:                  "asdf-de-1",
+		masterResourcesPath: "../../../config/kubermatic/static/master/",
+		dc:                  "host2",
 	}
 	c := &api.Cluster{
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{
-				Name: "aws",
+				BareMetal: &api.BareMetalCloudSpec{
+					Name: "test",
+				},
 			},
 		},
 		Metadata: api.Metadata{
-			Name: "de-test-01",
+			Name: "jh8j81chn",
+		},
+		Address: &api.ClusterAddress{
+			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
 		},
 	}
 
-	res, err := loadDeploymentFileControllerManager(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
+	deps := map[string]string{
+		"etcd":               "loaddeploymentfile-etcd-result",
+		"scheduler":          "loaddeploymentfile-scheduler-result",
+		"controller-manager": "loaddeploymentfile-controller-manager-result",
+		"apiserver":          "loaddeploymentfile-apiserver-result",
 	}
 
-	checkTestResult(t, "test-aws-dep-result", res)
+	for s, r := range deps {
+		res, err := loadDeploymentFile(cc, c, "dc", s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }
 
-func TestLoadDeploymentFileControllerManagerNotExists(t *testing.T) {
+func TestLoadDeploymentFileAWS(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
 	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		dc:                  "asdf-de-1",
+		masterResourcesPath: "../../../config/kubermatic/static/master/",
+		dc:                  "host2",
 	}
 	c := &api.Cluster{
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{
-				Name: "gcp",
+				AWS: &api.AWSCloudSpec{
+					AccessKeyID:      "my_AccessKeyID",
+					SecretAccessKey:  "my_SecretAccessKey",
+					VPCId:            "my_VPCId",
+					AvailabilityZone: "my_AvailabilityZone",
+				},
 			},
 		},
 		Metadata: api.Metadata{
-			Name: "de-test-01",
+			Name: "jh8j81chn",
+		},
+		Address: &api.ClusterAddress{
+			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
 		},
 	}
 
-	res, err := loadDeploymentFileControllerManager(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
+	deps := map[string]string{
+		"etcd":               "loaddeploymentfile-etcd-result",
+		"scheduler":          "loaddeploymentfile-scheduler-result",
+		"controller-manager": "loaddeploymentfile-aws-controller-manager-result",
+		"apiserver":          "loaddeploymentfile-aws-apiserver-result",
 	}
 
-	checkTestResult(t, "test-dep-result", res)
+	for s, r := range deps {
+		res, err := loadDeploymentFile(cc, c, "dc", s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }
 
 func TestLoadPVCFile(t *testing.T) {
-	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
 	}
-	c := &api.Cluster{}
-
-	res, err := loadPVCFile(cc, c, "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkTestResult(t, "test-pvc-result", res)
-}
-
-func TestLoadApiserverFile(t *testing.T) {
 	cc := &clusterController{
-		masterResourcesPath: "./fixtures/templates/",
-		overwriteHost:       "localhost",
+		masterResourcesPath: "../../../config/kubermatic/static/master/",
+		dc:                  "host2",
+		externalURL:         "int.kubermatic.io",
 	}
 	c := &api.Cluster{
+		Spec: api.ClusterSpec{
+			Cloud: &api.CloudSpec{
+				BareMetal: &api.BareMetalCloudSpec{
+					Name: "test",
+				},
+			},
+		},
+		Metadata: api.Metadata{
+			Name: "jh8j81chn",
+		},
 		Address: &api.ClusterAddress{
-			NodePort: 1234,
+			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			NodePort: 13000,
 		},
 	}
 
-	res, err := loadApiserver(cc, c, "test-api-server")
-	if err != nil {
-		t.Fatal(err)
+	ing := map[string]string{
+		"etcd": "loadpvcfile-etcd-result",
 	}
 
-	checkTestResult(t, "test-api-server-dep-result", res)
+	for s, r := range ing {
+		res, err := loadPVCFile(cc, c, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
@@ -163,6 +243,6 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	expStr := strings.TrimSpace(string(exp))
 
 	if resStr != expStr {
-		t.Fatalf("Expected to get %v, got %v", expStr, resStr)
+		t.Fatalf("Expected to get %v (%q), got %v from %T", expStr, resFile, resStr, testObj)
 	}
 }

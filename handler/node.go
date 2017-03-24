@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -215,7 +216,10 @@ func deleteNodeEndpoint(
 
 		for _, node := range nodes {
 			if node.Metadata.UID == req.uid {
-				_ = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
+				err = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
+				if err != nil {
+					glog.Errorf("failed to delete node %q from cluster: %v", node.Metadata.Name, err)
+				}
 			}
 		}
 
@@ -257,7 +261,20 @@ func createNodesEndpoint(
 				cpName, npName)
 		}
 
-		return cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, node := range nodes {
+			node.Metadata.User = req.user.Name
+			_, err = kp.CreateNode(req.user, req.cluster, node)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return nodes, nil
 	}
 }
 

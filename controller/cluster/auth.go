@@ -95,33 +95,6 @@ func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Temp
 	return nil, &secret, err
 }
 
-func createEtcdAuth(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error) {
-	u, err := url.Parse(c.Address.EtcdURL)
-	if err != nil {
-		return nil, nil, err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	etcdKC, err := c.CreateKeyCert(host, []string{})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create key cert: %v", err)
-	}
-
-	data := struct {
-		EtcdKey, EtcdCert, RootCACert string
-	}{
-		RootCACert: c.Status.RootCA.Cert.Base64(),
-		EtcdKey:    etcdKC.Key.Base64(),
-		EtcdCert:   etcdKC.Cert.Base64(),
-	}
-	var secret v1.Secret
-	err = t.Execute(data, &secret)
-	return nil, &secret, err
-}
-
 func createApiserverSSH(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error) {
 	kc, err := createSSHKeyCert()
 	if err != nil {
