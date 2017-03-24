@@ -73,6 +73,9 @@ type KubernetesProvider interface {
 
 	// CreateNode creates a node ThirdPartyResource
 	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
+
+	// SetSSHKeys updates the keys of a cluster
+	SetSSHKeys(user User, cluster string, key extensions.UserSSHKey) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
