@@ -40,6 +40,18 @@ type kubernetesProvider struct {
 	config *rest.Config
 }
 
+func (*kubernetesProvider) DeleteSSHKey(user provider.User, cluster string, key extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
+func (*kubernetesProvider) GetSSHKeys(user provider.User, cluster string) ([]extensions.UserSSHKey, error) {
+	panic("implement me")
+}
+
+func (*kubernetesProvider) SetSSHKeys(user provider.User, cluster string, keys []extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
 	clientConfig *rest.Config,

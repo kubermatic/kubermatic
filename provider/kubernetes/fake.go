@@ -21,6 +21,18 @@ type kubernetesFakeProvider struct {
 	cps      map[string]provider.CloudProvider
 }
 
+func (*kubernetesFakeProvider) DeleteSSHKey(user provider.User, cluster string, key extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
+func (*kubernetesFakeProvider) GetSSHKeys(user provider.User, cluster string) ([]extensions.UserSSHKey, error) {
+	panic("implement me")
+}
+
+func (*kubernetesFakeProvider) SetSSHKeys(user provider.User, cluster string, keys []extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
 // NewKubernetesFakeProvider creates a new kubernetes provider object
 func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
 	return &kubernetesFakeProvider{

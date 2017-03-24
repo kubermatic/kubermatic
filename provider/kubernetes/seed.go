@@ -25,6 +25,18 @@ type seedProvider struct {
 	seeds map[string]*api.Cluster
 }
 
+func (*seedProvider) DeleteSSHKey(user provider.User, cluster string, key extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
+func (*seedProvider) GetSSHKeys(user provider.User, cluster string) ([]extensions.UserSSHKey, error) {
+	panic("implement me")
+}
+
+func (*seedProvider) SetSSHKeys(user provider.User, cluster string, keys []extensions.UserSSHKey) error {
+	panic("implement me")
+}
+
 // NewSeedProvider creates a new seed provider object
 func NewSeedProvider(
 	dcs map[string]provider.DatacenterMeta,
