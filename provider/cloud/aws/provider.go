@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"golang.org/x/net/context"
@@ -594,11 +595,12 @@ func (a *aws) userData(
 	clusterState *api.Cluster,
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
+	authorizedKeys []string,
 ) error {
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: []string{},
+		SSHAuthorizedKeys: authorizedKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -621,7 +623,7 @@ func (a *aws) userData(
 	return tpl.Execute(buf, data)
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
@@ -632,6 +634,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	client, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
+	}
+
+	var skeys []string
+	for _, k := range keys {
+		skeys = append(skeys, k.PublicKey)
 	}
 	var createdNodes []*api.Node
 	var buf bytes.Buffer
@@ -645,7 +652,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC, skeys); err != nil {
 			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
