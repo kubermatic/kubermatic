@@ -79,6 +79,9 @@ type KubernetesProvider interface {
 
 	// DeleteSSHKey updates the keys of a cluster
 	DeleteSSHKey(user User, cluster string, key extensions.UserSSHKey) error
+
+	// GetSSHKeys returns all SSH keys for a cluster
+	GetSSHKeys(user User, cluster string) ([]extensions.UserSSHKey, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
