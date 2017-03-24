@@ -438,6 +438,7 @@ type NodeVersion struct {
 	Latest   bool
 }
 
+// MasterUpdate represents an update option for K8s master components
 type MasterUpdate struct {
 	From, To                   string
 	Automatic, RollbackAllowed bool
@@ -446,6 +447,7 @@ type MasterUpdate struct {
 	Promote                    bool
 }
 
+// NodeUpdate represents an update option for K8s node components
 type NodeUpdate struct {
 	From, To                   string
 	Automatic, RollbackAllowed bool

@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/api/controller/version/dijkstra"
 )
 
+// UpdatePathSearch represents a query for a path between K8s versions
 type UpdatePathSearch struct {
 	updates []api.MasterUpdate
 	nodes   map[string]*node
@@ -38,13 +39,16 @@ func (e *edge) Weight() float64 {
 	return 1.0
 }
 
+// Matcher is an interface to find matches within a pattern
 type Matcher interface {
 	Match(pattern string, version string) bool
 	Lower(a, b string) bool
 }
 
+// SemverMatcher implements Matcher for matching Semantic Versions
 type SemverMatcher struct{}
 
+// Match checks if a provided version matches the provided pattern
 func (m SemverMatcher) Match(pattern string, version string) bool {
 	v, err := semver.NewVersion(version)
 	if err != nil {
@@ -61,6 +65,7 @@ func (m SemverMatcher) Match(pattern string, version string) bool {
 	return matches.Check(v)
 }
 
+// Lower determines if SemVer a is less than SemVer b
 func (m SemverMatcher) Lower(a, b string) bool {
 	v1, err := semver.NewVersion(a)
 	if err != nil {
@@ -77,11 +82,16 @@ func (m SemverMatcher) Lower(a, b string) bool {
 	return v1.Compare(v2) == -1
 }
 
+// EqualityMatcher represents a Matcher to see if strings are equal
 type EqualityMatcher struct{}
 
+// Match determines if pattern is equal to version
 func (m EqualityMatcher) Match(pattern string, version string) bool { return pattern == version }
-func (m EqualityMatcher) Lower(a, b string) bool                    { return a < b }
 
+// Lower determines if a is less than b
+func (m EqualityMatcher) Lower(a, b string) bool { return a < b }
+
+// NewUpdatePathSearch finds a path between MasterVersions
 func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []api.MasterUpdate, matcher Matcher) *UpdatePathSearch {
 	result := &UpdatePathSearch{
 		updates: updates,
@@ -122,6 +132,7 @@ func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []api.M
 	return result
 }
 
+// Search finds an MasterUpdate path between versions
 func (s *UpdatePathSearch) Search(from, to string) ([]*api.MasterUpdate, error) {
 	fromNode, found := s.nodes[from]
 	if !found {
