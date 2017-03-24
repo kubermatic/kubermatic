@@ -1,6 +1,7 @@
 package api
 
 import (
+	"strings"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -266,6 +267,14 @@ type ClusterStatus struct {
 
 // SSHKeyFingerprint represents a representation to a extensions.UserSSHKey
 type SSHKeyFingerprint string
+
+// Equal takes a fingerprint and tests it equality
+func (s SSHKeyFingerprint) Equal(c string) bool {
+	// This is really slow :(
+	a := strings.Replace(c, ":", "", -1)
+	b := strings.Replace(string(s), ":", "", -1)
+	return strings.EqualFold(a, b)
+}
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
