@@ -20,6 +20,7 @@ type Edge interface {
 	Weight() float64
 }
 
+// NodeEdge represents a binding between a node and an edge
 type NodeEdge struct {
 	Node Node
 	Edge Edge
