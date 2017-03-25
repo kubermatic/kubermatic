@@ -27,7 +27,6 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	}
 
 	versions := buildMasterVerionsMap()
-	// TODO: Define MasterUpdates for testing
 	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
