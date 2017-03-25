@@ -38,8 +38,8 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 
 	verMap := make(map[string]*api.MasterVersion)
 
-	for _, ver := range s.Versions {
-		verMap[ver.ID] = &ver
+	for i, ver := range s.Versions {
+		verMap[ver.ID] = &s.Versions[i]
 	}
 
 	return verMap, nil
