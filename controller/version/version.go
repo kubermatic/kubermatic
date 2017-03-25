@@ -13,6 +13,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// LoadVersions loads MasterVersions from a given path
 func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -44,6 +45,7 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 	return verMap, nil
 }
 
+// DefaultMasterVersion determines the current default MasterVersion from a set of versions
 func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVersion, error) {
 	for _, ver := range versions {
 		if ver.Default {
@@ -54,6 +56,7 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 	return nil, errors.New("latest version not found")
 }
 
+// BestAutomaticUpdate determines the best automatic update available from the current version
 func BestAutomaticUpdate(from string, updates []api.MasterUpdate) (*api.MasterUpdate, error) {
 	type ToUpdate struct {
 		to     *semver.Version
