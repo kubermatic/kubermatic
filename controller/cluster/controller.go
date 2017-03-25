@@ -309,7 +309,7 @@ func NewController(
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
 	if err != nil {
-		return nil, fmt.Errorf("could not get default master versoin: %v", err)
+		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
 	cc.updateController = &update.Controller{
 		Client:              cc.client,
