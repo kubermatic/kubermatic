@@ -26,7 +26,8 @@ func newTestController() (*fake.Clientset, *clusterController) {
 		log.Fatal(err)
 	}
 
-	var versions map[string]*api.MasterVersion
+	versions := buildMasterVerionsMap()
+	// TODO: Define MasterUpdates for testing
 	var updates []api.MasterUpdate
 
 	clientSet := fake.NewSimpleClientset()
@@ -36,4 +37,51 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	}
 
 	return clientSet, cc.(*clusterController)
+}
+
+func buildMasterVerionsMap() map[string]*api.MasterVersion {
+	return map[string]*api.MasterVersion{
+		"1.5.2": &api.MasterVersion{
+			Name:                     "1.5.2",
+			ID:                       "1.5.2",
+			Default:                  false,
+			AllowedNodeVersions:      []string{"1.3.0"},
+			EtcdDeploymentYaml:       "etcd-dep.yaml",
+			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
+			ControllerDeploymentYaml: "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":  "v1.5.2",
+				"etcd-version": "3.0.14-kubeadm",
+			},
+		},
+		"1.5.3": &api.MasterVersion{
+			Name:                     "1.5.3",
+			ID:                       "1.5.3",
+			Default:                  true,
+			AllowedNodeVersions:      []string{"1.3.0"},
+			EtcdDeploymentYaml:       "etcd-dep.yaml",
+			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
+			ControllerDeploymentYaml: "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":  "v1.5.3",
+				"etcd-version": "3.0.14-kubeadm",
+			},
+		},
+		"v1.6.0-rc.1": &api.MasterVersion{
+			Name:                     "v1.6.0-rc.1",
+			ID:                       "v1.6.0-rc.1",
+			Default:                  false,
+			AllowedNodeVersions:      []string{"1.4.0"},
+			EtcdDeploymentYaml:       "etcd-dep.yaml",
+			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
+			ControllerDeploymentYaml: "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":  "v1.6.0-rc.1",
+				"etcd-version": "3.0.14-kubeadm",
+			},
+		},
+	}
 }
