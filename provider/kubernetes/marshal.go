@@ -30,24 +30,30 @@ const (
 	// namePrefix is the prefix string of every cluster namespace name.
 	namePrefix = "cluster"
 
-	urlAnnotation                       = annotationPrefix + "url"                         // kubermatic.io/url
-	tokenAnnotation                     = annotationPrefix + "token"                       // kubermatic.io/token
-	customAnnotationPrefix              = annotationPrefix + "annotation-"                 // kubermatic.io/annotation-
-	cloudAnnotationPrefix               = annotationPrefix + "cloud-provider-"             // kubermatic.io/cloud-provider-
-	providerAnnotation                  = annotationPrefix + "cloud-provider"              // kubermatic.io/cloud-provider
-	cloudDCAnnotation                   = annotationPrefix + "cloud-dc"                    // kubermatic.io/cloud-dc
-	phaseTimestampAnnotation            = annotationPrefix + "phase-ts"                    // kubermatic.io/phase-ts
-	healthAnnotation                    = annotationPrefix + "health"                      // kubermatic.io/health
-	userAnnotation                      = annotationPrefix + "user"                        // kubermatic.io/user
-	humanReadableNameAnnotation         = annotationPrefix + "name"                        // kubermatic.io/name
-	etcdURLAnnotation                   = annotationPrefix + "etcd-url"                    // kubermatic.io/etcd-url
-	nodePortLabel                       = annotationPrefix + "node-port"                   // kubermatic.io/etcd-url
-	rootCAKeyAnnotation                 = annotationPrefix + "root-ca-key"                 // kubermatic.io/root-ca-key
-	rootCACertAnnotation                = annotationPrefix + "root-ca-cert"                // kubermatic.io/root-cert
-	apiserverPubSSHAnnotation           = annotationPrefix + "ssh-pub"                     // kubermatic.io/ssh-pub
-	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deplyoed-master-verion" // kubermatic.io/last-deplyoed-master-verion
-	MasterUpdatePhaseAnnotation         = annotationPrefix + "master-update-phase"         // kubermatic.io/master-update-phase
-	MasterVersionAnnotation             = annotationPrefix + "master-version"              // kubermatic.io/master-verion
+	urlAnnotation               = annotationPrefix + "url"             // kubermatic.io/url
+	tokenAnnotation             = annotationPrefix + "token"           // kubermatic.io/token
+	customAnnotationPrefix      = annotationPrefix + "annotation-"     // kubermatic.io/annotation-
+	cloudAnnotationPrefix       = annotationPrefix + "cloud-provider-" // kubermatic.io/cloud-provider-
+	providerAnnotation          = annotationPrefix + "cloud-provider"  // kubermatic.io/cloud-provider
+	cloudDCAnnotation           = annotationPrefix + "cloud-dc"        // kubermatic.io/cloud-dc
+	phaseTimestampAnnotation    = annotationPrefix + "phase-ts"        // kubermatic.io/phase-ts
+	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
+	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
+	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
+	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
+	nodePortLabel               = annotationPrefix + "node-port"       // kubermatic.io/etcd-url
+	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
+	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
+	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
+
+	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
+	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-verion
+
+	// MasterUpdatePhaseAnnotation represents the annotation key for the MasterUpdatePhase
+	MasterUpdatePhaseAnnotation = annotationPrefix + "master-update-phase" // kubermatic.io/master-update-phase
+
+	// MasterVersionAnnotation represents the annotation key for the MasterVersion
+	MasterVersionAnnotation = annotationPrefix + "master-version" // kubermatic.io/master-verion
 
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
