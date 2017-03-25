@@ -2,9 +2,10 @@ package extensions
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/kubermatic/api/uuid"
+	"golang.org/x/crypto/ssh"
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/labels"
@@ -16,17 +17,24 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var replace = regexp.MustCompile(`[^a-z0-9]*`)
-
-// NormalizeUser is the base64 k8s compatible representation for a user
-func NormalizeUser(s string) string {
-	s = strings.ToLower(s)
-	return replace.ReplaceAllString(s, "")
+// ConstructNewSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
+// Fingerprint is without colons
+func ConstructNewSerialKeyName(fingerprint string) string {
+	return fmt.Sprintf("key-%s-%s", fingerprint, uuid.ShortUID(4))
 }
 
-// ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
-func ConstructSerialKeyName(username, fingerprint string) string {
-	return fmt.Sprintf("%s-%s", NormalizeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
+// NormalizeFingerprint returns a normalized fingerprint
+func NormalizeFingerprint(f string) string {
+	return strings.NewReplacer(":", "").Replace(f)
+}
+
+// GenerateNormalizedFigerprint a normalized fingerprint from a public key
+func GenerateNormalizedFigerprint(pub string) (string, error) {
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pub))
+	if err != nil {
+		return "", err
+	}
+	return ssh.FingerprintLegacyMD5(pubKey), nil
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
