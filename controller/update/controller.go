@@ -32,7 +32,7 @@ func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 
 	switch c.Status.MasterUpdatePhase {
 	case api.StartMasterUpdatePhase:
-		return u.updateDeployment(c, []string{v.EtcdDeploymentYaml, v.EtcdPublicDeploymentYaml}, v, api.EtcdMasterUpdatePhase)
+		return u.updateDeployment(c, []string{v.EtcdDeploymentYaml}, v, api.EtcdMasterUpdatePhase)
 	case api.EtcdMasterUpdatePhase:
 		c, ready, err := u.waitForDeployments(c, []string{"etcd", "etcd-public"}, api.StartMasterUpdatePhase)
 		if !ready || err != nil {

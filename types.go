@@ -425,7 +425,6 @@ type MasterVersion struct {
 	Default                  bool              `json:"default,omitempty"`
 	AllowedNodeVersions      []string          `json:"-"`
 	EtcdDeploymentYaml       string            `json:"-"`
-	EtcdPublicDeploymentYaml string            `json:"-"`
 	ApiserverDeploymentYaml  string            `json:"-"`
 	ControllerDeploymentYaml string            `json:"-"`
 	SchedulerDeploymentYaml  string            `json:"-"`
