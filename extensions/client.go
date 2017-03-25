@@ -191,15 +191,6 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
-	lbs := sk.Metadata.Labels
-	if lbs == nil {
-		lbs = map[string]string{}
-	}
-	lbs["user"] = NormalizeUser(s.user)
-	sk.Metadata.SetLabels(lbs)
-}
-
 // Create saves an SSHKey into an tpr
 func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 	var result UserSSHKey
