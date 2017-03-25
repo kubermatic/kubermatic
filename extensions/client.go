@@ -227,12 +227,11 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 }
 
 // Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.
-func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
+func (s *SSHKeyTPRClient) Delete(resourceName string, options *v1.DeleteOptions) error {
 	return s.client.Delete().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
-		Name(ConstructSerialKeyName(s.user, fingerprint)).
-		// TODO: workaround, remove this when delete options are allowed
+		Name(resourceName).
 		Body(options).
 		Do().
 		Error()
