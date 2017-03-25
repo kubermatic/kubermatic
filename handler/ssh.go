@@ -71,7 +71,7 @@ func createSSHKeyEndpoint(
 
 type deleteSSHKeyReq struct {
 	userReq
-	fingerprint string
+	metaName string
 }
 
 func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -85,8 +85,8 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 	req.userReq = ur.(userReq)
 
 	var ok bool
-	if req.fingerprint, ok = mux.Vars(r)["fingerprint"]; !ok {
-		return nil, errors.New("delte fingerprint needs a parameter 'fingerprint'")
+	if req.metaName, ok = mux.Vars(r)["meta_name"]; !ok {
+		return nil, errors.New("delte key needs a parameter 'meta_name'")
 	}
 
 	return req, nil
@@ -103,7 +103,7 @@ func deleteSSHKeyEndpoint(
 
 		c := clientset.SSHKeyTPR(req.user.Name)
 
-		return nil, c.Delete(req.fingerprint, v1.NewDeleteOptions(100))
+		return nil, c.Delete(req.metaName, v1.NewDeleteOptions(100))
 	}
 }
 
