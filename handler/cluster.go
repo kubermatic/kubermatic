@@ -38,7 +38,7 @@ func newClusterEndpointV2(
 		if len(req.SSHKeys) < 1 {
 			return nil, NewBadRequest("please provide at least one key")
 		}
-		
+
 		switch req.Cloud.Name {
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
