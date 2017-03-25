@@ -6,6 +6,7 @@ import (
 	"github.com/kubermatic/api"
 )
 
+// UpdateTimeout represent the duration to wait before considering an update failed
 const UpdateTimeout = time.Minute * 30
 
 func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Cluster, error) {
