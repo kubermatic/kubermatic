@@ -12,6 +12,7 @@ import (
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
+// LoadDeploymentFile loads a k8s yaml deloyment from disk and returns a Deployment struct
 func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*extensionsv1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
