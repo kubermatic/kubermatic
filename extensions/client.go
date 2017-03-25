@@ -193,8 +193,9 @@ type SSHKeyTPRClient struct {
 
 // Create saves an SSHKey into an tpr
 func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	sk.addLabel("user", s.user)
+
 	var result UserSSHKey
-	s.injectUserLabel(sk)
 	err := s.client.Post().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
