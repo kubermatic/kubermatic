@@ -208,10 +208,11 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 // List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
-	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
+	label, err := labels.NewRequirement("user", selection.Equals, []string{s.user})
 	if err != nil {
 		return UserSSHKeyList{}, err
 	}
+
 	var result UserSSHKeyList
 	err = s.client.Get().
 		Namespace(SSHKeyTPRNamespace).
