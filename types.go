@@ -420,15 +420,15 @@ type Datacenter struct {
 
 // MasterVersion is the object representing a Kubernetes Master version.
 type MasterVersion struct {
-	Name                     string            `json:"name,omitempty"`
-	ID                       string            `json:"id,omitempty"`
-	Default                  bool              `json:"default,omitempty"`
-	AllowedNodeVersions      []string          `json:"-"`
-	EtcdDeploymentYaml       string            `json:"-"`
-	ApiserverDeploymentYaml  string            `json:"-"`
-	ControllerDeploymentYaml string            `json:"-"`
-	SchedulerDeploymentYaml  string            `json:"-"`
-	Values                   map[string]string `json:"-"`
+	Name                     string            `yaml:"name"`
+	ID                       string            `yaml:"id"`
+	Default                  bool              `yaml:"default"`
+	AllowedNodeVersions      []string          `yaml:"allowedNodeVersions"`
+	EtcdDeploymentYaml       string            `yaml:"etcdDeploymentYaml"`
+	ApiserverDeploymentYaml  string            `yaml:"apiserverDeploymentYaml"`
+	ControllerDeploymentYaml string            `yaml:"controllerDeploymentYaml"`
+	SchedulerDeploymentYaml  string            `yaml:"schedulerDeploymentYaml"`
+	Values                   map[string]string `yaml:"values"`
 }
 
 // NodeVersion is the object representing a Kubernetes Kubelet version.
@@ -439,11 +439,13 @@ type NodeVersion struct {
 
 // MasterUpdate represents an update option for K8s master components
 type MasterUpdate struct {
-	From, To                   string
-	Automatic, RollbackAllowed bool
-	Enabled                    bool
-	Visible                    bool
-	Promote                    bool
+	From            string `yaml:"from"`
+	To              string `yaml:"to"`
+	Automatic       bool   `yaml:"automatic"`
+	RollbackAllowed bool   `yaml:"rollbackAllowed"`
+	Enabled         bool   `yaml:"enabled"`
+	Visible         bool   `yaml:"visible"`
+	Promote         bool   `yaml:"promote"`
 }
 
 // NodeUpdate represents an update option for K8s node components
