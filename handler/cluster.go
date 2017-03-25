@@ -35,13 +35,21 @@ func newClusterEndpointV2(
 			return nil, NewBadRequest("unknown datacenter %q", dc.Seed)
 		}
 
+		var keyname string
+		if len(req.SSHKeys) != 0 {
+			// TODO: more keys ?
+			keyname = req.SSHKeys[0]
+		} else {
+			// Do we need this ?
+			return nil, NewBadRequest("please provide at least one key")
+		}
 		switch req.Cloud.Name {
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
 				AccessKeyID:     req.Cloud.User,
 				SecretAccessKey: req.Cloud.Secret,
-				// @todo
-				SSHKeyName: req.SSHKeys[0],
+				// TODO: More keys!
+				SSHKeyName: keyname,
 			}
 			break
 		case provider.DigitaloceanCloudProvider:
