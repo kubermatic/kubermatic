@@ -303,7 +303,7 @@ type newClusterReqV2 struct {
 	userReq
 	Cloud   *api.CloudSpec   `json:"cloud"`
 	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []string         `json:"sshKeys"`
+	SSHKeys []string         `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
@@ -410,8 +410,8 @@ func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 
 type createAddonRequest struct {
 	dcReq
-	addonName string
-	cluster   string
+	addonName string `json:"addon_name"`
+	cluster   string `json:"cluster"`
 }
 
 func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {
