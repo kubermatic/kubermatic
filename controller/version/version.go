@@ -53,7 +53,7 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 		}
 	}
 
-	return nil, errors.New("latest version not found")
+	return nil, errors.New("default version not found")
 }
 
 // BestAutomaticUpdate determines the best automatic update available from the current version
