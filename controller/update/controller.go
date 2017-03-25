@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// Controller represents an update controller
 type Controller struct {
 	Client              k.Interface
 	MasterResourcesPath string
@@ -24,6 +25,7 @@ type Controller struct {
 	DepStore            cache.Indexer
 }
 
+// Sync determines the current update state, and advances to the next phase as required
 func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 	v, found := u.Versions[c.Spec.MasterVersion]
 	if !found {
