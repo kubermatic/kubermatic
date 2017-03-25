@@ -9,6 +9,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// LoadUpdates loads the update definition file and returns the defined MasterUpdate
 func LoadUpdates(path string) ([]api.MasterUpdate, error) {
 	f, err := os.Open(path)
 	if err != nil {
