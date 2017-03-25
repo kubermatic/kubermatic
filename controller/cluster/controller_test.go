@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
@@ -25,8 +26,11 @@ func newTestController() (*fake.Clientset, *clusterController) {
 		log.Fatal(err)
 	}
 
+	var versions map[string]*api.MasterVersion
+	var updates []api.MasterUpdate
+
 	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController("", clientSet, tprClient, cps, "", "localhost", true, "", "./../../addon-charts/")
+	cc, err := NewController("", clientSet, tprClient, cps, versions, updates, "./../../master-resources/", "localhost", true, "./../../addon-charts/")
 	if err != nil {
 		log.Fatal(err)
 	}
