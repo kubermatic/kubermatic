@@ -28,7 +28,7 @@ func newTestController() (*fake.Clientset, *clusterController) {
 
 	versions := buildMasterVerionsMap()
 	// TODO: Define MasterUpdates for testing
-	var updates []api.MasterUpdate
+	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
 	cc, err := NewController("", clientSet, tprClient, cps, versions, updates, "./../../master-resources/", "localhost", true, "./../../addon-charts/")
@@ -82,6 +82,38 @@ func buildMasterVerionsMap() map[string]*api.MasterVersion {
 				"k8s-version":  "v1.6.0-rc.1",
 				"etcd-version": "3.0.14-kubeadm",
 			},
+		},
+	}
+}
+
+func buildMasterUpdates() []api.MasterUpdate {
+	return []api.MasterUpdate{
+		{
+			From:            "1.5.*",
+			To:              "1.5.2",
+			Automatic:       true,
+			RollbackAllowed: true,
+			Enabled:         true,
+			Visible:         true,
+			Promote:         true,
+		},
+		{
+			From:            "1.4.6",
+			To:              "1.5.1",
+			Automatic:       true,
+			RollbackAllowed: true,
+			Enabled:         true,
+			Visible:         true,
+			Promote:         true,
+		},
+		{
+			From:            "1.4.*",
+			To:              "1.4.6",
+			Automatic:       true,
+			RollbackAllowed: true,
+			Enabled:         true,
+			Visible:         true,
+			Promote:         true,
 		},
 	}
 }
