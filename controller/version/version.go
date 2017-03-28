@@ -67,7 +67,7 @@ func BestAutomaticUpdate(from string, updates []api.MasterUpdate) (*api.MasterUp
 	if err != nil {
 		return nil, fmt.Errorf("failed to create semver version: %v", err)
 	}
-	for _, u := range updates {
+	for i, u := range updates {
 		if !u.Automatic {
 			continue
 		}
@@ -88,7 +88,7 @@ func BestAutomaticUpdate(from string, updates []api.MasterUpdate) (*api.MasterUp
 		if semverFrom.LessThan(semverTo) {
 			tos = append(tos, &ToUpdate{
 				to:     semverTo,
-				update: &u,
+				update: &updates[i],
 			})
 		}
 	}
