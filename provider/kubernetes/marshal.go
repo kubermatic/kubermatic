@@ -327,6 +327,8 @@ func ClusterPhase(ns *v1.Namespace) api.ClusterPhase {
 		return api.RunningClusterStatusPhase
 	case api.PausedClusterStatusPhase:
 		return api.PausedClusterStatusPhase
+	case api.UpdatingMasterClusterStatusPhase:
+		return api.UpdatingMasterClusterStatusPhase
 	default:
 		return api.UnknownClusterStatusPhase
 	}

@@ -231,10 +231,10 @@ const (
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 
 	// UpdatingMasterClusterStatusPhase means that the cluster controller is updating the master components of the cluster.
-	UpdatingMasterClusterStatusPhase ClusterPhase = "UpdatingMaster"
+	UpdatingMasterClusterStatusPhase ClusterPhase = "Updatingmaster"
 
 	// UpdatingNodesClusterStatusPhase means that the cluster controller is updating the nodes of the cluster.
-	UpdatingNodesClusterStatusPhase ClusterPhase = "UpdatingNodes"
+	UpdatingNodesClusterStatusPhase ClusterPhase = "Updatingnodes"
 )
 
 // MasterUpdatePhase represents the current master update phase.
