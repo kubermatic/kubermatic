@@ -50,7 +50,7 @@ func TestNewClusterEndpoint(t *testing.T) {
 }
 
 func TestNewClusterEndpointV2(t *testing.T) {
-	body := []byte("{\"cloud\":{\"user\":\"secret\",\"secret\":\"evenmoresecret\",\"name\":\"fake\",\"region\":\"fake-1\"},\"spec\":{\"humanReadableName\":\"test-1\"},\"sshKeys\":[\"test\"]}")
+	body := []byte("{\"cloud\":{\"user\":\"secret\",\"secret\":\"evenmoresecret\",\"name\":\"fake\",\"region\":\"fake-1\"},\"spec\":{\"humanReadableName\":\"test-1\"},\"ssh_keys\":[\"test\"]}")
 
 	req := httptest.NewRequest("POST", "/api/v1/cluster", bytes.NewReader(body))
 	authenticateHeader(req, false)
