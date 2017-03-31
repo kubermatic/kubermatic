@@ -54,6 +54,10 @@ const (
 	tplPath = "template/coreos/aws-cloud-config-node.yaml"
 )
 
+const (
+	coreosProductID = "ryg425ue2hwnsok9ccfastg4"
+)
+
 var (
 	defaultKubermaticClusterNameTagKey = "kubermatic-cluster-name"
 	defaultKubermaticClusterIDTagKey   = "kubermatic-cluster-id"
@@ -635,6 +639,23 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
 	var createdNodes []*api.Node
+
+	//This takes forever - when using the node controller we probably don't care anymore
+	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners: sdk.StringSlice([]string{"aws-marketplace"}),
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{coreosProductID})},
+			{Name: sdk.String("virtualization-type"), Values: sdk.StringSlice([]string{ec2.VirtualizationTypeHvm})},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed get latest coreos image from ami marketplace: %v", err)
+	}
+	if len(out.Images) == 0 {
+		return createdNodes, fmt.Errorf("could not find coreos image on aws ami marketplace with product-code %q", coreosProductID)
+	}
+	imageID := out.Images[0].ImageId
+
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		buf.Reset()
@@ -659,7 +680,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:           sdk.String(dc.Spec.AWS.AMI),
+			ImageId:           imageID,
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
