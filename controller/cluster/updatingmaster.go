@@ -28,5 +28,5 @@ func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Clu
 		return c, nil
 	}
 
-	return cc.updateController.Sync(c)
+		return cc.updateController.Sync(c)
 }

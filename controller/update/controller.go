@@ -36,7 +36,7 @@ func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 	case api.StartMasterUpdatePhase:
 		return u.updateDeployment(c, []string{v.EtcdDeploymentYaml}, v, api.EtcdMasterUpdatePhase)
 	case api.EtcdMasterUpdatePhase:
-		c, ready, err := u.waitForDeployments(c, []string{"etcd", "etcd-public"}, api.StartMasterUpdatePhase)
+		c, ready, err := u.waitForDeployments(c, []string{"etcd"}, api.StartMasterUpdatePhase)
 		if !ready || err != nil {
 			return c, err
 		}
@@ -108,10 +108,10 @@ func (u *Controller) waitForDeployments(c *api.Cluster, names []string, fallback
 			return nil, false, nil
 		}
 	}
-	return nil, true, nil
+	return c, true, nil
 }
 
 // healthyDep is true if >= 90% of the expected pods are ready
 func healthyDep(dep *v1beta1.Deployment) bool {
-	return float64(*dep.Spec.Replicas-dep.Status.UpdatedReplicas) >= 0.9*float64(*dep.Spec.Replicas)
+	return float64(dep.Status.UpdatedReplicas) >= 0.9*float64(*dep.Spec.Replicas)
 }
