@@ -127,9 +127,10 @@ func loadAwsCloudConfigConfigMap(cc *clusterController, c *api.Cluster, s string
 		"aws-cloud-config": fmt.Sprintf(`
 [global]
 zone=%s
-kubernetesclustertag=
+VPC=%s
+kubernetesclustertag=%s
 disablesecuritygroupingress=false
-disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone),
+disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name),
 	}
 	return &cm, nil
 
