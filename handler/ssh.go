@@ -55,7 +55,7 @@ func createSSHKeyEndpoint(
 		key := &extensions.UserSSHKey{
 			Metadata: v1.ObjectMeta{
 				// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
-				Name: extensions.ConstructNewSerialKeyName(fingerprint),
+				Name: extensions.ConstructNewSerialKeyName(extensions.NormalizeFingerprint(fingerprint)),
 			},
 			PublicKey:   req.UserSSHKey.PublicKey,
 			Fingerprint: fingerprint,
