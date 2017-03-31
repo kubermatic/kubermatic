@@ -657,6 +657,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			},
 		}
 
+		if node.AWS.DiskSize == 0 {
+			node.AWS.DiskSize = 8
+		}
+
 		instanceRequest := &ec2.RunInstancesInput{
 			ImageId: sdk.String(dc.Spec.AWS.AMI),
 			BlockDeviceMappings: []*ec2.BlockDeviceMapping{
