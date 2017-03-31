@@ -56,7 +56,8 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type string `json:"type"`
+	Type     string `json:"type"`
+	DiskSize int64  `json:"disk_size"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
