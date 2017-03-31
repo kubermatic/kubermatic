@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/util/rand"
-	"github.com/kubermatic/api/extensions"
 )
 
 const (
