@@ -658,8 +658,22 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			},
 		}
 
+		if node.AWS.DiskSize == 0 {
+			node.AWS.DiskSize = 8
+		}
+
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:           sdk.String(dc.Spec.AWS.AMI),
+			ImageId: sdk.String(dc.Spec.AWS.AMI),
+			BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+				{
+					DeviceName: sdk.String("/dev/xvda"),
+					Ebs: &ec2.EbsBlockDevice{
+						VolumeSize:          sdk.Int64(node.AWS.DiskSize),
+						DeleteOnTermination: sdk.Bool(true),
+						VolumeType:          sdk.String(ec2.VolumeTypeGp2),
+					},
+				},
+			},
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
