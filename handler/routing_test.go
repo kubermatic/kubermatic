@@ -15,9 +15,12 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var jwtSecret = "super secret auth key nobody will guess"
@@ -42,7 +45,19 @@ func createTestEndpoint() http.Handler {
 	kps["master"] = kubernetes.NewKubernetesFakeProvider("master", cps)
 
 	router := mux.NewRouter()
-	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)), nil)
+
+	var config *rest.Config
+	config, err = clientcmd.BuildConfigFromFlags("", "./fixtures/kubecfg.yaml")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	masterTPRClient, err := extensions.WrapClientsetWithExtensions(config)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)), masterTPRClient)
 	routing.Register(router)
 
 	return router
