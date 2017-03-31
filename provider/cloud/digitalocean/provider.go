@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
+	"github.com/kubermatic/api/uuid"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
@@ -110,7 +111,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 	created := make([]*api.Node, 0, instances)
 
 	for i := 0; i < instances; i++ {
-		id := provider.ShortUID(5)
+		id := uuid.ShortUID(5)
 		dropletName := fmt.Sprintf(
 			"kubermatic-%s-%s",
 			cluster.Metadata.Name,
