@@ -162,7 +162,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticated(r.createSSHKey()))
 	mux.
 		Methods("DELETE").
-		Path("/api/v1/ssh-keys/{fingerprint}").
+		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.authenticated(r.deleteSSHKey()))
 }
 
