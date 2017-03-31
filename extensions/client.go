@@ -1,6 +1,7 @@
 package extensions
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -26,6 +27,11 @@ func ConstructNewSerialKeyName(fingerprint string) string {
 // NormalizeFingerprint returns a normalized fingerprint
 func NormalizeFingerprint(f string) string {
 	return strings.NewReplacer(":", "").Replace(f)
+}
+
+// NormalizeUser base64 encodes a user to store him in labels
+func NormalizeUser(name string) string {
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(name))
 }
 
 // GenerateNormalizedFigerprint a normalized fingerprint from a public key
@@ -201,7 +207,7 @@ type SSHKeyTPRClient struct {
 
 // Create saves an SSHKey into an tpr
 func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
-	sk.addLabel("user", s.user)
+	sk.addLabel("user", NormalizeUser(s.user))
 
 	var result UserSSHKey
 	err := s.client.Post().
@@ -216,7 +222,7 @@ func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
 // List returns all SSHKey's for a given User
 func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	opts := v1.ListOptions{}
-	label, err := labels.NewRequirement("user", selection.Equals, []string{s.user})
+	label, err := labels.NewRequirement("user", selection.Equals, []string{NormalizeUser(s.user)})
 	if err != nil {
 		return UserSSHKeyList{}, err
 	}
