@@ -1,10 +1,12 @@
 package extensions
 
 import (
+	"encoding/base64"
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/kubermatic/api/uuid"
+	"golang.org/x/crypto/ssh"
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/labels"
@@ -16,17 +18,29 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var replace = regexp.MustCompile(`[^a-z0-9]*`)
-
-// NormalizeUser is the base64 k8s compatible representation for a user
-func NormalizeUser(s string) string {
-	s = strings.ToLower(s)
-	return replace.ReplaceAllString(s, "")
+// ConstructNewSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
+// Fingerprint is without colons
+func ConstructNewSerialKeyName(fingerprint string) string {
+	return fmt.Sprintf("key-%s-%s", fingerprint, uuid.ShortUID(4))
 }
 
-// ConstructSerialKeyName generates a name for a serial key which is accepted by k8s metadata.Name
-func ConstructSerialKeyName(username, fingerprint string) string {
-	return fmt.Sprintf("%s-%s", NormalizeUser(username), strings.NewReplacer(":", "").Replace(fingerprint))
+// NormalizeFingerprint returns a normalized fingerprint
+func NormalizeFingerprint(f string) string {
+	return strings.NewReplacer(":", "").Replace(f)
+}
+
+// NormalizeUser base64 encodes a user to store him in labels
+func NormalizeUser(name string) string {
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(name))
+}
+
+// GenerateNormalizedFigerprint a normalized fingerprint from a public key
+func GenerateNormalizedFigerprint(pub string) (string, error) {
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pub))
+	if err != nil {
+		return "", err
+	}
+	return ssh.FingerprintLegacyMD5(pubKey), nil
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions
@@ -191,19 +205,11 @@ type SSHKeyTPRClient struct {
 	user   string
 }
 
-func (s *SSHKeyTPRClient) injectUserLabel(sk *UserSSHKey) {
-	lbs := sk.Metadata.Labels
-	if lbs == nil {
-		lbs = map[string]string{}
-	}
-	lbs["user"] = NormalizeUser(s.user)
-	sk.Metadata.SetLabels(lbs)
-}
-
 // Create saves an SSHKey into an tpr
 func (s *SSHKeyTPRClient) Create(sk *UserSSHKey) (*UserSSHKey, error) {
+	sk.addLabel("user", NormalizeUser(s.user))
+
 	var result UserSSHKey
-	s.injectUserLabel(sk)
 	err := s.client.Post().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
@@ -220,6 +226,7 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 	if err != nil {
 		return UserSSHKeyList{}, err
 	}
+
 	var result UserSSHKeyList
 	err = s.client.Get().
 		Namespace(SSHKeyTPRNamespace).
@@ -234,12 +241,11 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 }
 
 // Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.
-func (s *SSHKeyTPRClient) Delete(fingerprint string, options *v1.DeleteOptions) error {
+func (s *SSHKeyTPRClient) Delete(resourceName string, options *v1.DeleteOptions) error {
 	return s.client.Delete().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
-		Name(ConstructSerialKeyName(s.user, fingerprint)).
-		// TODO: workaround, remove this when delete options are allowed
+		Name(resourceName).
 		Body(options).
 		Do().
 		Error()

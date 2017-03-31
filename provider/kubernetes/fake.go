@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/uuid"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/util/rand"
@@ -100,7 +101,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	id, err := provider.UUID()
+	id, err := uuid.UUID()
 	if err != nil {
 		return nil, err
 	}

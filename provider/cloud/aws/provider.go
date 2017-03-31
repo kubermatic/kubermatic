@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
+	"github.com/kubermatic/api/uuid"
 	"golang.org/x/net/context"
 )
 
@@ -644,7 +645,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		buf.Reset()
-		id := provider.ShortUID(5)
+		id := uuid.ShortUID(5)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
 
 		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
