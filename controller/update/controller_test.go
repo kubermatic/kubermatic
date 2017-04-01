@@ -1,15 +1,10 @@
 package update
 
 import (
-	"reflect"
 	"testing"
 
-	"github.com/kubermatic/api"
-	k "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/tools/cache"
 )
-
 
 func Test_healthyDep(t *testing.T) {
 	type args struct {
