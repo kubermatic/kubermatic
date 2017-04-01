@@ -35,12 +35,16 @@ func newClusterEndpointV2(
 			return nil, NewBadRequest("unknown datacenter %q", dc.Seed)
 		}
 
+		if len(req.SSHKeys) < 1 {
+			return nil, NewBadRequest("please provide at least one key")
+		}
+
 		switch req.Cloud.Name {
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
 				AccessKeyID:     req.Cloud.User,
 				SecretAccessKey: req.Cloud.Secret,
-				// @todo
+				// TODO: More keys!
 				SSHKeyName: req.SSHKeys[0],
 			}
 			break
@@ -295,7 +299,7 @@ type newClusterReqV2 struct {
 	userReq
 	Cloud   *api.CloudSpec   `json:"cloud"`
 	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []string         `json:"sshKeys"`
+	SSHKeys []string         `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
@@ -402,8 +406,8 @@ func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 
 type createAddonRequest struct {
 	dcReq
-	addonName string
-	cluster   string
+	addonName string `json:"addon_name"`
+	cluster   string `json:"cluster"`
 }
 
 func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {

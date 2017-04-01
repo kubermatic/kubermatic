@@ -1,9 +1,13 @@
-package provider
+package uuid
 
 import (
 	crand "crypto/rand"
 	"fmt"
 	"math/rand"
+)
+
+const (
+	alphabet64 = "abcdefghijklmnopqrstuvwxyz01234567890"
 )
 
 // UUID is a very simple random uuid generator used for faking.
@@ -18,11 +22,8 @@ func UUID() (string, error) {
 	return fmt.Sprintf("%X", b[0:2]), nil
 }
 
-const (
-	alphabet64 = "abcdefghijklmnopqrstuvwxyz01234567890"
-)
-
 // ShortUID generates a non-cryptographic random string in base62.
+// Size defines the bit length of the generated uuid
 func ShortUID(size int) string {
 	s := make([]byte, size)
 	for i := 0; i < size; i++ {
