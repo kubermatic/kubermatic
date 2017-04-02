@@ -40,6 +40,7 @@ const (
 	policyNameKey                = "policy-name"
 	availabilityZoneKey          = "availability-zone"
 	securityGroupIDKey           = "custom-security-group-id-Key"
+	kubernetesClusterTagKey      = "KubernetesCluster"
 )
 
 const (
@@ -823,6 +824,10 @@ func launch(client *ec2.EC2, name string, instance *ec2.RunInstancesInput, clust
 			{
 				Key:   sdk.String(awsFilterName),
 				Value: sdk.String(name),
+			},
+			{
+				Key:   sdk.String(kubernetesClusterTagKey),
+				Value: sdk.String(cluster.Metadata.Name),
 			},
 		},
 	})
