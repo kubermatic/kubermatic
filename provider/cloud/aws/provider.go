@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -20,13 +21,6 @@ import (
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
 	"golang.org/x/net/context"
-)
-
-const (
-	// VPCCidrBlock is the default CIDR block in the VpcSubnet
-	VPCCidrBlock = "10.10.0.0/16"
-	// SubnetCidrBlock is the default CIDR for the VPC
-	SubnetCidrBlock = "10.10.10.0/24"
 )
 
 const (
@@ -54,6 +48,10 @@ const (
 
 const (
 	tplPath = "template/coreos/aws-cloud-config-node.yaml"
+)
+
+const (
+	containerLinuxProductID = "ryg425ue2hwnsok9ccfastg4"
 )
 
 var (
@@ -481,6 +479,54 @@ func (a *aws) userData(
 	return tpl.Execute(buf, data)
 }
 
+// GetContainerLinuxAmiID returns the ami ID for the container linux image with the specified version
+// If the version is not specified the latest version is returned
+func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, error) {
+	//This takes forever - when using the node controller we probably don't care anymore
+	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners: sdk.StringSlice([]string{"aws-marketplace"}),
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{containerLinuxProductID})},
+			{Name: sdk.String("virtualization-type"), Values: sdk.StringSlice([]string{ec2.VirtualizationTypeHvm})},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(out.Images) == 0 {
+		return "", errors.New("could not find any coreos currentImage on aws ami marketplace")
+	}
+
+	if version != "" {
+		for _, currentImage := range out.Images {
+			if strings.Contains(*currentImage.Description, version) {
+				return *currentImage.ImageId, nil
+			}
+		}
+
+		return "", fmt.Errorf("could not find container linux image with version %q", version)
+	}
+
+	//return *out.Images[0].ImageId, nil
+	latestImage := out.Images[0]
+	for _, currentImage := range out.Images {
+		latestDate, err := time.Parse("2006-01-02T15:04:05.000Z", *latestImage.CreationDate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse creation date from latestImage image %q: %v", *latestImage.ImageId, err)
+		}
+		currentDate, err := time.Parse("2006-01-02T15:04:05.000Z", *currentImage.CreationDate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse creation date from currentImage %q: %v", *currentImage.ImageId, err)
+		}
+
+		if currentDate.After(latestDate) {
+			latestImage = currentImage
+		}
+	}
+
+	return *latestImage.ImageId, nil
+}
+
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
@@ -494,6 +540,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
 	var createdNodes []*api.Node
+	imageID, err := a.GetContainerLinuxAmiID(node.AWS.ContainerLinux.Version, client)
+	if err != nil {
+		return createdNodes, fmt.Errorf("failed to find latest container linux ami id: %v", err)
+	}
+
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		buf.Reset()
@@ -522,7 +573,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		}
 
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId: sdk.String(dc.Spec.AWS.AMI),
+			ImageId: sdk.String(imageID),
 			BlockDeviceMappings: []*ec2.BlockDeviceMapping{
 				{
 					DeviceName: sdk.String("/dev/xvda"),
