@@ -9,6 +9,8 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/addons/manager"
 	"github.com/kubermatic/api/controller"
+	"github.com/kubermatic/api/controller/update"
+	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
@@ -43,6 +45,7 @@ const (
 	pendingSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
+	updatingSyncPeriod  = 5 * time.Second
 )
 
 type clusterController struct {
@@ -53,7 +56,6 @@ type clusterController struct {
 	recorder            record.EventRecorder
 	masterResourcesPath string
 	externalURL         string
-	overwriteHost       string
 	addonResourcesPath  string
 	// store namespaces with the role=kubermatic-cluster label
 	nsController *cache.Controller
@@ -83,11 +85,18 @@ type clusterController struct {
 	cmController *cache.Controller
 	cmStore      cache.Indexer
 
+	cps map[string]provider.CloudProvider
+	dev bool
+
+	updateController      *update.Controller
+	versions              map[string]*api.MasterVersion
+	updates               []api.MasterUpdate
+	defaultMasterVersion  *api.MasterVersion
+	automaticUpdateSearch *version.UpdatePathSearch
+
 	// non-thread safe:
 	mu         sync.Mutex
-	cps        map[string]provider.CloudProvider
 	inProgress map[string]struct{} // in progress clusters
-	dev        bool
 }
 
 // NewController creates a cluster controller.
@@ -96,10 +105,11 @@ func NewController(
 	client kubernetes.Interface,
 	tprClient extensions.Clientset,
 	cps map[string]provider.CloudProvider,
+	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
 	dev bool,
-	overwriteHost string,
 	addonResourcesPath string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
@@ -108,11 +118,12 @@ func NewController(
 		tprClient:           tprClient,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
+		updates:             updates,
+		versions:            versions,
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
 		dev:                 dev,
-		overwriteHost:       overwriteHost,
 		addonResourcesPath:  addonResourcesPath,
 	}
 
@@ -294,6 +305,28 @@ func NewController(
 		},
 	)
 
+	// setup update controller
+	var err error
+	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
+	if err != nil {
+		return nil, fmt.Errorf("could not get default master version: %v", err)
+	}
+	cc.updateController = &update.Controller{
+		Client:              cc.client,
+		MasterResourcesPath: cc.masterResourcesPath,
+		DC:                  cc.dc,
+		Versions:            cc.versions,
+		Updates:             cc.updates,
+		DepStore:            cc.depStore,
+	}
+	automaticUpdates := []api.MasterUpdate{}
+	for _, u := range cc.updates {
+		if u.Automatic {
+			automaticUpdates = append(automaticUpdates, u)
+		}
+	}
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.EqualityMatcher{})
+
 	return cc, nil
 }
 
@@ -363,7 +396,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		glog.Errorf("failed to install plugin %s for cluster %s: %v", addon.Name, cluster.Metadata.Name, err)
 		addon.Attempt++
 		if addon.Attempt >= maxAddonInstallAttempts {
-			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", err)
+			glog.Errorf("failed to install plugin after %d attempts: %v - wont try again", maxAddonInstallAttempts, err)
 			addon.Phase = extensions.FailedAddonStatusPhase
 		} else {
 			time.Sleep(waitBetweenInstallAttempt)
@@ -380,6 +413,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		glog.Error(err)
 	}
 }
+
 func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase api.ClusterPhase) {
 	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
@@ -519,6 +553,8 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 		changedC, err = cc.syncLaunchingCluster(c)
 	case api.RunningClusterStatusPhase:
 		changedC, err = cc.syncRunningCluster(c)
+	case api.UpdatingMasterClusterStatusPhase:
+		changedC, err = cc.syncUpdatingClusterMaster(c)
 	default:
 		glog.V(5).Infof("Ignoring cluster %q in phase %q", c.Metadata.Name, c.Status.Phase)
 	}
@@ -621,6 +657,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(api.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
 	go wait.Until(func() {
 		err := cc.queue.Resync()
 		if err != nil {

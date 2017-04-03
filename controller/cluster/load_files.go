@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -23,9 +23,9 @@ func loadServiceFile(cc *clusterController, c *api.Cluster, s string) (*v1.Servi
 	var service v1.Service
 
 	data := struct {
-		SecurePort int
+		Cluster *api.Cluster
 	}{
-		SecurePort: c.Address.NodePort,
+		Cluster: c,
 	}
 
 	err = t.Execute(data, &service)

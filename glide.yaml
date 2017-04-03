@@ -25,5 +25,7 @@ import:
 - package: github.com/cloudflare/cfssl
 - package: k8s.io/helm
   version: ~2.1.0
+- package: github.com/Masterminds/semver
+  version: ~1.2.2
 - package: github.com/mitchellh/mapstructure
   version: db1efb556f84b25a0a13a04aad883943538ad2e0

@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/version"
 )
 
 func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {
@@ -26,6 +27,23 @@ func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, e
 		glog.V(5).Infof("Cluster %q not healthy: %+v", c.Metadata.Name, c.Status.Health)
 	} else {
 		glog.V(6).Infof("Cluster %q is healthy", c.Metadata.Name)
+
+		if c.Spec.MasterVersion != "" {
+			updateVersion, err := version.BestAutomaticUpdate(c.Spec.MasterVersion, cc.updates)
+			if err != nil {
+				return nil, err
+			}
+
+			if updateVersion != nil {
+				// start automatic update
+				c.Spec.MasterVersion = updateVersion.To
+				c.Status.Phase = api.UpdatingMasterClusterStatusPhase
+				c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
+				c.Status.LastTransitionTime = time.Now()
+
+			}
+			return c, nil
+		}
 	}
 
 	return nil, nil
