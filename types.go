@@ -117,20 +117,26 @@ type DigitaloceanCloudSpec struct {
 	SSHKeys []string `json:"sshKeys"`
 }
 
+// ContainerLinuxClusterSpec specifies container linux configuration for nodes - cluster wide
+type ContainerLinuxClusterSpec struct {
+	AutoUpdate bool `json:"auto_update"`
+}
+
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID         string `json:"access_key_id"`
-	SecretAccessKey     string `json:"secret_access_key"`
-	VPCId               string `json:"vpc_id"`
-	SSHKeyName          string `json:"ssh_key_name"`
-	SubnetID            string `json:"subnet_id"`
-	InternetGatewayID   string `json:"internet_gateway_id"`
-	RouteTableID        string `json:"route_table_id"`
-	RoleName            string `json:"role_name"`
-	PolicyName          string `json:"policy"`
-	InstanceProfileName string `json:"instance_profile_name"`
-	AvailabilityZone    string `json:"availability_zone"`
-	SecurityGroupID     string `json:"security_group_id"`
+	AccessKeyID         string                    `json:"access_key_id"`
+	SecretAccessKey     string                    `json:"secret_access_key"`
+	VPCId               string                    `json:"vpc_id"`
+	SSHKeyName          string                    `json:"ssh_key_name"`
+	SubnetID            string                    `json:"subnet_id"`
+	InternetGatewayID   string                    `json:"internet_gateway_id"`
+	RouteTableID        string                    `json:"route_table_id"`
+	RoleName            string                    `json:"role_name"`
+	PolicyName          string                    `json:"policy"`
+	InstanceProfileName string                    `json:"instance_profile_name"`
+	AvailabilityZone    string                    `json:"availability_zone"`
+	SecurityGroupID     string                    `json:"security_group_id"`
+	ContainerLinux      ContainerLinuxClusterSpec `json:"container_linux"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

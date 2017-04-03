@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -41,6 +42,7 @@ const (
 	policyNameKey                = "policy-name"
 	availabilityZoneKey          = "availability-zone"
 	securityGroupIDKey           = "custom-security-group-id-Key"
+	containerLinuxAutoUpdateKey  = "container-linux-autoupdate-enabled-key"
 )
 
 const (
@@ -384,11 +386,12 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		policyNameKey:                cs.AWS.PolicyName,
 		availabilityZoneKey:          cs.AWS.AvailabilityZone,
 		securityGroupIDKey:           cs.AWS.SecurityGroupID,
+		containerLinuxAutoUpdateKey:  strconv.FormatBool(cs.AWS.ContainerLinux.AutoUpdate),
 	}, nil
 }
 
-func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	spec := &api.CloudSpec{
+func (*aws) UnmarshalCloudSpec(annotations map[string]string) (spec *api.CloudSpec, err error) {
+	spec = &api.CloudSpec{
 		AWS: &api.AWSCloudSpec{},
 	}
 	var ok bool
@@ -437,6 +440,9 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 	}
 	spec.AWS.SecurityGroupID, _ = annotations[securityGroupIDKey]
 
+	spec.AWS.ContainerLinux = api.ContainerLinuxClusterSpec{}
+	spec.AWS.ContainerLinux.AutoUpdate, _ = strconv.ParseBool(annotations[containerLinuxAutoUpdateKey])
+
 	return spec, nil
 }
 
@@ -462,6 +468,7 @@ func (a *aws) userData(
 		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
+		AutoUpdate:        clusterState.Spec.Cloud.AWS.ContainerLinux.AutoUpdate,
 	}
 
 	tpl, err := template.

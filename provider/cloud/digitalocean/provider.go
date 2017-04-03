@@ -141,6 +141,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
 			ApiserverToken:    cluster.Address.Token,
 			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
+			AutoUpdate:        true,
 		}
 
 		tpl, err := template.
