@@ -33,6 +33,7 @@ type Data struct {
 	ApiserverPubSSH   string
 	ApiserverToken    string
 	FlannelCIDR       string
+	AutoUpdate        bool
 }
 
 func readLinesTemplate(data interface{}, path string) (lines []string) {
