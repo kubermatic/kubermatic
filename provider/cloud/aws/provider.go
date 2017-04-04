@@ -340,24 +340,28 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
-	securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
-	if err != nil {
-		return fmt.Errorf("failed to add security group: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
-
-	svcIAM, err := a.getIAMclient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get IAM client: %v", err)
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
+		if err != nil {
+			return fmt.Errorf("failed to add security group: %v", err)
+		}
+		cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 	}
 
-	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to create instance profile: %v", err)
+	if cluster.Spec.Cloud.AWS.PolicyName == "" && cluster.Spec.Cloud.AWS.RoleName == "" && cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+		svcIAM, err := a.getIAMclient(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to get IAM client: %v", err)
+		}
+
+		role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to create instance profile: %v", err)
+		}
+		cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
+		cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+		cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 	}
-	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
-	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
-	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 
 	return nil
 }
