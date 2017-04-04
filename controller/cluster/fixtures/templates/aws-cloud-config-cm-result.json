@@ -1,1 +1,0 @@
-{"kind":"ConfigMap","apiVersion":"v1","metadata":{"name":"example-config","creationTimestamp":null},"data":{"aws-cloud-config":"[global] zone=eu-central-1 kubernetesclustertag= disablesecuritygroupingress=false disablestrictzonecheck=true "}}
