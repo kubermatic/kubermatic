@@ -56,8 +56,9 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type     string `json:"type"`
-	DiskSize int64  `json:"disk_size"`
+	Type           string                 `json:"type"`
+	DiskSize       int64                  `json:"disk_size"`
+	ContainerLinux ContainerLinuxNodeSpec `json:"container_linux"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
@@ -120,6 +121,11 @@ type DigitaloceanCloudSpec struct {
 // ContainerLinuxClusterSpec specifies container linux configuration for nodes - cluster wide
 type ContainerLinuxClusterSpec struct {
 	AutoUpdate bool `json:"auto_update"`
+}
+
+// ContainerLinuxNodeSpec specifies container linux configuration for individual nodes
+type ContainerLinuxNodeSpec struct {
+	Version string `json:"version"`
 }
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
