@@ -681,7 +681,7 @@ func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
-	return session.New(config), nil
+	return session.NewSession(config)
 }
 
 func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
