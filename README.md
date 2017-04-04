@@ -17,8 +17,8 @@ $ echo 'dummy: dummy' > secrets.yaml
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln ../../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
-ln ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
+ln -sf ../../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
+ln -sf ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
 popd
 ```
 

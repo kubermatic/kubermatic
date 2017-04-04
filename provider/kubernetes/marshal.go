@@ -46,6 +46,15 @@ const (
 	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
 	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
 
+	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
+	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-verion
+
+	// MasterUpdatePhaseAnnotation represents the annotation key for the MasterUpdatePhase
+	MasterUpdatePhaseAnnotation = annotationPrefix + "master-update-phase" // kubermatic.io/master-update-phase
+
+	// MasterVersionAnnotation represents the annotation key for the MasterVersion
+	MasterVersionAnnotation = annotationPrefix + "master-version" // kubermatic.io/master-verion
+
 	userLabelKey  = "user"
 	nameLabelKey  = "name"
 	phaseLabelKey = "phase"
@@ -96,11 +105,14 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: ns.Annotations[humanReadableNameAnnotation],
+			MasterVersion:     ns.Annotations[MasterVersionAnnotation],
 			Dev:               ns.Labels[DevLabelKey] == DevLabelValue,
 		},
 		Status: api.ClusterStatus{
 			LastTransitionTime: phaseTS,
 			Phase:              ClusterPhase(ns),
+			LastDeployedMasterVersion: ns.Annotations[LastDeployedMasterVersionAnnotation],
+			MasterUpdatePhase:         api.MasterUpdatePhase(ns.Annotations[MasterUpdatePhaseAnnotation]),
 			RootCA: api.SecretKeyCert{
 				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
 				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
@@ -233,6 +245,9 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	ns.Annotations[phaseTimestampAnnotation] = c.Status.LastTransitionTime.Format(time.RFC3339)
 	ns.Annotations[userAnnotation] = c.Metadata.User
 	ns.Annotations[humanReadableNameAnnotation] = c.Spec.HumanReadableName
+	ns.Annotations[MasterVersionAnnotation] = c.Spec.MasterVersion
+	ns.Annotations[MasterUpdatePhaseAnnotation] = string(c.Status.MasterUpdatePhase)
+	ns.Annotations[LastDeployedMasterVersionAnnotation] = c.Status.LastDeployedMasterVersion
 	if c.Status.RootCA.Key != nil {
 		ns.Annotations[rootCAKeyAnnotation] = c.Status.RootCA.Key.Base64()
 	}
@@ -312,6 +327,8 @@ func ClusterPhase(ns *v1.Namespace) api.ClusterPhase {
 		return api.RunningClusterStatusPhase
 	case api.PausedClusterStatusPhase:
 		return api.PausedClusterStatusPhase
+	case api.UpdatingMasterClusterStatusPhase:
+		return api.UpdatingMasterClusterStatusPhase
 	default:
 		return api.UnknownClusterStatusPhase
 	}

@@ -195,6 +195,15 @@ func (sk *UserSSHKey) GetListMeta() metav1.List {
 	return &sk.Metadata
 }
 
+func (sk *UserSSHKey) addLabel(key string, value string) {
+	lbs := sk.Metadata.Labels
+	if lbs == nil {
+		lbs = map[string]string{}
+	}
+	lbs[key] = value
+	sk.Metadata.SetLabels(lbs)
+}
+
 // UserSSHKeyList specifies a users UserSSHKey
 type UserSSHKeyList struct {
 	metav1.TypeMeta `json:",inline"`

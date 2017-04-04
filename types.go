@@ -56,7 +56,9 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type string `json:"type"`
+	Type           string                 `json:"type"`
+	DiskSize       int64                  `json:"disk_size"`
+	ContainerLinux ContainerLinuxNodeSpec `json:"container_linux"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
@@ -116,31 +118,31 @@ type DigitaloceanCloudSpec struct {
 	SSHKeys []string `json:"sshKeys"`
 }
 
-// AWSInitMode specifies the initialization mode (vpc, subnet, etc.)
-type AWSInitMode string
+// ContainerLinuxClusterSpec specifies container linux configuration for nodes - cluster wide
+type ContainerLinuxClusterSpec struct {
+	AutoUpdate bool `json:"auto_update"`
+}
 
-const (
-	// AWSInitUseDefaults specifies to use the default VPC, subnet
-	AWSInitUseDefaults AWSInitMode = "use-defaults"
-	// AWSInitCreateVpc specifies to create the vpc, subnet, etc.
-	AWSInitCreateVpc AWSInitMode = "create-vpc"
-)
+// ContainerLinuxNodeSpec specifies container linux configuration for individual nodes
+type ContainerLinuxNodeSpec struct {
+	Version string `json:"version"`
+}
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	InitMode            AWSInitMode `json:"init_mode"`
-	AccessKeyID         string      `json:"access_key_id"`
-	SecretAccessKey     string      `json:"secret_access_key"`
-	VPCId               string      `json:"vpc_id"`
-	SSHKeyName          string      `json:"ssh_key_name"`
-	SubnetID            string      `json:"subnet_id"`
-	InternetGatewayID   string      `json:"internet_gateway_id"`
-	RouteTableID        string      `json:"route_table_id"`
-	RoleName            string      `json:"role_name"`
-	PolicyName          string      `json:"policy"`
-	InstanceProfileName string      `json:"instance_profile_name"`
-	AvailabilityZone    string      `json:"availability_zone"`
-	SecurityGroupID     string      `json:"security_group_id"`
+	AccessKeyID         string                    `json:"access_key_id"`
+	SecretAccessKey     string                    `json:"secret_access_key"`
+	VPCId               string                    `json:"vpc_id"`
+	SSHKeyName          string                    `json:"ssh_key_name"`
+	SubnetID            string                    `json:"subnet_id"`
+	InternetGatewayID   string                    `json:"internet_gateway_id"`
+	RouteTableID        string                    `json:"route_table_id"`
+	RoleName            string                    `json:"role_name"`
+	PolicyName          string                    `json:"policy"`
+	InstanceProfileName string                    `json:"instance_profile_name"`
+	AvailabilityZone    string                    `json:"availability_zone"`
+	SecurityGroupID     string                    `json:"security_group_id"`
+	ContainerLinux      ContainerLinuxClusterSpec `json:"container_linux"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -229,6 +231,32 @@ const (
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
+
+	// UpdatingMasterClusterStatusPhase means that the cluster controller is updating the master components of the cluster.
+	UpdatingMasterClusterStatusPhase ClusterPhase = "Updatingmaster"
+
+	// UpdatingNodesClusterStatusPhase means that the cluster controller is updating the nodes of the cluster.
+	UpdatingNodesClusterStatusPhase ClusterPhase = "Updatingnodes"
+)
+
+// MasterUpdatePhase represents the current master update phase.
+type MasterUpdatePhase string
+
+const (
+	// StartMasterUpdatePhase means that the update controller is updating etcd.
+	StartMasterUpdatePhase MasterUpdatePhase = "Starting"
+
+	// EtcdMasterUpdatePhase means that the update controller is waiting for etcd and updating the API server.
+	EtcdMasterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
+
+	// APIServerMasterUpdatePhase means that the update controller is waiting for the apiserver and updating the controllers.
+	APIServerMasterUpdatePhase MasterUpdatePhase = "WaitAPIReady"
+
+	// ControllersMasterUpdatePhase means that the update controller is waiting for the controllers.
+	ControllersMasterUpdatePhase MasterUpdatePhase = "WaitControllersReady"
+
+	// FinishMasterUpdatePhase means that the update controller has finished the update.
+	FinishMasterUpdatePhase MasterUpdatePhase = "Finished"
 )
 
 type (
@@ -256,9 +284,11 @@ type CPU struct {
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastTransitionTime time.Time      `json:"lastTransitionTime"`
-	Phase              ClusterPhase   `json:"phase,omitempty"`
-	Health             *ClusterHealth `json:"health,omitempty"`
+	LastTransitionTime        time.Time         `json:"lastTransitionTime"`
+	Phase                     ClusterPhase      `json:"phase,omitempty"`
+	Health                    *ClusterHealth    `json:"health,omitempty"`
+	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
+	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
 
 	RootCA       SecretKeyCert `json:"rootCA"`
 	ApiserverSSH string        `json:"apiserverSSH"`
@@ -269,6 +299,7 @@ type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
+	MasterVersion     string `json:"masterVersion"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
@@ -387,4 +418,43 @@ type Datacenter struct {
 	Metadata Metadata       `json:"metadata"`
 	Spec     DatacenterSpec `json:"spec"`
 	Seed     bool           `json:"seed,omitempty"`
+}
+
+// MasterVersion is the object representing a Kubernetes Master version.
+type MasterVersion struct {
+	Name                     string            `yaml:"name"`
+	ID                       string            `yaml:"id"`
+	Default                  bool              `yaml:"default"`
+	AllowedNodeVersions      []string          `yaml:"allowedNodeVersions"`
+	EtcdDeploymentYaml       string            `yaml:"etcdDeploymentYaml"`
+	ApiserverDeploymentYaml  string            `yaml:"apiserverDeploymentYaml"`
+	ControllerDeploymentYaml string            `yaml:"controllerDeploymentYaml"`
+	SchedulerDeploymentYaml  string            `yaml:"schedulerDeploymentYaml"`
+	Values                   map[string]string `yaml:"values"`
+}
+
+// NodeVersion is the object representing a Kubernetes Kubelet version.
+type NodeVersion struct {
+	Name, ID string
+	Latest   bool
+}
+
+// MasterUpdate represents an update option for K8s master components
+type MasterUpdate struct {
+	From            string `yaml:"from"`
+	To              string `yaml:"to"`
+	Automatic       bool   `yaml:"automatic"`
+	RollbackAllowed bool   `yaml:"rollbackAllowed"`
+	Enabled         bool   `yaml:"enabled"`
+	Visible         bool   `yaml:"visible"`
+	Promote         bool   `yaml:"promote"`
+}
+
+// NodeUpdate represents an update option for K8s node components
+type NodeUpdate struct {
+	From, To                   string
+	Automatic, RollbackAllowed bool
+	Enabled                    bool
+	Visable                    bool
+	Promote                    bool
 }

@@ -9,7 +9,8 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/controller/resources"
+	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
@@ -63,9 +64,9 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all deployments are available
-	err = cc.launchingCheckDeployments(c)
+	changedC, err = cc.launchingCheckDeployments(c)
 	if err != nil {
-		return nil, err
+		return changedC, err
 	}
 
 	err = cc.launchingCheckDefaultPlugins(c)
@@ -254,22 +255,34 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(cc *clusterController, c *api.Cluster, dc, app string) (*extensionsv1beta1.Deployment, error){
-		"etcd":               loadDeploymentFile,
-		"apiserver":          loadDeploymentFile,
-		"controller-manager": loadDeploymentFile,
-		"scheduler":          loadDeploymentFile,
+	if c.Spec.MasterVersion == "" {
+		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
+	}
+	masterVersion, found := cc.versions[c.Spec.MasterVersion]
+	if !found {
+		c.Status.LastTransitionTime = time.Now()
+		c.Status.Phase = api.FailedClusterStatusPhase
+		glog.Warningf("Unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		cc.recordClusterEvent(c, "launching", "Failed to create new cluster %q due to unknown master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+	}
+
+	deps := map[string]string{
+		"etcd":               masterVersion.EtcdDeploymentYaml,
+		"apiserver":          masterVersion.ApiserverDeploymentYaml,
+		"controller-manager": masterVersion.ControllerDeploymentYaml,
+		"scheduler":          masterVersion.SchedulerDeploymentYaml,
 	}
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for s, gen := range deps {
+	for s, yamlFile := range deps {
 		exists := false
 		for _, obj := range existingDeps {
 			dep := obj.(*extensionsv1beta1.Deployment)
@@ -283,20 +296,20 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(cc, c, cc.dc, s)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
 		if err != nil {
-			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
-			return fmt.Errorf("failed to create deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {

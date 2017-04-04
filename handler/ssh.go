@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/extensions"
-	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/pkg/api/v1"
 )
@@ -49,20 +47,18 @@ func createSSHKeyEndpoint(
 
 		c := clientset.SSHKeyTPR(req.user.Name)
 
-		// calculate fingerprint
-		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(req.UserSSHKey.PublicKey))
+		fingerprint, err := extensions.GenerateNormalizedFigerprint(req.UserSSHKey.PublicKey)
 		if err != nil {
 			return nil, NewBadRequest("Bad public key")
 		}
-		fingerprint := ssh.FingerprintLegacyMD5(pubKey)
 
 		key := &extensions.UserSSHKey{
 			Metadata: v1.ObjectMeta{
 				// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
-				Name: extensions.ConstructSerialKeyName(req.user.Name, fingerprint),
+				Name: extensions.ConstructNewSerialKeyName(extensions.NormalizeFingerprint(fingerprint)),
 			},
 			PublicKey:   req.UserSSHKey.PublicKey,
-			Fingerprint: strings.Trim(fingerprint, ":"),
+			Fingerprint: fingerprint,
 			Name:        req.UserSSHKey.Name,
 		}
 		return c.Create(key)
@@ -71,7 +67,7 @@ func createSSHKeyEndpoint(
 
 type deleteSSHKeyReq struct {
 	userReq
-	fingerprint string
+	metaName string
 }
 
 func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -85,8 +81,8 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 	req.userReq = ur.(userReq)
 
 	var ok bool
-	if req.fingerprint, ok = mux.Vars(r)["fingerprint"]; !ok {
-		return nil, errors.New("delte fingerprint needs a parameter 'fingerprint'")
+	if req.metaName, ok = mux.Vars(r)["meta_name"]; !ok {
+		return nil, errors.New("delte key needs a parameter 'meta_name'")
 	}
 
 	return req, nil
@@ -103,7 +99,7 @@ func deleteSSHKeyEndpoint(
 
 		c := clientset.SSHKeyTPR(req.user.Name)
 
-		return nil, c.Delete(req.fingerprint, v1.NewDeleteOptions(100))
+		return nil, c.Delete(req.metaName, v1.NewDeleteOptions(100))
 	}
 }
 
