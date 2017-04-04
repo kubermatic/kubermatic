@@ -1,5 +1,5 @@
-hash: a26c33d9ac0bcf75e4ed2ac787c622afd73c5b2e097524792b45e76bd0dea35e
-updated: 2017-02-14T10:27:33.319720679+01:00
+hash: 41f56f0881329aab04b543707ccfe088e1f0bfe087f2ae2813ad186b1a3de847
+updated: 2017-04-04T13:42:02.604391089+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -11,7 +11,7 @@ imports:
 - name: github.com/auth0/go-jwt-middleware
   version: f3f7de3b9e394e3af3b88e1b9457f6f71d1ae0ac
 - name: github.com/aws/aws-sdk-go
-  version: c924893c38ecc04b18d7aab8a7aa561cb8b4c4cc
+  version: 63ce630574a5ec05ecd8e8de5cea16332a5a684d
   subpackages:
   - aws
   - aws/awserr
@@ -21,11 +21,15 @@ imports:
   - aws/corehandlers
   - aws/credentials
   - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
   - aws/defaults
   - aws/ec2metadata
+  - aws/endpoints
   - aws/request
   - aws/session
-  - private/endpoints
+  - aws/signer/v4
+  - private/protocol
   - private/protocol/ec2query
   - private/protocol/json/jsonutil
   - private/protocol/jsonrpc
@@ -34,7 +38,6 @@ imports:
   - private/protocol/rest
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
-  - private/signer/v4
   - private/waiter
   - service/autoscaling
   - service/ec2
@@ -42,6 +45,7 @@ imports:
   - service/elb
   - service/iam
   - service/route53
+  - service/sts
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
   subpackages:
@@ -250,9 +254,9 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/Masterminds/semver
-  version: 59c29afe1a994eacb71c833025ca7acf874bb1da
+  version: 3f0ab6d4ab4bed1c61caf056b63a6e62190c7801
 - name: github.com/Masterminds/sprig
-  version: 69011c0cd9b4d2e0733c4d9e2c8e2a5a0d0a2f2f
+  version: 23597e5f6ad0e4d590e71314bfd0251a4a3cf849
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/mitchellh/mapstructure
@@ -306,6 +310,8 @@ imports:
   subpackages:
   - cast5
   - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
   - openpgp
   - openpgp/armor
   - openpgp/clearsign
@@ -313,8 +319,10 @@ imports:
   - openpgp/errors
   - openpgp/packet
   - openpgp/s2k
+  - pbkdf2
   - pkcs12
   - pkcs12/internal/rc2
+  - scrypt
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
@@ -539,7 +547,7 @@ imports:
   - pkg/timeconv
   - pkg/version
 - name: k8s.io/kubernetes
-  version: b5f9d56cab78ccaad2b726223ba8be5802026f0b
+  version: ea8f6637b639246faa14a8d5c6f864100fcb77a9
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install
