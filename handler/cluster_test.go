@@ -26,9 +26,9 @@ func TestNewClusterEndpoint(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
-		t.Fatalf("Expected status code to be 200, got %s", res.Code)
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 	}
 
 	var c api.Cluster
@@ -59,9 +59,9 @@ func TestNewClusterEndpointV2(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
-		t.Fatalf("Expected status code to be 200, got %s", res.Code)
+		t.Fatalf("Expected status code to be 200, got %d", res.Code)
 	}
 
 	var c api.Cluster
@@ -108,7 +108,7 @@ func TestNewClusterEndpointNotExistingDC(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
@@ -130,10 +130,9 @@ func TestClustersEndpoint(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -147,7 +146,6 @@ func TestClustersEndpoint(t *testing.T) {
 	if len(cs) != 1 {
 		t.Errorf("Expected list of clusters to be of length 1, got length %d", len(cs))
 		t.Error(res.Body.String())
-		return
 	}
 }
 
@@ -165,10 +163,9 @@ func TestClustersEndpointWithACreatedCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -203,10 +200,9 @@ func TestClusterEndpoint(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -234,7 +230,6 @@ func TestClusterEndpointNotExistingDC(t *testing.T) {
 	if res.Code != 400 {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -253,10 +248,9 @@ func TestClusterEndpointNotExistingCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 404, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -279,10 +273,9 @@ func TestSetCloudEndpointBringYourOwn(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -311,10 +304,9 @@ func TestSetCloudEndpointBringYourOwnNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -337,10 +329,9 @@ func TestSetCloudEndpointBringYourOwnNotExistingCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 404, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -364,10 +355,9 @@ func TestSetCloudEndpointAWS(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -397,10 +387,9 @@ func TestSetCloudEndpointAWSNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -424,10 +413,9 @@ func TestSetCloudEndpointAWSNotExistingCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 404, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -450,10 +438,9 @@ func TestDeleteCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 }
@@ -471,10 +458,9 @@ func TestDeleteClusterNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -497,10 +483,9 @@ func TestDeleteClusterNotExistingCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 404, got %d", res.Code)
-		t.Error(res.Body.String())
 		return
 	}
 
@@ -523,10 +508,9 @@ func createTestCluster(t *testing.T, e http.Handler) (*api.Cluster, error) {
 	res := httptest.NewRecorder()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
 		return nil, fmt.Errorf("Expected status code to be 200, got %d", res.Code)
 	}
 
