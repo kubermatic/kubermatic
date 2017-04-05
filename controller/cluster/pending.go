@@ -184,9 +184,9 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 }
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
-	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":      loadServiceFile,
-		"apiserver": loadServiceFile,
+	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
+		"etcd":      resources.LoadServiceFile,
+		"apiserver": resources.LoadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -202,7 +202,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 			continue
 		}
 
-		services, err := gen(cc, c, s)
+		services, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
@@ -225,13 +225,13 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	ingress := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Ingress, error){
-		"k8sniff": loadIngressFile,
+	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error){
+		"k8sniff": resources.LoadIngressFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	for s, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, s)
+	for app, gen := range ingress {
+		key := fmt.Sprintf("%s/%s", ns, app)
 		_, exists, err := cc.ingressStore.GetByKey(key)
 		if err != nil {
 			return err
@@ -240,14 +240,14 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 			glog.V(6).Infof("Skipping already existing ingress %q", key)
 			return nil
 		}
-		ingress, err := gen(cc, c, s)
+		ingress, err := gen(c, app, cc.masterResourcesPath, cc.dc, cc.externalURL)
 		if err != nil {
-			return fmt.Errorf("failed to generate %s: %v", s, err)
+			return fmt.Errorf("failed to generate %s: %v", app, err)
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
 		if err != nil {
-			return fmt.Errorf("failed to create ingress %s: %v", s, err)
+			return fmt.Errorf("failed to create ingress %s: %v", app, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created ingress")
@@ -315,9 +315,9 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){}
+	cms := map[string]func(c *api.Cluster) (*v1.ConfigMap, error){}
 	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
-		cms["aws-cloud-config"] = loadAwsCloudConfigConfigMap
+		cms["aws-cloud-config"] = resources.LoadAwsCloudConfigConfigMap
 	}
 
 	for s, gen := range cms {
@@ -332,7 +332,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 			continue
 		}
 
-		cm, err := gen(cc, c, s)
+		cm, err := gen(c)
 		if err != nil {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}
@@ -351,8 +351,8 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	pvcs := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.PersistentVolumeClaim, error){
-		"etcd": loadPVCFile,
+	pvcs := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error){
+		"etcd": resources.LoadPVCFile,
 	}
 
 	for s, gen := range pvcs {
@@ -367,7 +367,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 			continue
 		}
 
-		pvc, err := gen(cc, c, s)
+		pvc, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate pvc %s: %v", s, err)
 		}

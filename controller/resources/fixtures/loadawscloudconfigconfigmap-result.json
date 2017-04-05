@@ -1,0 +1,1 @@
+{"apiVersion":"v1","metadata":{"name":"aws-cloud-config","creationTimestamp":null},"data":{"aws-cloud-config":"\n[global]\nzone=my_AvailabilityZone\nVPC=my_VPCId\nkubernetesclustertag=jh8j81chn\ndisablesecuritygroupingress=false\ndisablestrictzonecheck=true"}}
