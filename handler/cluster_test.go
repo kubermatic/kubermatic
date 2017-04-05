@@ -227,7 +227,7 @@ func TestClusterEndpointNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Error(res.Body.String())
 		t.Fatalf("Expected status code to be 400, got %d", res.Code)
 		return
