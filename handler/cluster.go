@@ -40,6 +40,14 @@ func newClusterEndpointV2(
 			return nil, NewBadRequest("please provide at least one key")
 		}
 
+		var extKeys []extensions.UserSSHKey
+		for _, key := range req.SSHKeys {
+			extKeys = append(extKeys, extensions.UserSSHKey{
+				Name:        key.Name,
+				Fingerprint: key.Fingerprint,
+				PublicKey:   key.PublicKey,
+			})
+		}
 		switch req.Cloud.Name {
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
@@ -78,7 +86,7 @@ func newClusterEndpointV2(
 			return nil, err
 		}
 
-		return c, kp.SetSSHKeys(req.user, c.Metadata.Name, req.SSHKeys)
+		return c, kp.SetSSHKeys(req.user, c.Metadata.Name, extKeys)
 	}
 }
 
@@ -300,11 +308,17 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+type requestExtensionsUserSSHKey struct {
+	Name        string `json:"name"`
+	Fingerprint string `json:"fingerprint"`
+	PublicKey   string `json:"public_key"`
+}
+
 type newClusterReqV2 struct {
 	userReq
-	Cloud   *api.CloudSpec          `json:"cloud"`
-	Spec    *api.ClusterSpec        `json:"spec"`
-	SSHKeys []extensions.UserSSHKey `json:"ssh_keys"`
+	Cloud   *api.CloudSpec                `json:"cloud"`
+	Spec    *api.ClusterSpec              `json:"spec"`
+	SSHKeys []requestExtensionsUserSSHKey `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
