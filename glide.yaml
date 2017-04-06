@@ -15,8 +15,7 @@ import:
 - package: github.com/gorilla/context
   version: ~1.1.0
 - package: golang.org/x/crypto
-  subpackages:
-  - ssh
+  version: master
 - package: golang.org/x/net
 - package: github.com/dgrijalva/jwt-go
   version: ~3.0.0
@@ -25,5 +24,7 @@ import:
 - package: github.com/cloudflare/cfssl
 - package: k8s.io/helm
   version: ~2.1.0
+- package: github.com/Masterminds/semver
+  version: ~1.2.2
 - package: github.com/mitchellh/mapstructure
   version: db1efb556f84b25a0a13a04aad883943538ad2e0

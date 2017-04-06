@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -23,13 +25,6 @@ import (
 )
 
 const (
-	// VPCCidrBlock is the default CIDR block in the VpcSubnet
-	VPCCidrBlock = "10.10.0.0/16"
-	// SubnetCidrBlock is the default CIDR for the VPC
-	SubnetCidrBlock = "10.10.10.0/24"
-)
-
-const (
 	accessKeyIDAnnotationKey     = "acccess-key-id"
 	secretAccessKeyAnnotationKey = "secret-access-key"
 	sshKeyNameKey                = "ssh-key-fingerprint"
@@ -42,6 +37,7 @@ const (
 	policyNameKey                = "policy-name"
 	availabilityZoneKey          = "availability-zone"
 	securityGroupIDKey           = "custom-security-group-id-Key"
+	containerLinuxAutoUpdateKey  = "container-linux-autoupdate-enabled-key"
 )
 
 const (
@@ -53,6 +49,10 @@ const (
 
 const (
 	tplPath = "template/coreos/aws-cloud-config-node.yaml"
+)
+
+const (
+	containerLinuxProductID = "ryg425ue2hwnsok9ccfastg4"
 )
 
 var (
@@ -89,17 +89,26 @@ func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func createVpc(client *ec2.EC2) (*ec2.Vpc, error) {
-	vReq := &ec2.CreateVpcInput{
-		CidrBlock:       sdk.String(VPCCidrBlock),
-		InstanceTenancy: sdk.String(ec2.TenancyDefault),
-	}
-	vpcOut, err := client.CreateVpc(vReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create vpc on ec2: %v", err)
+func getVpc(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
+	if vpcID != "" {
+		vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
+			Filters: []*ec2.Filter{
+				{Name: sdk.String("vpc-id"), Values: []*string{sdk.String(vpcID)}},
+			},
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to list vpc's: %v", err)
+		}
+
+		if len(vpcOut.Vpcs) != 1 {
+			return nil, fmt.Errorf("unable to find specified vpc with id %q", vpcID)
+		}
+
+		return vpcOut.Vpcs[0], nil
 	}
 
-	return vpcOut.Vpc, nil
+	return getDefaultVpc(client)
 }
 
 func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
@@ -124,59 +133,28 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 	return sOut.Subnets[0], nil
 }
 
-func createSubnet(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.Subnet, error) {
-	sOut, err := client.CreateSubnet(&ec2.CreateSubnetInput{
-		CidrBlock: sdk.String(SubnetCidrBlock),
-		VpcId:     vpc.VpcId,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create subnet on ec2: %v", err)
+func getSubnet(subnetID string, client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
+	if subnetID != "" {
+		sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name: sdk.String("subnet-id"), Values: []*string{sdk.String(subnetID)},
+				},
+			},
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to list subnets: %v", err)
+		}
+
+		if len(sOut.Subnets) != 1 {
+			return nil, fmt.Errorf("unable to find subnet with id %q", subnetID)
+		}
+
+		return sOut.Subnets[0], nil
 	}
 
-	return sOut.Subnet, nil
-}
-
-func createInternetGateway(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.InternetGateway, error) {
-	igOut, err := client.CreateInternetGateway(&ec2.CreateInternetGatewayInput{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create internet gateway on ec2: %v", err)
-	}
-
-	_, err = client.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
-		InternetGatewayId: igOut.InternetGateway.InternetGatewayId,
-		VpcId:             vpc.VpcId,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to attach internetgateway %q to vpc %q: %v", *igOut.InternetGateway.InternetGatewayId, *vpc.VpcId, err)
-	}
-
-	return igOut.InternetGateway, nil
-}
-
-func addRoute(client *ec2.EC2, vpc *ec2.Vpc, gateway *ec2.InternetGateway) (*ec2.RouteTable, error) {
-	rtOut, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
-		Filters: []*ec2.Filter{
-			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list route tables: %v", err)
-	}
-
-	if len(rtOut.RouteTables) != 1 {
-		return nil, errors.New("Could not find main RouteTable")
-	}
-
-	_, err = client.CreateRoute(&ec2.CreateRouteInput{
-		GatewayId:            gateway.InternetGatewayId,
-		DestinationCidrBlock: sdk.String("0.0.0.0/0"),
-		RouteTableId:         rtOut.RouteTables[0].RouteTableId,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create route: %v", err)
-	}
-
-	return rtOut.RouteTables[0], nil
+	return getDefaultSubnet(client, vpc, zone)
 }
 
 func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, error) {
@@ -249,45 +227,6 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*string, erro
 	}
 
 	return csgOut.GroupId, nil
-}
-
-func getACL(client *ec2.EC2, vpc *ec2.Vpc) (*ec2.NetworkAcl, error) {
-	aOut, err := client.DescribeNetworkAcls(&ec2.DescribeNetworkAclsInput{
-		Filters: []*ec2.Filter{
-			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list Acls: %v", err)
-	}
-
-	if len(aOut.NetworkAcls) != 1 {
-		return nil, errors.New("Could not find main NetworkACL")
-	}
-
-	return aOut.NetworkAcls[0], nil
-}
-
-func createTags(client *ec2.EC2, cluster *api.Cluster, resources []*string) error {
-	_, err := client.CreateTags(&ec2.CreateTagsInput{
-		Resources: resources,
-		Tags: []*ec2.Tag{
-			{
-				Key:   sdk.String(defaultKubermaticClusterIDTagKey),
-				Value: sdk.String(cluster.Metadata.UID),
-			},
-			{
-				Key:   sdk.String(defaultKubermaticClusterNameTagKey),
-				Value: sdk.String(cluster.Metadata.Name),
-			},
-			{
-				Key:   sdk.String(awsFilterName),
-				Value: sdk.String(fmt.Sprintf("kubermatic-%s", cluster.Metadata.Name)),
-			},
-		},
-	})
-
-	return fmt.Errorf("failed to create tags on ec2: %v", err)
 }
 
 func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *iam.Policy, *iam.InstanceProfile, error) {
@@ -379,16 +318,12 @@ func createInstanceProfile(client *iam.IAM, cluster *api.Cluster) (*iam.Role, *i
 }
 
 func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
-	if cluster.Spec.Cloud.AWS.VPCId != "" {
-		return nil
-	}
-
 	client, err := a.getEC2client(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get EC2 client: %v", err)
 	}
 
-	vpc, err := getDefaultVpc(client)
+	vpc, err := getVpc(cluster.Spec.Cloud.AWS.VPCId, client)
 	if err != nil {
 		return fmt.Errorf("failed to get default vpc: %v", err)
 	}
@@ -399,124 +334,45 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 		return fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Zone)
+	subnet, err := getSubnet(cluster.Spec.Cloud.AWS.SubnetID, client, vpc, dc.Spec.AWS.Zone)
 	if err != nil {
 		return fmt.Errorf("failed to get default subnet: %v", err)
 	}
 	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
-	securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
-	if err != nil {
-		return fmt.Errorf("failed to add security group: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
-
-	svcIAM, err := a.getIAMclient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get IAM client: %v", err)
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
+		if err != nil {
+			return fmt.Errorf("failed to add security group: %v", err)
+		}
+		cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
 	}
 
-	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to create instance profile: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
-	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
-	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+	if cluster.Spec.Cloud.AWS.PolicyName == "" && cluster.Spec.Cloud.AWS.RoleName == "" && cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+		svcIAM, err := a.getIAMclient(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to get IAM client: %v", err)
+		}
 
-	return nil
-}
-
-func (a *aws) InitializeCloudSpecWithCreate(cluster *api.Cluster) error {
-	if cluster.Spec.Cloud.AWS.VPCId != "" {
-		return nil
+		role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to create instance profile: %v", err)
+		}
+		cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
+		cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+		cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 	}
-
-	client, err := a.getEC2client(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get EC2 client: %v", err)
-	}
-
-	vpc, err := createVpc(client)
-	if err != nil {
-		return fmt.Errorf("failed to create vpc: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.VPCId = *vpc.VpcId
-
-	subnet, err := createSubnet(client, vpc)
-	if err != nil {
-		return fmt.Errorf("failed to create subnet: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
-	cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
-
-	gateway, err := createInternetGateway(client, vpc)
-	if err != nil {
-		return fmt.Errorf("failed to create internet gateway: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.InternetGatewayID = *gateway.InternetGatewayId
-
-	routeTable, err := addRoute(client, vpc, gateway)
-	if err != nil {
-		return fmt.Errorf("failed to add route: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
-
-	securityGroupID, err := addSecurityGroup(client, vpc, cluster.Metadata.Name)
-	if err != nil {
-		return fmt.Errorf("failed to add security group: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.SecurityGroupID = *securityGroupID
-
-	acl, err := getACL(client, vpc)
-	if err != nil {
-		return fmt.Errorf("failed to get acl: %v", err)
-	}
-
-	err = createTags(client, cluster, []*string{vpc.VpcId, gateway.InternetGatewayId, subnet.SubnetId, routeTable.RouteTableId, securityGroupID, acl.NetworkAclId})
-	if err != nil {
-		return fmt.Errorf("failed to create tags: %v", err)
-	}
-
-	svcIAM, err := a.getIAMclient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get iam client: %v", err)
-	}
-
-	role, policy, instanceProfile, err := createInstanceProfile(svcIAM, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to create instance profile: %v", err)
-	}
-	cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
-	cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
-	cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 
 	return nil
 }
 
 func (a *aws) InitializeCloudSpec(cluster *api.Cluster) error {
-	glog.Infof("using init cloud spec mode: %s (default=use-defaults)", cluster.Spec.Cloud.AWS.InitMode)
-	switch cluster.Spec.Cloud.AWS.InitMode {
-	case api.AWSInitUseDefaults:
-		err := a.InitializeCloudSpecWithDefault(cluster)
-		if err != nil {
-			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
-		}
-		return nil
-	case api.AWSInitCreateVpc:
-		err := a.InitializeCloudSpecWithCreate(cluster)
-		if err != nil {
-			return fmt.Errorf("failed to initialize cloud provider with creating components: %v", err)
-		}
-		return nil
-	default:
-		err := a.InitializeCloudSpecWithDefault(cluster)
-		if err != nil {
-			return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
-		}
-		return nil
+	err := a.InitializeCloudSpecWithDefault(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to initialize cloud provider with default components: %v", err)
 	}
+	return nil
 }
 
 func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
@@ -533,11 +389,12 @@ func (*aws) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
 		policyNameKey:                cs.AWS.PolicyName,
 		availabilityZoneKey:          cs.AWS.AvailabilityZone,
 		securityGroupIDKey:           cs.AWS.SecurityGroupID,
+		containerLinuxAutoUpdateKey:  strconv.FormatBool(cs.AWS.ContainerLinux.AutoUpdate),
 	}, nil
 }
 
-func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	spec := &api.CloudSpec{
+func (*aws) UnmarshalCloudSpec(annotations map[string]string) (spec *api.CloudSpec, err error) {
+	spec = &api.CloudSpec{
 		AWS: &api.AWSCloudSpec{},
 	}
 	var ok bool
@@ -586,6 +443,9 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, e
 	}
 	spec.AWS.SecurityGroupID, _ = annotations[securityGroupIDKey]
 
+	spec.AWS.ContainerLinux = api.ContainerLinuxClusterSpec{}
+	spec.AWS.ContainerLinux.AutoUpdate, _ = strconv.ParseBool(annotations[containerLinuxAutoUpdateKey])
+
 	return spec, nil
 }
 
@@ -612,6 +472,7 @@ func (a *aws) userData(
 		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
 		ApiserverToken:    clusterState.Address.Token,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
+		AutoUpdate:        clusterState.Spec.Cloud.AWS.ContainerLinux.AutoUpdate,
 	}
 
 	tpl, err := template.
@@ -624,7 +485,55 @@ func (a *aws) userData(
 	return tpl.Execute(buf, data)
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
+// GetContainerLinuxAmiID returns the ami ID for the container linux image with the specified version
+// If the version is not specified the latest version is returned
+func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, error) {
+	//This takes forever - when using the node controller we probably don't care anymore
+	out, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners: sdk.StringSlice([]string{"aws-marketplace"}),
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("product-code"), Values: sdk.StringSlice([]string{containerLinuxProductID})},
+			{Name: sdk.String("virtualization-type"), Values: sdk.StringSlice([]string{ec2.VirtualizationTypeHvm})},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(out.Images) == 0 {
+		return "", errors.New("could not find any coreos currentImage on aws ami marketplace")
+	}
+
+	if version != "" {
+		for _, currentImage := range out.Images {
+			if strings.Contains(*currentImage.Description, version) {
+				return *currentImage.ImageId, nil
+			}
+		}
+
+		return "", fmt.Errorf("could not find container linux image with version %q", version)
+	}
+
+	//return *out.Images[0].ImageId, nil
+	latestImage := out.Images[0]
+	for _, currentImage := range out.Images {
+		latestDate, err := time.Parse("2006-01-02T15:04:05.000Z", *latestImage.CreationDate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse creation date from latestImage image %q: %v", *latestImage.ImageId, err)
+		}
+		currentDate, err := time.Parse("2006-01-02T15:04:05.000Z", *currentImage.CreationDate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse creation date from currentImage %q: %v", *currentImage.ImageId, err)
+		}
+
+		if currentDate.After(latestDate) {
+			latestImage = currentImage
+		}
+	}
+
+	return *latestImage.ImageId, nil
+}
+
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
@@ -642,6 +551,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		skeys = append(skeys, k.PublicKey)
 	}
 	var createdNodes []*api.Node
+	imageID, err := a.GetContainerLinuxAmiID(node.AWS.ContainerLinux.Version, client)
+	if err != nil {
+		return createdNodes, fmt.Errorf("failed to find latest container linux ami id: %v", err)
+	}
+
 	var buf bytes.Buffer
 	for i := 0; i < num; i++ {
 		buf.Reset()
@@ -665,8 +579,22 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			},
 		}
 
+		if node.AWS.DiskSize == 0 {
+			node.AWS.DiskSize = 8
+		}
+
 		instanceRequest := &ec2.RunInstancesInput{
-			ImageId:           sdk.String(dc.Spec.AWS.AMI),
+			ImageId: sdk.String(imageID),
+			BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+				{
+					DeviceName: sdk.String("/dev/xvda"),
+					Ebs: &ec2.EbsBlockDevice{
+						VolumeSize:          sdk.Int64(node.AWS.DiskSize),
+						DeleteOnTermination: sdk.Bool(true),
+						VolumeType:          sdk.String(ec2.VolumeTypeGp2),
+					},
+				},
+			},
 			MaxCount:          sdk.Int64(1),
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
@@ -760,7 +688,7 @@ func (a *aws) getSession(cluster *api.Cluster) (*session.Session, error) {
 	config = config.WithCredentials(credentials.NewStaticCredentials(awsSpec.AccessKeyID, awsSpec.SecretAccessKey, ""))
 	// TODO: specify retrycount
 	config = config.WithMaxRetries(3)
-	return session.New(config), nil
+	return session.NewSession(config)
 }
 
 func (a *aws) getEC2client(cluster *api.Cluster) (*ec2.EC2, error) {
@@ -916,44 +844,6 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 		})
 		if err != nil {
 			glog.V(2).Infof("Failed to delete security group %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SecurityGroupID, c.Metadata.Name, err)
-		}
-	}
-
-	if c.Spec.Cloud.AWS.InitMode == api.AWSInitCreateVpc {
-		if c.Spec.Cloud.AWS.RouteTableID != "" {
-			_, err = client.DeleteRouteTable(&ec2.DeleteRouteTableInput{
-				RouteTableId: sdk.String(c.Spec.Cloud.AWS.RouteTableID),
-			})
-			if err != nil {
-				glog.V(2).Infof("Failed to delete RouteTable %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.RouteTableID, c.Metadata.Name, err)
-			}
-		}
-
-		if c.Spec.Cloud.AWS.InternetGatewayID != "" && c.Spec.Cloud.AWS.VPCId != "" {
-			_, err = client.DeleteSubnet(&ec2.DeleteSubnetInput{
-				SubnetId: sdk.String(c.Spec.Cloud.AWS.SubnetID),
-			})
-			if err != nil {
-				glog.V(2).Infof("Failed to delete Subnet %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.SubnetID, c.Metadata.Name, err)
-			}
-		}
-
-		if c.Spec.Cloud.AWS.InternetGatewayID != "" {
-			_, err = client.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
-				InternetGatewayId: sdk.String(c.Spec.Cloud.AWS.InternetGatewayID),
-			})
-			if err != nil {
-				glog.V(2).Infof("Failed to delete InternetGateway %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.InternetGatewayID, c.Metadata.Name, err)
-			}
-		}
-
-		if c.Spec.Cloud.AWS.VPCId != "" {
-			_, err = client.DeleteVpc(&ec2.DeleteVpcInput{
-				VpcId: sdk.String(c.Spec.Cloud.AWS.VPCId),
-			})
-			if err != nil {
-				glog.V(2).Infof("Failed to delete VPC %s during aws-cleanup for cluster %s : %v", c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, err)
-			}
 		}
 	}
 

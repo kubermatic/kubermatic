@@ -107,8 +107,12 @@ func datacenterKeyEndpoint(
 			WithMaxRetries(10).
 			WithRegion(dc.Spec.AWS.Region).
 			WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
-		sess := ec2.New(session.New(config))
-		keys, err := sess.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
+		s, err := session.NewSession(config)
+		if err != nil {
+			return nil, err
+		}
+		client := ec2.New(s)
+		keys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
 
 		//Empty slices are getting marshaled to null...
 		//We always want to return an array to the frontend!

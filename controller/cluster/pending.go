@@ -9,7 +9,8 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/cluster/template"
+	"github.com/kubermatic/api/controller/resources"
+	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
@@ -63,9 +64,9 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all deployments are available
-	err = cc.launchingCheckDeployments(c)
+	changedC, err = cc.launchingCheckDeployments(c)
 	if err != nil {
-		return nil, err
+		return changedC, err
 	}
 
 	err = cc.launchingCheckDefaultPlugins(c)
@@ -183,9 +184,9 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 }
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
-	services := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.Service, error){
-		"etcd":      loadServiceFile,
-		"apiserver": loadServiceFile,
+	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
+		"etcd":      resources.LoadServiceFile,
+		"apiserver": resources.LoadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
@@ -201,7 +202,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 			continue
 		}
 
-		services, err := gen(cc, c, s)
+		services, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
@@ -224,13 +225,13 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	ingress := map[string]func(cc *clusterController, c *api.Cluster, s string) (*extensionsv1beta1.Ingress, error){
-		"k8sniff": loadIngressFile,
+	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error){
+		"k8sniff": resources.LoadIngressFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-	for s, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, s)
+	for app, gen := range ingress {
+		key := fmt.Sprintf("%s/%s", ns, app)
 		_, exists, err := cc.ingressStore.GetByKey(key)
 		if err != nil {
 			return err
@@ -239,14 +240,14 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 			glog.V(6).Infof("Skipping already existing ingress %q", key)
 			return nil
 		}
-		ingress, err := gen(cc, c, s)
+		ingress, err := gen(c, app, cc.masterResourcesPath, cc.dc, cc.externalURL)
 		if err != nil {
-			return fmt.Errorf("failed to generate %s: %v", s, err)
+			return fmt.Errorf("failed to generate %s: %v", app, err)
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
 		if err != nil {
-			return fmt.Errorf("failed to create ingress %s: %v", s, err)
+			return fmt.Errorf("failed to create ingress %s: %v", app, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created ingress")
@@ -254,22 +255,34 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
+func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	deps := map[string]func(cc *clusterController, c *api.Cluster, dc, app string) (*extensionsv1beta1.Deployment, error){
-		"etcd":               loadDeploymentFile,
-		"apiserver":          loadDeploymentFile,
-		"controller-manager": loadDeploymentFile,
-		"scheduler":          loadDeploymentFile,
+	if c.Spec.MasterVersion == "" {
+		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
+	}
+	masterVersion, found := cc.versions[c.Spec.MasterVersion]
+	if !found {
+		c.Status.LastTransitionTime = time.Now()
+		c.Status.Phase = api.FailedClusterStatusPhase
+		glog.Warningf("Unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		cc.recordClusterEvent(c, "launching", "Failed to create new cluster %q due to unknown master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+	}
+
+	deps := map[string]string{
+		"etcd":               masterVersion.EtcdDeploymentYaml,
+		"apiserver":          masterVersion.ApiserverDeploymentYaml,
+		"controller-manager": masterVersion.ControllerDeploymentYaml,
+		"scheduler":          masterVersion.SchedulerDeploymentYaml,
 	}
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for s, gen := range deps {
+	for s, yamlFile := range deps {
 		exists := false
 		for _, obj := range existingDeps {
 			dep := obj.(*extensionsv1beta1.Deployment)
@@ -283,28 +296,28 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 			continue
 		}
 
-		dep, err := gen(cc, c, cc.dc, s)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
 		if err != nil {
-			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
-			return fmt.Errorf("failed to create deployment %s: %v", s, err)
+			return nil, fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	cms := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.ConfigMap, error){}
+	cms := map[string]func(c *api.Cluster) (*v1.ConfigMap, error){}
 	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
-		cms["aws-cloud-config"] = loadAwsCloudConfigConfigMap
+		cms["aws-cloud-config"] = resources.LoadAwsCloudConfigConfigMap
 	}
 
 	for s, gen := range cms {
@@ -319,7 +332,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 			continue
 		}
 
-		cm, err := gen(cc, c, s)
+		cm, err := gen(c)
 		if err != nil {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}
@@ -338,8 +351,8 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
-	pvcs := map[string]func(cc *clusterController, c *api.Cluster, s string) (*v1.PersistentVolumeClaim, error){
-		"etcd": loadPVCFile,
+	pvcs := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error){
+		"etcd": resources.LoadPVCFile,
 	}
 
 	for s, gen := range pvcs {
@@ -354,7 +367,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 			continue
 		}
 
-		pvc, err := gen(cc, c, s)
+		pvc, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate pvc %s: %v", s, err)
 		}

@@ -377,7 +377,7 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace
 		return nil
 	}
 
-	err := p.client.Deployments(ns.Name).Delete("controller-manager-v1", &v1.DeleteOptions{})
+	err := p.client.Deployments(ns.Name).Delete("controller-manager", &v1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
