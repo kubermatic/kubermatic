@@ -45,13 +45,17 @@ func newClusterEndpointV2(
 				AccessKeyID:     req.Cloud.User,
 				SecretAccessKey: req.Cloud.Secret,
 				// TODO: More keys!
-				SSHKeyName: req.SSHKeys[0],
+				SSHKeyName: req.SSHKeys[0].Name,
 			}
 			break
 		case provider.DigitaloceanCloudProvider:
+			var keyNames []string
+			for _, key := range req.SSHKeys {
+				keyNames = append(keyNames, key.Name)
+			}
 			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   req.Cloud.Secret,
-				SSHKeys: req.SSHKeys,
+				SSHKeys: keyNames,
 			}
 			break
 		case provider.FakeCloudProvider:
@@ -295,11 +299,16 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+type KeyIdent struct {
+	Name     string `json:"name"`
+	MetaName string `json:"meta_name"`
+}
+
 type newClusterReqV2 struct {
 	userReq
 	Cloud   *api.CloudSpec   `json:"cloud"`
 	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []string         `json:"ssh_keys"`
+	SSHKeys []KeyIdent       `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
