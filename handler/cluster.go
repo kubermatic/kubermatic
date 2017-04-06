@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
@@ -77,7 +78,7 @@ func newClusterEndpointV2(
 			return nil, err
 		}
 
-		return c, nil
+		return c, kp.SetSSHKeys(req.user, c.Metadata.Name, req.SSHKeys)
 	}
 }
 
@@ -299,16 +300,11 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-type KeyIdent struct {
-	Name     string `json:"name"`
-	MetaName string `json:"meta_name"`
-}
-
 type newClusterReqV2 struct {
 	userReq
-	Cloud   *api.CloudSpec   `json:"cloud"`
-	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []KeyIdent       `json:"ssh_keys"`
+	Cloud   *api.CloudSpec          `json:"cloud"`
+	Spec    *api.ClusterSpec        `json:"spec"`
+	SSHKeys []extensions.UserSSHKey `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
