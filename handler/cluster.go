@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 func newClusterEndpointV2(
@@ -42,9 +43,17 @@ func newClusterEndpointV2(
 
 		var extKeys []extensions.UserSSHKey
 		for _, key := range req.SSHKeys {
+			fingerprint, err := extensions.GenerateNormalizedFigerprint(key.PublicKey)
+			if err != nil {
+				return nil, err
+			}
 			extKeys = append(extKeys, extensions.UserSSHKey{
+				Metadata: v1.ObjectMeta{
+					// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
+					Name: extensions.ConstructNewSerialKeyName(extensions.NormalizeFingerprint(fingerprint)),
+				},
 				Name:        key.Name,
-				Fingerprint: key.Fingerprint,
+				Fingerprint: fingerprint,
 				PublicKey:   key.PublicKey,
 			})
 		}
@@ -309,9 +318,8 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 }
 
 type requestExtensionsUserSSHKey struct {
-	Name        string `json:"name"`
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"public_key"`
+	Name      string `json:"name"`
+	PublicKey string `json:"public_key"`
 }
 
 type newClusterReqV2 struct {
