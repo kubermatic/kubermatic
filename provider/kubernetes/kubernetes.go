@@ -40,15 +40,18 @@ type kubernetesProvider struct {
 	config *rest.Config
 }
 
+// DeleteSSHKey implements the provider.KubernetesProvider interface
 func (p *kubernetesProvider) DeleteSSHKey(user provider.User, cluster string, key extensions.UserSSHKey) error {
 	return p.tprClient.SSHKeyTPR(user.Name).Delete(key.Metadata.Name, v1.NewDeleteOptions(100))
 }
 
+// GetSSHKeys implements the provider.KubernetesProvider interface
 func (p *kubernetesProvider) GetSSHKeys(user provider.User, cluster string) ([]extensions.UserSSHKey, error) {
 	keys, err := p.tprClient.SSHKeyTPR(user.Name).List()
 	return keys.Items, err
 }
 
+// SetSSHKeys implements the provider.KubernetesProvider interface
 func (p *kubernetesProvider) SetSSHKeys(user provider.User, cluster string, keys []extensions.UserSSHKey) error {
 	// This is fucky!
 	client := p.tprClient.SSHKeyTPR(user.Name)
