@@ -533,7 +533,7 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 	return *latestImage.ImageId, nil
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
