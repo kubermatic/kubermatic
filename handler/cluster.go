@@ -50,7 +50,7 @@ func newClusterEndpointV2(
 			extKeys = append(extKeys, extensions.UserSSHKey{
 				Metadata: v1.ObjectMeta{
 					// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
-					Name: extensions.ConstructNewSerialKeyName(extensions.NormalizeFingerprint(fingerprint)),
+					Name: extensions.ConstructNewSerialKeyName(fingerprint),
 				},
 				Name:        key.Name,
 				Fingerprint: fingerprint,
