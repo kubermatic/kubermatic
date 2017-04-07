@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"github.com/kubermatic/api/extensions/etcd-cluster"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -58,13 +59,19 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all pcv's are available
-	err = cc.launchingCheckPvcs(c)
-	if err != nil {
-		return nil, err
-	}
+	//err = cc.launchingCheckPvcs(c)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// check that all deployments are available
 	changedC, err = cc.launchingCheckDeployments(c)
+	if err != nil {
+		return changedC, err
+	}
+
+	// check that all deployments are available
+	changedC, err = cc.launchingCheckEtcdCluster(c)
 	if err != nil {
 		return changedC, err
 	}
@@ -420,4 +427,60 @@ func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error 
 	}
 
 	return nil
+}
+
+func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Cluster, error) {
+	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+
+	if c.Spec.MasterVersion == "" {
+		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
+	}
+	masterVersion, found := cc.versions[c.Spec.MasterVersion]
+	if !found {
+		c.Status.LastTransitionTime = time.Now()
+		c.Status.Phase = api.FailedClusterStatusPhase
+		glog.Warningf("Unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		cc.recordClusterEvent(c, "launching", "Failed to create new cluster %q due to unknown master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
+	}
+
+	etcds := map[string]string{
+		"etcd-cluster": masterVersion.EtcdClusterYaml,
+	}
+
+	existingEtcds, err := cc.etcdClusterStore.ByIndex("namespace", ns)
+	if err != nil {
+		return nil, err
+	}
+
+	for s, yamlFile := range etcds {
+		exists := false
+		var etcd *etcd_cluster.Cluster
+		for _, obj := range existingEtcds {
+			etcd := obj.(*etcd_cluster.Cluster)
+
+			if etcd.Metadata.Name == s {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			glog.V(7).Infof("Skipping already existing etcd-cluster %q for cluster %q", s, c.Metadata.Name)
+			continue
+		}
+
+		etcd, err := resources.LoadEtcdClustertFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
+		}
+
+		_, err = cc.etcdClusterClient.EtcdCluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ecd %s: %v", s, err)
+		}
+
+		cc.recordClusterEvent(c, "launching", "Created etcd-cluster %q", s)
+	}
+
+	return nil, nil
 }

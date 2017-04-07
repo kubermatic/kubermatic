@@ -8,6 +8,7 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/template"
+	"github.com/kubermatic/api/extensions/etcd-cluster"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -134,4 +135,23 @@ disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AW
 	}
 	return &cm, nil
 
+}
+
+// LoadEtcdClustertFile loads a etcd-operator tpr from disk and returns a Cluster tpr struct
+func LoadEtcdClustertFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*etcd_cluster.Cluster, error) {
+
+	data := struct {
+		ClusterName string
+	}{
+		ClusterName: c.Metadata.Name,
+	}
+
+	t, err := template.ParseFiles(path.Join(masterResourcesPath, yamlFile))
+	if err != nil {
+		return nil, err
+	}
+
+	var etcd etcd_cluster.Cluster
+	err = t.Execute(data, &etcd)
+	return &etcd, err
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/api/controller/update"
 	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/extensions/etcd-cluster"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/kubernetes"
@@ -51,6 +52,7 @@ const (
 type clusterController struct {
 	dc                  string
 	tprClient           extensions.Clientset
+	etcdClusterClient   etcd_cluster.Clientset
 	client              kubernetes.Interface
 	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
@@ -79,6 +81,9 @@ type clusterController struct {
 	addonController *cache.Controller
 	addonStore      cache.Store
 
+	etcdClusterController *cache.Controller
+	etcdClusterStore      cache.Indexer
+
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
@@ -104,6 +109,7 @@ func NewController(
 	dc string,
 	client kubernetes.Interface,
 	tprClient extensions.Clientset,
+	etcdClusterClient etcd_cluster.Clientset,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -116,6 +122,7 @@ func NewController(
 		dc:                  dc,
 		client:              client,
 		tprClient:           tprClient,
+		etcdClusterClient:   etcdClusterClient,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		updates:             updates,
@@ -276,6 +283,21 @@ func NewController(
 			},
 		},
 		&v1.ConfigMap{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.etcdClusterClient.EtcdCluster(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.etcdClusterClient.EtcdCluster(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&etcd_cluster.Cluster{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,

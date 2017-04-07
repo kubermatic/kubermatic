@@ -427,6 +427,7 @@ type MasterVersion struct {
 	Default                  bool              `yaml:"default"`
 	AllowedNodeVersions      []string          `yaml:"allowedNodeVersions"`
 	EtcdDeploymentYaml       string            `yaml:"etcdDeploymentYaml"`
+	EtcdClusterYaml          string            `yaml:"etcdClusterYaml"`
 	ApiserverDeploymentYaml  string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml  string            `yaml:"schedulerDeploymentYaml"`
