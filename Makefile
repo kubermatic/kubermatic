@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 CMD=kubermatic-api kubermatic-cluster-controller
-GOBUILD=go build
+GOBUILD=go build -ldflags "-s"
 REPO=kubermatic/api
 
 default: all
