@@ -68,6 +68,8 @@ func newClusterEndpointV2(
 			}
 			break
 		case provider.DigitaloceanCloudProvider:
+
+			// Generate fingerprints for digitalocean, they use them as their key identifier
 			var keyNames []string
 			for _, key := range req.SSHKeys {
 				pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
@@ -76,6 +78,7 @@ func newClusterEndpointV2(
 				}
 				keyNames = append(keyNames, ssh.FingerprintLegacyMD5(pubKey))
 			}
+
 			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   req.Cloud.Secret,
 				SSHKeys: keyNames,
