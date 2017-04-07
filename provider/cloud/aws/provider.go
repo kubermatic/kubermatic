@@ -457,11 +457,12 @@ func (a *aws) userData(
 	clusterState *api.Cluster,
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
+	authorizedKeys []string,
 ) error {
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: []string{},
+		SSHAuthorizedKeys: authorizedKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -581,6 +582,15 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if err != nil {
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
+	keyname, _, err := getOrCreateKey(keys, client)
+	if err != nil {
+		return []*api.Node{}, err
+	}
+
+	var skeys []string
+	for _, k := range keys {
+		skeys = append(skeys, k.PublicKey)
+	}
 	var createdNodes []*api.Node
 	imageID, err := a.GetContainerLinuxAmiID(node.AWS.ContainerLinux.Version, client)
 	if err != nil {
@@ -598,7 +608,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC, skeys); err != nil {
 			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
@@ -630,7 +640,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
-			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
+			KeyName:           sdk.String(keyname),
 			NetworkInterfaces: netSpec,
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: sdk.String(fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)),
