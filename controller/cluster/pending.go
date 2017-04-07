@@ -12,10 +12,10 @@ import (
 	"github.com/kubermatic/api/controller/resources"
 	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/extensions/etcd-cluster"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -58,11 +58,11 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return nil, err
 	}
 
-	// check that all pcv's are available
-	//err = cc.launchingCheckPvcs(c)
-	//if err != nil {
-	//	return nil, err
-	//}
+	////check that all pcv's are available
+	err = cc.launchingCheckPvcs(c)
+	if err != nil {
+		return nil, err
+	}
 
 	// check that all deployments are available
 	changedC, err = cc.launchingCheckDeployments(c)
@@ -192,7 +192,6 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
-		"etcd":      resources.LoadServiceFile,
 		"apiserver": resources.LoadServiceFile,
 	}
 
@@ -278,7 +277,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 	}
 
 	deps := map[string]string{
-		"etcd":               masterVersion.EtcdDeploymentYaml,
+		"etcd-operator":      masterVersion.EtcdOperatorDeploymentYaml,
 		"apiserver":          masterVersion.ApiserverDeploymentYaml,
 		"controller-manager": masterVersion.ControllerDeploymentYaml,
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
@@ -359,7 +358,8 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
 
 	pvcs := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error){
-		"etcd": resources.LoadPVCFile,
+	// Currently not required pvc for etcd is done by etcd-operator
+	//	"etcd": resources.LoadPVCFile,
 	}
 
 	for s, gen := range pvcs {

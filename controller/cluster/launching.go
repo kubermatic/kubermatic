@@ -24,8 +24,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	}
 
 	healthMapping := map[string]*bool{
-		"etcd": &health.Etcd[0],
-		// "etcd-public" TODO(sttts): add etcd-public?
+		"etcd-operator":      &health.Etcd[0],
 		"apiserver":          &health.Apiserver,
 		"controller-manager": &health.Controller,
 		"scheduler":          &health.Scheduler,

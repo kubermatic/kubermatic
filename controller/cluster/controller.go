@@ -335,11 +335,14 @@ func NewController(
 	}
 	cc.updateController = &update.Controller{
 		Client:              cc.client,
+		TprClient:           cc.tprClient,
+		EtcdClusterClient:   cc.etcdClusterClient,
 		MasterResourcesPath: cc.masterResourcesPath,
 		DC:                  cc.dc,
 		Versions:            cc.versions,
 		Updates:             cc.updates,
 		DepStore:            cc.depStore,
+		EtcdClusterStore:    cc.etcdClusterStore,
 	}
 	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
