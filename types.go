@@ -243,11 +243,14 @@ const (
 type MasterUpdatePhase string
 
 const (
-	// StartMasterUpdatePhase means that the update controller is updating etcd.
+	// StartMasterUpdatePhase means that the update controller is updating etcd operator.
 	StartMasterUpdatePhase MasterUpdatePhase = "Starting"
 
-	// EtcdMasterUpdatePhase means that the update controller is waiting for etcd and updating the API server.
-	EtcdMasterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
+	// EtcdOperatorUpdatePhase means that the update controller is waiting for etcd operator and updating the etcd cluster.
+	EtcdOperatorUpdatePhase MasterUpdatePhase = "WaitEtcdOperatorReady"
+
+	// EtcdClusterUpdatePhase means that the update controller is waiting for etcd cluster and updating the API server.
+	EtcdClusterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
 
 	// APIServerMasterUpdatePhase means that the update controller is waiting for the apiserver and updating the controllers.
 	APIServerMasterUpdatePhase MasterUpdatePhase = "WaitAPIReady"
