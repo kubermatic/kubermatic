@@ -89,6 +89,24 @@ func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
+func getRouteTable(vpc *ec2.Vpc, client *ec2.EC2) (*ec2.RouteTable, error) {
+	out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{Name: sdk.String("vpc-id"), Values: []*string{vpc.VpcId}},
+			{Name: sdk.String("association.main"), Values: []*string{sdk.String("true")}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(out.RouteTables) != 1 {
+		return nil, errors.New("could not get default RouteTable for vpc-id:%s. Make sure you have exact one main RouteTable for the vpc")
+	}
+
+	return out.RouteTables[0], nil
+}
+
 func getVpc(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
 	if vpcID != "" {
 		vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
@@ -362,6 +380,14 @@ func (a *aws) InitializeCloudSpecWithDefault(cluster *api.Cluster) error {
 		cluster.Spec.Cloud.AWS.PolicyName = *policy.Arn
 		cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
 		cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+	}
+
+	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
+		routeTable, err := getRouteTable(vpc, client)
+		if err != nil {
+			return fmt.Errorf("failed to get default RouteTable: %v", err)
+		}
+		cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 	}
 
 	return nil
