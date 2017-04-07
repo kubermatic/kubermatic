@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
@@ -69,7 +70,11 @@ func newClusterEndpointV2(
 		case provider.DigitaloceanCloudProvider:
 			var keyNames []string
 			for _, key := range req.SSHKeys {
-				keyNames = append(keyNames, key.Name)
+				pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
+				if err != nil {
+					return "", err
+				}
+				keyNames = append(keyNames, ssh.FingerprintLegacyMD5(pubKey))
 			}
 			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   req.Cloud.Secret,
