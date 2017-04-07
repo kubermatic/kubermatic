@@ -66,7 +66,6 @@ func newClusterEndpointV2(
 				// TODO: More keys!
 				SSHKeyName: req.SSHKeys[0].Name,
 			}
-			break
 		case provider.DigitaloceanCloudProvider:
 
 			// Generate fingerprints for digitalocean, they use them as their key identifier
@@ -79,7 +78,6 @@ func newClusterEndpointV2(
 				Token:   req.Cloud.Secret,
 				SSHKeys: []string{ssh.FingerprintLegacyMD5(pubKey)},
 			}
-			break
 		case provider.FakeCloudProvider:
 			req.Cloud.Fake = &api.FakeCloudSpec{
 				Token: req.Cloud.Secret,
@@ -88,6 +86,7 @@ func newClusterEndpointV2(
 			req.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
 				PrivateIntf: req.Cloud.BringYourOwn.PrivateIntf,
 			}
+		default:
 		}
 
 		req.Cloud.DatacenterName = req.Cloud.Region
