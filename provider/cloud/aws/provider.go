@@ -21,6 +21,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 )
 
@@ -557,6 +558,42 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 	}
 
 	return *latestImage.ImageId, nil
+}
+
+func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
+	if len(keys) < 1 {
+		return "", nil, errors.New("needs at least one key")
+	}
+	filters := make([]*ec2.Filter, 1)
+	filters[0].Name = sdk.String("fingerprint")
+	filters[0].Values = make([]*string, len(keys))
+
+	for index, key := range keys {
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
+		if err != nil {
+			return "", false, err
+		}
+		filters[0].Values[index] = sdk.String(ssh.FingerprintLegacyMD5(pubKey))
+	}
+
+	responesKeys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
+		Filters: filters,
+	})
+	if err != nil {
+		return "", false, err
+	}
+
+	// Return here if we got a matching key
+	if len(responesKeys.KeyPairs) > 0 {
+		return *responesKeys.KeyPairs[0].KeyName, false, nil
+	}
+
+	_, err = client.ImportKeyPair(&ec2.ImportKeyPairInput{
+		KeyName:           sdk.String(keys[0].Name),
+		PublicKeyMaterial: []byte(keys[0].PublicKey),
+	})
+
+	return "", true, err
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
