@@ -140,7 +140,7 @@ func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 		}
 		etcd := obj.(*etcd_cluster.Cluster)
 		//Ensure the etcd quorum
-		if etcd.Spec.Size/2+1 <= etcd.Status.Size {
+		if etcd.Spec.Size/2+1 >= etcd.Status.Size {
 			return nil, false, nil
 		}
 	}

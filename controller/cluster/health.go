@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions/etcd-cluster"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/labels"
@@ -36,6 +37,16 @@ func (cc *clusterController) healthyDep(dep *v1beta1.Deployment) (bool, error) {
 	}
 
 	if float64(healthyPods) < healthBar*float64(*replicas) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (cc *clusterController) healthyEtcd(etcd *etcd_cluster.Cluster) (bool, error) {
+
+	//Ensure the etcd quorum
+	if etcd.Spec.Size/2+1 >= etcd.Status.Size {
 		return false, nil
 	}
 

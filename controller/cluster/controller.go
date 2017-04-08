@@ -672,6 +672,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
 	go cc.addonController.Run(wait.NeverStop)
+	go cc.etcdClusterController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
 	go cc.cmController.Run(wait.NeverStop)
 
@@ -703,6 +704,7 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced() &&
 		cc.addonController.HasSynced() &&
+		cc.etcdClusterController.HasSynced() &&
 		cc.pvcController.HasSynced() &&
 		cc.cmController.HasSynced()
 }
