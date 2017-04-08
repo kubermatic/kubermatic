@@ -180,9 +180,10 @@ type UserSSHKey struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
 
-	Name        string `json:"name"`
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"public_key"`
+	Name        string   `json:"name"`
+	Fingerprint string   `json:"fingerprint"`
+	PublicKey   string   `json:"public_key"`
+	Clusters    []string `json:"clusters"`
 }
 
 //GetObjectKind returns the object typemeta information
