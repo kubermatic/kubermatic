@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/api/uuid"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"github.com/kubermatic/api/extensions"
 )
 
 const (
@@ -96,7 +97,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	return &n, nil
 }
 
-func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int) ([]*api.Node, error) {
+func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, found := do.dcs[spec.DatacenterName]
 	if !found || dc.Spec.Digitalocean == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
