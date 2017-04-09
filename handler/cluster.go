@@ -217,6 +217,7 @@ func clustersEndpoint(
 func deleteClusterEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
+	clientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteClusterReq)
@@ -265,6 +266,26 @@ func deleteClusterEndpoint(
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err
+		}
+
+		// TODO(realfake): Duplicated code move to function
+		sshClient := clientset.SSHKeyTPR(req.user.Name)
+		keys, err := sshClient.List()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, key := range keys.Items {
+			for i, clusterName := range key.Clusters {
+				if clusterName == req.cluster {
+					// TODO(realfake): This takes a long time look forward to async / batch implementation
+					key.Clusters = append(key.Clusters[:i], key.Clusters[i+1:]...)
+					_, err := sshClient.Update(&key)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
 		}
 
 		return nil, nil
