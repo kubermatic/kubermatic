@@ -205,6 +205,16 @@ func (sk *UserSSHKey) addLabel(key string, value string) {
 	sk.Metadata.SetLabels(lbs)
 }
 
+// UsedByCluster returns true if the clustername is present in a keys cluster list
+func (sk *UserSSHKey) UsedByCluster(clustername string) bool {
+	for _, name := range sk.Clusters {
+		if name == clustername {
+			return true
+		}
+	}
+	return false
+}
+
 // UserSSHKeyList specifies a users UserSSHKey
 type UserSSHKeyList struct {
 	metav1.TypeMeta `json:",inline"`
