@@ -1,4 +1,4 @@
-package etcd_cluster
+package etcd
 
 import (
 	"encoding/base64"
@@ -70,7 +70,7 @@ func etcdClusterClient(config *rest.Config) (*rest.RESTClient, error) {
 
 // Clientset is an interface to work with extensions
 type Clientset interface {
-	EtcdCluster(ns string) EtcdClusterInterface
+	Cluster(ns string) ClusterInterface
 }
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
@@ -79,15 +79,15 @@ type WrappedClientset struct {
 }
 
 // Cluster returns an interface to interact with Cluster
-func (w *WrappedClientset) EtcdCluster(ns string) EtcdClusterInterface {
-	return &EtcdClusterClient{
+func (w *WrappedClientset) Cluster(ns string) ClusterInterface {
+	return &ClusterClient{
 		client: w.Client,
 		ns:     ns,
 	}
 }
 
-// EtcdClusterInterface is an interface to interact with Cluster Operator TPRs
-type EtcdClusterInterface interface {
+// ClusterInterface is an interface to interact with Cluster Operator TPRs
+type ClusterInterface interface {
 	Create(*Cluster) (*Cluster, error)
 	Get(name string) (*Cluster, error)
 	List(v1.ListOptions) (*ClusterList, error)
@@ -96,14 +96,14 @@ type EtcdClusterInterface interface {
 	Delete(string, *v1.DeleteOptions) error
 }
 
-// EtcdClusterClient is an implementation of EtcdOperatorInterface to work with etcd-operator
-type EtcdClusterClient struct {
+// ClusterClient is an implementation of EtcdOperatorInterface to work with etcd-operator
+type ClusterClient struct {
 	client rest.Interface
 	ns     string
 }
 
-// Create makes a new etcd-Operator in the or returns an existing one with an error.
-func (c *EtcdClusterClient) Create(etcd *Cluster) (*Cluster, error) {
+// Create makes a new etcd-cluster in the or returns an existing one with an error.
+func (c *ClusterClient) Create(etcd *Cluster) (*Cluster, error) {
 	result := &Cluster{}
 	err := c.client.Post().
 		Namespace(c.ns).
@@ -115,7 +115,7 @@ func (c *EtcdClusterClient) Create(etcd *Cluster) (*Cluster, error) {
 }
 
 // List takes list options and returns a list of etcd-cluster.
-func (c *EtcdClusterClient) List(opts v1.ListOptions) (*ClusterList, error) {
+func (c *ClusterClient) List(opts v1.ListOptions) (*ClusterList, error) {
 	result := &ClusterList{}
 	err := c.client.Get().
 		Namespace(c.ns).
@@ -126,8 +126,8 @@ func (c *EtcdClusterClient) List(opts v1.ListOptions) (*ClusterList, error) {
 	return result, err
 }
 
-// Watch returns a watch.Interface that watches the requested etcd-cluster
-func (c *EtcdClusterClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
+// Watch returns a watch.Interface that watches the requested etcd
+func (c *ClusterClient) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.client.Get().
 		Namespace(c.ns).
 		Prefix("watch").
@@ -136,8 +136,8 @@ func (c *EtcdClusterClient) Watch(opts v1.ListOptions) (watch.Interface, error) 
 		Watch()
 }
 
-// Updates a given etcd-cluster
-func (c *EtcdClusterClient) Update(etcd *Cluster) (*Cluster, error) {
+// Update a given etcd-cluster.
+func (c *ClusterClient) Update(etcd *Cluster) (*Cluster, error) {
 	result := &Cluster{}
 	err := c.client.Put().
 		Namespace(c.ns).
@@ -149,8 +149,8 @@ func (c *EtcdClusterClient) Update(etcd *Cluster) (*Cluster, error) {
 	return result, err
 }
 
-// Delete takes the name of a etcd-cluster and removes it from the TPR
-func (c *EtcdClusterClient) Delete(name string, options *v1.DeleteOptions) error {
+// Delete takes the name of a etcd-cluster. and removes it from the TPR
+func (c *ClusterClient) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource(TPRKind).
@@ -161,7 +161,7 @@ func (c *EtcdClusterClient) Delete(name string, options *v1.DeleteOptions) error
 }
 
 // Get takes the name of a etcd-cluster and fetches it from the TPR.
-func (c *EtcdClusterClient) Get(name string) (*Cluster, error) {
+func (c *ClusterClient) Get(name string) (*Cluster, error) {
 	result := &Cluster{}
 	err := c.client.Get().
 		Namespace(c.ns).

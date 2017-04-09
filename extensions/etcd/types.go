@@ -1,4 +1,4 @@
-package etcd_cluster
+package etcd
 
 import (
 	"time"
@@ -55,6 +55,7 @@ func init() {
 	}
 }
 
+// Cluster represent an etcd cluster
 type Cluster struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        apiv1.ObjectMeta `json:"metadata"`
@@ -90,6 +91,7 @@ func (el *ClusterList) GetListMeta() metav1.List {
 	return &el.Metadata
 }
 
+// ClusterSpec defines the spec for an etcd cluster
 type ClusterSpec struct {
 	// Size is the expected size of the etcd cluster.
 	// The etcd-operator will eventually make the size of the running
@@ -156,8 +158,10 @@ type PodPolicy struct {
 	Resources apiv1.ResourceRequirements `json:"resources"`
 }
 
+// ClusterPhase defines the phases of a etcd-cluster
 type ClusterPhase string
 
+// ClusterPhase
 const (
 	ClusterPhaseNone     ClusterPhase = ""
 	ClusterPhaseCreating              = "Creating"
@@ -165,6 +169,7 @@ const (
 	ClusterPhaseFailed                = "Failed"
 )
 
+// ClusterCondition defines the condition of a etcd-cluster
 type ClusterCondition struct {
 	Type ClusterConditionType `json:"type"`
 
@@ -173,8 +178,10 @@ type ClusterCondition struct {
 	TransitionTime time.Time `json:"transitionTime"`
 }
 
+// ClusterConditionType defines the condition of a etcd-cluster
 type ClusterConditionType string
 
+// ClusterConditionTypes
 const (
 	ClusterConditionReady = "Ready"
 
@@ -188,6 +195,7 @@ const (
 	ClusterConditionUpgrading = "Upgrading"
 )
 
+// ClusterStatus defines the status for an etcd cluster
 type ClusterStatus struct {
 	// Phase is the cluster running phase
 	Phase  ClusterPhase `json:"phase"`
@@ -215,6 +223,7 @@ type ClusterStatus struct {
 	BackupServiceStatus *BackupServiceStatus `json:"backupServiceStatus,omitempty"`
 }
 
+// MembersStatus defines the member status for an etcd cluster
 type MembersStatus struct {
 	// Ready are the etcd members that are ready to serve requests
 	// The member names are the same as the etcd pod names
@@ -223,6 +232,7 @@ type MembersStatus struct {
 	Unready []string `json:"unready,omitempty"`
 }
 
+// BackupServiceStatus defines the backup service status for an etcd cluster
 type BackupServiceStatus struct {
 	// RecentBackup is status of the most recent backup created by
 	// the backup service
@@ -235,6 +245,7 @@ type BackupServiceStatus struct {
 	BackupSize float64 `json:"backupSize"`
 }
 
+// BackupStatus defines the backup status for an etcd cluster
 type BackupStatus struct {
 	// Creation time of the backup.
 	CreationTime string `json:"creationTime"`
@@ -249,8 +260,10 @@ type BackupStatus struct {
 	TimeTookInSecond int `json:"timeTookInSecond"`
 }
 
+// BackupStorageType defines the backup storage type for an etcd cluster
 type BackupStorageType string
 
+// BackupStorageTypes
 const (
 	BackupStorageTypeDefault          = ""
 	BackupStorageTypePersistentVolume = "PersistentVolume"
@@ -264,6 +277,7 @@ type TLSPolicy struct {
 	Static *StaticTLS `json:"static"`
 }
 
+// StaticTLS defines the static TLS for an etcd cluster
 type StaticTLS struct {
 	// ServerSecretName contains peer-interface and client-interface server x509 key/cert, along with peer and client CA cert.
 	ServerSecretName string `json:"serverSecretName"`
@@ -271,6 +285,7 @@ type StaticTLS struct {
 	ClientSecretName string `json:"clientSecretName"`
 }
 
+// BackupPolicy defines the backup policy for an etcd cluster
 type BackupPolicy struct {
 	// StorageType specifies the type of storage device to store backup files.
 	// If it's not set by user, the default is "PersistentVolume".
@@ -293,10 +308,13 @@ type BackupPolicy struct {
 	CleanupBackupsOnClusterDelete bool `json:"cleanupBackupsOnClusterDelete"`
 }
 
+// StorageSource defines the storage for an etcd cluster
 type StorageSource struct {
 	PV *PVSource `json:"pv,omitempty"`
 	S3 *S3Source `json:"s3,omitempty"`
 }
+
+// PVSource defines the PV for an etcd cluster
 type PVSource struct {
 	// VolumeSizeInMB specifies the required volume size to perform backups.
 	// Operator will claim the required size before creating the etcd cluster for backup
@@ -305,9 +323,11 @@ type PVSource struct {
 	VolumeSizeInMB int `json:"volumeSizeInMB"`
 }
 
+// S3Source defines the S3
 type S3Source struct {
 }
 
+// SelfHostedPolicy defines the SelfHostedPolicy
 type SelfHostedPolicy struct {
 	// BootMemberClientEndpoint specifies a bootstrap member for the cluster.
 	// If there is no bootstrap member, a completely new cluster will be created.

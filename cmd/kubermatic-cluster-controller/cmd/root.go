@@ -24,7 +24,7 @@ import (
 	"github.com/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/spf13/cobra"
@@ -115,7 +115,7 @@ var RootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 
-			etcdClusterClient, err := etcd_cluster.WrapClientsetWithExtensions(cfg)
+			etcdClusterClient, err := etcd.WrapClientsetWithExtensions(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/api/controller/update"
 	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/kubernetes"
@@ -52,7 +52,7 @@ const (
 type clusterController struct {
 	dc                  string
 	tprClient           extensions.Clientset
-	etcdClusterClient   etcd_cluster.Clientset
+	etcdClusterClient   etcd.Clientset
 	client              kubernetes.Interface
 	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
@@ -109,7 +109,7 @@ func NewController(
 	dc string,
 	client kubernetes.Interface,
 	tprClient extensions.Clientset,
-	etcdClusterClient etcd_cluster.Clientset,
+	etcdClusterClient etcd.Clientset,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -291,13 +291,13 @@ func NewController(
 	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.etcdClusterClient.EtcdCluster(v1.NamespaceAll).List(options)
+				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.etcdClusterClient.EtcdCluster(v1.NamespaceAll).Watch(options)
+				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&etcd_cluster.Cluster{},
+		&etcd.Cluster{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,

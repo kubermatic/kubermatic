@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -55,7 +55,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	}
 
 	for _, obj := range etcds {
-		etcd := obj.(*etcd_cluster.Cluster)
+		etcd := obj.(*etcd.Cluster)
 
 		etcdHealth, err := cc.healthyEtcd(etcd)
 		if err != nil {

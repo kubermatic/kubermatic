@@ -8,7 +8,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/resources"
 	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
 	k "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/errors"
@@ -20,7 +20,7 @@ import (
 type Controller struct {
 	Client              k.Interface
 	TprClient           extensions.Clientset
-	EtcdClusterClient   etcd_cluster.Clientset
+	EtcdClusterClient   etcd.Clientset
 	MasterResourcesPath string
 	OverwriteHost       string
 	DC                  string
@@ -41,11 +41,11 @@ func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 	case api.StartMasterUpdatePhase:
 		return u.updateDeployment(c, []string{v.EtcdOperatorDeploymentYaml}, v, api.EtcdOperatorUpdatePhase)
 	case api.EtcdOperatorUpdatePhase:
-		c, ready, err := u.waitForDeployments(c, []string{"etcd-cluster"}, api.StartMasterUpdatePhase)
+		c, ready, err := u.waitForDeployments(c, []string{"etcd-operator"}, api.StartMasterUpdatePhase)
 		if !ready || err != nil {
 			return c, err
 		}
-		return u.updateEtcdCluster(c, []string{v.ApiserverDeploymentYaml}, v, api.EtcdClusterUpdatePhase)
+		return u.updateEtcdCluster(c, []string{v.EtcdClusterYaml}, v, api.EtcdClusterUpdatePhase)
 	case api.EtcdClusterUpdatePhase:
 		c, ready, err := u.waitForEtcdCluster(c, []string{"etcd-cluster"}, api.EtcdClusterUpdatePhase)
 		if !ready || err != nil {
@@ -109,10 +109,10 @@ func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, maste
 			return nil, err
 		}
 
-		_, err = u.EtcdClusterClient.EtcdCluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Update(etcd)
+		_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Update(etcd)
 		if errors.IsNotFound(err) {
 			glog.Errorf("expected an %s etcd cluster, but didn't find any for cluster %v. Creating a new one.", etcd.Metadata.Name, c.Metadata.Name)
-			_, err = u.EtcdClusterClient.EtcdCluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
+			_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
 			if err != nil {
 				return nil, fmt.Errorf("failed to re-create etcd cluster for %s: %v", etcd.Metadata.Name, err)
 			}
@@ -134,11 +134,11 @@ func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 			return nil, false, err
 		}
 		if !exists {
-			glog.Errorf("expected an %s deployment, but didn't find any for cluster %v.", name, c.Metadata.Name)
+			glog.Errorf("expected an %s etcd cluster, but didn't find any for cluster %v.", name, c.Metadata.Name)
 			c.Status.MasterUpdatePhase = fallbackPhase
 			return c, false, nil
 		}
-		etcd := obj.(*etcd_cluster.Cluster)
+		etcd := obj.(*etcd.Cluster)
 		//Ensure the etcd quorum
 		if etcd.Spec.Size/2+1 >= etcd.Status.Size {
 			return nil, false, nil

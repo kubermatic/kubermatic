@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/api/controller/resources"
 	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/extensions/etcd-cluster"
+	etcdcluster "github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -445,7 +445,7 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Clu
 	}
 
 	etcds := map[string]string{
-		"etcd-cluster": masterVersion.EtcdClusterYaml,
+		"etcd": masterVersion.EtcdClusterYaml,
 	}
 
 	existingEtcds, err := cc.etcdClusterStore.ByIndex("namespace", ns)
@@ -455,9 +455,9 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Clu
 
 	for s, yamlFile := range etcds {
 		exists := false
-		var etcd *etcd_cluster.Cluster
+		var etcd *etcdcluster.Cluster
 		for _, obj := range existingEtcds {
-			etcd := obj.(*etcd_cluster.Cluster)
+			etcd := obj.(*etcdcluster.Cluster)
 
 			if etcd.Metadata.Name == s {
 				exists = true
@@ -474,12 +474,12 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Clu
 			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
 		}
 
-		_, err = cc.etcdClusterClient.EtcdCluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
+		_, err = cc.etcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ecd %s: %v", s, err)
 		}
 
-		cc.recordClusterEvent(c, "launching", "Created etcd-cluster %q", s)
+		cc.recordClusterEvent(c, "launching", "Created etcd %q", s)
 	}
 
 	return nil, nil
