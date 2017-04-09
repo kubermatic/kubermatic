@@ -263,11 +263,6 @@ func createNodesEndpoint(
 				cpName, npName)
 		}
 
-		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
-		if err != nil {
-			return nil, err
-		}
-
 		var keys []extensions.UserSSHKey
 		keyList, err := clientset.SSHKeyTPR(req.user.Name).List()
 		if err != nil {
@@ -279,9 +274,14 @@ func createNodesEndpoint(
 			}
 		}
 
+		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances, keys)
+		if err != nil {
+			return nil, err
+		}
+
 		for _, node := range nodes {
 			node.Metadata.User = req.user.Name
-			_, err = kp.CreateNode(req.user, req.cluster, node, keys)
+			_, err = kp.CreateNode(req.user, req.cluster, node)
 			if err != nil {
 				return nil, err
 			}
