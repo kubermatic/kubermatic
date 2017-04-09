@@ -72,7 +72,7 @@ type KubernetesProvider interface {
 	CreateAddon(user User, cluster string, addonName string) (*extensions.ClusterAddon, error)
 
 	// CreateNode creates a node ThirdPartyResource
-	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
+	CreateNode(user User, cluster string, node *api.Node, keys []extensions.UserSSHKey) (*extensions.ClNode, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
