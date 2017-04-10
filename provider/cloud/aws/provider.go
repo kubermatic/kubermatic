@@ -611,9 +611,8 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	}
 	keyname, _, err := getOrCreateKey(keys, client)
 	if err != nil {
-		return []*api.Node{}, err
+		keyname = cluster.Spec.Cloud.AWS.SSHKeyName
 	}
-
 	var skeys []string
 	for _, k := range keys {
 		skeys = append(skeys, k.PublicKey)
