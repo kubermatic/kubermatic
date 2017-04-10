@@ -133,10 +133,9 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
 		data := ktemplate.Data{
-			DC:          spec.DatacenterName,
-			ClusterName: cluster.Metadata.Name,
-			//
-			SSHAuthorizedKeys: append(cSpec.SSHKeys, skeys...),
+			DC:                spec.DatacenterName,
+			ClusterName:       cluster.Metadata.Name,
+			SSHAuthorizedKeys: skeys,
 			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
 			Region:            dc.Spec.Digitalocean.Region,
@@ -177,13 +176,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		if err != nil {
 			return created, err
 		}
-		for _, doKey := range doKeys {
-			for _, key := range keys {
-				if extensions.NormalizeFingerprint(doKey.Fingerprint) == key.Fingerprint {
-					dropKeys = append(dropKeys, doKey.Fingerprint)
-				}
-			}
-		}
+
 		for _, doKey := range doKeys {
 			for _, fingerprint := range nSpec.SSHKeyFingerprints {
 				if doKey.Fingerprint == fingerprint {
