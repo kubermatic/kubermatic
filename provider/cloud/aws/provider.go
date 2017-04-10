@@ -562,9 +562,6 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 }
 
 func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
-	if len(keys) < 1 {
-		return "", false, errors.New("needs at least one key")
-	}
 	filters := []*ec2.Filter{{
 		Name:   sdk.String("fingerprint"),
 		Values: make([]*string, len(keys)),
@@ -595,7 +592,7 @@ func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string,
 		PublicKeyMaterial: []byte(keys[0].PublicKey),
 	})
 
-	return "", true, err
+	return keys[0].Name, true, err
 }
 
 func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
@@ -610,9 +607,15 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	if err != nil {
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
 	}
-	keyname, _, err := getOrCreateKey(keys, client)
-	if err != nil {
+	var keyname string
+	if len(keys) < 1 {
+		glog.Info("could not find keypair, fallback")
 		keyname = cluster.Spec.Cloud.AWS.SSHKeyName
+	} else {
+		keyname, _, err = getOrCreateKey(keys, client)
+	}
+	if err != nil {
+		return nil, err
 	}
 	var skeys []string
 	for _, k := range keys {
