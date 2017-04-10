@@ -1,9 +1,9 @@
 package version
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/kubermatic/api"
 )
 
@@ -53,8 +53,8 @@ func TestPathSearch_Search(t *testing.T) {
 	}
 
 	expected := []string{"1.5.2", "1.5.3", "1.5.4"}
-	if !reflect.DeepEqual(versions, expected) {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, versions)
+	if diff := deep.Equal(versions, expected); diff != nil {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, versions, diff)
 	}
 }
 
@@ -108,7 +108,8 @@ func TestPathSearch_SemverSearch(t *testing.T) {
 	}
 
 	expected := []string{"1.5.2", "1.5.4"}
-	if !reflect.DeepEqual(versions, expected) {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, versions)
+
+	if diff := deep.Equal(versions, expected); diff != nil {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, versions)
 	}
 }

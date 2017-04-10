@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -13,7 +14,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
@@ -28,7 +29,7 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Fatalf("Expected route to return code 404, got %d: %s", res.Code, res.Body.String())
 	}
 }
@@ -41,7 +42,7 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Fatalf("Expected route to return code 404, got %d: %s", res.Code, res.Body.String())
 	}
 }
@@ -54,7 +55,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
@@ -70,7 +71,7 @@ func TestDatacenterEndpointFound(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
