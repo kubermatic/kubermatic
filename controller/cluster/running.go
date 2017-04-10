@@ -1,9 +1,9 @@
 package cluster
 
 import (
-	"reflect"
 	"time"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/version"
@@ -15,8 +15,8 @@ func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, e
 		return nil, err
 	}
 
-	if health != nil && (c.Status.Health == nil ||
-		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
+	diff := deep.Equal(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)
+	if health != nil && (c.Status.Health == nil || diff != nil) {
 		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
 		c.Status.Health = health
 		c.Status.Health.LastTransitionTime = time.Now()
