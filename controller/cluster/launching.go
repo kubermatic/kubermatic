@@ -1,9 +1,9 @@
 package cluster
 
 import (
+	"reflect"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
@@ -24,8 +24,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	}
 
 	healthMapping := map[string]*bool{
-		"etcd": &health.Etcd[0],
-		// "etcd-public" TODO(sttts): add etcd-public?
+		"etcd":               &health.Etcd[0],
 		"apiserver":          &health.Apiserver,
 		"controller-manager": &health.Controller,
 		"scheduler":          &health.Scheduler,
@@ -64,8 +63,8 @@ func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster,
 		return nil, err
 	}
 
-	diff := deep.Equal(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)
-	if health != nil && (c.Status.Health == nil || diff != nil) {
+	if health != nil && (c.Status.Health == nil ||
+		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
 		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
 		c.Status.Health = health
 		c.Status.Health.LastTransitionTime = time.Now()
