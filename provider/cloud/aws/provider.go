@@ -21,7 +21,6 @@ import (
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
-	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 )
 
@@ -563,21 +562,15 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 
 func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
 	filters := []*ec2.Filter{{
-		Name:   sdk.String("fingerprint"),
+		Name:   sdk.String("key-name"),
 		Values: make([]*string, len(keys)),
 	}}
 
 	for index, key := range keys {
-		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
-		if err != nil {
-			return "", false, err
-		}
-		filters[0].Values[index] = sdk.String(ssh.FingerprintLegacyMD5(pubKey))
+		filters[0].Values[index] = sdk.String(key.Name)
 	}
 
-	responesKeys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		Filters: filters,
-	})
+	responesKeys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{Filters: filters})
 	if err != nil {
 		return "", false, err
 	}
