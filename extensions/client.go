@@ -79,7 +79,7 @@ type Clientset interface {
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
 type WrappedClientset struct {
-	Client *rest.RESTClient
+	Client rest.Interface
 }
 
 // ClusterAddons returns an interface to interact with ClusterAddons
