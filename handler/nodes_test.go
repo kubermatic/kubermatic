@@ -29,8 +29,8 @@ func TestCreateNodesEndpoint(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %s", res.Code)
+	if res.Code != http.StatusOK {
+		t.Errorf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -74,8 +74,8 @@ func TestCreateNodesEndpointNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %s", res.Code)
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -95,7 +95,7 @@ func TestNodesEndpointEmpty(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Errorf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
@@ -159,8 +159,8 @@ func TestDeleteNodesEndpoint(t *testing.T) {
 	authenticateHeader(req, false)
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
-		t.Errorf("Expected status code to be 200, got %s", res.Code)
+	if res.Code != http.StatusOK {
+		t.Errorf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -180,8 +180,8 @@ func TestDeleteNodesEndpointNotExistingDC(t *testing.T) {
 	authenticateHeader(req, false)
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
-		t.Errorf("Expected status code to be 400, got %s", res.Code)
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
 	}
@@ -217,7 +217,7 @@ func createTestNode(t *testing.T, e http.Handler) (*api.Node, error) {
 	res := httptest.NewRecorder()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Errorf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return nil, fmt.Errorf("Expected status code to be 200, got %d", res.Code)
