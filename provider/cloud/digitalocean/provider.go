@@ -184,13 +184,21 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 				}
 			}
 		}
+		for _, doKey := range doKeys {
+			for _, fingerprint := range nSpec.SSHKeyFingerprints {
+				if doKey.Fingerprint == fingerprint {
+					dropKeys = append(dropKeys, doKey.Fingerprint)
+				}
+			}
+		}
+
 
 		createRequest := &godo.DropletCreateRequest{
 			Region:            dc.Spec.Digitalocean.Region,
 			Image:             image,
 			Size:              nSpec.Size,
 			PrivateNetworking: true,
-			SSHKeys:           dropletKeys(nSpec.SSHKeyFingerprints),
+			SSHKeys:           dropletKeys(dropKeys),
 			Name:              dropletName,
 			UserData:          buf.String(),
 		}
