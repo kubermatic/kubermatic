@@ -141,13 +141,8 @@ disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AW
 func LoadEtcdClustertFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*etcd.Cluster, error) {
 
 	data := struct {
-		DC               string
-		AdvertiseAddress string
-		Cluster          *api.Cluster
-		Version          *api.MasterVersion
+		Version *api.MasterVersion
 	}{
-		DC:      dc,
-		Cluster: c,
 		Version: v,
 	}
 

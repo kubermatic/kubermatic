@@ -359,6 +359,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 
 	pvcs := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error){
 	// Currently not required pvc for etcd is done by etcd-operator
+	// TODO launchingCheckPvcs can be removed in the future if we don't need PVC in general
 	//	"etcd": resources.LoadPVCFile,
 	}
 
