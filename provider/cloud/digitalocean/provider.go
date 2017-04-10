@@ -169,6 +169,22 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		t := token(cSpec.GetToken())
 		client := godo.NewClient(oauth2.NewClient(ctx, t))
 
+		var dropKeys []string
+		doKeys, _, err := client.Keys.List(&godo.ListOptions{
+			Page:    1,
+			PerPage: 50,
+		})
+		if err != nil {
+			return created, err
+		}
+		for _, doKey := range doKeys {
+			for _, key := range keys {
+				if extensions.NormalizeFingerprint(doKey.Fingerprint) == key.Fingerprint {
+					dropKeys = append(dropKeys, doKey.Fingerprint)
+				}
+			}
+		}
+
 		createRequest := &godo.DropletCreateRequest{
 			Region:            dc.Spec.Digitalocean.Region,
 			Image:             image,
