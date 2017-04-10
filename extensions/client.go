@@ -242,9 +242,9 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 }
 
 // Update takes the representation of a ssh key and updates it. Returns the server's representation of the ssh key, and an error, if there is any.
-func (c *SSHKeyTPRClient) Update(key *UserSSHKey) (result *UserSSHKey, err error) {
+func (s *SSHKeyTPRClient) Update(key *UserSSHKey) (result *UserSSHKey, err error) {
 	result = &UserSSHKey{}
-	err = c.client.Put().
+	err = s.client.Put().
 		Namespace(SSHKeyTPRNamespace).
 		Resource(SSHKeyTPRName).
 		Name(key.Metadata.Name).

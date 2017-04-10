@@ -563,7 +563,7 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 
 func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
 	if len(keys) < 1 {
-		return "", nil, errors.New("needs at least one key")
+		return "", false, errors.New("needs at least one key")
 	}
 	filters := make([]*ec2.Filter, 1)
 	filters[0].Name = sdk.String("fingerprint")
