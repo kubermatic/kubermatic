@@ -192,7 +192,6 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			}
 		}
 
-
 		createRequest := &godo.DropletCreateRequest{
 			Region:            dc.Spec.Digitalocean.Region,
 			Image:             image,
