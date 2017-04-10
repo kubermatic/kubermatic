@@ -23,6 +23,9 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	cps := cloud.Providers(dcs)
 
 	tprClient, err := extensions.WrapClientsetWithExtensions(&rest.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
 	etcdClient, err := etcd.WrapClientsetWithExtensions(&rest.Config{})
 	if err != nil {
 		log.Fatal(err)
