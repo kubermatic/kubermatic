@@ -565,9 +565,10 @@ func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string,
 	if len(keys) < 1 {
 		return "", false, errors.New("needs at least one key")
 	}
-	filters := make([]*ec2.Filter, 1)
-	filters[0].Name = sdk.String("fingerprint")
-	filters[0].Values = make([]*string, len(keys))
+	filters := []*ec2.Filter{{
+		Name:   sdk.String("fingerprint"),
+		Values: make([]*string, len(keys)),
+	}}
 
 	for index, key := range keys {
 		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
