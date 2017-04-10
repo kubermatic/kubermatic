@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -17,6 +18,11 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 		return false, nil, err
 	}
 
+	etcds, err := cc.etcdClusterStore.ByIndex("namespace", ns)
+	if err != nil {
+		return false, nil, err
+	}
+
 	health := api.ClusterHealth{
 		ClusterHealthStatus: api.ClusterHealthStatus{
 			Etcd: []bool{false},
@@ -24,8 +30,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	}
 
 	healthMapping := map[string]*bool{
-		"etcd": &health.Etcd[0],
-		// "etcd-public" TODO(sttts): add etcd-public?
+		"etcd-cluster":       &health.Etcd[0],
 		"apiserver":          &health.Apiserver,
 		"controller-manager": &health.Controller,
 		"scheduler":          &health.Scheduler,
@@ -46,6 +51,22 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 		}
 		if m, found := healthMapping[role]; found {
 			*m = depHealth
+		}
+	}
+
+	for _, obj := range etcds {
+		etcd := obj.(*etcd.Cluster)
+
+		etcdHealth, err := cc.healthyEtcd(etcd)
+		if err != nil {
+			return false, nil, err
+		}
+		allHealthy = allHealthy && etcdHealth
+		if !etcdHealth {
+			glog.V(6).Infof("Cluster %q etcd %q is not healthy", c.Metadata.Name, etcd.Metadata.Name)
+		}
+		if m, found := healthMapping[etcd.Metadata.Name]; found {
+			*m = etcdHealth
 		}
 	}
 

@@ -1,9 +1,9 @@
 package dijkstra_test
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/kubermatic/api/controller/version/dijkstra"
 )
 
@@ -83,8 +83,8 @@ func TestDijkstraGraph(t *testing.T) {
 		vertexPath[i] = path[i].Node.(*vertex)
 	}
 
-	if !reflect.DeepEqual(expPath, vertexPath) {
-		t.Errorf("Expected %+v, got %+v\n", expPath, vertexPath)
+	if diff := deep.Equal(expPath, vertexPath); diff != nil {
+		t.Errorf("Expected %+v, got %+v\ndiff %v", expPath, vertexPath, diff)
 	}
 
 	vG := &vertex{id: "G"} // This vertex is unreachable

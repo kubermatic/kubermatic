@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Errorf("Expected status code to be 200, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
@@ -51,7 +52,7 @@ func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 400 {
+	if res.Code != http.StatusBadRequest {
 		t.Errorf("Expected status code to be 400, got %d", res.Code)
 		t.Error(res.Body.String())
 		return
@@ -72,7 +73,7 @@ func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
 
 	e.ServeHTTP(res, req)
 
-	if res.Code != 404 {
+	if res.Code != http.StatusNotFound {
 		t.Errorf("Expected status code to be 404, got %d", res.Code)
 		t.Error(res.Body.String())
 		return

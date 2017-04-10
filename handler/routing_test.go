@@ -117,7 +117,7 @@ func TestUpRoute(t *testing.T) {
 	e := createTestEndpoint()
 	e.ServeHTTP(res, req)
 
-	if res.Code != 200 {
+	if res.Code != http.StatusOK {
 		t.Errorf("Expected route to return code 200, got %d", res.Code)
 	}
 }

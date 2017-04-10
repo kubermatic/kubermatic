@@ -1,9 +1,9 @@
 package version
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/kubermatic/api"
 )
 
@@ -26,8 +26,8 @@ func TestBestAutomaticUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(updateVersion, &expected) {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, updateVersion)
+	if diff := deep.Equal(updateVersion, &expected); diff != nil {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
 	}
 
 }
@@ -51,8 +51,8 @@ func TestBestAutomaticUpdateWildCard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(updateVersion, &expected) {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, updateVersion)
+	if diff := deep.Equal(updateVersion, &expected); diff != nil {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
 	}
 
 }
@@ -82,7 +82,7 @@ func TestBestAutomaticUpdateWildCardMultiValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(updateVersion, &expected) {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v", expected, updateVersion)
+	if diff := deep.Equal(updateVersion, &expected); diff != nil {
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
 	}
 }

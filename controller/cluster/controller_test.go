@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"k8s.io/client-go/kubernetes/fake"
@@ -25,12 +26,16 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	etcdClient, err := etcd.WrapClientsetWithExtensions(&rest.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	versions := buildMasterVerionsMap()
 	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController("", clientSet, tprClient, cps, versions, updates, "./../../master-resources/", "localhost", true, "./../../addon-charts/")
+	cc, err := NewController("", clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", "localhost", true, "./../../addon-charts/")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,42 +46,45 @@ func newTestController() (*fake.Clientset, *clusterController) {
 func buildMasterVerionsMap() map[string]*api.MasterVersion {
 	return map[string]*api.MasterVersion{
 		"1.5.2": &api.MasterVersion{
-			Name:                     "1.5.2",
-			ID:                       "1.5.2",
-			Default:                  false,
-			AllowedNodeVersions:      []string{"1.3.0"},
-			EtcdDeploymentYaml:       "etcd-dep.yaml",
-			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
-			ControllerDeploymentYaml: "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Name:                       "1.5.2",
+			ID:                         "1.5.2",
+			Default:                    false,
+			AllowedNodeVersions:        []string{"1.3.0"},
+			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+			EtcdClusterYaml:            "etcd-cluster.yaml",
+			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":  "v1.5.2",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
 		"1.5.3": &api.MasterVersion{
-			Name:                     "1.5.3",
-			ID:                       "1.5.3",
-			Default:                  true,
-			AllowedNodeVersions:      []string{"1.3.0"},
-			EtcdDeploymentYaml:       "etcd-dep.yaml",
-			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
-			ControllerDeploymentYaml: "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Name:                       "1.5.3",
+			ID:                         "1.5.3",
+			Default:                    true,
+			AllowedNodeVersions:        []string{"1.3.0"},
+			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+			EtcdClusterYaml:            "etcd-cluster.yaml",
+			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":  "v1.5.3",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
 		"v1.6.0-rc.1": &api.MasterVersion{
-			Name:                     "v1.6.0-rc.1",
-			ID:                       "v1.6.0-rc.1",
-			Default:                  false,
-			AllowedNodeVersions:      []string{"1.4.0"},
-			EtcdDeploymentYaml:       "etcd-dep.yaml",
-			ApiserverDeploymentYaml:  "apiserver-dep.yaml",
-			ControllerDeploymentYaml: "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+			Name:                       "v1.6.0-rc.1",
+			ID:                         "v1.6.0-rc.1",
+			Default:                    false,
+			AllowedNodeVersions:        []string{"1.4.0"},
+			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+			EtcdClusterYaml:            "etcd-cluster.yaml",
+			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":  "v1.6.0-rc.1",
 				"etcd-version": "3.0.14-kubeadm",
