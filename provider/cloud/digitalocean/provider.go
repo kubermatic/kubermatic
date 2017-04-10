@@ -11,12 +11,12 @@ import (
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"github.com/kubermatic/api/extensions"
 )
 
 const (
@@ -126,12 +126,17 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			return created, err
 		}
 
+		var skeys []string
+		for _, k := range keys {
+			skeys = append(skeys, k.PublicKey)
+		}
+
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
 		data := ktemplate.Data{
 			DC:          spec.DatacenterName,
 			ClusterName: cluster.Metadata.Name,
 			//
-			SSHAuthorizedKeys: cSpec.SSHKeys,
+			SSHAuthorizedKeys: append(cSpec.SSHKeys, skeys...),
 			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
 			Region:            dc.Spec.Digitalocean.Region,
