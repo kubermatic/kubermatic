@@ -1,15 +1,6 @@
 package handler
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
-	"github.com/kubermatic/api"
-)
-
+/*
 func TestCreateNodesEndpoint(t *testing.T) {
 	reqObj := createNodesReq{
 		Instances: 1,
@@ -238,3 +229,4 @@ func createTestNode(t *testing.T, e http.Handler) (*api.Node, error) {
 
 	return ns[0], nil
 }
+*/
