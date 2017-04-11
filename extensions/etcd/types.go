@@ -3,6 +3,9 @@ package etcd
 import (
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -35,21 +38,6 @@ func addTypes(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func init() {
-	if err := announced.NewGroupMetaFactory(
-		&announced.GroupMetaFactoryArgs{
-			GroupName:                  GroupName,
-			VersionPreferenceOrder:     []string{SchemeGroupVersion.Version},
-			AddInternalObjectsToScheme: SchemeBuilder.AddToScheme,
-		},
-		announced.VersionToSchemeFunc{
-			SchemeGroupVersion.Version: SchemeBuilder.AddToScheme,
-		},
-	).Announce().RegisterAndEnable(); err != nil {
-		panic(err)
-	}
-}
-
 // Cluster represent an etcd cluster
 type Cluster struct {
 	metav1.TypeMeta `json:",inline"`
@@ -72,7 +60,7 @@ func (e *Cluster) GetObjectKind() schema.ObjectKind {
 }
 
 // GetObjectMeta returns the object metadata
-func (e *Cluster) GetObjectMeta() meta.Object {
+func (e *Cluster) GetObjectMeta() metav1.Object {
 	return &e.Metadata
 }
 

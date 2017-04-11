@@ -1,8 +1,12 @@
 package etcd
 
 import (
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/watch"
 	kapi "k8s.io/client-go/pkg/api"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -55,7 +59,7 @@ func (w *WrappedClientset) Cluster(ns string) ClusterInterface {
 type ClusterInterface interface {
 	Create(*Cluster) (*Cluster, error)
 	Get(name string) (*Cluster, error)
-	List(v1.ListOptions) (*ClusterList, error)
+	List(options v1.ListOptions) (*ClusterList, error)
 	Watch(v1.ListOptions) (watch.Interface, error)
 	Update(*Cluster) (*Cluster, error)
 	Delete(string, *v1.DeleteOptions) error
