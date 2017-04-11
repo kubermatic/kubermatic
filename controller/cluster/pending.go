@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/api/extensions"
 	etcdcluster "github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -134,7 +135,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 				continue
 			}
 
-			err = cc.client.CoreV1().Secrets(ns).Delete(s, &v1.DeleteOptions{})
+			err = cc.client.CoreV1().Secrets(ns).Delete(s, &metav1.DeleteOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -414,7 +415,7 @@ func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error 
 		}
 
 		addon := &extensions.ClusterAddon{
-			Metadata: v1.ObjectMeta{
+			Metadata: metav1.ObjectMeta{
 				Name: metaName,
 			},
 			Name:  name,
