@@ -131,10 +131,11 @@ zone=%s
 VPC=%s
 kubernetesclustertag=%s
 disablesecuritygroupingress=false
-disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name),
+SubnetID=%s
+RouteTableID=%s
+disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, c.Spec.Cloud.AWS.SubnetID, c.Spec.Cloud.AWS.RouteTableID),
 	}
 	return &cm, nil
-
 }
 
 // LoadEtcdClustertFile loads a etcd-operator tpr from disk and returns a Cluster tpr struct
