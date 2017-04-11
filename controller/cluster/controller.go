@@ -15,12 +15,20 @@ import (
 	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	uruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 const (
@@ -56,7 +64,7 @@ type clusterController struct {
 	nsStore      cache.Store
 
 	podController *cache.Controller
-	podStore      cache.StoreToPodLister
+	podStore      cache.Indexer
 
 	depController *cache.Controller
 	depStore      cache.Indexer
@@ -142,11 +150,11 @@ func NewController(
 
 	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				options.LabelSelector = labels.SelectorFromSet(labels.Set(nsLabels)).String()
 				return cc.client.CoreV1().Namespaces().List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				return cc.client.CoreV1().Namespaces().Watch(options)
 			},
 		},
@@ -175,12 +183,12 @@ func NewController(
 		"namespace": cache.IndexFunc(cache.MetaNamespaceIndexFunc),
 	}
 
-	cc.podStore.Indexer, cc.podController = cache.NewIndexerInformer(
+	cc.podStore, cc.podController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				return cc.client.CoreV1().Pods(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				return cc.client.CoreV1().Pods(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -192,10 +200,10 @@ func NewController(
 
 	cc.depStore, cc.depController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				return cc.client.ExtensionsV1beta1().Deployments(v1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				return cc.client.ExtensionsV1beta1().Deployments(v1.NamespaceAll).Watch(options)
 			},
 		},
@@ -207,11 +215,11 @@ func NewController(
 
 	cc.secretStore, cc.secretController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.CoreV1().Secrets(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().Secrets(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.CoreV1().Secrets(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().Secrets(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1.Secret{},
@@ -222,11 +230,11 @@ func NewController(
 
 	cc.serviceStore, cc.serviceController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.CoreV1().Services(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().Services(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.CoreV1().Services(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().Services(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1.Service{},
@@ -237,11 +245,11 @@ func NewController(
 
 	cc.ingressStore, cc.ingressController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.ExtensionsV1beta1().Ingresses(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.client.ExtensionsV1beta1().Ingresses(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.ExtensionsV1beta1().Ingresses(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.client.ExtensionsV1beta1().Ingresses(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1beta1.Ingress{},
@@ -252,11 +260,11 @@ func NewController(
 
 	cc.pvcStore, cc.pvcController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.CoreV1().PersistentVolumeClaims(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().PersistentVolumeClaims(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.CoreV1().PersistentVolumeClaims(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().PersistentVolumeClaims(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1.PersistentVolumeClaim{},
@@ -267,11 +275,11 @@ func NewController(
 
 	cc.cmStore, cc.cmController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.CoreV1().ConfigMaps(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().ConfigMaps(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.CoreV1().ConfigMaps(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().ConfigMaps(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&v1.ConfigMap{},
@@ -282,11 +290,11 @@ func NewController(
 
 	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.etcdClusterClient.Cluster(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.etcdClusterClient.Cluster(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&etcd.Cluster{},
@@ -297,11 +305,11 @@ func NewController(
 
 	cc.addonStore, cc.addonController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.tprClient.ClusterAddons(v1.NamespaceAll).List(options)
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return cc.tprClient.ClusterAddons(metav1.NamespaceAll).List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.tprClient.ClusterAddons(v1.NamespaceAll).Watch(options)
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return cc.tprClient.ClusterAddons(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&extensions.ClusterAddon{},
@@ -476,7 +484,7 @@ func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
 		// try to write back namespace
 		_, err = cc.client.CoreV1().Namespaces().Update(newNS)
 		if err != nil {
-			if !kerrors.IsConflict(err) {
+			if !errors.IsConflict(err) {
 				glog.V(4).Infof("Write conflict of namespace %q (retry=%i/%i)", ns, i, maxUpdateRetries)
 				continue
 			}
