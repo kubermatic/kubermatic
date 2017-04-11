@@ -15,6 +15,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/api/provider/kubernetes"
@@ -42,7 +43,7 @@ func createTestEndpoint() http.Handler {
 	kps["master"] = kubernetes.NewKubernetesFakeProvider("master", cps)
 
 	router := mux.NewRouter()
-	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)), nil)
+	routing := NewRouting(ctx, dcs, kps, cps, true, base64.URLEncoding.EncodeToString([]byte(jwtSecret)), extensions.FakeWrapClientsetWithExtensions(nil))
 	routing.Register(router)
 
 	return router
