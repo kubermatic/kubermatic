@@ -3,6 +3,7 @@ package cluster
 import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions/etcd"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -13,9 +14,14 @@ const (
 
 func (cc *clusterController) healthyDep(dep *v1beta1.Deployment) (bool, error) {
 	replicas := dep.Spec.Replicas
-	pods, err := cc.podStore.List(labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels)))
-	if err != nil {
-		return false, err
+
+	l := labels.SelectorFromSet(labels.Set(dep.Spec.Selector.MatchLabels))
+	var pods []v1.Pod
+	for _, m := range cc.podStore.List() {
+		pod := m.(*v1.Pod)
+		if l.Matches(labels.Set(pod.Labels)) {
+			pods = append(pods, *pod)
+		}
 	}
 
 	healthyPods := 0
