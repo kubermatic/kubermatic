@@ -79,7 +79,7 @@ type Clientset interface {
 
 // WrappedClientset is an implementation of the ExtensionsClientset interface to work with extensions
 type WrappedClientset struct {
-	Client *rest.RESTClient
+	Client rest.Interface
 }
 
 // ClusterAddons returns an interface to interact with ClusterAddons
@@ -197,6 +197,7 @@ type SSHKeyTPRInterface interface {
 	Create(*UserSSHKey) (*UserSSHKey, error)
 	List() (UserSSHKeyList, error)
 	Delete(fingerprint string, options *v1.DeleteOptions) error
+	Update(key *UserSSHKey) (result *UserSSHKey, err error)
 }
 
 // SSHKeyTPRClient is an implementation of SSHKeyTPRInterface to work with stored SSH keys
@@ -238,6 +239,19 @@ func (s *SSHKeyTPRClient) List() (UserSSHKeyList, error) {
 
 	return result, err
 
+}
+
+// Update takes the representation of a ssh key and updates it. Returns the server's representation of the ssh key, and an error, if there is any.
+func (s *SSHKeyTPRClient) Update(key *UserSSHKey) (result *UserSSHKey, err error) {
+	result = &UserSSHKey{}
+	err = s.client.Put().
+		Namespace(SSHKeyTPRNamespace).
+		Resource(SSHKeyTPRName).
+		Name(key.Metadata.Name).
+		Body(key).
+		Do().
+		Into(result)
+	return
 }
 
 // Delete takes the fingerprint of the ssh key and deletes it. Returns an error if one occurs.

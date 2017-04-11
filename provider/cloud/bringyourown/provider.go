@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
@@ -59,7 +60,7 @@ func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec,
 
 func (b *bringyourown) CreateNodes(
 	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec, instances int,
+	cluster *api.Cluster, spec *api.NodeSpec, instances int, keys []extensions.UserSSHKey,
 ) ([]*api.Node, error) {
 	return nil, errors.New("not implemented")
 }

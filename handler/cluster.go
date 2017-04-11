@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
@@ -17,6 +18,7 @@ import (
 func newClusterEndpointV2(
 	kps map[string]provider.KubernetesProvider,
 	dcs map[string]provider.DatacenterMeta,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReqV2)
@@ -40,6 +42,7 @@ func newClusterEndpointV2(
 		}
 
 		switch req.Cloud.Name {
+		// Move from implementation use fingerprint / name but not both
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
 				AccessKeyID:     req.Cloud.User,
@@ -71,6 +74,27 @@ func newClusterEndpointV2(
 				return nil, NewConflict("cluster", req.Cloud.Region, req.Spec.HumanReadableName)
 			}
 			return nil, err
+		}
+
+		// TODO(realfake): Duplicated code move to function
+		sshClient := masterClientset.SSHKeyTPR(req.user.Name)
+		keys, err := sshClient.List()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, key := range keys.Items {
+			for _, sshKeyName := range req.SSHKeys {
+				if sshKeyName != key.Metadata.Name {
+					continue
+				}
+				key.Clusters = append(key.Clusters, c.Metadata.Name)
+				// TODO(realfake): This takes a long time look forward to async / batch implementation
+				_, err := sshClient.Update(&key)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		return c, nil
@@ -194,6 +218,7 @@ func clustersEndpoint(
 func deleteClusterEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteClusterReq)
@@ -242,6 +267,27 @@ func deleteClusterEndpoint(
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err
+		}
+
+		// TODO(realfake): Duplicated code move to function
+		sshClient := masterClientset.SSHKeyTPR(req.user.Name)
+		keys, err := sshClient.List()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, key := range keys.Items {
+			for i, clusterName := range key.Clusters {
+				if clusterName != req.cluster {
+					continue
+				}
+				// TODO(realfake): This takes a long time look forward to async / batch implementation
+				key.Clusters = append(key.Clusters[:i], key.Clusters[i+1:]...)
+				_, err := sshClient.Update(&key)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		return nil, nil

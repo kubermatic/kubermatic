@@ -274,7 +274,7 @@ func (r Routing) newClusterHandler() http.Handler {
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		newClusterEndpointV2(r.kubernetesProviders, r.datacenters),
+		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterTPRClient),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -334,7 +334,7 @@ func (r Routing) clustersHandler() http.Handler {
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders),
+		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient),
 		decodeDeleteClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -370,7 +370,7 @@ func (r Routing) nodesHandlerV2() http.Handler {
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.ctx,
-		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders),
+		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
