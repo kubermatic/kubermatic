@@ -1,6 +1,16 @@
 package handler
 
-/*
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/kubermatic/api"
+)
+
 func TestNewClusterEndpoint(t *testing.T) {
 	reqObj := &api.Cluster{
 		Spec: api.ClusterSpec{
@@ -512,4 +522,3 @@ func createTestCluster(t *testing.T, e http.Handler) (*api.Cluster, error) {
 
 	return c, nil
 }
-*/
