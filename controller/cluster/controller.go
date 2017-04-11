@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/api/controller/update"
 	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/kubernetes"
@@ -51,6 +52,7 @@ const (
 type clusterController struct {
 	dc                  string
 	tprClient           extensions.Clientset
+	etcdClusterClient   etcd.Clientset
 	client              kubernetes.Interface
 	queue               *cache.FIFO // of namespace keys
 	recorder            record.EventRecorder
@@ -79,6 +81,9 @@ type clusterController struct {
 	addonController *cache.Controller
 	addonStore      cache.Store
 
+	etcdClusterController *cache.Controller
+	etcdClusterStore      cache.Indexer
+
 	pvcController *cache.Controller
 	pvcStore      cache.Indexer
 
@@ -104,6 +109,7 @@ func NewController(
 	dc string,
 	client kubernetes.Interface,
 	tprClient extensions.Clientset,
+	etcdClusterClient etcd.Clientset,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -116,6 +122,7 @@ func NewController(
 		dc:                  dc,
 		client:              client,
 		tprClient:           tprClient,
+		etcdClusterClient:   etcdClusterClient,
 		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                 cps,
 		updates:             updates,
@@ -281,6 +288,21 @@ func NewController(
 		namespaceIndexer,
 	)
 
+	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.etcdClusterClient.Cluster(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&etcd.Cluster{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
 	cc.addonStore, cc.addonController = cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
@@ -313,11 +335,14 @@ func NewController(
 	}
 	cc.updateController = &update.Controller{
 		Client:              cc.client,
+		TprClient:           cc.tprClient,
+		EtcdClusterClient:   cc.etcdClusterClient,
 		MasterResourcesPath: cc.masterResourcesPath,
 		DC:                  cc.dc,
 		Versions:            cc.versions,
 		Updates:             cc.updates,
 		DepStore:            cc.depStore,
+		EtcdClusterStore:    cc.etcdClusterStore,
 	}
 	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
@@ -647,6 +672,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.serviceController.Run(wait.NeverStop)
 	go cc.ingressController.Run(wait.NeverStop)
 	go cc.addonController.Run(wait.NeverStop)
+	go cc.etcdClusterController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
 	go cc.cmController.Run(wait.NeverStop)
 
@@ -678,6 +704,7 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.serviceController.HasSynced() &&
 		cc.ingressController.HasSynced() &&
 		cc.addonController.HasSynced() &&
+		cc.etcdClusterController.HasSynced() &&
 		cc.pvcController.HasSynced() &&
 		cc.cmController.HasSynced()
 }

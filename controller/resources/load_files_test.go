@@ -157,14 +157,14 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	v := &api.MasterVersion{
-		Name:                     "1.5.3",
-		ID:                       "1.5.3",
-		Default:                  true,
-		AllowedNodeVersions:      []string{"1.3.0"},
-		EtcdDeploymentYaml:       "etcd-dep.yaml",
-		ApiserverDeploymentYaml:  "apiserver-dep.yaml",
-		ControllerDeploymentYaml: "controller-manager-dep.yaml",
-		SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+		Name:                       "1.5.3",
+		ID:                         "1.5.3",
+		Default:                    true,
+		AllowedNodeVersions:        []string{"1.3.0"},
+		EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 		Values: map[string]string{
 			"k8s-version":  "v1.5.3",
 			"etcd-version": "3.0.14-kubeadm",
@@ -188,10 +188,10 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	deps := map[string]string{
-		v.EtcdDeploymentYaml:       "loaddeploymentfile-etcd-result",
-		v.SchedulerDeploymentYaml:  "loaddeploymentfile-scheduler-result",
-		v.ControllerDeploymentYaml: "loaddeploymentfile-controller-manager-result",
-		v.ApiserverDeploymentYaml:  "loaddeploymentfile-apiserver-result",
+		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-result",
+		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
+		v.ControllerDeploymentYaml:   "loaddeploymentfile-controller-manager-result",
+		v.ApiserverDeploymentYaml:    "loaddeploymentfile-apiserver-result",
 	}
 
 	for s, r := range deps {
@@ -210,14 +210,14 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	v := &api.MasterVersion{
-		Name:                     "1.5.3",
-		ID:                       "1.5.3",
-		Default:                  true,
-		AllowedNodeVersions:      []string{"1.3.0"},
-		EtcdDeploymentYaml:       "etcd-dep.yaml",
-		ApiserverDeploymentYaml:  "apiserver-dep.yaml",
-		ControllerDeploymentYaml: "controller-manager-dep.yaml",
-		SchedulerDeploymentYaml:  "scheduler-dep.yaml",
+		Name:                       "1.5.3",
+		ID:                         "1.5.3",
+		Default:                    true,
+		AllowedNodeVersions:        []string{"1.3.0"},
+		EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 		Values: map[string]string{
 			"k8s-version":  "v1.5.3",
 			"etcd-version": "3.0.14-kubeadm",
@@ -244,10 +244,10 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	deps := map[string]string{
-		v.EtcdDeploymentYaml:       "loaddeploymentfile-etcd-result",
-		v.SchedulerDeploymentYaml:  "loaddeploymentfile-scheduler-result",
-		v.ControllerDeploymentYaml: "loaddeploymentfile-aws-controller-manager-result",
-		v.ApiserverDeploymentYaml:  "loaddeploymentfile-aws-apiserver-result",
+		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-result",
+		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
+		v.ControllerDeploymentYaml:   "loaddeploymentfile-aws-controller-manager-result",
+		v.ApiserverDeploymentYaml:    "loaddeploymentfile-aws-apiserver-result",
 	}
 
 	for s, r := range deps {
