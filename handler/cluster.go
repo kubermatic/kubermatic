@@ -85,13 +85,14 @@ func newClusterEndpointV2(
 
 		for _, key := range keys.Items {
 			for _, sshKeyName := range req.SSHKeys {
-				if sshKeyName == key.Metadata.Name {
-					key.Clusters = append(key.Clusters, c.Metadata.Name)
-					// TODO(realfake): This takes a long time look forward to async / batch implementation
-					_, err := sshClient.Update(&key)
-					if err != nil {
-						return nil, err
-					}
+				if sshKeyName != key.Metadata.Name {
+					continue
+				}
+				key.Clusters = append(key.Clusters, c.Metadata.Name)
+				// TODO(realfake): This takes a long time look forward to async / batch implementation
+				_, err := sshClient.Update(&key)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
@@ -277,13 +278,14 @@ func deleteClusterEndpoint(
 
 		for _, key := range keys.Items {
 			for i, clusterName := range key.Clusters {
-				if clusterName == req.cluster {
-					// TODO(realfake): This takes a long time look forward to async / batch implementation
-					key.Clusters = append(key.Clusters[:i], key.Clusters[i+1:]...)
-					_, err := sshClient.Update(&key)
-					if err != nil {
-						return nil, err
-					}
+				if clusterName != req.cluster {
+					continue
+				}
+				// TODO(realfake): This takes a long time look forward to async / batch implementation
+				key.Clusters = append(key.Clusters[:i], key.Clusters[i+1:]...)
+				_, err := sshClient.Update(&key)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
