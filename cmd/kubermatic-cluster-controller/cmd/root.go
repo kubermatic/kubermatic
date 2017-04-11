@@ -31,7 +31,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	kkubernetes "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

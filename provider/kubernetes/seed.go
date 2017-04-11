@@ -11,9 +11,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
-	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
 )
 

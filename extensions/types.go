@@ -4,12 +4,10 @@ import (
 	"time"
 
 	apitypes "github.com/kubermatic/api"
-	"k8s.io/client-go/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apimachinery/announced"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/runtime/schema"
 )
 
 const (
@@ -66,21 +64,6 @@ func addTypes(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func init() {
-	if err := announced.NewGroupMetaFactory(
-		&announced.GroupMetaFactoryArgs{
-			GroupName:                  GroupName,
-			VersionPreferenceOrder:     []string{SchemeGroupVersion.Version},
-			AddInternalObjectsToScheme: SchemeBuilder.AddToScheme,
-		},
-		announced.VersionToSchemeFunc{
-			SchemeGroupVersion.Version: SchemeBuilder.AddToScheme,
-		},
-	).Announce().RegisterAndEnable(); err != nil {
-		panic(err)
-	}
-}
-
 // AddonPhase is the life cycle phase of a add on.
 type AddonPhase string
 
@@ -124,7 +107,7 @@ func (e *ClusterAddon) GetObjectKind() schema.ObjectKind {
 }
 
 //GetObjectMeta returns the object metadata
-func (e *ClusterAddon) GetObjectMeta() meta.Object {
+func (e *ClusterAddon) GetObjectMeta() metav1.Object {
 	return &e.Metadata
 }
 
@@ -151,7 +134,7 @@ func (e *ClNode) GetObjectKind() schema.ObjectKind {
 }
 
 // GetObjectMeta returns the object metadata
-func (e *ClNode) GetObjectMeta() meta.Object {
+func (e *ClNode) GetObjectMeta() metav1.Object {
 	return &e.Metadata
 }
 

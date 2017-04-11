@@ -12,15 +12,13 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
-	kerrors "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/v1"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
-	"k8s.io/client-go/pkg/fields"
-	"k8s.io/client-go/pkg/labels"
-	"k8s.io/client-go/pkg/selection"
-	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
 )
 
@@ -100,9 +98,9 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	// sanity checks for a fresh cluster
 	switch {
 	case user.Name == "":
-		return nil, kerrors.NewBadRequest("cluster user is required")
+		return nil, errors.NewBadRequest("cluster user is required")
 	case spec.HumanReadableName == "":
-		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
+		return nil, errors.NewBadRequest("cluster humanReadableName is required")
 	}
 
 	clusterName := rand.String(9)
@@ -166,6 +164,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	if err != nil {
 		return nil, err
 	}
+	p.client.AppsV1beta1().Deployments().Watch()
 	ns, err = p.client.Namespaces().Create(ns)
 	if err != nil {
 		return nil, err

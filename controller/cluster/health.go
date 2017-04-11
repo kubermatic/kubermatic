@@ -5,7 +5,6 @@ import (
 	"github.com/kubermatic/api/extensions/etcd"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/labels"
 )
 
 const (

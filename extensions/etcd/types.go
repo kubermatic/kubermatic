@@ -3,12 +3,7 @@ package etcd
 import (
 	"time"
 
-	"k8s.io/client-go/pkg/api/meta"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apimachinery/announced"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/runtime/schema"
 )
 
 const (

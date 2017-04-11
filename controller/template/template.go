@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	texttemplate "text/template"
-
-	"k8s.io/client-go/pkg/util/yaml"
 )
 
 // Template holds the actual cluster template

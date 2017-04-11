@@ -1,10 +1,9 @@
 package: github.com/kubermatic/api
 import:
 - package: k8s.io/client-go
-  version: 5fe6fc56cb38d04ef4af601a03599c984229dea2
+  version: v3.0.0-beta.0
 - package: github.com/auth0/go-jwt-middleware
 - package: github.com/digitalocean/godo
-  version: c3a2aad75d576aed8f14dcaea896e40eff83dd18
 - package: github.com/go-kit/kit
   version: ~0.3.0
 - package: github.com/golang/glog
@@ -23,9 +22,6 @@ import:
 - package: gopkg.in/yaml.v2
 - package: github.com/cloudflare/cfssl
 - package: k8s.io/helm
-  version: ~2.1.0
 - package: github.com/Masterminds/semver
-  version: ~1.2.2
 - package: github.com/mitchellh/mapstructure
-  version: db1efb556f84b25a0a13a04aad883943538ad2e0
 - package: github.com/go-test/deep
