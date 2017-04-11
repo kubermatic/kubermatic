@@ -33,7 +33,7 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&Cluster{},
 		&ClusterList{},
-		&apiv1.ListOptions{},
+		&metav1.ListOptions{},
 	)
 	return nil
 }
@@ -41,9 +41,9 @@ func addTypes(scheme *runtime.Scheme) error {
 // Cluster represent an etcd cluster
 type Cluster struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
-	Spec            ClusterSpec      `json:"spec"`
-	Status          ClusterStatus    `json:"status"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
+	Spec            ClusterSpec       `json:"spec"`
+	Status          ClusterStatus     `json:"status"`
 }
 
 // ClusterList is a list of etcd clusters.
