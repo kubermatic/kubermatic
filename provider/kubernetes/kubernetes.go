@@ -31,8 +31,8 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient extensions.Clientset
-	client    *kubernetes.Clientset
+	tprClient       extensions.Clientset
+	kuberntesClient *kubernetes.Clientset
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
@@ -57,11 +57,11 @@ func NewKubernetesProvider(
 	}
 
 	return &kubernetesProvider{
-		cps:       cps,
-		client:    client,
-		tprClient: trpClient,
-		dev:       dev,
-		config:    clientConfig,
+		cps:             cps,
+		kuberntesClient: client,
+		tprClient:       trpClient,
+		dev:             dev,
+		config:          clientConfig,
 	}
 }
 
@@ -75,7 +75,7 @@ func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 			return 0, err
 		}
 		sel = sel.Add(*req)
-		nsList, err := p.client.Namespaces().List(meta_v1.ListOptions{LabelSelector: sel.String()})
+		nsList, err := p.kuberntesClient.Namespaces().List(meta_v1.ListOptions{LabelSelector: sel.String()})
 		if err != nil {
 			return 0, err
 		}
@@ -166,7 +166,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	if err != nil {
 		return nil, err
 	}
-	ns, err = p.client.Namespaces().Create(ns)
+	ns, err = p.kuberntesClient.Namespaces().Create(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	defer func(prov provider.CloudProvider, c *api.Cluster, err error) {
 		if err != nil {
 			_ = prov.CleanUp(c)
-			_ = p.client.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &meta_v1.DeleteOptions{})
+			_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &meta_v1.DeleteOptions{})
 		}
 	}(prov, c, err)
 
@@ -250,7 +250,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		return nil, err
 	}
 
-	ns, err = p.client.Namespaces().Create(ns)
+	ns, err = p.kuberntesClient.Namespaces().Create(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c, err = UnmarshalCluster(p.cps, ns)
 
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, clusterName), &meta_v1.DeleteOptions{})
+		_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, clusterName), &meta_v1.DeleteOptions{})
 		return nil, err
 	}
 
@@ -269,7 +269,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster), meta_v1.GetOptions{})
+	ns, err := p.kuberntesClient.Namespaces().Get(NamespaceName(user.Name, cluster), meta_v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
@@ -340,7 +340,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 			return nil, err
 		}
 
-		ns, err = p.client.Namespaces().Update(ns)
+		ns, err = p.kuberntesClient.Namespaces().Update(ns)
 		if err == nil {
 			c, err = UnmarshalCluster(p.cps, ns)
 			if err != nil {
@@ -365,11 +365,11 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *api_v1.Names
 		return nil
 	}
 
-	err := p.client.Deployments(ns.Name).Delete("controller-manager", &meta_v1.DeleteOptions{})
+	err := p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("controller-manager", &meta_v1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
-	err = p.client.Deployments(ns.Name).Delete("apiserver-v5", &meta_v1.DeleteOptions{})
+	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver-v5", &meta_v1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
 	}
@@ -391,7 +391,7 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 		l[userLabelKey] = LabelUser(user.Name)
 	}
 
-	nsList, err := p.client.Namespaces().List(meta_v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
+	nsList, err := p.kuberntesClient.Namespaces().List(meta_v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +429,7 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 		}
 	}
 
-	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &meta_v1.DeleteOptions{})
+	return p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, cluster), &meta_v1.DeleteOptions{})
 }
 
 func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {

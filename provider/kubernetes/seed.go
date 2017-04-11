@@ -85,9 +85,9 @@ func NewSeedProvider(
 				PrivateIntf: dc.Spec.Seed.BringYourOwn.PrivateIntf,
 			}
 			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
+				clientCA, err := c.CreateKeyCert("seed-etcd-kuberntesClient-ca", []string{})
 				if err != nil {
-					log.Fatalf("failed to create a client ca for seed dc %q", dcName)
+					log.Fatalf("failed to create a kuberntesClient ca for seed dc %q", dcName)
 				}
 				c.Spec.Cloud.BringYourOwn.ClientKeyCert = *clientCA
 			}
