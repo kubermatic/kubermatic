@@ -7,7 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -44,7 +43,7 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddonList{},
 		&ClNode{},
 		&ClNodeList{},
-		&apiv1.ListOptions{},
+		&metav1.ListOptions{},
 	)
 	m := map[string]runtime.Object{
 		"UserSshKey":     &UserSSHKey{},
@@ -84,9 +83,9 @@ const (
 // ClusterAddon specifies a cluster addon
 type ClusterAddon struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
-	Name            string           `json:"name"`
-	Phase           AddonPhase       `json:"phase"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
+	Name            string            `json:"name"`
+	Phase           AddonPhase        `json:"phase"`
 	Version         int32
 	Deployed        time.Time
 	ReleaseName     string
@@ -114,7 +113,7 @@ func (e *ClusterAddon) GetObjectMeta() metav1.Object {
 // ClNode contains node information to be saved
 type ClNode struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
 
 	Spec   apitypes.NodeSpec   `json:"spec"`
 	Status apitypes.NodeStatus `json:"status,omitempty"`
@@ -161,7 +160,7 @@ func (el *ClusterAddonList) GetListMeta() metav1.List {
 // UserSSHKey specifies a users UserSSHKey
 type UserSSHKey struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
 
 	Name        string `json:"name"`
 	Fingerprint string `json:"fingerprint"`
