@@ -13,13 +13,15 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/apimachinery/pkg/api/errors"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
+	api_v1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/fields"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -73,7 +75,7 @@ func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 			return 0, err
 		}
 		sel = sel.Add(*req)
-		nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: sel.String()})
+		nsList, err := p.client.Namespaces().List(meta_v1.ListOptions{LabelSelector: sel.String()})
 		if err != nil {
 			return 0, err
 		}
@@ -107,12 +109,12 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, kerrors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
+			return nil, errors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
 		}
 	}
 
-	ns := &v1.Namespace{
-		ObjectMeta: v1.ObjectMeta{
+	ns := &api_v1.Namespace{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        NamespaceName(user.Name, clusterName),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
@@ -164,19 +166,18 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	if err != nil {
 		return nil, err
 	}
-	p.client.AppsV1beta1().Deployments().Watch()
 	ns, err = p.client.Namespaces().Create(ns)
 	if err != nil {
 		return nil, err
 	}
 
 	// ensure the NS is deleted when any error occurs
-	defer func(ns *v1.Namespace, prov provider.CloudProvider, c *api.Cluster, err error) {
+	defer func(prov provider.CloudProvider, c *api.Cluster, err error) {
 		if err != nil {
 			_ = prov.CleanUp(c)
-			_ = p.client.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &v1.DeleteOptions{})
+			_ = p.client.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &meta_v1.DeleteOptions{})
 		}
-	}(ns, prov, c, err)
+	}(prov, c, err)
 
 	return UnmarshalCluster(p.cps, ns)
 	if err != nil {
@@ -201,21 +202,21 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	// sanity checks for a fresh cluster
 	switch {
 	case user.Name == "":
-		return nil, kerrors.NewBadRequest("cluster user is required")
+		return nil, errors.NewBadRequest("cluster user is required")
 	case spec.HumanReadableName == "":
-		return nil, kerrors.NewBadRequest("cluster humanReadableName is required")
+		return nil, errors.NewBadRequest("cluster humanReadableName is required")
 	}
 
 	clusterName := rand.String(9)
 
 	for _, c := range cs {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, kerrors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
+			return nil, errors.NewAlreadyExists(rbac.Resource("cluster"), spec.HumanReadableName)
 		}
 	}
 
-	ns := &v1.Namespace{
-		ObjectMeta: v1.ObjectMeta{
+	ns := &api_v1.Namespace{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        NamespaceName(user.Name, clusterName),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
@@ -257,21 +258,21 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c, err = UnmarshalCluster(p.cps, ns)
 
 	if err != nil {
-		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, clusterName), &v1.DeleteOptions{})
+		_ = p.client.Namespaces().Delete(NamespaceName(user.Name, clusterName), &meta_v1.DeleteOptions{})
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
+func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *api_v1.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster), metav1.GetOptions{})
+	ns, err := p.client.Namespaces().Get(NamespaceName(user.Name, cluster), meta_v1.GetOptions{})
 	if err != nil {
-		if kerrors.IsNotFound(err) {
-			return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		if errors.IsNotFound(err) {
+			return nil, nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 		}
 		return nil, nil, err
 	}
@@ -284,7 +285,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	_, isAdmin := user.Roles["admin"]
 	if c.Metadata.User != user.Name && !isAdmin {
 		// don't return Forbidden, not NotFound to obfuscate the existence
-		return nil, nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	return c, ns, nil
@@ -305,7 +306,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 
 		var c *api.Cluster
-		var ns *v1.Namespace
+		var ns *api_v1.Namespace
 		c, ns, err = p.clusterAndNS(user, cluster)
 		if err != nil {
 			return nil, err
@@ -348,7 +349,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 			return c, nil
 		}
-		if !kerrors.IsConflict(err) {
+		if !errors.IsConflict(err) {
 			return nil, err
 		}
 	}
@@ -359,16 +360,16 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // this is a super hack and dirty hack to load the AWS cloud config from the cluster controller's templates
 // to create the config map by hand for now.
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
-func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *v1.Namespace) error {
+func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *api_v1.Namespace) error {
 	if c.Spec.Cloud.GetAWS() == nil {
 		return nil
 	}
 
-	err := p.client.Deployments(ns.Name).Delete("controller-manager", &v1.DeleteOptions{})
+	err := p.client.Deployments(ns.Name).Delete("controller-manager", &meta_v1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
-	err = p.client.Deployments(ns.Name).Delete("apiserver-v5", &v1.DeleteOptions{})
+	err = p.client.Deployments(ns.Name).Delete("apiserver-v5", &meta_v1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
 	}
@@ -390,7 +391,7 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 		l[userLabelKey] = LabelUser(user.Name)
 	}
 
-	nsList, err := p.client.Namespaces().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
+	nsList, err := p.client.Namespaces().List(meta_v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: fields.Everything().String()})
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +418,7 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 		return err
 	}
 
-	list, err := p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).List(v1.ListOptions{LabelSelector: labels.Everything().String()})
+	list, err := p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).List(meta_v1.ListOptions{LabelSelector: labels.Everything().String()})
 	if err != nil {
 		return err
 	}
@@ -428,7 +429,7 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 		}
 	}
 
-	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &v1.DeleteOptions{})
+	return p.client.Namespaces().Delete(NamespaceName(user.Name, cluster), &meta_v1.DeleteOptions{})
 }
 
 func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
@@ -439,7 +440,7 @@ func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, add
 
 	// Create an instance of our TPR
 	addon := &extensions.ClusterAddon{
-		Metadata: v1.ObjectMeta{
+		Metadata: meta_v1.ObjectMeta{
 			Name: fmt.Sprintf("addon-%s-%s", strings.Replace(addonName, "/", "", -1), rand.String(4)),
 		},
 		Name:  addonName,
@@ -455,7 +456,7 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 		return nil, err
 	}
 
-	meta := v1.ObjectMeta{
+	meta := meta_v1.ObjectMeta{
 		Name:        node.Metadata.UID,
 		Annotations: node.Metadata.Annotations,
 	}
