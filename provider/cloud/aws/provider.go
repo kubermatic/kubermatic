@@ -602,9 +602,10 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	}
 	var keyname string
 	if len(keys) < 1 {
-		glog.Info("could not find keypair, fallback")
+		// The used hasn't any SSHTPRs, if so fall back to SSH keys from V1 endpoint
 		keyname = cluster.Spec.Cloud.AWS.SSHKeyName
 	} else {
+		// Get a already registered key from AWS or if non is found upload a key
 		keyname, _, err = getOrCreateKey(keys, client)
 	}
 	if err != nil {
