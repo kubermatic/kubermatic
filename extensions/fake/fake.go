@@ -1,4 +1,4 @@
-package extensions
+package fake
 
 import (
 	"bytes"
@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kubermatic/api/extensions"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/testapi"
 	"k8s.io/client-go/pkg/apimachinery/registered"
 	uapi "k8s.io/client-go/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/rest/fake"
 )
 
@@ -25,7 +25,7 @@ func objBody(object interface{}) io.ReadCloser {
 }
 
 // FakeWrapClientsetWithExtensions returns a fake clientset which should only be used for testing
-func FakeWrapClientsetWithExtensions(config *rest.Config) Clientset {
+func FakeWrapClientsetWithExtensions() extensions.Clientset {
 	fakeClient := &fake.RESTClient{
 		NegotiatedSerializer: testapi.Default.NegotiatedSerializer(),
 		Resp: &http.Response{
@@ -38,7 +38,7 @@ func FakeWrapClientsetWithExtensions(config *rest.Config) Clientset {
 			return &http.Response{StatusCode: 200, Header: header, Body: objBody(&uapi.APIVersions{Versions: []string{"version1", registered.GroupOrDie(api.GroupName).GroupVersion.String()}})}, nil
 		}),
 	}
-	return &WrappedClientset{
+	return &extensions.WrappedClientset{
 		Client: fakeClient,
 	}
 }
