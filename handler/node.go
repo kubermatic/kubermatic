@@ -231,7 +231,7 @@ func deleteNodeEndpoint(
 func createNodesEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
-	clientset extensions.Clientset,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
@@ -264,7 +264,7 @@ func createNodesEndpoint(
 		}
 
 		var keys []extensions.UserSSHKey
-		keyList, err := clientset.SSHKeyTPR(req.user.Name).List()
+		keyList, err := masterClientset.SSHKeyTPR(req.user.Name).List()
 		if err != nil {
 			return nil, err
 		}

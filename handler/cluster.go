@@ -18,7 +18,7 @@ import (
 func newClusterEndpointV2(
 	kps map[string]provider.KubernetesProvider,
 	dcs map[string]provider.DatacenterMeta,
-	clientset extensions.Clientset,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReqV2)
@@ -77,7 +77,7 @@ func newClusterEndpointV2(
 		}
 
 		// TODO(realfake): Duplicated code move to function
-		sshClient := clientset.SSHKeyTPR(req.user.Name)
+		sshClient := masterClientset.SSHKeyTPR(req.user.Name)
 		keys, err := sshClient.List()
 		if err != nil {
 			return nil, err
@@ -218,7 +218,7 @@ func clustersEndpoint(
 func deleteClusterEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
-	clientset extensions.Clientset,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteClusterReq)
@@ -270,7 +270,7 @@ func deleteClusterEndpoint(
 		}
 
 		// TODO(realfake): Duplicated code move to function
-		sshClient := clientset.SSHKeyTPR(req.user.Name)
+		sshClient := masterClientset.SSHKeyTPR(req.user.Name)
 		keys, err := sshClient.List()
 		if err != nil {
 			return nil, err
