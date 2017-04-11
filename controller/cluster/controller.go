@@ -22,6 +22,7 @@ import (
 	uruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -60,34 +61,34 @@ type clusterController struct {
 	externalURL         string
 	addonResourcesPath  string
 	// store namespaces with the role=kubermatic-cluster label
-	nsController *cache.Controller
+	nsController cache.Controller
 	nsStore      cache.Store
 
-	podController *cache.Controller
+	podController cache.Controller
 	podStore      cache.Indexer
 
-	depController *cache.Controller
+	depController cache.Controller
 	depStore      cache.Indexer
 
-	secretController *cache.Controller
+	secretController cache.Controller
 	secretStore      cache.Indexer
 
-	serviceController *cache.Controller
+	serviceController cache.Controller
 	serviceStore      cache.Indexer
 
-	ingressController *cache.Controller
+	ingressController cache.Controller
 	ingressStore      cache.Indexer
 
-	addonController *cache.Controller
+	addonController cache.Controller
 	addonStore      cache.Store
 
-	etcdClusterController *cache.Controller
+	etcdClusterController cache.Controller
 	etcdClusterStore      cache.Indexer
 
-	pvcController *cache.Controller
+	pvcController cache.Controller
 	pvcStore      cache.Indexer
 
-	cmController *cache.Controller
+	cmController cache.Controller
 	cmStore      cache.Indexer
 
 	cps map[string]provider.CloudProvider
@@ -135,7 +136,8 @@ func NewController(
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cc.recorder = eventBroadcaster.NewRecorder(v1.EventSource{Component: "clustermanager"})
+	// TODO(realfake): Not shure which scheme we should use ??
+	cc.recorder = eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "clustermanager"})
 	eventBroadcaster.StartLogging(glog.Infof)
 	e := cc.client.CoreV1().Events("")
 	es := corev1.EventSinkImpl{Interface: e}
