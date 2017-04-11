@@ -17,9 +17,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 )
 
@@ -482,11 +484,12 @@ func (a *aws) userData(
 	clusterState *api.Cluster,
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
+	authorizedKeys []string,
 ) error {
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: []string{},
+		SSHAuthorizedKeys: authorizedKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -558,7 +561,43 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 	return *latestImage.ImageId, nil
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
+	if len(keys) < 1 {
+		return "", false, errors.New("needs at least one key")
+	}
+	filters := make([]*ec2.Filter, 1)
+	filters[0].Name = sdk.String("fingerprint")
+	filters[0].Values = make([]*string, len(keys))
+
+	for index, key := range keys {
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.PublicKey))
+		if err != nil {
+			return "", false, err
+		}
+		filters[0].Values[index] = sdk.String(ssh.FingerprintLegacyMD5(pubKey))
+	}
+
+	responesKeys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
+		Filters: filters,
+	})
+	if err != nil {
+		return "", false, err
+	}
+
+	// Return here if we got a matching key
+	if len(responesKeys.KeyPairs) > 0 {
+		return *responesKeys.KeyPairs[0].KeyName, false, nil
+	}
+
+	_, err = client.ImportKeyPair(&ec2.ImportKeyPairInput{
+		KeyName:           sdk.String(keys[0].Name),
+		PublicKeyMaterial: []byte(keys[0].PublicKey),
+	})
+
+	return "", true, err
+}
+
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
@@ -569,6 +608,11 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	client, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
+	}
+
+	var skeys []string
+	for _, k := range keys {
+		skeys = append(skeys, k.PublicKey)
 	}
 	var createdNodes []*api.Node
 	imageID, err := a.GetContainerLinuxAmiID(node.AWS.ContainerLinux.Version, client)
@@ -587,7 +631,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC, skeys); err != nil {
 			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
@@ -619,11 +663,20 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
-			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
 			NetworkInterfaces: netSpec,
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: sdk.String(fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)),
 			},
+		}
+
+		keyname, _, err := getOrCreateKey(keys, client)
+		// Ignore error if old key is used
+		if err != nil && cluster.Spec.Cloud.AWS.SSHKeyName == "" {
+			return []*api.Node{}, err
+		} else if keyname != "" {
+			instanceRequest.SetKeyName(keyname)
+		} else {
+			instanceRequest.SetKeyName(cluster.Spec.Cloud.AWS.SSHKeyName)
 		}
 
 		newNode, err := launch(client, instanceName, instanceRequest, cluster)

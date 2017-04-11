@@ -32,7 +32,7 @@ type CloudSpecProvider interface {
 
 // NodeProvider declares methods for creating/listing nodes.
 type NodeProvider interface {
-	CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int) ([]*api.Node, error)
+	CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int, []extensions.UserSSHKey) ([]*api.Node, error)
 	Nodes(context.Context, *api.Cluster) ([]*api.Node, error)
 	DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error
 }
@@ -73,6 +73,15 @@ type KubernetesProvider interface {
 
 	// CreateNode creates a node ThirdPartyResource
 	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
+
+	// SetSSHKeys updates the keys of a cluster
+	SetSSHKeys(user User, cluster string, keys []extensions.UserSSHKey) error
+
+	// DeleteSSHKey updates the keys of a cluster
+	DeleteSSHKey(user User, cluster string, key extensions.UserSSHKey) error
+
+	// GetSSHKeys returns all SSH keys for a cluster
+	GetSSHKeys(user User, cluster string) ([]extensions.UserSSHKey, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

@@ -11,6 +11,7 @@ import (
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
@@ -96,7 +97,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	return &n, nil
 }
 
-func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int) ([]*api.Node, error) {
+func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, spec *api.NodeSpec, instances int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, found := do.dcs[spec.DatacenterName]
 	if !found || dc.Spec.Digitalocean == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
@@ -125,12 +126,16 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			return created, err
 		}
 
+		var skeys []string
+		for _, k := range keys {
+			skeys = append(skeys, k.PublicKey)
+		}
+
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
 		data := ktemplate.Data{
-			DC:          spec.DatacenterName,
-			ClusterName: cluster.Metadata.Name,
-			//
-			SSHAuthorizedKeys: cSpec.SSHKeys,
+			DC:                spec.DatacenterName,
+			ClusterName:       cluster.Metadata.Name,
+			SSHAuthorizedKeys: append(cSpec.SSHKeys, skeys...),
 			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
 			Region:            dc.Spec.Digitalocean.Region,

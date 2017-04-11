@@ -9,9 +9,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 func newClusterEndpointV2(
@@ -39,21 +42,42 @@ func newClusterEndpointV2(
 			return nil, NewBadRequest("please provide at least one key")
 		}
 
+		var extKeys []extensions.UserSSHKey
+		for _, key := range req.SSHKeys {
+			fingerprint, err := extensions.GenerateNormalizedFigerprint(key.PublicKey)
+			if err != nil {
+				return nil, err
+			}
+			extKeys = append(extKeys, extensions.UserSSHKey{
+				Metadata: v1.ObjectMeta{
+					// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
+					Name: extensions.ConstructNewSerialKeyName(fingerprint),
+				},
+				Name:        key.Name,
+				Fingerprint: fingerprint,
+				PublicKey:   key.PublicKey,
+			})
+		}
 		switch req.Cloud.Name {
 		case provider.AWSCloudProvider:
 			req.Cloud.AWS = &api.AWSCloudSpec{
 				AccessKeyID:     req.Cloud.User,
 				SecretAccessKey: req.Cloud.Secret,
 				// TODO: More keys!
-				SSHKeyName: req.SSHKeys[0],
+				SSHKeyName: req.SSHKeys[0].Name,
 			}
-			break
 		case provider.DigitaloceanCloudProvider:
+
+			// Generate fingerprints for digitalocean, they use them as their key identifier
+			pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(req.SSHKeys[0].PublicKey))
+			if err != nil {
+				return "", err
+			}
+
 			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   req.Cloud.Secret,
-				SSHKeys: req.SSHKeys,
+				SSHKeys: []string{ssh.FingerprintLegacyMD5(pubKey)},
 			}
-			break
 		case provider.FakeCloudProvider:
 			req.Cloud.Fake = &api.FakeCloudSpec{
 				Token: req.Cloud.Secret,
@@ -62,6 +86,7 @@ func newClusterEndpointV2(
 			req.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
 				PrivateIntf: req.Cloud.BringYourOwn.PrivateIntf,
 			}
+		default:
 		}
 
 		req.Cloud.DatacenterName = req.Cloud.Region
@@ -73,7 +98,7 @@ func newClusterEndpointV2(
 			return nil, err
 		}
 
-		return c, nil
+		return c, kp.SetSSHKeys(req.user, c.Metadata.Name, extKeys)
 	}
 }
 
@@ -295,11 +320,16 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+type requestExtensionsUserSSHKey struct {
+	Name      string `json:"name"`
+	PublicKey string `json:"public_key"`
+}
+
 type newClusterReqV2 struct {
 	userReq
-	Cloud   *api.CloudSpec   `json:"cloud"`
-	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []string         `json:"ssh_keys"`
+	Cloud   *api.CloudSpec                `json:"cloud"`
+	Spec    *api.ClusterSpec              `json:"spec"`
+	SSHKeys []requestExtensionsUserSSHKey `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {

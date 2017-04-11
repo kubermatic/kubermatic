@@ -40,7 +40,7 @@ func GenerateNormalizedFigerprint(pub string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ssh.FingerprintLegacyMD5(pubKey), nil
+	return NormalizeFingerprint(ssh.FingerprintLegacyMD5(pubKey)), nil
 }
 
 // WrapClientsetWithExtensions returns a clientset to work with extensions

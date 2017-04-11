@@ -1,6 +1,7 @@
 package api
 
 import (
+	"strings"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -297,12 +298,25 @@ type ClusterStatus struct {
 	ApiserverSSH string        `json:"apiserverSSH"`
 }
 
+// SSHKeyFingerprint represents a representation to a extensions.UserSSHKey
+type SSHKeyFingerprint string
+
+// Equal takes a fingerprint and tests it equality
+func (s SSHKeyFingerprint) Equal(c string) bool {
+	// This is really slow :(
+	a := strings.Replace(c, ":", "", -1)
+	b := strings.Replace(string(s), ":", "", -1)
+	return strings.EqualFold(a, b)
+}
+
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 	MasterVersion     string `json:"masterVersion"`
+
+	SSHKeys []SSHKeyFingerprint `json:"ssh_fingerprints,omitempty"`
 
 	Dev bool `json:"-"` // a cluster used in development, compare --dev flag.
 }
