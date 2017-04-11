@@ -32,6 +32,7 @@ import (
 	"github.com/spf13/viper"
 	kkubernetes "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources string
