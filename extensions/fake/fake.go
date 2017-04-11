@@ -24,7 +24,7 @@ func objBody(object interface{}) io.ReadCloser {
 	return ioutil.NopCloser(bytes.NewReader([]byte(output)))
 }
 
-// FakeWrapClientsetWithExtensions returns a fake clientset which should only be used for testing
+// FakeWrapClientsetWithExtensions returns a fake extensions.Clientset interface which should only be used for testing
 func FakeWrapClientsetWithExtensions() extensions.Clientset {
 	fakeClient := &fake.RESTClient{
 		NegotiatedSerializer: testapi.Default.NegotiatedSerializer(),
