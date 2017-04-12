@@ -62,8 +62,8 @@ const (
 	flannelCIDRADefault = "172.25.0.0/16"
 )
 
-// NamespaceName create a namespace name for a given user and cluster.
-func NamespaceName(user, cluster string) string {
+// NamespaceName create a namespace name for a given cluster.
+func NamespaceName(cluster string) string {
 	return fmt.Sprintf("%s-%s", namePrefix, cluster)
 }
 
@@ -188,7 +188,7 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	ns.Annotations = as
 
 	// check name
-	if ns.Name != "" && ns.Name != NamespaceName(c.Metadata.User, c.Metadata.Name) {
+	if ns.Name != "" && ns.Name != NamespaceName(c.Metadata.Name) {
 		return nil, fmt.Errorf("cannot rename cluster %s", ns.Name)
 	}
 

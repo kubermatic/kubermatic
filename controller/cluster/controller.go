@@ -451,7 +451,7 @@ func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase
 }
 
 func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
-	nsName := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	nsName := kprovider.NamespaceName(c.Metadata.Name)
 	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
 		Name:      nsName,
@@ -463,7 +463,7 @@ func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg stri
 }
 
 func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
-	ns := kprovider.NamespaceName(newC.Metadata.User, newC.Metadata.Name)
+	ns := kprovider.NamespaceName(newC.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
 		oldNS, err := cc.client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})

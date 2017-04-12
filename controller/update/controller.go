@@ -85,7 +85,7 @@ func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, master
 			return nil, err
 		}
 
-		ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+		ns := kubernetes.NamespaceName(c.Metadata.Name)
 		_, err = u.Client.ExtensionsV1beta1().Deployments(ns).Update(dep)
 		if errors.IsNotFound(err) {
 			glog.Errorf("expected an %s deployment, but didn't find any for cluster %v. Creating a new one.", dep.Name, c.Metadata.Name)
@@ -126,7 +126,7 @@ func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, maste
 }
 
 func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
 		obj, exists, err := u.EtcdClusterStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
@@ -148,7 +148,7 @@ func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 }
 
 func (u *Controller) waitForDeployments(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
 		dep, exists, err := u.DepStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))

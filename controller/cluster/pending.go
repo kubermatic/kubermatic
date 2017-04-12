@@ -12,7 +12,6 @@ import (
 	"github.com/kubermatic/api/controller/resources"
 	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions"
-	etcdcluster "github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -121,7 +120,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 		recreateSecrets["apiserver-ssh"] = struct{}{}
 	}
 
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range secrets {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.secretStore.GetByKey(key)
@@ -166,7 +165,7 @@ func (cc *clusterController) pendingCheckSecrets(c *api.Cluster) (*api.Cluster, 
 }
 
 func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Cluster, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	key := fmt.Sprintf("%s/token-users", ns)
 	_, exists, err := cc.secretStore.GetByKey(key)
@@ -195,7 +194,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		"apiserver": resources.LoadServiceFile,
 	}
 
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range services {
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.serviceStore.GetByKey(key)
@@ -235,7 +234,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 		"k8sniff": resources.LoadIngressFile,
 	}
 
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for app, gen := range ingress {
 		key := fmt.Sprintf("%s/%s", ns, app)
 		_, exists, err := cc.ingressStore.GetByKey(key)
@@ -262,7 +261,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 }
 
 func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Cluster, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
@@ -319,7 +318,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) (*api.Clu
 }
 
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	cms := map[string]func(c *api.Cluster) (*v1.ConfigMap, error){}
 	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
@@ -355,7 +354,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 }
 
 func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	pvcs := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error){
 	// Currently not required pvc for etcd is done by etcd-operator
@@ -392,7 +391,7 @@ func (cc *clusterController) launchingCheckPvcs(c *api.Cluster) error {
 }
 
 func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	defaultPlugins := map[string]string{
 		"flannelcni":          "flannel-cni",
 		"heapster":            "heapster",
@@ -431,8 +430,7 @@ func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error 
 }
 
 func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Cluster, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
-
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
@@ -445,43 +443,28 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Clu
 		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
 	}
 
-	etcds := map[string]string{
-		"etcd": masterVersion.EtcdClusterYaml,
+	etcd, err := resources.LoadEtcdClustertFile(c, masterVersion, cc.masterResourcesPath, cc.dc, masterVersion.EtcdClusterYaml)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}
 
-	existingEtcds, err := cc.etcdClusterStore.ByIndex("namespace", ns)
+	key := fmt.Sprintf("%s/%s", ns, etcd.Metadata.Name)
+	_, exists, err := cc.etcdClusterStore.GetByKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	for s, yamlFile := range etcds {
-		exists := false
-		var etcd *etcdcluster.Cluster
-		for _, obj := range existingEtcds {
-			etcd := obj.(*etcdcluster.Cluster)
-
-			if etcd.Metadata.Name == s {
-				exists = true
-				break
-			}
-		}
-		if exists {
-			glog.V(7).Infof("Skipping already existing etcd-cluster %q for cluster %q", s, c.Metadata.Name)
-			continue
-		}
-
-		etcd, err := resources.LoadEtcdClustertFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate deployment %s: %v", s, err)
-		}
-
-		_, err = cc.etcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create ecd %s: %v", s, err)
-		}
-
-		cc.recordClusterEvent(c, "launching", "Created etcd %q", s)
+	if exists {
+		glog.V(7).Infof("Skipping already existing etcd-cluster for cluster %q", c.Metadata.Name)
+		return c, nil
 	}
+
+	_, err = cc.etcdClusterClient.Cluster(ns).Create(etcd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ecd-cluster definition (tpr): %v", err)
+	}
+
+	cc.recordClusterEvent(c, "launching", "Created etcd-cluster", etcd.Metadata.Name)
 
 	return nil, nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	deps, err := cc.depStore.ByIndex("namespace", ns)
 	if err != nil {
 		return false, nil, err
