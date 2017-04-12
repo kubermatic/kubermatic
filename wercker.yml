@@ -1,5 +1,6 @@
+no-response-timeout: 20
 dev:
-  box: golang:1.7
+  box: golang:1.8
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
@@ -11,7 +12,7 @@ dev:
         reload: true
 
 build:
-  box: golang:1.7
+  box: golang:1.8
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
