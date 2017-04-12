@@ -12,7 +12,6 @@ dev:
 
 build:
   box: golang:1.8
-  command-timeout: 30
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
