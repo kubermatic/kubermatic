@@ -1,3 +1,4 @@
+no-response-timeout: 20
 dev:
   box: golang:1.8
   steps:
