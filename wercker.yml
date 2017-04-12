@@ -12,6 +12,7 @@ dev:
 
 build:
   box: golang:1.7
+  no-response-timeout: 20
   steps:
     - setup-go-workspace:
         package-dir: github.com/kubermatic/api
