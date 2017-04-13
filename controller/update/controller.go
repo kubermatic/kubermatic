@@ -104,7 +104,7 @@ func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, master
 
 func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		etcd, err := resources.LoadEtcdClustertFile(c, masterVersion, u.MasterResourcesPath, u.DC, yamlFile)
+		etcd, err := resources.LoadEtcdClusterFile(masterVersion, u.MasterResourcesPath, yamlFile)
 		if err != nil {
 			return nil, err
 		}
