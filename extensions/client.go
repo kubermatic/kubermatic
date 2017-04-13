@@ -47,6 +47,7 @@ func GenerateNormalizedFigerprint(pub string) (string, error) {
 func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
 	restConfig := &rest.Config{}
 	*restConfig = *config
+
 	c, err := extensionClient(restConfig)
 	if err != nil {
 		return nil, err

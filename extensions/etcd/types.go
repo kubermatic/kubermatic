@@ -33,8 +33,6 @@ func addTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&Cluster{},
 		&ClusterList{},
-		&apiv1.ListOptions{},
-		&metav1.ListOptions{},
 	)
 	return nil
 }
