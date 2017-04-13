@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -43,6 +44,7 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddonList{},
 		&ClNode{},
 		&ClNodeList{},
+		&apiv1.ListOptions{},
 		&metav1.ListOptions{},
 	)
 	m := map[string]runtime.Object{
