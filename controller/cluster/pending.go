@@ -37,14 +37,14 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all service accounts are created
-	changedC, err = cc.launchingCheckServiceAccounts(c)
-	if err != nil || changedC != nil {
+	err = cc.launchingCheckServiceAccounts(c)
+	if err != nil {
 		return changedC, err
 	}
 
 	// check that all role bindings are created
-	changedC, err = cc.launchingCheckRoleBindings(c)
-	if err != nil || changedC != nil {
+	err = cc.launchingCheckRoleBindings(c)
+	if err != nil {
 		return changedC, err
 	}
 
@@ -242,7 +242,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 	return c, nil
 }
 
-func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) (*api.Cluster, error) {
+func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error {
 	serviceAccounts := map[string]func(app, masterResourcesPath string) (*v1.ServiceAccount, error){
 		"etcd-operator": resources.LoadServiceAccountFile,
 	}
@@ -252,7 +252,7 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) (*api
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.saStore.GetByKey(key)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if exists {
@@ -262,21 +262,21 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) (*api
 
 		sa, err := gen(s, cc.masterResourcesPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to generate service account %s: %v", s, err)
+			return fmt.Errorf("failed to generate service account %s: %v", s, err)
 		}
 
 		_, err = cc.client.CoreV1().ServiceAccounts(ns).Create(sa)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create service account %s: %v", s, err)
+			return fmt.Errorf("failed to create service account %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created service account %q", s)
 	}
 
-	return c, nil
+	return nil
 }
 
-func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cluster, error) {
+func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) error {
 	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1alpha1.RoleBinding, error){
 		"etcd-operator": resources.LoadRoleBindingFile,
 	}
@@ -286,7 +286,7 @@ func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cl
 		key := fmt.Sprintf("%s/%s", ns, s)
 		_, exists, err := cc.roleBindingStore.GetByKey(key)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if exists {
@@ -296,18 +296,18 @@ func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cl
 
 		binding, err := gen(ns, s, cc.masterResourcesPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to generate binding binding %s: %v", s, err)
+			return fmt.Errorf("failed to generate binding binding %s: %v", s, err)
 		}
 
 		_, err = cc.client.RbacV1alpha1().RoleBindings(ns).Create(binding)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create binding binding %s: %v", s, err)
+			return fmt.Errorf("failed to create binding binding %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
 	}
 
-	return c, nil
+	return nil
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
