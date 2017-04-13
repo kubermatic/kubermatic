@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/api/provider/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -31,6 +32,18 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	// create token-users first and also persist immediately because this
 	// changes the cluster. The later secrets and other resources don't.
 	changedC, err = cc.launchingCheckTokenUsers(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	// check that all service accounts are created
+	changedC, err = cc.launchingCheckServiceAccounts(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	// check that all role bindings are created
+	changedC, err = cc.launchingCheckRoleBindings(c)
 	if err != nil || changedC != nil {
 		return changedC, err
 	}
@@ -225,6 +238,74 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 	}
 
 	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s:8443", c.Metadata.Name, cc.dc, cc.externalURL)
+
+	return c, nil
+}
+
+func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) (*api.Cluster, error) {
+	serviceAccounts := map[string]func(app, masterResourcesPath string) (*v1.ServiceAccount, error){
+		"etcd-operator": resources.LoadServiceAccountFile,
+	}
+
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
+	for s, gen := range serviceAccounts {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.saStore.GetByKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		if exists {
+			glog.V(6).Infof("Skipping already existing service account %q", key)
+			continue
+		}
+
+		sa, err := gen(s, cc.masterResourcesPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate service account %s: %v", s, err)
+		}
+
+		_, err = cc.client.CoreV1().ServiceAccounts(ns).Create(sa)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create service account %s: %v", s, err)
+		}
+
+		cc.recordClusterEvent(c, "launching", "Created service account %q", s)
+	}
+
+	return c, nil
+}
+
+func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cluster, error) {
+	roleBindings := map[string]func(app, masterResourcesPath string) (*v1alpha1.RoleBinding, error){
+		"etcd-operator": resources.LoadRoleBindingFile,
+	}
+
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
+	for s, gen := range roleBindings {
+		key := fmt.Sprintf("%s/%s", ns, s)
+		_, exists, err := cc.roleBindingStore.GetByKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		if exists {
+			glog.V(6).Infof("Skipping already existing binding binding %q", key)
+			continue
+		}
+
+		binding, err := gen(s, cc.masterResourcesPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate binding binding %s: %v", s, err)
+		}
+
+		_, err = cc.client.RbacV1alpha1().RoleBindings(ns).Create(binding)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create binding binding %s: %v", s, err)
+		}
+
+		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
+	}
 
 	return c, nil
 }
@@ -443,7 +524,7 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) (*api.Clu
 		return c, fmt.Errorf("unknown new cluster %q master version %q", c.Metadata.Name, c.Spec.MasterVersion)
 	}
 
-	etcd, err := resources.LoadEtcdClustertFile(c, masterVersion, cc.masterResourcesPath, cc.dc, masterVersion.EtcdClusterYaml)
+	etcd, err := resources.LoadEtcdClusterFile(masterVersion, cc.masterResourcesPath, masterVersion.EtcdClusterYaml)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}

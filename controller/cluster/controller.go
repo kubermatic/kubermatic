@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/types"
@@ -89,6 +90,12 @@ type clusterController struct {
 
 	cmController *cache.Controller
 	cmStore      cache.Indexer
+
+	saController *cache.Controller
+	saStore      cache.Indexer
+
+	roleBindingController *cache.Controller
+	roleBindingStore      cache.Indexer
 
 	cps map[string]provider.CloudProvider
 	dev bool
@@ -283,6 +290,36 @@ func NewController(
 			},
 		},
 		&v1.ConfigMap{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.saStore, cc.saController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().ServiceAccounts(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().ServiceAccounts(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&v1.ServiceAccount{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.roleBindingStore, cc.roleBindingController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.Rbac().RoleBindings(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.RbacV1alpha1().RoleBindings(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&rbac.RoleBinding{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -675,6 +712,8 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.etcdClusterController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
 	go cc.cmController.Run(wait.NeverStop)
+	go cc.saController.Run(wait.NeverStop)
+	go cc.roleBindingController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -706,5 +745,7 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.addonController.HasSynced() &&
 		cc.etcdClusterController.HasSynced() &&
 		cc.pvcController.HasSynced() &&
-		cc.cmController.HasSynced()
+		cc.cmController.HasSynced() &&
+		cc.saController.HasSynced() &&
+		cc.roleBindingController.HasSynced()
 }
