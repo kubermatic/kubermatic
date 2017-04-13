@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api/extensions"
 	"golang.org/x/net/context"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type createSSHKeyReq struct {
@@ -53,7 +53,7 @@ func createSSHKeyEndpoint(
 		}
 
 		key := &extensions.UserSSHKey{
-			Metadata: meta_v1.ObjectMeta{
+			Metadata: metav1.ObjectMeta{
 				// Metadata Name must match the regex [a-z0-9]([-a-z0-9]*[a-z0-9])? (e.g. 'my-name' or '123-abc')
 				Name: extensions.ConstructNewSerialKeyName(extensions.NormalizeFingerprint(fingerprint)),
 			},
@@ -99,7 +99,7 @@ func deleteSSHKeyEndpoint(
 
 		c := clientset.SSHKeyTPR(req.user.Name)
 
-		return nil, c.Delete(req.metaName, meta_v1.NewDeleteOptions(100))
+		return nil, c.Delete(req.metaName, metav1.NewDeleteOptions(100))
 	}
 }
 
