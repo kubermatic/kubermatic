@@ -158,6 +158,7 @@ func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile str
 	return &c, err
 }
 
+// LoadServiceAccountFile loads a service account from disk and returns it
 func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-serviceaccount.yaml"))
 	if err != nil {
@@ -169,13 +170,20 @@ func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount
 	return &sa, err
 }
 
-func LoadRoleBindingFile(app, masterResourcesPath string) (*v1alpha1.RoleBinding, error) {
+// LoadRoleBindingFile loads a role binding from disk, sets the namespace and returns it
+func LoadRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.RoleBinding, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, err
 	}
 
+	data := struct {
+		Namespace string
+	}{
+		Namespace: ns,
+	}
+
 	var r v1alpha1.RoleBinding
-	err = t.Execute(nil, &r)
+	err = t.Execute(data, &r)
 	return &r, err
 }

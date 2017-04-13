@@ -277,7 +277,7 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) (*api
 }
 
 func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cluster, error) {
-	roleBindings := map[string]func(app, masterResourcesPath string) (*v1alpha1.RoleBinding, error){
+	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1alpha1.RoleBinding, error){
 		"etcd-operator": resources.LoadRoleBindingFile,
 	}
 
@@ -294,7 +294,7 @@ func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) (*api.Cl
 			continue
 		}
 
-		binding, err := gen(s, cc.masterResourcesPath)
+		binding, err := gen(ns, s, cc.masterResourcesPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate binding binding %s: %v", s, err)
 		}
