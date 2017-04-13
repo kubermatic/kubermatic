@@ -21,7 +21,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/apis/rbac"
+	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
 	"k8s.io/client-go/pkg/labels"
 	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/types"
@@ -94,8 +94,8 @@ type clusterController struct {
 	saController *cache.Controller
 	saStore      cache.Indexer
 
-	roleBindingController *cache.Controller
-	roleBindingStore      cache.Indexer
+	clusterRoleBindingController *cache.Controller
+	clusterRoleBindingStore      cache.Indexer
 
 	cps map[string]provider.CloudProvider
 	dev bool
@@ -310,16 +310,16 @@ func NewController(
 		namespaceIndexer,
 	)
 
-	cc.roleBindingStore, cc.roleBindingController = cache.NewIndexerInformer(
+	cc.clusterRoleBindingStore, cc.clusterRoleBindingController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return cc.client.Rbac().RoleBindings(v1.NamespaceAll).List(options)
+				return cc.client.RbacV1alpha1().ClusterRoleBindings().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return cc.client.RbacV1alpha1().RoleBindings(v1.NamespaceAll).Watch(options)
+				return cc.client.RbacV1alpha1().ClusterRoleBindings().Watch(options)
 			},
 		},
-		&rbac.RoleBinding{},
+		&v1alpha1.ClusterRoleBinding{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -713,7 +713,7 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.pvcController.Run(wait.NeverStop)
 	go cc.cmController.Run(wait.NeverStop)
 	go cc.saController.Run(wait.NeverStop)
-	go cc.roleBindingController.Run(wait.NeverStop)
+	go cc.clusterRoleBindingController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -747,5 +747,5 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.pvcController.HasSynced() &&
 		cc.cmController.HasSynced() &&
 		cc.saController.HasSynced() &&
-		cc.roleBindingController.HasSynced()
+		cc.clusterRoleBindingController.HasSynced()
 }

@@ -159,7 +159,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 		ID:                         "1.5.3",
 		Default:                    true,
 		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-operator.yaml",
+		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
 		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
@@ -213,7 +213,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 		ID:                         "1.5.3",
 		Default:                    true,
 		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-operator.yaml",
+		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
 		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
@@ -313,17 +313,17 @@ func TestLoadServiceAccountFile(t *testing.T) {
 	}
 }
 
-func TestLoadRoleBindingFile(t *testing.T) {
+func TestLoadClusterRoleBindingFile(t *testing.T) {
 	if IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
 	apps := map[string]string{
-		"etcd-operator": "loadrolebindingfile-etcd-operator-result",
+		"etcd-operator": "loadclusterrolebindingfile-etcd-operator-result",
 	}
 
 	for app, r := range apps {
-		res, err := LoadRoleBindingFile("cluster-jh8j81chn", app, "../../../config/kubermatic/static/master/")
+		res, err := LoadClusterRoleBindingFile("cluster-jh8j81chn", app, "../../../config/kubermatic/static/master/")
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}

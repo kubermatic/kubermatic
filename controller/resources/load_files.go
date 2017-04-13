@@ -170,8 +170,8 @@ func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount
 	return &sa, err
 }
 
-// LoadRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.RoleBinding, error) {
+// LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
+func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.ClusterRoleBinding, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func LoadRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.RoleBin
 		Namespace: ns,
 	}
 
-	var r v1alpha1.RoleBinding
+	var r v1alpha1.ClusterRoleBinding
 	err = t.Execute(data, &r)
 	return &r, err
 }

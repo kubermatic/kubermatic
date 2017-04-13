@@ -1,0 +1,1 @@
+{"kind":"ClusterRoleBinding","apiVersion":"rbac.authorization.k8s.io/v1beta1","metadata":{"name":"cluster-jh8j81chn-etcd-operator","namespace":"cluster-jh8j81chn","creationTimestamp":null},"subjects":[{"kind":"ServiceAccount","name":"etcd-operator","namespace":"cluster-jh8j81chn"}],"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"ClusterRole","name":"etcd-operator"}}

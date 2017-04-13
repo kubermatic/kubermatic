@@ -43,7 +43,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 	}
 
 	// check that all role bindings are created
-	err = cc.launchingCheckRoleBindings(c)
+	err = cc.launchingCheckClusterRoleBindings(c)
 	if err != nil {
 		return changedC, err
 	}
@@ -276,32 +276,31 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error
 	return nil
 }
 
-func (cc *clusterController) launchingCheckRoleBindings(c *api.Cluster) error {
-	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1alpha1.RoleBinding, error){
-		"etcd-operator": resources.LoadRoleBindingFile,
+func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) error {
+	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1alpha1.ClusterRoleBinding, error){
+		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range roleBindings {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.roleBindingStore.GetByKey(key)
+		binding, err := gen(ns, s, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate cluster role binding %s: %v", s, err)
+		}
+
+		_, exists, err := cc.clusterRoleBindingStore.GetByKey(binding.ObjectMeta.Name)
 		if err != nil {
 			return err
 		}
 
 		if exists {
-			glog.V(6).Infof("Skipping already existing binding binding %q", key)
+			glog.V(6).Infof("Skipping already existing cluster role binding %q", binding.ObjectMeta.Name)
 			continue
 		}
 
-		binding, err := gen(ns, s, cc.masterResourcesPath)
+		_, err = cc.client.RbacV1alpha1().ClusterRoleBindings().Create(binding)
 		if err != nil {
-			return fmt.Errorf("failed to generate binding binding %s: %v", s, err)
-		}
-
-		_, err = cc.client.RbacV1alpha1().RoleBindings(ns).Create(binding)
-		if err != nil {
-			return fmt.Errorf("failed to create binding binding %s: %v", s, err)
+			return fmt.Errorf("failed to create cluster role binding %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
