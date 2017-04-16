@@ -17,7 +17,7 @@ podTemplate(label: 'buildpod', containers: [
             }
             stage('Check'){
                 container('golang') {
-                   sh 'make install'
+                   sh 'cd /go/src/github.com/kubermatic/api && make install'
                    sh 'make check'
                 }
             }
