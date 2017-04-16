@@ -1,47 +1,37 @@
-//Use only one containerTemplate otherwise it create an error "Pipe not connected" see https://issues.jenkins-ci.org/browse/JENKINS-40825
 podTemplate(label: 'buildpod', containers: [
+    containerTemplate(name: 'alpine', image: 'alpine:3.5', ttyEnabled: true, command: 'cat'),
     containerTemplate(name: 'golang', image: 'kubermatic/golang', ttyEnabled: true, command: 'cat')
   ]) {
     node ('buildpod') {
-      withEnv([
-        "CGO_ENABLED=0",
-        "GOBUILD='go install'"
-      ]) {
 
-            stage('setup workdir'){
-                container('golang') {
-                    sh 'mkdir -p /go/src/github.com/kubermatic'
-                    sh 'ln -s `pwd` /go/src/github.com/kubermatic/api'
-                    sh 'cd /go/src/github.com/kubermatic/api'
-                    checkout scm
-                }
-            }
-            stage('Check'){
-                container('golang') {
-                   sh 'cd /go/src/github.com/kubermatic/api && make install'
-                   sh 'cd /go/src/github.com/kubermatic/api && make check'
-                }
-            }
-            stage('Test'){
-                container('golang') {
-                   sh 'cd /go/src/github.com/kubermatic/api && make test'
-                }
-            }
-            stage('Build'){
-                container('golang') {
-                    sh 'cd /go/src/github.com/kubermatic/api && make build'
-                    sh 'cd /go/src/github.com/kubermatic/api && make docker'
-                }
-            }
-            stage('Push'){
-                container('golang') {
-                    sh 'cd /go/src/github.com/kubermatic/api && make push'
-                }
-            }
-            stage('Deploy'){
-                    echo "echo"
-            }
-        }
+        stage 'Checkout'
+        checkout scm
+
+        stage 'Check'
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make install'
+               }
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make check'
+               }
+        stage 'Test'
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make test'
+               }
+        stage 'Build'
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make build'
+               }
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make docker'
+               }
+        stage 'Push'
+               container('golang') {
+                    sh 'CGO_ENABLED=0 GOBUILD="go install" make push'
+               }
+
+        stage 'Deploy'
+                echo "echo"
+
     }
 }
-
