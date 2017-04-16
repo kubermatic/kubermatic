@@ -3,25 +3,44 @@ podTemplate(label: 'buildpod', containers: [
     containerTemplate(name: 'golang', image: 'kubermatic/golang', ttyEnabled: true, command: 'cat')
   ]) {
     node ('buildpod') {
+      withEnv([
+        "CGO_ENABLED=0",
+        "GOBUILD='go install'"
+      ]) {
 
-        stage('Check'){
-           sh 'echo $PWD'
-           sh 'CGO_ENABLED=0 GOBUILD="go install" make install'
-           sh 'CGO_ENABLED=0 GOBUILD="go install" make check'
-        }
-        stage('Test'){
-           sh 'CGO_ENABLED=0 GOBUILD="go install" make test'
-        }
-        stage('Build'){
-            sh 'CGO_ENABLED=0 GOBUILD="go install" make build'
-            sh 'CGO_ENABLED=0 GOBUILD="go install" make docker'
-        }
-        stage('Push'){
-            sh 'CGO_ENABLED=0 GOBUILD="go install" make push'
-        }
-
-        stage('Deploy'){
-                echo "echo"
+            stage('setup workdir'){
+                container('golang') {
+                    sh 'mkdir -p /go/src/github.com/kubermatic'
+                    sh 'ln -s `pwd` /go/src/github.com/kubermatic/api'
+                    sh 'cd /go/src/github.com/kubermatic/api'
+                }
+            }
+            stage('Check'){
+                container('golang') {
+                   sh 'make install'
+                   sh 'make check'
+                }
+            }
+            stage('Test'){
+                container('golang') {
+                   sh 'make test'
+                }
+            }
+            stage('Build'){
+                container('golang') {
+                    sh 'make build'
+                    sh 'make docker'
+                }
+            }
+            stage('Push'){
+                container('golang') {
+                    sh 'make push'
+                }
+            }
+            stage('Deploy'){
+                    echo "echo"
+            }
         }
     }
 }
+
