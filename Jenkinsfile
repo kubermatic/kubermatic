@@ -5,6 +5,7 @@ podTemplate(label: 'buildpod', containers: [
     node ('buildpod') {
 
         stage('Check'){
+           sh 'PWD'
            sh 'CGO_ENABLED=0 GOBUILD="go install" make install'
            sh 'CGO_ENABLED=0 GOBUILD="go install" make check'
         }
