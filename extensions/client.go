@@ -69,7 +69,9 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 	}
 
 	v1.AddToGroupVersion(kapi.Scheme, SchemeGroupVersion)
-	SchemeBuilder.AddToScheme(kapi.Scheme)
+	if err := SchemeBuilder.AddToScheme(kapi.Scheme); err != nil {
+		return nil, err
+	}
 
 	return rest.RESTClientFor(config)
 }

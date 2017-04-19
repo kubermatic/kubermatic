@@ -36,7 +36,9 @@ func etcdClusterClient(config *rest.Config) (*rest.RESTClient, error) {
 	}
 
 	v1.AddToGroupVersion(kapi.Scheme, groupversion)
-	SchemeBuilder.AddToScheme(kapi.Scheme)
+	if err := SchemeBuilder.AddToScheme(kapi.Scheme); err != nil {
+		return nil, err
+	}
 
 	return rest.RESTClientFor(config)
 }
