@@ -25,6 +25,7 @@ func objBody(object interface{}) io.ReadCloser {
 // ClientsetWithExtensions returns a fake extensions.Clientset interface which should only be used for testing
 func ClientsetWithExtensions() extensions.Clientset {
 	fakeClient := &fake.RESTClient{
+		APIRegistry:          api.Registry,
 		NegotiatedSerializer: api.Codecs,
 		Resp: &http.Response{
 			StatusCode: 200,
@@ -36,6 +37,7 @@ func ClientsetWithExtensions() extensions.Clientset {
 			return &http.Response{StatusCode: 200, Header: header, Body: objBody(&uapi.APIVersions{Versions: []string{"version1", api.Registry.GroupOrDie(api.GroupName).GroupVersion.String()}})}, nil
 		}),
 	}
+
 	return &extensions.WrappedClientset{
 		Client: fakeClient,
 	}
