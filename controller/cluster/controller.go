@@ -26,6 +26,14 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/types"
+	uruntime "k8s.io/client-go/pkg/util/runtime"
+	"k8s.io/client-go/pkg/util/wait"
+	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/labels"
@@ -90,6 +98,12 @@ type clusterController struct {
 
 	cmController cache.Controller
 	cmStore      cache.Indexer
+
+	saController *cache.Controller
+	saStore      cache.Indexer
+
+	clusterRoleBindingController *cache.Controller
+	clusterRoleBindingStore      cache.Indexer
 
 	cps map[string]provider.CloudProvider
 	dev bool
@@ -290,6 +304,36 @@ func NewController(
 		namespaceIndexer,
 	)
 
+	cc.saStore, cc.saController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.CoreV1().ServiceAccounts(v1.NamespaceAll).List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.CoreV1().ServiceAccounts(v1.NamespaceAll).Watch(options)
+			},
+		},
+		&v1.ServiceAccount{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
+	cc.clusterRoleBindingStore, cc.clusterRoleBindingController = cache.NewIndexerInformer(
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				return cc.client.RbacV1alpha1().ClusterRoleBindings().List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				return cc.client.RbacV1alpha1().ClusterRoleBindings().Watch(options)
+			},
+		},
+		&v1alpha1.ClusterRoleBinding{},
+		fullResyncPeriod,
+		cache.ResourceEventHandlerFuncs{},
+		namespaceIndexer,
+	)
+
 	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
@@ -453,7 +497,7 @@ func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase
 }
 
 func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
-	nsName := kprovider.NamespaceName(c.Metadata.User, c.Metadata.Name)
+	nsName := kprovider.NamespaceName(c.Metadata.Name)
 	ref := &v1.ObjectReference{
 		Kind:      "Namespace",
 		Name:      nsName,
@@ -465,7 +509,7 @@ func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg stri
 }
 
 func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
-	ns := kprovider.NamespaceName(newC.Metadata.User, newC.Metadata.Name)
+	ns := kprovider.NamespaceName(newC.Metadata.Name)
 	for i := 0; i < maxUpdateRetries; i++ {
 		// try to get current namespace
 		oldNS, err := cc.client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
@@ -677,6 +721,8 @@ func (cc *clusterController) Run(stopCh <-chan struct{}) {
 	go cc.etcdClusterController.Run(wait.NeverStop)
 	go cc.pvcController.Run(wait.NeverStop)
 	go cc.cmController.Run(wait.NeverStop)
+	go cc.saController.Run(wait.NeverStop)
+	go cc.clusterRoleBindingController.Run(wait.NeverStop)
 
 	for i := 0; i < workerNum; i++ {
 		go wait.Until(cc.worker, workerPeriod, stopCh)
@@ -708,5 +754,7 @@ func (cc *clusterController) controllersHaveSynced() bool {
 		cc.addonController.HasSynced() &&
 		cc.etcdClusterController.HasSynced() &&
 		cc.pvcController.HasSynced() &&
-		cc.cmController.HasSynced()
+		cc.cmController.HasSynced() &&
+		cc.saController.HasSynced() &&
+		cc.clusterRoleBindingController.HasSynced()
 }

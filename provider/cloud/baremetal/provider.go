@@ -14,6 +14,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 )
@@ -122,7 +123,7 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	return &cs, nil
 }
 
-func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int) ([]*api.Node, error) {
+func (b *baremetal) CreateNodes(ctx context.Context, c *api.Cluster, _ *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	var nodes []*api.Node
 	data, err := json.Marshal(struct {
 		Number int `json:"number"`

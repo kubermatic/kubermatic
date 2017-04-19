@@ -161,9 +161,10 @@ type UserSSHKey struct {
 	metav1.TypeMeta `json:",inline"`
 	Metadata        metav1.ObjectMeta `json:"metadata"`
 
-	Name        string `json:"name"`
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"public_key"`
+	Name        string   `json:"name"`
+	Fingerprint string   `json:"fingerprint"`
+	PublicKey   string   `json:"public_key"`
+	Clusters    []string `json:"clusters"`
 }
 
 //GetObjectKind returns the object typemeta information
@@ -183,6 +184,16 @@ func (sk *UserSSHKey) addLabel(key string, value string) {
 	}
 	lbs[key] = value
 	sk.Metadata.SetLabels(lbs)
+}
+
+// UsedByCluster returns true if the clustername is present in a keys cluster list
+func (sk *UserSSHKey) UsedByCluster(clustername string) bool {
+	for _, name := range sk.Clusters {
+		if name == clustername {
+			return true
+		}
+	}
+	return false
 }
 
 // UserSSHKeyList specifies a users UserSSHKey

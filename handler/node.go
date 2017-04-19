@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -230,6 +231,7 @@ func deleteNodeEndpoint(
 func createNodesEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
+	masterClientset extensions.Clientset,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
@@ -261,7 +263,18 @@ func createNodesEndpoint(
 				cpName, npName)
 		}
 
-		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances)
+		var keys []extensions.UserSSHKey
+		keyList, err := masterClientset.SSHKeyTPR(req.user.Name).List()
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range keyList.Items {
+			if (&key).UsedByCluster(req.cluster) {
+				keys = append(keys, key)
+			}
+		}
+
+		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances, keys)
 		if err != nil {
 			return nil, err
 		}

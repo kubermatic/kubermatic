@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	ktemplate "github.com/kubermatic/api/template"
 	"github.com/kubermatic/api/uuid"
@@ -482,11 +483,12 @@ func (a *aws) userData(
 	clusterState *api.Cluster,
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
+	authorizedKeys []string,
 ) error {
 	data := ktemplate.Data{
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: []string{},
+		SSHAuthorizedKeys: authorizedKeys,
 		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
@@ -558,7 +560,35 @@ func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, e
 	return *latestImage.ImageId, nil
 }
 
-func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int) ([]*api.Node, error) {
+func getOrCreateKey(keys []extensions.UserSSHKey, client *ec2.EC2) (name string, created bool, err error) {
+	filters := []*ec2.Filter{{
+		Name:   sdk.String("key-name"),
+		Values: make([]*string, len(keys)),
+	}}
+
+	for index, key := range keys {
+		filters[0].Values[index] = sdk.String(key.Name)
+	}
+
+	responesKeys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{Filters: filters})
+	if err != nil {
+		return "", false, err
+	}
+
+	// Return here if we got a matching key
+	if len(responesKeys.KeyPairs) > 0 {
+		return *responesKeys.KeyPairs[0].KeyName, false, nil
+	}
+
+	_, err = client.ImportKeyPair(&ec2.ImportKeyPairInput{
+		KeyName:           sdk.String(keys[0].Name),
+		PublicKeyMaterial: []byte(keys[0].PublicKey),
+	})
+
+	return keys[0].Name, true, err
+}
+
+func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.NodeSpec, num int, keys []extensions.UserSSHKey) ([]*api.Node, error) {
 	dc, ok := a.datacenters[node.DatacenterName]
 	if !ok || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", node.DatacenterName)
@@ -569,6 +599,21 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 	client, err := a.getEC2client(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed get ec2 client: %v", err)
+	}
+	var keyname string
+	if len(keys) < 1 {
+		// The used hasn't any SSHTPRs, if so fall back to SSH keys from V1 endpoint
+		keyname = cluster.Spec.Cloud.AWS.SSHKeyName
+	} else {
+		// Get a already registered key from AWS or if non is found upload a key
+		keyname, _, err = getOrCreateKey(keys, client)
+	}
+	if err != nil {
+		return nil, err
+	}
+	var skeys []string
+	for _, k := range keys {
+		skeys = append(skeys, k.PublicKey)
 	}
 	var createdNodes []*api.Node
 	imageID, err := a.GetContainerLinuxAmiID(node.AWS.ContainerLinux.Version, client)
@@ -587,7 +632,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC); err != nil {
+		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC, skeys); err != nil {
 			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
 		}
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
@@ -619,7 +664,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			MinCount:          sdk.Int64(1),
 			InstanceType:      sdk.String(node.AWS.Type),
 			UserData:          sdk.String(base64.StdEncoding.EncodeToString(buf.Bytes())),
-			KeyName:           sdk.String(cluster.Spec.Cloud.AWS.SSHKeyName),
+			KeyName:           sdk.String(keyname),
 			NetworkInterfaces: netSpec,
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: sdk.String(fmt.Sprintf("kubermatic-instance-profile-%s", cluster.Metadata.Name)),

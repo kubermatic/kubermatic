@@ -53,7 +53,7 @@ func TestLoadServiceFile(t *testing.T) {
 	for app, r := range svcs {
 		res, err := LoadServiceFile(c, app, "../../../config/kubermatic/static/master/")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to load %q: %v", app, err)
 		}
 
 		checkTestResult(t, r, res)
@@ -89,7 +89,7 @@ func TestLoadIngressFile(t *testing.T) {
 	for app, r := range ing {
 		res, err := LoadIngressFile(c, app, "../../../config/kubermatic/static/master/", "host2", "int.kubermatic.io")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to load %q: %v", app, err)
 		}
 
 		checkTestResult(t, r, res)
@@ -118,14 +118,12 @@ func TestLoadPVCFile(t *testing.T) {
 		},
 	}
 
-	ing := map[string]string{
-		"etcd": "loadpvcfile-etcd-result",
-	}
+	ing := map[string]string{}
 
 	for s, r := range ing {
 		res, err := LoadPVCFile(c, s, "../../../config/kubermatic/static/master/")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
 		checkTestResult(t, r, res)
@@ -161,13 +159,14 @@ func TestLoadDeploymentFile(t *testing.T) {
 		ID:                         "1.5.3",
 		Default:                    true,
 		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
 		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 		Values: map[string]string{
-			"k8s-version":  "v1.5.3",
-			"etcd-version": "3.0.14-kubeadm",
+			"k8s-version":           "v1.5.3",
+			"etcd-operator-version": "v0.2.4fix",
+			"etcd-cluster-version":  "3.1.5",
 		},
 	}
 
@@ -188,7 +187,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	deps := map[string]string{
-		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-result",
+		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-operator-result",
 		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
 		v.ControllerDeploymentYaml:   "loaddeploymentfile-controller-manager-result",
 		v.ApiserverDeploymentYaml:    "loaddeploymentfile-apiserver-result",
@@ -197,7 +196,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 	for s, r := range deps {
 		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "host2", s)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
 		checkTestResult(t, r, res)
@@ -214,13 +213,14 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 		ID:                         "1.5.3",
 		Default:                    true,
 		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
 		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 		Values: map[string]string{
-			"k8s-version":  "v1.5.3",
-			"etcd-version": "3.0.14-kubeadm",
+			"k8s-version":           "v1.5.3",
+			"etcd-operator-version": "v0.2.4fix",
+			"etcd-cluster-version":  "3.1.5",
 		},
 	}
 
@@ -244,7 +244,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	deps := map[string]string{
-		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-result",
+		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-operator-result",
 		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
 		v.ControllerDeploymentYaml:   "loaddeploymentfile-aws-controller-manager-result",
 		v.ApiserverDeploymentYaml:    "loaddeploymentfile-aws-apiserver-result",
@@ -253,7 +253,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	for s, r := range deps {
 		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "host2", s)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
 		checkTestResult(t, r, res)
@@ -273,6 +273,8 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 					SecretAccessKey:  "my_SecretAccessKey",
 					VPCId:            "my_VPCId",
 					AvailabilityZone: "my_AvailabilityZone",
+					RouteTableID:     "my-routetableID",
+					SubnetID:         "my-subnetID",
 				},
 			},
 		},
@@ -290,4 +292,42 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 	}
 
 	checkTestResult(t, "loadawscloudconfigconfigmap-result", res)
+}
+
+func TestLoadServiceAccountFile(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
+
+	apps := map[string]string{
+		"etcd-operator": "loadserviceaccountfile-etcd-operator-result",
+	}
+
+	for app, r := range apps {
+		res, err := LoadServiceAccountFile(app, "../../../config/kubermatic/static/master/")
+		if err != nil {
+			t.Fatalf("failed to load %q: %v", app, err)
+		}
+
+		checkTestResult(t, r, res)
+	}
+}
+
+func TestLoadClusterRoleBindingFile(t *testing.T) {
+	if IsOnCi() {
+		t.Skip("cannot load master files. Maybe on CI?")
+	}
+
+	apps := map[string]string{
+		"etcd-operator": "loadclusterrolebindingfile-etcd-operator-result",
+	}
+
+	for app, r := range apps {
+		res, err := LoadClusterRoleBindingFile("cluster-jh8j81chn", app, "../../../config/kubermatic/static/master/")
+		if err != nil {
+			t.Fatalf("failed to load %q: %v", app, err)
+		}
+
+		checkTestResult(t, r, res)
+	}
 }

@@ -1,13 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"bytes"
 
 	"github.com/kubermatic/api"
 )

@@ -115,7 +115,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 
 	ns := &api_v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        NamespaceName(user.Name, clusterName),
+			Name:        NamespaceName(clusterName),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
@@ -175,7 +175,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	defer func(prov provider.CloudProvider, c *api.Cluster, err error) {
 		if err != nil {
 			_ = prov.CleanUp(c)
-			_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, c.Metadata.Name), &metav1.DeleteOptions{})
+			_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(c.Metadata.Name), &metav1.DeleteOptions{})
 		}
 	}(prov, c, err)
 
@@ -217,7 +217,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 
 	ns := &api_v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        NamespaceName(user.Name, clusterName),
+			Name:        NamespaceName(clusterName),
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
@@ -258,7 +258,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c, err = UnmarshalCluster(p.cps, ns)
 
 	if err != nil {
-		_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, clusterName), &metav1.DeleteOptions{})
+		_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(clusterName), &metav1.DeleteOptions{})
 		return nil, err
 	}
 
@@ -269,7 +269,7 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ns, err := p.kuberntesClient.Namespaces().Get(NamespaceName(user.Name, cluster), metav1.GetOptions{})
+	ns, err := p.kuberntesClient.Namespaces().Get(NamespaceName(cluster), metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
@@ -418,18 +418,18 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 		return err
 	}
 
-	list, err := p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
+	list, err := p.tprClient.ClusterAddons(NamespaceName(cluster)).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if err != nil {
 		return err
 	}
 	for _, item := range list.Items {
-		err = p.tprClient.ClusterAddons(NamespaceName(user.Name, cluster)).Delete(item.Metadata.Name, nil)
+		err = p.tprClient.ClusterAddons(NamespaceName(cluster)).Delete(item.Metadata.Name, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	return p.kuberntesClient.Namespaces().Delete(NamespaceName(user.Name, cluster), &metav1.DeleteOptions{})
+	return p.kuberntesClient.Namespaces().Delete(NamespaceName(cluster), &metav1.DeleteOptions{})
 }
 
 func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
