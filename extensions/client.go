@@ -68,6 +68,9 @@ func extensionClient(config *rest.Config) (*rest.RESTClient, error) {
 		ContentType:          runtime.ContentTypeJSON,
 	}
 
+	v1.AddToGroupVersion(kapi.Scheme, SchemeGroupVersion)
+	SchemeBuilder.AddToScheme(kapi.Scheme)
+
 	return rest.RESTClientFor(config)
 }
 
