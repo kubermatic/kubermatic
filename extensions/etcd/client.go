@@ -25,14 +25,18 @@ func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
 
 func etcdClusterClient(config *rest.Config) (*rest.RESTClient, error) {
 	config.APIPath = "/apis"
+	groupversion := schema.GroupVersion{
+		Group:   GroupName,
+		Version: Version,
+	}
 	config.ContentConfig = rest.ContentConfig{
-		GroupVersion: &schema.GroupVersion{
-			Group:   GroupName,
-			Version: Version,
-		},
+		GroupVersion:         &groupversion,
 		NegotiatedSerializer: serializer.DirectCodecFactory{CodecFactory: kapi.Codecs},
 		ContentType:          runtime.ContentTypeJSON,
 	}
+
+	v1.AddToGroupVersion(kapi.Scheme, groupversion)
+	SchemeBuilder.AddToScheme(kapi.Scheme)
 
 	return rest.RESTClientFor(config)
 }
