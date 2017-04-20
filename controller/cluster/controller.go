@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
+	rbacv1beta1 "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/labels"
@@ -315,13 +315,13 @@ func NewController(
 	cc.clusterRoleBindingStore, cc.clusterRoleBindingController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return cc.client.RbacV1alpha1().ClusterRoleBindings().List(options)
+				return cc.client.RbacV1beta1().ClusterRoleBindings().List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return cc.client.RbacV1alpha1().ClusterRoleBindings().Watch(options)
+				return cc.client.RbacV1beta1().ClusterRoleBindings().Watch(options)
 			},
 		},
-		&v1alpha1.ClusterRoleBinding{},
+		&rbacv1beta1.ClusterRoleBinding{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,

@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
+	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -278,7 +278,7 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error
 }
 
 func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) error {
-	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1alpha1.ClusterRoleBinding, error){
+	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1beta1.ClusterRoleBinding, error){
 		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
 
@@ -299,7 +299,7 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 			continue
 		}
 
-		_, err = cc.client.RbacV1alpha1().ClusterRoleBindings().Create(binding)
+		_, err = cc.client.RbacV1beta1().ClusterRoleBindings().Create(binding)
 		if err != nil {
 			return fmt.Errorf("failed to create cluster role binding %s: %v", s, err)
 		}
