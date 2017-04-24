@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
-	api_v1 "k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/fields"
@@ -113,7 +113,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		}
 	}
 
-	ns := &api_v1.Namespace{
+	ns := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        NamespaceName(clusterName),
 			Annotations: map[string]string{},
@@ -215,7 +215,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		}
 	}
 
-	ns := &api_v1.Namespace{
+	ns := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        NamespaceName(clusterName),
 			Annotations: map[string]string{},
@@ -265,7 +265,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	return c, nil
 }
 
-func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *api_v1.Namespace, error) {
+func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *apiv1.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -306,7 +306,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		}
 
 		var c *api.Cluster
-		var ns *api_v1.Namespace
+		var ns *apiv1.Namespace
 		c, ns, err = p.clusterAndNS(user, cluster)
 		if err != nil {
 			return nil, err
@@ -360,7 +360,7 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // this is a super hack and dirty hack to load the AWS cloud config from the cluster controller's templates
 // to create the config map by hand for now.
 // @TODO Remove with https://github.com/kubermatic/api/issues/220
-func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *api_v1.Namespace) error {
+func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namespace) error {
 	if c.Spec.Cloud.GetAWS() == nil {
 		return nil
 	}
