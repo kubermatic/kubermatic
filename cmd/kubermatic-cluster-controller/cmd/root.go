@@ -30,8 +30,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kkubernetes "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

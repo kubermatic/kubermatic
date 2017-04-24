@@ -1,12 +1,12 @@
 package etcd
 
 import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/watch"
 	kapi "k8s.io/client-go/pkg/api"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/runtime/schema"
-	"k8s.io/client-go/pkg/runtime/serializer"
-	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 )
 
@@ -25,13 +25,19 @@ func WrapClientsetWithExtensions(config *rest.Config) (Clientset, error) {
 
 func etcdClusterClient(config *rest.Config) (*rest.RESTClient, error) {
 	config.APIPath = "/apis"
+	groupversion := schema.GroupVersion{
+		Group:   GroupName,
+		Version: Version,
+	}
 	config.ContentConfig = rest.ContentConfig{
-		GroupVersion: &schema.GroupVersion{
-			Group:   GroupName,
-			Version: Version,
-		},
+		GroupVersion:         &groupversion,
 		NegotiatedSerializer: serializer.DirectCodecFactory{CodecFactory: kapi.Codecs},
 		ContentType:          runtime.ContentTypeJSON,
+	}
+
+	v1.AddToGroupVersion(kapi.Scheme, groupversion)
+	if err := SchemeBuilder.AddToScheme(kapi.Scheme); err != nil {
+		return nil, err
 	}
 
 	return rest.RESTClientFor(config)
@@ -59,7 +65,7 @@ func (w *WrappedClientset) Cluster(ns string) ClusterInterface {
 type ClusterInterface interface {
 	Create(*Cluster) (*Cluster, error)
 	Get(name string) (*Cluster, error)
-	List(v1.ListOptions) (*ClusterList, error)
+	List(options v1.ListOptions) (*ClusterList, error)
 	Watch(v1.ListOptions) (watch.Interface, error)
 	Update(*Cluster) (*Cluster, error)
 	Delete(string, *v1.DeleteOptions) error

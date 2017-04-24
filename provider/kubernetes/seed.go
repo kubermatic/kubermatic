@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -11,10 +10,10 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
-	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/rbac"
-	"k8s.io/client-go/pkg/util/rand"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/util/rand"
 )
 
 var _ provider.KubernetesProvider = (*seedProvider)(nil)
@@ -86,9 +85,9 @@ func NewSeedProvider(
 				PrivateIntf: dc.Spec.Seed.BringYourOwn.PrivateIntf,
 			}
 			if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-				clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
+				clientCA, err := c.CreateKeyCert("seed-etcd-kuberntesClient-ca", []string{})
 				if err != nil {
-					log.Fatalf("failed to create a client ca for seed dc %q", dcName)
+					log.Fatalf("failed to create a kuberntesClient ca for seed dc %q", dcName)
 				}
 				c.Spec.Cloud.BringYourOwn.ClientKeyCert = *clientCA
 			}
@@ -146,15 +145,15 @@ func (p *seedProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*a
 	cluster := rand.String(9)
 
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
-	return nil, errors.New("not implemented")
+	return nil, errors.NewBadRequest("not implemented")
 }
 
 func (p *seedProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
 	p.mu.Lock()
@@ -162,22 +161,22 @@ func (p *seedProvider) Cluster(user provider.User, cluster string) (*api.Cluster
 
 	c, found := p.seeds[cluster]
 	if !found {
-		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 	return c, nil
 }
 
 func (p *seedProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
-	return nil, errors.New("not implemented")
+	return nil, errors.NewBadRequest("not implemented")
 }
 
 func (p *seedProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return nil, errors.New("forbidden to access clusters")
+		return nil, errors.NewBadRequest("forbidden to access clusters")
 	}
 
 	p.mu.Lock()
@@ -193,10 +192,10 @@ func (p *seedProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
 
 func (p *seedProvider) DeleteCluster(user provider.User, cluster string) error {
 	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		return kerrors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return errors.NewNotFound(rbac.Resource("cluster"), cluster)
 	}
 
-	return errors.New("not implemented")
+	return errors.NewBadRequest("not implemented")
 }
 
 func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {

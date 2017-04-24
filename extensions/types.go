@@ -4,12 +4,9 @@ import (
 	"time"
 
 	apitypes "github.com/kubermatic/api"
-	"k8s.io/client-go/pkg/api/meta"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apimachinery/announced"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/runtime"
-	"k8s.io/client-go/pkg/runtime/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -46,7 +43,6 @@ func addTypes(scheme *runtime.Scheme) error {
 		&ClusterAddonList{},
 		&ClNode{},
 		&ClNodeList{},
-		&apiv1.ListOptions{},
 	)
 	m := map[string]runtime.Object{
 		"UserSshKey":     &UserSSHKey{},
@@ -64,21 +60,6 @@ func addTypes(scheme *runtime.Scheme) error {
 	}
 
 	return nil
-}
-
-func init() {
-	if err := announced.NewGroupMetaFactory(
-		&announced.GroupMetaFactoryArgs{
-			GroupName:                  GroupName,
-			VersionPreferenceOrder:     []string{SchemeGroupVersion.Version},
-			AddInternalObjectsToScheme: SchemeBuilder.AddToScheme,
-		},
-		announced.VersionToSchemeFunc{
-			SchemeGroupVersion.Version: SchemeBuilder.AddToScheme,
-		},
-	).Announce().RegisterAndEnable(); err != nil {
-		panic(err)
-	}
 }
 
 // AddonPhase is the life cycle phase of a add on.
@@ -101,9 +82,9 @@ const (
 // ClusterAddon specifies a cluster addon
 type ClusterAddon struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
-	Name            string           `json:"name"`
-	Phase           AddonPhase       `json:"phase"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
+	Name            string            `json:"name"`
+	Phase           AddonPhase        `json:"phase"`
 	Version         int32
 	Deployed        time.Time
 	ReleaseName     string
@@ -124,14 +105,14 @@ func (e *ClusterAddon) GetObjectKind() schema.ObjectKind {
 }
 
 //GetObjectMeta returns the object metadata
-func (e *ClusterAddon) GetObjectMeta() meta.Object {
+func (e *ClusterAddon) GetObjectMeta() metav1.Object {
 	return &e.Metadata
 }
 
 // ClNode contains node information to be saved
 type ClNode struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
 
 	Spec   apitypes.NodeSpec   `json:"spec"`
 	Status apitypes.NodeStatus `json:"status,omitempty"`
@@ -151,7 +132,7 @@ func (e *ClNode) GetObjectKind() schema.ObjectKind {
 }
 
 // GetObjectMeta returns the object metadata
-func (e *ClNode) GetObjectMeta() meta.Object {
+func (e *ClNode) GetObjectMeta() metav1.Object {
 	return &e.Metadata
 }
 
@@ -178,7 +159,7 @@ func (el *ClusterAddonList) GetListMeta() metav1.List {
 // UserSSHKey specifies a users UserSSHKey
 type UserSSHKey struct {
 	metav1.TypeMeta `json:",inline"`
-	Metadata        apiv1.ObjectMeta `json:"metadata"`
+	Metadata        metav1.ObjectMeta `json:"metadata"`
 
 	Name        string   `json:"name"`
 	Fingerprint string   `json:"fingerprint"`

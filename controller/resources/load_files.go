@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/apis/rbac/v1alpha1"
+	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
@@ -171,7 +171,7 @@ func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount
 }
 
 // LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.ClusterRoleBinding, error) {
+func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1beta1.ClusterRoleBinding, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1alpha1.
 		Namespace: ns,
 	}
 
-	var r v1alpha1.ClusterRoleBinding
+	var r v1beta1.ClusterRoleBinding
 	err = t.Execute(data, &r)
 	return &r, err
 }

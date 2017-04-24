@@ -6,7 +6,7 @@ import (
 	"fmt"
 	texttemplate "text/template"
 
-	"k8s.io/client-go/pkg/util/yaml"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 // Template holds the actual cluster template

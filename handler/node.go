@@ -13,8 +13,8 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
-	metav1 "k8s.io/client-go/pkg/apis/meta/v1"
 )
 
 func nodesEndpoint(
@@ -80,7 +80,7 @@ func nodesEndpointV2(
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch nodes from cloud provider: %v", err)
 		}
-		knodes, err := client.Nodes().List(v1.ListOptions{})
+		knodes, err := client.Nodes().List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch nodes from apiserver: %v", err)
 		}
@@ -152,7 +152,7 @@ func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoin
 			return nil, err
 		}
 
-		return client.Nodes().List(v1.ListOptions{})
+		return client.Nodes().List(metav1.ListOptions{})
 	}
 }
 
@@ -217,7 +217,7 @@ func deleteNodeEndpoint(
 
 		for _, node := range nodes {
 			if node.Metadata.UID == req.uid {
-				err = client.Nodes().Delete(node.Metadata.Name, &v1.DeleteOptions{})
+				err = client.Nodes().Delete(node.Metadata.Name, &metav1.DeleteOptions{})
 				if err != nil {
 					glog.Errorf("failed to delete node %q from cluster: %v", node.Metadata.Name, err)
 				}

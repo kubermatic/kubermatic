@@ -2,17 +2,17 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
+	"errors"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/client-go/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func newClusterEndpointV2(

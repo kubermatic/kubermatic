@@ -8,7 +8,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	kerrors "k8s.io/client-go/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
@@ -26,7 +26,7 @@ func kubeconfigEndpoint(
 
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
+			if errors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err

@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/template"
 	"golang.org/x/crypto/ssh"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 )
 
@@ -130,7 +131,7 @@ func generateTokenUsers(cc *clusterController, c *api.Cluster) (*v1.Secret, erro
 	trimmedToken64 := strings.TrimRight(token64, "=")
 
 	secret := v1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "token-users",
 		},
 		Type: v1.SecretTypeOpaque,

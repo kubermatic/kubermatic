@@ -10,8 +10,8 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/api/errors"
 	k "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
 )

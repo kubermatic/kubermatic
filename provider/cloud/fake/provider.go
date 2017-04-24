@@ -8,7 +8,7 @@ import (
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
 	"golang.org/x/net/context"
-	"k8s.io/client-go/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 const (
