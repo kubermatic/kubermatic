@@ -451,7 +451,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 
 	addonManager, err := manager.NewHelmAddonManager(cluster.GetKubeconfig(), cc.addonResourcesPath)
 	if err != nil {
-		glog.Errorf("failed to create addonManager:%s", addon.Metadata.Namespace, err)
+		glog.Errorf("failed to create addonManager for cluster %s: %v", addon.Metadata.Namespace, err)
 		return
 	}
 
@@ -676,9 +676,9 @@ func (cc *clusterController) worker() {
 	})
 
 	if err != nil {
-		glog.Errorf("Worker failed to proccess key %s: %v - will be requeued", nsKey.(string), err)
+		glog.Errorf("Worker failed to process key %s: %v - will be requeued", nsKey.(string), err)
 	} else {
-		glog.V(4).Infof("Worker proccessed key %s", nsKey.(string))
+		glog.V(4).Infof("Worker processed key %s", nsKey.(string))
 	}
 
 	err = cc.syncClusterNamespace(nsKey.(string))

@@ -76,16 +76,16 @@ func TestCreateApiserverAuth(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	if _, has := secret.Data["apiserver.crt"]; has == false {
+	if _, has := secret.Data["apiserver.crt"]; !has {
 		t.Error("secret data does not contain apiserver.crt")
 	}
-	if _, has := secret.Data["apiserver.key"]; has == false {
+	if _, has := secret.Data["apiserver.key"]; !has {
 		t.Error("secret data does not contain apiserver.key")
 	}
-	if _, has := secret.Data["root-ca.crt"]; has == false {
+	if _, has := secret.Data["root-ca.crt"]; !has {
 		t.Error("secret data does not contain root-ca.crt")
 	}
-	if _, has := secret.Data["service-account.key"]; has == false {
+	if _, has := secret.Data["service-account.key"]; !has {
 		t.Error("secret data does not contain service-account.key")
 	}
 }

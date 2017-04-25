@@ -468,10 +468,13 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (spec *api.CloudSp
 	if spec.AWS.AvailabilityZone, ok = annotations[availabilityZoneKey]; !ok {
 		return nil, errors.New("no availability zone found")
 	}
-	spec.AWS.SecurityGroupID, _ = annotations[securityGroupIDKey]
+	spec.AWS.SecurityGroupID = annotations[securityGroupIDKey]
 
 	spec.AWS.ContainerLinux = api.ContainerLinuxClusterSpec{}
-	spec.AWS.ContainerLinux.AutoUpdate, _ = strconv.ParseBool(annotations[containerLinuxAutoUpdateKey])
+	spec.AWS.ContainerLinux.AutoUpdate, err = strconv.ParseBool(annotations[containerLinuxAutoUpdateKey])
+	if err != nil {
+		return nil, fmt.Errorf("could not parse AutoUpdate annotation %s", containerLinuxAutoUpdateKey)
+	}
 
 	return spec, nil
 }
@@ -967,6 +970,11 @@ func (a *aws) doCleanUpAWS(c *api.Cluster) error {
 }
 
 func (a *aws) CleanUp(c *api.Cluster) error {
-	go func() { _ = a.doCleanUpAWS(c) }()
+	go func() {
+		err := a.doCleanUpAWS(c)
+		if err != nil {
+			glog.Warningf("Cleanup failed for cluster %s : %v", c.Metadata.Name, err)
+		}
+	}()
 	return nil
 }
