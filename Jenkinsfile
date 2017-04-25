@@ -3,7 +3,7 @@ podTemplate(label: 'buildpod', containers: [
     containerTemplate(name: 'golang',
                       image: 'kubermatic/golang:test',
                       ttyEnabled: true,
-                      command: 'cat'
+                      command: 'cat',
                       envVars: [
                             containerEnvVar(key: 'DOCKER_HOST', value: 'tcp://localhost:2375'),
                       ]
