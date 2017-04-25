@@ -12,7 +12,7 @@ podTemplate(label: 'buildpod', containers: [
                       image: 'docker:stable-dind',
                       ttyEnabled: true,
                       privileged: true,
-                      command: 'cat')
+                      command: 'dockerd-entrypoint.sh')
   ],
   volumes: [
       emptyDirVolume(mountPath: '/var/lib/docker', memory: false)
