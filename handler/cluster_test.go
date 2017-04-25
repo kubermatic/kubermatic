@@ -213,7 +213,7 @@ func TestClusterEndpoint(t *testing.T) {
 	}
 
 	if c.Metadata.Name != "234jkh24234g" {
-		t.Errorf("Expeced response to be the default fake cluster, got %+v", c)
+		t.Errorf("Expected response to be the default fake cluster, got %+v", c)
 	}
 }
 
@@ -286,7 +286,7 @@ func TestSetCloudEndpointBringYourOwn(t *testing.T) {
 	}
 
 	if c.Metadata.Name != "234jkh24234g" {
-		t.Errorf("Expeced response to be the default fake cluster, got %+v", c)
+		t.Errorf("Expected response to be the default fake cluster, got %+v", c)
 	}
 }
 
@@ -368,7 +368,7 @@ func TestSetCloudEndpointAWS(t *testing.T) {
 	}
 
 	if c.Metadata.Name != "234jkh24234g" {
-		t.Errorf("Expeced response to be the default fake cluster, got %+v", c)
+		t.Errorf("Expected response to be the default fake cluster, got %+v", c)
 	}
 }
 

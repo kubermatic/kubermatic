@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions/etcd"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
@@ -56,19 +55,4 @@ func (cc *clusterController) healthyEtcd(etcd *etcd.Cluster) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func overallHealthy(h *api.ClusterHealth) bool {
-	if h == nil {
-		return false
-	}
-	healthy := true
-	healthy = healthy && h.Apiserver
-	healthy = healthy && h.Controller
-	healthy = healthy && h.Scheduler
-	for _, eh := range h.Etcd {
-		healthy = healthy && eh
-	}
-
-	return healthy
 }

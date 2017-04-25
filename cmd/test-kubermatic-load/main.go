@@ -63,11 +63,7 @@ func createProvider(cluster api.Cluster, client *http.Client) error {
 	setAuth(req)
 
 	_, err = client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // waitNS waits for the Namespace to get created.
@@ -85,7 +81,10 @@ func waitNS(cl api.Cluster, client *http.Client) error {
 
 		// Read all Data from the body,
 		// We cloud also use a tee reader but this would have been a bit overkill.
-		data, _ := ioutil.ReadAll(resp.Body)
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
 
 		// We use the cluster state to get notified when a new NS gets created.
 		// When a NS gets created the cluster will revice an cluster URL.
@@ -115,10 +114,7 @@ func deleteCluster(cluster api.Cluster, client *http.Client) error {
 	}
 	setAuth(req)
 	_, err = client.Do(req)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // up is the main entry point for the up method
@@ -133,7 +129,7 @@ func up(maxClusters, maxNodes int) error {
 	waitAll.Add(maxClusters)
 
 	// Orchestrate all workers.
-	// All go routines are started simultaniously.
+	// All go routines are started simultaneously.
 	// An active worker puts one "ticket" in the channel.
 	// When the worker is done the ticket is removed and other workers starts.
 	// Due to the fact that a channel blocks when
@@ -145,7 +141,7 @@ func up(maxClusters, maxNodes int) error {
 		log.Printf("started worker-%d", i)
 		// Start go routine, reevaluate x every time
 		go func(x int) {
-			// inner is used to quickly execute teardown behaviour
+			// inner is used to quickly execute teardown behavior
 			// It is not implemented as a function due to its heavy scope
 			inner := func() {
 				// Place ticket
@@ -171,7 +167,12 @@ func up(maxClusters, maxNodes int) error {
 				}
 
 				// Read body, tee reader is overkill
-				data, _ := ioutil.ReadAll(resp.Body)
+				data, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
 				var cluster api.Cluster
 				if err = json.NewDecoder(bytes.NewReader(data)).Decode(&cluster); err != nil {
 					log.Println(string(data))

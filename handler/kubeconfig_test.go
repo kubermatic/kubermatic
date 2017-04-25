@@ -39,7 +39,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 	}
 
 	if c.CurrentContext != "234jkh24234g" {
-		t.Errorf("Expeced response to be the default fake cluster, got %+v", c)
+		t.Errorf("Expected response to be the default fake cluster, got %+v", c)
 	}
 }
 

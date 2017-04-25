@@ -110,6 +110,6 @@ func TestPathSearch_SemverSearch(t *testing.T) {
 	expected := []string{"1.5.2", "1.5.4"}
 
 	if diff := deep.Equal(versions, expected); diff != nil {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, versions)
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, versions, diff)
 	}
 }

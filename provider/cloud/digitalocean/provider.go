@@ -264,9 +264,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 		}
 
 		// append the current page's droplets to our list
-		for _, d := range droplets {
-			ds = append(ds, d)
-		}
+		ds = append(ds, droplets...)
 
 		// if we are at the last page, break out the for loop
 		if resp.Links == nil || resp.Links.IsLastPage() {
