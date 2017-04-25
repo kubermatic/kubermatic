@@ -2,20 +2,12 @@
 podTemplate(label: 'buildpod', containers: [
     containerTemplate(name: 'golang',
                       image: 'kubermatic/golang:test',
+                      alwaysPullImage: true,
                       ttyEnabled: true,
-                      command: 'cat',
-                      envVars: [
-                            containerEnvVar(key: 'DOCKER_HOST', value: 'tcp://localhost:2375'),
-                      ]
-    ),
-    containerTemplate(name: 'docker',
-                      image: 'docker:stable-dind',
-                      ttyEnabled: true,
-                      privileged: true,
-                      command: 'dockerd-entrypoint.sh')
-  ],
+                      command: 'cat'
+  ),
   volumes: [
-      emptyDirVolume(mountPath: '/var/lib/docker', memory: false)
+        hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'
   ],
   ) {
     node ('buildpod') {
