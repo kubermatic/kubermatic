@@ -1,6 +1,14 @@
 //Use only one containerTemplate otherwise it create an error "Pipe not connected" see https://issues.jenkins-ci.org/browse/JENKINS-40825
 podTemplate(label: 'buildpod', containers: [
-    containerTemplate(name: 'golang', image: 'kubermatic/golang:test', ttyEnabled: true, command: 'cat')
+    containerTemplate(name: 'golang',
+                      image: 'kubermatic/golang:test',
+                      ttyEnabled: true,
+                      command: 'cat'
+                      envVars: [
+                            containerEnvVar(key: 'DOCKER_HOST', value: 'tcp://localhost:2375'),
+                      ]
+    )
+    containerTemplate(name: 'docker', image: 'docker:stable-dind', ttyEnabled: true, command: 'cat')
   ]) {
     node ('buildpod') {
       withEnv([
