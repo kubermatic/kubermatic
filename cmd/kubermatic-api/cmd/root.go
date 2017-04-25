@@ -37,7 +37,7 @@ import (
 )
 
 var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, dev string
-var  auth bool
+var auth bool
 
 var viperWhiteList = []string{
 	"v",

@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources,dev  string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, dev string
 var viperWhiteList = []string{
 	"v",
 }

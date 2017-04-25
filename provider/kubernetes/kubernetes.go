@@ -240,7 +240,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			NodePort: nodePort,
 		},
 	}
-		c.Spec.Dev = p.dev
+	c.Spec.Dev = p.dev
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
