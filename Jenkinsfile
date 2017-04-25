@@ -8,8 +8,16 @@ podTemplate(label: 'buildpod', containers: [
                             containerEnvVar(key: 'DOCKER_HOST', value: 'tcp://localhost:2375'),
                       ]
     ),
-    containerTemplate(name: 'docker', image: 'docker:stable-dind')
-  ]) {
+    containerTemplate(name: 'docker',
+                      image: 'docker:stable-dind',
+                      ttyEnabled: true,
+                      privileged: true,
+                      command: 'cat')
+  ],
+  volumes: [
+      emptyDirVolume(mountPath: '/var/lib/docker', memory: false)
+  ],
+  ) {
     node ('buildpod') {
       withEnv([
         "CGO_ENABLED=0",
