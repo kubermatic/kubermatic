@@ -45,9 +45,7 @@ clean:
 install:
 	glide install --strip-vendor
 
-docker: $(CMD)
-	@if [ "$$GOOS" != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
-	@if [ "$$CGO_ENABLED" != 0 ]; then echo "Run make with CGO_ENABLED=0"; exit 1; fi
+docker:
 	docker build -t $(REPO) .
 
 push: docker
