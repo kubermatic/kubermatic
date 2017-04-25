@@ -7,8 +7,8 @@ podTemplate(label: 'buildpod', containers: [
                       command: 'cat'
   ),
   volumes: [
-        hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'
-  ],
+        hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
+  ]
   ) {
     node ('buildpod') {
       withEnv([
