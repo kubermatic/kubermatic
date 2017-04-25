@@ -8,7 +8,7 @@ podTemplate(label: 'buildpod', containers: [
                             containerEnvVar(key: 'DOCKER_HOST', value: 'tcp://localhost:2375'),
                       ]
     ),
-    containerTemplate(name: 'docker', image: 'docker:stable-dind', ttyEnabled: true, command: 'cat')
+    containerTemplate(name: 'docker', image: 'docker:stable-dind')
   ]) {
     node ('buildpod') {
       withEnv([
