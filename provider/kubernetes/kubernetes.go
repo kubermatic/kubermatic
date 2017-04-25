@@ -36,7 +36,7 @@ type kubernetesProvider struct {
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
-	dev    bool
+	dev    string
 	config *rest.Config
 }
 
@@ -44,7 +44,7 @@ type kubernetesProvider struct {
 func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
-	dev bool,
+	dev string,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
@@ -143,9 +143,8 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			NodePort: nodePort,
 		},
 	}
-	if p.dev {
-		c.Spec.Dev = true
-	}
+
+	c.Spec.Dev = p.dev
 
 	prov, found := p.cps[cloud.Name]
 	if !found {
@@ -241,9 +240,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			NodePort: nodePort,
 		},
 	}
-	if p.dev {
-		c.Spec.Dev = true
-	}
+		c.Spec.Dev = p.dev
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {

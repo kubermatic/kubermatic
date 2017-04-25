@@ -99,7 +99,7 @@ type clusterController struct {
 	clusterRoleBindingStore      cache.Indexer
 
 	cps map[string]provider.CloudProvider
-	dev bool
+	dev string
 
 	updateController      *update.Controller
 	versions              map[string]*api.MasterVersion
@@ -123,7 +123,7 @@ func NewController(
 	updates []api.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
-	dev bool,
+	dev string,
 	addonResourcesPath string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
@@ -153,9 +153,7 @@ func NewController(
 	nsLabels := map[string]string{
 		kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
 	}
-	if dev {
-		nsLabels[kprovider.DevLabelKey] = kprovider.DevLabelValue
-	}
+	nsLabels[kprovider.DevLabelKey] = dev
 
 	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
@@ -652,7 +650,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 }
 
 func (cc *clusterController) enqueue(ns *v1.Namespace) {
-	if !cc.dev && ns.Labels[kprovider.DevLabelKey] == kprovider.DevLabelValue {
+	if cc.dev != ns.Labels[kprovider.DevLabelKey] {
 		glog.V(5).Infof("Skipping dev cluster %q", ns.Name)
 		return
 	}
