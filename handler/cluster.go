@@ -2,10 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
-	"errors"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
@@ -242,23 +242,32 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
+		var errDelete, errCleanup error
 		if cp != nil {
-			nodes, err := cp.Nodes(ctx, c)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, node := range nodes {
-				err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+			// This code requires the valid credentials of the
+			// CloudProvider (eg. AWS, DO, ...) however, when
+			// there is an error the customer cluster laying on
+			// our side does not get deleted properly.
+			// We will save errors and later return them after
+			// the cluster on our side got deleted.
+			deleteNodes := func() error {
+				nodes, err := cp.Nodes(ctx, c)
 				if err != nil {
-					return nil, err
+					err = fmt.Errorf("error getting nodes: %v", err)
+					return err
 				}
+
+				for _, node := range nodes {
+					err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+					if err != nil {
+						return err
+					}
+				}
+				return nil
 			}
 
-			err = cp.CleanUp(c)
-			if err != nil {
-				return nil, err
-			}
+			errDelete = deleteNodes()
+			errCleanup = cp.CleanUp(c)
 		}
 
 		err = kp.DeleteCluster(req.user, req.cluster)
@@ -290,6 +299,12 @@ func deleteClusterEndpoint(
 			}
 		}
 
+		if errDelete != nil {
+			return nil, errDelete
+		}
+		if errCleanup != nil {
+			return nil, errCleanup
+		}
 		return nil, nil
 	}
 }
