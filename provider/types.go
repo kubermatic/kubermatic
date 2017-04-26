@@ -17,6 +17,9 @@ const (
 	BareMetalCloudProvider    = "baremetal"
 )
 
+// ErrInvalidToken is raised when a given token is not valid.
+var ErrInvalidToken = fmt.Errorf("invalid token")
+
 // User represents an API user that is used for authentication.
 type User struct {
 	Name  string
