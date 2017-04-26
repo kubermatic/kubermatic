@@ -242,7 +242,7 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		var errDelete, errCleanup error
+		var deleteErrors []error
 		if cp != nil {
 			// This code requires the valid credentials of the
 			// CloudProvider (eg. AWS, DO, ...) however, when
@@ -250,24 +250,23 @@ func deleteClusterEndpoint(
 			// our side does not get deleted properly.
 			// We will save errors and later return them after
 			// the cluster on our side got deleted.
-			deleteNodes := func() error {
-				nodes, err := cp.Nodes(ctx, c)
-				if err != nil {
-					err = fmt.Errorf("error getting nodes: %v", err)
-					return err
-				}
-
-				for _, node := range nodes {
-					err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
-					if err != nil {
-						return err
-					}
-				}
-				return nil
+			nodes, err := cp.Nodes(ctx, c)
+			if err != nil {
+				err = fmt.Errorf("error getting nodes: %v", err)
+				deleteErrors = append(deleteErrors, err)
 			}
 
-			errDelete = deleteNodes()
-			errCleanup = cp.CleanUp(c)
+			for _, node := range nodes {
+				err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+				if err != nil {
+					deleteErrors = append(deleteErrors, err)
+				}
+			}
+
+			err = cp.CleanUp(c)
+			if err != nil {
+				deleteErrors = append(deleteErrors, err)
+			}
 		}
 
 		err = kp.DeleteCluster(req.user, req.cluster)
@@ -299,13 +298,11 @@ func deleteClusterEndpoint(
 			}
 		}
 
-		if errDelete != nil {
-			return nil, errDelete
+		if len(deleteErrors) > 0 {
+			err = fmt.Errorf("Error deleting resources on the cloud provider, please manually care about the cleanup: %v", deleteErrors)
 		}
-		if errCleanup != nil {
-			return nil, errCleanup
-		}
-		return nil, nil
+
+		return nil, err
 	}
 }
 
