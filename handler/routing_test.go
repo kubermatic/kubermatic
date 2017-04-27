@@ -34,7 +34,7 @@ func createTestEndpoint() http.Handler {
 	// create CloudProviders
 	cps := cloud.Providers(dcs)
 
-	kps, err := kubernetes.Providers("./fixtures/kubecfg.yaml", dcs, cps, "./fixtures/secrets.yaml", true)
+	kps, err := kubernetes.Providers("./fixtures/kubecfg.yaml", dcs, cps, "./fixtures/secrets.yaml", true, 12000, 14767)
 	if err != nil {
 		log.Fatal(err)
 	}
