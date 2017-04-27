@@ -304,7 +304,7 @@ type ClusterSpec struct {
 	HumanReadableName string `json:"humanReadableName"`
 	MasterVersion     string `json:"masterVersion"`
 
-	Dev string `json:"-"` // a cluster used in development, compare --dev flag.
+	WorkerName string `json:"-"` // a cluster used in development, compare --worker-name flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.

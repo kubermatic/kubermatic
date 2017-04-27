@@ -98,8 +98,8 @@ type clusterController struct {
 	clusterRoleBindingController cache.Controller
 	clusterRoleBindingStore      cache.Indexer
 
-	cps map[string]provider.CloudProvider
-	dev string
+	cps        map[string]provider.CloudProvider
+	workerName string
 
 	updateController      *update.Controller
 	versions              map[string]*api.MasterVersion
@@ -123,7 +123,7 @@ func NewController(
 	updates []api.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
-	dev string,
+	workerName string,
 	addonResourcesPath string,
 ) (controller.Controller, error) {
 	cc := &clusterController{
@@ -138,7 +138,7 @@ func NewController(
 		inProgress:          map[string]struct{}{},
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
-		dev:                 dev,
+		workerName:          workerName,
 		addonResourcesPath:  addonResourcesPath,
 	}
 
@@ -153,7 +153,7 @@ func NewController(
 	nsLabels := map[string]string{
 		kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
 	}
-	nsLabels[kprovider.DevLabelKey] = dev
+	nsLabels[kprovider.WorkerNameLabelKey] = workerName
 
 	cc.nsStore, cc.nsController = cache.NewInformer(
 		&cache.ListWatch{
@@ -420,7 +420,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 		return
 	}
 
-	if cluster.Spec.Dev != cc.dev {
+	if cluster.Spec.WorkerName != cc.workerName {
 		return
 	}
 
@@ -650,8 +650,8 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 }
 
 func (cc *clusterController) enqueue(ns *v1.Namespace) {
-	if cc.dev != ns.Labels[kprovider.DevLabelKey] {
-		glog.V(5).Infof("Skipping dev cluster %q", ns.Name)
+	if cc.workerName != ns.Labels[kprovider.WorkerNameLabelKey] {
+		glog.V(5).Infof("Skipping cluster %q", ns.Name)
 		return
 	}
 

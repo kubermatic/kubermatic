@@ -132,7 +132,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: spec.HumanReadableName,
-			Dev:               spec.Dev,
+			WorkerName:        spec.WorkerName,
 			Cloud:             cloud,
 		},
 		Status: api.ClusterStatus{
@@ -144,7 +144,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 	}
 
-	c.Spec.Dev = p.dev
+	c.Spec.WorkerName = p.dev
 
 	prov, found := p.cps[cloud.Name]
 	if !found {
@@ -240,7 +240,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			NodePort: nodePort,
 		},
 	}
-	c.Spec.Dev = p.dev
+	c.Spec.WorkerName = p.dev
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
