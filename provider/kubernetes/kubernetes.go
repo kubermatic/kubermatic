@@ -31,9 +31,9 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient                extensions.Clientset
-	kuberntesClient          *kubernetes.Clientset
-	minNodePort, maxNodePort int
+	tprClient                          extensions.Clientset
+	kuberntesClient                    *kubernetes.Clientset
+	minAPIServerPort, maxAPIServerPort int
 
 	mu     sync.Mutex
 	cps    map[string]provider.CloudProvider
@@ -46,7 +46,7 @@ func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	dev bool,
-	minNodePort, maxNodePort int,
+	minAPIServerPort, maxAPIServerPort int,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
@@ -59,19 +59,19 @@ func NewKubernetesProvider(
 	}
 
 	return &kubernetesProvider{
-		cps:             cps,
-		kuberntesClient: client,
-		tprClient:       trpClient,
-		dev:             dev,
-		config:          clientConfig,
-		minNodePort:     minNodePort,
-		maxNodePort:     maxNodePort,
+		cps:              cps,
+		kuberntesClient:  client,
+		tprClient:        trpClient,
+		dev:              dev,
+		config:           clientConfig,
+		minAPIServerPort: minAPIServerPort,
+		maxAPIServerPort: maxAPIServerPort,
 	}
 }
 
 func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 	for {
-		port := rand.IntnRange(p.minNodePort, p.maxNodePort)
+		port := rand.IntnRange(p.minAPIServerPort, p.maxAPIServerPort)
 		sel := labels.NewSelector()
 		portString := strconv.Itoa(port)
 		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})

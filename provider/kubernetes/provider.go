@@ -16,7 +16,7 @@ func Providers(
 	cps provider.CloudRegistry,
 	secretsPath string,
 	dev bool,
-	minNodePort, maxNodePort int,
+	minAPIServerPort, maxAPIServerPort int,
 ) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
 		"fake-1": NewKubernetesFakeProvider("fake-1", cps),
@@ -49,8 +49,8 @@ func Providers(
 			cfg,
 			cps,
 			dev,
-			minNodePort,
-			maxNodePort,
+			minAPIServerPort,
+			maxAPIServerPort,
 		)
 		cfgs[ctx] = *cfg
 	}
