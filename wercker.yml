@@ -43,7 +43,8 @@ build:
         name: copy to deployment directory
         code: |
           mkdir -p "$WERCKER_OUTPUT_DIR/opt"
-          cp -av kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
+          wget https://nl.alpinelinux.org/alpine/v3.5/releases/x86_64/alpine-minirootfs-3.5.2-x86_64.tar.gz
+          cp -av alpine-minirootfs-3.5.2-x86_64.tar.gz kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
           cp -r addon-charts "$WERCKER_OUTPUT_DIR/opt/"
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
   after-steps:
@@ -54,12 +55,12 @@ build:
         notify_on: "failed"
 
 push-hash-image:
-    box: alpine:3.5
+    box: ubuntu:14.04
     steps:
     - script:
-        name: install ca certificates
         code: |
-          apk add -U ca-certificates && rm -rf /var/cache/apk/*
+          tar -xzf alpine-minirootfs-3.5.2-x86_64.tar.gz
+          rm -f alpine-minirootfs-3.5.2-x86_64.tar.gz
     - internal/docker-scratch-push:
         name: push to docker hub as $WERCKER_GIT_COMMIT
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
@@ -98,8 +99,8 @@ push-image:
     steps:
     - script:
         code: |
-          tar -xvjf alpine-3.1.tar.bz2
-          rm -f alpine-3.1.tar.bz2
+          tar -xzf alpine-minirootfs-3.5.2-x86_64.tar.gz
+          rm -f alpine-minirootfs-3.5.2-x86_64.tar.gz
     - internal/docker-scratch-push:
         name: push to docker hub as $PUSH_TAG
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
