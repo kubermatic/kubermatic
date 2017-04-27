@@ -43,8 +43,7 @@ build:
         name: copy to deployment directory
         code: |
           mkdir -p "$WERCKER_OUTPUT_DIR/opt"
-          wget https://nl.alpinelinux.org/alpine/v3.5/releases/x86_64/alpine-minirootfs-3.5.2-x86_64.tar.gz
-          cp -av alpine-minirootfs-3.5.2-x86_64.tar.gz kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
+          cp -av alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
           cp -r addon-charts "$WERCKER_OUTPUT_DIR/opt/"
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
   after-steps:
@@ -59,8 +58,8 @@ push-hash-image:
     steps:
     - script:
         code: |
-          tar -xzf alpine-minirootfs-3.5.2-x86_64.tar.gz
-          rm -f alpine-minirootfs-3.5.2-x86_64.tar.gz
+          tar -xzf alpine-3.1.tar.bz2
+          rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $WERCKER_GIT_COMMIT
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
@@ -99,8 +98,8 @@ push-image:
     steps:
     - script:
         code: |
-          tar -xzf alpine-minirootfs-3.5.2-x86_64.tar.gz
-          rm -f alpine-minirootfs-3.5.2-x86_64.tar.gz
+          tar -xzf alpine-3.1.tar.bz2
+          rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $PUSH_TAG
         author: Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
