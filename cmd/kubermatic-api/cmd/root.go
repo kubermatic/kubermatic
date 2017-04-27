@@ -73,7 +73,7 @@ var RootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		minPort, maxPort, err := parseAPIServerPortRange()
 		if err != nil {
-			log.Fatalf("Error reading node range: %v", err)
+			log.Fatalf("Error reading port range: %v", err)
 		}
 		log.Printf("Using API server port range %d-%d\n", minPort, maxPort)
 
