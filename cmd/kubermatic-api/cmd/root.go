@@ -38,7 +38,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, nodeRange string
+var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, apiServerPortRange string
 var dev, auth bool
 
 var viperWhiteList = []string{
@@ -49,16 +49,16 @@ func parseNodeRange() (minNodePort, maxNodePort int, err error) {
 	input := viper.GetString("node-port-range")
 	minMax := strings.Split(input, "-")
 	if len(minMax) != 2 {
-		return 1200, 14767, fmt.Errorf("can't parse %s, plsease enter it in the format of \"12000-14767\"", input)
+		return 12000, 14767, fmt.Errorf("can't parse %s, please enter it in the format of \"12000-14767\"", input)
 	}
 
 	min, err := strconv.Atoi(minMax[0])
 	if err != nil {
-		return 1200, 14767, err
+		return 12000, 14767, err
 	}
 	max, err := strconv.Atoi(minMax[1])
 	if err != nil {
-		return 1200, 14767, err
+		return 12000, 14767, err
 	}
 	return min, max, err
 }
@@ -143,7 +143,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&jwtKey, "jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	RootCmd.PersistentFlags().StringVar(&address, "address", ":8080", "The address to listen on")
 	RootCmd.PersistentFlags().StringVar(&masterKubeconfig, "master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
-	RootCmd.PersistentFlags().StringVar(&nodeRange, "node-port-range", "12000-14767", "The range node port will be allocated in, provider in format: \"12000-14767\"")
+	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "node-port-range", "12000-14767", "The range client API server port will be allocated in, provide in format: \"12000-14767\"")
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("Unable to bind Command Line flags: %s\n", err)
