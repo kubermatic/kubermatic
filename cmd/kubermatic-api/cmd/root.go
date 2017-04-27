@@ -91,8 +91,8 @@ var RootCmd = &cobra.Command{
 		cps := cloud.Providers(dcs)
 
 		// create KubernetesProvider for each context in the kubeconfig
-
 		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetBool("dev"), minPort, maxPort)
+
 		if err != nil {
 			log.Fatal(err)
 		}
