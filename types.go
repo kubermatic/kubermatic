@@ -310,7 +310,6 @@ type ClusterSpec struct {
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
 	URL      string `json:"url"`
-	EtcdURL  string `json:"etcdURL"`
 	Token    string `json:"token"`
 	NodePort int    `json:"nodePort"`
 }

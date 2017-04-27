@@ -40,8 +40,7 @@ const (
 	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
 	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
 	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
-	etcdURLAnnotation           = annotationPrefix + "etcd-url"        // kubermatic.io/etcd-url
-	nodePortLabel               = annotationPrefix + "node-port"       // kubermatic.io/etcd-url
+	nodePortAnnotation          = annotationPrefix + "node-port"       // kubermatic.io/node-port
 	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
 	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
 	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
@@ -135,13 +134,11 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
 		token, _ := ns.Annotations[tokenAnnotation]
-		etcdURL, _ := ns.Annotations[etcdURLAnnotation]
 		c.Address.URL = url
 		c.Address.Token = token
-		c.Address.EtcdURL = etcdURL
 	}
 
-	if nodePort, found := ns.Labels[nodePortLabel]; found {
+	if nodePort, found := ns.Annotations[nodePortAnnotation]; found {
 		iNodePort, _ := strconv.ParseInt(nodePort, 10, 0)
 		c.Address.NodePort = int(iNodePort)
 	}
@@ -207,12 +204,8 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 			ns.Annotations[tokenAnnotation] = c.Address.Token
 		}
 
-		if c.Address.EtcdURL != "" {
-			ns.Annotations[etcdURLAnnotation] = c.Address.EtcdURL
-		}
-
 		if c.Address.NodePort != 0 {
-			ns.Labels[nodePortLabel] = strconv.Itoa(c.Address.NodePort)
+			ns.Annotations[nodePortAnnotation] = strconv.Itoa(c.Address.NodePort)
 		}
 	}
 
