@@ -15,7 +15,8 @@ func Providers(
 	dcs map[string]provider.DatacenterMeta,
 	cps provider.CloudRegistry,
 	secretsPath string,
-	dev string,
+	workerName string,
+	minAPIServerPort, maxAPIServerPort int,
 ) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
 		"fake-1": NewKubernetesFakeProvider("fake-1", cps),
@@ -47,7 +48,9 @@ func Providers(
 		kps[ctx] = NewKubernetesProvider(
 			cfg,
 			cps,
-			dev,
+			workerName,
+			minAPIServerPort,
+			maxAPIServerPort,
 		)
 		cfgs[ctx] = *cfg
 	}

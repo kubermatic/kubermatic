@@ -19,7 +19,7 @@ const (
 	RoleLabelKey = "role"
 	// ClusterRoleLabel is the value of the role label of a cluster namespace.
 	ClusterRoleLabel = "kubermatic-cluster"
-	// WorkerNameLabelKey identifies clusters that are only processed by dev cluster controllers.
+	// WorkerNameLabelKey identifies clusters that are only processed by workerName cluster controllers.
 	WorkerNameLabelKey = "worker-name"
 
 	// annotationPrefix is the prefix string of every cluster namespace annotation.
