@@ -23,7 +23,6 @@ type Data struct {
 	DC                string
 	ClusterName       string
 	SSHAuthorizedKeys []string
-	EtcdURL           string
 	APIServerURL      string
 	Region            string
 	Name              string

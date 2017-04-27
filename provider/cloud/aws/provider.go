@@ -489,7 +489,6 @@ func (a *aws) userData(
 		DC:                node.DatacenterName,
 		ClusterName:       clusterState.Metadata.Name,
 		SSHAuthorizedKeys: authorizedKeys,
-		EtcdURL:           clusterState.Address.EtcdURL,
 		APIServerURL:      clusterState.Address.URL,
 		Region:            dc.Spec.AWS.Region,
 		Name:              instanceName,

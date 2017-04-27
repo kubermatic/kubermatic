@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -124,10 +122,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			Labels:      map[string]string{},
 		},
 	}
-	nodePort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
@@ -143,9 +137,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			NodePort: nodePort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 
 	c.Spec.WorkerName = p.workerName
@@ -225,10 +217,6 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			Labels:      map[string]string{},
 		},
 	}
-	nodePort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
@@ -240,9 +228,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			NodePort: nodePort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 	c.Spec.WorkerName = p.workerName
 
