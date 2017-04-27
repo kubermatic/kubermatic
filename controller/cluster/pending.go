@@ -234,9 +234,14 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		cc.recordClusterEvent(c, "launching", "Created service %q", s)
 
 		if s == "apiserver" {
-			c.Address.NodePort = int(service.Spec.Ports[0].NodePort)
-			c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.NodePort)
-			return c, nil
+			for _, p := range service.Spec.Ports {
+				if p.Name != "secure" {
+					continue
+				}
+				c.Address.NodePort = int(p.NodePort)
+				c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.NodePort)
+				return c, nil
+			}
 		}
 	}
 
