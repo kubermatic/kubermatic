@@ -49,16 +49,16 @@ func parseAPIServerPortRange() (min, max int, err error) {
 	input := viper.GetString("api-server-port-range")
 	minMax := strings.Split(input, "-")
 	if len(minMax) != 2 {
-		return 12000, 14767, fmt.Errorf("can't parse %s, please enter it in the format of \"12000-14767\"", input)
+		return min, min, fmt.Errorf("can't parse %s, please enter it in the format of \"30000-32767\"", input)
 	}
 
 	min, err = strconv.Atoi(minMax[0])
 	if err != nil {
-		return 12000, 14767, err
+		return min, max, err
 	}
 	max, err = strconv.Atoi(minMax[1])
 	if err != nil {
-		return 12000, 14767, err
+		return min, max, err
 	}
 	return min, max, err
 }
@@ -143,7 +143,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&jwtKey, "jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	RootCmd.PersistentFlags().StringVar(&address, "address", ":8080", "The address to listen on")
 	RootCmd.PersistentFlags().StringVar(&masterKubeconfig, "master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
-	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "api-server-port-range", "12000-14767", "The range client API server port will be allocated in, provide in format: \"12000-14767\"")
+	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "api-server-port-range", "30000-32767", "The range client API server port will be allocated in, provide in format: \"30000-32767\"")
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("Unable to bind Command Line flags: %s\n", err)
