@@ -40,7 +40,7 @@ glide update --strip-vendor
 
 In order to use incremental compilation one can compile a binary as follows:
 ```
-$ make GOBUILD="go install" kubermatic-api
+$ make GOBUILD="go install" build
 ```
 Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depending on what you want to build.
 
@@ -72,6 +72,33 @@ make build CMD=kubermatic-cluster-controller &&  \
 --external-url=dev.kubermatic.io
 ```
 
+## Linting / Testing
+### Install linters
+```bash
+go get -u github.com/golang/lint/golint
+go get -u github.com/client9/misspell/cmd/misspell
+go get -u github.com/kisielk/errcheck
+go get -u github.com/Masterminds/glide
+go get -u github.com/opennota/check/cmd/varcheck
+go get -u github.com/opennota/check/cmd/structcheck
+go get -u honnef.co/go/tools/cmd/unused
+go get -u honnef.co/go/tools/cmd/gosimple
+```
+## Run linters
+Before every push, make sure you run:
+```bash
+make check
+```
+
+gofmt errors can be automatically fixed by running
+```bash
+make fix
+```
+
+## Run tests
+```bash
+make test
+```
 
 # Misc
 
