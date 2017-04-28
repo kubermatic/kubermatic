@@ -45,7 +45,7 @@ type kubernetesProvider struct {
 func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
-	dev string,
+	workerName string,
 	minAPIServerPort, maxAPIServerPort int,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
@@ -62,7 +62,7 @@ func NewKubernetesProvider(
 		cps:              cps,
 		kuberntesClient:  client,
 		tprClient:        trpClient,
-		workerName:       dev,
+		workerName:       workerName,
 		config:           clientConfig,
 		minAPIServerPort: minAPIServerPort,
 		maxAPIServerPort: maxAPIServerPort,
