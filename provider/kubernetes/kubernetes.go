@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -70,23 +68,40 @@ func NewKubernetesProvider(
 }
 
 func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
-	for {
-		port := rand.IntnRange(p.minAPIServerPort, p.maxAPIServerPort)
-		sel := labels.NewSelector()
-		portString := strconv.Itoa(port)
-		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})
-		if err != nil {
-			return 0, err
-		}
-		sel = sel.Add(*req)
-		nsList, err := p.kuberntesClient.Namespaces().List(metav1.ListOptions{LabelSelector: sel.String()})
-		if err != nil {
-			return 0, err
-		}
-		if len(nsList.Items) == 0 {
-			return port, nil
+	services, err := p.kuberntesClient.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	takenPorts := []int{}
+	for _, service := range services.Items {
+		for _, port := range service.Spec.Ports {
+			if port.NodePort == 0 {
+				continue
+			}
+			takenPorts = append(takenPorts, int(port.NodePort))
 		}
 	}
+
+	isIn := func(p int, takenPorts []int) bool {
+		for _, takenPort := range takenPorts {
+			if p == takenPort {
+				return true
+			}
+		}
+		return false
+	}
+
+	port := p.minAPIServerPort
+	for port <= p.maxAPIServerPort {
+		if isIn(port, takenPorts) {
+			port += 1
+			continue
+		}
+		return port, nil
+	}
+
+	return 0, fmt.Errorf("no free NodePort available within the given range %d-%d", p.minAPIServerPort, p.maxAPIServerPort)
 }
 
 func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
