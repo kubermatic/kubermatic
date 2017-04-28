@@ -48,7 +48,7 @@ Example for `kubermatic-api`
 
 ```
 make build CMD=kubermatic-api && ./kubermatic-api \
---dev=1 \
+--worker-name="unique-label-abcdef123" \
 --kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
 --datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
 --jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
@@ -64,13 +64,16 @@ make build CMD=kubermatic-cluster-controller &&  \
 ./kubermatic-cluster-controller \
 --datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
 --kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
---dev=1 \
+--worker-name="unique-label-abcdef123" \
 --logtostderr=1 \
 --master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
 --v=4 \
 --addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
 --external-url=dev.kubermatic.io
 ```
+
+Valid worker-name label value must be 63 characters or less and must be empty or begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alphanumerics between.
+The dev label should be also unique between a pair of api<->controller.
 
 
 # Misc
