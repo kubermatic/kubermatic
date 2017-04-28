@@ -1,5 +1,6 @@
 FROM alpine:3.5
-MAINTAINER Dr. Stefan Schimanski <stefan.schimanski@gmail.com>
+
+LABEL maintainer "sebastian@loodse.com"
 
 RUN apk add -U ca-certificates && rm -rf /var/cache/apk/*
 
