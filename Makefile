@@ -45,10 +45,10 @@ clean:
 install:
 	glide install --strip-vendor
 
-docker:
+docker-build:
 	docker build -t $(REPO) .
 
-push: docker
+docker-push: docker
 	docker push $(REPO)
 
 .PHONY: build test check
