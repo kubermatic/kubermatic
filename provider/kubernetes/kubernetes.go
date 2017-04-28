@@ -95,7 +95,7 @@ func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
 	port := p.minAPIServerPort
 	for port <= p.maxAPIServerPort {
 		if isIn(port, takenPorts) {
-			port += 1
+			port++
 			continue
 		}
 		return port, nil
@@ -140,6 +140,11 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 	}
 
+	apiserverPort, err := p.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
+
 	c := &api.Cluster{
 		Metadata: api.Metadata{
 			User: user.Name,
@@ -154,7 +159,9 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{},
+		Address: &api.ClusterAddress{
+			ApiserverExternalPort: apiserverPort,
+		},
 	}
 
 	c.Spec.WorkerName = p.workerName
@@ -227,6 +234,11 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		}
 	}
 
+	apiserverPort, err := p.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
+
 	ns := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        NamespaceName(clusterName),
@@ -245,7 +257,9 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{},
+		Address: &api.ClusterAddress{
+			ApiserverExternalPort: apiserverPort,
+		},
 	}
 	c.Spec.WorkerName = p.workerName
 

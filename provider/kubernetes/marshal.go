@@ -138,7 +138,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 
 	if nodePort, found := ns.Annotations[nodePortAnnotation]; found {
 		iNodePort, _ := strconv.ParseInt(nodePort, 10, 0)
-		c.Address.NodePort = int(iNodePort)
+		c.Address.ApiserverExternalPort = int(iNodePort)
 	}
 
 	// decode the cloud spec from annotations
@@ -202,8 +202,8 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 			ns.Annotations[tokenAnnotation] = c.Address.Token
 		}
 
-		if c.Address.NodePort != 0 {
-			ns.Annotations[nodePortAnnotation] = strconv.Itoa(c.Address.NodePort)
+		if c.Address.ApiserverExternalPort != 0 {
+			ns.Annotations[nodePortAnnotation] = strconv.Itoa(c.Address.ApiserverExternalPort)
 		}
 	}
 

@@ -40,8 +40,8 @@ func TestLoadServiceFile(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &api.ClusterAddress{
-			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			NodePort: 13000,
+			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ApiserverExternalPort: 13000,
 		},
 	}
 
@@ -77,8 +77,8 @@ func TestLoadIngressFile(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			NodePort: 13000,
+			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ApiserverExternalPort: 13000,
 		},
 	}
 
@@ -113,8 +113,8 @@ func TestLoadPVCFile(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:      "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			NodePort: 13000,
+			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ApiserverExternalPort: 13000,
 		},
 	}
 
