@@ -226,23 +226,12 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
 
-		service, err = cc.client.CoreV1().Services(ns).Create(service)
+		_, err = cc.client.CoreV1().Services(ns).Create(service)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create service %s: %v", s, err)
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created service %q", s)
-
-		if s == "apiserver" {
-			for _, p := range service.Spec.Ports {
-				if p.Name != "secure" {
-					continue
-				}
-				c.Address.NodePort = int(p.NodePort)
-				c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.NodePort)
-				return c, nil
-			}
-		}
 	}
 
 	return nil, nil
