@@ -387,7 +387,7 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namesp
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
-	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver-v5", &metav1.DeleteOptions{})
+	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver", &metav1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
 	}
