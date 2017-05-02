@@ -168,3 +168,7 @@ func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string,
 func (p *kubernetesFakeProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
 	return nil, nil
 }
+
+func (p *kubernetesFakeProvider) DeleteNode(user provider.User, cluster string, node *api.Node) error {
+	return nil
+}
