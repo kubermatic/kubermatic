@@ -38,8 +38,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, apiServerPortRange string
-var dev, auth bool
+var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, workerName, apiServerPortRange string
+var auth bool
 
 var viperWhiteList = []string{
 	"v",
@@ -91,7 +91,7 @@ var RootCmd = &cobra.Command{
 		cps := cloud.Providers(dcs)
 
 		// create KubernetesProvider for each context in the kubeconfig
-		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetBool("dev"), minPort, maxPort)
+		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetString("worker-name"), minPort, maxPort)
 
 		if err != nil {
 			log.Fatal(err)
@@ -135,7 +135,7 @@ func init() {
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/kubermatic/kubermatic-api.yaml)")
-	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
+	RootCmd.PersistentFlags().StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	RootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	RootCmd.PersistentFlags().BoolVar(&auth, "auth", true, "Activate authentication with JSON Web Tokens")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")

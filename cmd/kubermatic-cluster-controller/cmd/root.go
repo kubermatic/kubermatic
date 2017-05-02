@@ -35,8 +35,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources string
-var dev bool
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, workerName string
 var viperWhiteList = []string{
 	"v",
 }
@@ -132,7 +131,7 @@ var RootCmd = &cobra.Command{
 				updates,
 				viper.GetString("master-resources"),
 				viper.GetString("external-url"),
-				viper.GetBool("dev"),
+				viper.GetString("worker-name"),
 				viper.GetString("addon-resources"),
 			)
 			if err != nil {
@@ -162,7 +161,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&masterResources, "master-resources", "", "The master resources path (Required).")
 	RootCmd.PersistentFlags().StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	RootCmd.PersistentFlags().StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
-	RootCmd.PersistentFlags().BoolVar(&dev, "dev", false, "Create dev-mode clusters only processed by dev-mode cluster controller")
+	RootCmd.PersistentFlags().StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
 	RootCmd.PersistentFlags().StringVar(&versions, "versions", "versions.yaml", "The versions.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&updates, "updates", "updates.yaml", "The updates.yaml file path")

@@ -35,17 +35,17 @@ type kubernetesProvider struct {
 	kuberntesClient                    *kubernetes.Clientset
 	minAPIServerPort, maxAPIServerPort int
 
-	mu     sync.Mutex
-	cps    map[string]provider.CloudProvider
-	dev    bool
-	config *rest.Config
+	mu         sync.Mutex
+	cps        map[string]provider.CloudProvider
+	workerName string
+	config     *rest.Config
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
-	dev bool,
+	workerName string,
 	minAPIServerPort, maxAPIServerPort int,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
@@ -62,7 +62,7 @@ func NewKubernetesProvider(
 		cps:              cps,
 		kuberntesClient:  client,
 		tprClient:        trpClient,
-		dev:              dev,
+		workerName:       workerName,
 		config:           clientConfig,
 		minAPIServerPort: minAPIServerPort,
 		maxAPIServerPort: maxAPIServerPort,
@@ -136,7 +136,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 		Spec: api.ClusterSpec{
 			HumanReadableName: spec.HumanReadableName,
-			Dev:               spec.Dev,
+			WorkerName:        spec.WorkerName,
 			Cloud:             cloud,
 		},
 		Status: api.ClusterStatus{
@@ -147,9 +147,8 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			NodePort: nodePort,
 		},
 	}
-	if p.dev {
-		c.Spec.Dev = true
-	}
+
+	c.Spec.WorkerName = p.workerName
 
 	prov, found := p.cps[cloud.Name]
 	if !found {
@@ -246,9 +245,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			NodePort: nodePort,
 		},
 	}
-	if p.dev {
-		c.Spec.Dev = true
-	}
+	c.Spec.WorkerName = p.workerName
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
