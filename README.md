@@ -102,5 +102,5 @@ make test
 ```
 
 ## CI/CD
-[Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile`.
-A build gets triggered for every push.
+Currently: [Wercker](https://app.wercker.com/Kubermatic/api) - Which uses the `wercker.yaml` & does a build on every push. 
+Future: [Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile` & also does a build on every push.
