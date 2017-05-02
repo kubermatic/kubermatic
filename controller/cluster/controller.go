@@ -406,7 +406,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 
 	obj, exists, err := cc.nsStore.GetByKey(a.Metadata.Namespace)
 	if !exists {
-		glog.Errorf("Namespace for cluster %s does not exist", a.Metadata.Namespace)
+		glog.V(6).Infof("Namespace for cluster %s does not exist. Probably orphaned addon tpr", a.Metadata.Namespace)
 		return
 	}
 	if err != nil {
