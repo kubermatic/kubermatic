@@ -65,13 +65,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
-	// check that the ingress is available
-	err = cc.launchingCheckIngress(c)
-	if err != nil {
-		return nil, err
-	}
-
-	////check that all pcv's are available
+	////check that all pvc's are available
 	err = cc.launchingCheckPvcs(c)
 	if err != nil {
 		return nil, err
@@ -205,7 +199,8 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
-		"apiserver": resources.LoadServiceFile,
+		"apiserver":          resources.LoadServiceFile,
+		"apiserver-insecure": resources.LoadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
@@ -301,37 +296,6 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
 	}
 
-	return nil
-}
-
-func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error){
-		"k8sniff": resources.LoadIngressFile,
-	}
-
-	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	for app, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, app)
-		_, exists, err := cc.ingressStore.GetByKey(key)
-		if err != nil {
-			return err
-		}
-		if exists {
-			glog.V(6).Infof("Skipping already existing ingress %q", key)
-			return nil
-		}
-		ingress, err := gen(c, app, cc.masterResourcesPath, cc.dc, cc.externalURL)
-		if err != nil {
-			return fmt.Errorf("failed to generate %s: %v", app, err)
-		}
-
-		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
-		if err != nil {
-			return fmt.Errorf("failed to create ingress %s: %v", app, err)
-		}
-
-		cc.recordClusterEvent(c, "launching", "Created ingress")
-	}
 	return nil
 }
 
