@@ -299,7 +299,7 @@ func deleteClusterEndpoint(
 		}
 
 		if len(deleteErrors) > 0 {
-			err = fmt.Errorf("Error deleting resources on the cloud provider, please manually care about the cleanup: %v", deleteErrors)
+			err = fmt.Errorf("Please manually clean up any Storage, Nodes or Load Balancers associated with %q, got errors while cleaning up: %v", req.cluster, deleteErrors)
 		}
 
 		return nil, err
