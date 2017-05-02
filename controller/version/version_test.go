@@ -27,7 +27,7 @@ func TestBestAutomaticUpdate(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if diff := deep.Equal(updateVersion, &expected); diff != nil {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion, diff)
 	}
 
 }
@@ -52,7 +52,7 @@ func TestBestAutomaticUpdateWildCard(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if diff := deep.Equal(updateVersion, &expected); diff != nil {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion, diff)
 	}
 
 }
@@ -83,6 +83,6 @@ func TestBestAutomaticUpdateWildCardMultiValid(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if diff := deep.Equal(updateVersion, &expected); diff != nil {
-		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion)
+		t.Fatalf("Unexpected update path: expected=%v, got=%v, diff=%v", expected, updateVersion, diff)
 	}
 }

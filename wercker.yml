@@ -19,12 +19,14 @@ build:
     - script:
         name: install go tools
         code: |
-          go version
-          go get -u github.com/alecthomas/gometalinter
-          go get github.com/axw/gocov/gocov # https://github.com/golang/go/issues/6909
-          # go get github.com/mattn/goveralls
-          git describe --tags |tee VERSION
-          gometalinter --install
+          go get -u github.com/golang/lint/golint
+          go get -u github.com/client9/misspell/cmd/misspell
+          go get -u github.com/kisielk/errcheck
+          go get -u github.com/Masterminds/glide
+          go get -u github.com/opennota/check/cmd/varcheck
+          go get -u github.com/opennota/check/cmd/structcheck
+          go get -u honnef.co/go/tools/cmd/unused
+          go get -u honnef.co/go/tools/cmd/gosimple
           go get -u github.com/Masterminds/glide
     - script:
         name: install dependencies
@@ -56,7 +58,7 @@ push-hash-image:
     steps:
     - script:
         code: |
-          tar -xvjf alpine-3.1.tar.bz2
+          tar -xf alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $WERCKER_GIT_COMMIT
@@ -96,7 +98,7 @@ push-image:
     steps:
     - script:
         code: |
-          tar -xvjf alpine-3.1.tar.bz2
+          tar -xf alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $PUSH_TAG

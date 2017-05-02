@@ -459,6 +459,6 @@ type NodeUpdate struct {
 	From, To                   string
 	Automatic, RollbackAllowed bool
 	Enabled                    bool
-	Visable                    bool
+	Visible                    bool
 	Promote                    bool
 }

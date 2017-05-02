@@ -47,12 +47,18 @@ func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec,
 		},
 	}
 	if as[clientKeyAnnotationKey] != "" {
-		c.BringYourOwn.ClientKeyCert.Key, _ =
-			base64.StdEncoding.DecodeString(as[clientKeyAnnotationKey])
+		key, err := base64.StdEncoding.DecodeString(as[clientKeyAnnotationKey])
+		if err != nil {
+			return &c, err
+		}
+		c.BringYourOwn.ClientKeyCert.Key = key
 	}
 	if as[clientCertAnnotationKey] != "" {
-		c.BringYourOwn.ClientKeyCert.Cert, _ =
-			base64.StdEncoding.DecodeString(as[clientCertAnnotationKey])
+		cert, err := base64.StdEncoding.DecodeString(as[clientCertAnnotationKey])
+		if err != nil {
+			return &c, err
+		}
+		c.BringYourOwn.ClientKeyCert.Cert = cert
 	}
 
 	return &c, nil

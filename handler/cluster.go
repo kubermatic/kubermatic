@@ -50,13 +50,11 @@ func newClusterEndpointV2(
 				// TODO: More keys!
 				SSHKeyName: req.SSHKeys[0],
 			}
-			break
 		case provider.DigitaloceanCloudProvider:
 			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
 				Token:   req.Cloud.Secret,
 				SSHKeys: req.SSHKeys,
 			}
-			break
 		case provider.FakeCloudProvider:
 			req.Cloud.Fake = &api.FakeCloudSpec{
 				Token: req.Cloud.Secret,
@@ -452,8 +450,8 @@ func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 
 type createAddonRequest struct {
 	dcReq
-	addonName string `json:"addon_name"`
-	cluster   string `json:"cluster"`
+	addonName string
+	cluster   string
 }
 
 func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {

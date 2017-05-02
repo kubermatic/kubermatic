@@ -22,18 +22,22 @@ gofmt:
 fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
-gometalinter:
-	gometalinter \
-		--vendor \
-		--cyclo-over=13 \
-		--tests \
-		--deadline=1200s \
-		--dupl-threshold=53 \
-		--concurrency=2 \
-		--disable=gotype --disable=aligncheck --disable=unconvert --disable=structcheck --disable=interfacer --disable=deadcode --disable=gocyclo --disable=dupl --disable=gosimple --disable=gas --disable=vet --disable=vetshadow\
-		./...
+lint:
+	{ \
+	set -e ;\
+	PACKAGES=$$(go list ./... | grep -v /vendor/) ;\
+	go vet $$PACKAGES ;\
+	golint $$PACKAGES ;\
+	errcheck -blank $$PACKAGES ;\
+	varcheck $$PACKAGES ;\
+	structcheck $$PACKAGES ;\
+	gosimple $$PACKAGES ;\
+	unused $$PACKAGES ;\
+	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
+	misspell -error -locale US $$GOFILES ;\
+	}
 
-check: gofmt gometalinter
+check: gofmt lint
 
 clean:
 	rm -f $(CMD)
@@ -41,16 +45,10 @@ clean:
 install:
 	glide install --strip-vendor
 
-docker: $(CMD)
-	@if [ "$$GOOS" != linux ]; then echo "Run make with GOOS=linux"; exit 1; fi
+docker-build:
 	docker build -t $(REPO) .
 
-push: docker
+docker-push: docker
 	docker push $(REPO)
-
-.PHONY: alpine-3.1.tar.bz2
-alpine-3.1.tar.bz2:
-	docker run -i alpine:3.1 /bin/sh -c "apk add -U ca-certificates && rm -rf /var/cache/apk/*"
-	docker export $$(docker ps -l -q) | bzip2 > $@
 
 .PHONY: build test check

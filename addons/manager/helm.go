@@ -147,11 +147,8 @@ func (a *HelmAddonManager) Delete(addon *extensions.ClusterAddon) error {
 	ctx := helm.NewContext()
 
 	_, err := a.tiller.UninstallRelease(ctx, req)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // Update will update a installed addon in the cluster
