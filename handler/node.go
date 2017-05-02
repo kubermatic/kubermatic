@@ -221,6 +221,10 @@ func deleteNodeEndpoint(
 				if err != nil {
 					glog.Errorf("failed to delete node %q from cluster: %v", node.Metadata.Name, err)
 				}
+				err = kp.DeleteNode(req.user, req.cluster, node)
+				if err != nil {
+					glog.Errorf("failed to delete node tpr %q: %v", node.Metadata.Name, err)
+				}
 			}
 		}
 

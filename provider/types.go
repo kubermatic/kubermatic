@@ -73,6 +73,9 @@ type KubernetesProvider interface {
 
 	// CreateNode creates a node ThirdPartyResource
 	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
+
+	// DeleteNode deletes a node ThirdPartyResource
+	DeleteNode(user User, cluster string, node *api.Node) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

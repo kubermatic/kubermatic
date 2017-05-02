@@ -205,3 +205,7 @@ func (p *seedProvider) CreateAddon(user provider.User, cluster string, addonName
 func (p *seedProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
 	return nil, nil
 }
+
+func (p *seedProvider) DeleteNode(user provider.User, cluster string, node *api.Node) error {
+	return nil
+}
