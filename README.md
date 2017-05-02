@@ -22,32 +22,32 @@ ln -sf ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/clou
 popd
 ```
 
-## Dependencies
+### Dependencies
 
-### Install dependencies
+#### Install dependencies
 
 ```bash
 glide install --strip-vendor
 ```
 
-### Update dependencies
+#### Update dependencies
 
 ```bash
 glide update --strip-vendor
 ```
 
-## Building locally
+### Building locally
 
 In order to use incremental compilation one can compile a binary as follows:
 ```
 $ make GOBUILD="go install" build
 ```
-Replace `kubermatic-api` with `kubermatic-cluster-controller` respectively depending on what you want to build.
 
-Example for `kubermatic-api`
+### Running locally
+#### kubermatic-api
 
-```
-make build CMD=kubermatic-api && ./kubermatic-api \
+```bash
+./kubermatic-api \
 --dev=1 \
 --kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
 --datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
@@ -57,10 +57,8 @@ make build CMD=kubermatic-api && ./kubermatic-api \
 --address=127.0.0.1:8080 \
 ```
 
-and `kubermatic-cluster-controller`
-
-```
-make build CMD=kubermatic-cluster-controller &&  \
+#### kubermatic-cluster-controller
+```bash
 ./kubermatic-cluster-controller \
 --datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
 --kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
@@ -84,7 +82,7 @@ go get -u github.com/opennota/check/cmd/structcheck
 go get -u honnef.co/go/tools/cmd/unused
 go get -u honnef.co/go/tools/cmd/gosimple
 ```
-## Run linters
+### Run linters
 Before every push, make sure you run:
 ```bash
 make check
@@ -95,15 +93,11 @@ gofmt errors can be automatically fixed by running
 make fix
 ```
 
-## Run tests
+### Run tests
 ```bash
 make test
 ```
 
-# Misc
-
-## Upload to S3
-
-```
-s3cmd put -P --multipart-chunk-size-mb=1 etcd2-proxy-proxy s3://kubermatic/coreos/etcd2-proxy-proxy
-```
+## CI/CD
+[Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile`.
+A build gets triggered for every push.
