@@ -38,7 +38,10 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 
 func (b *baremetal) getAuthenticatedRequest(c *api.Cluster, method, path string, body io.Reader) (*http.Request, error) {
 	bmSpec := b.datacenters[c.Spec.Cloud.DatacenterName].Spec.BareMetal
-	u, _ := url.Parse(bmSpec.URL)
+	u, err := url.Parse(bmSpec.URL)
+	if err != nil {
+		return nil, err
+	}
 	u.Path = path
 
 	r, err := http.NewRequest(method, u.String(), body)

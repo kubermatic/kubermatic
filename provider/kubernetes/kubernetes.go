@@ -193,17 +193,18 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	// ensure the NS is deleted when any error occurs
 	defer func(prov provider.CloudProvider, c *api.Cluster, err error) {
 		if err != nil {
-			_ = prov.CleanUp(c)
-			_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(c.Metadata.Name), &metav1.DeleteOptions{})
+			err = prov.CleanUp(c)
+			if err != nil {
+				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
+			}
+			err = p.kuberntesClient.Namespaces().Delete(NamespaceName(c.Metadata.Name), &metav1.DeleteOptions{})
+			if err != nil {
+				glog.Errorf("failed to delete cluster after failed creation for cluster %s: %v", c.Metadata.Name, err)
+			}
 		}
 	}(prov, c, err)
 
 	return UnmarshalCluster(p.cps, ns)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
 }
 
 // Deprecated in favor of NewClusterWithCloud
@@ -276,7 +277,10 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 	c, err = UnmarshalCluster(p.cps, ns)
 
 	if err != nil {
-		_ = p.kuberntesClient.Namespaces().Delete(NamespaceName(clusterName), &metav1.DeleteOptions{})
+		delErr := p.kuberntesClient.Namespaces().Delete(NamespaceName(clusterName), &metav1.DeleteOptions{})
+		if delErr != nil {
+			glog.Errorf("failed to delete cluster after failed creation for cluster %s: %v", c.Metadata.Name, err)
+		}
 		return nil, err
 	}
 
@@ -338,7 +342,10 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = prov.InitializeCloudSpec(c)
 		if err != nil {
-			_ = prov.CleanUp(c)
+			cleanupErr := prov.CleanUp(c)
+			if cleanupErr != nil {
+				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
+			}
 			return nil, fmt.Errorf(
 				"cannot set %s cloud config for cluster %q: %v",
 				provName,
@@ -349,7 +356,11 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 
 		err = p.ApplyCloudProvider(c, ns)
 		if err != nil {
-			_ = prov.CleanUp(c)
+			cleanupErr := prov.CleanUp(c)
+			if cleanupErr != nil {
+				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
+			}
+
 			return nil, err
 		}
 
@@ -493,6 +504,6 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 		Spec:     node.Spec,
 	}
 
-	// TODO: Use propper cluster generator
+	// TODO: Use proper cluster generator
 	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Create(n)
 }

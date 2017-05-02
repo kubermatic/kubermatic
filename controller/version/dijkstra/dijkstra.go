@@ -113,8 +113,3 @@ func (q *queue) Pop() interface{} {
 	*q = old[0 : n-1]
 	return item
 }
-
-func (q *queue) update(item *queueItem, weight float64) {
-	item.weight = weight
-	heap.Fix(q, item.index)
-}

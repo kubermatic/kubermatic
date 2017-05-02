@@ -91,7 +91,10 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 		phaseTS = time.Now() // gracefully use "now"
 	}
 
-	apiserverSSH, _ := base64.StdEncoding.DecodeString(ns.Annotations[apiserverPubSSHAnnotation])
+	apiserverSSH, err := base64.StdEncoding.DecodeString(ns.Annotations[apiserverPubSSHAnnotation])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode apiserver pub ssh key: %v", err)
+	}
 	c := api.Cluster{
 		Metadata: api.Metadata{
 			Name:        ns.Labels[nameLabelKey],
@@ -131,13 +134,16 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 
 	// get address
 	if url, found := ns.Annotations[urlAnnotation]; found {
-		token, _ := ns.Annotations[tokenAnnotation]
+		token := ns.Annotations[tokenAnnotation]
 		c.Address.URL = url
 		c.Address.Token = token
 	}
 
 	if nodePort, found := ns.Annotations[nodePortAnnotation]; found {
-		iNodePort, _ := strconv.ParseInt(nodePort, 10, 0)
+		iNodePort, err := strconv.ParseInt(nodePort, 10, 0)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse nodeport: %v", err)
+		}
 		c.Address.ApiserverExternalPort = int(iNodePort)
 	}
 
