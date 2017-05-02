@@ -486,7 +486,7 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:        node.Metadata.UID,
+		Name:        node.Metadata.Name,
 		Annotations: node.Metadata.Annotations,
 	}
 
@@ -506,4 +506,13 @@ func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node
 
 	// TODO: Use proper cluster generator
 	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Create(n)
+}
+
+func (p *kubernetesProvider) DeleteNode(user provider.User, cluster string, node *api.Node) error {
+	_, err := p.Cluster(user, cluster)
+	if err != nil {
+		return err
+	}
+
+	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Delete(node.Metadata.Name, &metav1.DeleteOptions{})
 }
