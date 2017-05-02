@@ -60,42 +60,6 @@ func TestLoadServiceFile(t *testing.T) {
 	}
 }
 
-func TestLoadIngressFile(t *testing.T) {
-	if IsOnCi() {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				BareMetal: &api.BareMetalCloudSpec{
-					Name: "test",
-				},
-			},
-		},
-		Metadata: api.Metadata{
-			Name: "jh8j81chn",
-		},
-		Address: &api.ClusterAddress{
-			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ApiserverExternalPort: 13000,
-		},
-	}
-
-	ing := map[string]string{
-		"k8sniff": "loadingressfile-k8sniff-result",
-	}
-
-	for app, r := range ing {
-		res, err := LoadIngressFile(c, app, "../../../config/kubermatic/static/master/", "host2", "int.kubermatic.io")
-		if err != nil {
-			t.Fatalf("failed to load %q: %v", app, err)
-		}
-
-		checkTestResult(t, r, res)
-	}
-}
-
 func TestLoadPVCFile(t *testing.T) {
 	if IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
@@ -183,6 +147,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 		},
 		Address: &api.ClusterAddress{
 			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ApiserverExternalPort: 3000,
 		},
 	}
 
@@ -240,6 +205,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 		},
 		Address: &api.ClusterAddress{
 			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ApiserverExternalPort: 3000,
 		},
 	}
 
