@@ -39,7 +39,7 @@ podTemplate(label: 'buildpod', containers: [
             stage('Build'){
                 container('golang') {
                     sh "cd /go/src/github.com/kubermatic/api && make build"
-                    sh "cd /go/src/github.com/kubermatic/api && make docker"
+                    sh "cd /go/src/github.com/kubermatic/api && make docker-build"
                 }
             }
             stage('Push'){
@@ -47,7 +47,7 @@ podTemplate(label: 'buildpod', containers: [
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
                             usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                         sh "docker login --username="${env.USERNAME}" --password="${env.PASSWORD}""
-                        sh "cd /go/src/github.com/kubermatic/api && make push"
+                        sh "cd /go/src/github.com/kubermatic/api && make docker-push"
                     }
                 }
             }
