@@ -48,7 +48,7 @@ install:
 docker-build:
 	docker build -t $(REPO) .
 
-docker-push: docker
+docker-push:
 	docker push $(REPO)
 
 .PHONY: build test check
