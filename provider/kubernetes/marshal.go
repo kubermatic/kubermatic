@@ -28,23 +28,23 @@ const (
 	// namePrefix is the prefix string of every cluster namespace name.
 	namePrefix = "cluster"
 
-	urlAnnotation               = annotationPrefix + "url"             // kubermatic.io/url
-	tokenAnnotation             = annotationPrefix + "token"           // kubermatic.io/token
-	customAnnotationPrefix      = annotationPrefix + "annotation-"     // kubermatic.io/annotation-
-	cloudAnnotationPrefix       = annotationPrefix + "cloud-provider-" // kubermatic.io/cloud-provider-
-	providerAnnotation          = annotationPrefix + "cloud-provider"  // kubermatic.io/cloud-provider
-	cloudDCAnnotation           = annotationPrefix + "cloud-dc"        // kubermatic.io/cloud-dc
-	phaseTimestampAnnotation    = annotationPrefix + "phase-ts"        // kubermatic.io/phase-ts
-	healthAnnotation            = annotationPrefix + "health"          // kubermatic.io/health
-	userAnnotation              = annotationPrefix + "user"            // kubermatic.io/user
-	humanReadableNameAnnotation = annotationPrefix + "name"            // kubermatic.io/name
-	nodePortAnnotation          = annotationPrefix + "node-port"       // kubermatic.io/node-port
-	rootCAKeyAnnotation         = annotationPrefix + "root-ca-key"     // kubermatic.io/root-ca-key
-	rootCACertAnnotation        = annotationPrefix + "root-ca-cert"    // kubermatic.io/root-cert
-	apiserverPubSSHAnnotation   = annotationPrefix + "ssh-pub"         // kubermatic.io/ssh-pub
+	urlAnnotation                   = annotationPrefix + "url"                     // kubermatic.io/url
+	tokenAnnotation                 = annotationPrefix + "token"                   // kubermatic.io/token
+	customAnnotationPrefix          = annotationPrefix + "annotation-"             // kubermatic.io/annotation-
+	cloudAnnotationPrefix           = annotationPrefix + "cloud-provider-"         // kubermatic.io/cloud-provider-
+	providerAnnotation              = annotationPrefix + "cloud-provider"          // kubermatic.io/cloud-provider
+	cloudDCAnnotation               = annotationPrefix + "cloud-dc"                // kubermatic.io/cloud-dc
+	phaseTimestampAnnotation        = annotationPrefix + "phase-ts"                // kubermatic.io/phase-ts
+	healthAnnotation                = annotationPrefix + "health"                  // kubermatic.io/health
+	userAnnotation                  = annotationPrefix + "user"                    // kubermatic.io/user
+	humanReadableNameAnnotation     = annotationPrefix + "name"                    // kubermatic.io/name
+	apiserverExternalPortAnnotation = annotationPrefix + "apiserver-external-port" // kubermatic.io/apiserver-external-port
+	rootCAKeyAnnotation             = annotationPrefix + "root-ca-key"             // kubermatic.io/root-ca-key
+	rootCACertAnnotation            = annotationPrefix + "root-ca-cert"            // kubermatic.io/root-cert
+	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                 // kubermatic.io/ssh-pub
 
 	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
-	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-verion
+	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-version
 
 	// MasterUpdatePhaseAnnotation represents the annotation key for the MasterUpdatePhase
 	MasterUpdatePhaseAnnotation = annotationPrefix + "master-update-phase" // kubermatic.io/master-update-phase
@@ -134,7 +134,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	c.Address.URL = ns.Annotations[urlAnnotation]
 	c.Address.Token = ns.Annotations[tokenAnnotation]
 
-	if nodePort, found := ns.Annotations[nodePortAnnotation]; found {
+	if nodePort, found := ns.Annotations[apiserverExternalPortAnnotation]; found {
 		iNodePort, err := strconv.ParseInt(nodePort, 10, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse nodeport: %v", err)
@@ -204,7 +204,7 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 		}
 
 		if c.Address.ApiserverExternalPort != 0 {
-			ns.Annotations[nodePortAnnotation] = strconv.Itoa(c.Address.ApiserverExternalPort)
+			ns.Annotations[apiserverExternalPortAnnotation] = strconv.Itoa(c.Address.ApiserverExternalPort)
 		}
 	}
 
