@@ -140,7 +140,6 @@ func generateTokenUsers(cc *clusterController, c *api.Cluster) (*v1.Secret, erro
 		},
 	}
 
-	c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.ApiserverExternalPort)
 	c.Address.Token = trimmedToken64
 
 	return &secret, nil

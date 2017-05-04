@@ -29,9 +29,8 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient                          extensions.Clientset
-	kuberntesClient                    *kubernetes.Clientset
-	minAPIServerPort, maxAPIServerPort int
+	tprClient       extensions.Clientset
+	kuberntesClient *kubernetes.Clientset
 
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -44,7 +43,6 @@ func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	workerName string,
-	minAPIServerPort, maxAPIServerPort int,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
@@ -57,51 +55,12 @@ func NewKubernetesProvider(
 	}
 
 	return &kubernetesProvider{
-		cps:              cps,
-		kuberntesClient:  client,
-		tprClient:        trpClient,
-		workerName:       workerName,
-		config:           clientConfig,
-		minAPIServerPort: minAPIServerPort,
-		maxAPIServerPort: maxAPIServerPort,
+		cps:             cps,
+		kuberntesClient: client,
+		tprClient:       trpClient,
+		workerName:      workerName,
+		config:          clientConfig,
 	}
-}
-
-func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
-	services, err := p.kuberntesClient.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
-	if err != nil {
-		return 0, err
-	}
-
-	takenPorts := []int{}
-	for _, service := range services.Items {
-		for _, port := range service.Spec.Ports {
-			if port.NodePort == 0 {
-				continue
-			}
-			takenPorts = append(takenPorts, int(port.NodePort))
-		}
-	}
-
-	isIn := func(p int, takenPorts []int) bool {
-		for _, takenPort := range takenPorts {
-			if p == takenPort {
-				return true
-			}
-		}
-		return false
-	}
-
-	port := p.minAPIServerPort
-	for port <= p.maxAPIServerPort {
-		if isIn(port, takenPorts) {
-			port++
-			continue
-		}
-		return port, nil
-	}
-
-	return 0, fmt.Errorf("no free NodePort available within the given range %d-%d", p.minAPIServerPort, p.maxAPIServerPort)
 }
 
 func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
@@ -140,11 +99,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 	}
 
-	apiserverPort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
-
 	c := &api.Cluster{
 		Metadata: api.Metadata{
 			User: user.Name,
@@ -159,9 +113,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			ApiserverExternalPort: apiserverPort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 
 	c.Spec.WorkerName = p.workerName
@@ -235,11 +187,6 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 		}
 	}
 
-	apiserverPort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
-
 	ns := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        NamespaceName(clusterName),
@@ -258,9 +205,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			ApiserverExternalPort: apiserverPort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 	c.Spec.WorkerName = p.workerName
 

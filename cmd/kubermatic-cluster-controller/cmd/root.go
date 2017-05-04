@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster"
@@ -35,9 +37,27 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, workerName string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, workerName, apiServerPortRange string
 var viperWhiteList = []string{
 	"v",
+}
+
+func parseAPIServerPortRange() (min, max int, err error) {
+	input := viper.GetString("api-server-port-range")
+	minMax := strings.Split(input, "-")
+	if len(minMax) != 2 {
+		return min, min, fmt.Errorf("can't parse %s, please enter it in the format of \"30000-32767\"", input)
+	}
+
+	min, err = strconv.Atoi(minMax[0])
+	if err != nil {
+		return min, max, err
+	}
+	max, err = strconv.Atoi(minMax[1])
+	if err != nil {
+		return min, max, err
+	}
+	return min, max, err
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -119,6 +139,12 @@ var RootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 
+			minPort, maxPort, err := parseAPIServerPortRange()
+			if err != nil {
+				log.Fatalf("Error reading port range: %v", err)
+			}
+			log.Printf("Using API server port range %d-%d\n", minPort, maxPort)
+
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
@@ -133,6 +159,8 @@ var RootCmd = &cobra.Command{
 				viper.GetString("external-url"),
 				viper.GetString("worker-name"),
 				viper.GetString("addon-resources"),
+				minPort,
+				maxPort,
 			)
 			if err != nil {
 				log.Fatal(err)
@@ -165,6 +193,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
 	RootCmd.PersistentFlags().StringVar(&versions, "versions", "versions.yaml", "The versions.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&updates, "updates", "updates.yaml", "The updates.yaml file path")
+	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "api-server-port-range", "30000-32767", "The range client API server port will be allocated in, provide in format: \"30000-32767\"")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {

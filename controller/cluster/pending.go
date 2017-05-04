@@ -37,6 +37,12 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
+	// create apiservers public service early to have valid contact information
+	changedC, err = cc.launchingCheckApiserverPublicService(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// check that all service accounts are created
 	err = cc.launchingCheckServiceAccounts(c)
 	if err != nil {
@@ -197,9 +203,77 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 	return c, nil
 }
 
+func (cc *clusterController) GetFreeNodePort() (int, error) {
+	services, err := cc.client.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	takenPorts := []int{}
+	for _, service := range services.Items {
+		for _, port := range service.Spec.Ports {
+			if port.NodePort == 0 {
+				continue
+			}
+			takenPorts = append(takenPorts, int(port.NodePort))
+		}
+	}
+
+	isIn := func(p int, takenPorts []int) bool {
+		for _, takenPort := range takenPorts {
+			if p == takenPort {
+				return true
+			}
+		}
+		return false
+	}
+
+	port := cc.minAPIServerPort
+	for port <= cc.maxAPIServerPort {
+		if isIn(port, takenPorts) {
+			port++
+			continue
+		}
+		return port, nil
+	}
+
+	return 0, fmt.Errorf("no free NodePort available within the given range %d-%d", cc.minAPIServerPort, cc.maxAPIServerPort)
+}
+
+func (cc *clusterController) launchingCheckApiserverPublicService(c *api.Cluster) (*api.Cluster, error) {
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
+	key := fmt.Sprintf("%s/%s", ns, "apiserver")
+	_, exists, err := cc.serviceStore.GetByKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, nil
+	}
+
+	c.Address.ApiserverExternalPort, err = cc.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
+	c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.ApiserverExternalPort)
+
+	service, err := resources.LoadServiceFile(c, "apiserver", cc.masterResourcesPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate apiserver service %s: %v", key, err)
+	}
+
+	service, err = cc.client.CoreV1().Services(ns).Create(service)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create apiserver service %s: %v", key, err)
+	}
+
+	cc.recordClusterEvent(c, "launching", "Created apiserver service %q", key)
+
+	return c, nil
+}
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
-		"apiserver":          resources.LoadServiceFile,
 		"apiserver-insecure": resources.LoadServiceFile,
 	}
 
