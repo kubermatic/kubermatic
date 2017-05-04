@@ -131,13 +131,8 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	}
 
 	c.Address = &api.ClusterAddress{}
-
-	// get address
-	if url, found := ns.Annotations[urlAnnotation]; found {
-		token := ns.Annotations[tokenAnnotation]
-		c.Address.URL = url
-		c.Address.Token = token
-	}
+	c.Address.URL = ns.Annotations[urlAnnotation]
+	c.Address.Token = ns.Annotations[tokenAnnotation]
 
 	if nodePort, found := ns.Annotations[nodePortAnnotation]; found {
 		iNodePort, err := strconv.ParseInt(nodePort, 10, 0)
