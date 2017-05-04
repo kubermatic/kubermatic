@@ -30,15 +30,15 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
-	// create token-users first and also persist immediately because this
-	// changes the cluster. The later secrets and other resources don't.
-	changedC, err = cc.launchingCheckTokenUsers(c)
+	// create apiservers public service early to have valid contact information
+	changedC, err = cc.launchingCheckApiserverPublicService(c)
 	if err != nil || changedC != nil {
 		return changedC, err
 	}
 
-	// create apiservers public service early to have valid contact information
-	changedC, err = cc.launchingCheckApiserverPublicService(c)
+	// create token-users first and also persist immediately because this
+	// changes the cluster. The later secrets and other resources don't.
+	changedC, err = cc.launchingCheckTokenUsers(c)
 	if err != nil || changedC != nil {
 		return changedC, err
 	}
