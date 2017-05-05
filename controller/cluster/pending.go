@@ -312,7 +312,7 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error){
-		"k8sniff": resources.LoadIngressFile,
+		"apiserver": resources.LoadIngressFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
