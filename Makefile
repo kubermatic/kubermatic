@@ -31,6 +31,7 @@ lint:
 	errcheck -blank $$PACKAGES ;\
 	varcheck $$PACKAGES ;\
 	structcheck $$PACKAGES ;\
+	## Currently causing 'index out of range' ;\
 	##gosimple $$PACKAGES ;\
 	unused $$PACKAGES ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
