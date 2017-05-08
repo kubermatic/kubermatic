@@ -52,15 +52,17 @@ const (
 )
 
 type clusterController struct {
-	dc                  string
-	tprClient           extensions.Clientset
-	etcdClusterClient   etcd.Clientset
-	client              kubernetes.Interface
-	queue               *cache.FIFO // of namespace keys
-	recorder            record.EventRecorder
-	masterResourcesPath string
-	externalURL         string
-	addonResourcesPath  string
+	dc                                 string
+	tprClient                          extensions.Clientset
+	etcdClusterClient                  etcd.Clientset
+	client                             kubernetes.Interface
+	queue                              *cache.FIFO // of namespace keys
+	recorder                           record.EventRecorder
+	masterResourcesPath                string
+	externalURL                        string
+	addonResourcesPath                 string
+	minAPIServerPort, maxAPIServerPort int
+
 	// store namespaces with the role=kubermatic-cluster label
 	nsController cache.Controller
 	nsStore      cache.Store
@@ -125,6 +127,7 @@ func NewController(
 	externalURL string,
 	workerName string,
 	addonResourcesPath string,
+	minAPIServerPort, maxAPIServerPort int,
 ) (controller.Controller, error) {
 	cc := &clusterController{
 		dc:                  dc,
@@ -140,6 +143,8 @@ func NewController(
 		externalURL:         externalURL,
 		workerName:          workerName,
 		addonResourcesPath:  addonResourcesPath,
+		minAPIServerPort:    minAPIServerPort,
+		maxAPIServerPort:    maxAPIServerPort,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -406,7 +411,7 @@ func (cc *clusterController) syncAddon(a *extensions.ClusterAddon) {
 
 	obj, exists, err := cc.nsStore.GetByKey(a.Metadata.Namespace)
 	if !exists {
-		glog.Errorf("Namespace for cluster %s does not exist", a.Metadata.Namespace)
+		glog.V(6).Infof("Namespace for cluster %s does not exist. Please check for orphaned addon tpr %s/%s", a.Metadata.Namespace, a.Metadata.Namespace, a.Metadata.Name)
 		return
 	}
 	if err != nil {

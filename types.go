@@ -309,10 +309,9 @@ type ClusterSpec struct {
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL      string `json:"url"`
-	EtcdURL  string `json:"etcdURL"`
-	Token    string `json:"token"`
-	NodePort int    `json:"nodePort"`
+	URL                   string `json:"url"`
+	Token                 string `json:"token"`
+	ApiserverExternalPort int    `json:"apiserver_external_port"`
 }
 
 // Cluster is the object representing a cluster.

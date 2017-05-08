@@ -37,6 +37,12 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
+	// create apiservers public service early to have valid contact information
+	changedC, err = cc.launchingCheckApiserverPublicService(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// check that all service accounts are created
 	err = cc.launchingCheckServiceAccounts(c)
 	if err != nil {
@@ -65,13 +71,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 		return changedC, err
 	}
 
-	// check that the ingress is available
-	err = cc.launchingCheckIngress(c)
-	if err != nil {
-		return nil, err
-	}
-
-	////check that all pcv's are available
+	////check that all pvc's are available
 	err = cc.launchingCheckPvcs(c)
 	if err != nil {
 		return nil, err
@@ -203,9 +203,76 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 	return c, nil
 }
 
+func (cc *clusterController) GetFreeNodePort() (int, error) {
+	services := cc.serviceStore.List()
+
+	usedPorts := []int{}
+	for _, s := range services {
+		service := s.(*v1.Service)
+		for _, port := range service.Spec.Ports {
+			if port.NodePort == 0 {
+				continue
+			}
+			usedPorts = append(usedPorts, int(port.NodePort))
+		}
+	}
+
+	isIn := func(p int, takenPorts []int) bool {
+		for _, takenPort := range takenPorts {
+			if p == takenPort {
+				return true
+			}
+		}
+		return false
+	}
+
+	port := cc.minAPIServerPort
+	for port <= cc.maxAPIServerPort {
+		if isIn(port, usedPorts) {
+			port++
+			continue
+		}
+		return port, nil
+	}
+
+	return 0, fmt.Errorf("no free NodePort available within the given range %d-%d", cc.minAPIServerPort, cc.maxAPIServerPort)
+}
+
+func (cc *clusterController) launchingCheckApiserverPublicService(c *api.Cluster) (*api.Cluster, error) {
+	ns := kubernetes.NamespaceName(c.Metadata.Name)
+	key := fmt.Sprintf("%s/%s", ns, "apiserver")
+	_, exists, err := cc.serviceStore.GetByKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, nil
+	}
+
+	c.Address.ApiserverExternalPort, err = cc.GetFreeNodePort()
+	if err != nil {
+		return nil, err
+	}
+	c.Address.URL = fmt.Sprintf("https://%s.%s.%s:%d", c.Metadata.Name, cc.dc, cc.externalURL, c.Address.ApiserverExternalPort)
+
+	service, err := resources.LoadServiceFile(c, "apiserver", cc.masterResourcesPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate apiserver service %s: %v", key, err)
+	}
+
+	service, err = cc.client.CoreV1().Services(ns).Create(service)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create apiserver service %s: %v", key, err)
+	}
+
+	cc.recordClusterEvent(c, "launching", "Created apiserver service %q", key)
+
+	return c, nil
+}
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluster, error) {
 	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
-		"apiserver": resources.LoadServiceFile,
+		"apiserver-insecure": resources.LoadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
@@ -221,12 +288,12 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 			continue
 		}
 
-		services, err := gen(c, s, cc.masterResourcesPath)
+		service, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
 
-		_, err = cc.client.CoreV1().Services(ns).Create(services)
+		_, err = cc.client.CoreV1().Services(ns).Create(service)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create service %s: %v", s, err)
 		}
@@ -234,13 +301,7 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) (*api.Cluste
 		cc.recordClusterEvent(c, "launching", "Created service %q", s)
 	}
 
-	if c.Address.EtcdURL != "" {
-		return nil, nil
-	}
-
-	c.Address.EtcdURL = fmt.Sprintf("https://etcd.%s.%s.%s:8443", c.Metadata.Name, cc.dc, cc.externalURL)
-
-	return c, nil
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error {
@@ -307,37 +368,6 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
 	}
 
-	return nil
-}
-
-func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error){
-		"k8sniff": resources.LoadIngressFile,
-	}
-
-	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	for app, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, app)
-		_, exists, err := cc.ingressStore.GetByKey(key)
-		if err != nil {
-			return err
-		}
-		if exists {
-			glog.V(6).Infof("Skipping already existing ingress %q", key)
-			return nil
-		}
-		ingress, err := gen(c, app, cc.masterResourcesPath, cc.dc, cc.externalURL)
-		if err != nil {
-			return fmt.Errorf("failed to generate %s: %v", app, err)
-		}
-
-		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
-		if err != nil {
-			return fmt.Errorf("failed to create ingress %s: %v", app, err)
-		}
-
-		cc.recordClusterEvent(c, "launching", "Created ingress")
-	}
 	return nil
 }
 

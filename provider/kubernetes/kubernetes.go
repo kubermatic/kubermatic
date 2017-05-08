@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -31,9 +29,8 @@ const (
 )
 
 type kubernetesProvider struct {
-	tprClient                          extensions.Clientset
-	kuberntesClient                    *kubernetes.Clientset
-	minAPIServerPort, maxAPIServerPort int
+	tprClient       extensions.Clientset
+	kuberntesClient *kubernetes.Clientset
 
 	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
@@ -46,7 +43,6 @@ func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	workerName string,
-	minAPIServerPort, maxAPIServerPort int,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
@@ -59,33 +55,11 @@ func NewKubernetesProvider(
 	}
 
 	return &kubernetesProvider{
-		cps:              cps,
-		kuberntesClient:  client,
-		tprClient:        trpClient,
-		workerName:       workerName,
-		config:           clientConfig,
-		minAPIServerPort: minAPIServerPort,
-		maxAPIServerPort: maxAPIServerPort,
-	}
-}
-
-func (p *kubernetesProvider) GetFreeNodePort() (int, error) {
-	for {
-		port := rand.IntnRange(p.minAPIServerPort, p.maxAPIServerPort)
-		sel := labels.NewSelector()
-		portString := strconv.Itoa(port)
-		req, err := labels.NewRequirement("node-port", selection.Equals, []string{portString})
-		if err != nil {
-			return 0, err
-		}
-		sel = sel.Add(*req)
-		nsList, err := p.kuberntesClient.Namespaces().List(metav1.ListOptions{LabelSelector: sel.String()})
-		if err != nil {
-			return 0, err
-		}
-		if len(nsList.Items) == 0 {
-			return port, nil
-		}
+		cps:             cps,
+		kuberntesClient: client,
+		tprClient:       trpClient,
+		workerName:      workerName,
+		config:          clientConfig,
 	}
 }
 
@@ -124,10 +98,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			Labels:      map[string]string{},
 		},
 	}
-	nodePort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
@@ -143,9 +113,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			NodePort: nodePort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 
 	c.Spec.WorkerName = p.workerName
@@ -226,10 +194,6 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			Labels:      map[string]string{},
 		},
 	}
-	nodePort, err := p.GetFreeNodePort()
-	if err != nil {
-		return nil, err
-	}
 
 	c := &api.Cluster{
 		Metadata: api.Metadata{
@@ -241,9 +205,7 @@ func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpe
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
 		},
-		Address: &api.ClusterAddress{
-			NodePort: nodePort,
-		},
+		Address: &api.ClusterAddress{},
 	}
 	c.Spec.WorkerName = p.workerName
 
@@ -381,7 +343,7 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namesp
 	if err != nil {
 		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
 	}
-	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver-v5", &metav1.DeleteOptions{})
+	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver", &metav1.DeleteOptions{})
 	if err != nil {
 		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
 	}

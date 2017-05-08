@@ -21,8 +21,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
 
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -38,29 +36,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, workerName, apiServerPortRange string
+var cfgFile, kubeConfig, dcFile, secretsFile, jwtKey, address, masterKubeconfig, workerName string
 var auth bool
 
 var viperWhiteList = []string{
 	"v",
-}
-
-func parseAPIServerPortRange() (min, max int, err error) {
-	input := viper.GetString("api-server-port-range")
-	minMax := strings.Split(input, "-")
-	if len(minMax) != 2 {
-		return 12000, 14767, fmt.Errorf("can't parse %s, please enter it in the format of \"12000-14767\"", input)
-	}
-
-	min, err = strconv.Atoi(minMax[0])
-	if err != nil {
-		return 12000, 14767, err
-	}
-	max, err = strconv.Atoi(minMax[1])
-	if err != nil {
-		return 12000, 14767, err
-	}
-	return min, max, err
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -71,12 +51,6 @@ var RootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		minPort, maxPort, err := parseAPIServerPortRange()
-		if err != nil {
-			log.Fatalf("Error reading port range: %v", err)
-		}
-		log.Printf("Using API server port range %d-%d\n", minPort, maxPort)
-
 		// load list of datacenters
 		dcs := map[string]provider.DatacenterMeta{}
 		if viper.GetString("datacenters") != "" {
@@ -91,7 +65,7 @@ var RootCmd = &cobra.Command{
 		cps := cloud.Providers(dcs)
 
 		// create KubernetesProvider for each context in the kubeconfig
-		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetString("worker-name"), minPort, maxPort)
+		kps, err := kubernetes.Providers(viper.GetString("kubeconfig"), dcs, cps, viper.GetString("secrets"), viper.GetString("worker-name"))
 
 		if err != nil {
 			log.Fatal(err)
@@ -143,7 +117,6 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&jwtKey, "jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	RootCmd.PersistentFlags().StringVar(&address, "address", ":8080", "The address to listen on")
 	RootCmd.PersistentFlags().StringVar(&masterKubeconfig, "master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
-	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "api-server-port-range", "12000-14767", "The range client API server port will be allocated in, provide in format: \"12000-14767\"")
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("Unable to bind Command Line flags: %s\n", err)

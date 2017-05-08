@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -50,9 +49,8 @@ func NewSeedProvider(
 				},
 			},
 			Address: &api.ClusterAddress{
-				URL:     cfg.Host,
-				Token:   cfg.BearerToken,
-				EtcdURL: strings.TrimRight(cfg.Host, "/") + ":2378",
+				URL:   cfg.Host,
+				Token: cfg.BearerToken,
 			},
 			Status: api.ClusterStatus{
 				LastTransitionTime: time.Now(),

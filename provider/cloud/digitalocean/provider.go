@@ -136,7 +136,6 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			DC:                spec.DatacenterName,
 			ClusterName:       cluster.Metadata.Name,
 			SSHAuthorizedKeys: skeys,
-			EtcdURL:           cluster.Address.EtcdURL,
 			APIServerURL:      cluster.Address.URL,
 			Region:            dc.Spec.Digitalocean.Region,
 			Name:              dropletName,
