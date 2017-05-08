@@ -208,7 +208,7 @@ func (cc *clusterController) GetFreeNodePort() (int, error) {
 
 	usedPorts := []int{}
 	for _, s := range services {
-		service := s.(v1.Service)
+		service := s.(*v1.Service)
 		for _, port := range service.Spec.Ports {
 			if port.NodePort == 0 {
 				continue
