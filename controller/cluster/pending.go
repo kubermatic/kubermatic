@@ -204,18 +204,16 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 }
 
 func (cc *clusterController) GetFreeNodePort() (int, error) {
-	services, err := cc.client.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
-	if err != nil {
-		return 0, err
-	}
+	services := cc.serviceStore.List()
 
-	takenPorts := []int{}
-	for _, service := range services.Items {
+	usedPorts := []int{}
+	for _, s := range services {
+		service := s.(v1.Service)
 		for _, port := range service.Spec.Ports {
 			if port.NodePort == 0 {
 				continue
 			}
-			takenPorts = append(takenPorts, int(port.NodePort))
+			usedPorts = append(usedPorts, int(port.NodePort))
 		}
 	}
 
@@ -230,7 +228,7 @@ func (cc *clusterController) GetFreeNodePort() (int, error) {
 
 	port := cc.minAPIServerPort
 	for port <= cc.maxAPIServerPort {
-		if isIn(port, takenPorts) {
+		if isIn(port, usedPorts) {
 			port++
 			continue
 		}
