@@ -73,7 +73,6 @@ func newClusterEndpointV2(
 			}
 			return nil, err
 		}
-		c.Seed = dc.Seed
 
 		// TODO(realfake): Duplicated code move to function
 		sshClient := masterClientset.SSHKeyTPR(req.user.Name)

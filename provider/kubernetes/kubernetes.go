@@ -36,6 +36,7 @@ type kubernetesProvider struct {
 	cps        map[string]provider.CloudProvider
 	workerName string
 	config     *rest.Config
+	dcs        map[string]provider.DatacenterMeta
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
@@ -43,6 +44,7 @@ func NewKubernetesProvider(
 	clientConfig *rest.Config,
 	cps map[string]provider.CloudProvider,
 	workerName string,
+	dcs map[string]provider.DatacenterMeta,
 ) provider.KubernetesProvider {
 	client, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
@@ -60,6 +62,7 @@ func NewKubernetesProvider(
 		tprClient:       trpClient,
 		workerName:      workerName,
 		config:          clientConfig,
+		dcs:             dcs,
 	}
 }
 
@@ -99,6 +102,11 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 	}
 
+	dc, found := p.dcs[cloud.Region]
+	if !found {
+		return nil, errors.NewBadRequest("Unregistered datacenter")
+	}
+
 	c := &api.Cluster{
 		Metadata: api.Metadata{
 			User: user.Name,
@@ -114,6 +122,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			Phase:              api.PendingClusterStatusPhase,
 		},
 		Address: &api.ClusterAddress{},
+		Seed:    dc.Seed,
 	}
 
 	c.Spec.WorkerName = p.workerName

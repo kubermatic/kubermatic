@@ -20,10 +20,15 @@ type kubernetesFakeProvider struct {
 	mu       sync.Mutex
 	clusters map[string]*api.Cluster // by name
 	cps      map[string]provider.CloudProvider
+	dcs      map[string]provider.DatacenterMeta
 }
 
 // NewKubernetesFakeProvider creates a new kubernetes provider object
-func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider) provider.KubernetesProvider {
+func NewKubernetesFakeProvider(
+	dc string,
+	cps map[string]provider.CloudProvider,
+	dcs map[string]provider.DatacenterMeta,
+) provider.KubernetesProvider {
 	return &kubernetesFakeProvider{
 		clusters: map[string]*api.Cluster{
 			"234jkh24234g": {
@@ -61,6 +66,7 @@ func NewKubernetesFakeProvider(dc string, cps map[string]provider.CloudProvider)
 			},
 		},
 		cps: cps,
+		dcs: dcs,
 	}
 }
 
@@ -77,6 +83,7 @@ func (p *kubernetesFakeProvider) Country() string {
 }
 
 func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
+	spec.Cloud = cloud
 	c, err := p.NewCluster(user, spec)
 	if err != nil {
 		return nil, err
@@ -99,6 +106,11 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 		return nil, fmt.Errorf("cluster %s already exists", cluster)
 	}
 
+	dc, found := p.dcs[spec.Cloud.Region]
+	if !found {
+		return nil, errors.NewBadRequest("Unregistered datacenter")
+	}
+
 	c := &api.Cluster{
 		Metadata: api.Metadata{
 			Name:     cluster,
@@ -106,6 +118,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 			UID:      id,
 		},
 		Spec: *spec,
+		Seed: dc.Seed,
 	}
 
 	p.clusters[cluster] = c

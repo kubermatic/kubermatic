@@ -18,8 +18,8 @@ func Providers(
 	workerName string,
 ) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
-		"fake-1": NewKubernetesFakeProvider("fake-1", cps),
-		"fake-2": NewKubernetesFakeProvider("fake-2", cps),
+		"fake-1": NewKubernetesFakeProvider("fake-1", cps, dcs),
+		"fake-2": NewKubernetesFakeProvider("fake-2", cps, dcs),
 	}
 
 	clientcmdConfig, err := clientcmd.LoadFromFile(kubeconfig)
@@ -48,6 +48,7 @@ func Providers(
 			cfg,
 			cps,
 			workerName,
+			dcs,
 		)
 		cfgs[ctx] = *cfg
 	}
