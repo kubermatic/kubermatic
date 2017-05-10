@@ -91,6 +91,9 @@ func TestNewClusterEndpointV2(t *testing.T) {
 	if c.Spec.Cloud.Fake.Token != "evenmoresecret" {
 		t.Fatalf("Expected Cluster.Spec.Cloud.Fake to be \"evenmoresecret\", got %q", c.Spec.Cloud.Fake.Token)
 	}
+	if c.Seed != "master" {
+		t.Fatalf("Expected Cluster.Seed to be \"master\", got %q", c.Seed)
+	}
 }
 
 func TestNewClusterEndpointNotExistingDC(t *testing.T) {
