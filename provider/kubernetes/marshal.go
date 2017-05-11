@@ -42,6 +42,7 @@ const (
 	rootCAKeyAnnotation             = annotationPrefix + "root-ca-key"             // kubermatic.io/root-ca-key
 	rootCACertAnnotation            = annotationPrefix + "root-ca-cert"            // kubermatic.io/root-cert
 	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                 // kubermatic.io/ssh-pub
+	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"      // kubermatic.io/seed-provider-used
 
 	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
 	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-version
@@ -119,6 +120,7 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 			},
 			ApiserverSSH: string(apiserverSSH),
 		},
+		Seed: ns.Annotations[seedProviderUsedAnnotation],
 	}
 
 	// unprefix and copy kubermatic annotations
@@ -240,6 +242,7 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	ns.Annotations[MasterVersionAnnotation] = c.Spec.MasterVersion
 	ns.Annotations[MasterUpdatePhaseAnnotation] = string(c.Status.MasterUpdatePhase)
 	ns.Annotations[LastDeployedMasterVersionAnnotation] = c.Status.LastDeployedMasterVersion
+	ns.Annotations[seedProviderUsedAnnotation] = c.Seed
 	if c.Status.RootCA.Key != nil {
 		ns.Annotations[rootCAKeyAnnotation] = c.Status.RootCA.Key.Base64()
 	}

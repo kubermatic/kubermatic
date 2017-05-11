@@ -320,6 +320,7 @@ type Cluster struct {
 	Spec     ClusterSpec     `json:"spec"`
 	Address  *ClusterAddress `json:"address,omitempty"`
 	Status   ClusterStatus   `json:"status,omitempty"`
+	Seed     string          `json:"seed,omitempty"`
 }
 
 // GetKubeconfig returns a kubeconfig to connect to the cluster

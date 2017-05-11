@@ -117,6 +117,9 @@ func newClusterEndpoint(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
+		// Hacky shit to to bridge between V1<->V2 endpoint!
+		req.cluster.Spec.Cloud = &api.CloudSpec{Region: req.dc}
+
 		c, err := kp.NewCluster(req.user, &req.cluster.Spec)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
