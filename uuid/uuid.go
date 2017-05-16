@@ -4,11 +4,16 @@ import (
 	crand "crypto/rand"
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 const (
 	alphabet64 = "abcdefghijklmnopqrstuvwxyz01234567890"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // UUID is a very simple random uuid generator used for faking.
 func UUID() (string, error) {
