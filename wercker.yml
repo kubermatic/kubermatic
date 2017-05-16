@@ -84,7 +84,7 @@ deployment-update:
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
+        command: set image daemonset/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME

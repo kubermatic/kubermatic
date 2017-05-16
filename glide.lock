@@ -1,12 +1,10 @@
-hash: 2287a2f6b44eef4358ed800ef376561b7ca84d5ceaed837658fa93d96a0c68bc
-updated: 2017-07-03T12:03:24.444842757+02:00
+hash: 5d435e07f7071c7b503fae9a882f90e358ab54cb16f2fcd8a0cb785ba203660e
+updated: 2017-07-12T12:11:01.612521785+02:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
-- name: github.com/auth0/go-jwt-middleware
-  version: 5493cabe49f7bfa6e2ec444a09d334d90cd4e2bd
 - name: github.com/aws/aws-sdk-go
-  version: 49c3892b61af1d4996292a3025f36e4dfa25eaee
+  version: ae53883b2478fd8e2bdca2748367d5b5fa27ca22
   subpackages:
   - aws
   - aws/awserr
@@ -16,27 +14,30 @@ imports:
   - aws/corehandlers
   - aws/credentials
   - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
   - aws/defaults
   - aws/ec2metadata
+  - aws/endpoints
   - aws/request
   - aws/session
-  - private/endpoints
+  - aws/signer/v4
+  - internal/shareddefaults
   - private/protocol
   - private/protocol/ec2query
   - private/protocol/query
   - private/protocol/query/queryutil
   - private/protocol/rest
   - private/protocol/xml/xmlutil
-  - private/signer/v4
-  - private/waiter
   - service/ec2
   - service/iam
+  - service/sts
+- name: github.com/coreos/go-oidc
+  version: a4973d9a4225417aecf5d450a9522f00c1f7130f
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
   - spew
-- name: github.com/dgrijalva/jwt-go
-  version: d2709f9f1f31ebcda9651b03077758c1f3a0018c
 - name: github.com/digitalocean/godo
   version: 4fa9e9d999007b447089056a1c581b5594f0f851
   subpackages:
@@ -56,7 +57,7 @@ imports:
 - name: github.com/go-ini/ini
   version: 3d73f4b845efdf9989fffd4b4e562727744a34ba
 - name: github.com/go-kit/kit
-  version: f66b0e13579bfc5a48b9e2a94b1209c107ea1f41
+  version: 6a894fed38a999e1a0ce384f3a45589f1752d30d
   subpackages:
   - endpoint
   - log
@@ -72,7 +73,7 @@ imports:
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/go-stack/stack
-  version: 7a2f19628aabfe68f0766b59e74d6315f8347d22
+  version: 54be5f394ed2c3e19dac9134a40a95ba5a017f7b
 - name: github.com/go-test/deep
   version: f49763a6ea0a91026be26f8213bebee726b4185f
 - name: github.com/gogo/protobuf
@@ -97,11 +98,11 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/gorilla/context
-  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/handlers
-  version: ee54c7b44cab12289237fb8631314790076e728b
+  version: a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca
 - name: github.com/gorilla/mux
-  version: 0eeaf8392f5b04950925b8a69fe70f110fa7cbfc
+  version: ac112f7d75a0714af1bd86ab17749b31f7809640
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/huandu/xstrings
@@ -121,9 +122,13 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/Masterminds/semver
-  version: 59c29afe1a994eacb71c833025ca7acf874bb1da
+  version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
 - name: github.com/Masterminds/sprig
   version: e039e20e500c2c025d9145be375e27cf42a94174
+- name: github.com/pquerna/cachecontrol
+  version: 5475d973ea70916980bee28c2b674f3dc3eaed0a
+  subpackages:
+  - cacheobject
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
@@ -139,7 +144,7 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 368a6044bc0e88e78f6dd705a6c8eb1fd69b6676
+  version: dd85ac7e6a88fc6ca420478e934de5f1a42dd3c6
   subpackages:
   - curve25519
   - ed25519
@@ -192,6 +197,11 @@ imports:
   - urlfetch
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/square/go-jose.v2
+  version: b25e6cab129e4a54675b42ea49d38e9c33ade9e6
+  subpackages:
+  - cipher
+  - json
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery

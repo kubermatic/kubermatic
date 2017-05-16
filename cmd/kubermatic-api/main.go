@@ -23,11 +23,11 @@ import (
 var (
 	workerName       = flag.String("worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	kubeConfig       = flag.String("kubeconfig", "", "The kubeconfig file path with one context per Kubernetes provider")
-	auth             = flag.Bool("auth", true, "Activate authentication with JSON Web Tokens")
 	dcFile           = flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
-	jwtKey           = flag.String("jwt-key", "", "The JSON Web Token validation key, encoded in base64")
 	address          = flag.String("address", ":8080", "The address to listen on")
 	masterKubeconfig = flag.String("master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
+	tokenIssuer      = flag.String("token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	clientID         = flag.String("client-id", "", "OpenID client ID")
 )
 
 func main() {
@@ -57,9 +57,18 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	authenticator := handler.NewOpenIDAuthenticator(
+		*tokenIssuer,
+		*clientID,
+		handler.NewCombinedExtractor(
+			handler.NewHeaderBearerTokenExtractor("Authorization"),
+			handler.NewQueryParamBearerTokenExtractor("token"),
+		),
+	)
+
 	// start server
 	ctx := context.Background()
-	r := handler.NewRouting(ctx, dcs, kps, cps, *auth, *jwtKey, masterTPRClient)
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient)
 	router := mux.NewRouter()
 	r.Register(router)
 	glog.Info(fmt.Sprintf("Listening on %s", *address))

@@ -8,10 +8,9 @@ import (
 
 func TestDatacentersEndpoint(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
-	authenticateHeader(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -23,10 +22,9 @@ func TestDatacentersEndpoint(t *testing.T) {
 
 func TestDatacenterEndpointNotFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
-	authenticateHeader(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -36,10 +34,9 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 
 func TestDatacenterEndpointPrivate(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
-	authenticateHeader(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -49,10 +46,9 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 
 func TestDatacenterEndpointAdmin(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
-	authenticateHeader(req, true)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(true))
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -65,10 +61,9 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 
 func TestDatacenterEndpointFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/us-west-2", nil)
-	authenticateHeader(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {

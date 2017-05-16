@@ -1,10 +1,9 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-
-	"golang.org/x/net/context"
 )
 
 // StatusOK returns a handler always returning http status code 200 (StatusOK).

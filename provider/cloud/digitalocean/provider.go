@@ -174,7 +174,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		}
 
 		if len(keys) != 0 && len(dropKeys) == 0 {
-			f, err := createKey(keys[0], client)
+			f, err := createKey(ctx, keys[0], client)
 			if err != nil {
 				return nil, err
 			}
@@ -207,7 +207,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 	return created, nil
 }
 
-func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
+func createKey(ctx context.Context, key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
 	glog.Infof("Creating new DigitalOcean key with name %q", key.Name)
 	keyRequest := &godo.KeyCreateRequest{
 		Name:      key.Name,
