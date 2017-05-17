@@ -1,7 +1,8 @@
 SHELL=/bin/bash
-CMD=kubermatic-api kubermatic-cluster-controller
+CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILD=go build
 REPO=kubermatic/api
+GOFLAGS=
 
 default: all
 
@@ -9,7 +10,7 @@ all: check test build
 
 .PHONY: $(CMD)
 $(CMD):
-	$(GOBUILD) github.com/kubermatic/api/cmd/$@
+	$(GOBUILD) $(GOFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
 
 build: $(CMD)
 
@@ -51,5 +52,9 @@ docker-build:
 
 docker-push: docker
 	docker push $(REPO)
+
+e2e:
+	docker run -it -v $(KUBECONFIG):/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
+
 
 .PHONY: build test check
