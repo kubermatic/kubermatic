@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"bytes"
@@ -394,8 +394,7 @@ func main() {
 	var err error
 	switch flag.Arg(0) {
 	case "up":
-		out, err := up(1, flag.Arg(1))
-		err = err
+		out, _ := up(1, flag.Arg(1))
 		fmt.Printf("%s", string(out))
 	case "purge":
 		err = purge()
