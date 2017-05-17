@@ -91,7 +91,7 @@ deployment-update:
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        command: set image daemonset/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
+        command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
