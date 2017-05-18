@@ -6,3 +6,4 @@ RUN apk add -U ca-certificates && rm -rf /var/cache/apk/*
 
 ADD ./_build/kubermatic-api /
 ADD ./_build/kubermatic-cluster-controller /
+ADD ./_build/client /
