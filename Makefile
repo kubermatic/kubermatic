@@ -1,7 +1,9 @@
 SHELL=/bin/bash
 CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILD=go build
+GOBUILDFLAGS= -i
 REPO=kubermatic/api
+GITTAG=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
 GOFLAGS=
 
 default: all
@@ -10,7 +12,7 @@ all: check test build
 
 .PHONY: $(CMD)
 $(CMD):
-	$(GOBUILD) $(GOFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
+	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
 
 build: $(CMD)
 
@@ -42,19 +44,31 @@ lint:
 check: gofmt lint
 
 clean:
-	rm -f $(CMD)
+	@cd _build
+	@rm -f $(CMD)
+	@echo "Cleaned _build"
 
 install:
 	glide install --strip-vendor
 
-docker-build:
-	docker build -t $(REPO) .
+docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
+docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
+docker-build: build
+	docker build -t $(REPO):$(GITTAG) .
 
-docker-push: docker
+docker-push: docker-build
 	docker push $(REPO)
 
-e2e:
+e2e-build:
+	$(MAKE) -C hack/e2e build
+
+e2e: e2e-build
 	docker run -it -v $(KUBECONFIG):/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
 
+client-up: docker-build
+	docker run -it $(REPO):$(GITTAG) ./client up
 
-.PHONY: build test check
+client-down:
+	docker run -it $(REPO):$(GITTAG) ./client purge
+
+.PHONY: build test check e2e-build client-build client-down client-up e2e docker-build docker-push
