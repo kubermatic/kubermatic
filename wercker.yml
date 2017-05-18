@@ -85,13 +85,19 @@ deployment-update:
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
-        command: set image deployment/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
+        command: set image daemonset/kubermatic-api-v1 api=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
     - kubectl:
         server: $KUBERNETES_MASTER
         username: $KUBERNETES_USERNAME
         password: $KUBERNETES_PASSWORD
         certificate-authority: ca.pem
         command: set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$WERCKER_GIT_COMMIT --namespace=kubermatic
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        username: $KUBERNETES_USERNAME
+        password: $KUBERNETES_PASSWORD
+        certificate-authority: ca.pem
+        command: delete pod --all --namespace=kubermatic
 
 push-image:
     box: ubuntu:14.04
@@ -111,35 +117,3 @@ push-image:
         working-dir: /opt
         repository: kubermatic/api
         registry: https://registry.hub.docker.com
-
-rollback-api:
-    box: ubuntu:14.04
-    steps:
-    - create-file:
-        name: Create ca.pem
-        filename: ca.pem
-        content: $CERTIFICATE_AUTHORITY
-    - kubectl:
-        server: $KUBERNETES_MASTER
-        username: $KUBERNETES_USERNAME
-        password: $KUBERNETES_PASSWORD
-        certificate-authority: ca.pem
-        command: rollout undo deployment/kubermatic-api-v1 --namespace=api
-
-rollback-cluster-controller:
-    box: ubuntu:14.04
-    steps:
-    - script:
-        code: |
-          apt-get update
-          apt-get install -y ca-certificates
-    - create-file:
-        name: Create ca.pem
-        filename: ca.pem
-        content: $CERTIFICATE_AUTHORITY
-    - kubectl:
-        server: $KUBERNETES_MASTER
-        username: $KUBERNETES_USERNAME
-        password: $KUBERNETES_PASSWORD
-        certificate-authority: ca.pem
-        command: rollout undo deployment/kubermatic-api-v1 --namespace=control
