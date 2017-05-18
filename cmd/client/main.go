@@ -20,9 +20,6 @@ import (
 
 const timeSleep = time.Second * 5
 
-var jwtFlag string
-var auth0Domain = ""
-
 // setAuth sets the jwt token int a requests Authorization header field
 func setAuth(r *http.Request) {
 	r.Header.Add("Authorization", "Bearer "+jwtFlag)
@@ -31,6 +28,7 @@ func setAuth(r *http.Request) {
 var (
 	dcFlag     = "us-central1"
 	domainFlag = "dev.kubermatic.io"
+	jwtFlag    = ""
 )
 
 type clusterRequest struct {
@@ -334,49 +332,6 @@ func purge() error {
 	return nil
 }
 
-func getBearer(audience_domain, client_id, client_secret string) string {
-	request := struct {
-		GrantType    string `json:"grant_type"`
-		ClientID     string `json:"client_id"`
-		ClientSecret string `json:"client_secret"`
-		Audience     string `json:"audience"`
-	}{
-		"client_credentials",
-		client_id,
-		client_secret,
-		audience_domain,
-	}
-
-	url := "https://" + auth0Domain + "/oauth/token"
-
-	reqBody, err := json.Marshal(request)
-	if err != nil {
-		log.Fatalf("Cant get Bearer: %v\n", err)
-	}
-
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(reqBody))
-
-	req.Header.Add("content-type", "application/json")
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var response struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		log.Fatalln("Error unmarshalling Auth0 response")
-	}
-	return response.TokenType + " " + response.AccessToken
-}
-
 func main() {
 	flag.Parse()
 	printError := func() {
@@ -387,9 +342,6 @@ func main() {
 	if len(flag.Args()) < 1 {
 		printError()
 	}
-
-	//jwtFlag = getBearer("", "", "")
-	jwtFlag = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk0OTUzNTUxLCJpYXQiOjE0OTQ5MTc1NTF9.FVa-z88AMMEA5jg-Ud5SOG8U7kQ1foSUamDLbZbxNn4"
 
 	var err error
 	switch flag.Arg(0) {
