@@ -53,7 +53,7 @@ install:
 
 docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
 docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
-docker-build: build
+docker-build: #build
 	docker build -t $(REPO):$(GITTAG) .
 
 docker-push: docker-build
@@ -66,7 +66,7 @@ e2e: e2e-build
 	docker run -it -v $(KUBECONFIG):/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
 
 client-up: docker-build
-	docker run -it $(REPO):$(GITTAG) ./client up
+	docker run -v kubeconfgi:kubeconfig -it $(REPO):$(GITTAG) ./client up
 
 client-down:
 	docker run -it $(REPO):$(GITTAG) ./client purge
