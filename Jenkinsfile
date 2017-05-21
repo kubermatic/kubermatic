@@ -38,13 +38,12 @@ podTemplate(label: 'buildpod', containers: [
             }
             stage('Build'){
                 container('golang') {
-                    sh 'cd /go/src/github.com/kubermatic/api && make build'
-                    sh 'cd /go/src/github.com/kubermatic/api && make docker'
+                    sh 'cd /go/src/github.com/kubermatic/api && make docker-build'
                 }
             }
             stage('Push'){
                 container('golang') {
-                    sh 'cd /go/src/github.com/kubermatic/api && make push'
+                    sh 'cd /go/src/github.com/kubermatic/api && make docker-push'
                 }
             }
             stage('Deploy'){

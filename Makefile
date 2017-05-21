@@ -34,8 +34,6 @@ lint:
 	errcheck -blank $$PACKAGES ;\
 	varcheck $$PACKAGES ;\
 	structcheck $$PACKAGES ;\
-	## Currently causing 'index out of range' ;\
-	##gosimple $$PACKAGES ;\
 	unused $$PACKAGES ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
 	misspell -error -locale US $$GOFILES ;\
@@ -53,10 +51,10 @@ install:
 
 docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
 docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
-docker-build: #build
+docker-build: build
 	docker build -t $(REPO):$(GITTAG) .
 
-docker-push: docker-build
+docker-push:
 	docker push $(REPO)
 
 e2e-build:
