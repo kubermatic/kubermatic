@@ -10,3 +10,4 @@ template/coreos
 vendor
 !handler/fixtures/*
 _build/*
+kubeconfig

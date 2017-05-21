@@ -64,7 +64,8 @@ e2e: e2e-build
 	docker run -it -v  $(CURDIR)/kubeconfig:/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
 
 client-up: docker-build
-	docker run -v  $(CURDIR)/kubeconfg:/kubeconfig -it $(REPO):$(GITTAG) ./client up
+	touch $(CURDIR)/kubeconfg:
+	docker run -v $(CURDIR)/kubeconfg:/kubeconfig -it $(REPO):$(GITTAG) ./client up
 
 client-down:
 	docker run -it $(REPO):$(GITTAG) ./client purge
