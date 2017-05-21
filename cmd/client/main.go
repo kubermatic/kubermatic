@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -47,12 +46,12 @@ func newClusterRequest() clusterRequest {
 	}
 }
 
-func (c *clusterRequest) applyAWS() {
-	c.Cloud.Name = "aws"
-	c.Cloud.Region = "aws-us-west-2a"
-	c.Cloud.User = "AKIAIF5EOAWOD4BLMJGA"
-	c.Cloud.Secret = "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"
-}
+//func (c *clusterRequest) applyAWS() {
+//	c.Cloud.Name = "aws"
+//	c.Cloud.Region = "aws-us-west-2a"
+//	c.Cloud.User = "AKIAIF5EOAWOD4BLMJGA"
+//	c.Cloud.Secret = "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"
+//}
 
 func (c *clusterRequest) applyDO() {
 	c.Cloud.Name = "digitalocean"
@@ -75,9 +74,9 @@ func newNodeRequest(cl api.Cluster) *nodeRequest {
 	}
 }
 
-func (n *nodeRequest) applyAWS(cl api.Cluster) {
-	panic("Not implemented")
-}
+//func (n *nodeRequest) applyAWS(cl api.Cluster) {
+//	panic("Not implemented")
+//}
 
 func (n *nodeRequest) applyDO(cl api.Cluster) {
 	n.Spec.Digitalocean = &api.DigitaloceanNodeSpec{
@@ -135,7 +134,8 @@ func createSSHKey(key *extensions.UserSSHKey) error {
 		println("2")
 		return err
 	}
-	defer resp.Body.Close()
+	// Hate the linter !
+	defer func() { err = resp.Body.Close(); _ = err }()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		println("3")
@@ -223,11 +223,7 @@ func up(nodes int, typ string) ([]byte, error) {
 	// Test AWS or DO
 	request := newClusterRequest()
 	request.SSHKeys = []string{key.Metadata.Name, "80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0", "dd:c1:43:1a:fe:cb:9c:3f:48:20:78:c8:fe:cf:d5:a8", "79:cc:81:d6:7a:d5:2b:db:1b:c6:68:15:6e:4f:44:05", "b0:1c:92:9b:d7:25:33:a3:82:5f:60:b4:15:52:fb:d5", "be:b4:1b:c0:ad:01:9f:ef:d7:52:00:6b:69:e9:95:f2", "61:e9:45:14:67:94:8a:c9:d6:5e:6f:8c:4a:0b:51:f9", "65:f2:d1:22:d0:af:a6:4c:1c:b1:9d:cb:aa:39:2f:99", "ef:dc:8b:66:b0:f0:60:63:ea:57:75:fe:6e:1e:01:c1"}
-	if strings.EqualFold(typ, "aws") {
-		request.applyAWS()
-	} else {
-		request.applyDO()
-	}
+	request.applyDO()
 
 	buf, err := json.Marshal(request)
 	if err != nil {
@@ -289,7 +285,8 @@ func getKubeConfig(cl api.Cluster) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	// God I hate this linter soo much!
+	defer func() { err = resp.Body.Close(); _ = err }()
 	return ioutil.ReadAll(resp.Body)
 }
 
