@@ -61,10 +61,10 @@ e2e-build:
 	$(MAKE) -C hack/e2e build
 
 e2e: e2e-build
-	docker run -it -v $(KUBECONFIG):/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
+	docker run -it -v  $(CURDIR)/kubeconfig:/workspace/kubermatickubeconfig kubermatic.io/api/e2e-conformance:1.6
 
 client-up: docker-build
-	docker run -v kubeconfgi:kubeconfig -it $(REPO):$(GITTAG) ./client up
+	docker run -v  $(CURDIR)/kubeconfg:/kubeconfig -it $(REPO):$(GITTAG) ./client up
 
 client-down:
 	docker run -it $(REPO):$(GITTAG) ./client purge
