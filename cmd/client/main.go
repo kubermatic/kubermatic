@@ -28,7 +28,8 @@ func setAuth(r *http.Request) {
 var (
 	dcFlag     = "us-central1"
 	domainFlag = "dev.kubermatic.io"
-	jwtFlag    = ""
+	jwtFlag    = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1MTQzNjk5LCJpYXQiOjE0OTUxMDc2OTl9.K314E0WXMwRFTDhIECoOJf5GStc0kcVbPC6-YCXPw6c"
+	outputPath = "kubeconfig"
 )
 
 type clusterRequest struct {
@@ -37,7 +38,7 @@ type clusterRequest struct {
 	SSHKeys []string         `json:"ssh_keys"`
 }
 
-func NewClusterRequest() clusterRequest {
+func newClusterRequest() clusterRequest {
 	return clusterRequest{
 		Cloud: &api.CloudSpec{},
 		Spec: &api.ClusterSpec{
@@ -65,7 +66,7 @@ type nodeRequest struct {
 	Spec      api.NodeSpec `json:"spec"`
 }
 
-func NewNodeRequest(cl api.Cluster) *nodeRequest {
+func newNodeRequest(cl api.Cluster) *nodeRequest {
 	return &nodeRequest{
 		Instances: 1,
 		Spec: api.NodeSpec{
@@ -87,7 +88,7 @@ func (n *nodeRequest) applyDO(cl api.Cluster) {
 
 // createNodes creates nodes
 func createNodes(nodeCount int, cluster api.Cluster) error {
-	n := NewNodeRequest(cluster)
+	n := newNodeRequest(cluster)
 	n.applyDO(cluster)
 	buf, err := json.Marshal(n)
 	if err != nil {
@@ -109,7 +110,7 @@ func createNodes(nodeCount int, cluster api.Cluster) error {
 	return err
 }
 
-func NewSSHKey() *extensions.UserSSHKey {
+func newSSHKey() *extensions.UserSSHKey {
 	return &extensions.UserSSHKey{
 		Name:      "e2e-test-key-" + uuid.ShortUID(4),
 		PublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDhtMw2eqE8vNitm9XZ6TAE5dL+pk3rLRA/39Pko0RRB1h6isevlAbG560t9vwAu7w3F59O0zbmbnN/0C0qcaz1sxZfdAPGCUESppYsxL2t7lhoaCCoK5pHXB8Iv3e8wPyuuugfXP0tS4oXI72tnmj9SJYCF3lxh02HLl2v0RsRto0Ojsx7anP98IcVsZWoRk3Xfh0UIoup2bwZ8F1DCtNrshu5pYr1zRklM7ANIrqzjHYjVwu/GGTkuUccEoiU8833hIHSd74Itdvk7p5iHeLRhu02rFLxCtG5BUiagpxg3ErvYMFrjQHO2wLggSRbKtqdWCSeAPV9Rf4GFSLtsBaXfUqb2PimAIPqXfMucEmUDWumWSbyZDPjZ+p7fLEI+BLsnT9NyFHjLqToUmYDz+a/8j8wt6iFC08/5z2SPu/71kEJlOYBgOW8KxhCotw1S07qnlvfdc4BXViXxeu9iYwVlv/257LQvmKzyfVqwMTouHw+jbNDOrFz+ozBs8frKYwXDuWDwzPyBDzkrloU8WUso1Mgiw/4vGCNx5x5yk7oAfzGjYlh3Dyvw/2SulpMuxoYnRkIlVVW6QYueFS4v+be/Ch6HkxBuqNZ2M8Z8X2GODaHIfAIlfWc8+xJNceAcSKou8Vda/LCSwHITl15TL0iKoWvlIutuXKOQ4gST81YQw== luk.burchard@gmail.com",
@@ -209,7 +210,7 @@ func deleteCluster(cluster api.Cluster, client *http.Client) error {
 // up is the main entry point for the up method
 func up(nodes int, typ string) ([]byte, error) {
 
-	key := NewSSHKey()
+	key := newSSHKey()
 	err := createSSHKey(key)
 	if err != nil {
 		log.Fatalf("Couldn't post key: %v\n", err)
@@ -220,7 +221,7 @@ func up(nodes int, typ string) ([]byte, error) {
 	log.Printf("Creating %d nodes", nodes)
 
 	// Test AWS or DO
-	request := NewClusterRequest()
+	request := newClusterRequest()
 	request.SSHKeys = []string{key.Metadata.Name, "80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0", "dd:c1:43:1a:fe:cb:9c:3f:48:20:78:c8:fe:cf:d5:a8", "79:cc:81:d6:7a:d5:2b:db:1b:c6:68:15:6e:4f:44:05", "b0:1c:92:9b:d7:25:33:a3:82:5f:60:b4:15:52:fb:d5", "be:b4:1b:c0:ad:01:9f:ef:d7:52:00:6b:69:e9:95:f2", "61:e9:45:14:67:94:8a:c9:d6:5e:6f:8c:4a:0b:51:f9", "65:f2:d1:22:d0:af:a6:4c:1c:b1:9d:cb:aa:39:2f:99", "ef:dc:8b:66:b0:f0:60:63:ea:57:75:fe:6e:1e:01:c1"}
 	if strings.EqualFold(typ, "aws") {
 		request.applyAWS()
@@ -346,8 +347,12 @@ func main() {
 	var err error
 	switch flag.Arg(0) {
 	case "up":
-		out, _ := up(1, flag.Arg(1))
-		fmt.Printf("%s", string(out))
+		var out []byte
+		out, err = up(1, flag.Arg(1))
+		if err != nil {
+			break
+		}
+		err = ioutil.WriteFile(outputPath, out, 0666)
 	case "purge":
 		err = purge()
 	default:
