@@ -34,6 +34,8 @@ podTemplate(label: 'buildpod', containers: [
             stage('Test'){
                 container('golang') {
                    sh 'cd /go/src/github.com/kubermatic/api && make test'
+                   sh 'cd cd /go/src/github.com/kubermatic/api && make client-up'
+                   sh 'cd cd /go/src/github.com/kubermatic/api && make e2e'
                 }
             }
             stage('Build'){
@@ -41,6 +43,15 @@ podTemplate(label: 'buildpod', containers: [
                     sh 'cd /go/src/github.com/kubermatic/api && make docker-build'
                 }
             }
+<<<<<<< Updated upstream
+=======
+            stage('End-to-End'){
+                container('golang') {
+                   sh 'cd /go/src/github.com/kubermatic/api && make client-up'
+                   sh 'cd /go/src/github.com/kubermatic/api && make e2e'
+                }
+            }
+>>>>>>> Stashed changes
             stage('Push'){
                 container('golang') {
                     sh 'cd /go/src/github.com/kubermatic/api && make docker-push'
