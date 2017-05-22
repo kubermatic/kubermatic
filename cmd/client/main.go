@@ -27,7 +27,7 @@ func setAuth(r *http.Request) {
 var (
 	dcFlag     = "us-central1"
 	domainFlag = "dev.kubermatic.io"
-	jwtFlag    = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1NDE1MjkwLCJpYXQiOjE0OTUzNzkyOTB9.QECAqfTs7fpPPWuIvPx60JmsH_WD2jA5pg4UD2EW4Kg"
+	jwtFlag    = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1NDYxODkwLCJpYXQiOjE0OTU0MjU4OTB9.9m8IewgfvLCANi9B8kDbW8adgJqinwAev-vJ7hUSZ5M"
 	outputPath = "/_artifacts/kubeconfig"
 )
 
