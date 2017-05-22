@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"sync"
 	"time"
 
@@ -17,19 +18,35 @@ import (
 	"github.com/kubermatic/api/uuid"
 )
 
-const timeSleep = time.Second * 5
+const (
+	timeSleep  = time.Second * 5
+	hostname   = "dev.kubermatic.io"
+	jwtToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1NTEzODM5LCJpYXQiOjE0OTU0Nzc4Mzl9.bdN6Pdeu4IV7kcvx5ofDyjTraGte3q_xdC7qZgctpek"
+	outputPath = "/_artifacts/"
+)
 
-// setAuth sets the jwt token int a requests Authorization header field
-func setAuth(r *http.Request) {
-	r.Header.Add("Authorization", "Bearer "+jwtFlag)
+type client struct {
+	token          string
+	baseURL        string
+	kubeconfigFile string
+	cluster        *api.Cluster
+	client         *http.Client
+	seeds          []api.Datacenter
 }
 
-var (
-	dcFlag     = "us-central1"
-	domainFlag = "dev.kubermatic.io"
-	jwtFlag    = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1NDYxODkwLCJpYXQiOjE0OTU0MjU4OTB9.9m8IewgfvLCANi9B8kDbW8adgJqinwAev-vJ7hUSZ5M"
-	outputPath = "/_artifacts/kubeconfig"
-)
+func newClient(domain string, token string, outPath string) *client {
+	return &client{
+		token:          token,
+		baseURL:        fmt.Sprintf("https://%s/api/v1", domain),
+		kubeconfigFile: path.Join(outPath, "kubeconfig"),
+		client:         &http.Client{},
+	}
+}
+
+// setAuth sets the jwt token int a requests Authorization header field
+func (c *client) setAuth(r *http.Request) {
+	r.Header.Add("Authorization", "Bearer "+c.token)
+}
 
 type clusterRequest struct {
 	Cloud   *api.CloudSpec   `json:"cloud"`
@@ -45,13 +62,6 @@ func newClusterRequest() clusterRequest {
 		},
 	}
 }
-
-//func (c *clusterRequest) applyAWS() {
-//	c.Cloud.Name = "aws"
-//	c.Cloud.Region = "aws-us-west-2a"
-//	c.Cloud.User = "AKIAIF5EOAWOD4BLMJGA"
-//	c.Cloud.Secret = "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"
-//}
 
 func (c *clusterRequest) applyDO() {
 	c.Cloud.Name = "digitalocean"
@@ -74,10 +84,6 @@ func newNodeRequest(cl api.Cluster) *nodeRequest {
 	}
 }
 
-//func (n *nodeRequest) applyAWS(cl api.Cluster) {
-//	panic("Not implemented")
-//}
-
 func (n *nodeRequest) applyDO(cl api.Cluster) {
 	n.Spec.Digitalocean = &api.DigitaloceanNodeSpec{
 		Size:               "2gb",
@@ -86,27 +92,10 @@ func (n *nodeRequest) applyDO(cl api.Cluster) {
 }
 
 // createNodes creates nodes
-func createNodes(nodeCount int, cluster api.Cluster) error {
+func (c *client) createNodes(nodeCount int, cluster api.Cluster) error {
 	n := newNodeRequest(cluster)
 	n.applyDO(cluster)
-	buf, err := json.Marshal(n)
-	if err != nil {
-		return err
-	}
-
-	// Create node request
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/api/v1/dc/%s/cluster/%s/node", domainFlag, cluster.Seed, cluster.Metadata.Name), bytes.NewReader(buf))
-	if err != nil {
-		return err
-	}
-	setAuth(req)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	_, err = ioutil.ReadAll(resp.Body)
-	return err
+	return c.smartDo(fmt.Sprintf("/dc/%s/cluster/%s/node", cluster.Seed, cluster.Metadata.Name), n, nil)
 }
 
 func newSSHKey() *extensions.UserSSHKey {
@@ -116,71 +105,16 @@ func newSSHKey() *extensions.UserSSHKey {
 	}
 }
 
-func createSSHKey(key *extensions.UserSSHKey) error {
-	buf, err := json.Marshal(key)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Submitting key %s\n", string(buf))
-	req, err := http.NewRequest("POST", "https://"+domainFlag+"/api/v1/ssh-keys", bytes.NewReader(buf))
-	if err != nil {
-		println("1")
-		return err
-	}
-	setAuth(req)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		println("2")
-		return err
-	}
-	// Hate the linter !
-	defer func() { err = resp.Body.Close(); _ = err }()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		println("3")
-		return err
-	}
-
-	var newKey extensions.UserSSHKey
-	fmt.Printf("Got key %s\n", string(data))
-	err = json.NewDecoder(bytes.NewReader(data)).Decode(&newKey)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		println("4")
-		return err
-	}
-	println("DONE")
-
-	*key = newKey
-	return nil
+func (c *client) createSSHKey(key *extensions.UserSSHKey) error {
+	return c.smartDo("/ssh-keys", key, key)
 }
 
 // waitNS waits for the Namespace to get created.
-func waitNS(cl api.Cluster) error {
+func (c *client) waitNS(cl api.Cluster) error {
 	for {
-		req, err := http.NewRequest("GET", "https://"+domainFlag+"/api/v1/dc/"+cl.Seed+"/cluster/"+cl.Metadata.Name, nil)
-		if err != nil {
-			return err
-		}
-		setAuth(req)
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return err
-		}
-
-		// Read all Data from the body,
-		// We cloud also use a tee reader but this would have been a bit overkill.
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		// We use the cluster state to get notified when a new NS gets created.
-		// When a NS gets created the cluster will revice an cluster URL.
 		var clusterState api.Cluster
-		if err = json.NewDecoder(bytes.NewReader(data)).Decode(&clusterState); err != nil {
-			log.Println(string(data))
+		err := c.smartDo("/dc/"+cl.Seed+"/cluster/"+cl.Metadata.Name, nil, &clusterState)
+		if err != nil {
 			return err
 		}
 
@@ -196,22 +130,21 @@ func waitNS(cl api.Cluster) error {
 }
 
 // deleteCluster deletes all clusters for a given user
-func deleteCluster(cluster api.Cluster, client *http.Client) error {
+func (c *client) deleteCluster(cluster api.Cluster) error {
 	log.Printf("Deleting %q\n", cluster.Metadata.Name)
-	req, err := http.NewRequest("DELETE", "https://"+domainFlag+"/api/v1/dc/"+dcFlag+"/cluster/"+cluster.Metadata.Name, nil)
+	req, err := http.NewRequest("DELETE", c.baseURL+"/dc/"+cluster.Seed+"/cluster/"+cluster.Metadata.Name, nil)
 	if err != nil {
 		return err
 	}
-	setAuth(req)
-	_, err = client.Do(req)
+	c.setAuth(req)
+	_, err = c.client.Do(req)
 	return err
 }
 
 // up is the main entry point for the up method
-func up(nodes int, typ string) ([]byte, error) {
-
+func (c *client) up(nodes int) error {
 	key := newSSHKey()
-	err := createSSHKey(key)
+	err := c.createSSHKey(key)
 	if err != nil {
 		log.Fatalf("Couldn't post key: %v\n", err)
 	}
@@ -220,143 +153,180 @@ func up(nodes int, typ string) ([]byte, error) {
 	// This creates the cluster, NS, and cloud provider
 	log.Printf("Creating %d nodes", nodes)
 
-	// Test AWS or DO
 	request := newClusterRequest()
 	request.SSHKeys = []string{key.Metadata.Name, "80:ba:7a:3b:3f:89:b1:b4:cd:b8:b4:fb:6c:a4:62:d0", "dd:c1:43:1a:fe:cb:9c:3f:48:20:78:c8:fe:cf:d5:a8", "79:cc:81:d6:7a:d5:2b:db:1b:c6:68:15:6e:4f:44:05", "b0:1c:92:9b:d7:25:33:a3:82:5f:60:b4:15:52:fb:d5", "be:b4:1b:c0:ad:01:9f:ef:d7:52:00:6b:69:e9:95:f2", "61:e9:45:14:67:94:8a:c9:d6:5e:6f:8c:4a:0b:51:f9", "65:f2:d1:22:d0:af:a6:4c:1c:b1:9d:cb:aa:39:2f:99", "ef:dc:8b:66:b0:f0:60:63:ea:57:75:fe:6e:1e:01:c1"}
 	request.applyDO()
 
-	buf, err := json.Marshal(request)
-	if err != nil {
-		log.Fatalf("Couldn't serialize to json: %v\n", err)
-	}
-	log.Printf("Creating cluster: %s\n", string(buf))
-
-	req, err := http.NewRequest("POST", "https://"+domainFlag+"/api/v1/cluster", bytes.NewReader(buf))
-	if err != nil {
-		return nil, err
-	}
-	setAuth(req)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
 	var cluster api.Cluster
-	if err = json.NewDecoder(bytes.NewReader(data)).Decode(&cluster); err != nil {
-		log.Println(err)
-		return nil, err
+	err = c.smartDo("/cluster", request, &cluster)
+	if err != nil {
+		return err
 	}
 
 	// Wait for a Namespace:
 	// wait for NS to not get errors when setting the cloud provider
-	if err = waitNS(cluster); err != nil {
+	if err = c.waitNS(cluster); err != nil {
 		log.Println(err)
-		return nil, err
+		return err
 	}
 
 	// Create Nodes:
 	// This is creating N nodes
-	if err = createNodes(nodes, cluster); err != nil {
+	if err = c.createNodes(nodes, cluster); err != nil {
 		log.Println(err)
-		return nil, err
+		return err
 	}
 
-	return getKubeConfig(cluster)
+	c.cluster = &cluster
+
+	return nil
 }
 
-func getKubeConfig(cl api.Cluster) ([]byte, error) {
-	u := "https://" + domainFlag + "/api/v1/dc/" + cl.Seed + "/cluster/" + cl.Metadata.Name + "/kubeconfig"
-	u += "?token=" + jwtFlag
+func (c *client) getKubeConfig() ([]byte, error) {
+	u := c.baseURL + "/dc/" + c.cluster.Seed + "/cluster/" + c.cluster.Metadata.Name + "/kubeconfig"
+	u += "?token=" + c.token
 
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
-	setAuth(req)
+	c.setAuth(req)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
 	// God I hate this linter soo much!
 	defer func() { err = resp.Body.Close(); _ = err }()
 	return ioutil.ReadAll(resp.Body)
 }
 
+func (c *client) expandpath(apiPath string) string {
+	return c.baseURL + apiPath
+}
+
+func (c *client) smartDo(apiPath string, data interface{}, into interface{}) error {
+	var buf io.Reader
+	var method string
+	if data != nil {
+		log.Printf("Preparing POST request under %q\n", c.expandpath(apiPath))
+		d, err := json.Marshal(data)
+		log.Printf("With data %s\n", string(d))
+		buf = bytes.NewReader(d)
+		if err != nil {
+			return err
+		}
+		method = "POST"
+	} else {
+		log.Printf("Preparing GET request under %q\n", c.expandpath(apiPath))
+		method = "GET"
+	}
+
+	// Create node request
+	req, err := http.NewRequest(method, c.expandpath(apiPath), buf)
+	if err != nil {
+		return err
+	}
+	c.setAuth(req)
+
+	resp, err := c.client.Do(req)
+	if into == nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	defer func() { err := resp.Body.Close(); _ = err }()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	log.Printf("Got response %s\n", string(body))
+
+	return json.Unmarshal(body, into)
+}
+
 // purge is the main entry point for the merge command
-func purge() error {
-	client := &http.Client{}
-
-	// Get clusters list
-	req, err := http.NewRequest("GET", "https://"+domainFlag+"/api/v1/dc/"+dcFlag+"/cluster", nil)
-	if err != nil {
-		return err
-	}
-
-	setAuth(req)
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	var clusters []api.Cluster
-	if err = json.NewDecoder(resp.Body).Decode(&clusters); err != nil {
-		return err
-	}
-
-	// Same pattern as in up
-	done := make(chan struct{}, 5)
+func (c *client) purge() error {
 	waitAll := sync.WaitGroup{}
-	waitAll.Add(len(clusters))
-	for _, cluster := range clusters {
-		go func(cl api.Cluster) {
-			// Place ticket
-			done <- struct{}{}
-			log.Println(deleteCluster(cl, client))
-			// Remove ticket
-			<-done
-			waitAll.Done()
-		}(cluster)
+	for _, s := range c.seeds {
+		var clusters []api.Cluster
+		err := c.smartDo("/dc/"+s.Metadata.Name+"/cluster", nil, &clusters)
+		if err != nil {
+			return err
+		}
+
+		// Same pattern as in up
+		done := make(chan struct{}, 5)
+		waitAll.Add(len(clusters))
+		for _, cluster := range clusters {
+			go func(cl api.Cluster) {
+				// Place ticket
+				done <- struct{}{}
+				err := c.deleteCluster(cl)
+				if err != nil {
+					log.Printf("Error deleting cluster %q, got error: %v", cl.Spec.HumanReadableName, err)
+				}
+				// Remove ticket
+				<-done
+				waitAll.Done()
+			}(cluster)
+		}
 	}
 	// Wait for all workers
 	waitAll.Wait()
 	return nil
 }
 
+func (c *client) updateSeeds() error {
+	var dcs []api.Datacenter
+	err := c.smartDo("/dc", nil, &dcs)
+	if err != nil {
+		return err
+	}
+
+	seeds := make([]api.Datacenter, 0)
+	for _, dc := range dcs {
+		if dc.Seed {
+			seeds = append(seeds, dc)
+		}
+	}
+	c.seeds = seeds
+	return nil
+}
+
+func (c *client) writeKubeconfig() error {
+	data, err := c.getKubeConfig()
+	if err != nil {
+		return err
+	}
+	log.Printf("Writing kubeconfig to %q\n", c.kubeconfigFile)
+	log.Printf("With data %s\n", string(data))
+	return ioutil.WriteFile(c.kubeconfigFile, data, 0666)
+}
+
+func errFatal(err error) {
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
 func main() {
-	flag.Parse()
-	printError := func() {
-		log.Printf("Wrong usage. Use:\n\n\t %s [up [aws]|purge]\n\n", os.Args[0])
+	c := newClient(hostname, jwtToken, outputPath)
+
+	if len(os.Args) != 2 {
+		log.Printf("Wrong usage. Use:\n\n\t %s [up|purge]\n\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	if len(flag.Args()) < 1 {
-		printError()
-	}
-
-	var err error
-	switch flag.Arg(0) {
+	switch os.Args[1] {
 	case "up":
-		var out []byte
-		out, err = up(1, flag.Arg(1))
-		if err != nil {
-			break
-		}
-		err = ioutil.WriteFile(outputPath, out, 0666)
+		errFatal(c.up(2))
+		errFatal(c.writeKubeconfig())
 	case "purge":
-		err = purge()
-	default:
-		printError()
-	}
-
-	if err != nil {
-		log.Fatal(err)
+		errFatal(c.updateSeeds())
+		errFatal(c.purge())
 	}
 }
