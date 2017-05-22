@@ -16,7 +16,7 @@ podTemplate(label: 'buildpod', containers: [
         "CGO_ENABLED=0",
         "GOBUILD='go install'"
       ]) {
-
+         wrap([$class: 'AnsiColorBuildWrapper']) {
             stage('setup workdir'){
                 container('golang') {
                     sh 'mkdir -p /go/src/github.com/kubermatic'
@@ -57,4 +57,5 @@ podTemplate(label: 'buildpod', containers: [
             }
         }
     }
+   }
 }
