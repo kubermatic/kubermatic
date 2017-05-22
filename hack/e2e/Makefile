@@ -1,4 +1,4 @@
-IMG = kubermatic.io/api/e2e-conformance
+IMG = kubermatic/e2e-conformance
 TAG = 1.6
 
 all: build
