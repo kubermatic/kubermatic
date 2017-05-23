@@ -191,6 +191,14 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			}
 		}
 
+		if len(keys) != 0 && len(dropKeys) == 0 {
+			f, err := createKey(keys[0], client)
+			if err != nil {
+				return nil, err
+			}
+			dropKeys = []string{f}
+		}
+
 		createRequest := &godo.DropletCreateRequest{
 			Region:            dc.Spec.Digitalocean.Region,
 			Image:             image,
@@ -215,6 +223,20 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 	}
 
 	return created, nil
+}
+func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
+	glog.Infof("Creating new DigitalOcean key with name %q\n", key.Name)
+	keyRequest := &godo.KeyCreateRequest{
+		Name:      key.Name,
+		PublicKey: key.PublicKey,
+	}
+	created, _, err := client.Keys.Create(keyRequest)
+	if err != nil {
+		glog.Info("Error creating new DigitalOcean key with name %q, with : %v\n", key.Name, err)
+		return "", err
+	}
+	glog.Info("Successfully created new DigitalOcean key with name %q\n", key.Name)
+	return created.Fingerprint, nil
 }
 
 func (do *digitalocean) InitializeCloudSpec(c *api.Cluster) error {
