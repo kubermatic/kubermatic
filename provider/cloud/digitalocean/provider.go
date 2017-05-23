@@ -233,7 +233,7 @@ func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint stri
 	}
 	created, _, err := client.Keys.Create(keyRequest)
 	if err != nil {
-		glog.Infof("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
+		glog.Errorf("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
 		return "", err
 	}
 	glog.Infof("Successfully created new DigitalOcean key with name %q", key.Name)
