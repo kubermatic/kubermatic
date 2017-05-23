@@ -224,18 +224,19 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 	return created, nil
 }
+
 func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
-	glog.Infof("Creating new DigitalOcean key with name %q\n", key.Name)
+	glog.Infof("Creating new DigitalOcean key with name %q", key.Name)
 	keyRequest := &godo.KeyCreateRequest{
 		Name:      key.Name,
 		PublicKey: key.PublicKey,
 	}
 	created, _, err := client.Keys.Create(keyRequest)
 	if err != nil {
-		glog.Info("Error creating new DigitalOcean key with name %q, with : %v\n", key.Name, err)
+		glog.Infof("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
 		return "", err
 	}
-	glog.Info("Successfully created new DigitalOcean key with name %q\n", key.Name)
+	glog.Infof("Successfully created new DigitalOcean key with name %q", key.Name)
 	return created.Fingerprint, nil
 }
 
