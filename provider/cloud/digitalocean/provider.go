@@ -173,9 +173,19 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			return created, err
 		}
 
+		// Add keys from deprecated DigitalOcean Node spec
 		for _, doKey := range allDoKeys {
 			for _, fingerprint := range nSpec.SSHKeyFingerprints {
 				if doKey.Fingerprint == fingerprint {
+					dropKeys = append(dropKeys, doKey.Fingerprint)
+				}
+			}
+		}
+
+		// Add keys from our own keystore, which exist in DO
+		for _, doKey := range allDoKeys {
+			for _, k := range keys {
+				if doKey.Fingerprint == k.Fingerprint {
 					dropKeys = append(dropKeys, doKey.Fingerprint)
 				}
 			}
