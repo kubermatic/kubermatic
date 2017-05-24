@@ -19,21 +19,21 @@ podTemplate(label: 'buildpod', containers: [
          wrap([$class: 'AnsiColorBuildWrapper']) {
             stage('setup workdir'){
                 container('golang') {
-                    sh 'mkdir -p /go/src/github.com/kubermatic'
-                    sh 'ln -s `pwd` /go/src/github.com/kubermatic/api'
-                    sh 'cd /go/src/github.com/kubermatic/api'
+                    sh("mkdir -p /go/src/github.com/kubermatic")
+                    sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
+                    sh("cd /go/src/github.com/kubermatic/api")
                     checkout scm
                 }
             }
             stage('Check'){
                 container('golang') {
-                   sh 'cd /go/src/github.com/kubermatic/api && make install'
-                   sh 'cd /go/src/github.com/kubermatic/api && make check'
+                   sh("cd /go/src/github.com/kubermatic/api && make install")
+                   sh("cd /go/src/github.com/kubermatic/api && make check")
                 }
             }
             stage('Test'){
                 container('golang') {
-                   sh 'cd /go/src/github.com/kubermatic/api && make test'
+                   sh("cd /go/src/github.com/kubermatic/api && make test")
                 }
             }
             stage('Build'){
@@ -49,7 +49,11 @@ podTemplate(label: 'buildpod', containers: [
             }
             stage('Push'){
                 container('golang') {
-                    sh 'cd /go/src/github.com/kubermatic/api && make docker-push'
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
+                            usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                        sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
+                        sh("cd /go/src/github.com/kubermatic/api && make docker-push")
+                    }
                 }
             }
             stage('Deploy'){
