@@ -48,7 +48,7 @@ podTemplate(label: 'buildpod', containers: [
                         sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
                         sh("cd /go/src/github.com/kubermatic/api && make client-up")
                    	sh("cd /go/src/github.com/kubermatic/api && make e2e")
-                        sh("cd /go/src/github.com/kubermatic/api && make client-purge")
+                        sh("cd /go/src/github.com/kubermatic/api && make client-down")
                     }
                 }
             }
