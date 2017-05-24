@@ -60,7 +60,7 @@ docker-push:
 e2e-build:
 	$(MAKE) -C hack/e2e build
 
-e2e: e2e-build
+e2e:
 	docker run -it -v  $(CURDIR)/_artifacts/kubeconfig:/workspace/kubermatickubeconfig kubermatic/e2e-conformance:1.6
 
 client-up: docker-build
