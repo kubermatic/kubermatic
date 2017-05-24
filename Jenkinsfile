@@ -43,8 +43,13 @@ podTemplate(label: 'buildpod', containers: [
             }
             stage('End-to-End'){
                 container('golang') {
-                   sh 'cd /go/src/github.com/kubermatic/api && make client-up'
-                   sh 'cd /go/src/github.com/kubermatic/api && make e2e'
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
+                            usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                        sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
+                        sh("cd /go/src/github.com/kubermatic/api && make client-up")
+                   	sh("cd /go/src/github.com/kubermatic/api && make e2e")
+                        sh("cd /go/src/github.com/kubermatic/api && make client-purge")
+                    }
                 }
             }
             stage('Push'){
