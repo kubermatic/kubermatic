@@ -173,12 +173,30 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			return created, err
 		}
 
+		// Add keys from deprecated DigitalOcean Node spec
 		for _, doKey := range allDoKeys {
 			for _, fingerprint := range nSpec.SSHKeyFingerprints {
 				if doKey.Fingerprint == fingerprint {
 					dropKeys = append(dropKeys, doKey.Fingerprint)
 				}
 			}
+		}
+
+		// Add keys from our own keystore, which exist in DO
+		for _, doKey := range allDoKeys {
+			for _, k := range keys {
+				if doKey.Fingerprint == k.Fingerprint {
+					dropKeys = append(dropKeys, doKey.Fingerprint)
+				}
+			}
+		}
+
+		if len(keys) != 0 && len(dropKeys) == 0 {
+			f, err := createKey(keys[0], client)
+			if err != nil {
+				return nil, err
+			}
+			dropKeys = []string{f}
 		}
 
 		createRequest := &godo.DropletCreateRequest{
@@ -205,6 +223,21 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 	}
 
 	return created, nil
+}
+
+func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
+	glog.Infof("Creating new DigitalOcean key with name %q", key.Name)
+	keyRequest := &godo.KeyCreateRequest{
+		Name:      key.Name,
+		PublicKey: key.PublicKey,
+	}
+	created, _, err := client.Keys.Create(keyRequest)
+	if err != nil {
+		glog.Errorf("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
+		return "", err
+	}
+	glog.Infof("Successfully created new DigitalOcean key with name %q", key.Name)
+	return created.Fingerprint, nil
 }
 
 func (do *digitalocean) InitializeCloudSpec(c *api.Cluster) error {
