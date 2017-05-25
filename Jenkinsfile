@@ -76,7 +76,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
   // Default values
   def colorName = 'RED'
   def colorCode = '#FF0000'
-  def msg = "${buildStatus}: ${JOB_NAME} #${BUILD_NUMBER}: ${BUILD_URL}"
+  def msg = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}: ${env.JOB_URL} ${env}"
 
 
   // Override default values based on build status
