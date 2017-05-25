@@ -76,7 +76,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
   // Default values
   def colorName = 'RED'
   def colorCode = '#FF0000'
-  def msg = "${buildStatus}: `${env.JOB_NAME}` #${env.BUILD_NUMBER}:\n${env.BUILD_URL}"
+  def msg = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}: ${env.BUILD_URL}"
 
 
   // Override default values based on build status
@@ -87,7 +87,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
     color = 'GREEN'
     colorCode = '#00FF00'
   }
-  
+
   // Send notifications
   slackSend (color: colorCode, message: msg)
 
