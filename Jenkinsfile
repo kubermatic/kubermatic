@@ -19,42 +19,12 @@ podTemplate(label: 'buildpod', containers: [
             try {
                 notifyBuild('STARTED')
 
-                stage('setup workdir'){
-                    container('golang') {
-                        sh("mkdir -p /go/src/github.com/kubermatic")
-                        sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
-                        sh("cd /go/src/github.com/kubermatic/api")
-                        checkout scm
-                    }
-                }
-                stage('Check'){
-                    container('golang') {
-                       sh("cd /go/src/github.com/kubermatic/api && make install")
-                       sh("cd /go/src/github.com/kubermatic/api && make check")
-                    }
-                }
-                stage('Test'){
-                    container('golang') {
-                       sh("cd /go/src/github.com/kubermatic/api && make test")
-                    }
-                }
-                stage('Build'){
-                    container('golang') {
-                        sh("cd /go/src/github.com/kubermatic/api && make build")
-                        sh("cd /go/src/github.com/kubermatic/api && make docker-build")
-                    }
-                }
-                stage('Push'){
-                    container('golang') {
-                        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
-                                usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-                            sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
-                            sh("cd /go/src/github.com/kubermatic/api && make docker-push")
-                        }
-                    }
-                }
-                stage('Deploy'){
-                        echo "echo"
+                def TAG_NAME = binding.variables.get("TAG_NAME")
+
+                if (env.BRANCH_NAME == develop && TAG_NAME !=  null) {
+                    buildPipeline(TAG_NAME)
+                } else {
+                    buildPipeline(env.GIT_COMMIT)
                 }
             } catch (e) {
                // If there was an exception thrown, the build failed
@@ -68,6 +38,48 @@ podTemplate(label: 'buildpod', containers: [
     }
 }
 
+
+def buildPipeline(String tag) {
+
+    stage('setup workdir'){
+        container('golang') {
+            sh("mkdir -p /go/src/github.com/kubermatic")
+            sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
+            sh("cd /go/src/github.com/kubermatic/api")
+            checkout scm
+        }
+    }
+    stage('Check'){
+        container('golang') {
+           sh("cd /go/src/github.com/kubermatic/api && make install")
+           sh("cd /go/src/github.com/kubermatic/api && make check")
+        }
+    }
+    stage('Test'){
+        container('golang') {
+           sh("cd /go/src/github.com/kubermatic/api && make test")
+        }
+    }
+    stage('Build'){
+        container('golang') {
+            sh("cd /go/src/github.com/kubermatic/api && make build")
+            sh("cd /go/src/github.com/kubermatic/api && ake TAG=tag docker-build")
+        }
+    }
+    stage('Push'){
+        container('golang') {
+            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
+                    usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
+                sh("cd /go/src/github.com/kubermatic/api && make TAG=tag docker-push")
+            }
+        }
+    }
+    stage('Deploy'){
+            echo "echo"
+    }
+
+}
 
 def notifyBuild(String buildStatus = 'STARTED') {
   // build status of null means successful
