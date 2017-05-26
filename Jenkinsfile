@@ -19,7 +19,8 @@ podTemplate(label: 'buildpod', containers: [
             try {
                 notifyBuild('STARTED')
 
-                def TAG_NAME = binding.variables.get("TAG_NAME")
+                env.TAG_NAME = getTag()
+                env.GIT_COMMIT = getRevision.take(7)
 
                 if (env.BRANCH_NAME == develop && TAG_NAME !=  null) {
                     buildPipeline(TAG_NAME)
@@ -81,6 +82,16 @@ def buildPipeline(String tag) {
 
 }
 
+// Finds the revision from the source code.
+def getRevision() {
+  // Code needs to be checked out for this.
+  return sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
+}
+
+def getTag() {
+  return sh(returnStdout: true, script: 'git describe 2> /dev/null || exit 0').trim()
+}
+
 def notifyBuild(String buildStatus = 'STARTED') {
   // build status of null means successful
   buildStatus =  buildStatus ?: 'SUCCESSFUL'
@@ -88,7 +99,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
   // Default values
   def colorName = 'RED'
   def colorCode = '#FF0000'
-  def msg = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}: ${env.JOB_URL} ${env}"
+  def msg = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
 
 
   // Override default values based on build status
@@ -104,5 +115,6 @@ def notifyBuild(String buildStatus = 'STARTED') {
   slackSend (color: colorCode, message: msg)
 
 }
+
 
 
