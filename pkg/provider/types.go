@@ -3,8 +3,8 @@ package provider
 import (
 	"fmt"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
+	api "github.com/kubermatic/api/pkg/types"
 	"golang.org/x/net/context"
 )
 

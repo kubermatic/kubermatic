@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/template"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func TestCreateServiceAccountKey(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions/etcd"
 	"github.com/kubermatic/api/pkg/provider/kubernetes"
+	api "github.com/kubermatic/api/pkg/types"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 

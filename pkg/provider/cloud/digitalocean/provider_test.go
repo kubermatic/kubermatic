@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func TestCreate(t *testing.T) {

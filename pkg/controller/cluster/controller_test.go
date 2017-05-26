@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/extensions/etcd"
 	"github.com/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/api/pkg/provider/cloud"
+	api "github.com/kubermatic/api/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 )

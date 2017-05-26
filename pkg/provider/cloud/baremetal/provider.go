@@ -13,9 +13,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/provider"
+	api "github.com/kubermatic/api/pkg/types"
 	"golang.org/x/net/context"
 )
 

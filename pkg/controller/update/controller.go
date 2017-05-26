@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/resources"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/extensions/etcd"
 	"github.com/kubermatic/api/pkg/provider/kubernetes"
+	api "github.com/kubermatic/api/pkg/types"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"

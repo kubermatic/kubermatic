@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func TestCreateNodesEndpoint(t *testing.T) {

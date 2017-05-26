@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 	yaml "gopkg.in/yaml.v2"
 )
 

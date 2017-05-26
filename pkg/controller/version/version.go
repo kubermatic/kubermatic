@@ -9,7 +9,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 	yaml "gopkg.in/yaml.v2"
 )
 

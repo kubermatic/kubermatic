@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/provider"
+	api "github.com/kubermatic/api/pkg/types"
 	"github.com/kubermatic/api/pkg/uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"

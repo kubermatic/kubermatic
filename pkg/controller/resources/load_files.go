@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/template"
 	"github.com/kubermatic/api/pkg/extensions/etcd"
 	"github.com/kubermatic/api/pkg/provider"
+	api "github.com/kubermatic/api/pkg/types"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/apis/rbac/v1beta1"

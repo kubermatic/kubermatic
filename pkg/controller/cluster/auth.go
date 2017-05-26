@@ -15,8 +15,8 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/template"
+	api "github.com/kubermatic/api/pkg/types"
 	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"

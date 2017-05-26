@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/provider"
+	api "github.com/kubermatic/api/pkg/types"
 	"golang.org/x/net/context"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )

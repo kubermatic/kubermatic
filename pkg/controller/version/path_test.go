@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func TestPathSearch_Search(t *testing.T) {

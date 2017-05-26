@@ -16,10 +16,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/extensions"
 	"github.com/kubermatic/api/pkg/provider"
 	ktemplate "github.com/kubermatic/api/pkg/template"
+	api "github.com/kubermatic/api/pkg/types"
 	"github.com/kubermatic/api/pkg/uuid"
 	"golang.org/x/net/context"
 )

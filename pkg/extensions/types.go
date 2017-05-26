@@ -3,7 +3,7 @@ package extensions
 import (
 	"time"
 
-	apitypes "github.com/kubermatic/api"
+	apitypes "github.com/kubermatic/api/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

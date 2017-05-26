@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/version"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/provider"
+	api "github.com/kubermatic/api/pkg/types"
 	"k8s.io/client-go/pkg/api/v1"
 )
 

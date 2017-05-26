@@ -6,8 +6,8 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
 
-	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/pkg/controller/version/dijkstra"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 // UpdatePathSearch represents a query for a path between K8s versions

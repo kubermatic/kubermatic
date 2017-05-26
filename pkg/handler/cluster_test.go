@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 func TestNewClusterEndpoint(t *testing.T) {

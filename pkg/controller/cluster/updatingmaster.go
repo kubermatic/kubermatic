@@ -3,7 +3,7 @@ package cluster
 import (
 	"time"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 // UpdateTimeout represent the duration to wait before considering an update failed

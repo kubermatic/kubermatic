@@ -1,4 +1,4 @@
-package api
+package types
 
 // GetToken returns digital ocean's token.
 func (spec *DigitaloceanCloudSpec) GetToken() string {
