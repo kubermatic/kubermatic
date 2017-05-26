@@ -19,11 +19,14 @@ podTemplate(label: 'buildpod', containers: [
             try {
                 notifyBuild('STARTED')
 
-                env.TAG_NAME = getTag()
-                env.GIT_COMMIT = getRevision.take(7)
+                // Setting source code related global variable once so it can be reused.
+                def gitCommit = getRevision()
+                env.GIT_SHA = gitCommit
+                env.GIT_COMMIT = gitCommit.take(7)
+                env.GIT_TAG = getTag()
 
-                if (env.BRANCH_NAME == develop && TAG_NAME !=  null) {
-                    buildPipeline(TAG_NAME)
+                if (env.BRANCH_NAME == develop && env.GIT_TAG !=  null) {
+                    buildPipeline(env.GIT_TAG)
                 } else {
                     buildPipeline(env.GIT_COMMIT)
                 }
