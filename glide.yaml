@@ -25,3 +25,7 @@ import:
 - package: github.com/Masterminds/semver
 - package: github.com/mitchellh/mapstructure
 - package: github.com/go-test/deep
+- package: github.com/coreos/go-systemd
+- package: github.com/spf13/cobra
+- package: github.com/spf13/pflag
+- package: github.com/spf13/viper
