@@ -108,4 +108,4 @@ Future: [Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile` & als
 
 #Documentation
 
-- [Apiserver public port](docs/apiserver-port-range.md)
+- [Apiserver public port](pkg/docs/apiserver-port-range.md)
