@@ -8,7 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/kubermatic/api/pkg/bare-metal-provider/extensions"
-	"k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateClusterEndpoint returns the endpoint to create a cluster
@@ -125,7 +125,7 @@ func DeleteClusterEndpoint(c extensions.Clientset, nodeStore extensions.NodeStor
 			}
 		}
 
-		err = c.Clusters(Namespace).Delete(cluster.Metadata.Name, &v1.DeleteOptions{})
+		err = c.Clusters(Namespace).Delete(cluster.Metadata.Name, &metav1.DeleteOptions{})
 		if err != nil {
 			glog.Errorf("failed to delete cluster %s: %v", key, err)
 			http.Error(w, "failed to delete cluster", http.StatusInternalServerError)
@@ -288,7 +288,7 @@ func DeleteClusterNodeEndpoint(c extensions.Clientset, nodeStore extensions.Node
 			return
 		}
 
-		err = c.Nodes(Namespace).Delete(node.Metadata.Name, v1.NewDeleteOptions(60))
+		err = c.Nodes(Namespace).Delete(node.Metadata.Name, metav1.NewDeleteOptions(60))
 		if err != nil {
 			glog.Errorf("failed to delete node %s: %v", node.Metadata.Name, err)
 			http.Error(w, "failed to delete node", http.StatusInternalServerError)
