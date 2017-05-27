@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/exec"
+	"strings"
 	"text/template"
 	"time"
-	"strings"
-	"net"
 )
 
 func env(name, def string) (val string) {
@@ -95,7 +95,7 @@ func deployDNS() error {
 
 func deployIngress() error {
 	data := struct {
-		Region string
+		Region         string
 		NodeFloatingIP string
 	}{
 		Region: mustEnv("REGION"),
@@ -149,7 +149,7 @@ func deployIngress() error {
 
 	for _, f := range files {
 		print(fmt.Sprintf("Trying to create ingress/%s: ", f))
-		if err := kubectlCreate("ingress/" + f, data); err != nil {
+		if err := kubectlCreate("ingress/"+f, data); err != nil {
 			return err
 		}
 	}
@@ -166,11 +166,11 @@ func usage(cmds []cmd) {
 
 type cmd struct {
 	name string
-	run func() error
+	run  func() error
 }
 
 func main() {
-	cmds := []cmd {
+	cmds := []cmd{
 		cmd{"kube-system", deployKubeSystem},
 		cmd{"dns", deployDNS},
 		cmd{"ingress", deployIngress},
