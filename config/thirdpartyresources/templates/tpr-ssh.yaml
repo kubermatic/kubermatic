@@ -1,0 +1,8 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+description: "A stored SSH key"
+metadata:
+  name: "user-ssh-key.kubermatic.io"
+versions:
+  - name: v1
+

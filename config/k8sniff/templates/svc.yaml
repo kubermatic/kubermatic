@@ -1,0 +1,16 @@
+{{ if not .Values.IsBareMetal }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8sniff-ingress-lb
+  namespace: k8sniff
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "default-https"
+      port: 8443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    role: k8sniff-ingress-lb
+{{ end }}

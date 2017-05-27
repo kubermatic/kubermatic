@@ -1,0 +1,6 @@
+.idea
+*.swp
+*.swo
+kubermatic/static/kubeconfig
+kubermatic/static/datacenters.yaml
+kubermatic/static/url

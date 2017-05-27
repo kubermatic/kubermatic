@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  namespace: kubermatic
+  name: kubermatic-ui-v1
+spec:
+  template:
+    metadata:
+      labels:
+        role: kubermatic-ui
+        version: v1
+    spec:
+      containers:
+        - name: webserver
+          image: kubermatic/ui:{{.Values.KubermaticDashboardImageTag}}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - name: http
+              containerPort: 8080
+      imagePullSecrets:
+        - name: dockercfg

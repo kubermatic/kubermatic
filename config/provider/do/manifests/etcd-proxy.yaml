@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd-proxy
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: etcd-proxy
+    image: gcr.io/google_containers/etcd:3.0.14-kubeadm
+    command:
+      - /usr/local/bin/etcd
+      - -proxy=on
+      - -name=$private_ipv4
+      - -discovery={{.DiscoveryURL}}
+      - -advertise-client-urls=https://{{.MasterHost}}:2378
+      - -listen-client-urls=https://0.0.0.0:2378
+      - -data-dir=/var/etcd/data
+      - -trusted-ca-file=/etc/secrets/root-ca.crt
+      - -client-cert-auth=true
+      - -cert-file=/etc/secrets/etcd.crt
+      - -key-file=/etc/secrets/etcd.key
+    ports:
+      - containerPort: 2379
+        protocol: TCP
+    volumeMounts:
+      - name: data
+        mountPath: "/var/etcd/data"
+      - name: secrets
+        mountPath: "/etc/secrets"
+        readOnly: true
+      - name: ca-certificates
+        mountPath: "/etc/ssl/certs"
+        readOnly: true
+  volumes:
+    - name: data
+      emptyDir: {}
+    - name: secrets
+      hostPath:
+        path: /var/run/etcd-proxy/secrets
+    - name: ca-certificates
+      hostPath:
+        path: /usr/share/ca-certificates

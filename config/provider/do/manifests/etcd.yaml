@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: etcd
+    image: sttts/elastic-etcd:2.2.1
+    command:
+      - /bin/sh
+      - -e
+      - -x
+      - -c
+      - >
+        ELASTIC_PARAMS=$(/usr/local/bin/elastic-etcd
+        -o flags -name=$private_ipv4 -v=6 --logtostderr
+        -discovery {{.K8sDiscoveryURL}}
+        -initial-advertise-peer-urls=http://$private_ipv4:12380
+        -data-dir=/var/etcd/data
+        -client-port=12379
+        ) &&
+        /usr/local/bin/etcd $ELASTIC_PARAMS
+        -listen-peer-urls=http://$private_ipv4:12380
+        -advertise-client-urls=http://$private_ipv4:12379
+        -listen-client-urls=http://$private_ipv4:12379
+    ports:
+      - containerPort: 12379
+        protocol: TCP
+      - containerPort: 12380
+        protocol: TCP
+    volumeMounts:
+      - name: data
+        mountPath: "/var/etcd/data"
+      - name: ca-certificates
+        mountPath: "/etc/ssl/certs"
+        readOnly: true
+  volumes:
+    - name: data
+      hostPath:
+        path: /var/lib/etcd-k8s/data
+    - name: ca-certificates
+      hostPath:
+        path: /usr/share/ca-certificates

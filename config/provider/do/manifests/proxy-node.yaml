@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: proxy
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: proxy
+    image: gcr.io/google_containers/hyperkube:v1.5.3
+    command: [
+      "/hyperkube",
+      "proxy",
+      "--master=https://{{.MasterHost}}",
+      "--kubeconfig=/var/run/kubelet/kubeconfig",
+      "--v=2"
+    ]
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /var/run/kubelet/kubeconfig
+      name: kubeconfig
+      readOnly: true
+  volumes:
+  - name: kubeconfig
+    hostPath:
+      path: /var/run/kubelet/kubeconfig

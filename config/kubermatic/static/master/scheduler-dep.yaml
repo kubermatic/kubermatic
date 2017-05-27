@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: scheduler
+spec:
+  selector:
+    matchLabels:
+      role: scheduler
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: scheduler
+        release: {{index .Version.Values "k8s-version"}}
+        version: v1
+      annotations:
+        prometheus.io/port: '10251'
+        prometheus.io/scrape: 'true'
+    spec:
+      containers:
+      - name: scheduler
+        image: gcr.io/google_containers/hyperkube:{{index .Version.Values "k8s-version"}}
+        command: [ "/hyperkube", "scheduler",
+            "--master=http://apiserver-insecure:8080",
+            "--v=4"
+        ]
+        resources:
+          limits:
+            memory: 30Mi

@@ -1,0 +1,110 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-ingress-3rdpartycfg
+  namespace: ingress
+  labels:
+    k8s-app: nginx-ingress-lb
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: nginx-ingress-lb
+        name: nginx-ingress-lb
+    spec:
+      containers:
+      - image: sttts/nginx-third-party:0.2
+        command:
+        - /nginx-third-party-lb
+        - --v=5
+        - --logtostderr
+        - --default-backend-service=ingress/default-http-backend
+        name: nginx-ingress-lb
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10249
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+          hostPort: 443
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /etc/nginx-ssl/kubermatic-certs
+          name: kubermatic-certs
+        - mountPath: /etc/nginx-ssl/dhparam
+          name: dhparam
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      - name: http-redirect
+        image: nginx
+        resources:
+          requests:
+            cpu: 50m
+            memory: 100Mi
+        command:
+        - sh
+        - -x
+        - -c
+        - |
+          echo 'server {
+            listen 10080;
+            server_name kubermatic.io;
+            return 301 https://$host$request_uri;
+          }' > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"
+        ports:
+        - name: redirect
+          containerPort: 10080
+          hostPort: 80
+      - name: do-floating-ip-self-assign
+        image: sttts/do-floating-ip-self-assign:latest
+        command:
+        - /bin/sh
+        - -c
+        - -x
+        - >
+          /do-floating-ip-self-assign -token-file=/etc/do/token
+          -floating-ip={{.NodeFloatingIP}} -update-period=0
+          -v=4 -logtostderr=true && tail -f /dev/null
+        volumeMounts:
+        - name: do-token
+          mountPath: /etc/do
+        - mountPath: /etc/nginx-ssl/dhparam
+          name: dhparam
+      volumes:
+      - name: do-token
+        secret:
+          secretName: do-token
+      - name: dhparam
+        secret:
+          secretName: dhparam
+      # A secret for each nginx host that requires SSL. These secrets need to
+      # exist before hand, see README.
+      # Follow this https://github.com/kubernetes/contrib/Ingress/controllers/nginx-third-party/examples/certs.sh
+      # as a guide on how to generate secrets containing SSL certificates.
+      - name: kubermatic-certs
+        secret:
+          secretName: kubermatic-certs

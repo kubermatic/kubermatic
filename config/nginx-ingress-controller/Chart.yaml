@@ -1,0 +1,12 @@
+name: nginx-ingress-controller
+version: 0.1.0
+description: nginx-ingress-controller
+keywords:
+  - k8s
+  - kubermatic
+home: https://github.com/kubernetes/ingress/
+sources:
+  - https://github.com/kubernetes/ingress/tree/master/controllers/nginx
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

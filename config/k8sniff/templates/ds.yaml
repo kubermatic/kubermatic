@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    role: k8sniff-ingress-lb
+  name: k8sniff-ingress-lb
+  namespace: k8sniff
+spec:
+  template:
+    metadata:
+      labels:
+        role: k8sniff-ingress-lb
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: "8081"
+    spec:
+      serviceAccountName: k8sniff
+    {{ if .Values.IsBareMetal }}
+      hostNetwork: true
+    {{ end }}
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - -x
+        - /pipeline/source/k8sniff -logtostderr --v=4 --config /etc/config/k8sniff.json
+        image: kubermatic/k8sniff-internal:{{.Values.K8sniffImageTag}}
+        imagePullPolicy: Always
+        name: k8sniff-ingress-lb
+        {{ if not .Values.IsBareMetal }}
+        ports:
+        - containerPort: 8081
+          name: metrics
+        {{ range $, $port := untilStep 30000 32768 1 }}
+        - containerPort: {{ $port }}
+          name: tcp-proxy-{{- $port -}}
+        {{ end }}
+        {{ end }}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: k8sniff-config
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - configMap:
+          name: k8sniff-configmap
+        name: k8sniff-config

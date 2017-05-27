@@ -1,0 +1,795 @@
+#cloud-config
+coreos:
+  update:
+    reboot-strategy: "off"
+  flannel:
+    interface: $private_ipv4
+    etcd_endpoints: {{ .ETCDEndpoints }}
+  etcd2:
+    name: controller
+    advertise-client-urls: http://$private_ipv4:2379
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    listen-client-urls: http://0.0.0.0:2379
+    listen-peer-urls: http://0.0.0.0:2380
+    initial-cluster: controller=http://$private_ipv4:2380
+  units:
+    - name: etcd2.service
+      command: start
+      runtime: true
+
+    - name: docker.service
+      drop-ins:
+        - name: 40-flannel.conf
+          content: |
+            [Unit]
+            Requires=flanneld.service
+            After=flanneld.service
+            [Service]
+            EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
+
+    - name: flanneld.service
+      drop-ins:
+        - name: 10-etcd.conf
+          content: |
+            [Service]
+            ExecStartPre=/usr/bin/curl --silent -X PUT -d \
+            "value={\"Network\" : \"{{.PodCIDR}}\", \"Backend\" : {\"Type\" : \"vxlan\"}}" \
+            http://localhost:2379/v2/keys/coreos.com/network/config?prevExist=false
+    - name: kubelet.service
+      command: start
+      runtime: true
+      content: |
+        [Service]
+        Environment=KUBELET_VERSION={{.K8sVer}}
+        Environment=KUBELET_ACI={{.HyperkubeImageRepo}}
+        Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf \
+        --mount volume=dns,target=/etc/resolv.conf \
+        --volume rkt,kind=host,source=/opt/bin/host-rkt \
+        --mount volume=rkt,target=/usr/bin/rkt \
+        --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
+        --mount volume=var-lib-rkt,target=/var/lib/rkt \
+        --volume stage,kind=host,source=/tmp \
+        --mount volume=stage,target=/tmp \
+        --volume var-log,kind=host,source=/var/log \
+        --mount volume=var-log,target=/var/log"
+        ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+        ExecStart=/usr/lib/coreos/kubelet-wrapper \
+        --api-servers=http://localhost:8080 \
+        --cni-conf-dir=/etc/kubernetes/cni/net.d \
+        --network-plugin={{.K8sNetworkPlugin}} \
+        --container-runtime={{.ContainerRuntime}} \
+        --rkt-path=/usr/bin/rkt \
+        --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
+        --register-schedulable=false \
+        --allow-privileged=true \
+        --config=/etc/kubernetes/manifests \
+        --cluster_dns={{.DNSServiceIP}} \
+        --cluster_domain=cluster.local \
+        --cloud-provider=aws
+        Restart=always
+        RestartSec=10
+
+        [Install]
+        WantedBy=multi-user.target
+
+{{ if eq .ContainerRuntime "rkt" }}
+    - name: rkt-api.service
+      enable: true
+      content: |
+        [Unit]
+        Before=kubelet.service
+        [Service]
+        ExecStart=/usr/bin/rkt api-service
+        Restart=always
+        RestartSec=10
+        [Install]
+        RequiredBy=kubelet.service
+
+    - name: load-rkt-stage1.service
+      enable: true
+      content: |
+        [Unit]
+        Description=Load rkt stage1 images
+        Documentation=http://github.com/coreos/rkt
+        Requires=network-online.target
+        After=network-online.target
+        Before=rkt-api.service
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rkt fetch /usr/lib/rkt/stage1-images/stage1-coreos.aci /usr/lib/rkt/stage1-images/stage1-fly.aci  --insecure-options=image
+        [Install]
+        RequiredBy=rkt-api.service
+{{ end }}
+
+{{ if .UseCalico }}
+    - name: calico-node.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Calico per-host agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Slice=machine.slice
+        Environment=CALICO_DISABLE_FILE_LOGGING=true
+        Environment=HOSTNAME=$private_ipv4
+        Environment=IP=$private_ipv4
+        Environment=FELIX_FELIXHOSTNAME=$private_ipv4
+        Environment=CALICO_NETWORKING=false
+        Environment=NO_DEFAULT_POOLS=true
+        Environment=ETCD_ENDPOINTS={{ .ETCDEndpoints }}
+        ExecStart=/usr/bin/rkt run --inherit-env --stage1-from-dir=stage1-fly.aci \
+        --volume=modules,kind=host,source=/lib/modules,readOnly=false \
+        --mount=volume=modules,target=/lib/modules \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
+        --mount=volume=dns,target=/etc/resolv.conf \
+        --trust-keys-from-https quay.io/calico/node:v0.19.0
+        KillMode=mixed
+        Restart=always
+        TimeoutStartSec=0
+
+        [Install]
+        WantedBy=multi-user.target
+{{ end }}
+
+    - name: decrypt-tls-assets.service
+      enable: true
+      content: |
+        [Unit]
+        Description=decrypt kubelet tls assets using amazon kms
+        Before=kubelet.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/opt/bin/decrypt-tls-assets
+
+        [Install]
+        RequiredBy=kubelet.service
+
+    - name: install-kube-system.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Requires=kubelet.service docker.service
+        After=kubelet.service docker.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        Restart=on-failure
+        ExecStartPre=/usr/bin/curl http://127.0.0.1:8080/version
+        ExecStart=/opt/bin/install-kube-system
+
+{{ if .UseCalico }}
+    - name: install-calico-system.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Requires=kubelet.service docker.service
+        After=kubelet.service docker.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        Restart=on-failure
+        ExecStartPre=/usr/bin/curl http://127.0.0.1:8080/version
+        ExecStart=/opt/bin/install-calico-system
+{{ end }}
+
+write_files:
+  - path: /opt/bin/install-kube-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
+      -d"$(cat /srv/kubernetes/manifests/kube-dns-rc.yaml)" \
+      "http://127.0.0.1:8080/api/v1/namespaces/kube-system/replicationcontrollers"
+
+      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
+      -d"$(cat /srv/kubernetes/manifests/kube-dashboard-rc.yaml)" \
+      "http://127.0.0.1:8080/api/v1/namespaces/kube-system/replicationcontrollers"
+
+      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
+      -d"$(cat /srv/kubernetes/manifests/heapster-de.yaml)" \
+      "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
+
+      for manifest in {kube-dns,heapster,kube-dashboard}-svc.yaml;do
+          /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
+          -d"$(cat /srv/kubernetes/manifests/$manifest)" \
+          "http://127.0.0.1:8080/api/v1/namespaces/kube-system/services"
+      done
+
+  - path: /etc/kubernetes/cni/docker_opts_cni.env
+    content: |
+      DOCKER_OPT_BIP=""
+      DOCKER_OPT_IPMASQ=""
+
+  - path: /opt/bin/host-rkt
+    permissions: 0755
+    owner: root:root
+    content: |
+      #!/bin/sh
+      # This is bind mounted into the kubelet rootfs and all rkt shell-outs go
+      # through this rkt wrapper. It essentially enters the host mount namespace
+      # (which it is already in) only for the purpose of breaking out of the chroot
+      # before calling rkt. It makes things like rkt gc work and avoids bind mounting
+      # in certain rkt filesystem dependancies into the kubelet rootfs. This can
+      # eventually be obviated when the write-api stuff gets upstream and rkt gc is
+      # through the api-server. Related issue:
+      # https://github.com/coreos/rkt/issues/2878
+      exec nsenter -m -u -i -n -p -t 1 -- /usr/bin/rkt "$@"
+
+{{ if .UseCalico }}
+  - path: /opt/bin/install-calico-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      /usr/bin/curl -H "Content-Type: application/json" -XPOST -d @"/srv/kubernetes/manifests/calico-system.json" "http://127.0.0.1:8080/api/v1/namespaces"
+
+      /usr/bin/cp /srv/kubernetes/manifests/calico-policy-controller.yaml /etc/kubernetes/manifests
+{{ end }}
+
+  - path: /opt/bin/decrypt-tls-assets
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      for encKey in $(find /etc/kubernetes/ssl/*.pem.enc);do
+        sudo rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
+        --dns=8.8.8.8 --dns=8.8.4.4 \
+        --net=host \
+        --trust-keys-from-https \
+        quay.io/coreos/awscli --exec=/bin/bash -- \
+          -c \
+          "/usr/bin/aws \
+            --region {{.Region}} kms decrypt \
+            --ciphertext-blob fileb://$encKey \
+            --output text \
+            --query Plaintext \
+            > $encKey.b64"
+
+        base64 --decode < $encKey.b64 > ${encKey%.enc}
+        sudo rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid
+      done
+
+  - path: /etc/kubernetes/manifests/kube-proxy.yaml
+    content: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: kube-proxy
+          namespace: kube-system
+          annotations:
+            rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
+        spec:
+          hostNetwork: true
+          containers:
+          - name: kube-proxy
+            image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+            command:
+            - /hyperkube
+            - proxy
+            - --master=http://127.0.0.1:8080
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - mountPath: /etc/ssl/certs
+              name: ssl-certs-host
+              readOnly: true
+            - mountPath: /var/run/dbus
+              name: dbus
+              readOnly: false
+          volumes:
+          - hostPath:
+              path: /usr/share/ca-certificates
+            name: ssl-certs-host
+          - hostPath:
+              path: /var/run/dbus
+            name: dbus
+
+  - path: /etc/kubernetes/manifests/kube-apiserver.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: kube-apiserver
+        namespace: kube-system
+      spec:
+        hostNetwork: true
+        containers:
+        - name: kube-apiserver
+          image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+          command:
+          - /hyperkube
+          - apiserver
+          - --bind-address=0.0.0.0
+          - --etcd-servers=http://localhost:2379
+          - --allow-privileged=true
+          - --service-cluster-ip-range={{.ServiceCIDR}}
+          - --secure-port=443
+          - --advertise-address=$private_ipv4
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
+          - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
+          - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          - --client-ca-file=/etc/kubernetes/ssl/ca.pem
+          - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          - --runtime-config=extensions/v1beta1/networkpolicies=true
+          - --cloud-provider=aws
+          livenessProbe:
+            httpGet:
+              host: 127.0.0.1
+              port: 8080
+              path: /healthz
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          ports:
+          - containerPort: 443
+            hostPort: 443
+            name: https
+          - containerPort: 8080
+            hostPort: 8080
+            name: local
+          volumeMounts:
+          - mountPath: /etc/kubernetes/ssl
+            name: ssl-certs-kubernetes
+            readOnly: true
+          - mountPath: /etc/ssl/certs
+            name: ssl-certs-host
+            readOnly: true
+        volumes:
+        - hostPath:
+            path: /etc/kubernetes/ssl
+          name: ssl-certs-kubernetes
+        - hostPath:
+            path: /usr/share/ca-certificates
+          name: ssl-certs-host
+
+  - path: /etc/kubernetes/manifests/kube-controller-manager.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: kube-controller-manager
+        namespace: kube-system
+      spec:
+        containers:
+        - name: kube-controller-manager
+          image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+          command:
+          - /hyperkube
+          - controller-manager
+          - --master=http://127.0.0.1:8080
+          - --leader-elect=true
+          - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          - --root-ca-file=/etc/kubernetes/ssl/ca.pem
+          - --cloud-provider=aws
+          resources:
+            requests:
+              cpu: 200m
+          livenessProbe:
+            httpGet:
+              host: 127.0.0.1
+              path: /healthz
+              port: 10252
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          volumeMounts:
+          - mountPath: /etc/kubernetes/ssl
+            name: ssl-certs-kubernetes
+            readOnly: true
+          - mountPath: /etc/ssl/certs
+            name: ssl-certs-host
+            readOnly: true
+        hostNetwork: true
+        volumes:
+        - hostPath:
+            path: /etc/kubernetes/ssl
+          name: ssl-certs-kubernetes
+        - hostPath:
+            path: /usr/share/ca-certificates
+          name: ssl-certs-host
+
+  - path: /etc/kubernetes/manifests/kube-scheduler.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: kube-scheduler
+        namespace: kube-system
+      spec:
+        hostNetwork: true
+        containers:
+        - name: kube-scheduler
+          image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+          command:
+          - /hyperkube
+          - scheduler
+          - --master=http://127.0.0.1:8080
+          - --leader-elect=true
+          resources:
+            requests:
+              cpu: 100m
+          livenessProbe:
+            httpGet:
+              host: 127.0.0.1
+              path: /healthz
+              port: 10251
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+
+{{ if .UseCalico }}
+  - path: /srv/kubernetes/manifests/calico-policy-controller.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: calico-policy-controller
+        namespace: calico-system
+      spec:
+        hostNetwork: true
+        containers:
+          # The Calico policy controller.
+          - name: kube-policy-controller
+            image: calico/kube-policy-controller:v0.2.0
+            env:
+              - name: ETCD_ENDPOINTS
+                value: "{{ .ETCDEndpoints }}"
+              - name: K8S_API
+                value: "http://127.0.0.1:8080"
+              - name: LEADER_ELECTION
+                value: "true"
+          # Leader election container used by the policy controller.
+          - name: leader-elector
+            image: quay.io/calico/leader-elector:v0.1.0
+            imagePullPolicy: IfNotPresent
+            args:
+              - "--election=calico-policy-election"
+              - "--election-namespace=calico-system"
+              - "--http=127.0.0.1:4040"
+{{ end }}
+
+{{ if .UseCalico }}
+  - path: /srv/kubernetes/manifests/calico-system.json
+    content: |
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "calico-system"
+          }
+        }
+{{ end }}
+
+  - path: /srv/kubernetes/manifests/kube-dns-rc.yaml
+    content: |
+        apiVersion: v1
+        kind: ReplicationController
+        metadata:
+          name: kube-dns-v20
+          namespace: kube-system
+          labels:
+            k8s-app: kube-dns
+            version: v20
+            kubernetes.io/cluster-service: "true"
+        spec:
+          replicas: 1
+          selector:
+            k8s-app: kube-dns
+            version: v20
+          template:
+            metadata:
+              labels:
+                k8s-app: kube-dns
+                version: v20
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+                scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+            spec:
+              containers:
+              - name: kubedns
+                image: gcr.io/google_containers/kubedns-amd64:1.8
+                resources:
+                  limits:
+                    memory: 170Mi
+                  requests:
+                    cpu: 100m
+                    memory: 70Mi
+                livenessProbe:
+                  httpGet:
+                    path: /healthz-kubedns
+                    port: 8080
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                  timeoutSeconds: 5
+                  successThreshold: 1
+                  failureThreshold: 5
+                readinessProbe:
+                  httpGet:
+                    path: /readiness
+                    port: 8081
+                    scheme: HTTP
+                  initialDelaySeconds: 3
+                  timeoutSeconds: 5
+                args:
+                - --domain=cluster.local.
+                - --dns-port=10053
+                ports:
+                - containerPort: 10053
+                  name: dns-local
+                  protocol: UDP
+                - containerPort: 10053
+                  name: dns-tcp-local
+                  protocol: TCP
+              - name: dnsmasq
+                image: gcr.io/google_containers/kube-dnsmasq-amd64:1.4
+                livenessProbe:
+                  httpGet:
+                    path: /healthz-dnsmasq
+                    port: 8080
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                  timeoutSeconds: 5
+                  successThreshold: 1
+                  failureThreshold: 5
+                args:
+                - --cache-size=1000
+                - --no-resolv
+                - --server=127.0.0.1#10053
+                - --log-facility=-
+                ports:
+                - containerPort: 53
+                  name: dns
+                  protocol: UDP
+                - containerPort: 53
+                  name: dns-tcp
+                  protocol: TCP
+              - name: healthz
+                image: gcr.io/google_containers/exechealthz-amd64:1.2
+                resources:
+                  limits:
+                    memory: 50Mi
+                  requests:
+                    cpu: 10m
+                    memory: 50Mi
+                args:
+                - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null
+                - --url=/healthz-dnsmasq
+                - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1:10053 >/dev/null
+                - --url=/healthz-kubedns
+                - --port=8080
+                - --quiet
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+              dnsPolicy: Default
+
+  - path: /srv/kubernetes/manifests/kube-dns-svc.yaml
+    content: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: kube-dns
+          namespace: kube-system
+          labels:
+            k8s-app: kube-dns
+            kubernetes.io/cluster-service: "true"
+            kubernetes.io/name: "KubeDNS"
+        spec:
+          selector:
+            k8s-app: kube-dns
+          clusterIP: {{.DNSServiceIP}}
+          ports:
+          - name: dns
+            port: 53
+            protocol: UDP
+          - name: dns-tcp
+            port: 53
+            protocol: TCP
+
+  - path: /srv/kubernetes/manifests/heapster-de.yaml
+    content: |
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: heapster-v1.2.0
+          namespace: kube-system
+          labels:
+            k8s-app: heapster
+            kubernetes.io/cluster-service: "true"
+            version: v1.2.0
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              k8s-app: heapster
+              version: v1.2.0
+          template:
+            metadata:
+              labels:
+                k8s-app: heapster
+                version: v1.2.0
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+                scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+            spec:
+              containers:
+                - image: gcr.io/google_containers/heapster:v1.2.0
+                  name: heapster
+                  livenessProbe:
+                    httpGet:
+                      path: /healthz
+                      port: 8082
+                      scheme: HTTP
+                    initialDelaySeconds: 180
+                    timeoutSeconds: 5
+                  resources:
+                    limits:
+                      cpu: 80m
+                      memory: 200Mi
+                    requests:
+                      cpu: 80m
+                      memory: 200Mi
+                  command:
+                    - /heapster
+                    - --source=kubernetes.summary_api:''
+                - image: gcr.io/google_containers/addon-resizer:1.6
+                  name: heapster-nanny
+                  resources:
+                    limits:
+                      cpu: 50m
+                      memory: 90Mi
+                    requests:
+                      cpu: 50m
+                      memory: 90Mi
+                  env:
+                    - name: MY_POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.name
+                    - name: MY_POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                  command:
+                    - /pod_nanny
+                    - --cpu=80m
+                    - --extra-cpu=4m
+                    - --memory=200Mi
+                    - --extra-memory=4Mi
+                    - --threshold=5
+                    - --deployment=heapster-v1.2.0
+                    - --container=heapster
+                    - --poll-period=300000
+                    - --estimator=exponential
+
+  - path: /srv/kubernetes/manifests/heapster-svc.yaml
+    content: |
+        kind: Service
+        apiVersion: v1
+        metadata: 
+          name: heapster
+          namespace: kube-system
+          labels: 
+            kubernetes.io/cluster-service: "true"
+            kubernetes.io/name: "Heapster"
+        spec: 
+          ports: 
+            - port: 80
+              targetPort: 8082
+          selector: 
+            k8s-app: heapster
+
+  - path: /srv/kubernetes/manifests/kube-dashboard-rc.yaml
+    content: |
+        apiVersion: v1
+        kind: ReplicationController
+        metadata:
+          name: kubernetes-dashboard-v1.4.1
+          namespace: kube-system
+          labels:
+            k8s-app: kubernetes-dashboard
+            version: v1.4.1
+            kubernetes.io/cluster-service: "true"
+        spec:
+          replicas: 1
+          selector:
+            k8s-app: kubernetes-dashboard
+          template:
+            metadata:
+              labels:
+                k8s-app: kubernetes-dashboard
+                version: v1.4.1
+                kubernetes.io/cluster-service: "true"
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+                scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+            spec:
+              containers:
+              - name: kubernetes-dashboard
+                image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.4.1
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 50Mi
+                  requests:
+                    cpu: 100m
+                    memory: 50Mi
+                ports:
+                - containerPort: 9090
+                livenessProbe:
+                  httpGet:
+                    path: /
+                    port: 9090
+                  initialDelaySeconds: 30
+                  timeoutSeconds: 30
+
+  - path: /srv/kubernetes/manifests/kube-dashboard-svc.yaml
+    content: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: kubernetes-dashboard
+          namespace: kube-system
+          labels:
+            k8s-app: kubernetes-dashboard
+            kubernetes.io/cluster-service: "true"
+        spec:
+          selector:
+            k8s-app: kubernetes-dashboard
+          ports:
+          - port: 80
+            targetPort: 9090
+        
+  - path: /etc/kubernetes/ssl/ca.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.CACert}}
+
+  - path: /etc/kubernetes/ssl/apiserver.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.APIServerCert}}
+
+  - path: /etc/kubernetes/ssl/apiserver-key.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.APIServerKey}}
+
+{{ if .UseCalico }}
+  - path: /etc/kubernetes/cni/net.d/10-calico.conf
+    content: |
+        {
+            "name": "calico",
+            "type": "flannel",
+            "delegate": {
+                "type": "calico",
+                "etcd_endpoints": "{{ .ETCDEndpoints }}",
+                "log_level": "none",
+                "log_level_stderr": "info",
+                "hostname": "$private_ipv4",
+                "policy": {
+                    "type": "k8s",
+                    "k8s_api_root": "http://127.0.0.1:8080/api/v1/"
+                }
+            }
+        }
+{{ else }}
+  - path: /etc/kubernetes/cni/net.d/10-flannel.conf
+    content: |
+        {
+            "name": "podnet",
+            "type": "flannel",
+            "delegate": {
+                "isDefaultGateway": true
+            }
+        }
+{{ end }}

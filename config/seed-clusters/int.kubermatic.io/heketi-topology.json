@@ -1,0 +1,56 @@
+{
+  "clusters": [
+    {
+      "nodes": [
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "kubeadm-worker1"
+              ],
+              "storage": [
+                "10.50.0.61"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vda"
+          ]
+        },
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "kubeadm-worker2"
+              ],
+              "storage": [
+                "10.50.0.62"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vda"
+          ]
+        },
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "kubeadm-worker3"
+              ],
+              "storage": [
+                "10.50.0.63"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vda"
+          ]
+        }
+      ]
+    }
+  ]
+}

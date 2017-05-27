@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: kubermatic
+  name: kubermatic-api-config
+data:
+  kubermatic-api.yaml: |-
+    kubeconfig: {{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace | quote }}
+    datacenters: {{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace | quote }}
+    secrets: {{cat .Values.DatacenterSecretsMountPath "/" .Values.DatacenterSecretsFilename | nospace | quote }}

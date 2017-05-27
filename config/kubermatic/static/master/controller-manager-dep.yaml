@@ -1,0 +1,72 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  selector:
+    matchLabels:
+      role: controller-manager
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: controller-manager
+        release: {{index .Version.Values "k8s-version"}}
+        version: v1
+      annotations:
+        prometheus.io/port: '10252'
+        prometheus.io/scrape: 'true'
+    spec:
+      containers:
+      - name: controller-manager
+        {{ if eq .CloudProvider "aws" }}
+        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        {{ else }}
+        image: gcr.io/google_containers/hyperkube:{{index .Version.Values "k8s-version"}}
+        {{ end }}
+        command: [
+          "/hyperkube", "controller-manager",
+          "--master=http://apiserver-insecure:8080",
+          "--service-account-private-key-file=/var/run/kubernetes/auth/service-account.key",
+          "--root-ca-file=/var/run/kubernetes/auth/root-ca.crt",
+          "--cluster-cidr=172.25.0.0/16",
+          {{ if eq .CloudProvider "aws" }}
+          "--cloud-provider=aws",
+          "--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
+          {{ end }}
+          "--allocate-node-cidrs",
+          "--v=4"
+        ]
+        resources:
+          limits:
+            memory: 75Mi
+        {{ if eq .CloudProvider "aws" }}
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{.Cluster.Spec.Cloud.AWS.AccessKeyID}}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{.Cluster.Spec.Cloud.AWS.SecretAccessKey}}
+        - name: AWS_VPC_ID
+          value: {{.Cluster.Spec.Cloud.AWS.VPCId}}
+        - name: AWS_AVAILABILITY_ZONE
+          value: {{.Cluster.Spec.Cloud.AWS.AvailabilityZone}}
+        {{ end }}
+        volumeMounts:
+        - name: apiserver-auth
+          mountPath: /var/run/kubernetes/auth
+          readOnly: true
+        {{ if eq .CloudProvider "aws" }}
+        - name: aws-cloud-config
+          mountPath: /etc/kubermatic/aws
+          readOnly: true
+        {{ end }}
+      volumes:
+      - name: apiserver-auth
+        secret:
+          secretName: apiserver-auth
+      {{ if eq .CloudProvider "aws" }}
+      - name: aws-cloud-config
+        configMap:
+          name: aws-cloud-config
+      {{ end }}
