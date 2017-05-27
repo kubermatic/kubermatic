@@ -46,5 +46,5 @@ Create nodes using the UI.
 
 To create the `kube-system` namespace, skydns and the ingress controller, execute:
 ```
-$ go run addons.go
+$ go run addons/main.go
 ```

@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -16,7 +17,7 @@ import (
 	"text/template"
 )
 
-var funcMap template.FuncMap = template.FuncMap{
+var funcMap = template.FuncMap{
 	"readLines":          readLines,
 	"readBase64":         readBase64,
 	"readBase64Gzip":     readBase64Gzip,
@@ -32,7 +33,7 @@ var data struct {
 	KubeletToken    string
 	Region          string
 	FloatingIP      string
-	ApiToken        string
+	APIToken        string
 }
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 	data.KubeletToken = os.Getenv("KUBELET_TOKEN")
 	data.AdminToken = os.Getenv("ADMIN_TOKEN")
 	data.Region = os.Getenv("REGION")
-	data.ApiToken = os.Getenv("TOKEN")
+	data.APIToken = os.Getenv("TOKEN")
 
 	ips, err := net.LookupIP(data.MasterHost)
 	if err != nil {
@@ -103,11 +104,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer res.Body.Close()
+	defer func() { err := res.Body.Close(); _ = err }()
 
 	fmt.Fprintf(os.Stderr, "Response Status: %v\n", res.Status)
 	fmt.Fprintf(os.Stderr, "Response Headers: %+v\n", res.Header)
-	io.Copy(os.Stdout, res.Body)
+	_, err = io.Copy(os.Stdout, res.Body)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func readTemplate(filename string) (string, error) {
@@ -140,7 +144,8 @@ func readBase64Template(filename string) string {
 	if err := t.Execute(b64, data); err != nil {
 		panic(err)
 	}
-	b64.Close()
+
+	defer func() { err := b64.Close(); _ = err }()
 
 	return buf.String()
 }
@@ -160,7 +165,10 @@ func readLines(path string) (lines []string) {
 		}
 
 		var buf bytes.Buffer
-		t.Execute(&buf, data)
+		err = t.Execute(&buf, data)
+		if err != nil {
+			log.Panic(err)
+		}
 
 		lines = append(lines, buf.String())
 	}
@@ -184,11 +192,17 @@ func readBase64(paths ...string) string {
 			panic(err)
 		}
 
-		io.Copy(b64, f)
-		f.Close()
+		_, err = io.Copy(b64, f)
+		if err != nil {
+			log.Panic(err)
+		}
+		err = f.Close()
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 
-	b64.Close()
+	defer func() { err := b64.Close(); _ = err }()
 	return buf.String()
 }
 
@@ -203,12 +217,18 @@ func readBase64Gzip(paths ...string) string {
 			panic(err)
 		}
 
-		io.Copy(gz, f)
-		f.Close()
+		_, err = io.Copy(gz, f)
+		if err != nil {
+			log.Panic(err)
+		}
+		err = f.Close()
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 
-	gz.Close()
-	b64.Close()
+	defer func() { err := gz.Close(); _ = err }()
+	defer func() { err := b64.Close(); _ = err }()
 
 	return buf.String()
 }

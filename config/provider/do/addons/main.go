@@ -57,7 +57,11 @@ func kubectlCreate(filename string, data interface{}) error {
 		log.Println(err)
 	}
 
-	stdin.Close()
+	err = stdin.Close()
+	if err != nil {
+		return err
+	}
+
 	return kubectl.Wait()
 }
 
@@ -133,12 +137,18 @@ func deployIngress() error {
 
 	print("Trying to delete namespace ingress: ")
 	cmd := exec.Command("kubectl", "delete", "namespace", "ingress")
-	o, _ = cmd.CombinedOutput()
+	o, err = cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
 	print(strings.TrimSuffix(string(o), "\n"))
 
 	for {
 		get := exec.Command("kubectl", "get", "namespace", "ingress")
-		get.Run()
+		err = get.Run()
+		if err != nil {
+			return err
+		}
 		if !get.ProcessState.Success() {
 			break
 		}
@@ -171,9 +181,9 @@ type cmd struct {
 
 func main() {
 	cmds := []cmd{
-		cmd{"kube-system", deployKubeSystem},
-		cmd{"dns", deployDNS},
-		cmd{"ingress", deployIngress},
+		{"kube-system", deployKubeSystem},
+		{"dns", deployDNS},
+		{"ingress", deployIngress},
 	}
 	if len(os.Args) == 1 {
 		usage(cmds)
