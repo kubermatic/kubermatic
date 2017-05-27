@@ -3,23 +3,22 @@ package resources
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	"reflect"
 
 	api "github.com/kubermatic/api/pkg/types"
 )
 
 func IsOnCi() bool {
-	_, err := os.Stat("../../../config/kubermatic/static/master/")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return true
-		}
-		panic(err)
-	}
-
+	//_, err := os.Stat("../../../config/kubermatic/static/master/")
+	//if err != nil {
+	//	if os.IsNotExist(err) {
+	//		return true
+	//	}
+	//	panic(err)
+	//}
 	return false
 }
 
@@ -56,7 +55,7 @@ func TestLoadServiceFile(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
 
@@ -90,12 +89,19 @@ func TestLoadPVCFile(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
 
-func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
+func checkEqualJSONResult(t *testing.T, resFile string, testObj interface{}) {
+	var o1, o2 interface{}
+
 	exp, err := ioutil.ReadFile(filepath.Join("./fixtures", resFile+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal(exp, &o1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,12 +110,13 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = json.Unmarshal(res, &o2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	resStr := strings.TrimSpace(string(res))
-	expStr := strings.TrimSpace(string(exp))
-
-	if resStr != expStr {
-		t.Fatalf("\nExpected to get \n%v (%q)\n Got \n%v \nfrom %T", expStr, resFile, resStr, testObj)
+	if !reflect.DeepEqual(o1, o2) {
+		t.Fatalf("\nExpected to get \n%v \nFrom(%q)\n Got \n%v \nfrom %T", string(exp), resFile, string(res), testObj)
 	}
 }
 
@@ -164,7 +171,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
 
@@ -222,7 +229,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
 
@@ -257,7 +264,7 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	checkTestResult(t, "loadawscloudconfigconfigmap-result", res)
+	checkEqualJSONResult(t, "loadawscloudconfigconfigmap-result", res)
 }
 
 func TestLoadServiceAccountFile(t *testing.T) {
@@ -275,7 +282,7 @@ func TestLoadServiceAccountFile(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
 
@@ -294,6 +301,6 @@ func TestLoadClusterRoleBindingFile(t *testing.T) {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
 
-		checkTestResult(t, r, res)
+		checkEqualJSONResult(t, r, res)
 	}
 }
