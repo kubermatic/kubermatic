@@ -69,7 +69,7 @@ def buildPipeline(tags) {
     stage('Build'){
         container('golang') {
             sh("cd /go/src/github.com/kubermatic/api && make build")
-            sh("cd /go/src/github.com/kubermatic/api && make TAG=${tags} docker-build")
+            sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
         }
     }
     stage('Push'){
@@ -77,7 +77,7 @@ def buildPipeline(tags) {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
                     usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                 sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
-                sh("cd /go/src/github.com/kubermatic/api && make TAG=${tags} docker-push")
+                sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-push")
             }
         }
     }
