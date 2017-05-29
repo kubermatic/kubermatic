@@ -1,5 +1,5 @@
-hash: 866122ab2ce375254a3cf723b45efe8ac76f19335ae5ae9ad3a0e7ae5c4449ff
-updated: 2017-05-29T13:07:01.494853924+02:00
+hash: f7bde5698f9fafb08c135ad8b10edee82d2f73b51f428e15f56335a18f65edc8
+updated: 2017-05-29T16:37:10.794341564+02:00
 imports:
 - name: github.com/coreos/go-systemd
   version: 1f9909e51b2dab2487c26d64c8f2e7e580e4c9f5
