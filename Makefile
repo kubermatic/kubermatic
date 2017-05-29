@@ -2,7 +2,7 @@ SHELL=/bin/bash
 CMD=kubermatic-api kubermatic-cluster-controller
 GOBUILD=go build
 REPO=kubermatic/api
-TAG=latest
+TAGS=dev
 
 default: all
 
@@ -48,10 +48,9 @@ install:
 	glide install --strip-vendor
 
 docker-build:
-	docker build -t $(REPO):$(TAG) .
-	docker tag $(REPO):$(TAG) $(REPO):latest
+	docker build -t $(REPO):$(TAGS) .
 
 docker-push:
-	docker push $(REPO):$(TAG)
+	docker push $(REPO):$(TAGS)
 
 .PHONY: build test check

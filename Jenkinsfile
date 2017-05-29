@@ -33,11 +33,13 @@ podTemplate(label: 'buildpod', containers: [
                 env.GIT_COMMIT = gitCommit.take(7)
                 env.GIT_TAG = getTag()
 
+                def tags
                 if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
-                    buildPipeline(env.GIT_TAG)
+                    tags = "${env.GIT_TAG}, latest"
                 } else {
-                    buildPipeline(env.GIT_COMMIT)
+                    tags = "${env.GIT_COMMIT}, dev"
                 }
+                buildPipeline(tags)
             } catch (e) {
                // If there was an exception thrown, the build failed
                currentBuild.result = "FAILED"
@@ -51,7 +53,7 @@ podTemplate(label: 'buildpod', containers: [
 }
 
 
-def buildPipeline(String tag) {
+def buildPipeline(tags) {
 
     stage('Check'){
         container('golang') {
@@ -67,7 +69,7 @@ def buildPipeline(String tag) {
     stage('Build'){
         container('golang') {
             sh("cd /go/src/github.com/kubermatic/api && make build")
-            sh("cd /go/src/github.com/kubermatic/api && ake TAG=tag docker-build")
+            sh("cd /go/src/github.com/kubermatic/api && make TAG=${tags} docker-build")
         }
     }
     stage('Push'){
@@ -75,7 +77,7 @@ def buildPipeline(String tag) {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
                     usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                 sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
-                sh("cd /go/src/github.com/kubermatic/api && make TAG=tag docker-push")
+                sh("cd /go/src/github.com/kubermatic/api && make TAG=${tags} docker-push")
             }
         }
     }
