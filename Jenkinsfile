@@ -35,9 +35,9 @@ podTemplate(label: 'buildpod', containers: [
 
                 def tags
                 if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
-                    tags = "${env.GIT_TAG}, latest"
+                    tags = "${env.GIT_TAG} latest"
                 } else {
-                    tags = "${env.GIT_COMMIT}, dev"
+                    tags = "${env.GIT_COMMIT} dev"
                 }
                 buildPipeline(tags)
             } catch (e) {
