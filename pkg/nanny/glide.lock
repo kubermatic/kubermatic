@@ -1,0 +1,38 @@
+hash: 866122ab2ce375254a3cf723b45efe8ac76f19335ae5ae9ad3a0e7ae5c4449ff
+updated: 2017-05-29T13:07:01.494853924+02:00
+imports:
+- name: github.com/coreos/go-systemd
+  version: 1f9909e51b2dab2487c26d64c8f2e7e580e4c9f5
+  subpackages:
+  - dbus
+  - login1
+- name: github.com/go-ole/go-ole
+  version: de8695c8edbf8236f30d6e1376e20b198a028d42
+  subpackages:
+  - oleutil
+- name: github.com/godbus/dbus
+  version: c7fdd8b5cd55e87b4e1f4e372cdb1db61dd6c66f
+- name: github.com/golang/glog
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- name: github.com/shirou/gopsutil
+  version: 3e0b91b57e3af799519f9df577f4a27235e004d2
+  subpackages:
+  - cpu
+  - disk
+  - internal/common
+  - mem
+- name: github.com/StackExchange/wmi
+  version: ea383cf3ba6ec950874b8486cd72356d007c768f
+- name: golang.org/x/net
+  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
+  subpackages:
+  - http2
+  - http2/hpack
+  - idna
+  - lex/httplex
+- name: k8s.io/apimachinery
+  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
+  subpackages:
+  - pkg/util/net
+  - pkg/util/sets
+testImports: []
