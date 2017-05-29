@@ -33,7 +33,7 @@ podTemplate(label: 'buildpod', containers: [
                 env.GIT_COMMIT = gitCommit.take(7)
                 env.GIT_TAG = getTag()
 
-                if (env.BRANCH_NAME == develop && env.GIT_TAG !=  null) {
+                if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
                     buildPipeline(env.GIT_TAG)
                 } else {
                     buildPipeline(env.GIT_COMMIT)
