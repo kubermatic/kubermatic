@@ -12,10 +12,10 @@ $ cd src/kubermatic
 $ git clone git@github.com:kubermatic/api
 $ echo 'dummy: dummy' > secrets.yaml
 
-mkdir -p template/coreos &&
-pushd template/coreos &&
-ln -sf config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
-ln -sf config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
+mkdir -p template/coreos && \
+pushd template/coreos && \
+ln -sf ../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml && \
+ln -sf ../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml && \
 popd
 ```
 
