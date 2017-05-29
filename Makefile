@@ -42,7 +42,7 @@ clean:
 	rm -f $(CMD)
 
 install:
-	glide install --strip-vendor
+	@hack/install.sh
 
 docker-build:
 	docker build -t $(REPO) .
