@@ -19,6 +19,14 @@ podTemplate(label: 'buildpod', containers: [
             try {
                 notifyBuild('STARTED')
 
+                stage('setup workdir'){
+                    container('golang') {
+                        sh("mkdir -p /go/src/github.com/kubermatic")
+                        sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
+                        sh("cd /go/src/github.com/kubermatic/api")
+                        checkout scm
+                    }
+                }
                 // Setting source code related global variable once so it can be reused.
                 def gitCommit = getRevision()
                 env.GIT_SHA = gitCommit
@@ -45,14 +53,6 @@ podTemplate(label: 'buildpod', containers: [
 
 def buildPipeline(String tag) {
 
-    stage('setup workdir'){
-        container('golang') {
-            sh("mkdir -p /go/src/github.com/kubermatic")
-            sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
-            sh("cd /go/src/github.com/kubermatic/api")
-            checkout scm
-        }
-    }
     stage('Check'){
         container('golang') {
            sh("cd /go/src/github.com/kubermatic/api && make install")
