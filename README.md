@@ -2,7 +2,6 @@
 
 ## Development environment
 
-Due to the big dependency tree derived from Kubernetes it is strongly recommended to set up a separate `GOPATH` environment for Kubermatic:
 
 ```bash
 $ mkdir $HOME/src/kubermatic
