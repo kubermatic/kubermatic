@@ -44,7 +44,7 @@ build:
         code: |
           mkdir -p "$WERCKER_OUTPUT_DIR/opt"
           cp -av build/alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
-          cp -r addon-charts "$WERCKER_OUTPUT_DIR/opt/"
+          cp -r config/addon-charts "$WERCKER_OUTPUT_DIR/opt/"
           cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
   after-steps:
     - install-packages:
