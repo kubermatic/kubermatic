@@ -30,9 +30,4 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
-- name: k8s.io/apimachinery
-  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
-  subpackages:
-  - pkg/util/net
-  - pkg/util/sets
 testImports: []

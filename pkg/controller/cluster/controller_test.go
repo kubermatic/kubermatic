@@ -35,7 +35,7 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController("", clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", "localhost", "user1", "./../../addon-charts/", 30000, 32767)
+	cc, err := NewController("", clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", "localhost", "user1", "./../../../config/addon-charts/", 30000, 32767)
 	if err != nil {
 		log.Fatal(err)
 	}

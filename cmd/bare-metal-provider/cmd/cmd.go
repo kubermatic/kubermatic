@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/client-go/kubernetes"
+	kkubernetes "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -29,17 +29,28 @@ Every bare-metal server will register at the provider and will then be available
 Every client will be able to assign free servers to a kubernetes cluster.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := clientcmd.BuildConfigFromFlags("", viper.GetString("kubeconfig"))
+		clientcmdConfig, err := clientcmd.LoadFromFile(viper.GetString("kubeconfig"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		clientConfig := clientcmd.NewNonInteractiveClientConfig(
+			*clientcmdConfig,
+			clientcmdConfig.CurrentContext,
+			&clientcmd.ConfigOverrides{},
+			nil,
+		)
+
+		cfg, err := clientConfig.ClientConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		client, err := kubernetes.NewForConfig(config)
+		client, err := kkubernetes.NewForConfig(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		wrappedClientset, err := extensions.WrapClientsetWithExtensions(config)
+		wrappedClientset, err := extensions.WrapClientsetWithExtensions(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}

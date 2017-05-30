@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-CMD=kubermatic-api kubermatic-cluster-controller
+CMD=kubermatic-api kubermatic-cluster-controller kubelet-nanny bare-metal-provider
 GOBUILD=go build
 REPO=kubermatic/api
 
