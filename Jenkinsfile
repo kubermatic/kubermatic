@@ -60,26 +60,24 @@ podTemplate(label: 'buildpod', containers: [
 
 
 def buildPipeline(tags, stage) {
-    parallel (
-        stage('Check'){
-            container('golang') {
-               sh("cd /go/src/github.com/kubermatic/api && make install")
-               sh("cd /go/src/github.com/kubermatic/api && make check")
-            }
-        }
-        stage('Test'){
-            container('golang') {
-               sh("cd /go/src/github.com/kubermatic/api && make test")
-            }
-        }
-        stage('Build'){
-            container('golang') {
-                sh("cd /go/src/github.com/kubermatic/api && make build")
-                sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
-            }
-        }
-        failFast: ture)
 
+    stage('Check'){
+        container('golang') {
+           sh("cd /go/src/github.com/kubermatic/api && make install")
+           sh("cd /go/src/github.com/kubermatic/api && make check")
+        }
+    }
+    stage('Test'){
+        container('golang') {
+           sh("cd /go/src/github.com/kubermatic/api && make test")
+        }
+    }
+    stage('Build'){
+        container('golang') {
+            sh("cd /go/src/github.com/kubermatic/api && make build")
+            sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
+        }
+    }
     stage('Push'){
         container('golang') {
             withCredentials([usernamePassword(credentialsId: 'docker',
