@@ -34,12 +34,18 @@ podTemplate(label: 'buildpod', containers: [
                 env.GIT_TAG = getTag()
 
                 def tags
+                def stage
                 if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
                     tags = "${env.GIT_TAG} latest"
+                    stage = prod
+                } else if (env.BRANCH_NAME == "develop") {
+                    tags = "${env.GIT_TAG} latest"
+                    stage = staging
                 } else {
-                    tags = "${env.GIT_COMMIT} dev"
+                    tags = "${env.BRANCH_NAME} dev"
+                    stage = dev
                 }
-                buildPipeline(tags)
+                buildPipeline(tags, stage)
             } catch (e) {
                // If there was an exception thrown, the build failed
                currentBuild.result = "FAILED"
@@ -53,38 +59,58 @@ podTemplate(label: 'buildpod', containers: [
 }
 
 
-def buildPipeline(tags) {
+def buildPipeline(tags, stage) {
+    parallel (
+        stage('Check'){
+            container('golang') {
+               sh("cd /go/src/github.com/kubermatic/api && make install")
+               sh("cd /go/src/github.com/kubermatic/api && make check")
+            }
+        }
+        stage('Test'){
+            container('golang') {
+               sh("cd /go/src/github.com/kubermatic/api && make test")
+            }
+        }
+        stage('Build'){
+            container('golang') {
+                sh("cd /go/src/github.com/kubermatic/api && make build")
+                sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
+            }
+        }
+        failFast: ture)
 
-    stage('Check'){
-        container('golang') {
-           sh("cd /go/src/github.com/kubermatic/api && make install")
-           sh("cd /go/src/github.com/kubermatic/api && make check")
-        }
-    }
-    stage('Test'){
-        container('golang') {
-           sh("cd /go/src/github.com/kubermatic/api && make test")
-        }
-    }
-    stage('Build'){
-        container('golang') {
-            sh("cd /go/src/github.com/kubermatic/api && make build")
-            sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
-        }
-    }
     stage('Push'){
         container('golang') {
-            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'docker',
-                    usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-                sh("docker login --username=${env.USERNAME} --password=${env.PASSWORD}")
+            withCredentials([usernamePassword(credentialsId: 'docker',
+                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                sh("docker login --username=$USERNAME --password=$PASSWORD")
                 sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-push")
             }
         }
     }
-    stage('Deploy'){
-            echo "echo"
-    }
+    switch (stage) {
+         case "staging":
+                stage('Deploy Staging'){
+                    container('golang') {
+                        withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
+                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                        }
 
+                    }
+                }
+         default:
+                stage('Deploy Dev'){
+                    container('golang') {
+                        withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
+                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                        }
+
+                    }
+                }
+    }
 }
 
 // Finds the revision from the source code.
