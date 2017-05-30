@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: kubermatic
+  name: kubermatic-controller-config
+data:
+  kubermatic-cluster-controller.yaml: |-
+    external-url: {{ .Values.KubermaticURL | trim }}
+    kubeconfig: {{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace | quote }}
+    master-resources: {{.Values.MasterResourcesMountPath | quote }}
+    datacenters: {{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace | quote }}
+    versions: {{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace | quote }}
+    updates: {{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace | quote }}
+    addon-resources: {{.Values.AddonResourcesMountPath | quote }}

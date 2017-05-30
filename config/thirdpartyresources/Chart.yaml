@@ -1,0 +1,4 @@
+apiVersion: v1
+description: ThirdPartyResources necessary for kubermatic
+name: thirdpartyresources
+version: 0.1.0

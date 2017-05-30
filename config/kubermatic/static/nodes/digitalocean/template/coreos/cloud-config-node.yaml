@@ -1,0 +1,108 @@
+#cloud-config
+
+ssh_authorized_keys:
+  {{range .SSHAuthorizedKeys}}- {{.}}
+  {{end}}- "{{.ApiserverPubSSH}} apiserver@{{.ClusterName}}.{{.DC}}.kubermatic.io"
+
+coreos:
+{{ if not .AutoUpdate }}
+  update:
+    reboot-strategy: off
+{{ end }}
+  units:
+    - name: cni-plugin-download.service
+      command: start
+      content: |
+        [Unit]
+        Description=Container Networking Interface (CNI) plugin downloader
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
+        ExecStart=/bin/bash -c "/usr/bin/curl -L -o /tmp/cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-v0.5.2.tgz && tar -xvf /tmp/cni-amd64.tgz -C /opt/cni/bin/"
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: docker.service
+      command: start
+      enable: true
+
+    - name: kubelet.service
+      command: start
+      enable: true
+      drop-ins:
+        - name: 40-docker.conf
+          content: |
+            [Unit]
+            Requires=docker.service
+            After=docker.service
+      content: |
+        [Unit]
+        Description=Kubernetes Kubelet
+
+        [Service]
+        Restart=always
+        RestartSec=10
+        Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin"
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/kubelet /var/run/kubernetes
+        ExecStartPre=/usr/bin/curl -L -o /var/lib/kubelet/kubelet https://storage.googleapis.com/kubernetes-release/release/v1.6.1/bin/linux/amd64/kubelet
+        ExecStartPre=/usr/bin/chmod +x /var/lib/kubelet/kubelet
+        ExecStartPre=/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=/usr/bin/curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/socat
+        ExecStart=/var/lib/kubelet/kubelet \
+          --address=0.0.0.0 \
+          --anonymous-auth=false \
+          --kubeconfig=/var/run/kubelet/kubeconfig \
+          --require-kubeconfig \
+          --cluster-dns=10.10.10.10 \
+          --cluster-domain=cluster.local \
+          --allow-privileged=true \
+          --client-ca-file=/etc/ssl/etcd/root-ca.crt \
+          --hostname-override=$public_ipv4 \
+          --v=2 \
+          --logtostderr=true \
+          --network-plugin=cni
+        [Install]
+        WantedBy=multi-user.target
+
+users:
+  - name: apiserver
+    ssh-authorized-keys:
+      - "{{.ApiserverPubSSH}} apiserver@{{.ClusterName}}.{{.DC}}.kubermatic.io"
+
+write_files:
+  - path: "/var/run/kubelet/kubeconfig"
+    permissions: "0400"
+    content: |
+      apiVersion: v1
+      clusters:
+      - cluster:
+          server: "{{.APIServerURL}}"
+          certificate-authority: "/etc/ssl/etcd/root-ca.crt"
+        name: {{.ClusterName}}
+      contexts:
+      - context:
+          cluster: {{.ClusterName}}
+          user: {{.ClusterName}}
+        name: {{.ClusterName}}
+      current-context: {{.ClusterName}}
+      kind: Config
+      preferences: {}
+      users:
+      - name: {{.ClusterName}}
+        user:
+          token: {{.ApiserverToken}}
+
+  - path: "/etc/ssl/etcd/root-ca.crt"
+    permissions: "0444"
+    encoding: base64
+    content: |
+      {{ .RootCACert }}
+  - path: "/opt/node-name"
+    permissions: "0644"
+    owner: "root"
+    content: |
+      $public_ipv4

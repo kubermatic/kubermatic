@@ -1,0 +1,36 @@
+package version
+
+import (
+	"bufio"
+	"io/ioutil"
+	"os"
+
+	api "github.com/kubermatic/api/pkg/types"
+	yaml "gopkg.in/yaml.v2"
+)
+
+// LoadUpdates loads the update definition file and returns the defined MasterUpdate
+func LoadUpdates(path string) ([]api.MasterUpdate, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	if err != nil {
+		return nil, err
+	}
+
+	s := struct {
+		Updates []api.MasterUpdate
+	}{
+		Updates: []api.MasterUpdate{},
+	}
+
+	err = yaml.Unmarshal(bytes, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Updates, nil
+}

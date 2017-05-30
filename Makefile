@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-CMD=kubermatic-api kubermatic-cluster-controller
+CMD=kubermatic-api kubermatic-cluster-controller kubelet-nanny bare-metal-provider
 GOBUILD=go build
 REPO=kubermatic/api
 
@@ -31,8 +31,6 @@ lint:
 	errcheck -blank $$PACKAGES ;\
 	varcheck $$PACKAGES ;\
 	structcheck $$PACKAGES ;\
-	## Currently causing 'index out of range' ;\
-	##gosimple $$PACKAGES ;\
 	unused $$PACKAGES ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
 	misspell -error -locale US $$GOFILES ;\
@@ -44,7 +42,7 @@ clean:
 	rm -f $(CMD)
 
 install:
-	glide install --strip-vendor
+	@hack/install.sh
 
 docker-build:
 	docker build -t $(REPO) .

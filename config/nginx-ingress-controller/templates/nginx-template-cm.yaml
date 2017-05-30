@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-template
+  namespace: nginx
+data:
+{{ (.Files.Glob "nginx.tmpl").AsConfig | indent 2 }}

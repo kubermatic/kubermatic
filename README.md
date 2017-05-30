@@ -2,7 +2,6 @@
 
 ## Development environment
 
-Due to the big dependency tree derived from Kubernetes it is strongly recommended to set up a separate `GOPATH` environment for Kubermatic:
 
 ```bash
 $ mkdir $HOME/src/kubermatic
@@ -11,14 +10,12 @@ $ export GOPATH=$PWD
 $ mkdir -p bin pkg src
 $ cd src/kubermatic
 $ git clone git@github.com:kubermatic/api
-$ git clone git@github.com:kubermatic/config
-$ cd api
 $ echo 'dummy: dummy' > secrets.yaml
 
-mkdir -p template/coreos &&
-pushd template/coreos &&
-ln -sf ../../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
-ln -sf ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
+mkdir -p template/coreos && \
+pushd template/coreos && \
+ln -sf ../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml && \
+ln -sf ../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml && \
 popd
 ```
 
@@ -54,7 +51,7 @@ $ make GOBUILD="go install" build
 --jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
 --logtostderr \
 --v=8 \
---address=127.0.0.1:8080 \
+--address=127.0.0.1:8080
 ```
 
 #### kubermatic-cluster-controller

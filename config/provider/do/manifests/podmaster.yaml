@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podmaster
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: podmaster
+    image: gcr.io/google_containers/podmaster:1.1
+    command:
+    - /podmaster
+    - --etcd-servers=http://127.0.0.1:2379
+    - --key=master
+    - --source-file=/var/run/kubernetes/standby/master.yaml
+    - --dest-file=/var/run/kubernetes/manifests/master.yaml
+    - --whoami=$private_ipv4
+    volumeMounts:
+    - mountPath: /var/run/kubernetes/standby
+      name: standby
+      readOnly: true
+    - mountPath: /var/run/kubernetes/manifests
+      name: manifests
+  volumes:
+  - hostPath:
+      path: /var/run/kubernetes/standby
+    name: standby
+  - hostPath:
+      path: /var/run/kubernetes/manifests
+    name: manifests

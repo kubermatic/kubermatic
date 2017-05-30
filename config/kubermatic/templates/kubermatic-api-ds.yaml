@@ -1,0 +1,80 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  namespace: kubermatic
+  name: kubermatic-api-v1
+spec:
+  template:
+    metadata:
+      labels:
+        role: kubermatic-api
+        version: v1
+    spec:
+      containers:
+        - name: api
+          command:
+            - /bin/sh
+            - -c
+            - -x
+            - "/kubermatic-api --jwt-key=$(cat /opt/.jwt/key) --v=4 --logtostderr"
+          image: kubermatic/api:{{.Values.KubermaticAPIImageTag}}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: jwt-key
+              mountPath: /opt/.jwt
+              readOnly: true
+            - name: kubeconfig
+              mountPath: {{.Values.KubeConfigMountPath}}
+              readOnly: true
+            - name: datacenter-secrets
+              mountPath: {{.Values.DatacenterSecretsMountPath}}
+              readOnly: true
+            - name: datacenters
+              mountPath: {{.Values.DatacentersMountPath}}
+              readOnly: true
+            - name: node-files
+              mountPath: /opt/template/coreos
+              readOnly: true
+            # @TODO Remove with https://github.com/kubermatic/api/issues/220
+            - name: master-files
+              mountPath: {{.Values.MasterResourcesMountPath}}
+              readOnly: true
+            - name: kubermatic-api-config
+              mountPath: {{.Values.KubermaticConfigMountPath}}
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+      imagePullSecrets:
+        - name: dockercfg
+      volumes:
+        - name: jwt-key
+          secret:
+            secretName: jwt-key
+        - name: kubeconfig
+          secret:
+            secretName: kubeconfig
+        - name: datacenter-secrets
+          secret:
+            secretName: datacenter-secrets
+        - name: node-files
+          secret:
+            secretName: node-files
+        # @TODO Remove with https://github.com/kubermatic/api/issues/220
+        - name: master-files
+          secret:
+            secretName: master-files
+        - name: datacenters
+          secret:
+            secretName: datacenters
+        - name: kubermatic-api-config
+          configMap:
+            name: kubermatic-api-config

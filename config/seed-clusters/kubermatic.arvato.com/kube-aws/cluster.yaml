@@ -1,0 +1,127 @@
+# Unique name of Kubernetes cluster. In order to deploy
+# more than one cluster into the same AWS account, this
+# name must not conflict with an existing cluster.
+clusterName: arvato-master-seed
+
+# DNS name routable to the Kubernetes controller nodes
+# from worker nodes and external clients. Configure the options
+# below if you'd like kube-aws to create a Route53 record sets/hosted zones
+# for you.  Otherwise the deployer is responsible for making this name routable
+externalDNSName: arvato-seed.kubermatic.io
+
+# CoreOS release channel to use. Currently supported options: alpha, beta, stable
+# See coreos.com/releases for more information
+releaseChannel: stable
+
+# Set to true if you want kube-aws to create a Route53 A Record for you.
+#createRecordSet: false
+
+# TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
+#recordSetTTL: 300
+
+# DEPRECATED: use hostedZoneId instead
+# The name of the hosted zone to add the externalDNSName to,
+# E.g: "google.com".  This needs to already exist, kube-aws will not create
+# it for you.
+#hostedZone: ""
+
+# The ID of hosted zone to add the externalDNSName to.
+# Either specify hostedZoneId or hostedZone, but not both
+#hostedZoneId: ""
+
+# Name of the SSH keypair already loaded into the AWS
+# account being used to deploy this cluster.
+keyName: loodse-key
+
+# Region to provision Kubernetes cluster
+region: eu-central-1
+
+# Availability Zone to provision Kubernetes cluster when placing nodes in a single availability zone (not highly-available) Comment out for multi availability zone setting and use the below `subnets` section instead.
+availabilityZone: eu-central-1a
+
+# ARN of the KMS key used to encrypt TLS assets.
+kmsKeyArn: "arn:aws:kms:eu-central-1:835864535395:key/1f345fd8-05bd-491b-9bb2-840f54255fdf"
+
+# Instance type for controller node
+controllerInstanceType: m4.large
+
+# Disk size (GiB) for controller node
+controllerRootVolumeSize: 50
+
+# Disk type for controller node (one of standard, io1, or gp2)
+controllerRootVolumeType: gp2
+
+# Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
+#controllerRootVolumeIOPS: 0
+
+# Number of worker nodes to create
+workerCount: 2
+
+# Instance type for worker nodes
+workerInstanceType: m4.large
+
+# Disk size (GiB) for worker nodes
+workerRootVolumeSize: 30
+
+# Disk type for worker node (one of standard, io1, or gp2)
+#workerRootVolumeType: gp2
+
+# Number of I/O operations per second (IOPS) that the worker node disk supports. Leave blank if workerRootVolumeType is not io1
+#workerRootVolumeIOPS: 0
+
+# Price (Dollars) to bid for spot instances. Omit for on-demand instances.
+# workerSpotPrice: "0.05"
+
+# ID of existing VPC to create subnet in. Leave blank to create a new VPC
+# vpcId:
+
+# ID of existing route table in existing VPC to attach subnet to. Leave blank to use the VPC's main route table.
+# routeTableId:
+
+# CIDR for Kubernetes VPC. If vpcId is specified, must match the CIDR of existing vpc.
+# vpcCIDR: "10.0.0.0/16"
+
+# CIDR for Kubernetes subnet when placing nodes in a single availability zone (not highly-available) Leave commented out for multi availability zone setting and use the below `subnets` section instead.
+# instanceCIDR: "10.0.0.0/24"
+
+# Kubernetes subnets with their CIDRs and availability zones. Differentiating availability zone for 2 or more subnets result in high-availability (failures of a single availability zone won't result in immediate downtimes)
+# subnets:
+#   - availabilityZone: us-west-1a
+#     instanceCIDR: "10.0.0.0/24"
+#   - availabilityZone: us-west-1b
+#     instanceCIDR: "10.0.1.0/24"
+
+# IP Address for the controller in Kubernetes subnet. When we have 2 or more subnets, the controller is placed in the first subnet and controllerIP must be included in the instanceCIDR of the first subnet. This convention will change once we have H/A controllers
+# controllerIP: 10.0.0.50
+
+# CIDR for all service IP addresses
+# serviceCIDR: "10.3.0.0/24"
+
+# CIDR for all pod IP addresses
+# podCIDR: "10.2.0.0/16"
+
+# IP address of Kubernetes dns service (must be contained by serviceCIDR)
+# dnsServiceIP: 10.3.0.10
+
+# Expiration in days from creation time of TLS assets. By default, the CA will
+# expire in 10 years and the server and client certificates will expire in 1
+# year.
+#tlsCADurationDays: 3650
+#tlsCertDurationDays: 365
+
+# Version of hyperkube image to use. This is the tag for the hyperkube image repository.
+kubernetesVersion: v1.5.1_coreos.0
+
+# Hyperkube image repository to use.
+hyperkubeImageRepo: quay.io/coreos/hyperkube
+
+# Use Calico for network policy.
+useCalico: false
+
+# Determines the container runtime for kubernetes to use. Accepts 'docker' or 'rkt'.
+containerRuntime: docker
+
+# AWS Tags for cloudformation stack resources
+stackTags:
+  Name: "Kubermatic"
+  Environment: "POC"

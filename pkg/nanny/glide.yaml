@@ -1,0 +1,3 @@
+package: github.com/kubermatic/api/pkg/kubelet-nanny
+import:
+- package: github.com/coreos/go-systemd

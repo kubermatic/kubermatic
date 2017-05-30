@@ -1,0 +1,293 @@
+#cloud-config
+coreos:
+  update:
+    reboot-strategy: "off"
+  flannel:
+    interface: $private_ipv4
+    etcd_endpoints: {{ .ETCDEndpoints }}
+  units:
+    - name: docker.service
+      drop-ins:
+        - name: 40-flannel.conf
+          content: |
+            [Unit]
+            Requires=flanneld.service
+            After=flanneld.service
+            [Service]
+            EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
+
+    - name: kubelet.service
+      command: start
+      runtime: true
+      content: |
+        [Service]
+        Environment=KUBELET_VERSION={{.K8sVer}}
+        Environment=KUBELET_ACI={{.HyperkubeImageRepo}}
+        Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf \
+        --mount volume=dns,target=/etc/resolv.conf \
+        --volume rkt,kind=host,source=/opt/bin/host-rkt \
+        --mount volume=rkt,target=/usr/bin/rkt \
+        --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
+        --mount volume=var-lib-rkt,target=/var/lib/rkt \
+        --volume stage,kind=host,source=/tmp \
+        --mount volume=stage,target=/tmp \
+        --volume var-log,kind=host,source=/var/log \
+        --mount volume=var-log,target=/var/log"
+        ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+        ExecStart=/usr/lib/coreos/kubelet-wrapper \
+        --api-servers={{.SecureAPIServers}} \
+        --cni-conf-dir=/etc/kubernetes/cni/net.d \
+        --network-plugin={{.K8sNetworkPlugin}} \
+        --container-runtime={{.ContainerRuntime}} \
+        --rkt-path=/usr/bin/rkt \
+        --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
+        --register-node=true \
+        --allow-privileged=true \
+        --config=/etc/kubernetes/manifests \
+        --cluster_dns={{.DNSServiceIP}} \
+        --cluster_domain=cluster.local \
+        --cloud-provider=aws \
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
+        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem
+        Restart=always
+        RestartSec=10
+        [Install]
+        WantedBy=multi-user.target
+
+{{ if eq .ContainerRuntime "rkt" }}
+    - name: rkt-api.service
+      enable: true
+      content: |
+        [Unit]
+        Before=kubelet.service
+        [Service]
+        ExecStart=/usr/bin/rkt api-service
+        Restart=always
+        RestartSec=10
+        [Install]
+        RequiredBy=kubelet.service
+
+    - name: load-rkt-stage1.service
+      enable: true
+      content: |
+        [Unit]
+        Description=Load rkt stage1 images
+        Documentation=http://github.com/coreos/rkt
+        Requires=network-online.target
+        After=network-online.target
+        Before=rkt-api.service
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rkt fetch /usr/lib/rkt/stage1-images/stage1-coreos.aci /usr/lib/rkt/stage1-images/stage1-fly.aci  --insecure-options=image
+        [Install]
+        RequiredBy=rkt-api.service
+{{ end }}
+
+{{ if .UseCalico }}
+    - name: calico-node.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Calico per-host agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Slice=machine.slice
+        Environment=CALICO_DISABLE_FILE_LOGGING=true
+        Environment=HOSTNAME=$private_ipv4
+        Environment=IP=$private_ipv4
+        Environment=FELIX_FELIXHOSTNAME=$private_ipv4
+        Environment=CALICO_NETWORKING=false
+        Environment=NO_DEFAULT_POOLS=true
+        Environment=ETCD_ENDPOINTS={{ .ETCDEndpoints }}
+        ExecStart=/usr/bin/rkt run --inherit-env --stage1-from-dir=stage1-fly.aci \
+        --volume=modules,kind=host,source=/lib/modules,readOnly=false \
+        --mount=volume=modules,target=/lib/modules \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
+        --mount=volume=dns,target=/etc/resolv.conf \
+        --trust-keys-from-https quay.io/calico/node:v0.19.0
+        KillMode=mixed
+        Restart=always
+        TimeoutStartSec=0
+
+        [Install]
+        WantedBy=multi-user.target
+{{ end }}
+
+    - name: decrypt-tls-assets.service
+      enable: true
+      content: |
+        [Unit]
+        Description=decrypt kubelet tls assets using amazon kms
+        Before=kubelet.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/opt/bin/decrypt-tls-assets
+
+        [Install]
+        RequiredBy=kubelet.service
+
+write_files:
+  - path: /etc/kubernetes/cni/docker_opts_cni.env
+    content: |
+      DOCKER_OPT_BIP=""
+      DOCKER_OPT_IPMASQ=""
+
+  - path: /opt/bin/host-rkt
+    permissions: 0755
+    owner: root:root
+    content: |
+      #!/bin/sh
+      # This is bind mounted into the kubelet rootfs and all rkt shell-outs go
+      # through this rkt wrapper. It essentially enters the host mount namespace
+      # (which it is already in) only for the purpose of breaking out of the chroot
+      # before calling rkt. It makes things like rkt gc work and avoids bind mounting
+      # in certain rkt filesystem dependancies into the kubelet rootfs. This can
+      # eventually be obviated when the write-api stuff gets upstream and rkt gc is
+      # through the api-server. Related issue:
+      # https://github.com/coreos/rkt/issues/2878
+      exec nsenter -m -u -i -n -p -t 1 -- /usr/bin/rkt "$@"
+
+  - path: /etc/kubernetes/ssl/worker.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.WorkerCert}}
+
+  - path: /etc/kubernetes/ssl/worker-key.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.WorkerKey}}
+
+  - path: /etc/kubernetes/ssl/ca.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.CACert}}
+
+  - path: /opt/bin/decrypt-tls-assets
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      for encKey in $(find /etc/kubernetes/ssl/*.pem.enc);do
+        sudo rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
+        --dns=8.8.8.8 --dns=8.8.4.4 \
+        --net=host \
+        --trust-keys-from-https \
+        quay.io/coreos/awscli --exec=/bin/bash -- \
+          -c \
+          "/usr/bin/aws \
+            --region {{.Region}} kms decrypt \
+            --ciphertext-blob fileb://$encKey \
+            --output text \
+            --query Plaintext \
+            > $encKey.b64"
+
+        base64 --decode < $encKey.b64 > ${encKey%.enc}
+        sudo rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid
+      done
+
+  - path: /etc/kubernetes/manifests/kube-proxy.yaml
+    content: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: kube-proxy
+          namespace: kube-system
+          annotations:
+            rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
+        spec:
+          hostNetwork: true
+          containers:
+          - name: kube-proxy
+            image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+            command:
+            - /hyperkube
+            - proxy
+            - --master=https://{{.ControllerIP}}:443
+            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - mountPath: /etc/ssl/certs
+                name: "ssl-certs"
+              - mountPath: /etc/kubernetes/worker-kubeconfig.yaml
+                name: "kubeconfig"
+                readOnly: true
+              - mountPath: /etc/kubernetes/ssl
+                name: "etc-kube-ssl"
+                readOnly: true
+              - mountPath: /var/run/dbus
+                name: dbus
+                readOnly: false
+          volumes:
+            - name: "ssl-certs"
+              hostPath:
+                path: "/usr/share/ca-certificates"
+            - name: "kubeconfig"
+              hostPath:
+                path: "/etc/kubernetes/worker-kubeconfig.yaml"
+            - name: "etc-kube-ssl"
+              hostPath:
+                path: "/etc/kubernetes/ssl"
+            - hostPath:
+                path: /var/run/dbus
+              name: dbus
+
+  - path: /etc/kubernetes/worker-kubeconfig.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+        users:
+        - name: kubelet
+          user:
+            client-certificate: /etc/kubernetes/ssl/worker.pem
+            client-key: /etc/kubernetes/ssl/worker-key.pem
+        contexts:
+        - context:
+            cluster: local
+            user: kubelet
+          name: kubelet-context
+        current-context: kubelet-context
+
+{{ if .UseCalico }}
+  - path: /etc/kubernetes/cni/net.d/10-calico.conf
+    content: |
+        {
+            "name": "calico",
+            "type": "flannel",
+            "delegate": {
+                "type": "calico",
+                "etcd_endpoints": "{{ .ETCDEndpoints }}",
+                "log_level": "none",
+                "log_level_stderr": "info",
+                "hostname": "$private_ipv4",
+                "policy": {
+                    "type": "k8s",
+                    "k8s_api_root": "https://{{.ControllerIP}}:443/api/v1/",
+                    "k8s_client_key": "/etc/kubernetes/ssl/worker-key.pem",
+                    "k8s_client_certificate": "/etc/kubernetes/ssl/worker.pem"
+                }
+            }
+        }
+{{ else }}
+  - path: /etc/kubernetes/cni/net.d/10-flannel.conf
+    content: |
+        {
+            "name": "podnet",
+            "type": "flannel",
+            "delegate": {
+                "isDefaultGateway": true
+            }
+        }
+{{ end }}

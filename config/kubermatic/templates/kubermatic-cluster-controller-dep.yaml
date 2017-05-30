@@ -1,0 +1,61 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: kubermatic
+  name: cluster-controller-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: cluster-controller
+        version: v1
+    spec:
+      containers:
+        - name: cluster-controller
+          command:
+            - /bin/sh
+            - -c
+            - -x
+            - "/kubermatic-cluster-controller --v=4 --logtostderr"
+          image: kubermatic/api:{{.Values.KubermaticControllerImageTag}}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: {{.Values.KubeConfigMountPath}}
+              readOnly: true
+            - name: master-files
+              mountPath: {{.Values.MasterResourcesMountPath}}
+              readOnly: true
+            - name: datacenters
+              mountPath: {{.Values.DatacentersMountPath}}
+              readOnly: true
+            - name: kubermatic-controller-config
+              mountPath: {{.Values.KubermaticConfigMountPath}}
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+      imagePullSecrets:
+        - name: dockercfg
+      volumes:
+        - name: kubeconfig
+          secret:
+            secretName: kubeconfig
+        - name: master-files
+          secret:
+            secretName: master-files
+        - name: datacenters
+          secret:
+            secretName: datacenters
+        - name: kubermatic-controller-config
+          configMap:
+            name: kubermatic-controller-config

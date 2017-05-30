@@ -43,9 +43,9 @@ build:
         name: copy to deployment directory
         code: |
           mkdir -p "$WERCKER_OUTPUT_DIR/opt"
-          cp -av alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
-          cp -r addon-charts "$WERCKER_OUTPUT_DIR/opt/"
-          cp -avx template "$WERCKER_OUTPUT_DIR/opt/"
+          cp -av build/alpine-3.1.tar.bz2 kubermatic-api kubermatic-cluster-controller "$WERCKER_OUTPUT_DIR"
+          cp -r config/addon-charts "$WERCKER_OUTPUT_DIR/opt/"
+          cp -avx pkg/template "$WERCKER_OUTPUT_DIR/opt/"
   after-steps:
     - install-packages:
         packages: ruby
@@ -58,7 +58,7 @@ push-hash-image:
     steps:
     - script:
         code: |
-          tar -xf alpine-3.1.tar.bz2
+          tar -xf build/alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $WERCKER_GIT_COMMIT
@@ -104,7 +104,7 @@ push-image:
     steps:
     - script:
         code: |
-          tar -xf alpine-3.1.tar.bz2
+          tar -xf build/alpine-3.1.tar.bz2
           rm -f alpine-3.1.tar.bz2
     - internal/docker-scratch-push:
         name: push to docker hub as $PUSH_TAG

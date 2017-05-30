@@ -1,0 +1,6 @@
+[Unit]
+Description=Fix DigitalOcean Floating IP ARP requests
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/modprobe arp_tables
+ExecStartPost=/bin/bash -c 'docker run --privileged --net=host sttts/arptables arptables -A OUTPUT -s $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address) --opcode 1 -j mangle --mangle-ip-s $public_ipv4'

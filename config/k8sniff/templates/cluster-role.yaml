@@ -1,0 +1,8 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: k8sniff
+rules:
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["watch", "list", "update"]

@@ -1,0 +1,219 @@
+#cloud-config
+
+ssh_authorized_keys:
+  - {{range readLines "../../nodes/ssh/id_rsa.pub"}}{{.}}{{end}}
+
+coreos:
+  etcd2:
+    name: $private_ipv4
+    advertise-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001
+    listen-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001,http://127.0.0.1:2379,http://127.0.0.1:4001
+    listen-peer-urls: http://$private_ipv4:2380
+
+  fleet:
+    metadata: role=master,hostname={{.Name}},region={{.Region}},private_ipv4=$private_ipv4
+
+  units:
+    - name: elastic-etcd.service
+      command: start
+      content: |
+        [Unit]
+        Description=Elastic etcd
+
+        [Service]
+        Type=oneshot
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/elastic-etcd
+        ExecStartPre=/usr/bin/curl -L -o /var/lib/elastic-etcd/elastic-etcd https://github.com/sttts/elastic-etcd/releases/download/v0.0.9/elastic-etcd
+        ExecStartPre=/usr/bin/chmod +x /var/lib/elastic-etcd/elastic-etcd
+        ExecStartPre=/usr/bin/mkdir -p /run/systemd/system/etcd2.service.d
+        ExecStart=/bin/sh -c "/var/lib/elastic-etcd/elastic-etcd -o dropin -data-dir=/var/lib/etcd2 -initial-advertise-peer-urls=http://$private_ipv4:2380 -name=$private_ipv4 -discovery={{.DiscoveryURL}} -v=6 -logtostderr > /run/systemd/system/etcd2.service.d/99-elastic-etcd.conf"
+        ExecStartPost=/usr/bin/systemctl daemon-reload
+
+    - name: etcd2.service
+      command: start
+
+    - name: fleet.service
+      command: start
+
+    - name: docker.service
+      command: start
+      enable: true
+
+    - name: floating-ip.service
+      command: start
+      content: |
+        {{range readLines "units/floating-ip.service"}}{{.}}
+        {{end}}
+
+    - name: arptables.service
+      command: start
+      content: |
+        {{range readLines "units/arptables.service"}}{{.}}
+        {{end}}
+
+    - name: kubelet.service
+      command: start
+      enable: true
+      drop-ins:
+        - name: 40-docker.conf
+          content: |
+            [Unit]
+            Requires=docker.service
+            After=docker.service
+      content: |
+        [Unit]
+        Description=Kubernetes Kubelet
+
+        [Service]
+        Restart=always
+        RestartSec=10
+        Environment="PATH=/opt/bin:/usr/bin:$PATH"
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/kubelet
+        ExecStartPre=/usr/bin/curl -L -o /var/lib/kubelet/kubelet -z /kubelet https://storage.googleapis.com/kubernetes-release/release/v1.5.3/bin/linux/amd64/kubelet
+        ExecStartPre=/usr/bin/chmod +x /var/lib/kubelet/kubelet
+        ExecStartPre=/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=/usr/bin/curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/socat
+        ExecStart=/var/lib/kubelet/kubelet \
+          --hostname_override=$private_ipv4 \
+          --address=$private_ipv4 \
+          --allow-privileged=true \
+          --config=/var/run/kubernetes/manifests \
+          --v=2 \
+          --logtostderr=true
+
+        [Install]
+        WantedBy=multi-user.target
+
+write_files:
+  - path: "/etc/hosts"
+    content: |
+      $private_ipv4 host-private
+      $public_ipv4 host-public
+
+  - path: "/var/run/kubernetes/manifests/podmaster.yaml"
+    content: |
+      {{range readLines "manifests/podmaster.yaml"}}{{.}}
+      {{end}}
+
+  - path: "/var/run/kubernetes/standby/master.yaml"
+    content: |
+      {{range readLines "manifests/master.yaml"}}{{.}}
+      {{end}}
+
+  - path: "/var/run/kubernetes/manifests/nginx.yaml"
+    content: |
+      {{range readLines "manifests/nginx.yaml"}}{{.}}
+      {{end}}
+
+  - path: "/var/run/kubernetes/manifests/etcd.yaml"
+    content: |
+      {{range readLines "manifests/etcd.yaml"}}{{.}}
+      {{end}}
+
+  - path: "/var/run/kubernetes/manifests/etcd-proxy.yaml"
+    content: |
+      {{range readLines "manifests/etcd-proxy.yaml"}}{{.}}
+      {{end}}
+
+  - path: "/var/run/kubernetes/auth/apiserver.crt"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/apiserver.crt"}}
+
+  - path: "/var/run/kubernetes/auth/apiserver.key"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/apiserver.key"}}
+
+  - path: "/var/run/kubernetes/auth/root-ca.crt"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/root-ca.crt"}}
+
+  - path: "/var/run/kubernetes/auth/root-ca.key"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/root-ca.key"}}
+
+  - path: "/var/run/kubernetes/auth/service-accounts.key"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/service-accounts.key"}}
+
+  - path: "/var/run/kubernetes/ssh/id-rsa"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../nodes/ssh/id_rsa"}}
+
+  - path: "/var/run/kubernetes/ssh/id-rsa.pub"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../nodes/ssh/id_rsa.pub"}}
+
+  - path: "/var/run/kubernetes/token-users"
+    permissions: "0400"
+    content: |
+      {{.AdminToken}},admin,admin
+      {{.KubeletToken}},kubelet,kubelet
+
+  - path: "/var/run/nginx/nginx.conf"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "nginx/nginx.conf"}}
+
+  - path: "/var/run/nginx/proxy-ssl.conf"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "nginx/proxy-ssl.conf"}}
+
+  - path: "/var/run/nginx/secrets/proxy.key"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/kubermatic.io.key"}}
+
+  - path: "/var/run/nginx/secrets/proxy.crt"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/kubermatic.io-2016.crt" "../../certs/alphassl.crt"}}
+
+  - path: "/var/run/nginx/secrets/dhparam"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/proxy-dhparam"}}
+
+  - path: "/var/run/nginx/secrets/root-ca.crt"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/root-ca.crt"}}
+
+  - path: "/var/run/etcd-proxy/secrets/root-ca.crt"
+    permissions: "0400"
+    encoding: "gzip+base64"
+    content: |
+      {{readBase64Gzip "../../certs/etcd/ca.pem"}}
+
+  - path: "/var/run/etcd-proxy/secrets/etcd.key"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/etcd/server-key.pem"}}
+
+  - path: "/var/run/etcd-proxy/secrets/etcd.crt"
+    permissions: "0400"
+    encoding: gzip+base64
+    content: |
+      {{readBase64Gzip "../../certs/etcd/server.pem"}}

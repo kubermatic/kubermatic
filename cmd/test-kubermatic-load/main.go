@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kubermatic/api"
+	api "github.com/kubermatic/api/pkg/types"
 )
 
 var (
