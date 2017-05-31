@@ -37,15 +37,15 @@ podTemplate(label: 'buildpod', containers: [
                 def stage
                 if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
                     tags = "${env.GIT_TAG} latest"
-                    stage = prod
+                    stage_system = "prod"
                 } else if (env.BRANCH_NAME == "develop") {
                     tags = "${env.GIT_TAG} latest"
-                    stage = staging
+                    stage_system = "staging"
                 } else {
                     tags = "${env.BRANCH_NAME} dev"
-                    stage = dev
+                    stage_system = "dev"
                 }
-                buildPipeline(tags, stage)
+                buildPipeline(tags, stage_system)
             } catch (e) {
                // If there was an exception thrown, the build failed
                currentBuild.result = "FAILED"
@@ -59,11 +59,15 @@ podTemplate(label: 'buildpod', containers: [
 }
 
 
-def buildPipeline(tags, stage) {
+def buildPipeline(tags, stage_system) {
 
-    stage('Check'){
+    stage('Install deps'){
         container('golang') {
            sh("cd /go/src/github.com/kubermatic/api && make install")
+        }
+    }
+    stage('Check'){
+        container('golang') {
            sh("cd /go/src/github.com/kubermatic/api && make check")
         }
     }
@@ -87,13 +91,13 @@ def buildPipeline(tags, stage) {
             }
         }
     }
-    switch (stage) {
+    switch (stage_system) {
          case "staging":
                 stage('Deploy Staging'){
                     container('golang') {
                         withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
                         }
 
                     }
@@ -102,8 +106,8 @@ def buildPipeline(tags, stage) {
                 stage('Deploy Dev'){
                     container('golang') {
                         withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("kubectl --kubeconfig=$KUBECONFIG set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
                         }
 
                     }
