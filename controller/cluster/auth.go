@@ -22,6 +22,8 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 )
 
+const svcSAN string = "kubernetes.default.svc"
+
 func createServiceAccountKey() (api.Bytes, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -71,12 +73,12 @@ func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Temp
 		return nil, nil, err
 	}
 
-	asKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1"})
+	asKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1", svcSAN})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create apiserver-key/cert: %v", err)
 	}
 
-	kubeletKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1"})
+	kubeletKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1", svcSAN})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create kubelet-key/cert: %v", err)
 	}

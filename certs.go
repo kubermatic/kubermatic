@@ -12,8 +12,6 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 )
 
-const svcSAN string = "kubernetes.default.svc"
-
 // CreateKeyCert creates a private/publich RSA key pair with 2048 bits and the given CN.
 func (c *Cluster) CreateKeyCert(cn string, hosts []string) (*KeyCert, error) {
 	// create key and csr
@@ -23,7 +21,6 @@ func (c *Cluster) CreateKeyCert(cn string, hosts []string) (*KeyCert, error) {
 			A: "rsa",
 			S: 2048,
 		},
-		Hosts: []string{svcSAN},
 	}
 
 	if len(hosts) > 0 {
