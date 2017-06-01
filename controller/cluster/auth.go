@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 )
 
-const svcSAN string = "kubernetes.default.svc"
+const svcSAN string = "kubernetes.default"
 
 func createServiceAccountKey() (api.Bytes, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
