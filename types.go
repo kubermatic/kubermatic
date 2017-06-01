@@ -310,7 +310,8 @@ type ClusterSpec struct {
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
 	URL                   string `json:"url"`
-	Token                 string `json:"token"`
+	KubeletToken          string `json:"kubelet_token"`
+	AdminToken            string `json:"admin_token"`
 	ApiserverExternalPort int    `json:"apiserver_external_port"`
 }
 
@@ -346,7 +347,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		AuthInfos: []cmdv1.NamedAuthInfo{{
 			Name: c.Metadata.Name,
 			AuthInfo: cmdv1.AuthInfo{
-				Token: c.Address.Token,
+				Token: c.Address.AdminToken,
 			},
 		}},
 	}

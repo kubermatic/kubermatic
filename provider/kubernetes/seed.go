@@ -49,8 +49,8 @@ func NewSeedProvider(
 				},
 			},
 			Address: &api.ClusterAddress{
-				URL:   cfg.Host,
-				Token: cfg.BearerToken,
+				URL:        cfg.Host,
+				AdminToken: cfg.BearerToken,
 			},
 			Status: api.ClusterStatus{
 				LastTransitionTime: time.Now(),

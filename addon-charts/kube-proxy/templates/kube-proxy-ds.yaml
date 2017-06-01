@@ -15,30 +15,20 @@ spec:
       containers:
       - name: kube-proxy
         image: {{.Values.kubeproxy_image | quote }}
-        command:
-        - /bin/sh
-        - -c
-        - -x
-        - "NODE_NAME=$( cat /opt/node-name ) && /hyperkube proxy --kubeconfig=/etc/kubernetes/kubeconfig --hostname-override=$NODE_NAME --cluster-cidr=172.25.0.0/16"
+        command: [
+          "/hyperkube",
+          "proxy",
+          "--master={{.APIServerURL}}",
+          "--kubeconfig=/etc/kubernetes/kubeconfig",
+          "--v=2"
+        ]
         securityContext:
           privileged: true
         volumeMounts:
-        - name: root-ca
-          mountPath: /etc/ssl/etcd/root-ca.crt
-          readOnly: true
-        - name: kubeconfig
-          mountPath: /etc/kubernetes/kubeconfig
-          readOnly: true
-        - name: node-name
-          mountPath: /opt/node-name
+        - name: etc-kubernetes
+          mountPath: /etc/kubernetes
           readOnly: true
       volumes:
-      - name: kubeconfig
+      - name: etc-kubernetes
         hostPath:
-          path: /var/run/kubelet/kubeconfig
-      - name: root-ca
-        hostPath:
-          path: /etc/ssl/etcd/root-ca.crt
-      - name: node-name
-        hostPath:
-          path: /opt/node-name
+          path: /etc/kubernetes

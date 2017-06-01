@@ -499,7 +499,7 @@ func (a *aws) userData(
 		ClientCert:        key.Cert.Base64(),
 		RootCACert:        clusterState.Status.RootCA.Cert.Base64(),
 		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
-		ApiserverToken:    clusterState.Address.Token,
+		ApiserverToken:    clusterState.Address.KubeletToken,
 		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
 		AutoUpdate:        clusterState.Spec.Cloud.AWS.ContainerLinux.AutoUpdate,
 	}

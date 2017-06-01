@@ -54,9 +54,7 @@ func parseAPIServerPortRange() (min, max int, err error) {
 		return min, max, err
 	}
 	max, err = strconv.Atoi(minMax[1])
-	if err != nil {
-		return min, max, err
-	}
+
 	return min, max, err
 }
 
