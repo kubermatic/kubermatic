@@ -191,7 +191,7 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) (*api.Clus
 		return nil, nil
 	}
 
-	secret, err := generateTokenUsers(cc, c)
+	secret, err := createTokens(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token users: %v", err)
 	}
