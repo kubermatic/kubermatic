@@ -2,6 +2,8 @@ SHELL=/bin/bash
 CMD=kubermatic-api kubermatic-cluster-controller
 GOBUILD=go build
 REPO=kubermatic/api
+TAGS=dev
+BUILD_FLAG += $(foreach tag, $(TAGS), -t $(REPO):$(tag))
 
 default: all
 
@@ -47,9 +49,12 @@ install:
 	glide install --strip-vendor
 
 docker-build:
-	docker build -t $(REPO) .
+	docker build $(BUILD_FLAG) .
 
-docker-push: docker
-	docker push $(REPO)
+docker-push:
+	for TAG in $(TAGS) ; do \
+		docker push $(REPO):$$TAG ; \
+	done
+
 
 .PHONY: build test check
