@@ -371,8 +371,11 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namesp
 			glog.Errorf("failed to delete deployment %s/%s: %v", ns.Name, name, err)
 		}
 	}
+	//Dirty hack to give the controller indexers time to sync
+	time.Sleep(5 * time.Second)
 
 	c.Status.Phase = api.PendingClusterStatusPhase
+	c.Status.LastTransitionTime = time.Now()
 
 	return nil
 }
