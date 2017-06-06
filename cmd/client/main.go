@@ -21,7 +21,7 @@ import (
 const (
 	timeSleep  = time.Second * 5
 	hostname   = "dev.kubermatic.io"
-	jwtToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk1NzMxMjExLCJpYXQiOjE0OTU2OTUyMTF9.UfY2Y6VEck_hFjqyM9biJcLuw8IDYn_d_3E8BNIlqA8"
+	jwtToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk2ODA4OTc3LCJpYXQiOjE0OTY3NzI5Nzd9.YgmA7lnTHaxDwgHWfJPgQJlVx7oprbOgvCNBGQU4_2o"
 	outputPath = "/_artifacts/"
 )
 
