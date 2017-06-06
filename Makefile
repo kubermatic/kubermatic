@@ -5,7 +5,7 @@ GOBUILDFLAGS= -i
 REPO=kubermatic/api
 GITTAG=$(shell git describe --tags --always)
 GOFLAGS=
-DOCKERTAGS=dev $(GITTAG) $(TAGS)
+DOCKERTAGS=dev $(TAGS)
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 
 default: all
