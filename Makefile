@@ -3,9 +3,9 @@ CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILD=go build
 GOBUILDFLAGS= -i
 REPO=kubermatic/api
-GITTAG=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
+GITTAG=$(shell git describe --tags --always)
 GOFLAGS=
-TAGS=dev
+TAGS=dev $(GITTAG)
 DOCKER_BUILD_FLAG += $(foreach tag, $(TAGS), -t $(REPO):$(tag))
 
 default: all
@@ -53,11 +53,14 @@ install:
 
 docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
 docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
-docker-build:
+docker-build: build
 	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
-	$(foreach var,$(TAGS),docker push $(REPO):$(var);)
+	@for TAG in $(TAGS) ; do \
+		echo "docker push $(REPO):$$TAG"; \
+		docker push $(REPO):$$TAG; \
+	done
 
 e2e:
 	docker run -it -v  $(CURDIR)/_artifacts/kubeconfig:/workspace/kubermatickubeconfig kubermatic/e2e-conformance:1.6
@@ -68,5 +71,8 @@ client-up: docker-build
 
 client-down:
 	docker run -it $(REPO):$(GITTAG) ./client purge
+
+gittag:
+	@echo $(GITTAG)
 
 .PHONY: build test check e2e-build client-build client-down client-up e2e docker-build docker-push

@@ -35,16 +35,18 @@ podTemplate(label: 'buildpod', containers: [
 
                 def tags
                 def stage
-                if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
-                    tags = "${env.GIT_TAG} latest"
-                    stage_system = "prod"
-                } else if (env.BRANCH_NAME == "develop") {
-                    tags = "${env.GIT_TAG} latest"
+
+                if (env.BRANCH_NAME == "develop") {
+                    tags = "${env.GIT_TAG}"
                     stage_system = "staging"
+                } else if (env.BRANCH_NAME == "master") {
+                    tags = "${env.GIT_TAG}"
+                    stage_system = "prod"
                 } else {
-                    tags = "${env.BRANCH_NAME} dev"
+                    tags = "${env.GIT_TAG}"
                     stage_system = "dev"
                 }
+
                 buildPipeline(tags, stage_system)
             } catch (e) {
                // If there was an exception thrown, the build failed
@@ -78,8 +80,7 @@ def buildPipeline(tags, stage_system) {
     }
     stage('Build'){
         container('golang') {
-            sh("cd /go/src/github.com/kubermatic/api && make build")
-            sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
+            sh("cd /go/src/github.com/kubermatic/api && make docker-build")
         }
     }
     stage('Push'){
@@ -102,6 +103,18 @@ def buildPipeline(tags, stage_system) {
 
                     }
                 }
+                stage('End-to-End'){
+                    container('golang') {
+                    withCredentials([usernamePassword(credentialsId: 'docker',
+                        passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                            sh("docker login --username=$USERNAME --password=$PASSWORD")
+                            sh("cd /go/src/github.com/kubermatic/api && make client-up")
+                            sh("cd /go/src/github.com/kubermatic/api && make e2e")
+                            sh("cd /go/src/github.com/kubermatic/api && make client-down")
+                        }
+                    }
+                }
+
          default:
                 stage('Deploy Dev'){
                     container('golang') {
@@ -122,7 +135,7 @@ def getRevision() {
 }
 
 def getTag() {
-  return sh(returnStdout: true, script: 'git describe 2> /dev/null || exit 0').trim()
+  return sh(returnStdout: true, script: 'make gittag || exit 0').trim()
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
