@@ -5,6 +5,8 @@ GOBUILDFLAGS= -i
 REPO=kubermatic/api
 GITTAG=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
 GOFLAGS=
+TAGS=dev
+DOCKER_BUILD_FLAG += $(foreach tag, $(TAGS), -t $(REPO):$(tag))
 
 default: all
 
@@ -51,11 +53,11 @@ install:
 
 docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
 docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
-docker-build: build
-	docker build -t $(REPO):$(GITTAG) .
+docker-build:
+	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
-	docker push $(REPO)
+	$(foreach var,$(TAGS),docker push $(REPO):$(var);)
 
 e2e:
 	docker run -it -v  $(CURDIR)/_artifacts/kubeconfig:/workspace/kubermatickubeconfig kubermatic/e2e-conformance:1.6
