@@ -37,10 +37,10 @@ podTemplate(label: 'buildpod', containers: [
                 def stage
 
                 if (env.BRANCH_NAME == "develop") {
-                    tags = "${env.GIT_TAG}"
+                    tags = "latest"
                     stage_system = "staging"
                 } else if (env.BRANCH_NAME == "master") {
-                    tags = "${env.GIT_TAG}"
+                    tags = "stable"
                     stage_system = "prod"
                 } else {
                     tags = "${env.GIT_TAG}"
@@ -62,7 +62,6 @@ podTemplate(label: 'buildpod', containers: [
 
 
 def buildPipeline(tags, stage_system) {
-
     stage('Install deps'){
         container('golang') {
            sh("cd /go/src/github.com/kubermatic/api && make install")
@@ -80,7 +79,20 @@ def buildPipeline(tags, stage_system) {
     }
     stage('Build'){
         container('golang') {
-            sh("cd /go/src/github.com/kubermatic/api && make docker-build")
+            sh("cd /go/src/github.com/kubermatic/api && make TAGS=\"'${tags}'\" docker-build")
+        }
+    }
+    if (stage_system != "dev") {
+        stage('End-to-End'){
+            container('golang') {
+            withCredentials([usernamePassword(credentialsId: 'docker',
+                passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    sh("docker login --username=$USERNAME --password=$PASSWORD")
+                    sh("cd /go/src/github.com/kubermatic/api && make client-up")
+                    sh("cd /go/src/github.com/kubermatic/api && make e2e")
+                    sh("cd /go/src/github.com/kubermatic/api && make client-down")
+                }
+            }
         }
     }
     stage('Push'){
@@ -88,44 +100,22 @@ def buildPipeline(tags, stage_system) {
             withCredentials([usernamePassword(credentialsId: 'docker',
                     passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                 sh("docker login --username=$USERNAME --password=$PASSWORD")
-                sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-push")
+                sh("cd /go/src/github.com/kubermatic/api && make TAGS=\"'${tags}'\" docker-push")
             }
         }
     }
-    switch (stage_system) {
-         case "staging":
-                stage('Deploy Staging'){
-                    container('golang') {
-                        withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
-                        }
-
-                    }
-                }
-                stage('End-to-End'){
-                    container('golang') {
-                    withCredentials([usernamePassword(credentialsId: 'docker',
-                        passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                            sh("docker login --username=$USERNAME --password=$PASSWORD")
-                            sh("cd /go/src/github.com/kubermatic/api && make client-up")
-                            sh("cd /go/src/github.com/kubermatic/api && make e2e")
-                            sh("cd /go/src/github.com/kubermatic/api && make client-down")
-                        }
-                    }
+    if (stage_system == "dev") {
+        stage('Deploy dev'){
+            container('golang') {
+                withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
+                    sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
+                    sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
                 }
 
-         default:
-                stage('Deploy Dev'){
-                    container('golang') {
-                        withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
-                        }
-
-                    }
-                }
+            }
+        }
     }
+
 }
 
 // Finds the revision from the source code.
@@ -135,7 +125,7 @@ def getRevision() {
 }
 
 def getTag() {
-  return sh(returnStdout: true, script: 'make gittag || exit 0').trim()
+  return sh(returnStdout: true, script: 'git describe --tags --always || exit 0').trim()
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {

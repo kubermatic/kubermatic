@@ -5,8 +5,8 @@ GOBUILDFLAGS= -i
 REPO=kubermatic/api
 GITTAG=$(shell git describe --tags --always)
 GOFLAGS=
-TAGS=dev $(GITTAG)
-DOCKER_BUILD_FLAG += $(foreach tag, $(TAGS), -t $(REPO):$(tag))
+DOCKERTAGS=dev $(GITTAG) $(TAGS)
+DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 
 default: all
 
@@ -57,9 +57,9 @@ docker-build: build
 	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
-	@for TAG in $(TAGS) ; do \
-		echo "docker push $(REPO):$$TAG"; \
-		docker push $(REPO):$$TAG; \
+	@for tag in $(DOCKERTAGS) ; do \
+		echo "docker push $(REPO):$$tag"; \
+		docker push $(REPO):$$tag; \
 	done
 
 e2e:
