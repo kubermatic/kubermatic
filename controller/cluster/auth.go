@@ -76,15 +76,23 @@ func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Temp
 		return nil, nil, fmt.Errorf("failed to create apiserver-key/cert: %v", err)
 	}
 
+	kubeletKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1"})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create kubelet-key/cert: %v", err)
+	}
+
 	data := struct {
-		ApiserverKey, ApiserverCert, RootCACert, RootCAKey, ServiceAccountKey string
+		ApiserverKey, ApiserverCert, RootCACert, RootCAKey, ServiceAccountKey, KubeletClientKey, KubeletClientCert string
 	}{
 		ApiserverKey:      asKC.Key.Base64(),
 		ApiserverCert:     asKC.Cert.Base64(),
+		KubeletClientCert: kubeletKC.Cert.Base64(),
+		KubeletClientKey:  kubeletKC.Key.Base64(),
 		RootCACert:        c.Status.RootCA.Cert.Base64(),
 		RootCAKey:         c.Status.RootCA.Key.Base64(),
 		ServiceAccountKey: saKey.Base64(),
 	}
+
 	var secret v1.Secret
 	err = t.Execute(data, &secret)
 	return nil, &secret, err
