@@ -48,8 +48,9 @@ func NewKubernetesFakeProvider(
 					},
 				},
 				Address: &api.ClusterAddress{
-					URL:   "http://104.155.80.128:8888",
-					Token: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
+					URL:          "http://104.155.80.128:8888",
+					AdminToken:   "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
+					KubeletToken: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
 				},
 				Status: api.ClusterStatus{
 					Phase: api.RunningClusterStatusPhase,

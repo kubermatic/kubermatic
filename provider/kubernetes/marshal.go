@@ -29,7 +29,8 @@ const (
 	namePrefix = "cluster"
 
 	urlAnnotation                   = annotationPrefix + "url"                     // kubermatic.io/url
-	tokenAnnotation                 = annotationPrefix + "token"                   // kubermatic.io/token
+	adminTokenAnnotation            = annotationPrefix + "token"                   // kubermatic.io/token
+	kubeletTokenAnnotation          = annotationPrefix + "kubelet-token"           // kubermatic.io/kubelet-token
 	customAnnotationPrefix          = annotationPrefix + "annotation-"             // kubermatic.io/annotation-
 	cloudAnnotationPrefix           = annotationPrefix + "cloud-provider-"         // kubermatic.io/cloud-provider-
 	providerAnnotation              = annotationPrefix + "cloud-provider"          // kubermatic.io/cloud-provider
@@ -134,7 +135,8 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 
 	c.Address = &api.ClusterAddress{}
 	c.Address.URL = ns.Annotations[urlAnnotation]
-	c.Address.Token = ns.Annotations[tokenAnnotation]
+	c.Address.AdminToken = ns.Annotations[adminTokenAnnotation]
+	c.Address.KubeletToken = ns.Annotations[kubeletTokenAnnotation]
 
 	if nodePort, found := ns.Annotations[apiserverExternalPortAnnotation]; found {
 		iNodePort, err := strconv.ParseInt(nodePort, 10, 0)
@@ -201,8 +203,12 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 			ns.Annotations[urlAnnotation] = c.Address.URL
 		}
 
-		if c.Address.Token != "" {
-			ns.Annotations[tokenAnnotation] = c.Address.Token
+		if c.Address.AdminToken != "" {
+			ns.Annotations[adminTokenAnnotation] = c.Address.AdminToken
+		}
+
+		if c.Address.KubeletToken != "" {
+			ns.Annotations[kubeletTokenAnnotation] = c.Address.KubeletToken
 		}
 
 		if c.Address.ApiserverExternalPort != 0 {

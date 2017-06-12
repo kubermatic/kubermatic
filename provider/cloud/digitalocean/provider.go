@@ -77,7 +77,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
-			Name: publicIP,
+			Name: d.Name,
 		},
 		Status: api.NodeStatus{
 			Addresses: api.NodeAddresses{
@@ -143,7 +143,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			ClientCert:        clientKC.Cert.Base64(),
 			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
 			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-			ApiserverToken:    cluster.Address.Token,
+			ApiserverToken:    cluster.Address.KubeletToken,
 			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
 			AutoUpdate:        true,
 		}
