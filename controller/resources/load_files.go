@@ -24,6 +24,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 	data := struct {
 		DC               string
 		AdvertiseAddress string
+		Host             string
 		Cluster          *api.Cluster
 		Version          *api.MasterVersion
 		CloudProvider    string
@@ -78,21 +79,36 @@ func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Servi
 	return &service, err
 }
 
+// LoadSecretFile returns the secret for the given cluster and app
+func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret, error) {
+	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-secret.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	var secret v1.Secret
+	data := struct {
+		Cluster *api.Cluster
+	}{
+		Cluster: c,
+	}
+
+	err = t.Execute(data, &secret)
+
+	return &secret, err
+}
+
 // LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error) {
+func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*extensionsv1beta1.Ingress, error) {
 	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-ingress.yaml"))
 	if err != nil {
 		return nil, err
 	}
 	var ingress extensionsv1beta1.Ingress
 	data := struct {
-		DC          string
-		ClusterName string
-		ExternalURL string
+		Cluster *api.Cluster
 	}{
-		DC:          dc,
-		ClusterName: c.Metadata.Name,
-		ExternalURL: externalURL,
+		Cluster: c,
 	}
 	err = t.Execute(data, &ingress)
 

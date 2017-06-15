@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	texttemplate "text/template"
 
+	"github.com/Masterminds/sprig"
+	"github.com/golang/glog"
+	"github.com/kubermatic/api"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -17,7 +21,21 @@ type Template struct {
 // ParseFiles creates a new template for the given filenames
 // and parses the template definitions from the named files.
 func ParseFiles(filename string) (*Template, error) {
-	tpl, err := texttemplate.ParseFiles(filename)
+	glog.V(6).Infof("Loading template %q", filename)
+
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
+	}
+
+	apiBytesToB64 := func(b api.Bytes) string {
+		return b.Base64()
+	}
+
+	funcMap := sprig.TxtFuncMap()
+	funcMap["apiBytesToB64"] = apiBytesToB64
+
+	tpl, err := texttemplate.New("base").Funcs(funcMap).Parse(string(b))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %q: %v", filename, err)
 	}

@@ -1,17 +1,3 @@
-// Copyright © 2016 Loodse GmbH <info@loodse.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -19,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/cluster"
@@ -37,25 +21,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, workerName, apiServerPortRange string
+var cfgFile, kubeConfig, masterResources, externalURL, dcFile, versions, updates, addonResources, workerName string
+var apiserverExternalPort int
 var viperWhiteList = []string{
 	"v",
-}
-
-func parseAPIServerPortRange() (min, max int, err error) {
-	input := viper.GetString("api-server-port-range")
-	minMax := strings.Split(input, "-")
-	if len(minMax) != 2 {
-		return min, min, fmt.Errorf("can't parse %s, please enter it in the format of \"30000-32767\"", input)
-	}
-
-	min, err = strconv.Atoi(minMax[0])
-	if err != nil {
-		return min, max, err
-	}
-	max, err = strconv.Atoi(minMax[1])
-
-	return min, max, err
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -137,12 +106,6 @@ var RootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 
-			minPort, maxPort, err := parseAPIServerPortRange()
-			if err != nil {
-				log.Fatalf("Error reading port range: %v", err)
-			}
-			log.Printf("Using API server port range %d-%d\n", minPort, maxPort)
-
 			// start controller
 			cps := cloud.Providers(dcs)
 			ctrl, err := cluster.NewController(
@@ -157,8 +120,7 @@ var RootCmd = &cobra.Command{
 				viper.GetString("external-url"),
 				viper.GetString("worker-name"),
 				viper.GetString("addon-resources"),
-				minPort,
-				maxPort,
+				viper.GetInt("apiserver-external-port"),
 			)
 			if err != nil {
 				log.Fatal(err)
@@ -191,7 +153,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
 	RootCmd.PersistentFlags().StringVar(&versions, "versions", "versions.yaml", "The versions.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&updates, "updates", "updates.yaml", "The updates.yaml file path")
-	RootCmd.PersistentFlags().StringVar(&apiServerPortRange, "api-server-port-range", "30000-32767", "The range client API server port will be allocated in, provide in format: \"30000-32767\"")
+	RootCmd.PersistentFlags().IntVar(&apiserverExternalPort, "apiserver-external-port", 443, "Port on which the apiserver of a client cluster should be reachable")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {

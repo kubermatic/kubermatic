@@ -1,5 +1,5 @@
-hash: 55739c71678972d5853f284fb297b75a0faf33fd34f31f87902e83c2c730aee9
-updated: 2017-04-11T15:06:59.081422384+02:00
+hash: 5e7a47ebecd15f0be144b1645d87b0143cb6b0a8803f86387a7512975af8ad1a
+updated: 2017-06-15T15:31:45.264770276+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -233,6 +233,8 @@ imports:
   - json/token
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
+- name: github.com/huandu/xstrings
+  version: 3959339b333561bf62a38b424fd41517c2c90f40
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
@@ -258,7 +260,7 @@ imports:
 - name: github.com/Masterminds/semver
   version: 3f0ab6d4ab4bed1c61caf056b63a6e62190c7801
 - name: github.com/Masterminds/sprig
-  version: 23597e5f6ad0e4d590e71314bfd0251a4a3cf849
+  version: 9526be0327b26ad31aa70296a7b10704883976d5
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/mitchellh/mapstructure
@@ -308,7 +310,7 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 9ef620b9ca2f82b55030ffd4f41327fa9e77a92c
+  version: 7e9105388ebff089b3f99f0ef676ea55a6da3a7e
   subpackages:
   - cast5
   - curve25519
@@ -527,6 +529,7 @@ imports:
   - pkg/util/parsers
   - pkg/version
   - rest
+  - rest/fake
   - rest/watch
   - testing
   - tools/auth
@@ -568,7 +571,7 @@ imports:
   - pkg/timeconv
   - pkg/version
 - name: k8s.io/kubernetes
-  version: ea8f6637b639246faa14a8d5c6f864100fcb77a9
+  version: 8eb75a5810cba92ccad845ca360cf924f2385881
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install
