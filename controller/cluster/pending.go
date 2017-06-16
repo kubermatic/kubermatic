@@ -129,15 +129,28 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 
 // pendingCreateAddresses will set the cluster hostname and the url under which the apiserver will be reachable
 func (cc *clusterController) pendingCreateAddresses(c *api.Cluster) (*api.Cluster, error) {
-	if c.Address.ExternalName != "" {
-		return nil, nil
+	var updated bool
+
+	if c.Address.ExternalName == "" {
+		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
+		updated = true
 	}
 
-	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL)
-	c.Address.URL = fmt.Sprintf("https://%s:%d", c.Address.ExternalName, cc.apiserverExternalPort)
+	if c.Address.ExternalPort == 0 {
+		c.Address.ExternalPort = cc.apiserverExternalPort
+		updated = true
+	}
 
-	glog.V(4).Infof("Set url for cluster %s to %s", kubernetes.NamespaceName(c.Metadata.Name), c.Address.URL)
-	return c, nil
+	if c.Address.URL == "" {
+		c.Address.URL = fmt.Sprintf("https://%s:%d", c.Address.ExternalName, c.Address.ExternalPort)
+		updated = true
+	}
+
+	if updated {
+		glog.V(4).Infof("Set address for cluster %s to %s", kubernetes.NamespaceName(c.Metadata.Name), c.Address.URL)
+		return c, nil
+	}
+	return nil, nil
 }
 
 func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
