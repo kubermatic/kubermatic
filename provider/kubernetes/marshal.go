@@ -159,9 +159,12 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	c.Address.AdminToken = ns.Annotations[adminTokenAnnotation]
 	c.Address.KubeletToken = ns.Annotations[kubeletTokenAnnotation]
 	c.Address.ExternalName = ns.Annotations[apiserverExternalNameAnnotation]
-	c.Address.ExternalPort, err = strconv.Atoi(ns.Annotations[apiserverExternalPortAnnotation])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse external apiserver port from annotation %s", apiserverExternalPortAnnotation)
+	if externalPort, found := ns.Annotations[apiserverExternalPortAnnotation]; found {
+		iExternalPort, err := strconv.Atoi(externalPort)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse external apiserver port: %v", err)
+		}
+		c.Address.ExternalPort = int(iExternalPort)
 	}
 
 	// decode the cloud spec from annotations
