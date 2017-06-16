@@ -3,7 +3,6 @@ package resources
 import (
 	"fmt"
 	"net"
-	"net/url"
 	"path"
 
 	"github.com/kubermatic/api"
@@ -24,7 +23,6 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 	data := struct {
 		DC               string
 		AdvertiseAddress string
-		Host             string
 		Cluster          *api.Cluster
 		Version          *api.MasterVersion
 		CloudProvider    string
@@ -35,15 +33,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 		CloudProvider: p,
 	}
 
-	u, err := url.Parse(c.Address.URL)
-	if err != nil {
-		return nil, err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return nil, err
-	}
-	addrs, err := net.LookupHost(host)
+	addrs, err := net.LookupHost(c.Address.ExternalName)
 	if err != nil {
 		return nil, err
 	}
