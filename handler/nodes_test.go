@@ -145,27 +145,6 @@ func TestNodesEndpoint(t *testing.T) {
 	}
 }
 
-func TestDeleteNodesEndpoint(t *testing.T) {
-	res := httptest.NewRecorder()
-	e := createTestEndpoint()
-
-	tn, err := createTestNode(t, e)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/dc/fake-1/cluster/234jkh24234g/node/%s", tn.Metadata.UID), nil)
-	authenticateHeader(req, false)
-	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusOK {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
-		return
-	}
-}
-
 func TestDeleteNodesEndpointNotExistingDC(t *testing.T) {
 	res := httptest.NewRecorder()
 	e := createTestEndpoint()
