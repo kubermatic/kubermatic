@@ -42,6 +42,7 @@ func TestLoadServiceFile(t *testing.T) {
 		Address: &api.ClusterAddress{
 			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			ExternalPort: 8443,
 		},
 	}
 
@@ -79,6 +80,7 @@ func TestLoadPVCFile(t *testing.T) {
 		Address: &api.ClusterAddress{
 			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			ExternalPort: 8443,
 		},
 	}
 
@@ -148,6 +150,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 		Address: &api.ClusterAddress{
 			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			ExternalPort: 8443,
 		},
 	}
 
@@ -206,6 +209,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 		Address: &api.ClusterAddress{
 			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			ExternalPort: 8443,
 		},
 	}
 
@@ -248,7 +252,9 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL: "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			ExternalPort: 8443,
 		},
 	}
 
