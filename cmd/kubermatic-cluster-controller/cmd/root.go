@@ -153,7 +153,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&addonResources, "addon-resources", "/etc/kubermaitc/addons", "Path to addon helm charts")
 	RootCmd.PersistentFlags().StringVar(&versions, "versions", "versions.yaml", "The versions.yaml file path")
 	RootCmd.PersistentFlags().StringVar(&updates, "updates", "updates.yaml", "The updates.yaml file path")
-	RootCmd.PersistentFlags().IntVar(&apiserverExternalPort, "apiserver-external-port", 443, "Port on which the apiserver of a client cluster should be reachable")
+	RootCmd.PersistentFlags().IntVar(&apiserverExternalPort, "apiserver-external-port", 8443, "Port on which the apiserver of a client cluster should be reachable")
 
 	err := viper.BindPFlags(RootCmd.PersistentFlags())
 	if err != nil {
