@@ -87,8 +87,8 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 	c := &api.Cluster{
 		Status: api.ClusterStatus{
 			ApiserverSSHKey: api.SecretRSAKeys{
-				PublicKey:  []byte("FOO"),
-				PrivateKey: []byte("BAR"),
+				PublicKey:  []byte("PUB_KEY"),
+				PrivateKey: []byte("PRIV_KEY"),
 			},
 		},
 	}
@@ -98,15 +98,108 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	oldPrivKey := c.Status.ApiserverSSHKey.PrivateKey
-	oldPubKey := c.Status.ApiserverSSHKey.PublicKey
-	_, err = cc.pendingCreateApiserverSSHKeys(c)
+	changedC, err := cc.pendingCreateApiserverSSHKeys(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	if string(c.Status.ApiserverSSHKey.PublicKey) != string(oldPubKey) || string(c.Status.ApiserverSSHKey.PrivateKey) != string(oldPrivKey) {
+	if changedC != nil {
+		t.Fatalf("returned cluster pointer to trigger update instead of nil")
+	}
+
+	if string(c.Status.ApiserverSSHKey.PublicKey) != "PUB_KEY" || string(c.Status.ApiserverSSHKey.PrivateKey) != "PRIV_KEY" {
 		t.Fatalf("apiserver ssh key was overwritten")
+	}
+
+}
+
+func TestPendingCreateRootCASuccessfully(t *testing.T) {
+	_, cc := newTestController()
+	c := &api.Cluster{
+		Status: api.ClusterStatus{
+			RootCA: api.SecretKeyCert{},
+		},
+	}
+
+	c, err := cc.pendingCreateRootCA(c)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if c.Status.RootCA.Key == nil {
+		t.Fatalf("root ca key is nil")
+	}
+
+	if c.Status.RootCA.Cert == nil {
+		t.Fatalf("root ca cert is nil")
+	}
+}
+
+func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
+	_, cc := newTestController()
+	c := &api.Cluster{
+		Status: api.ClusterStatus{
+			RootCA: api.SecretKeyCert{
+				Cert: api.Bytes([]byte("CERT")),
+				Key:  api.Bytes([]byte("KEY")),
+			},
+		},
+	}
+
+	changedC, err := cc.pendingCreateRootCA(c)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if changedC != nil {
+		t.Fatalf("returned cluster pointer to trigger update instead of nil")
+	}
+
+	if string(c.Status.RootCA.Key) != "KEY" || string(c.Status.RootCA.Cert) != "CERT" {
+		t.Fatalf("root ca was overwritten")
+	}
+}
+
+func TestPendingCreateTokensSuccessfully(t *testing.T) {
+	_, cc := newTestController()
+	c := &api.Cluster{
+		Address: &api.ClusterAddress{},
+	}
+
+	changedC, err := cc.pendingCreateTokens(c)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if changedC.Address.KubeletToken == "" {
+		t.Fatalf("kubelet token is empty")
+	}
+
+	if changedC.Address.AdminToken == "" {
+		t.Fatalf("admin token is empty")
+	}
+}
+
+func TestPendingCreateTokensAlreadyExists(t *testing.T) {
+	_, cc := newTestController()
+	c := &api.Cluster{
+		Address: &api.ClusterAddress{
+			KubeletToken: "KubeletToken",
+			AdminToken:   "AdminToken",
+		},
+	}
+
+	changedC, err := cc.pendingCreateTokens(c)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if changedC != nil {
+		t.Fatalf("returned cluster pointer to trigger update instead of nil")
+	}
+
+	if c.Address.KubeletToken != "KubeletToken" || c.Address.AdminToken != "AdminToken" {
+		t.Fatalf("tokens were overwritten")
 	}
 
 }

@@ -45,24 +45,32 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 }
 
 func (cc *clusterController) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) {
-	if c.Address.AdminToken != "" {
-		return nil, nil
+	var updated bool
+
+	if c.Address.AdminToken == "" {
+		adminToken, err := generateRandomToken()
+		if err != nil {
+			return nil, err
+		}
+		c.Address.AdminToken = adminToken
+		glog.V(4).Infof("Created admin token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
 	}
 
-	adminToken, err := generateRandomToken()
-	if err != nil {
-		return nil, err
-	}
-	kubeletToken, err := generateRandomToken()
-	if err != nil {
-		return nil, err
+	if c.Address.KubeletToken == "" {
+		kubeletToken, err := generateRandomToken()
+		if err != nil {
+			return nil, err
+		}
+		c.Address.KubeletToken = kubeletToken
+		glog.V(4).Infof("Created kubelet token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
 	}
 
-	c.Address.AdminToken = adminToken
-	c.Address.KubeletToken = kubeletToken
-
-	glog.V(4).Infof("Created admin & kubelet token for %s", kubernetes.NamespaceName(c.Metadata.Name))
-	return c, nil
+	if updated {
+		return c, nil
+	}
+	return nil, nil
 }
 
 func (cc *clusterController) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
