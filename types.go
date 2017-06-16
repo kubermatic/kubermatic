@@ -321,6 +321,7 @@ type ClusterSpec struct {
 type ClusterAddress struct {
 	URL          string `json:"url"`
 	ExternalName string `json:"external_name"`
+	ExternalPort int    `json:"external_port"`
 	KubeletToken string `json:"kubelet_token"`
 	AdminToken   string `json:"admin_token"`
 }

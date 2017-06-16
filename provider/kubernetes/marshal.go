@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,6 +51,7 @@ const (
 	serviceAccountKeyAnnotation     = annotationPrefix + "service-account-key"    // kubermatic.io/service-account-key
 	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"     // kubermatic.io/seed-provider-used
 	apiserverExternalNameAnnotation = annotationPrefix + "external-name"          // external-name
+	apiserverExternalPortAnnotation = annotationPrefix + "external-port"          // external-port
 
 	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
 	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-version
@@ -157,6 +159,10 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	c.Address.AdminToken = ns.Annotations[adminTokenAnnotation]
 	c.Address.KubeletToken = ns.Annotations[kubeletTokenAnnotation]
 	c.Address.ExternalName = ns.Annotations[apiserverExternalNameAnnotation]
+	c.Address.ExternalPort, err = strconv.Atoi(ns.Annotations[apiserverExternalPortAnnotation])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse external apiserver port from annotation %s", apiserverExternalPortAnnotation)
+	}
 
 	// decode the cloud spec from annotations
 	cpName, found := ns.Annotations[providerAnnotation]
@@ -225,6 +231,10 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 
 		if c.Address.ExternalName != "" {
 			ns.Annotations[apiserverExternalNameAnnotation] = c.Address.ExternalName
+		}
+
+		if c.Address.ExternalPort != 0 {
+			ns.Annotations[apiserverExternalPortAnnotation] = strconv.Itoa(c.Address.ExternalPort)
 		}
 	}
 
