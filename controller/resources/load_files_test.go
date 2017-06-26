@@ -3,28 +3,16 @@ package resources
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/test"
 )
 
-func IsOnCi() bool {
-	_, err := os.Stat("../../../config/kubermatic/static/master/")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return true
-		}
-		panic(err)
-	}
-
-	return false
-}
-
 func TestLoadServiceFile(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -62,7 +50,7 @@ func TestLoadServiceFile(t *testing.T) {
 }
 
 func TestLoadPVCFile(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -116,7 +104,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -172,7 +160,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 }
 
 func TestLoadDeploymentFileAWS(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -231,7 +219,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 }
 
 func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -267,7 +255,7 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 }
 
 func TestLoadServiceAccountFile(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
@@ -286,7 +274,7 @@ func TestLoadServiceAccountFile(t *testing.T) {
 }
 
 func TestLoadClusterRoleBindingFile(t *testing.T) {
-	if IsOnCi() {
+	if test.IsOnCi() {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
