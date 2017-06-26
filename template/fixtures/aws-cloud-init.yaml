@@ -1,0 +1,94 @@
+#cloud-config
+
+ssh_authorized_keys:
+  - key1
+  - key2
+  - "ApiserverSSHKey_PUBLIC_KEY apiserver@jh8j81chn.host2.int.kubermatic.io"
+
+coreos:
+
+  units:
+    - name: docker.service
+      command: start
+      enable: true
+
+    - name: kubelet.service
+      command: start
+      enable: true
+      drop-ins:
+        - name: 40-docker.conf
+          content: |
+            [Unit]
+            Requires=docker.service
+            After=docker.service
+      content: |
+        [Unit]
+        Description=Kubernetes Kubelet
+
+        [Service]
+        Environment=KUBELET_IMAGE_TAG=v1.6.6
+        Environment=KUBELET_IMAGE_URL=docker://kubermatic/hyperkube-amd64
+        Environment="RKT_RUN_ARGS=--uuid-file-save=/var/run/kubelet-pod.uuid \
+          --insecure-options=image \
+          --volume dns,kind=host,source=/etc/resolv.conf \
+          --mount volume=dns,target=/etc/resolv.conf \
+          --volume cni-conf,kind=host,source=/etc/cni/net.d \
+          --mount volume=cni-conf,target=/etc/cni/net.d \
+          --volume var-log,kind=host,source=/var/log \
+          --mount volume=var-log,target=/var/log"
+        ExecStartPre=/usr/bin/mkdir -p /etc/cni/net.d
+        ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+        ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+        ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/run/kubelet-pod.uuid
+        ExecStart=/usr/lib/coreos/kubelet-wrapper \
+          --api-servers=https://jh8j81chn.host2.int.kubermatic.io:8443 \
+          --container-runtime=docker \
+          --allow-privileged=true \
+          --pod-manifest-path=/etc/kubernetes/manifests \
+          --cni-conf-dir=/etc/cni/net.d \
+          --network-plugin=cni \
+          --cluster-dns=10.10.10.10 \
+          --cluster_domain=cluster.local \
+          --kubeconfig=/etc/kubernetes/kubeconfig \
+          --cloud-provider=aws \
+          --experimental-bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
+          --cert-dir=/etc/kubernetes/
+        ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
+        Restart=always
+        RestartSec=10
+        [Install]
+        WantedBy=multi-user.target
+
+users:
+  - name: apiserver
+    ssh-authorized-keys:
+      - "ApiserverSSHKey_PUBLIC_KEY apiserver@jh8j81chn.host2.int.kubermatic.io"
+
+write_files:
+  - path: "/etc/kubernetes/bootstrap.kubeconfig"
+    permissions: "0444"
+    content: |
+      apiVersion: v1
+      clusters:
+      - cluster:
+          server: "https://jh8j81chn.host2.int.kubermatic.io:8443"
+          certificate-authority: "/etc/kubernetes/ca.crt"
+        name: jh8j81chn
+      contexts:
+      - context:
+          cluster: jh8j81chn
+          user: jh8j81chn
+        name: jh8j81chn
+      current-context: jh8j81chn
+      kind: Config
+      preferences: {}
+      users:
+      - name: jh8j81chn
+        user:
+          token: kubelet-token
+
+  - path: "/etc/kubernetes/ca.crt"
+    permissions: "0444"
+    encoding: base64
+    content: |
+      Um9vdENBX0NFUlQ=
