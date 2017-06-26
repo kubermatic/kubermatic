@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	tplPath = "coreos/cloud-init.yaml"
+	tplPath         = "coreos/cloud-init.yaml"
+	masterFilesPath = "../../config/kubermatic/static/master/"
 )
 
 var (
@@ -84,7 +85,7 @@ var (
 )
 
 func TestNodeTemplate(t *testing.T) {
-	if test.IsOnCi() {
+	if test.IsOnCi(masterFilesPath) {
 		t.Skip("cannot load master files. Maybe on CI?")
 	}
 
