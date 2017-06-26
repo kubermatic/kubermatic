@@ -121,36 +121,20 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 		glog.V(2).Infof("dropletName %q", dropletName)
 
-		clientKC, err := cluster.CreateKeyCert(dropletName, []string{})
-		if err != nil {
-			return created, err
-		}
-
 		var skeys []string
 		for _, k := range keys {
 			skeys = append(skeys, k.PublicKey)
 		}
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
-		data := ktemplate.Data{
-			DC:                spec.DatacenterName,
-			ClusterName:       cluster.Metadata.Name,
+		data := api.NodeTemplateData{
 			SSHAuthorizedKeys: skeys,
-			APIServerURL:      cluster.Address.URL,
-			Region:            dc.Spec.Digitalocean.Region,
-			Name:              dropletName,
-			ClientKey:         clientKC.Key.Base64(),
-			ClientCert:        clientKC.Cert.Base64(),
-			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
-			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-			ApiserverToken:    cluster.Address.KubeletToken,
-			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
-			AutoUpdate:        true,
+			Cluster:           cluster,
 		}
 
 		tpl, err := template.
 			New("do-cloud-config-node.yaml").
-			Funcs(ktemplate.FuncMap).
+			Funcs(ktemplate.TxtFuncMap()).
 			ParseFiles("template/coreos/do-cloud-config-node.yaml")
 
 		if err != nil {

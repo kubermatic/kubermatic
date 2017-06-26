@@ -7,9 +7,8 @@ import (
 	"io/ioutil"
 	texttemplate "text/template"
 
-	"github.com/Masterminds/sprig"
 	"github.com/golang/glog"
-	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/template"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -28,14 +27,7 @@ func ParseFiles(filename string) (*Template, error) {
 		return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
 	}
 
-	apiBytesToB64 := func(b api.Bytes) string {
-		return b.Base64()
-	}
-
-	funcMap := sprig.TxtFuncMap()
-	funcMap["apiBytesToB64"] = apiBytesToB64
-
-	tpl, err := texttemplate.New("base").Funcs(funcMap).Parse(string(b))
+	tpl, err := texttemplate.New("base").Funcs(template.TxtFuncMap()).Parse(string(b))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %q: %v", filename, err)
 	}

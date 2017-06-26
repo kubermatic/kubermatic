@@ -483,30 +483,19 @@ func (a *aws) userData(
 	buf *bytes.Buffer,
 	instanceName string,
 	node *api.NodeSpec,
-	clusterState *api.Cluster,
+	cluster *api.Cluster,
 	dc provider.DatacenterMeta,
 	key *api.KeyCert,
 	authorizedKeys []string,
 ) error {
-	data := ktemplate.Data{
-		DC:                node.DatacenterName,
-		ClusterName:       clusterState.Metadata.Name,
+	data := api.NodeTemplateData{
 		SSHAuthorizedKeys: authorizedKeys,
-		APIServerURL:      clusterState.Address.URL,
-		Region:            dc.Spec.AWS.Region,
-		Name:              instanceName,
-		ClientKey:         key.Key.Base64(),
-		ClientCert:        key.Cert.Base64(),
-		RootCACert:        clusterState.Status.RootCA.Cert.Base64(),
-		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
-		ApiserverToken:    clusterState.Address.KubeletToken,
-		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
-		AutoUpdate:        clusterState.Spec.Cloud.AWS.ContainerLinux.AutoUpdate,
+		Cluster:           cluster,
 	}
 
 	tpl, err := template.
 		New("aws-cloud-config-node.yaml").
-		Funcs(ktemplate.FuncMap).
+		Funcs(ktemplate.TxtFuncMap()).
 		ParseFiles(tplPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse cloud config: %v", err)

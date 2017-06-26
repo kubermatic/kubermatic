@@ -474,3 +474,9 @@ type NodeUpdate struct {
 	Visible                    bool
 	Promote                    bool
 }
+
+// NodeTemplateData is the struct defining kubermatic node template variables.
+type NodeTemplateData struct {
+	Cluster           *Cluster
+	SSHAuthorizedKeys []string
+}
