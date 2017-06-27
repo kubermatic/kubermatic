@@ -28,22 +28,30 @@ const (
 	// namePrefix is the prefix string of every cluster namespace name.
 	namePrefix = "cluster"
 
-	urlAnnotation                   = annotationPrefix + "url"                     // kubermatic.io/url
-	adminTokenAnnotation            = annotationPrefix + "token"                   // kubermatic.io/token
-	kubeletTokenAnnotation          = annotationPrefix + "kubelet-token"           // kubermatic.io/kubelet-token
-	customAnnotationPrefix          = annotationPrefix + "annotation-"             // kubermatic.io/annotation-
-	cloudAnnotationPrefix           = annotationPrefix + "cloud-provider-"         // kubermatic.io/cloud-provider-
-	providerAnnotation              = annotationPrefix + "cloud-provider"          // kubermatic.io/cloud-provider
-	cloudDCAnnotation               = annotationPrefix + "cloud-dc"                // kubermatic.io/cloud-dc
-	phaseTimestampAnnotation        = annotationPrefix + "phase-ts"                // kubermatic.io/phase-ts
-	healthAnnotation                = annotationPrefix + "health"                  // kubermatic.io/health
-	userAnnotation                  = annotationPrefix + "user"                    // kubermatic.io/user
-	humanReadableNameAnnotation     = annotationPrefix + "name"                    // kubermatic.io/name
-	apiserverExternalPortAnnotation = annotationPrefix + "apiserver-external-port" // kubermatic.io/apiserver-external-port
-	rootCAKeyAnnotation             = annotationPrefix + "root-ca-key"             // kubermatic.io/root-ca-key
-	rootCACertAnnotation            = annotationPrefix + "root-ca-cert"            // kubermatic.io/root-cert
-	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                 // kubermatic.io/ssh-pub
-	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"      // kubermatic.io/seed-provider-used
+	urlAnnotation                   = annotationPrefix + "url"                    // kubermatic.io/url
+	adminTokenAnnotation            = annotationPrefix + "token"                  // kubermatic.io/token
+	kubeletTokenAnnotation          = annotationPrefix + "kubelet-token"          // kubermatic.io/kubelet-token
+	customAnnotationPrefix          = annotationPrefix + "annotation-"            // kubermatic.io/annotation-
+	cloudAnnotationPrefix           = annotationPrefix + "cloud-provider-"        // kubermatic.io/cloud-provider-
+	providerAnnotation              = annotationPrefix + "cloud-provider"         // kubermatic.io/cloud-provider
+	cloudDCAnnotation               = annotationPrefix + "cloud-dc"               // kubermatic.io/cloud-dc
+	phaseTimestampAnnotation        = annotationPrefix + "phase-ts"               // kubermatic.io/phase-ts
+	healthAnnotation                = annotationPrefix + "health"                 // kubermatic.io/health
+	userAnnotation                  = annotationPrefix + "user"                   // kubermatic.io/user
+	humanReadableNameAnnotation     = annotationPrefix + "name"                   // kubermatic.io/name
+	rootCAKeyAnnotation             = annotationPrefix + "root-ca-key"            // kubermatic.io/root-ca-key
+	rootCACertAnnotation            = annotationPrefix + "root-ca-cert"           // kubermatic.io/root-cert
+	apiserverCertAnnotation         = annotationPrefix + "apiserver-cert"         // kubermatic.io/apiserver-cert
+	apiserverCertKeyAnnotation      = annotationPrefix + "apiserver-cert-key"     // kubermatic.io/apiserver-cert-key
+	kubeletCertAnnotation           = annotationPrefix + "kubelet-cert"           // kubermatic.io/kubelet-cert
+	kubeletCertKeyAnnotation        = annotationPrefix + "kubelet-cert-key"       // kubermatic.io/kubelet-cert-key
+	apiserverSSHPrivKeyAnnotation   = annotationPrefix + "apiserver-ssh-priv-key" // kubermatic.io/apiserver-ssh-priv-key
+	apiserverSSHPubKeyAnnotation    = annotationPrefix + "apiserver-ssh-pub-key"  // kubermatic.io/apiserver-ssh-pub-key
+	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                // kubermatic.io/ssh-pub
+	serviceAccountKeyAnnotation     = annotationPrefix + "service-account-key"    // kubermatic.io/service-account-key
+	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"     // kubermatic.io/seed-provider-used
+	apiserverExternalNameAnnotation = annotationPrefix + "external-name"          // external-name
+	apiserverExternalPortAnnotation = annotationPrefix + "external-port"          // external-port
 
 	// LastDeployedMasterVersionAnnotation represents the annotation key for the LastDeployedMasterVersion
 	LastDeployedMasterVersionAnnotation = annotationPrefix + "last-deployed-master-verion" // kubermatic.io/last-deployed-master-version
@@ -115,9 +123,22 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 			Phase:              ClusterPhase(ns),
 			LastDeployedMasterVersion: ns.Annotations[LastDeployedMasterVersionAnnotation],
 			MasterUpdatePhase:         api.MasterUpdatePhase(ns.Annotations[MasterUpdatePhaseAnnotation]),
+			ServiceAccountKey:         api.NewBytes(ns.Annotations[serviceAccountKeyAnnotation]),
 			RootCA: api.SecretKeyCert{
 				Key:  api.NewBytes(ns.Annotations[rootCAKeyAnnotation]),
 				Cert: api.NewBytes(ns.Annotations[rootCACertAnnotation]),
+			},
+			ApiserverCert: api.KeyCert{
+				Key:  api.NewBytes(ns.Annotations[apiserverCertKeyAnnotation]),
+				Cert: api.NewBytes(ns.Annotations[apiserverCertAnnotation]),
+			},
+			KubeletCert: api.KeyCert{
+				Key:  api.NewBytes(ns.Annotations[kubeletCertKeyAnnotation]),
+				Cert: api.NewBytes(ns.Annotations[kubeletCertAnnotation]),
+			},
+			ApiserverSSHKey: api.SecretRSAKeys{
+				PublicKey:  api.NewBytes(ns.Annotations[apiserverSSHPubKeyAnnotation]),
+				PrivateKey: api.NewBytes(ns.Annotations[apiserverSSHPrivKeyAnnotation]),
 			},
 			ApiserverSSH: string(apiserverSSH),
 		},
@@ -137,13 +158,13 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 	c.Address.URL = ns.Annotations[urlAnnotation]
 	c.Address.AdminToken = ns.Annotations[adminTokenAnnotation]
 	c.Address.KubeletToken = ns.Annotations[kubeletTokenAnnotation]
-
-	if nodePort, found := ns.Annotations[apiserverExternalPortAnnotation]; found {
-		iNodePort, err := strconv.ParseInt(nodePort, 10, 0)
+	c.Address.ExternalName = ns.Annotations[apiserverExternalNameAnnotation]
+	if externalPort, found := ns.Annotations[apiserverExternalPortAnnotation]; found {
+		iExternalPort, err := strconv.Atoi(externalPort)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse nodeport: %v", err)
+			return nil, fmt.Errorf("failed to parse external apiserver port: %v", err)
 		}
-		c.Address.ApiserverExternalPort = int(iNodePort)
+		c.Address.ExternalPort = int(iExternalPort)
 	}
 
 	// decode the cloud spec from annotations
@@ -211,8 +232,12 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 			ns.Annotations[kubeletTokenAnnotation] = c.Address.KubeletToken
 		}
 
-		if c.Address.ApiserverExternalPort != 0 {
-			ns.Annotations[apiserverExternalPortAnnotation] = strconv.Itoa(c.Address.ApiserverExternalPort)
+		if c.Address.ExternalName != "" {
+			ns.Annotations[apiserverExternalNameAnnotation] = c.Address.ExternalName
+		}
+
+		if c.Address.ExternalPort != 0 {
+			ns.Annotations[apiserverExternalPortAnnotation] = strconv.Itoa(c.Address.ExternalPort)
 		}
 	}
 
@@ -255,6 +280,28 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	if c.Status.RootCA.Cert != nil {
 		ns.Annotations[rootCACertAnnotation] = c.Status.RootCA.Cert.Base64()
 	}
+	if c.Status.ApiserverSSHKey.PrivateKey != nil {
+		ns.Annotations[apiserverSSHPrivKeyAnnotation] = c.Status.ApiserverSSHKey.PrivateKey.Base64()
+	}
+	if c.Status.ApiserverSSHKey.PublicKey != nil {
+		ns.Annotations[apiserverSSHPubKeyAnnotation] = c.Status.ApiserverSSHKey.PublicKey.Base64()
+	}
+	if c.Status.ApiserverCert.Cert != nil {
+		ns.Annotations[apiserverCertAnnotation] = c.Status.ApiserverCert.Cert.Base64()
+	}
+	if c.Status.ApiserverCert.Key != nil {
+		ns.Annotations[apiserverCertKeyAnnotation] = c.Status.ApiserverCert.Key.Base64()
+	}
+	if c.Status.KubeletCert.Cert != nil {
+		ns.Annotations[kubeletCertAnnotation] = c.Status.KubeletCert.Cert.Base64()
+	}
+	if c.Status.KubeletCert.Key != nil {
+		ns.Annotations[kubeletCertKeyAnnotation] = c.Status.KubeletCert.Key.Base64()
+	}
+	if c.Status.ServiceAccountKey != nil {
+		ns.Annotations[serviceAccountKeyAnnotation] = c.Status.ServiceAccountKey.Base64()
+	}
+
 	ns.Annotations[apiserverPubSSHAnnotation] = base64.StdEncoding.EncodeToString([]byte(c.Status.ApiserverSSH))
 
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel

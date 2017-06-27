@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	sdk "github.com/aws/aws-sdk-go/aws"
@@ -49,7 +48,7 @@ const (
 )
 
 const (
-	tplPath = "template/coreos/aws-cloud-config-node.yaml"
+	tplPath = "template/coreos/cloud-init.yaml"
 )
 
 const (
@@ -479,41 +478,6 @@ func (*aws) UnmarshalCloudSpec(annotations map[string]string) (spec *api.CloudSp
 	return spec, nil
 }
 
-func (a *aws) userData(
-	buf *bytes.Buffer,
-	instanceName string,
-	node *api.NodeSpec,
-	clusterState *api.Cluster,
-	dc provider.DatacenterMeta,
-	key *api.KeyCert,
-	authorizedKeys []string,
-) error {
-	data := ktemplate.Data{
-		DC:                node.DatacenterName,
-		ClusterName:       clusterState.Metadata.Name,
-		SSHAuthorizedKeys: authorizedKeys,
-		APIServerURL:      clusterState.Address.URL,
-		Region:            dc.Spec.AWS.Region,
-		Name:              instanceName,
-		ClientKey:         key.Key.Base64(),
-		ClientCert:        key.Cert.Base64(),
-		RootCACert:        clusterState.Status.RootCA.Cert.Base64(),
-		ApiserverPubSSH:   clusterState.Status.ApiserverSSH,
-		ApiserverToken:    clusterState.Address.KubeletToken,
-		FlannelCIDR:       clusterState.Spec.Cloud.Network.Flannel.CIDR,
-		AutoUpdate:        clusterState.Spec.Cloud.AWS.ContainerLinux.AutoUpdate,
-	}
-
-	tpl, err := template.
-		New("aws-cloud-config-node.yaml").
-		Funcs(ktemplate.FuncMap).
-		ParseFiles(tplPath)
-	if err != nil {
-		return fmt.Errorf("failed to parse cloud config: %v", err)
-	}
-	return tpl.Execute(buf, data)
-}
-
 // GetContainerLinuxAmiID returns the ami ID for the container linux image with the specified version
 // If the version is not specified the latest version is returned
 func (a *aws) GetContainerLinuxAmiID(version string, client *ec2.EC2) (string, error) {
@@ -629,14 +593,20 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 		id := uuid.ShortUID(5)
 		instanceName := fmt.Sprintf("kubermatic-%s-%s", cluster.Metadata.Name, id)
 
-		clientKC, err := cluster.CreateKeyCert(instanceName, []string{})
+		tpl, err := ktemplate.ParseFile(tplPath)
 		if err != nil {
-			return createdNodes, fmt.Errorf("failed to create key cert: %v", err)
+			return createdNodes, fmt.Errorf("failed to parse cloud config: %v", err)
+		}
+		err = tpl.Execute(&buf, api.NodeTemplateData{
+			Cluster:           cluster,
+			SSHAuthorizedKeys: skeys,
+		})
+		if err != nil {
+			return createdNodes, fmt.Errorf("failed to execute template: %v", err)
 		}
 
-		if err = a.userData(&buf, instanceName, node, cluster, dc, clientKC, skeys); err != nil {
-			return createdNodes, fmt.Errorf("failed to generate user data: %v", err)
-		}
+		glog.V(2).Infof("User-Data:\n\n%s", string(buf.Bytes()))
+
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
 			{
 				DeviceIndex:              sdk.Int64(0), // eth0

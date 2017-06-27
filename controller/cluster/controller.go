@@ -52,16 +52,16 @@ const (
 )
 
 type clusterController struct {
-	dc                                 string
-	tprClient                          extensions.Clientset
-	etcdClusterClient                  etcd.Clientset
-	client                             kubernetes.Interface
-	queue                              *cache.FIFO // of namespace keys
-	recorder                           record.EventRecorder
-	masterResourcesPath                string
-	externalURL                        string
-	addonResourcesPath                 string
-	minAPIServerPort, maxAPIServerPort int
+	dc                    string
+	tprClient             extensions.Clientset
+	etcdClusterClient     etcd.Clientset
+	client                kubernetes.Interface
+	queue                 *cache.FIFO // of namespace keys
+	recorder              record.EventRecorder
+	masterResourcesPath   string
+	externalURL           string
+	addonResourcesPath    string
+	apiserverExternalPort int
 
 	// store namespaces with the role=kubermatic-cluster label
 	nsController cache.Controller
@@ -127,24 +127,23 @@ func NewController(
 	externalURL string,
 	workerName string,
 	addonResourcesPath string,
-	minAPIServerPort, maxAPIServerPort int,
+	apiserverExternalPort int,
 ) (controller.Controller, error) {
 	cc := &clusterController{
-		dc:                  dc,
-		client:              client,
-		tprClient:           tprClient,
-		etcdClusterClient:   etcdClusterClient,
-		queue:               cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
-		cps:                 cps,
-		updates:             updates,
-		versions:            versions,
-		inProgress:          map[string]struct{}{},
-		masterResourcesPath: masterResourcesPath,
-		externalURL:         externalURL,
-		workerName:          workerName,
-		addonResourcesPath:  addonResourcesPath,
-		minAPIServerPort:    minAPIServerPort,
-		maxAPIServerPort:    maxAPIServerPort,
+		dc:                    dc,
+		client:                client,
+		tprClient:             tprClient,
+		etcdClusterClient:     etcdClusterClient,
+		queue:                 cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
+		cps:                   cps,
+		updates:               updates,
+		versions:              versions,
+		inProgress:            map[string]struct{}{},
+		masterResourcesPath:   masterResourcesPath,
+		externalURL:           externalURL,
+		workerName:            workerName,
+		addonResourcesPath:    addonResourcesPath,
+		apiserverExternalPort: apiserverExternalPort,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()

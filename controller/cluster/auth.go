@@ -6,21 +6,138 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/csv"
 	"encoding/pem"
 	"fmt"
-	"net"
-	"net/url"
 
+	"github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/template"
+	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 const svcSAN string = "kubernetes.default"
+
+func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
+	if c.Status.RootCA.Key != nil {
+		return nil, nil
+	}
+
+	rootCAReq := csr.CertificateRequest{
+		CN: fmt.Sprintf("root-ca.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL),
+		KeyRequest: &csr.BasicKeyRequest{
+			A: "rsa",
+			S: 2048,
+		},
+		CA: &csr.CAConfig{
+			Expiry: fmt.Sprintf("%dh", 24*365*10),
+		},
+	}
+	var err error
+	c.Status.RootCA.Cert, _, c.Status.RootCA.Key, err = initca.New(&rootCAReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create root-ca: %v", err)
+	}
+
+	glog.V(4).Infof("Created root ca for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	return c, nil
+}
+
+func (cc *clusterController) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) {
+	var updated bool
+
+	if c.Address.AdminToken == "" {
+		adminToken, err := generateRandomToken()
+		if err != nil {
+			return nil, err
+		}
+		c.Address.AdminToken = adminToken
+		glog.V(4).Infof("Created admin token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
+	}
+
+	if c.Address.KubeletToken == "" {
+		kubeletToken, err := generateRandomToken()
+		if err != nil {
+			return nil, err
+		}
+		c.Address.KubeletToken = kubeletToken
+		glog.V(4).Infof("Created kubelet token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
+	}
+
+	if updated {
+		return c, nil
+	}
+	return nil, nil
+}
+
+func (cc *clusterController) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
+	var updated bool
+
+	if c.Status.ApiserverCert.Key == nil {
+		asKC, err := c.CreateKeyCert(c.Address.ExternalName, []string{c.Address.ExternalName, "10.10.10.1", svcSAN})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create apiserver-key/cert: %v", err)
+		}
+		c.Status.ApiserverCert.Key = asKC.Key
+		c.Status.ApiserverCert.Cert = asKC.Cert
+		glog.V(4).Infof("Created apiserver certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
+	}
+
+	if c.Status.KubeletCert.Key == nil {
+		kubeletKC, err := c.CreateKeyCert(c.Address.ExternalName, []string{c.Address.ExternalName, "10.10.10.1"})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create kubelet-key/cert: %v", err)
+		}
+		c.Status.KubeletCert.Key = kubeletKC.Key
+		c.Status.KubeletCert.Cert = kubeletKC.Cert
+		glog.V(4).Infof("Created kubelet certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		updated = true
+	}
+
+	if updated {
+		return c, nil
+	}
+
+	return nil, nil
+}
+
+func (cc *clusterController) pendingCreateServiceAccountKey(c *api.Cluster) (*api.Cluster, error) {
+	if c.Status.ServiceAccountKey != nil {
+		return nil, nil
+	}
+
+	key, err := createServiceAccountKey()
+	if err != nil {
+		return nil, fmt.Errorf("error creating service account key: %v", err)
+	}
+	c.Status.ServiceAccountKey = key
+	glog.V(4).Infof("Created service account key for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	return c, nil
+}
+
+func (cc *clusterController) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api.Cluster, error) {
+	if c.Status.ApiserverSSHKey.PublicKey != nil {
+		return nil, nil
+	}
+
+	k, err := createSSHKey()
+	if err != nil {
+		return nil, fmt.Errorf("error creating service account key: %v", err)
+	}
+
+	c.Status.ApiserverSSHKey.PublicKey = k.PublicKey
+	c.Status.ApiserverSSHKey.PrivateKey = k.PrivateKey
+
+	//TODO: Deprecated: Remove at some point with Dashboard V2
+	c.Status.ApiserverSSH = string(k.PublicKey)
+
+	glog.V(4).Infof("Created apiserver ssh keys for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	return c, nil
+}
 
 func createServiceAccountKey() (api.Bytes, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -36,7 +153,7 @@ func createServiceAccountKey() (api.Bytes, error) {
 	return api.Bytes(pem.EncodeToMemory(&block)), nil
 }
 
-func createSSHKeyCert() (*api.KeyCert, error) {
+func createSSHKey() (*api.SecretRSAKeys, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -53,113 +170,11 @@ func createSSHKeyCert() (*api.KeyCert, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &api.KeyCert{Key: privBuf.Bytes(), Cert: ssh.MarshalAuthorizedKey(pub)}, nil
-}
-
-func createApiserverAuth(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error) {
-	saKey, err := createServiceAccountKey()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating service account key: %v", err)
-	}
-
-	u, err := url.Parse(c.Address.URL)
-	if err != nil {
-		return nil, nil, err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	asKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1", svcSAN})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create apiserver-key/cert: %v", err)
-	}
-
-	kubeletKC, err := c.CreateKeyCert(host, []string{host, "10.10.10.1"})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create kubelet-key/cert: %v", err)
-	}
-
-	data := struct {
-		ApiserverKey, ApiserverCert, RootCACert, RootCAKey, ServiceAccountKey, KubeletClientKey, KubeletClientCert string
-	}{
-		ApiserverKey:      asKC.Key.Base64(),
-		ApiserverCert:     asKC.Cert.Base64(),
-		KubeletClientCert: kubeletKC.Cert.Base64(),
-		KubeletClientKey:  kubeletKC.Key.Base64(),
-		RootCACert:        c.Status.RootCA.Cert.Base64(),
-		RootCAKey:         c.Status.RootCA.Key.Base64(),
-		ServiceAccountKey: saKey.Base64(),
-	}
-
-	var secret v1.Secret
-	err = t.Execute(data, &secret)
-	return nil, &secret, err
-}
-
-func createApiserverSSH(cc *clusterController, c *api.Cluster, t *template.Template) (*api.Cluster, *v1.Secret, error) {
-	kc, err := createSSHKeyCert()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating service account key: %v", err)
-	}
-
-	data := struct {
-		Key, Cert string
-	}{
-		Key:  kc.Key.Base64(),
-		Cert: kc.Cert.Base64(),
-	}
-	var secret v1.Secret
-	err = t.Execute(data, &secret)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	glog.Warningf("####################### %v ###############", len(kc.Cert))
-	c.Status.ApiserverSSH = string(kc.Cert)
-
-	return c, &secret, nil
+	return &api.SecretRSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
 }
 
 func generateRandomToken() (string, error) {
 	rawToken := make([]byte, 64)
 	_, err := rand.Read(rawToken)
 	return base64.StdEncoding.EncodeToString(rawToken), err
-}
-
-func createTokens(c *api.Cluster) (*v1.Secret, error) {
-	adminToken, err := generateRandomToken()
-	if err != nil {
-		return nil, err
-	}
-	kubeletToken, err := generateRandomToken()
-	if err != nil {
-		return nil, err
-	}
-
-	buffer := bytes.Buffer{}
-	writer := csv.NewWriter(&buffer)
-	if err := writer.Write([]string{kubeletToken, "kubelet-bootstrap", "10001", "system:kubelet-bootstrap"}); err != nil {
-		return nil, err
-	}
-	if err := writer.Write([]string{adminToken, "admin", "10000", "admin"}); err != nil {
-		return nil, err
-	}
-	writer.Flush()
-
-	c.Address.KubeletToken = kubeletToken
-	c.Address.AdminToken = adminToken
-
-	secret := v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "token-users",
-		},
-		Type: v1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			"tokens.csv": buffer.Bytes(),
-		},
-	}
-
-	return &secret, nil
 }

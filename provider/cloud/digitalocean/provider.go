@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
@@ -22,6 +21,10 @@ import (
 const (
 	tokenAnnotationKey  = "token"
 	sshKeysAnnotionsKey = "ssh-keys"
+)
+
+const (
+	tplPath = "template/coreos/cloud-init.yaml"
 )
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
@@ -121,48 +124,27 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 		glog.V(2).Infof("dropletName %q", dropletName)
 
-		clientKC, err := cluster.CreateKeyCert(dropletName, []string{})
-		if err != nil {
-			return created, err
-		}
-
 		var skeys []string
 		for _, k := range keys {
 			skeys = append(skeys, k.PublicKey)
 		}
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
-		data := ktemplate.Data{
-			DC:                spec.DatacenterName,
-			ClusterName:       cluster.Metadata.Name,
-			SSHAuthorizedKeys: skeys,
-			APIServerURL:      cluster.Address.URL,
-			Region:            dc.Spec.Digitalocean.Region,
-			Name:              dropletName,
-			ClientKey:         clientKC.Key.Base64(),
-			ClientCert:        clientKC.Cert.Base64(),
-			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
-			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-			ApiserverToken:    cluster.Address.KubeletToken,
-			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
-			AutoUpdate:        true,
-		}
 
-		tpl, err := template.
-			New("do-cloud-config-node.yaml").
-			Funcs(ktemplate.FuncMap).
-			ParseFiles("template/coreos/do-cloud-config-node.yaml")
-
+		tpl, err := ktemplate.ParseFile(tplPath)
 		if err != nil {
-			return created, err
+			return created, fmt.Errorf("failed to parse cloud config: %v", err)
 		}
-
 		var buf bytes.Buffer
-		if err = tpl.Execute(&buf, data); err != nil {
-			return created, err
+		err = tpl.Execute(&buf, api.NodeTemplateData{
+			Cluster:           cluster,
+			SSHAuthorizedKeys: skeys,
+		})
+		if err != nil {
+			return created, fmt.Errorf("failed to execute template: %v", err)
 		}
 
-		glog.V(2).Infof("---- template\n%s\n----", buf.String())
+		glog.V(2).Infof("User-Data:\n\n%s", string(buf.Bytes()))
 
 		t := token(cSpec.GetToken())
 		client := godo.NewClient(oauth2.NewClient(ctx, t))

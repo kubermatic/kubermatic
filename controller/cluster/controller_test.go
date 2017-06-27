@@ -13,6 +13,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const TestDC string = "testdc"
+const TestExternalURL string = "localhost"
+const TestExternalPort int = 8443
+
 func newTestController() (*fake.Clientset, *clusterController) {
 	dcs, err := provider.DatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
@@ -35,7 +39,7 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController("", clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", "localhost", "user1", "./../../addon-charts/", 30000, 32767)
+	cc, err := NewController(TestDC, clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", "./../../addon-charts/", TestExternalPort)
 	if err != nil {
 		log.Fatal(err)
 	}

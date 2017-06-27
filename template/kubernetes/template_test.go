@@ -1,4 +1,4 @@
-package template
+package kubernetes
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ type testData struct {
 func TestParseFiles(t *testing.T) {
 	path := "fixtures/simple.yml"
 
-	if _, err := ParseFiles(path); err != nil {
+	if _, err := ParseFile(path); err != nil {
 		t.Error(err)
 	}
 }
