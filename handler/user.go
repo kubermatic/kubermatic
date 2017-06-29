@@ -6,7 +6,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/glog"
-	"github.com/gorilla/context"
 	"github.com/kubermatic/api/provider"
 )
 
@@ -21,7 +20,7 @@ func decodeUserReq(r *http.Request) (interface{}, error) {
 		},
 	}
 
-	obj := context.Get(r, "user")
+	obj := r.Context().Value("user")
 	token := obj.(*jwt.Token)
 
 	claims, ok := token.Claims.(jwt.MapClaims)

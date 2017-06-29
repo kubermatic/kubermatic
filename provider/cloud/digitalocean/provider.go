@@ -150,7 +150,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		client := godo.NewClient(oauth2.NewClient(ctx, t))
 
 		var dropKeys []string
-		allDoKeys, _, err := client.Keys.List(nil)
+		allDoKeys, _, err := client.Keys.List(context.Background(), nil)
 		if err != nil {
 			return created, err
 		}
@@ -191,7 +191,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			UserData:          buf.String(),
 		}
 
-		droplet, _, err := client.Droplets.Create(createRequest)
+		droplet, _, err := client.Droplets.Create(context.Background(), createRequest)
 		if err != nil {
 			return created, err
 		}
@@ -213,7 +213,7 @@ func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint stri
 		Name:      key.Name,
 		PublicKey: key.PublicKey,
 	}
-	created, _, err := client.Keys.Create(keyRequest)
+	created, _, err := client.Keys.Create(context.Background(), keyRequest)
 	if err != nil {
 		glog.Errorf("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
 		return "", err
@@ -253,7 +253,7 @@ func (do *digitalocean) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []
 	for _, id := range ids {
 		glog.V(7).Infof("deleting %d", id)
 
-		res, err := client.Droplets.Delete(id)
+		res, err := client.Droplets.Delete(context.Background(), id)
 		if err != nil {
 			return err
 		}
@@ -272,7 +272,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 	ds := []godo.Droplet{}
 	opt := &godo.ListOptions{}
 	for {
-		droplets, resp, err := client.Droplets.List(opt)
+		droplets, resp, err := client.Droplets.List(context.Background(), opt)
 		if err != nil {
 			return nil, err
 		}
