@@ -32,20 +32,22 @@ podTemplate(label: 'buildpod', containers: [
                 env.GIT_SHA = gitCommit
                 env.GIT_COMMIT = gitCommit.take(7)
                 env.GIT_TAG = getTag()
+                env.DOCKER_TAG = env.BRANCH_NAME.replaceAll("/","_")
 
-                def tags
-                def stage
                 if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  null) {
-                    tags = "${env.GIT_TAG} latest"
-                    stage_system = "prod"
+                    dockerTags = "${env.GIT_TAG} latest"
+                    deployTag  = "${env.GIT_TAG}"
+                    stageSystem = "prod"
                 } else if (env.BRANCH_NAME == "develop") {
-                    tags = "${env.GIT_TAG} latest"
-                    stage_system = "staging"
+                    dockerTags = "${env.DOCKER_TAG} staging"
+                    deployTag  = "${env.DOCKER_TAG}"
+                    stageSystem = "staging"
                 } else {
-                    tags = "${env.BRANCH_NAME} dev"
-                    stage_system = "dev"
+                    dockerTags = "${env.DOCKER_TAG} dev"
+                    deployTag  = "${env.DOCKER_TAG}"
+                    stageSystem = "dev"
                 }
-                buildPipeline(tags, stage_system)
+                buildPipeline(dockerTags,deployTag, stageSystem)
             } catch (e) {
                // If there was an exception thrown, the build failed
                currentBuild.result = "FAILED"
@@ -59,7 +61,7 @@ podTemplate(label: 'buildpod', containers: [
 }
 
 
-def buildPipeline(tags, stage_system) {
+def buildPipeline(dockerTags, deployTag, stageSystem) {
 
     stage('Install deps'){
         container('golang') {
@@ -79,7 +81,7 @@ def buildPipeline(tags, stage_system) {
     stage('Build'){
         container('golang') {
             sh("cd /go/src/github.com/kubermatic/api && make build")
-            sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-build")
+            sh("cd /go/src/github.com/kubermatic/api && make TAGS='${dockerTags}' docker-build")
         }
     }
     stage('Push'){
@@ -87,17 +89,17 @@ def buildPipeline(tags, stage_system) {
             withCredentials([usernamePassword(credentialsId: 'docker',
                     passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                 sh("docker login --username=$USERNAME --password=$PASSWORD")
-                sh("cd /go/src/github.com/kubermatic/api && make TAG='${tags}' docker-push")
+                sh("cd /go/src/github.com/kubermatic/api && make TAGS='${dockerTags}' docker-push")
             }
         }
     }
-    switch (stage_system) {
+    switch (stageSystem) {
          case "staging":
                 stage('Deploy Staging'){
                     container('golang') {
                         withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${deployTag}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${deployTag}' --namespace=kubermatic")
                         }
 
                     }
@@ -106,8 +108,8 @@ def buildPipeline(tags, stage_system) {
                 stage('Deploy Dev'){
                     container('golang') {
                         withCredentials([string(credentialsId: 'kubeconfig-dev', variable: 'KUBECONFIG')]) {
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${tags}' --namespace=kubermatic")
-                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${tags}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/kubermatic-api-v1 api=kubermatic/api:'${deployTag}' --namespace=kubermatic")
+                            sh("echo '$KUBECONFIG'>kubeconfig && kubectl --kubeconfig=kubeconfig set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:'${deployTag}' --namespace=kubermatic")
                         }
 
                     }
