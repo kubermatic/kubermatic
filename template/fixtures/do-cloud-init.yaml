@@ -6,7 +6,6 @@ ssh_authorized_keys:
   - "ApiserverSSHKey_PUBLIC_KEY apiserver@jh8j81chn.host2.int.kubermatic.io"
 
 coreos:
-
   units:
     - name: docker.service
       command: start

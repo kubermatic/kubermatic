@@ -26,7 +26,7 @@ var (
 					VPCId:            "my_VPCId",
 					AvailabilityZone: "my_AvailabilityZone",
 					ContainerLinux: api.ContainerLinuxClusterSpec{
-						AutoUpdate: true,
+						AutoUpdate: false,
 					},
 				},
 			},
