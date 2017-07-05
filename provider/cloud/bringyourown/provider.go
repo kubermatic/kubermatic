@@ -3,7 +3,6 @@ package bringyourown
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
@@ -72,14 +71,6 @@ func (b *bringyourown) CreateNodes(
 }
 
 func (b *bringyourown) InitializeCloudSpec(c *api.Cluster) error {
-	if c.Status.RootCA.Key != nil && c.Status.RootCA.Cert != nil {
-		clientCA, err := c.CreateKeyCert("seed-etcd-client-ca", []string{})
-		if err != nil {
-			return fmt.Errorf("failed to create a client ca for cluster %q", c.Metadata.Name)
-		}
-		c.Spec.Cloud.BringYourOwn.ClientKeyCert = *clientCA
-	}
-
 	return nil
 }
 

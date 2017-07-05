@@ -446,6 +446,8 @@ type MasterVersion struct {
 	ApiserverDeploymentYaml    string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml   string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml    string            `yaml:"schedulerDeploymentYaml"`
+	KubeMachineDeploymentYaml  string            `yaml:"kubeMachineDeploymentYaml"`
+	AddonManagerDeploymentYaml string            `yaml:"addonManagerDeploymentYaml"`
 	Values                     map[string]string `yaml:"values"`
 }
 

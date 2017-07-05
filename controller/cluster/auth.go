@@ -9,36 +9,26 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
+	"k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
-
-const svcSAN string = "kubernetes.default"
 
 func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
 	if c.Status.RootCA.Key != nil {
 		return nil, nil
 	}
 
-	rootCAReq := csr.CertificateRequest{
-		CN: fmt.Sprintf("root-ca.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL),
-		KeyRequest: &csr.BasicKeyRequest{
-			A: "rsa",
-			S: 2048,
-		},
-		CA: &csr.CAConfig{
-			Expiry: fmt.Sprintf("%dh", 24*365*10),
-		},
-	}
-	var err error
-	c.Status.RootCA.Cert, _, c.Status.RootCA.Key, err = initca.New(&rootCAReq)
+	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create root-ca: %v", err)
 	}
+
+	c.Status.RootCA.Key = cert.EncodePrivateKeyPEM(k.Key)
+	c.Status.RootCA.Cert = cert.EncodeCertPEM(k.Cert)
 
 	glog.V(4).Infof("Created root ca for %s", kubernetes.NamespaceName(c.Metadata.Name))
 	return c, nil
@@ -76,24 +66,41 @@ func (cc *clusterController) pendingCreateTokens(c *api.Cluster) (*api.Cluster, 
 func (cc *clusterController) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
 	var updated bool
 
+	certs, err := cert.ParseCertsPEM(c.Status.RootCA.Cert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse root-ca cert: %v", err)
+	}
+
+	key, err := cert.ParsePrivateKeyPEM(c.Status.RootCA.Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse root-ca key: %v", err)
+	}
+
+	caKp := &triple.KeyPair{
+		Cert: certs[0],
+		Key:  key.(*rsa.PrivateKey),
+	}
+
 	if c.Status.ApiserverCert.Key == nil {
-		asKC, err := c.CreateKeyCert(c.Address.ExternalName, []string{c.Address.ExternalName, "10.10.10.1", svcSAN})
+		apiKp, err := triple.NewServerKeyPair(caKp, c.Address.ExternalName, "kubernetes", "default", "cluster.local", []string{"10.10.10.1"}, []string{c.Address.ExternalName})
 		if err != nil {
-			return nil, fmt.Errorf("failed to create apiserver-key/cert: %v", err)
+			return nil, fmt.Errorf("failed to create apiserver key pair: %v", err)
 		}
-		c.Status.ApiserverCert.Key = asKC.Key
-		c.Status.ApiserverCert.Cert = asKC.Cert
+
+		c.Status.ApiserverCert.Key = cert.EncodePrivateKeyPEM(apiKp.Key)
+		c.Status.ApiserverCert.Cert = cert.EncodeCertPEM(apiKp.Cert)
 		glog.V(4).Infof("Created apiserver certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
 		updated = true
 	}
 
 	if c.Status.KubeletCert.Key == nil {
-		kubeletKC, err := c.CreateKeyCert(c.Address.ExternalName, []string{c.Address.ExternalName, "10.10.10.1"})
+		kubeletKp, err := triple.NewClientKeyPair(caKp, c.Address.ExternalName, []string{c.Address.ExternalName})
 		if err != nil {
-			return nil, fmt.Errorf("failed to create kubelet-key/cert: %v", err)
+			return nil, fmt.Errorf("failed to create kubelet client key pair: %v", err)
 		}
-		c.Status.KubeletCert.Key = kubeletKC.Key
-		c.Status.KubeletCert.Cert = kubeletKC.Cert
+
+		c.Status.KubeletCert.Key = cert.EncodePrivateKeyPEM(kubeletKp.Key)
+		c.Status.KubeletCert.Cert = cert.EncodeCertPEM(kubeletKp.Cert)
 		glog.V(4).Infof("Created kubelet certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
 		updated = true
 	}

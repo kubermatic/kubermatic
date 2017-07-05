@@ -9,7 +9,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/controller/resources"
-	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
@@ -113,11 +112,6 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 
 	// check that all deployments are available
 	err = cc.launchingCheckEtcdCluster(c)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cc.launchingCheckDefaultPlugins(c)
 	if err != nil {
 		return nil, err
 	}
@@ -341,6 +335,8 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		"apiserver":          masterVersion.ApiserverDeploymentYaml,
 		"controller-manager": masterVersion.ControllerDeploymentYaml,
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
+		"node-controller":    masterVersion.KubeMachineDeploymentYaml,
+		"addon-manager":      masterVersion.AddonManagerDeploymentYaml,
 	}
 
 	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
@@ -409,45 +405,6 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 		}
 
 		cc.recordClusterEvent(c, "launching", "Created cm %q", s)
-	}
-
-	return nil
-}
-
-func (cc *clusterController) launchingCheckDefaultPlugins(c *api.Cluster) error {
-	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	defaultPlugins := map[string]string{
-		"flannelcni":          "flannel-cni",
-		"heapster":            "heapster",
-		"kubedns":             "kubedns",
-		"kubeproxy":           "kube-proxy",
-		"kubernetesdashboard": "kubernetes-dashboard",
-	}
-
-	for safeName, name := range defaultPlugins {
-		metaName := fmt.Sprintf("addon-default-%s", safeName)
-		_, exists, err := cc.addonStore.GetByKey(fmt.Sprintf("%s/%s", ns, metaName))
-		if err != nil {
-			return err
-		}
-
-		if exists {
-			glog.V(6).Infof("Skipping already existing default addon %q", metaName)
-			continue
-		}
-
-		addon := &extensions.ClusterAddon{
-			Metadata: metav1.ObjectMeta{
-				Name: metaName,
-			},
-			Name:  name,
-			Phase: extensions.PendingAddonStatusPhase,
-		}
-
-		_, err = cc.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(addon)
-		if err != nil {
-			return fmt.Errorf("failed to create default addon third-party-resource %s; %v", name, err)
-		}
 	}
 
 	return nil

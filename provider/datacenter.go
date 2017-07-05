@@ -31,38 +31,12 @@ type BareMetalSpec struct {
 	AuthPassword string `yaml:"auth-password"`
 }
 
-// SeedSpec describes a seed in the given datacenter.
-type SeedSpec struct {
-	Digitalocean struct {
-		SSHKeys []string `yaml:"sshKeys"`
-	} `yaml:"digitalocean"`
-	BringYourOwn struct {
-		PrivateIntf string `yaml:"privateInterface"`
-	} `yaml:"bringyourown"`
-	AWS struct {
-		SSHKeyName string `yaml:"ssh_key_fingerprint"`
-	} `yaml:"aws"`
-
-	Network struct {
-		Flannel struct {
-			CIDR string `yaml:"cidr"`
-		} `yaml:"flannel"`
-	} `yaml:"network"`
-
-	ApiserverSSH struct {
-		Private string `yaml:"private"`
-		Public  string `yaml:"public"`
-	} `yaml:"apiserverSSH"`
-}
-
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
 	BareMetal    *BareMetalSpec    `yaml:"baremetal"`
-
-	Seed SeedSpec `yaml:"seed"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

@@ -13,13 +13,13 @@ import (
 	"github.com/kubermatic/api/provider"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/fields"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
