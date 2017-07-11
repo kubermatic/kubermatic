@@ -18,8 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/provider"
 )
 
-const jwtRolesKeyAdmin = "admin"
-
 func datacentersEndpoint(
 	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
@@ -40,8 +38,8 @@ func datacentersEndpoint(
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
-			if _, isAdmin := req.user.Roles[jwtRolesKeyAdmin]; dc.Private && !isAdmin {
-				glog.V(7).Infof("Hiding dc %q for non-admin user", dcName, req.user.Name)
+			if _, isAdmin := req.user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
+				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, req.user.Name)
 				continue
 			}
 
@@ -134,7 +132,7 @@ func datacenterEndpoint(
 			return nil, NewNotFound("datacenter", req.dc)
 		}
 
-		if _, isAdmin := req.user.Roles[jwtRolesKeyAdmin]; dc.Private && !isAdmin {
+		if _, isAdmin := req.user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
 			return nil, NewNotFound("datacenter", req.dc)
 		}
 
@@ -214,6 +212,11 @@ func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
 		spec.BringYourOwn = &api.BringYourOwnDatacenterSpec{}
 	case dc.Spec.BareMetal != nil:
 		spec.BareMetal = &api.BareMetalDatacenterSpec{}
+	case dc.Spec.Openstack != nil:
+		spec.Openstack = &api.OpenstackDatacenterSpec{
+			AuthURL:          dc.Spec.Openstack.AuthURL,
+			AvailabilityZone: dc.Spec.Openstack.AvailabilityZone,
+		}
 	}
 
 	return spec, nil

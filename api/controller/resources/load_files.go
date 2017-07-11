@@ -127,12 +127,12 @@ func LoadPVCFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Persisten
 }
 
 // LoadAwsCloudConfigConfigMap returns the aws cloud config configMap for the cluster
-func LoadAwsCloudConfigConfigMap(c *api.Cluster) (*v1.ConfigMap, error) {
+func LoadAwsCloudConfigConfigMap(c *api.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
 	cm := v1.ConfigMap{}
-	cm.Name = "aws-cloud-config"
+	cm.Name = "cloud-config"
 	cm.APIVersion = "v1"
 	cm.Data = map[string]string{
-		"aws-cloud-config": fmt.Sprintf(`
+		"config": fmt.Sprintf(`
 [global]
 zone=%s
 VPC=%s
@@ -140,7 +140,31 @@ kubernetesclustertag=%s
 disablesecuritygroupingress=false
 SubnetID=%s
 RouteTableID=%s
-disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCId, c.Metadata.Name, c.Spec.Cloud.AWS.SubnetID, c.Spec.Cloud.AWS.RouteTableID),
+disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCID, c.Metadata.Name, c.Spec.Cloud.AWS.SubnetID, c.Spec.Cloud.AWS.RouteTableID),
+	}
+	return &cm, nil
+}
+
+// LoadOpenstackCloudConfigConfigMap returns the aws cloud config configMap for the cluster
+func LoadOpenstackCloudConfigConfigMap(c *api.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
+	config := fmt.Sprintf(`
+[Global]
+auth-url=%s
+Username="%s"
+password=%s
+domain-name="%s"
+`,
+		dc.Spec.Openstack.AuthURL,
+		c.Spec.Cloud.Openstack.Username,
+		c.Spec.Cloud.Openstack.Password,
+		c.Spec.Cloud.Openstack.Domain,
+	)
+
+	cm := v1.ConfigMap{}
+	cm.Name = "cloud-config"
+	cm.APIVersion = "v1"
+	cm.Data = map[string]string{
+		"config": config,
 	}
 	return &cm, nil
 }

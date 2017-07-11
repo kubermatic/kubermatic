@@ -2,12 +2,11 @@ package bringyourown
 
 import (
 	"encoding/base64"
-	"errors"
 
+	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -16,13 +15,19 @@ const (
 	clientCertAnnotationKey  = "client-cert"
 )
 
-var _ provider.CloudProvider = (*bringyourown)(nil)
-
 type bringyourown struct{}
 
 // NewCloudProvider creates a new bringyourown provider.
 func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
+}
+
+func (b *bringyourown) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpec, error) {
+	return cloud, nil
+}
+
+func (b *bringyourown) CleanUp(*api.CloudSpec) error {
+	return nil
 }
 
 func (b *bringyourown) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
@@ -63,25 +68,10 @@ func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec,
 	return &c, nil
 }
 
-func (b *bringyourown) CreateNodes(
-	ctx context.Context,
-	cluster *api.Cluster, spec *api.NodeSpec, instances int, keys []extensions.UserSSHKey,
-) ([]*api.Node, error) {
-	return nil, errors.New("not implemented")
+func (b *bringyourown) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+	return nil, nil
 }
 
-func (b *bringyourown) InitializeCloudSpec(c *api.Cluster) error {
-	return nil
-}
-
-func (b *bringyourown) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	return []*api.Node{}, nil
-}
-
-func (b *bringyourown) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
-	return errors.New("delete: unsupported operation")
-}
-
-func (b *bringyourown) CleanUp(c *api.Cluster) error {
-	return nil
+func (b *bringyourown) GetNodeClassName(nSpec *api.NodeSpec) string {
+	return ""
 }

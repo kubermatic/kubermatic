@@ -40,7 +40,7 @@ func main() {
 		glog.Fatal("external-url is undefined\n\n")
 	}
 
-	dcs, err := provider.DatacentersMeta(*dcFile)
+	dcs, err := provider.LoadDatacentersMeta(*dcFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to load datacenter yaml %q: %v", *dcFile, err))
 	}
@@ -112,6 +112,7 @@ func main() {
 			*externalURL,
 			*workerName,
 			*apiserverExternalPort,
+			dcs,
 		)
 		if err != nil {
 			glog.Fatal(err)

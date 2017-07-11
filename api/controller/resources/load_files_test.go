@@ -188,7 +188,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 				AWS: &api.AWSCloudSpec{
 					AccessKeyID:      "my_AccessKeyID",
 					SecretAccessKey:  "my_SecretAccessKey",
-					VPCId:            "my_VPCId",
+					VPCID:            "my_VPCId",
 					AvailabilityZone: "my_AvailabilityZone",
 				},
 			},
@@ -231,7 +231,7 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 				AWS: &api.AWSCloudSpec{
 					AccessKeyID:      "my_AccessKeyID",
 					SecretAccessKey:  "my_SecretAccessKey",
-					VPCId:            "my_VPCId",
+					VPCID:            "my_VPCId",
 					AvailabilityZone: "my_AvailabilityZone",
 					RouteTableID:     "my-routetableID",
 					SubnetID:         "my-subnetID",
@@ -248,7 +248,7 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 		},
 	}
 
-	res, err := LoadAwsCloudConfigConfigMap(c)
+	res, err := LoadAwsCloudConfigConfigMap(c, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

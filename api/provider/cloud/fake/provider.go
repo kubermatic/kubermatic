@@ -2,20 +2,16 @@ package fake
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
-	"golang.org/x/net/context"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 const (
 	tokenAnnotationKey = "token"
 )
-
-var _ provider.CloudProvider = (*fakeCloudProvider)(nil)
 
 type fakeCloudProvider struct {
 	nodes map[string]*api.Node
@@ -26,6 +22,14 @@ func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{
 		nodes: map[string]*api.Node{},
 	}
+}
+
+func (p *fakeCloudProvider) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpec, error) {
+	return cloud, nil
+}
+
+func (p *fakeCloudProvider) CleanUp(*api.CloudSpec) error {
+	return nil
 }
 
 func (p *fakeCloudProvider) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
@@ -49,61 +53,10 @@ func (p *fakeCloudProvider) UnmarshalCloudSpec(as map[string]string) (*api.Cloud
 	return &c, nil
 }
 
-func (p *fakeCloudProvider) CreateNodes(
-	ctx context.Context,
-	cluster *api.Cluster,
-	spec *api.NodeSpec,
-	instances int,
-	keys []extensions.UserSSHKey,
-) ([]*api.Node, error) {
-	var ns []*api.Node
-
-	for i := 0; i < instances; i++ {
-		n := &api.Node{
-			Metadata: api.Metadata{
-				UID:  rand.String(4),
-				Name: rand.String(8),
-			},
-			Spec: *spec,
-		}
-
-		p.nodes[n.Metadata.UID] = n
-		ns = append(ns, n)
-	}
-
-	return ns, nil
+func (p *fakeCloudProvider) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+	return nil, nil
 }
 
-func (p *fakeCloudProvider) InitializeCloudSpec(c *api.Cluster) error {
-	return nil
-}
-
-func (p *fakeCloudProvider) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api.Node, error) {
-	var ns []*api.Node
-
-	for _, n := range p.nodes {
-		ns = append(ns, n)
-	}
-
-	return ns, nil
-}
-
-func (p *fakeCloudProvider) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error {
-	// @apinnecke: Removed error throwing to make code testable
-	//return errors.New("delete: unsupported operation")
-
-	for _, u := range UIDs {
-		_, found := p.nodes[u]
-		if !found {
-			return fmt.Errorf("node %q not found", u)
-		}
-
-		delete(p.nodes, u)
-	}
-
-	return nil
-}
-
-func (p *fakeCloudProvider) CleanUp(c *api.Cluster) error {
-	return nil
+func (p *fakeCloudProvider) GetNodeClassName(nSpec *api.NodeSpec) string {
+	return ""
 }

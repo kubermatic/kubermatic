@@ -17,6 +17,8 @@ const (
 	UserContextKey contextKey = 0
 	// UserRoleKey is the role key for the default role "user"
 	UserRoleKey = "user"
+	// AdminRoleKey is the role key for the admin role
+	AdminRoleKey = "admin"
 )
 
 // Authenticator is an interface for configurable authentication middlewares

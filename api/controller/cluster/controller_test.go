@@ -18,7 +18,7 @@ const TestExternalURL string = "localhost"
 const TestExternalPort int = 8443
 
 func newTestController() (*fake.Clientset, *clusterController) {
-	dcs, err := provider.DatacentersMeta("./fixtures/datacenters.yaml")
+	dcs, err := provider.LoadDatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
 		log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", "./fixtures/datacenters.yaml", err))
 	}
@@ -39,7 +39,7 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	updates := buildMasterUpdates()
 
 	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController(TestDC, clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", TestExternalPort)
+	cc, err := NewController(TestDC, clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", TestExternalPort, dcs)
 	if err != nil {
 		log.Fatal(err)
 	}
