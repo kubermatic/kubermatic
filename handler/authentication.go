@@ -2,8 +2,6 @@ package handler
 
 import (
 	"context"
-	"crypto/md5"
-	"fmt"
 	"net/http"
 
 	"github.com/coreos/go-oidc"
@@ -59,23 +57,37 @@ func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
 			return
 		}
 
-		var claims struct {
-			Name   string `json:"sub"`
-			Groups string `json:"groups"`
-		}
+		claims := map[string]interface{}{}
 		err = idToken.Claims(&claims)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 		}
 
-		//Give the id a fixed length of 32 characters
-		id := md5.Sum([]byte(claims.Name))
 		user := provider.User{
-			Name:  fmt.Sprintf("%x", id),
+			Name:  claims["sub"].(string),
 			Roles: map[string]struct{}{},
 		}
-		//TODO: Use groups from token
-		user.Roles["user"] = struct{}{}
+
+		if user.Name == "" {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+		}
+
+		md, ok := claims["app_metadata"].(map[string]interface{})
+		if ok && md != nil {
+			roles, ok := md["roles"].([]interface{})
+			if ok && roles != nil {
+				for _, r := range roles {
+					s, ok := r.(string)
+					if ok && s != "" {
+						user.Roles[s] = struct{}{}
+					}
+				}
+			}
+		}
+
+		if len(user.Roles) == 0 {
+			user.Roles["user"] = struct{}{}
+		}
 		glog.V(6).Infof("Authenticated user: %s", user.Name)
 
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
