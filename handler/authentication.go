@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/coreos/go-oidc"
 	"github.com/golang/glog"
@@ -11,8 +12,12 @@ import (
 
 type contextKey int
 
-// UserContextKey is the context key to retrieve the user object
-const UserContextKey contextKey = 0
+const (
+	// UserContextKey is the context key to retrieve the user object
+	UserContextKey contextKey = 0
+	// UserRoleKey is the role key for the default role "user"
+	UserRoleKey = "user"
+)
 
 // Authenticator is an interface for configurable authentication middlewares
 type Authenticator interface {
@@ -72,24 +77,25 @@ func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 		}
 
+		roles := []string{UserRoleKey}
 		md, ok := claims["app_metadata"].(map[string]interface{})
 		if ok && md != nil {
-			roles, ok := md["roles"].([]interface{})
-			if ok && roles != nil {
-				for _, r := range roles {
+			metaRoles, ok := md["roles"].([]interface{})
+			if ok && metaRoles != nil {
+				for _, r := range metaRoles {
 					s, ok := r.(string)
-					if ok && s != "" {
-						user.Roles[s] = struct{}{}
+					if ok && s != "" && s != UserRoleKey {
+						roles = append(roles, s)
 					}
 				}
 			}
 		}
 
-		if len(user.Roles) == 0 {
-			user.Roles["user"] = struct{}{}
+		for _, r := range roles {
+			user.Roles[r] = struct{}{}
 		}
-		glog.V(6).Infof("Authenticated user: %s", user.Name)
 
+		glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
 	})
 }
