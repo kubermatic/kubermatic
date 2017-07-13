@@ -3,9 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-
-	httptransport "github.com/go-kit/kit/transport/http"
-	"golang.org/x/net/context"
 )
 
 // HTTPError represents an HTTP server error.
@@ -17,6 +14,11 @@ type HTTPError struct {
 // Error implements the error interface.
 func (err HTTPError) Error() string {
 	return err.msg
+}
+
+// StatusCode returns the status code for the error
+func (err HTTPError) StatusCode() int {
+	return err.code
 }
 
 // NewNotFound creates a HTTP 404 error for a kind.
@@ -42,25 +44,4 @@ func NewConflict(kind, dc, name string) error {
 // NewNotAuthorized creates a HTTP 403 error.
 func NewNotAuthorized() error {
 	return HTTPError{http.StatusForbidden, "not authorized"}
-}
-
-func defaultHTTPErrorEncoder() httptransport.ServerOption {
-	return httptransport.ServerErrorEncoder(
-		func(ctx context.Context, err error, w http.ResponseWriter) {
-			switch err.(type) {
-			case httptransport.Error:
-				httpError := err.(httptransport.Error)
-
-				switch httpError.Err.(type) {
-				case HTTPError:
-					http.Error(w, httpError.Err.Error(), httpError.Err.(HTTPError).code)
-				default:
-					http.Error(w, httpError.Err.Error(), http.StatusBadRequest)
-				}
-
-			default:
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		},
-	)
 }

@@ -22,10 +22,9 @@ func TestCreateNodesEndpoint(t *testing.T) {
 	}
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	req := httptest.NewRequest("POST", "/api/v1/dc/fake-1/cluster/234jkh24234g/node", encodeReq(t, reqObj))
-	authenticateHeader(req, false)
 
 	e.ServeHTTP(res, req)
 
@@ -67,10 +66,9 @@ func TestCreateNodesEndpointNotExistingDC(t *testing.T) {
 	}
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	req := httptest.NewRequest("POST", "/api/v1/dc/testtest/cluster/234jkh24234g/node", encodeReq(t, reqObj))
-	authenticateHeader(req, false)
 
 	e.ServeHTTP(res, req)
 
@@ -80,7 +78,7 @@ func TestCreateNodesEndpointNotExistingDC(t *testing.T) {
 		return
 	}
 
-	exp := "unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\""
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -88,10 +86,9 @@ func TestCreateNodesEndpointNotExistingDC(t *testing.T) {
 
 func TestNodesEndpointEmpty(t *testing.T) {
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/234jkh24234g/node", nil)
-	authenticateHeader(req, false)
 
 	e.ServeHTTP(res, req)
 
@@ -115,7 +112,7 @@ func TestNodesEndpointEmpty(t *testing.T) {
 
 func TestNodesEndpoint(t *testing.T) {
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	_, err := createTestNode(t, e)
 	if err != nil {
@@ -124,7 +121,7 @@ func TestNodesEndpoint(t *testing.T) {
 	}
 
 	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/234jkh24234g/node", nil)
-	authenticateHeader(req, false)
+
 	e.ServeHTTP(res, req)
 
 	if res.Code != 200 {
@@ -147,7 +144,7 @@ func TestNodesEndpoint(t *testing.T) {
 
 func TestDeleteNodesEndpointNotExistingDC(t *testing.T) {
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	tn, err := createTestNode(t, e)
 	if err != nil {
@@ -156,7 +153,7 @@ func TestDeleteNodesEndpointNotExistingDC(t *testing.T) {
 	}
 
 	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/dc/testtest/cluster/234jkh24234g/node/%s", tn.Metadata.UID), nil)
-	authenticateHeader(req, false)
+
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -165,7 +162,7 @@ func TestDeleteNodesEndpointNotExistingDC(t *testing.T) {
 		return
 	}
 
-	exp := "unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\""
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -191,7 +188,6 @@ func createTestNode(t *testing.T, e http.Handler) (*api.Node, error) {
 	}
 
 	req := httptest.NewRequest("POST", "/api/v1/dc/fake-1/cluster/234jkh24234g/node", encodeReq(t, &reqObj))
-	authenticateHeader(req, false)
 
 	res := httptest.NewRecorder()
 	e.ServeHTTP(res, req)

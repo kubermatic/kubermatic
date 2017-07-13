@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"context"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/provider"
-	"golang.org/x/net/context"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 

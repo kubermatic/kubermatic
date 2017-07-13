@@ -13,7 +13,6 @@ $ cd src/kubermatic
 $ git clone git@github.com:kubermatic/api
 $ git clone git@github.com:kubermatic/config
 $ cd api
-$ echo 'dummy: dummy' > secrets.yaml
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
