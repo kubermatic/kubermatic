@@ -1,54 +1,45 @@
-//Use only one containerTemplate otherwise it create an error "Pipe not connected" see https://issues.jenkins-ci.org/browse/JENKINS-40825
-podTemplate(label: 'api', containers: [
-    containerTemplate(name: 'golang', image: 'kubermatic/golang:test', ttyEnabled: true, command: 'cat'),
-    containerTemplate(name: 'docker', image: 'kubermatic/docker:1.11', ttyEnabled: true, command: 'cat')
-  ],
-    volumes: [hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'),
-    emptyDirVolume(mountPath: '/go/src/github.com/kubermatic', memory: false)]
-  )
-  {
-    node ('api') {
-        try {
-            notifyBuild('STARTED')
+node ('golang') {
+    try {
+        notifyBuild('STARTED')
 
-            stage('setup workdir'){
-                container('golang') {
-                    sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
-                    sh("cd /go/src/github.com/kubermatic/api")
-                    checkout scm
-                }
+        stage('setup workdir'){
+            container('golang') {
+                sh("ln -s `pwd` /go/src/github.com/kubermatic/api")
+                sh("cd /go/src/github.com/kubermatic/api")
+                checkout scm
             }
-            // Setting source code related global variable once so it can be reused.
-            def gitCommit = getRevision()
-            env.GIT_SHA = gitCommit
-            env.GIT_COMMIT = gitCommit.take(7)
-            env.GIT_TAG = getTag()
-            env.DOCKER_TAG = env.BRANCH_NAME.replaceAll("/","_")
+        }
+        // Setting source code related global variable once so it can be reused.
+        def gitCommit = getRevision()
+        env.GIT_SHA = gitCommit
+        env.GIT_COMMIT = gitCommit.take(7)
+        env.GIT_TAG = getTag()
+        env.DOCKER_TAG = env.BRANCH_NAME.replaceAll("/","_")
 
-            if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  "") {
-                dockerTags = "${env.GIT_TAG} latest"
-                deployTag  = "${env.GIT_TAG}"
-                stageSystem = "prod"
-            } else if (env.BRANCH_NAME == "develop") {
-                dockerTags = "${env.DOCKER_TAG} staging"
-                deployTag  = "${env.DOCKER_TAG}"
-                stageSystem = "staging"
-            } else {
-                dockerTags = "${env.DOCKER_TAG} dev"
-                deployTag  = "${env.DOCKER_TAG}"
-                stageSystem = "dev"
-            }
-            buildPipeline(dockerTags,deployTag, stageSystem)
-        } catch (e) {
-           // If there was an exception thrown, the build failed
-           currentBuild.result = "FAILED"
-           throw e
-         } finally {
-           // Success or failure, always send notifications
-           notifyBuild(currentBuild.result)
-         }
-    }
+        if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  "") {
+            dockerTags = "${env.GIT_TAG} latest"
+            deployTag  = "${env.GIT_TAG}"
+            stageSystem = "prod"
+        } else if (env.BRANCH_NAME == "develop") {
+            dockerTags = "${env.DOCKER_TAG} staging"
+            deployTag  = "${env.DOCKER_TAG}"
+            stageSystem = "staging"
+        } else {
+            dockerTags = "${env.DOCKER_TAG} dev"
+            deployTag  = "${env.DOCKER_TAG}"
+            stageSystem = "dev"
+        }
+        buildPipeline(dockerTags,deployTag, stageSystem)
+    } catch (e) {
+       // If there was an exception thrown, the build failed
+       currentBuild.result = "FAILED"
+       throw e
+     } finally {
+       // Success or failure, always send notifications
+       notifyBuild(currentBuild.result)
+     }
 }
+
 
 def buildPipeline(dockerTags, deployTag, stageSystem) {
 
