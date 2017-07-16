@@ -1,5 +1,5 @@
 //Use only one containerTemplate otherwise it create an error "Pipe not connected" see https://issues.jenkins-ci.org/browse/JENKINS-40825
-podTemplate(label: 'buildpod', containers: [
+podTemplate(label: 'api', containers: [
     containerTemplate(name: 'golang', image: 'kubermatic/golang:test', ttyEnabled: true, command: 'cat'),
     containerTemplate(name: 'docker', image: 'kubermatic/docker:1.11', ttyEnabled: true, command: 'cat')
   ],
@@ -7,7 +7,7 @@ podTemplate(label: 'buildpod', containers: [
     emptyDirVolume(mountPath: '/go/src/github.com/kubermatic', memory: false)]
   )
   {
-    node ('buildpod') {
+    node ('api') {
         try {
             notifyBuild('STARTED')
 
