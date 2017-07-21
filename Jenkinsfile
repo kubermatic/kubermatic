@@ -1,5 +1,5 @@
 def pipeline = new io.kubermatic.pipeline()
-goBuildNode(){
+goBuildNode(pipeline){
 
          def goPath = "/go/src/github.com/kubermatic"
          def goImportPath = "/go/src/github.com/kubermatic/api"
