@@ -20,6 +20,24 @@ ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.
 popd
 ```
 
+Or you can use regular `GOPATH`
+
+```bash
+$ workspace pwd
+$HOME/workspace
+$ workspace echo $GOPATH
+$HOME/workspace
+
+$ cd $GOPATH/src/github.com/
+$ git clone git@github.com:kubermatic/api
+$ git clone git@github.com:kubermatic/config
+$ cd api
+mkdir -p template/coreos &&
+pushd template/coreos &&
+ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+popd
+```
+
 ### Dependencies
 
 #### Install dependencies
