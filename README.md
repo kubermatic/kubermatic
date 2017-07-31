@@ -5,14 +5,14 @@
 Due to the big dependency tree derived from Kubernetes it is strongly recommended to set up a separate `GOPATH` environment for Kubermatic:
 
 ```bash
-$ mkdir $HOME/src/kubermatic
-$ cd $HOME/src/kubermatic
-$ export GOPATH=$PWD
-$ mkdir -p bin pkg src
-$ cd src/kubermatic
-$ git clone git@github.com:kubermatic/api
-$ git clone git@github.com:kubermatic/config
-$ cd api
+mkdir $HOME/src/kubermatic
+cd $HOME/src/kubermatic
+export GOPATH=$PWD
+mkdir -p bin pkg src
+cd src/kubermatic
+git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/config
+cd api
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
@@ -23,15 +23,10 @@ popd
 Or you can use regular `GOPATH`
 
 ```bash
-$ workspace pwd
-$HOME/workspace
-$ workspace echo $GOPATH
-$HOME/workspace
-
-$ cd $GOPATH/src/github.com/
-$ git clone git@github.com:kubermatic/api
-$ git clone git@github.com:kubermatic/config
-$ cd api
+cd $GOPATH/src/github.com/
+git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/config
+cd api
 mkdir -p template/coreos &&
 pushd template/coreos &&
 ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
@@ -55,8 +50,8 @@ glide update --strip-vendor
 ### Building locally
 
 In order to use incremental compilation one can compile a binary as follows:
-```
-$ make GOBUILD="go install" build
+```bash
+make GOBUILD="go install" build
 ```
 
 ### Running locally
