@@ -27,7 +27,6 @@ build:
           go get -u github.com/opennota/check/cmd/structcheck
           go get -u honnef.co/go/tools/cmd/unused
           go get -u honnef.co/go/tools/cmd/gosimple
-          go get -u github.com/Masterminds/glide
     - script:
         name: install dependencies
         code: |
