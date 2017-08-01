@@ -605,7 +605,7 @@ func (a *aws) CreateNodes(ctx context.Context, cluster *api.Cluster, node *api.N
 			return createdNodes, fmt.Errorf("failed to execute template: %v", err)
 		}
 
-		glog.V(2).Infof("User-Data:\n\n%s", string(buf.Bytes()))
+		glog.V(2).Infof("User-Data:\n\n%s", buf.String())
 
 		netSpec := []*ec2.InstanceNetworkInterfaceSpecification{
 			{
