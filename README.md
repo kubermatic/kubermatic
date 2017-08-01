@@ -12,6 +12,7 @@ mkdir -p bin pkg src
 cd src/kubermatic
 git clone git@github.com:kubermatic/api
 git clone git@github.com:kubermatic/config
+git clone git@github.com:kubermatic/secrets
 cd api
 
 mkdir -p template/coreos &&
@@ -26,6 +27,7 @@ Or you can use regular `GOPATH`
 cd $GOPATH/src/github.com/
 git clone git@github.com:kubermatic/api
 git clone git@github.com:kubermatic/config
+git clone git@github.com:kubermatic/secrets
 cd api
 mkdir -p template/coreos &&
 pushd template/coreos &&
@@ -60,8 +62,8 @@ make GOBUILD="go install" build
 ```bash
 ./kubermatic-api \
 --worker-name="unique-label-abcdef123" \
---kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
---datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+--datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
 --jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
 --logtostderr \
 --v=8 \
@@ -71,8 +73,8 @@ make GOBUILD="go install" build
 #### kubermatic-cluster-controller
 ```bash
 ./kubermatic-cluster-controller \
---datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+--datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+--kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
 --worker-name="unique-label-abcdef123" \
 --logtostderr=1 \
 --master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
