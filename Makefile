@@ -1,6 +1,8 @@
 SHELL=/bin/bash
+GO=go
+GOBUILD=$(GO) build
+GOTEST=$(GO) test
 CMD=kubermatic-api kubermatic-cluster-controller
-GOBUILD=go build
 REPO=kubermatic/api
 TAGS=dev
 BUILD_FLAG += $(foreach tag, $(TAGS), -t $(REPO):$(tag))
@@ -15,8 +17,9 @@ $(CMD):
 
 build: $(CMD)
 
+
 test:
-	go test -v $$(go list ./... | grep -v /vendor/)
+	$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
 
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
