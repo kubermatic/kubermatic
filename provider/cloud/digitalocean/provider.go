@@ -144,7 +144,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			return created, fmt.Errorf("failed to execute template: %v", err)
 		}
 
-		glog.V(2).Infof("User-Data:\n\n%s", string(buf.Bytes()))
+		glog.V(2).Infof("User-Data:\n\n%s", buf.String())
 
 		t := token(cSpec.GetToken())
 		client := godo.NewClient(oauth2.NewClient(ctx, t))
