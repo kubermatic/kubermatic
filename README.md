@@ -17,7 +17,7 @@ cd api
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 ```
 
@@ -31,7 +31,7 @@ git clone git@github.com:kubermatic/secrets
 cd api
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 ```
 
