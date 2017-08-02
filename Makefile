@@ -65,6 +65,9 @@ HAS_GOMETALINTER:= $(shell command -v gometalinter;)
 HAS_GLIDE:= $(shell command -v glide;)
 HAS_GIT:= $(shell command -v git;)
 
+vendor:
+	glide install --strip-vendor
+
 .PHONY: bootstrap
 bootstrap:
 ifndef HAS_GOMETALINTER

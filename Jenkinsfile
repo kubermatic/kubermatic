@@ -7,7 +7,7 @@ goBuildNode(pipeline){
          pipeline.setupENV()
          stage('Install deps'){
              container('golang') {
-                sh("cd ${goImportPath} && make install")
+                sh("cd ${goImportPath} && make bootstrap")
              }
          }
          stage('Check'){
