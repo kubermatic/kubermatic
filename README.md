@@ -17,7 +17,7 @@ cd api
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 ```
 
@@ -31,7 +31,7 @@ git clone git@github.com:kubermatic/secrets
 cd api
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -s ../../../config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 ```
 
@@ -60,27 +60,28 @@ make GOBUILD="go install" build
 #### kubermatic-api
 
 ```bash
-./kubermatic-api \
---worker-name="unique-label-abcdef123" \
---kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
---datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
---logtostderr \
---v=8 \
---address=127.0.0.1:8080 \
+./kubermatic-api \                                                                          
+  --worker-name="unique-label-abcdef123" \
+  --kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  --datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --logtostderr \
+  --v=8 \
+  --token-issuer=https://kubermatic.eu.auth0.com/ \
+  --client-id=xHLUljMUUEFP95wmlODWexe1rvOXuyTT \
+  --address=127.0.0.1:8080 \                 
+  --master-kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig
 ```
 
 #### kubermatic-cluster-controller
 ```bash
 ./kubermatic-cluster-controller \
---datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
---worker-name="unique-label-abcdef123" \
---logtostderr=1 \
---master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
---v=4 \
---addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
---external-url=dev.kubermatic.io
+  --datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  --worker-name="unique-label-abcdef123" \
+  --logtostderr=1 \
+  --master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
+  --v=4 \
+  --external-url=dev.kubermatic.io
 ```
 
 Valid worker-name label value must be 63 characters or less and must be empty or begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alphanumerics between.
@@ -116,6 +117,7 @@ make test
 
 ## CI/CD
 Currently: [Wercker](https://app.wercker.com/Kubermatic/api) - Which uses the `wercker.yaml` & does a build on every push. 
+
 Future: [Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile` & also does a build on every push.
 
 
