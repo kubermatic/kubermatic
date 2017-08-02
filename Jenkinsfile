@@ -28,12 +28,15 @@ goBuildNode(pipeline){
 
         if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  "") {
             pipeline.dockerBuild("docker", "${env.DOCKER_TAG} latest" )
-            pipeline.deploy("docker", "prod", "${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "prod", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "prod", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
         } else if (env.BRANCH_NAME == "develop") {
             pipeline.dockerBuild("docker", "${env.DOCKER_TAG} develop" )
-            pipeline.deploy("docker", "staging", "${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "staging", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "staging", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
         } else {
             pipeline.dockerBuild("docker", "${env.DOCKER_TAG} dev" )
-            pipeline.deploy("docker", "dev", "${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "dev", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
+            pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
         }
 }
