@@ -81,7 +81,6 @@ make GOBUILD="go install" build
   --logtostderr=1 \
   --master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
   --v=4 \
-  --addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
   --external-url=dev.kubermatic.io
 ```
 
