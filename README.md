@@ -24,9 +24,8 @@ popd
 Or you can use regular `GOPATH`
 
 ```bash
-cd $GOPATH/src/github.com/
-mkdir -p kubermatic
-cd kubermatic
+mkdir -p $GOPATH/src/github.com/kubermatic
+cd $GOPATH/src/github.com/kubermatic
 git clone git@github.com:kubermatic/api
 git clone git@github.com:kubermatic/config
 git clone git@github.com:kubermatic/secrets
