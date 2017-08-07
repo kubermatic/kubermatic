@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
-	"golang.org/x/net/context"
 )
 
 const jwtRolesKeyAdmin = "admin"
@@ -107,10 +107,7 @@ func datacenterKeyEndpoint(
 			WithMaxRetries(10).
 			WithRegion(dc.Spec.AWS.Region).
 			WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
-		s, err := session.NewSession(config)
-		if err != nil {
-			return nil, err
-		}
+		s := session.New(config)
 		client := ec2.New(s)
 		keys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
 

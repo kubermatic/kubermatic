@@ -5,20 +5,33 @@
 Due to the big dependency tree derived from Kubernetes it is strongly recommended to set up a separate `GOPATH` environment for Kubermatic:
 
 ```bash
-$ mkdir $HOME/src/kubermatic
-$ cd $HOME/src/kubermatic
-$ export GOPATH=$PWD
-$ mkdir -p bin pkg src
-$ cd src/kubermatic
-$ git clone git@github.com:kubermatic/api
-$ git clone git@github.com:kubermatic/config
-$ cd api
-$ echo 'dummy: dummy' > secrets.yaml
+mkdir $HOME/src/kubermatic
+cd $HOME/src/kubermatic
+export GOPATH=$PWD
+mkdir -p bin pkg src
+cd src/kubermatic
+git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/config
+git clone git@github.com:kubermatic/secrets
+cd api
 
 mkdir -p template/coreos &&
 pushd template/coreos &&
-ln -sf ../../../config/kubermatic/static/nodes/aws/template/coreos/cloud-config-node.yaml aws-cloud-config-node.yaml &&
-ln -sf ../../../config/kubermatic/static/nodes/digitalocean/template/coreos/cloud-config-node.yaml do-cloud-config-node.yaml &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
+popd
+```
+
+Or you can use regular `GOPATH`
+
+```bash
+cd $GOPATH/src/github.com/
+git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/config
+git clone git@github.com:kubermatic/secrets
+cd api
+mkdir -p template/coreos &&
+pushd template/coreos &&
+ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 ```
 
@@ -39,35 +52,36 @@ glide update --strip-vendor
 ### Building locally
 
 In order to use incremental compilation one can compile a binary as follows:
-```
-$ make GOBUILD="go install" build
+```bash
+make GOBUILD="go install" build
 ```
 
 ### Running locally
 #### kubermatic-api
 
 ```bash
-./kubermatic-api \
---worker-name="unique-label-abcdef123" \
---kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
---datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---jwt-key=RE93Ef1Yt5-mrp2asikmfalfmcRaaa27gpH8hTAlby48LQQbUbn9d4F7yh01g_cc \
---logtostderr \
---v=8 \
---address=127.0.0.1:8080 \
+./kubermatic-api \                                                                          
+  --worker-name="unique-label-abcdef123" \
+  --kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  --datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --logtostderr \
+  --v=8 \
+  --token-issuer=https://kubermatic.eu.auth0.com/ \
+  --client-id=xHLUljMUUEFP95wmlODWexe1rvOXuyTT \
+  --address=127.0.0.1:8080 \                 
+  --master-kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig
 ```
 
 #### kubermatic-cluster-controller
 ```bash
 ./kubermatic-cluster-controller \
---datacenters=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
---kubeconfig=$GOPATH/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
---worker-name="unique-label-abcdef123" \
---logtostderr=1 \
---master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
---v=4 \
---addon-resources=$GOPATH/src/github.com/kubermatic/api/addon-charts \
---external-url=dev.kubermatic.io
+  --datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  --worker-name="unique-label-abcdef123" \
+  --logtostderr=1 \
+  --master-resources=$GOPATH/src/github.com/kubermatic/config/kubermatic/static/master \
+  --v=4 \
+  --external-url=dev.kubermatic.io
 ```
 
 Valid worker-name label value must be 63 characters or less and must be empty or begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alphanumerics between.
@@ -103,6 +117,7 @@ make test
 
 ## CI/CD
 Currently: [Wercker](https://app.wercker.com/Kubermatic/api) - Which uses the `wercker.yaml` & does a build on every push. 
+
 Future: [Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile` & also does a build on every push.
 
 

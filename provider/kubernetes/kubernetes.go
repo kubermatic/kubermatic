@@ -13,13 +13,13 @@ import (
 	"github.com/kubermatic/api/provider"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/fields"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
@@ -348,16 +348,34 @@ func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namesp
 		return nil
 	}
 
-	err := p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("controller-manager", &metav1.DeleteOptions{})
-	if err != nil {
-		glog.Errorf("could not delete controller manager deployment for new aws deployment: %v", err)
-	}
-	err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete("apiserver", &metav1.DeleteOptions{})
-	if err != nil {
-		glog.Errorf("could not delete apiserver deployment for new aws deployment: %v", err)
+	deps := []string{
+		"controller-manager",
+		"apiserver",
 	}
 
+	//We need to set the replica count to 0 before deleting the deployment.
+	//This is a known issue in the apiserver, kubectl does the same...
+	for _, name := range deps {
+		dep, err := p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Get(name, metav1.GetOptions{})
+		if err != nil {
+			glog.Errorf("failed to get deployment %s/%s: %v", ns.Name, name, err)
+		}
+		replicas := int32(0)
+		dep.Spec.Replicas = &replicas
+		dep, err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Update(dep)
+		if err != nil {
+			glog.Errorf("failed to update deployment %s/%s: %v", ns.Name, name, err)
+		}
+		err = p.kuberntesClient.ExtensionsV1beta1Client.Deployments(ns.Name).Delete(name, &metav1.DeleteOptions{})
+		if err != nil {
+			glog.Errorf("failed to delete deployment %s/%s: %v", ns.Name, name, err)
+		}
+	}
+	//Dirty hack to give the controller indexers time to sync
+	time.Sleep(5 * time.Second)
+
 	c.Status.Phase = api.PendingClusterStatusPhase
+	c.Status.LastTransitionTime = time.Now()
 
 	return nil
 }

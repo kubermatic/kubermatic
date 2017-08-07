@@ -2,26 +2,18 @@ package: github.com/kubermatic/api
 import:
 - package: k8s.io/client-go
   version: v3.0.0-beta.0
-- package: github.com/auth0/go-jwt-middleware
 - package: github.com/digitalocean/godo
+  version: ^1.0.0
 - package: github.com/go-kit/kit
-  version: ~0.3.0
 - package: github.com/golang/glog
 - package: github.com/gorilla/mux
-  version: ~1.1.0
 - package: github.com/gorilla/handlers
-  version: ~1.1.0
-- package: github.com/gorilla/context
-  version: ~1.1.0
 - package: golang.org/x/crypto
   version: master
 - package: golang.org/x/net
-- package: github.com/dgrijalva/jwt-go
-  version: ~3.0.0
 - package: golang.org/x/oauth2
 - package: gopkg.in/yaml.v2
-- package: github.com/cloudflare/cfssl
-- package: k8s.io/helm
 - package: github.com/Masterminds/semver
-- package: github.com/mitchellh/mapstructure
 - package: github.com/go-test/deep
+- package: github.com/Masterminds/sprig
+- package: github.com/coreos/go-oidc

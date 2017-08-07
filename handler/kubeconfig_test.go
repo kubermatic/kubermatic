@@ -12,10 +12,9 @@ import (
 
 func TestKubeConfigEndpoint(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/234jkh24234g/kubeconfig", nil)
-	authenticateQuery(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
 
@@ -45,10 +44,9 @@ func TestKubeConfigEndpoint(t *testing.T) {
 
 func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/testtest/cluster/234jkh24234g/kubeconfig", nil)
-	authenticateQuery(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
 
@@ -58,7 +56,7 @@ func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 		return
 	}
 
-	exp := "unknown kubernetes datacenter \"testtest\"\n"
+	exp := "unknown kubernetes datacenter \"testtest\""
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}
@@ -66,10 +64,9 @@ func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 
 func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/testtest/kubeconfig", nil)
-	authenticateQuery(req, false)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint()
+	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
 
@@ -79,7 +76,7 @@ func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
 		return
 	}
 
-	exp := "cluster \"testtest\" in dc \"fake-1\" not found\n"
+	exp := "cluster \"testtest\" in dc \"fake-1\" not found"
 	if res.Body.String() != exp {
 		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
 	}

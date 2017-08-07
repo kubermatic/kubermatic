@@ -263,7 +263,7 @@ const (
 )
 
 type (
-	// Bytes stores a byte slices and ecnodes as base64 in JSON.
+	// Bytes stores a byte slices and encodes as base64 in JSON.
 	Bytes []byte
 )
 
@@ -277,6 +277,12 @@ type KeyCert struct {
 type SecretKeyCert struct {
 	Key  Bytes `json:"-"`
 	Cert Bytes `json:"cert"`
+}
+
+// SecretRSAKeys is a pair of private and public key where the key is not published to the API client.
+type SecretRSAKeys struct {
+	PrivateKey Bytes `json:"-"`
+	PublicKey  Bytes `json:"public_key"`
 }
 
 // CPU represents the CPU resources available on a node
@@ -293,8 +299,12 @@ type ClusterStatus struct {
 	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
 	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
 
-	RootCA       SecretKeyCert `json:"rootCA"`
-	ApiserverSSH string        `json:"apiserverSSH"`
+	RootCA            SecretKeyCert `json:"rootCA"`
+	ApiserverCert     KeyCert       `json:"-"`
+	KubeletCert       KeyCert       `json:"-"`
+	ApiserverSSH      string        `json:"apiserverSSH"`
+	ApiserverSSHKey   SecretRSAKeys `json:"apiserver_ssh_key"`
+	ServiceAccountKey Bytes         `json:"-"`
 }
 
 // ClusterSpec specifies the data for a new cluster.
@@ -309,9 +319,11 @@ type ClusterSpec struct {
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL                   string `json:"url"`
-	Token                 string `json:"token"`
-	ApiserverExternalPort int    `json:"apiserver_external_port"`
+	URL          string `json:"url"`
+	ExternalName string `json:"external_name"`
+	ExternalPort int    `json:"external_port"`
+	KubeletToken string `json:"kubelet_token"`
+	AdminToken   string `json:"admin_token"`
 }
 
 // Cluster is the object representing a cluster.
@@ -346,7 +358,7 @@ func (c *Cluster) GetKubeconfig() *cmdv1.Config {
 		AuthInfos: []cmdv1.NamedAuthInfo{{
 			Name: c.Metadata.Name,
 			AuthInfo: cmdv1.AuthInfo{
-				Token: c.Address.Token,
+				Token: c.Address.AdminToken,
 			},
 		}},
 	}
@@ -434,6 +446,8 @@ type MasterVersion struct {
 	ApiserverDeploymentYaml    string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml   string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml    string            `yaml:"schedulerDeploymentYaml"`
+	KubeMachineDeploymentYaml  string            `yaml:"kubeMachineDeploymentYaml"`
+	AddonManagerDeploymentYaml string            `yaml:"addonManagerDeploymentYaml"`
 	Values                     map[string]string `yaml:"values"`
 }
 
@@ -461,4 +475,10 @@ type NodeUpdate struct {
 	Enabled                    bool
 	Visible                    bool
 	Promote                    bool
+}
+
+// NodeTemplateData is the struct defining kubermatic node template variables.
+type NodeTemplateData struct {
+	Cluster           *Cluster
+	SSHAuthorizedKeys []string
 }

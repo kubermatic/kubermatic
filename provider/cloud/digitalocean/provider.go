@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/digitalocean/godo"
 	"github.com/golang/glog"
@@ -22,6 +21,10 @@ import (
 const (
 	tokenAnnotationKey  = "token"
 	sshKeysAnnotionsKey = "ssh-keys"
+)
+
+const (
+	tplPath = "template/coreos/cloud-init.yaml"
 )
 
 var _ provider.CloudProvider = (*digitalocean)(nil)
@@ -77,7 +80,7 @@ func node(dc string, d *godo.Droplet) (*api.Node, error) {
 	n := api.Node{
 		Metadata: api.Metadata{
 			UID:  fmt.Sprintf("%s-%d", d.Name, d.ID),
-			Name: publicIP,
+			Name: d.Name,
 		},
 		Status: api.NodeStatus{
 			Addresses: api.NodeAddresses{
@@ -121,54 +124,33 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 
 		glog.V(2).Infof("dropletName %q", dropletName)
 
-		clientKC, err := cluster.CreateKeyCert(dropletName, []string{})
-		if err != nil {
-			return created, err
-		}
-
 		var skeys []string
 		for _, k := range keys {
 			skeys = append(skeys, k.PublicKey)
 		}
 
 		image := godo.DropletCreateImage{Slug: "coreos-stable"}
-		data := ktemplate.Data{
-			DC:                spec.DatacenterName,
-			ClusterName:       cluster.Metadata.Name,
-			SSHAuthorizedKeys: skeys,
-			APIServerURL:      cluster.Address.URL,
-			Region:            dc.Spec.Digitalocean.Region,
-			Name:              dropletName,
-			ClientKey:         clientKC.Key.Base64(),
-			ClientCert:        clientKC.Cert.Base64(),
-			RootCACert:        cluster.Status.RootCA.Cert.Base64(),
-			ApiserverPubSSH:   cluster.Status.ApiserverSSH,
-			ApiserverToken:    cluster.Address.Token,
-			FlannelCIDR:       cluster.Spec.Cloud.Network.Flannel.CIDR,
-			AutoUpdate:        true,
-		}
 
-		tpl, err := template.
-			New("do-cloud-config-node.yaml").
-			Funcs(ktemplate.FuncMap).
-			ParseFiles("template/coreos/do-cloud-config-node.yaml")
-
+		tpl, err := ktemplate.ParseFile(tplPath)
 		if err != nil {
-			return created, err
+			return created, fmt.Errorf("failed to parse cloud config: %v", err)
 		}
-
 		var buf bytes.Buffer
-		if err = tpl.Execute(&buf, data); err != nil {
-			return created, err
+		err = tpl.Execute(&buf, api.NodeTemplateData{
+			Cluster:           cluster,
+			SSHAuthorizedKeys: skeys,
+		})
+		if err != nil {
+			return created, fmt.Errorf("failed to execute template: %v", err)
 		}
 
-		glog.V(2).Infof("---- template\n%s\n----", buf.String())
+		glog.V(2).Infof("User-Data:\n\n%s", buf.String())
 
 		t := token(cSpec.GetToken())
 		client := godo.NewClient(oauth2.NewClient(ctx, t))
 
 		var dropKeys []string
-		allDoKeys, _, err := client.Keys.List(nil)
+		allDoKeys, _, err := client.Keys.List(context.Background(), nil)
 		if err != nil {
 			return created, err
 		}
@@ -192,7 +174,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 		}
 
 		if len(keys) != 0 && len(dropKeys) == 0 {
-			f, err := createKey(keys[0], client)
+			f, err := createKey(ctx, keys[0], client)
 			if err != nil {
 				return nil, err
 			}
@@ -209,7 +191,7 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 			UserData:          buf.String(),
 		}
 
-		droplet, _, err := client.Droplets.Create(createRequest)
+		droplet, _, err := client.Droplets.Create(context.Background(), createRequest)
 		if err != nil {
 			return created, err
 		}
@@ -225,13 +207,13 @@ func (do *digitalocean) CreateNodes(ctx context.Context, cluster *api.Cluster, s
 	return created, nil
 }
 
-func createKey(key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
+func createKey(ctx context.Context, key extensions.UserSSHKey, client *godo.Client) (fingerprint string, err error) {
 	glog.Infof("Creating new DigitalOcean key with name %q", key.Name)
 	keyRequest := &godo.KeyCreateRequest{
 		Name:      key.Name,
 		PublicKey: key.PublicKey,
 	}
-	created, _, err := client.Keys.Create(keyRequest)
+	created, _, err := client.Keys.Create(context.Background(), keyRequest)
 	if err != nil {
 		glog.Errorf("Error creating new DigitalOcean key with name %q, with : %v", key.Name, err)
 		return "", err
@@ -271,7 +253,7 @@ func (do *digitalocean) DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []
 	for _, id := range ids {
 		glog.V(7).Infof("deleting %d", id)
 
-		res, err := client.Droplets.Delete(id)
+		res, err := client.Droplets.Delete(context.Background(), id)
 		if err != nil {
 			return err
 		}
@@ -290,7 +272,7 @@ func (do *digitalocean) Nodes(ctx context.Context, cluster *api.Cluster) ([]*api
 	ds := []godo.Droplet{}
 	opt := &godo.ListOptions{}
 	for {
-		droplets, resp, err := client.Droplets.List(opt)
+		droplets, resp, err := client.Droplets.List(context.Background(), opt)
 		if err != nil {
 			return nil, err
 		}

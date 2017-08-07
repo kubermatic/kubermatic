@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api/provider"
-	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )

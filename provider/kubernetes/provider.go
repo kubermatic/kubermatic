@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"fmt"
-
 	"github.com/golang/glog"
 	"github.com/kubermatic/api/provider"
 	"k8s.io/client-go/rest"
@@ -14,7 +12,6 @@ func Providers(
 	kubeconfig string,
 	dcs map[string]provider.DatacenterMeta,
 	cps provider.CloudRegistry,
-	secretsPath string,
 	workerName string,
 ) (provider.KubernetesRegistry, error) {
 	kps := map[string]provider.KubernetesProvider{
@@ -52,15 +49,6 @@ func Providers(
 		)
 		cfgs[ctx] = *cfg
 	}
-
-	// load secrets
-	secrets, err := LoadSecrets(secretsPath)
-	if err != nil {
-		return nil, fmt.Errorf("cannot load secrets file %q: %v", secretsPath, err)
-	}
-
-	// create SeedProvider
-	kps["seed"] = NewSeedProvider(dcs, cps, cfgs, secrets)
 
 	return kps, nil
 }

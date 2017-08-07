@@ -1,4 +1,4 @@
-package template
+package kubernetes
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	texttemplate "text/template"
 
+	"github.com/kubermatic/api/template"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -14,15 +15,15 @@ type Template struct {
 	tpl *texttemplate.Template
 }
 
-// ParseFiles creates a new template for the given filenames
+// ParseFile creates a new template for the given filenames
 // and parses the template definitions from the named files.
-func ParseFiles(filename string) (*Template, error) {
-	tpl, err := texttemplate.ParseFiles(filename)
+func ParseFile(filename string) (*Template, error) {
+	t, err := template.ParseFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse %q: %v", filename, err)
+		return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
 	}
 
-	return &Template{tpl}, nil
+	return &Template{t}, nil
 }
 
 // Execute applies a parsed template to the specified data object,

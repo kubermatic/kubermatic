@@ -3,13 +3,12 @@ package resources
 import (
 	"fmt"
 	"net"
-	"net/url"
 	"path"
 
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/template"
 	"github.com/kubermatic/api/extensions/etcd"
 	"github.com/kubermatic/api/provider"
+	k8stemplate "github.com/kubermatic/api/template/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
@@ -34,21 +33,13 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 		CloudProvider: p,
 	}
 
-	u, err := url.Parse(c.Address.URL)
-	if err != nil {
-		return nil, err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return nil, err
-	}
-	addrs, err := net.LookupHost(host)
+	addrs, err := net.LookupHost(c.Address.ExternalName)
 	if err != nil {
 		return nil, err
 	}
 	data.AdvertiseAddress = addrs[0]
 
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, yamlFile))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +51,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 
 // LoadServiceFile returns the service for the given cluster and app
 func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error) {
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-service.yaml"))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-service.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -78,21 +69,36 @@ func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Servi
 	return &service, err
 }
 
+// LoadSecretFile returns the secret for the given cluster and app
+func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret, error) {
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-secret.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	var secret v1.Secret
+	data := struct {
+		Cluster *api.Cluster
+	}{
+		Cluster: c,
+	}
+
+	err = t.Execute(data, &secret)
+
+	return &secret, err
+}
+
 // LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(c *api.Cluster, app, masterResourcesPath, dc, externalURL string) (*extensionsv1beta1.Ingress, error) {
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-ingress.yaml"))
+func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*extensionsv1beta1.Ingress, error) {
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-ingress.yaml"))
 	if err != nil {
 		return nil, err
 	}
 	var ingress extensionsv1beta1.Ingress
 	data := struct {
-		DC          string
-		ClusterName string
-		ExternalURL string
+		Cluster *api.Cluster
 	}{
-		DC:          dc,
-		ClusterName: c.Metadata.Name,
-		ExternalURL: externalURL,
+		Cluster: c,
 	}
 	err = t.Execute(data, &ingress)
 
@@ -105,7 +111,7 @@ func LoadIngressFile(c *api.Cluster, app, masterResourcesPath, dc, externalURL s
 
 // LoadPVCFile returns the PVC for the given cluster & app
 func LoadPVCFile(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error) {
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-pvc.yaml"))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-pvc.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +154,7 @@ func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile str
 		Version: v,
 	}
 
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, yamlFile))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +166,7 @@ func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile str
 
 // LoadServiceAccountFile loads a service account from disk and returns it
 func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount, error) {
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-serviceaccount.yaml"))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-serviceaccount.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +178,7 @@ func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount
 
 // LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
 func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1beta1.ClusterRoleBinding, error) {
-	t, err := template.ParseFiles(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, err
 	}
