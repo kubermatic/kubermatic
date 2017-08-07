@@ -50,7 +50,19 @@ func NewRouting(
 	}
 }
 
-// Register registers all known endpoints in the given router.
+// @Title GetStringByInt
+// @Description get string by ID
+// @Accept  json
+// @Produce  json
+// @Param   some_id     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "We need ID!!"
+// @Failure 404 {object} APIError "Can not find ID"
+// @Router /testapi/get-string-by-int/{some_id} [get]
+func SwaggerHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello", r.URL.Path[1:])
+}
+
 func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodGet).
@@ -64,7 +76,10 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
-
+	mux.
+		Methods("GET").
+		Path("/api/v1/docs").
+		HandlerFunc(SwaggerHandler)
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc").
