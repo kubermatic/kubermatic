@@ -8,16 +8,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
-
-	"strings"
-
-	"regexp"
-
-	"net/url"
 
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
@@ -326,9 +323,10 @@ func errFatal(err error) {
 	}
 }
 
+// TODO: Close Body!
 func getToken() {
 	cl := &http.Client{}
-	authBaseUrl := "https://auth.int.kubermatic.io/"
+	authBaseURL := "https://auth.int.kubermatic.io/"
 	nonce := uuid.ShortUID(20)
 
 	/*
@@ -342,14 +340,13 @@ func getToken() {
 		"nonce":         {nonce},
 	}
 
-	u := authBaseUrl + "auth?" + baseValues.Encode()
+	u := authBaseURL + "auth?" + baseValues.Encode()
 	log.Println(u)
 	resp, err := cl.Get(u)
 	if err != nil {
 		panic(err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -363,9 +360,12 @@ func getToken() {
 	/*
 	  Visit the mail option site
 	*/
-	localURL := authBaseUrl + "auth/local?req=" + reqUID
+	localURL := authBaseURL + "auth/local?req=" + reqUID
 	formData := url.Values{"req": {reqUID}}
-	cl.PostForm(localURL, formData)
+	_, err = cl.PostForm(localURL, formData)
+	if err != nil {
+		panic(err)
+	}
 
 	/*
 	  Perform the login
@@ -373,14 +373,13 @@ func getToken() {
 	formData = url.Values{"login": {username}, "password": {password}}
 	resp, err = cl.PostForm(localURL, formData)
 	data, err = ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		panic(err)
 	}
 	// Check for errors
 	errorString := "Invalid username and password"
 	if strings.Contains(string(data), errorString) {
-		panic("Fucking wrong passowrd")
+		panic("Wrong passowrd")
 	}
 
 	/*
@@ -390,7 +389,7 @@ func getToken() {
 	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	resp, err = cl.PostForm(authBaseUrl+"approval?req="+reqUID, formData)
+	resp, err = cl.PostForm(authBaseURL+"approval?req="+reqUID, formData)
 	if err != nil {
 		panic(err)
 	}
