@@ -13,6 +13,12 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+
+	"regexp"
+
+	"net/url"
+
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/extensions"
 	"github.com/kubermatic/api/uuid"
@@ -21,9 +27,17 @@ import (
 const (
 	timeSleep  = time.Second * 5
 	hostname   = "dev.kubermatic.io"
-	jwtToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhcHBfbWV0YWRhdGEiOnsicm9sZXMiOlsidXNlciJdfSwiaXNzIjoiaHR0cHM6Ly9rdWJlcm1hdGljLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnaXRodWJ8NzM4NzcwMyIsImF1ZCI6InpxYUdBcUJHaVdENnRjZTdmY0hMMDNRWllpMUFDOXdGIiwiZXhwIjoxNDk2ODA4OTc3LCJpYXQiOjE0OTY3NzI5Nzd9.YgmA7lnTHaxDwgHWfJPgQJlVx7oprbOgvCNBGQU4_2o"
 	outputPath = "/_artifacts/"
 )
+const (
+	password    = "password"
+	username    = "demo1@cluster"
+	clientID    = "kubermatic"
+	redirectURI = "http://localhost:8000/login"
+)
+
+var jwtToken = ""
+var localRE = regexp.MustCompile(`/local\?req=([^\"]+)`)
 
 type client struct {
 	token          string
@@ -312,7 +326,90 @@ func errFatal(err error) {
 	}
 }
 
+func getToken() {
+	cl := &http.Client{}
+	authBaseUrl := "https://auth.int.kubermatic.io/"
+	nonce := uuid.ShortUID(20)
+
+	/*
+	  First request to retrieve the Mail login option
+	*/
+	baseValues := url.Values{
+		"response_type": {"id_token"},
+		"client_id":     {clientID},
+		"redirect_uri":  {redirectURI},
+		"scope":         {"openid"},
+		"nonce":         {nonce},
+	}
+
+	u := authBaseUrl + "auth?" + baseValues.Encode()
+	log.Println(u)
+	resp, err := cl.Get(u)
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		panic(err)
+	}
+	// Find the mail option
+	match := localRE.FindSubmatch(data)
+	if len(match) != 2 {
+		panic(string(data))
+	}
+	reqUID := string(match[1])
+
+	/*
+	  Visit the mail option site
+	*/
+	localURL := authBaseUrl + "auth/local?req=" + reqUID
+	formData := url.Values{"req": {reqUID}}
+	cl.PostForm(localURL, formData)
+
+	/*
+	  Perform the login
+	*/
+	formData = url.Values{"login": {username}, "password": {password}}
+	resp, err = cl.PostForm(localURL, formData)
+	data, err = ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		panic(err)
+	}
+	// Check for errors
+	errorString := "Invalid username and password"
+	if strings.Contains(string(data), errorString) {
+		panic("Fucking wrong passowrd")
+	}
+
+	/*
+	  Approve the login
+	*/
+	formData = url.Values{"req": {reqUID}, "approval": {"approve"}}
+	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	resp, err = cl.PostForm(authBaseUrl+"approval?req="+reqUID, formData)
+	if err != nil {
+		panic(err)
+	}
+	l, err := resp.Location()
+	if err != nil {
+		panic(err)
+	}
+
+	// Get the token
+	q, err := url.ParseQuery(l.Fragment)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(q.Get("id_token"))
+	jwtToken = q.Get("id_token")
+}
+
 func main() {
+	getToken()
 	c := newClient(hostname, jwtToken, outputPath)
 
 	if len(os.Args) != 2 {
