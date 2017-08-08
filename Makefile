@@ -8,6 +8,7 @@ CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILDFLAGS= -i
 GITTAG=$(shell git describe --tags --always)
 GOFLAGS=
+TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 HAS_GOMETALINTER:= $(shell command -v gometalinter;)
@@ -18,7 +19,10 @@ default: all
 
 all: check test build
 
+build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
+build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
 build: $(CMD)
+
 $(CMD): vendor
 	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
 
@@ -36,9 +40,7 @@ install: vendor
 		$(GOINSTALL) github.com/kubermatic/api/cmd/$$PRODUCT ; \
 	done
 
-docker-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
-docker-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
-docker-build: build
+docker-build:
 	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
@@ -65,7 +67,7 @@ ifndef HAS_GLIDE
 	go get -u github.com/Masterminds/glide
 endif
 
-client-up: docker-build
+client-up:
 	mkdir -p $(CURDIR)/_artifacts
 	docker run -v $(CURDIR)/_artifacts/:/_artifacts -it $(REPO):$(GITTAG) ./client up
 
