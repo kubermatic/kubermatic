@@ -1,10 +1,12 @@
 package extensions
 
 import (
-	"crypto/sha512"
-	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"crypto/sha1"
+
+	"encoding/base64"
 
 	"github.com/kubermatic/api/uuid"
 	"golang.org/x/crypto/ssh"
@@ -33,9 +35,17 @@ func NormalizeFingerprint(f string) string {
 // NormalizeUser base64 encodes a user to store him in labels
 // This is a one way function
 func NormalizeUser(name string) string {
-	// For this a migration script is provided in the config/kubermatic/static helm chart.
-	raw := sha512.New384().Sum([]byte(name + "kubermatic"))
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(raw)
+	// This part has to stay for backwards capability.
+	b := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(name))
+	if len(b) <= 63 {
+		return b
+	}
+
+	// New method!
+	// We can use a weak hash because we trust the authority, which generates the name.
+	sh := sha1.New()
+	fmt.Fprint(sh, name)
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(sh.Sum(nil))
 }
 
 // GenerateNormalizedFigerprint a normalized fingerprint from a public key

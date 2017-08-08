@@ -307,7 +307,7 @@ func (c *client) updateSeeds() error {
 	return nil
 }
 
-func (c *client) writeKubeconfig() error {
+func (c *client) writeKubeConfig() error {
 	data, err := c.getKubeConfig()
 	if err != nil {
 		return err
@@ -419,7 +419,7 @@ func main() {
 	switch os.Args[1] {
 	case "up":
 		errFatal(c.up(2))
-		errFatal(c.writeKubeconfig())
+		errFatal(c.writeKubeConfig())
 	case "purge":
 		errFatal(c.updateSeeds())
 		errFatal(c.purge())
