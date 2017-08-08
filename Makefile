@@ -28,7 +28,7 @@ $(CMD): vendor
 
 check: gofmt lint
 test:
-	$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
+	@$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
 
 clean:
 	@cd _build

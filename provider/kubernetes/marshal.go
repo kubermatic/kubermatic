@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/sha1"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
@@ -76,13 +78,23 @@ func NamespaceName(cluster string) string {
 
 // LabelUser encodes an arbitrary user string into a Kubernetes label value
 // compatible value. This is never decoded again. It shall be without
-// collisions, i.e. no hash.
+// collisions, i.e. no hash. This is a one-way-function!
+// When the user is to long it will be hashed.
+// This is done for backwards compatibility!
 func LabelUser(user string) string {
 	if user == "" {
 		return user
 	}
-	user64 := base64.URLEncoding.EncodeToString([]byte(user))
-	return strings.TrimRight(user64, "=")
+	b := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(user))
+	if len(b) <= 63 {
+		return b
+	}
+
+	// New method!
+	// We can use a weak hash because we trust the authority, which generates the name.
+	sh := sha1.New()
+	fmt.Fprint(sh, user)
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(sh.Sum(nil))
 }
 
 func cloudProviderAnnotationPrefix(name string) string {
