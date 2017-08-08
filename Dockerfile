@@ -6,7 +6,6 @@ RUN apk add -U ca-certificates && rm -rf /var/cache/apk/*
 
 RUN mkdir -p /_artifacts/
 
-ADD addon-charts /
 ADD template /
 
 ADD ./_build/kubermatic-api /
