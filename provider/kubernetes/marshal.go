@@ -101,7 +101,7 @@ func LabelUser(user string) string {
 	// set of our domain is smaller than our codomain.
 	// It's trivial to see that we can't reverse this due to the fact that our function is not injective. q.e.d
 	sh := sha1.New()
-	fmt.Fprint(sh, name)
+	fmt.Fprint(sh, user)
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(sh.Sum(nil))
 }
 
