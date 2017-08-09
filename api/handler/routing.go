@@ -119,6 +119,16 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.deleteNodeHandler()))
 
 	mux.
+		Methods("GET").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
+		Handler(r.authenticator.IsAuthenticated(r.getPossibleClusterUpgrades()))
+
+	mux.
+		Methods("PUT").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
+		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrage()))
+
+	mux.
 		Methods("POST").
 		Path("/api/v1/ext/{dc}/keys").
 		Handler(r.authenticator.IsAuthenticated(r.getAWSKeyHandler()))
@@ -132,10 +142,12 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods("GET").
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.listSSHKeys()))
+
 	mux.
 		Methods("POST").
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.createSSHKey()))
+
 	mux.
 		Methods("DELETE").
 		Path("/api/v1/ssh-keys/{meta_name}").
@@ -298,4 +310,23 @@ func (r Routing) deleteNodeHandler() http.Handler {
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
+}
+
+func (r Routing) createAddonHandler() http.Handler {
+	return httptransport.NewServer(
+		createAddonEndpoint(r.kubernetesProviders, r.cloudProviders),
+		decodeCreateAddonRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+	)
+}
+
+// getPossibleClusterUpgrades returns a list of possible cluster upgrades
+func (r Routing) getPossibleClusterUpgrades() http.Handler {
+	return nil
+}
+
+// performClusterUpgrage starts a cluster upgrade to a specific version
+func (r Routing) performClusterUpgrage() http.Handler {
+	return nil
 }
