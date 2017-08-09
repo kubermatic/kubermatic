@@ -1,4 +1,7 @@
 def pipeline = new io.kubermatic.pipeline()
+def getCommitMessage() {
+  return sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
+}
 goBuildNode(pipeline){
 
          def goPath = "/go/src/github.com/kubermatic"
@@ -38,9 +41,6 @@ goBuildNode(pipeline){
             pipeline.dockerBuild("docker", "${env.DOCKER_TAG} dev" )
             pipeline.deploy("docker", "dev", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
             pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
-        }
-        def getCommitMessage() {
-          return (String) sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
         }
 
 	if (getCommitMessage().startsWith("!e2e")) {
