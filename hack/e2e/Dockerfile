@@ -1,6 +1,6 @@
 # TODO(realfake): Strip this nonsense
 FROM gcr.io/google-containers/kubekins-test:latest
-MAINTAINER Luk Burchard <luk@loodse.com>
+LABEL maintainer "luk@loodse.com"
 
 ADD "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz" \
  "https://raw.githubusercontent.com/kubernetes/kubernetes/master/hack/e2e.go" \
