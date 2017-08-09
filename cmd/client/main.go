@@ -378,8 +378,7 @@ func getToken() {
 		panic(err)
 	}
 	// Check for errors
-	errorString := "Invalid username and password"
-	if strings.Contains(string(data), errorString) {
+	if strings.Contains(string(data), "Invalid username and password") {
 		panic("Wrong passowrd")
 	}
 
