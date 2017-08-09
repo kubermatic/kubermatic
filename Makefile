@@ -69,10 +69,10 @@ endif
 
 client-up:
 	mkdir -p $(CURDIR)/_artifacts
-	docker run -v $(CURDIR)/_artifacts/:/_artifacts -it $(REPO):latestbuild ./client up
+	docker run -v $(CURDIR)/_artifacts/:/_artifacts -it $(REPO):latestbuild /client up
 
 client-down:
-	docker run -it $(REPO):latestbuild ./client purge
+	docker run -it $(REPO):latestbuild /client purge
 
 gittag:
 	@echo $(GITTAG)
