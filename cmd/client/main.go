@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	timeSleep  = time.Second * 5
-	hostname   = "dev.kubermatic.io"
-	outputPath = "/_artifacts/"
+	instanceCount = 2
+	timeSleep     = time.Second * 5
+	hostname      = "dev.kubermatic.io"
+	outputPath    = "/_artifacts/"
 )
 const (
 	password    = "password"
@@ -88,7 +89,7 @@ type nodeRequest struct {
 
 func newNodeRequest(cl api.Cluster) *nodeRequest {
 	return &nodeRequest{
-		Instances: 1,
+		Instances: instanceCount,
 		Spec: api.NodeSpec{
 			DatacenterName: cl.Spec.Cloud.DatacenterName,
 		},
@@ -102,7 +103,7 @@ func (n *nodeRequest) applyDO(cl api.Cluster) {
 }
 
 // createNodes creates nodes
-func (c *client) createNodes(nodeCount int, cluster api.Cluster) error {
+func (c *client) createNodes(cluster api.Cluster) error {
 	n := newNodeRequest(cluster)
 	n.applyDO(cluster)
 	return c.smartDo(fmt.Sprintf("/dc/%s/cluster/%s/node", cluster.Seed, cluster.Metadata.Name), n, nil)
@@ -152,7 +153,7 @@ func (c *client) deleteCluster(cluster api.Cluster) error {
 }
 
 // up is the main entry point for the up method
-func (c *client) up(nodes int) error {
+func (c *client) up() error {
 	key := newSSHKey()
 	err := c.createSSHKey(key)
 	if err != nil {
@@ -161,7 +162,7 @@ func (c *client) up(nodes int) error {
 
 	// Create cluster:
 	// This creates the cluster, NS, and cloud provider
-	log.Printf("Creating %d nodes", nodes)
+	log.Printf("Creating %d nodes", instanceCount)
 
 	request := newClusterRequest()
 	request.SSHKeys = []string{key.Metadata.Name}
@@ -182,7 +183,7 @@ func (c *client) up(nodes int) error {
 
 	// Create Nodes:
 	// This is creating N nodes
-	if err = c.createNodes(nodes, cluster); err != nil {
+	if err = c.createNodes(cluster); err != nil {
 		log.Println(err)
 		return err
 	}
@@ -418,7 +419,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "up":
-		errFatal(c.up(2))
+		errFatal(c.up())
 		errFatal(c.writeKubeConfig())
 	case "purge":
 		errFatal(c.updateSeeds())
