@@ -1,4 +1,4 @@
-# TODO(realfake): Strip this nonsense
+# TODO(realfake): Reduce container size and make it slimmer, the size of over 6.3gb which is normally not acceptable.
 FROM gcr.io/google-containers/kubekins-test:latest
 LABEL maintainer "luk@loodse.com"
 
