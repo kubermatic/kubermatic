@@ -116,7 +116,6 @@ make test
 ```
 #### E2E-tests
 ```bash
-make client-up   #automatically creates a user and downloads the kubeconfig into _artifacts
 make e2e         #run the e2e container (needs _artifacts/kubeconfig)
 make client-down #deletes all clusters from the given user
 ```
