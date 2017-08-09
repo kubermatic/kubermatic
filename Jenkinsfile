@@ -39,4 +39,12 @@ goBuildNode(pipeline){
             pipeline.deploy("docker", "dev", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
             pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
         }
+	
+	if (env.BRANCH_NAME == "develop") {
+          stage('Build go'){
+            container('docker') {
+              sh("make e2e")
+            }
+          }
+	}
 }
