@@ -46,110 +46,133 @@ func NewRouting(
 // Register registers all known endpoints in the given router.
 func (r Routing) Register(mux *mux.Router) {
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/").
 		HandlerFunc(StatusOK)
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(StatusOK)
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc").
 		Handler(r.authenticator.IsAuthenticated(r.datacentersHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}").
 		Handler(r.authenticator.IsAuthenticated(r.datacenterHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.newClusterHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.newClusterHandlerV2()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.clustersHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.authenticator.IsAuthenticated(r.clusterHandler()))
 
 	mux.
-		Methods("PUT").
+		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/cloud").
 		Handler(r.authenticator.IsAuthenticated(r.setCloudHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.authenticator.IsAuthenticated(r.kubeconfigHandler()))
 
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteClusterHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
+<<<<<<< HEAD:api/handler/routing.go
 		Methods("POST").
+=======
+		Methods(http.MethodGet).
+		Path("/api/v2/dc/{dc}/cluster/{cluster}/node").
+		Handler(r.authenticator.IsAuthenticated(r.nodesHandlerV2()))
+
+	mux.
+		Methods(http.MethodPost).
+>>>>>>> refactor: removed string representation of HTTP:handler/routing.go
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
 
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteNodeHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.authenticator.IsAuthenticated(r.getPossibleClusterUpgrades()))
 
 	mux.
-		Methods("PUT").
+		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
 		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrage()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/ext/{dc}/keys").
 		Handler(r.authenticator.IsAuthenticated(r.getAWSKeyHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
+<<<<<<< HEAD:api/handler/routing.go
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
+=======
+		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodesHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
+		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodeInfoHandler()))
+
+	mux.
+		Methods(http.MethodPost).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
+		Handler(r.authenticator.IsAuthenticated(r.createAddonHandler()))
+>>>>>>> refactor: removed string representation of HTTP:handler/routing.go
+
+	mux.
+		Methods(http.MethodGet).
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.listSSHKeys()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.createSSHKey()))
 
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteSSHKey()))
 }
