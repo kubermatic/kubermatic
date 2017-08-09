@@ -8,8 +8,8 @@ RUN mkdir -p /_artifacts/
 
 ADD template /opt/
 
-ADD ./_build/kubermatic-api /opt/
-ADD ./_build/kubermatic-cluster-controller /opt/
-ADD ./_build/client /opt/
+ADD ./_build/kubermatic-api /
+ADD ./_build/kubermatic-cluster-controller /
+ADD ./_build/client /
 
 WORKDIR /opt/
