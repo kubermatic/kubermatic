@@ -45,7 +45,7 @@ func NormalizeUser(name string) string {
 
 	// This is the new way.
 	// We can use a weak hash because we trust the authority, which generates the name.
-	// This will always yield a string which makes the user identifyable and is less than 63 chars
+	// This will always yield a string which makes the user identifiable and is less than 63 chars
 	// due to the usage of a hash function.
 	// Potentially we could have collisions, but this is not avoidable, due to the fact that the
 	// set of our domain is smaller than our codomain.
