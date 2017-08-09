@@ -28,10 +28,11 @@ const (
 	outputPath    = "/_artifacts/"
 )
 const (
+	authBaseURL = "https://auth.int.kubermatic.io/"
 	password    = "password"
 	username    = "demo1@cluster"
 	clientID    = "kubermatic"
-	redirectURI = "http://localhost:8000/login"
+	redirectURI = "https://int.kubermatic.io/login"
 )
 
 var jwtToken = ""
@@ -327,7 +328,6 @@ func errFatal(err error) {
 // TODO: Close Body!
 func getToken() {
 	cl := &http.Client{}
-	authBaseURL := "https://auth.int.kubermatic.io/"
 	nonce := uuid.ShortUID(20)
 
 	/*
