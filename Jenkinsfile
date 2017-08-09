@@ -40,7 +40,7 @@ goBuildNode(pipeline){
             pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
         }
         def getCommitMessage() {
-          return String(sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim())
+          return (String) sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
         }
 
 	if (getCommitMessage().startsWith("!e2e")) {
