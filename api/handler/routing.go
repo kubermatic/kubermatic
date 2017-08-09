@@ -347,7 +347,7 @@ func (r Routing) createAddonHandler() http.Handler {
 // getPossibleClusterUpgrades returns a list of possible cluster upgrades
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		getClusterUpgrades(r.kubernetesProviders, r.cloudProviders),
+		getClusterUpgrades(r.kubernetesProviders),
 		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -357,7 +357,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 // performClusterUpgrage starts a cluster upgrade to a specific version
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		performClusterUpgrade(r.kubernetesProviders, r.cloudProviders),
+		performClusterUpgrade(r.kubernetesProviders),
 		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
