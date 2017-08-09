@@ -11,6 +11,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/kubernetes/util"
 	"k8s.io/client-go/pkg/api/v1"
 )
 
@@ -74,15 +75,9 @@ func NamespaceName(cluster string) string {
 	return fmt.Sprintf("%s-%s", namePrefix, cluster)
 }
 
-// LabelUser encodes an arbitrary user string into a Kubernetes label value
-// compatible value. This is never decoded again. It shall be without
-// collisions, i.e. no hash.
+// LabelUser returns the encoded user.
 func LabelUser(user string) string {
-	if user == "" {
-		return user
-	}
-	user64 := base64.URLEncoding.EncodeToString([]byte(user))
-	return strings.TrimRight(user64, "=")
+	return util.UserToLabel(user)
 }
 
 func cloudProviderAnnotationPrefix(name string) string {

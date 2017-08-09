@@ -1,10 +1,10 @@
 package extensions
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/api/provider/kubernetes/util"
 	"github.com/kubermatic/api/uuid"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,9 +29,9 @@ func NormalizeFingerprint(f string) string {
 	return strings.NewReplacer(":", "").Replace(f)
 }
 
-// NormalizeUser base64 encodes a user to store him in labels
+// NormalizeUser returns the encoded user.
 func NormalizeUser(name string) string {
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(name))
+	return util.UserToLabel(name)
 }
 
 // GenerateNormalizedFigerprint a normalized fingerprint from a public key

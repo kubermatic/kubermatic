@@ -115,6 +115,11 @@ make fix
 ```bash
 make test
 ```
+#### E2E-tests
+```bash
+make e2e         #run the e2e container (needs _artifacts/kubeconfig)
+make client-down #deletes all clusters from the given user
+```
 
 ## CI/CD
 Currently: [Wercker](https://app.wercker.com/Kubermatic/api) - Which uses the `wercker.yaml` & does a build on every push. 
