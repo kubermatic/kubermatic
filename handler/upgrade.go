@@ -20,7 +20,10 @@ func getClusterUpgrades(
 	kps map[string]provider.KubernetesProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(upgradeReq)
+		req, ok := request.(upgradeReq)
+		if !ok {
+			return nil, NewWrongRequest(req, upgradeReq{})
+		}
 
 		kp, found := kps[req.dc]
 		if !found {
