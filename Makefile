@@ -19,8 +19,6 @@ default: all
 
 all: check test build
 
-build: GOFLAGS := $(GOFLAGS) GOOS=linux CGO_ENABLED=0
-build: GOBUILDFLAGS := $(GOBUILDFLAGS) -ldflags "-s" -a -installsuffix cgo
 build: $(CMD)
 
 $(CMD): vendor
