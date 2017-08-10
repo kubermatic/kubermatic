@@ -49,6 +49,5 @@ make client-down #deletes all clusters from the given user
 When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 
 # Documentation
-- [Apiserver public port](docs/apiserver-port-range.md)
 - [AWS Account Creation](docs/aws-account-creation.md)
 - [Load Script Usage](docs/load-script-usage.md)
