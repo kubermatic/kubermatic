@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/version"
 	"github.com/kubermatic/api/provider"
 )
 
@@ -18,6 +17,7 @@ type upgradeReq struct {
 
 func getClusterUpgrades(
 	kps map[string]provider.KubernetesProvider,
+	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(upgradeReq)
@@ -38,16 +38,10 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
-		vs, err := version.LoadVersions("")
-		if err != nil {
-			return nil, err
-		}
-
 		possibleUpdates := make([]*api.MasterVersion, 0)
-
 		current := c.Spec.MasterVersion
 
-		for _, v := range vs {
+		for _, v := range versions {
 			if v.ID > current {
 				possibleUpdates = append(possibleUpdates, v)
 			}
@@ -59,6 +53,7 @@ func getClusterUpgrades(
 
 func performClusterUpgrade(
 	kps map[string]provider.KubernetesProvider,
+	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return nil, errors.New("Not implemented")

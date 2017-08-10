@@ -8,8 +8,14 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+<<<<<<< HEAD:api/handler/routing.go
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
+=======
+	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/provider"
+>>>>>>> refactoring:handler/routing.go
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -21,6 +27,8 @@ type Routing struct {
 	logger              log.Logger
 	masterTPRClient     extensions.Clientset
 	authenticator       Authenticator
+	versions            map[string]*api.MasterVersion
+	updates             []api.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
@@ -31,6 +39,8 @@ func NewRouting(
 	cps map[string]provider.CloudProvider,
 	authenticator Authenticator,
 	masterTPRClient extensions.Clientset,
+	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 ) Routing {
 	return Routing{
 		ctx:                 ctx,
@@ -40,6 +50,8 @@ func NewRouting(
 		logger:              log.NewLogfmtLogger(os.Stderr),
 		masterTPRClient:     masterTPRClient,
 		authenticator:       authenticator,
+		versions:            versions,
+		updates:             updates,
 	}
 }
 
@@ -347,7 +359,7 @@ func (r Routing) createAddonHandler() http.Handler {
 // getPossibleClusterUpgrades returns a list of possible cluster upgrades
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		getClusterUpgrades(r.kubernetesProviders),
+		getClusterUpgrades(r.kubernetesProviders, r.versions),
 		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -357,7 +369,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 // performClusterUpgrage starts a cluster upgrade to a specific version
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		performClusterUpgrade(r.kubernetesProviders),
+		performClusterUpgrade(r.kubernetesProviders, r.updates),
 		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
