@@ -30,6 +30,8 @@ var (
 	address          = flag.String("address", ":8080", "The address to listen on")
 	masterKubeconfig = flag.String("master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
 	tokenIssuer      = flag.String("token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	versionsFile     = flag.String("versions", "versions.yaml", "The versions.yaml file path")
+	updatesFile      = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	clientID         = flag.String("client-id", "", "OpenID client ID")
 )
 
@@ -71,7 +73,9 @@ func main() {
 
 	// start server
 	ctx := context.Background()
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient)
+	_ = *versionsFile
+	_ = *updatesFile
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, nil, nil)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
