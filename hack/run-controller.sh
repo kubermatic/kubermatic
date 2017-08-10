@@ -6,11 +6,13 @@ set -o pipefail
 
 
 cd ${GOPATH}/src/github.com/kubermatic/api
-./kubermatic-cluster-controller \
-  --datacenters=${GOPATH}/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
-  --kubeconfig=${GOPATH}/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  --worker-name="$(uname -n | tr -cd '[:alnum:]')" \
-  --logtostderr=1 \
-  --master-resources=${GOPATH}/src/github.com/kubermatic/config/kubermatic/static/master \
-  --v=4 \
-  --external-url=dev.kubermatic.io
+./_build/kubermatic-cluster-controller \
+  -datacenters=../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -versions=../config/kubermatic/static/master/versions.yaml \
+  -updates=../config/kubermatic/static/master/updates.yaml \
+  -master-resources=../secrets/kubermatic/static/master \
+  -worker-name="$(uname -n | tr -cd '[:alnum:]')" \
+  -external-url=dev.kubermatic.io \
+  -logtostderr=1 \
+  -v=6

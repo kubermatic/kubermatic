@@ -11,9 +11,9 @@ GOFLAGS=
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
-HAS_GOMETALINTER:= $(shell command -v gometalinter;)
-HAS_GLIDE:= $(shell command -v glide;)
-HAS_GIT:= $(shell command -v git;)
+HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
+HAS_DEP:= $(shell command -v dep 2> /dev/null)
+HAS_GIT:= $(shell command -v git 2> /dev/null)
 
 default: all
 
@@ -25,7 +25,7 @@ $(CMD): vendor
 	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
 
 check: gofmt lint
-test:
+test: vendor
 	@$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
 
 clean:
@@ -54,15 +54,15 @@ vendor:
 ifndef HAS_GIT
 	$(error You must install git)
 endif
-	glide install --strip-vendor
+	dep ensure
 
-bootstrap: vendor
+bootstrap:
 ifndef HAS_GOMETALINTER
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 endif
-ifndef HAS_GLIDE
-	go get -u github.com/Masterminds/glide
+ifndef HAS_DEP
+	go get -u github.com/golang/dep/cmd/dep
 endif
 
 client-up:
@@ -78,7 +78,7 @@ gittag:
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
-fix:
+fix: 
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
