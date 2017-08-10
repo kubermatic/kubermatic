@@ -11,9 +11,9 @@ GOFLAGS=
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
-HAS_GOMETALINTER:= $(shell command -v gometalinter;)
-HAS_DEP:= $(shell command -v dep;)
-HAS_GIT:= $(shell command -v git;)
+HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
+HAS_DEP:= $(shell command -v dep 2> /dev/null)
+HAS_GIT:= $(shell command -v git 2> /dev/null)
 
 default: all
 
@@ -56,7 +56,7 @@ ifndef HAS_GIT
 endif
 	dep ensure
 
-bootstrap: vendor
+bootstrap:
 ifndef HAS_GOMETALINTER
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
