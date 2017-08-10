@@ -54,7 +54,7 @@ vendor:
 ifndef HAS_GIT
 	$(error You must install git)
 endif
-	glide install --strip-vendor
+	dep ensure
 
 bootstrap: vendor
 ifndef HAS_GOMETALINTER
@@ -62,7 +62,7 @@ ifndef HAS_GOMETALINTER
 	gometalinter --install
 endif
 ifndef HAS_GLIDE
-	go get -u github.com/Masterminds/glide
+	go get -u github.com/golang/dep/cmd/dep
 endif
 
 client-up:

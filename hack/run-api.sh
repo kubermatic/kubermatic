@@ -7,12 +7,12 @@ set -o pipefail
 
 cd ${GOPATH}/src/github.com/kubermatic/api
 ./_build/kubermatic-api \                                                                          
+  --master-kubeconfig=${GOPATH}/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
+  --datacenters=${GOPATH}/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --kubeconfig=${GOPATH}/src/github.com/kubermatic/config/seed-clusters/dev.kubermatic.io/kubeconfig \
   --worker-name="$(uname -n | tr -cd '[:alnum:]')" \
-  --kubeconfig=${GOPATH}/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  --datacenters=${GOPATH}/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  --token-issuer=http://auth.int.kubermatic.io \
+  --address=127.0.0.1:8080 \
+  --client-id=kubermatic \
   --logtostderr \
-  --v=8 \
-  --token-issuer=https://kubermatic.eu.auth0.com/ \
-  --client-id=xHLUljMUUEFP95wmlODWexe1rvOXuyTT \
-  --address=127.0.0.1:8080 \                 
-  --master-kubeconfig=${GOPATH}/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig
+  --v=8

@@ -1,0 +1,35 @@
+versions:
+- name: 1.6.6
+  id: 1.6.6
+  default: false
+  allowedNodeVersions: [1.4.0]
+  etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
+  etcdClusterYaml: etcd-cluster.yaml
+  apiserverDeploymentYaml: apiserver-dep.yaml
+  controllerDeploymentYaml: controller-manager-dep.yaml
+  schedulerDeploymentYaml: scheduler-dep.yaml
+  kubeMachineDeploymentYaml: kube-machine-dep.yaml
+  addonManagerDeploymentYaml: addon-manager-dep.yaml
+  values:
+    k8s-version: v1.6.6
+    etcd-operator-version: v0.2.4fix
+    etcd-cluster-version: 3.1.5
+    kube-machine-version: latest
+    addon-manager-version: v1.6.0
+- name: 1.6.7
+  id: 1.6.7
+  default: true
+  allowedNodeVersions: [1.4.0]
+  etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
+  etcdClusterYaml: etcd-cluster.yaml
+  apiserverDeploymentYaml: apiserver-dep.yaml
+  controllerDeploymentYaml: controller-manager-dep.yaml
+  schedulerDeploymentYaml: scheduler-dep.yaml
+  kubeMachineDeploymentYaml: kube-machine-dep.yaml
+  addonManagerDeploymentYaml: addon-manager-dep.yaml
+  values:
+    k8s-version: v1.6.7
+    etcd-operator-version: v0.2.4fix
+    etcd-cluster-version: 3.1.5
+    kube-machine-version: latest
+    addon-manager-version: v1.6.0
