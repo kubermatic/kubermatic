@@ -11,6 +11,7 @@ goBuildNode(pipeline){
          stage('Install deps'){
              container('golang') {
                 sh("cd ${goImportPath} && make bootstrap")
+                sh("cd ${goImportPath} && make vendor")
              }
          }
          stage('Check'){

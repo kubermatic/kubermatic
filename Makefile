@@ -25,7 +25,7 @@ $(CMD): vendor
 	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/api/cmd/$@
 
 check: gofmt lint
-test:
+test: vendor
 	@$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
 
 clean:
@@ -78,7 +78,7 @@ gittag:
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
-fix:
+fix: 
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
