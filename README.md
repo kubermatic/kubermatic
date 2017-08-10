@@ -1,5 +1,5 @@
 # Kubermatic API
-[Jenkins](https://jenkins.loodse.com)
+[Jenkins](https://jenkins.loodse.com/blue/pipelines)
 
 ## Development environment
 Copy the bootstrap script and execute it [bootstrap.sh](hack/bootstrap.sh)
