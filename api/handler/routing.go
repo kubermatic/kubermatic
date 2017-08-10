@@ -27,8 +27,8 @@ type Routing struct {
 	logger              log.Logger
 	masterTPRClient     extensions.Clientset
 	authenticator       Authenticator
-	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
+	versions            map[string]*api.MasterVersion
 }
 
 // NewRouting creates a new Routing.
