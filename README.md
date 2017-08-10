@@ -1,6 +1,8 @@
 # Kubermatic API
 [Jenkins](https://jenkins.loodse.com/blue/pipelines)
 
+---
+
 ## Development environment
 Copy the bootstrap script and execute it [bootstrap.sh](hack/bootstrap.sh)
 
@@ -22,9 +24,6 @@ glide update --strip-vendor
 ```bash
 ./hack/run-controller.sh
 ```
-
-Valid worker-name label value must be 63 characters or less and must be empty or begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alphanumerics between.
-The dev label should be also unique between a pair of api<->controller.
 
 ### Run linters
 Before every push, make sure you run:
