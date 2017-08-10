@@ -4,7 +4,7 @@
 ---
 
 ## Development environment
-Copy the bootstrap script and execute it [bootstrap.sh](hack/bootstrap.sh)
+To setup your enviroment clock [here](docs/setup.md).
 
 ### Dependencies
 #### Update dependencies
