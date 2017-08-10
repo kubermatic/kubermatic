@@ -14,8 +14,6 @@ pushd template/coreos &&
 ln -s $GOPATH/src/github.com/kubermatic/config/kubermatic/static/nodes/coreos/cloud-init.yaml cloud-init.yaml &&
 popd
 
-# Install linters
-go get -u github.com/Masterminds/glide
 # Install the dependencies
 make bootstrap
 ````
