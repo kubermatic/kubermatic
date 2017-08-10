@@ -12,7 +12,7 @@ TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 HAS_GOMETALINTER:= $(shell command -v gometalinter;)
-HAS_GLIDE:= $(shell command -v glide;)
+HAS_DEP:= $(shell command -v dep;)
 HAS_GIT:= $(shell command -v git;)
 
 default: all
@@ -61,7 +61,7 @@ ifndef HAS_GOMETALINTER
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 endif
-ifndef HAS_GLIDE
+ifndef HAS_DEP
 	go get -u github.com/golang/dep/cmd/dep
 endif
 
