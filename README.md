@@ -15,12 +15,12 @@ glide update --strip-vendor
 #### kubermatic-api
 
 ```bash
-	./hack/run-api.sh
+./hack/run-api.sh
 ```
 
 #### kubermatic-cluster-controller
 ```bash
-	./hack/run-controller.sh
+./hack/run-controller.sh
 ```
 
 Valid worker-name label value must be 63 characters or less and must be empty or begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), dots (.), and alphanumerics between.
@@ -46,9 +46,8 @@ Locally run:
 ```bash
 make e2e         #run the e2e container (needs _artifacts/kubeconfig)
 make client-down #deletes all clusters from the given user
-
-When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 ```
+When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 
 #Documentation
 
