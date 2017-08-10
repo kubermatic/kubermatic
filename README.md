@@ -1,4 +1,5 @@
 # Kubermatic API
+[Jenkins](https://jenkins.loodse.com)
 
 ## Development environment
 Copy the bootstrap script and execute it [bootstrap.sh](hack/bootstrap.sh)
@@ -41,16 +42,13 @@ make fix
 make test
 ```
 #### E2E-tests
+Locally run:
 ```bash
 make e2e         #run the e2e container (needs _artifacts/kubeconfig)
 make client-down #deletes all clusters from the given user
+
+When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 ```
-
-## CI/CD
-Currently: [Wercker](https://app.wercker.com/Kubermatic/api) - Which uses the `wercker.yaml` & does a build on every push. 
-
-Future: [Jenkins](https://jenkins.loodse.com) which uses the `Jenkinsfile` & also does a build on every push.
-
 
 #Documentation
 
