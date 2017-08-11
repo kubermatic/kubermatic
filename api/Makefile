@@ -17,7 +17,7 @@ HAS_GIT:= $(shell command -v git 2> /dev/null)
 
 default: all
 
-all: check test build
+all: check test cover build
 
 build: $(CMD)
 
@@ -96,5 +96,8 @@ lint:
 	misspell -error -locale US $$GOFILES ;\
 	}
 
-.PHONY: build test check e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)
+cover:
+	./hack/cover.sh
+
+.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)
 
