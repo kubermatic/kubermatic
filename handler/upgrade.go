@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"sort"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -43,17 +44,18 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
-		possibleUpdates := make([]*version.Version, 0)
+		possibleUpdates := make(version.Collection, 0)
 		for _, ver := range versions {
 			v, err := version.NewVersion(ver.ID)
 			if err != nil {
 				continue
 			}
 
-			if current.GreaterThan(v) {
+			if current.LessThan(v) {
 				possibleUpdates = append(possibleUpdates, v)
 			}
 		}
+		sort.Sort(possibleUpdates)
 		return possibleUpdates, nil
 	}
 }

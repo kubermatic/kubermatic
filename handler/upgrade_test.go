@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 
 	version "github.com/hashicorp/go-version"
@@ -111,6 +112,34 @@ func generateClusterUpgradeReq(cluster, dc, user string) upgradeReq {
 	}
 }
 
+func generateMasterVersions(versions []string) map[string]*api.MasterVersion {
+	vs := make(map[string]*api.MasterVersion)
+
+	for _, v := range versions {
+		vs[v] = &api.MasterVersion{
+			Name: v,
+			ID:   v,
+		}
+	}
+
+	return vs
+}
+
+func generateSemVerSlice(versions []string) version.Collection {
+	vs := make(version.Collection, 0)
+
+	for _, v := range versions {
+		ver, err := version.NewVersion(v)
+		if err != nil {
+			continue
+		}
+		vs = append(vs, ver)
+	}
+
+	sort.Sort(vs)
+	return vs
+}
+
 func Test_getClusterUpgrades(t *testing.T) {
 	type want struct {
 		val interface{}
@@ -190,7 +219,43 @@ func Test_getClusterUpgrades(t *testing.T) {
 						ctx:  context.Background(),
 						req:  generateClusterUpgradeReq("234jkh24234g", "base", "anom"),
 						want: want{
-							val: []*version.Version{},
+							val: version.Collection{},
+							err: nil,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "upgradable",
+			args: args{
+				kps:      generateBaseKubernetesProvider(),
+				versions: generateMasterVersions([]string{"1.6.0", "1.7.0"}),
+				args: []endpointArgs{
+					{
+						name: "no request",
+						ctx:  context.Background(),
+						req:  nil,
+						want: want{
+							val: nil,
+							err: NewWrongRequest(nil, upgradeReq{}),
+						},
+					},
+					{
+						name: "wrong request",
+						ctx:  context.Background(),
+						req:  "blah",
+						want: want{
+							val: nil,
+							err: NewWrongRequest("blah", upgradeReq{}),
+						},
+					},
+					{
+						name: "base request - empty response",
+						ctx:  context.Background(),
+						req:  generateClusterUpgradeReq("234jkh24234g", "base", "anom"),
+						want: want{
+							val: generateSemVerSlice([]string{"1.6.0", "1.7.0"}),
 							err: nil,
 						},
 					},
