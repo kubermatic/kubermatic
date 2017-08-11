@@ -40,6 +40,7 @@ func NewKubernetesFakeProvider(
 				},
 				Spec: api.ClusterSpec{
 					HumanReadableName: "sttts",
+					MasterVersion:     "0.0.1",
 					Cloud: &api.CloudSpec{
 						DatacenterName: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
