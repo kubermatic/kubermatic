@@ -50,3 +50,8 @@ func NewConflict(kind, dc, name string) error {
 func NewNotAuthorized() error {
 	return HTTPError{http.StatusForbidden, "not authorized"}
 }
+
+// NewNotImplemented creates a HTTP 501 'not implemented' error.
+func NewNotImplemented() error {
+	return HTTPError{http.StatusNotImplemented, "not implemented"}
+}
