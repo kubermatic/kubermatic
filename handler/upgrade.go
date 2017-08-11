@@ -6,6 +6,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-kit/kit/endpoint"
+	version "github.com/hashicorp/go-version"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 )
@@ -37,15 +38,22 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
-		possibleUpdates := make([]*api.MasterVersion, 0)
-		current := c.Spec.MasterVersion
+		current, err := version.NewVersion(c.Spec.MasterVersion)
+		if err != nil {
+			return nil, err
+		}
 
-		for _, v := range versions {
-			if v.ID > current {
+		possibleUpdates := make([]*version.Version, 0)
+		for _, ver := range versions {
+			v, err := version.NewVersion(ver.ID)
+			if err != nil {
+				continue
+			}
+
+			if current.GreaterThan(v) {
 				possibleUpdates = append(possibleUpdates, v)
 			}
 		}
-
 		return possibleUpdates, nil
 	}
 }

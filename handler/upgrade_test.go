@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	version "github.com/hashicorp/go-version"
 	"github.com/kubermatic/api"
 	"github.com/kubermatic/api/provider"
 	"github.com/kubermatic/api/provider/kubernetes"
@@ -94,18 +95,18 @@ func generateBaseKubernetesProvider() map[string]provider.KubernetesProvider {
 	}
 }
 
-func generateClusterUpgradeReq() upgradeReq {
+func generateClusterUpgradeReq(cluster, dc, user string) upgradeReq {
 	return upgradeReq{
 		clusterReq: clusterReq{
 			dcReq: dcReq{
-				dc: "base",
+				dc: dc,
 				userReq: userReq{
 					user: provider.User{
-						Name: "",
+						Name: user,
 					},
 				},
 			},
-			cluster: "234jkh24234g",
+			cluster: cluster,
 		},
 	}
 }
@@ -187,9 +188,9 @@ func Test_getClusterUpgrades(t *testing.T) {
 					{
 						name: "base request - empty response",
 						ctx:  context.Background(),
-						req:  generateClusterUpgradeReq(),
+						req:  generateClusterUpgradeReq("234jkh24234g", "base", "anom"),
 						want: want{
-							val: []*api.MasterVersion{},
+							val: []*version.Version{},
 							err: nil,
 						},
 					},
