@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -22,7 +21,7 @@ func getClusterUpgrades(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(upgradeReq)
 		if !ok {
-			return nil, NewWrongRequest(req, upgradeReq{})
+			return nil, NewWrongRequest(request, upgradeReq{})
 		}
 
 		kp, found := kps[req.dc]
@@ -56,6 +55,6 @@ func performClusterUpgrade(
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return nil, errors.New("Not implemented")
+		return nil, NewNotImplemented()
 	}
 }
