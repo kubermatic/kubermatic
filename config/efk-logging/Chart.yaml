@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A EFK stack for logging in kubernetes
+name: efk-logging
+version: 0.1.0

@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: addon-manager
+spec:
+  selector:
+    matchLabels:
+      role: addon-manager
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: addon-manager
+        release: {{index .Version.Values "addon-manager-version"}}
+        version: v1
+    spec:
+      containers:
+      - name: addon-manager
+        image: kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
+        imagePullPolicy: Always
+        env:
+        - name: KUBECTL_OPTS
+          value: "--server=http://apiserver:8080"

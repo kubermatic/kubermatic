@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: apiserver
+  annotations:
+    kubernetes.io/ingress.class: "k8sniff"
+spec:
+  backend:
+    serviceName: apiserver
+    servicePort: secure
+  rules:
+  - host: {{ .Cluster.Address.ExternalName }}
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: apiserver
+          servicePort: secure

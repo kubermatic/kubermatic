@@ -1,0 +1,10 @@
+##### Kubermatic k8sniff
+### Docker Hub Secret
+DockercfgSecret: ""
+
+IsBareMetal: false
+K8sniffImageTag: "latest"
+ApiserverExternalPort: "8443"
+
+### Not valid on bare-metal due to daemonset
+K8SniffReplicaCount: "2"

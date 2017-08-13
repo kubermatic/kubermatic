@@ -1,0 +1,95 @@
+podTemplate(label: 'addon-manager', containers: [
+    containerTemplate(name: 'docker', image: 'kubermatic/docker:1.11', ttyEnabled: true, command: 'cat')
+  ],
+    volumes: [hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')]
+  )
+  {
+    node ('addon-manager') {
+        try {
+            notifyBuild('STARTED')
+
+            stage('setup workdir'){
+                container('docker') {
+                    checkout scm
+                }
+            }
+            // Setting source code related global variable once so it can be reused.
+            def gitCommit = getRevision()
+            env.GIT_SHA = gitCommit
+            env.GIT_COMMIT = gitCommit.take(7)
+            env.GIT_TAG = getTag()
+            env.DOCKER_TAG = env.BRANCH_NAME.replaceAll("/","_")
+
+            if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  "") {
+                dockerTags = "${env.GIT_TAG} latest"
+                deployTag  = "${env.GIT_TAG}"
+                stageSystem = "prod"
+            } else if (env.BRANCH_NAME == "develop") {
+                dockerTags = "${env.DOCKER_TAG} staging"
+                deployTag  = "${env.DOCKER_TAG}"
+                stageSystem = "staging"
+            } else {
+                dockerTags = "${env.DOCKER_TAG} dev"
+                deployTag  = "${env.DOCKER_TAG}"
+                stageSystem = "dev"
+            }
+            buildPipeline(dockerTags,deployTag, stageSystem)
+        } catch (e) {
+           // If there was an exception thrown, the build failed
+           currentBuild.result = "FAILED"
+           throw e
+         } finally {
+           // Success or failure, always send notifications
+           notifyBuild(currentBuild.result)
+         }
+    }
+}
+
+def buildPipeline(dockerTags, deployTag, stageSystem) {
+
+    stage('Build docker image'){
+        container('docker') {
+            sh("make TAGS='${dockerTags}' docker-build")
+        }
+    }
+    stage('Push'){
+        container('docker') {
+            withCredentials([usernamePassword(credentialsId: 'docker',
+                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                sh("docker login --username=$USERNAME --password=$PASSWORD")
+                sh("make TAGS='${dockerTags}' docker-push")
+            }
+        }
+    }
+}
+
+// Finds the revision from the source code.
+def getRevision() {
+  // Code needs to be checked out for this.
+  return sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
+}
+
+def getTag() {
+  return sh(returnStdout: true, script: 'git describe 2> /dev/null || exit 0').trim()
+}
+
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+  // Default values
+  def colorName = 'RED'
+  def colorCode = '#FF0000'
+  def msg = "${buildStatus}: ${env.BUILD_URL}display/redirect"
+
+  // Override default values based on build status
+  if (buildStatus == 'STARTED') {
+    color = 'YELLOW'
+    colorCode = '#FFFF00'
+  } else if (buildStatus == 'SUCCESSFUL') {
+    color = 'GREEN'
+    colorCode = '#00FF00'
+  }
+  // Send notifications
+  slackSend (color: colorCode, message: msg)
+}

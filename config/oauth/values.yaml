@@ -1,0 +1,12 @@
+##### Kubermatic oauth
+### Docker Hub Secret
+DockercfgSecret: "" 
+
+# Dex image tag from quay.io
+DexImageTag: v2.4.1
+
+OAuth:
+  StaticClients:
+    - dummy: dummy
+  StaticPassword:
+    - dummy: dummy

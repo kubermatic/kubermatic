@@ -1,0 +1,26 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kube-flannel-cfg
+  namespace: kube-system
+  labels:
+    tier: node
+    app: flannel
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+data:
+  cni-conf.json: |
+    {
+      "name": "cbr0",
+      "type": "flannel",
+      "delegate": {
+        "isDefaultGateway": true
+      }
+    }
+  net-conf.json: |
+    {
+      "Network": "172.25.0.0/16",
+      "Backend": {
+        "Type": "vxlan"
+      }
+    }

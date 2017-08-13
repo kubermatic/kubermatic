@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coreos-ipxe-server-configmap
+  namespace: coreos-ipxe-server
+data:
+  dataDirectory: "/opt/coreos-ipxe-server"
+  baseURL: "ipxe.{{ .Values.KubermaticURL | trim }}:4777"
+  listenAddress: "0.0.0.0:4777"
+  defaultProfile: "worker"

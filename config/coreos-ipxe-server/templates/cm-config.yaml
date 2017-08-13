@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coreos-ipxe-server-cloud-configs
+  namespace: coreos-ipxe-server
+data:
+  worker.yml: |
+    #cloud-config
+
+    ssh_authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDrZ3hBmMD8aFYVOIhQbDVJrploG7Od68JJPMuiRHDf2c5STK9/mfZ/P7v0uBVX+Tcemc0qkUJ68GtTPrB4s10Adu+7R5xdhFMUr0xuRvtJZ9znw7hJz6jAYzUVHKloTtT5xh+CE8jJhOLoiErl8bAaWpuQAvs9TGRYIFsVTFfj1y5j9tpddU5so1TlAcla4MpSCodKjSjgTENUm5KShIDXQKTjOIa6DIFLACvhTjGsyolaxrh3UhHUPbFz5BVf+2NOMERqLxIjviGxV5x12kkUcnK9hgbfq9FopgNuDFgonppsnGrcSopAkRHJWwCrnZJn13c/kPFlkO9wouUydlGl susman@lenovo"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC496PqMk7zZuQKXpzcgl3g92LNZMcgEgkfnj4BNoa2CRs5f4wrHMt1Ii78CgY3Ziqw4y191v6IJ3Fby2gT26YWIaK6qSF35sXmjyG/MH+Iu96wIn7JcjlnTkizofGE7zOkRmEtMYcyOVbgnwEH4UNj1W1aalton5JCAqz8kFpKE7sp/2NpxZMqgO68NaqYSd0nDXdwM9HX1grWVF88lBXEJ5YSF03sEpnsOyw0QHhXHyNwHOpfL/wCG0/8OWel1dcXOeQKVVp5V045er0AyIFJVwHSTQCnfyKYCf5i0cLci4+61iSS1hBSl2qBqz6z6mdLy8O7XSP9kPoyQarnQguFO+DHOG8IyTP/Kk3PC/+yR8xGfhFxqM8fGdSdrRwpIgjGH0/7or1vbbUvp52evRMZIdT1YfndahRxafo0iZ36o+VgX1W5oWiZ8Bws/zrV2PCqrmuEbFYSpLati3XvxRQG+Om5p7dzdXx1mb86wqyNe4xpZ2gVInaUYINnwcUmLiaOtCHh4tE/RBMqjcRY7i75gl29H8nbDFwWHGLTULix1W+1FH0XyPiL831XdECYSlw8h+kJW/fYtlynTgeYSLSrIA0atEblf1ui0BPnd8imFX7h8mlUhPgxpfxasI+EQj+m4xjeJUalHTvFuE1wqls8A7A6+J8HP/Ol9cOlDFxexw== henrik@loodse.com"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDW04m3m7o9iwMnSrsIP2WPT5zbPTIDfBguAEmz+Q+p7xWJpAOu8KhbPm0m19yhOy3LxFXYgzqBsbpdXQJGOrU5ZjEGU+Y0Ij0PXwoC6wHCXZLGNAgAqTtHiW8J2MH3YLXv9pgGae5EzyafvXo2YNjxaR1AkWN6x2qkfnHYUMuWAzQ+bRyUK/ATPfrKcjHojY9OmL6HrGaCfkB5NJh67W7fYXBypSpymOX3bM464+6akU4jYsNU+T1gebq6YsrR2DFGlNo8Ua0E/XIAs6sk3XjNSYZDzwOmrA0/IQZokWQa4NRrDz1ySMSsCmS1WJxRPiew1tU2n+v+26FjdilfKfdBYUC0aq0xKwkIOs+uGBE/v12LGdDFqa7+ebJP7hF1oPHTlwKZ9GD0bkDQcT/AN4DoLN1CRgUUZk8TYqEYMGstliTOMqFp9KNg5BkNmGLS8i7t/NZFhe0Jg13AM6CobXgCvzlzDWg0Gll6TAE5r4a5H8+1HkLkGEy2NhzuaIHbzxCuS5mwfpzdzvUNhN3+kQXo/rvE3Kmj1sSVBxHktlq5kyMUsB9jf9DWtGulaHUFfQhH/V0tmK2EB6qaoSDSu6fqARlYbh2M5QHbObeVJATicTjvPBLGG9w6EkdwlqphLLljACLP43MQkOZPv/7duoLnedUCiwXJw/xpiEcJRjHeTw== jason@loodse.com"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDhtMw2eqE8vNitm9XZ6TAE5dL+pk3rLRA/39Pko0RRB1h6isevlAbG560t9vwAu7w3F59O0zbmbnN/0C0qcaz1sxZfdAPGCUESppYsxL2t7lhoaCCoK5pHXB8Iv3e8wPyuuugfXP0tS4oXI72tnmj9SJYCF3lxh02HLl2v0RsRto0Ojsx7anP98IcVsZWoRk3Xfh0UIoup2bwZ8F1DCtNrshu5pYr1zRklM7ANIrqzjHYjVwu/GGTkuUccEoiU8833hIHSd74Itdvk7p5iHeLRhu02rFLxCtG5BUiagpxg3ErvYMFrjQHO2wLggSRbKtqdWCSeAPV9Rf4GFSLtsBaXfUqb2PimAIPqXfMucEmUDWumWSbyZDPjZ+p7fLEI+BLsnT9NyFHjLqToUmYDz+a/8j8wt6iFC08/5z2SPu/71kEJlOYBgOW8KxhCotw1S07qnlvfdc4BXViXxeu9iYwVlv/257LQvmKzyfVqwMTouHw+jbNDOrFz+ozBs8frKYwXDuWDwzPyBDzkrloU8WUso1Mgiw/4vGCNx5x5yk7oAfzGjYlh3Dyvw/2SulpMuxoYnRkIlVVW6QYueFS4v+be/Ch6HkxBuqNZ2M8Z8X2GODaHIfAIlfWc8+xJNceAcSKou8Vda/LCSwHITl15TL0iKoWvlIutuXKOQ4gST81YQw== luk.burchard@gmail.com"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDRPD+jFtDSjuoMc/Wh8gxJ34y6PCaePyeDnDF4lTrJDc1riej9rGmYPdwzirqn3il+v3Lt802HTfbhuzELqcgad6gnisjpPa0xffwZPhulQLYPZp6FQ18FPvQBSDGy8VU3OUWr1AcntTQ0BUvAmYFoKrsjRPeix/LrvSAgOY+dDmgHus4vb37WmqyH23izUNYxMrYcmG3RM0Qnog2C2JGWd8w2pN6huB1CXN8ab06amRuBfYbwabSofxyxmgEpm1jBYkhKEwSM302z7lWxKgu3FXaUeg/o954NYv69vW/vf9+KRPI3iM0uXrmHg5zjtgd1uifTUVBZ044FL9HjiQdv Sebastian@macbook.fritz.box"
+
+    coreos:
+      units:
+        - name: docker.service
+          command: start
+          enable: true
+
+        - name: cni-plugin-download.service
+          command: start
+          content: |
+            [Unit]
+            Description=Container Networking Interface (CNI) plugin downloader
+
+            [Service]
+            Type=oneshot
+            RemainAfterExit=yes
+            ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
+            ExecStart=/bin/bash -c "/usr/bin/curl -L -o /tmp/cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/v0.5.0/cni-amd64-v0.5.0.tgz && tar -xvf /tmp/cni-amd64.tgz -C /opt/cni/bin/"
+
+            [Install]
+            WantedBy=multi-user.target
+
+        - name: kubelet-nanny.service
+          command: start
+          enable: true
+          content: |
+            [Unit]
+            Description=Kubermatic Kubelet Nanny
+
+            [Service]
+            Restart=always
+            RestartSec=10
+            Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin"
+            ExecStartPre=/usr/bin/mkdir -p /opt/bin
+            ExecStartPre=/usr/bin/curl -L -o /opt/bin/kubelet-nanny https://storage.googleapis.com/kubelet-nanny/kubelet-nanny
+            ExecStartPre=/usr/bin/chmod +x /opt/bin/kubelet-nanny
+            ExecStart=/opt/bin/kubelet-nanny --v=8 --logtostderr --provider-auth-user={{ .Values.BareMetalAuthUser | quote }} --provider-auth-password={{ .Values.BareMetalAuthPassword | quote }} --provider-url=http://{{ .Values.BareMetalProviderURL | quote }}
+
+            [Install]
+            WantedBy=multi-user.target
+    users:
+      - name: apiserver

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager
+  namespace: prometheus
+data:
+  alertmanager.yml: |-
+    global:
+      slack_api_url: {{ .Values.SlackApiUrl | trim | quote }}
+    route:
+      receiver: 'default-receiver'
+      group_by: ['alertname', 'cluster']
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+      routes:
+      - receiver: 'page'
+        match:
+          severity: page
+      - receiver: 'notify'
+        match_re:
+          severity: notify|page
+    receivers:
+{{ toYaml .Values.PrometheusReceiver | indent 4 }}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coreos-ipxe-server-profiles
+  namespace: coreos-ipxe-server
+data:
+  worker.json: |
+    {
+      "cloud_config": "worker",
+      "version": "stable"
+    }

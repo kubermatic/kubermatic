@@ -1,0 +1,80 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apiserver
+spec:
+  selector:
+    matchLabels:
+      role: apiserver
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: apiserver
+        release: {{index .Version.Values "k8s-version"}}
+        version: v1
+      annotations:
+        prometheus.io/port: '8080'
+        prometheus.io/scrape: 'true'
+    spec:
+      containers:
+      - name: apiserver
+        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        command: [ "/hyperkube", "apiserver",
+            "--advertise-address={{ .AdvertiseAddress }}",
+            "--secure-port={{ .Cluster.Address.ExternalPort }}",
+            "--kubernetes-service-external-name={{ .Cluster.Address.ExternalName }}",
+            "--apiserver-service-port={{ .Cluster.Address.ExternalPort }}",
+            "--insecure-bind-address=0.0.0.0",
+            "--insecure-port=8080",
+            "--external-hostname=apiserver",
+            "--etcd-servers=http://etcd-cluster-client:2379",
+            "--storage-backend=etcd3",
+            "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
+            "--authorization-mode=AlwaysAllow,RBAC",
+            "--anonymous-auth=false",
+            "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
+            "--experimental-bootstrap-token-auth=true",
+            "--service-account-key-file=/var/run/kubernetes/apiserver/service-account.key",
+            "--service-cluster-ip-range=10.10.10.0/24",
+            "--service-node-port-range=30000-32767",
+            "--allow-privileged",
+            "--tls-cert-file=/var/run/kubernetes/apiserver/apiserver.crt",
+            "--tls-private-key-file=/var/run/kubernetes/apiserver/apiserver.key",
+            "--client-ca-file=/var/run/kubernetes/apiserver/root-ca.crt",
+            "--kubelet-client-certificate=/var/run/kubernetes/apiserver/kubelet-client.crt",
+            "--kubelet-client-key=/var/run/kubernetes/apiserver/kubelet-client.key",
+            {{ if eq .CloudProvider "aws" }}
+            "--kubelet-preferred-address-types=ExternalDNS,Hostname,InternalDNS,InternalIP,ExternalIP,LegacyHostIP",
+            {{ else }}
+            "--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP,LegacyHostIP",
+            {{ end }}
+            "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
+            "--ssh-user=apiserver",
+            "--v=4" ]
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+        ports:
+        - containerPort: {{ .Cluster.Address.ExternalPort }}
+        - containerPort: 8080
+        volumeMounts:
+        - name: apiserver
+          mountPath: /var/run/kubernetes/apiserver
+          readOnly: true
+        - name: token-users
+          mountPath: /var/run/kubernetes/token-users
+          readOnly: true
+      volumes:
+      - name: apiserver
+        secret:
+          secretName: apiserver
+          defaultMode: 0400
+      - name: token-users
+        secret:
+          secretName: token-users
+          defaultMode: 0400

@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: dex
+  name: dex
+  namespace: oauth
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dex
+    spec:
+      serviceAccountName: dex
+      containers:
+      - image: quay.io/coreos/dex:{{ .Values.DexImageTag }}
+        name: dex
+        command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+        ports:
+        - name: https
+          containerPort: 5556
+        volumeMounts:
+        - name: config
+          mountPath: /etc/dex/cfg
+        - name: themes
+          mountPath: /web/themes/coreos
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - name: config
+        configMap:
+          name: dex
+          items:
+          - key: config.yaml
+            path: config.yaml
+      - name: themes
+        secret:
+          secretName: themes

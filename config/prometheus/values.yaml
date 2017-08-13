@@ -1,0 +1,4 @@
+##### Kubermatic Prometheus
+PrometheusAuth: ""
+SlackApiUrl: ""
+PrometheusReceiver: dummy

@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      name: alertmanager
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: quay.io/prometheus/alertmanager:v0.7.1
+        args:
+          - '-config.file=/etc/alertmanager/alertmanager.yml'
+          - '-web.external-url=https://alerting.{{ .Values.KubermaticURL | trim }}'
+        ports:
+        - name: web
+          containerPort: 9093
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/alertmanager
+      volumes:
+      - name: config-volume
+        configMap:
+          name: alertmanager
