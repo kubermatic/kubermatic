@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	tplPath = "template/nodeclasses/digitalocean.yaml"
+	tplPath = "/opt/template/nodes/digitalocean.yaml"
 )
 
 type digitalocean struct {

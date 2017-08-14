@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	tplPath = "template/nodeclasses/openstack.yaml"
+	tplPath = "/opt/template/nodes/openstack.yaml"
 
 	usernameAnnotationKey       = "username"
 	passwordAnnotationKey       = "password"
