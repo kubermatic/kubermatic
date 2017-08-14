@@ -49,8 +49,15 @@ func main() {
 	}
 
 	// load versions
-	versions, err := version.LoadVersions(*versionsFile)
-	if err != nil {
+	versions := make(map[string]*api.MasterVersion)
+	if *versionsFile != "" {
+
+		var err error
+		versions, err = version.LoadVersions(*updatesFile)
+		if err != nil {
+			glog.Fatal(fmt.Sprintf("failed to load updates yaml %q: %v", *updatesFile, err))
+		}
+
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
