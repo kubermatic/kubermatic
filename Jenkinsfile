@@ -3,10 +3,10 @@ def getCommitMessage() {
   return sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
 }
 goBuildNode(pipeline){
-
          def goPath = "/go/src/github.com/kubermatic"
+         def goScmImportPath = "/go/src/github.com/kubermatic/kubermatic"
          def goImportPath = "/go/src/github.com/kubermatic/kubermatic/api"
-         pipeline.setup ("golang", goPath, goImportPath)
+         pipeline.setup ("golang", goPath, goScmImportPath)
          pipeline.setupENV()
          stage('Install deps'){
              container('golang') {
@@ -47,8 +47,8 @@ goBuildNode(pipeline){
 	if (getCommitMessage().startsWith("!e2e")) {
           stage('E2E'){
             container('docker') {
-              sh("make e2e")
-              sh("make client-down")
+              sh("cd ${goImportPath} && make e2e")
+              sh("cd ${goImportPath} && make client-down")
             }
           }
 	}
