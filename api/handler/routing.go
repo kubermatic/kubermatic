@@ -369,7 +369,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 // performClusterUpgrage starts a cluster upgrade to a specific version
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		performClusterUpgrade(r.kubernetesProviders, r.updates),
+		performClusterUpgrade(r.kubernetesProviders, r.versions),
 		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

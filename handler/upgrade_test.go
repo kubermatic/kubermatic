@@ -26,9 +26,9 @@ func Test_performClusterUpgrade(t *testing.T) {
 	}
 
 	type args struct {
-		kps     map[string]provider.KubernetesProvider
-		updates []api.MasterUpdate
-		args    []endpointArgs
+		kps      map[string]provider.KubernetesProvider
+		versions map[string]*api.MasterVersion
+		args     []endpointArgs
 	}
 
 	tests := []struct {
@@ -38,8 +38,8 @@ func Test_performClusterUpgrade(t *testing.T) {
 		{
 			name: "no config",
 			args: args{
-				kps:     nil,
-				updates: nil,
+				kps:      nil,
+				versions: nil,
 				args: []endpointArgs{
 					{
 						name: "no request",
@@ -65,8 +65,8 @@ func Test_performClusterUpgrade(t *testing.T) {
 		{
 			name: "base config",
 			args: args{
-				kps:     generateBaseKubernetesProvider(),
-				updates: generateMasterUpdates([]string{}),
+				kps:      generateBaseKubernetesProvider(),
+				versions: generateMasterVersions([]string{"1.6.0", "1.7.0"}),
 				args: []endpointArgs{
 					{
 						name: "no request",
@@ -102,7 +102,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := performClusterUpgrade(tt.args.kps, tt.args.updates)
+			fn := performClusterUpgrade(tt.args.kps, tt.args.versions)
 			for _, ttE := range tt.args.args {
 				t.Run(ttE.name, func(t *testing.T) {
 					got, err := fn(ttE.ctx, ttE.req)

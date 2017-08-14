@@ -79,7 +79,7 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func performClusterUpgrade(
 	kps map[string]provider.KubernetesProvider,
-	updates []api.MasterUpdate,
+	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(upgradeReq)
@@ -100,7 +100,13 @@ func performClusterUpgrade(
 			return nil, err
 		}
 
-		_, _ = version.NewVersion(c.Spec.MasterVersion)
+		_, ok = versions[req.to]
+		if !ok {
+			return nil, NewUnknownVersion(req.to)
+		}
+
+		c.Spec.MasterVersion = req.to
+		c.Status.Phase = api.UpdatingMasterClusterStatusPhase
 
 		return nil, nil
 	}
