@@ -7,7 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/provider/cloud/bringyourown"
 	"github.com/kubermatic/kubermatic/api/provider/cloud/digitalocean"
 	"github.com/kubermatic/kubermatic/api/provider/cloud/fake"
-	"github.com/kubermatic/api/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/provider/cloud/openstack"
 )
 
 // Providers returns a map from cloud provider id to the actual provider.

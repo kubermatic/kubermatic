@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/provider"
-	"github.com/kubermatic/api/provider/template"
+	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/extensions"
+	"github.com/kubermatic/kubermatic/api/provider"
+	"github.com/kubermatic/kubermatic/api/provider/template"
 	"time"
 )
 

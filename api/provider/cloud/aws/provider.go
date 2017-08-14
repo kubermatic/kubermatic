@@ -16,8 +16,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/template"
-	ktemplate "github.com/kubermatic/kubermatic/api/template"
-	"github.com/kubermatic/kubermatic/api/uuid"
 )
 
 const (
