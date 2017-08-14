@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: kube-machine
-        image: kubermatic/kube-machine:{{index .Version.Values "kube-machine-version"}}
+        image: kubenode/kube-machine:{{index .Version.Values "kube-machine-version"}}
         imagePullPolicy: Always
         command: [ "/node-controller",
             "--master=http://apiserver:8080",
