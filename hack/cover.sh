@@ -9,7 +9,7 @@
 #     --html      Additionally create HTML report and open it in browser
 #
 
-set -ex
+set -e
 
 workdir=.cover
 profile="$workdir/cover.out"
