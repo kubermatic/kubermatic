@@ -153,10 +153,6 @@ func generateUpgradeReq(to, cluster, dc, user string) upgradeReq {
 	}
 }
 
-func generateMasterUpdates(versions []string) []api.MasterUpdate {
-	return nil
-}
-
 func generateMasterVersions(versions []string) map[string]*api.MasterVersion {
 	vs := make(map[string]*api.MasterVersion)
 
