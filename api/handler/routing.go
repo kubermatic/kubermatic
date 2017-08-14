@@ -360,7 +360,7 @@ func (r Routing) createAddonHandler() http.Handler {
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		getClusterUpgrades(r.kubernetesProviders, r.versions),
-		decodeCreateAddonRequest,
+		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
@@ -370,7 +370,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
 		performClusterUpgrade(r.kubernetesProviders, r.updates),
-		decodeCreateAddonRequest,
+		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)

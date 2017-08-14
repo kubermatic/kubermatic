@@ -47,7 +47,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewNotImplemented(),
+							err: NewWrongRequest(nil, upgradeReq{}),
 						},
 					},
 					{
@@ -56,7 +56,34 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewNotImplemented(),
+							err: NewWrongRequest("blah", upgradeReq{}),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "base config",
+			args: args{
+				kps:     nil,
+				updates: generateMasterUpdates([]string{}),
+				args: []endpointArgs{
+					{
+						name: "no request",
+						ctx:  context.Background(),
+						req:  nil,
+						want: want{
+							val: nil,
+							err: NewWrongRequest(nil, upgradeReq{}),
+						},
+					},
+					{
+						name: "wrong request",
+						ctx:  context.Background(),
+						req:  "blah",
+						want: want{
+							val: nil,
+							err: NewWrongRequest("blah", upgradeReq{}),
 						},
 					},
 				},
@@ -96,20 +123,29 @@ func generateBaseKubernetesProvider() map[string]provider.KubernetesProvider {
 	}
 }
 
-func generateClusterUpgradeReq(cluster, dc, user string) upgradeReq {
-	return upgradeReq{
-		clusterReq: clusterReq{
-			dcReq: dcReq{
-				dc: dc,
-				userReq: userReq{
-					user: provider.User{
-						Name: user,
-					},
+func generateClusterReq(cluster, dc, user string) clusterReq {
+	return clusterReq{
+		dcReq: dcReq{
+			dc: dc,
+			userReq: userReq{
+				user: provider.User{
+					Name: user,
 				},
 			},
-			cluster: cluster,
 		},
+		cluster: cluster,
 	}
+}
+
+func generateUpgradeReq(to, cluster, dc, user string) upgradeReq {
+	return upgradeReq{
+		to:         to,
+		clusterReq: generateClusterReq(cluster, dc, user),
+	}
+}
+
+func generateMasterUpdates(versions []string) []api.MasterUpdate {
+	return nil
 }
 
 func generateMasterVersions(versions []string) map[string]*api.MasterVersion {
@@ -175,7 +211,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, upgradeReq{}),
+							err: NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -184,7 +220,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", upgradeReq{}),
+							err: NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 				},
@@ -202,7 +238,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, upgradeReq{}),
+							err: NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -211,13 +247,13 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", upgradeReq{}),
+							err: NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 					{
 						name: "base request - empty response",
 						ctx:  context.Background(),
-						req:  generateClusterUpgradeReq("234jkh24234g", "base", "anom"),
+						req:  generateClusterReq("234jkh24234g", "base", "anom"),
 						want: want{
 							val: version.Collection{},
 							err: nil,
@@ -238,7 +274,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, upgradeReq{}),
+							err: NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -247,13 +283,13 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", upgradeReq{}),
+							err: NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 					{
 						name: "base request - empty response",
 						ctx:  context.Background(),
-						req:  generateClusterUpgradeReq("234jkh24234g", "base", "anom"),
+						req:  generateClusterReq("234jkh24234g", "base", "anom"),
 						want: want{
 							val: generateSemVerSlice([]string{"1.6.0", "1.7.0"}),
 							err: nil,
