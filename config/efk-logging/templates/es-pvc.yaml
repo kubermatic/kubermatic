@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: es-logging-pvc
+  namespace: kube-system
+  annotations:
+    volume.beta.kubernetes.io/storage-class: generic
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi

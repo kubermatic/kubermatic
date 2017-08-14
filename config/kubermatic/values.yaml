@@ -1,0 +1,53 @@
+##### Kubermatic
+### DockerHub token
+DockercfgSecret: ""
+
+#Should be overwritten by the seed-clusters specific values
+KubermaticURL: ""
+KubermaticDatacenters: ""
+Kubeconfig: ""
+ApiserverExternalPort: "8443"
+
+###
+### IMPORTANT: Every of the following path's must not contain a space!
+###
+### Mount path for master-files Secret
+MasterResourcesMountPath: "/opt/master-files"
+
+### Mount path for kubeconfig Secret
+KubeConfigMountPath: "/opt/.kube"
+
+### Filename of the kubeconfig
+KubeConfigFilename: "config"
+
+### Mount path for datacenters Secret
+DatacentersMountPath: "/opt/datacenter"
+
+### Filename of the datacenters file
+DatacentersFilename: "datacenters.yaml"
+
+### Mount path for kubermatic-controller-config ConfigMap
+KubermaticControllerMountPath: "/etc/kubermatic"
+
+### Mount path for the Addons resources
+AddonResourcesMountPath: "/opt/addon-charts"
+
+### Mount path for datacenter-secrets Secret
+DatacenterSecretsMountPath: "/opt/.datacenter-secrets"
+
+### Filename of the secrets file
+DatacenterSecretsFilename: "secrets.yaml"
+
+### Mount path for kubermatic-api-config ConfigMap
+KubermaticConfigMountPath: "/etc/kubermatic"
+
+### Tag to use for the Kubermatic application images
+KubermaticImageTag: "latest"
+
+### Replica count for kubermatic components
+KubermaticAPIReplicaCount: "2"
+KubermaticUIReplicaCount: "2"
+
+### OpenID connect options
+TokenIssuer: "https://kubermatic.eu.auth0.com/"
+ClientID: "xHLUljMUUEFP95wmlODWexe1rvOXuyTT"

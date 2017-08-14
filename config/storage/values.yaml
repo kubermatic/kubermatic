@@ -1,0 +1,13 @@
+### Bare-Metal
+#StorageProvider: bare-metal
+#StorageURL: http://192.168.0.170:8081
+
+### AWS
+#StorageProvider: aws
+#StorageZone: eu-central-1
+#StorageType: gp2
+
+### GKE
+#StorageProvider: gke
+#StorageZone: us-central1-b
+#StorageType: pd-ssd

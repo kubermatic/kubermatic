@@ -1,0 +1,74 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  selector:
+    matchLabels:
+      role: controller-manager
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: controller-manager
+        release: {{index .Version.Values "k8s-version"}}
+        version: v1
+      annotations:
+        prometheus.io/port: '10252'
+        prometheus.io/scrape: 'true'
+    spec:
+      containers:
+      - name: controller-manager
+        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        command: [
+          "/hyperkube", "controller-manager",
+          "--master=http://apiserver:8080",
+          "--service-account-private-key-file=/var/run/kubernetes/auth/service-account.key",
+          "--root-ca-file=/var/run/kubernetes/auth/root-ca.crt",
+          "--insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap",
+          "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
+          "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
+          "--cluster-cidr=172.25.0.0/16",
+          {{ if eq .CloudProvider "aws" }}
+          "--cloud-provider=aws",
+          "--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
+          {{ end }}
+          "--allocate-node-cidrs=true",
+          "--v=4"
+        ]
+        {{ if eq .CloudProvider "aws" }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10252
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{.Cluster.Spec.Cloud.AWS.AccessKeyID}}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{.Cluster.Spec.Cloud.AWS.SecretAccessKey}}
+        - name: AWS_VPC_ID
+          value: {{.Cluster.Spec.Cloud.AWS.VPCId}}
+        - name: AWS_AVAILABILITY_ZONE
+          value: {{.Cluster.Spec.Cloud.AWS.AvailabilityZone}}
+        {{ end }}
+        volumeMounts:
+        - name: controller-manager
+          mountPath: /var/run/kubernetes/auth
+          readOnly: true
+        {{ if eq .CloudProvider "aws" }}
+        - name: aws-cloud-config
+          mountPath: /etc/kubermatic/aws
+          readOnly: true
+        {{ end }}
+      volumes:
+      - name: controller-manager
+        secret:
+          secretName: controller-manager
+      {{ if eq .CloudProvider "aws" }}
+      - name: aws-cloud-config
+        configMap:
+          name: aws-cloud-config
+      {{ end }}

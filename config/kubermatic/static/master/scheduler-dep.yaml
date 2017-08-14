@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: scheduler
+spec:
+  selector:
+    matchLabels:
+      role: scheduler
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: scheduler
+        release: {{index .Version.Values "k8s-version"}}
+        version: v1
+      annotations:
+        prometheus.io/port: '10251'
+        prometheus.io/scrape: 'true'
+    spec:
+      containers:
+      - name: scheduler
+        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        command: [ "/hyperkube", "scheduler",
+            "--master=http://apiserver:8080",
+            "--v=4"
+        ]
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10251
+          initialDelaySeconds: 15
+          timeoutSeconds: 1

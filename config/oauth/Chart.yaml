@@ -1,0 +1,13 @@
+name: dex
+version: 0.1.0
+description: Dex
+keywords:
+  - k8s
+  - kubermatic
+  - Oauth
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

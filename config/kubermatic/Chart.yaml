@@ -1,0 +1,12 @@
+name: kubermatic
+version: 0.1.0
+description: Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

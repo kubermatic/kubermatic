@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: etcd-operator
+rules:
+- apiGroups: ["etcd.coreos.com"]
+  resources: ["clusters"]
+  verbs: ["*"]
+- apiGroups: ["extensions"]
+  resources: ["thirdpartyresources"]
+  verbs: ["create"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints", "persistentvolumeclaims"]
+  verbs: ["*"]
+- apiGroups: ["extensions"]
+  resources: ["replicasets"]
+  verbs: ["*"]

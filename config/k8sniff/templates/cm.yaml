@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8sniff-configmap
+  namespace: k8sniff
+data:
+  k8sniff.json: |
+    {
+      "bind": {
+        "host": "0.0.0.0",
+        "port": 8443
+      },
+      "kubernetes": {},
+      "metrics": {
+        "host": "0.0.0.0",
+        "path": "/metrics",
+        "port": 8081
+      }
+    }

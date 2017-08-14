@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: ingress
+rules:
+- apiGroups: ["", "extensions"]
+  resources: ["configmaps", "secrets", "services", "endpoints", "ingresses", "nodes", "pods"]
+  verbs: ["list", "watch", "get"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["events", "services"]
+  verbs: ["create", "list", "update", "get"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses/status", "ingresses"]
+  verbs: ["update"]

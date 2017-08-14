@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: prometheus
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: "nginx"
+    # type of authentication
+    ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    ingress.kubernetes.io/auth-secret: basic-auth
+    # message to display with an appropiate context why the authentication is required
+    ingress.kubernetes.io/auth-realm: "Authentication Required"    
+spec:
+  tls:
+  - hosts:
+    - prometheus.{{ .Values.KubermaticURL | trim }}
+    secretName: prometheus-tls-secret
+  backend:
+    serviceName: prometheus
+    servicePort: 9090
+  rules:
+  - host: prometheus.{{ .Values.KubermaticURL | trim }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: prometheus
+          servicePort: 9090

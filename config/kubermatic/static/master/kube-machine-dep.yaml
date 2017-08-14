@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: node-controller
+spec:
+  selector:
+    matchLabels:
+      role: node-controller
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: node-controller
+        release: {{index .Version.Values "kube-machine-version"}}
+        version: v1
+    spec:
+      containers:
+      - name: kube-machine
+        image: kubermatic/kube-machine:{{index .Version.Values "kube-machine-version"}}
+        imagePullPolicy: Always
+        command: [ "/node-controller",
+            "--master=http://apiserver:8080",
+            "--v=4",
+            "--logtostderr",
+        ]

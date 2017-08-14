@@ -1,0 +1,193 @@
+datacenters:
+#==================================
+#===============Seed===============
+#==================================
+  us-central1: #Master
+    location: US-Central
+    country: US
+    provider: Loodse
+    spec:
+      bringyourown:
+        region: US
+      seed:
+        bringyourown:
+#==================================
+#===========Digitalocean===========
+#==================================
+  do-ams2:
+    location: Amsterdam
+    country: NL
+    spec:
+      digitalocean:
+        region: ams2
+  do-nyc1:
+    location: New York
+    country: US
+    spec:
+      digitalocean:
+        region: nyc1
+  do-sfo1:
+    location: San Francisco
+    country: US
+    spec:
+      digitalocean:
+        region: sfo1
+  do-sgp1:
+    location: Singapore
+    country: SG
+    spec:
+      digitalocean:
+        region: sgp1
+  do-lon1:
+    location: London
+    country: GB
+    spec:
+      digitalocean:
+        region: lon1
+  do-fra1:
+    location: Frankfurt
+    country: DE
+    spec:
+      digitalocean:
+        region: fra1
+  do-tor1:
+    location: Toronto
+    country: CA
+    spec:
+      digitalocean:
+        region: tor1
+  do-blr1:
+    location: Bangalore
+    country: IN
+    spec:
+      digitalocean:
+        region: blr1
+#==================================
+#===============AWS================
+#==================================
+  aws-us-east-1a:
+    location: US East (N. Virginia)
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-f56181e3
+        region: us-east-1
+        zone: us-east-1a
+  aws-us-east-2a:
+    location: US East (Ohio)
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-3e6f4a5b
+        region: us-east-2
+        zone: us-east-2a
+  aws-us-west-1b:
+    location: US West (N. California)
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-4a2f7c2a
+        region: us-west-1
+        zone: us-west-1b
+  aws-us-west-2a:
+    location: US West (Oregon)
+    country: US
+    provider: aws
+    spec:
+      aws:
+        ami: ami-345fed54
+        region: us-west-2
+        zone: us-west-2a
+  aws-ca-central-1a:
+    location: Canada (Central)
+    country: CA
+    provider: aws
+    spec:
+      aws:
+        ami: ami-180bb97c
+        region: ca-central-1
+        zone: ca-central-1a
+  aws-eu-west-1a:
+    location: EU (Ireland)
+    country: IE
+    provider: aws
+    spec:
+      aws:
+        ami: ami-157e5566
+        region: eu-west-1
+        zone: eu-west-1a
+  aws-eu-central-1a:
+    location: EU (Frankfurt)
+    country: DE
+    provider: aws
+    spec:
+      aws:
+        ami: ami-076da068
+        region: eu-central-1
+        zone: eu-central-1a
+  aws-eu-west-2a:
+    location: EU (London)
+    country: GB
+    provider: aws
+    spec:
+      aws:
+        ami: ami-838e84e7
+        region: eu-west-2
+        zone: eu-west-2a
+  aws-ap-northeast-1a:
+    location: Asia Pacific (Tokyo)
+    country: JP
+    provider: aws
+    spec:
+      aws:
+        ami: ami-29334e4e
+        region: ap-northeast-1
+        zone: ap-northeast-1a
+  aws-ap-northeast-2a:
+    location: Asia Pacific (Seoul)
+    country: KR
+    provider: aws
+    spec:
+      aws:
+        ami: ami-3a63b554
+        region: ap-northeast-2
+        zone: ap-northeast-2a
+  aws-ap-southeast-1a:
+    location: Asia Pacific (Singapore)
+    country: SG
+    provider: aws
+    spec:
+      aws:
+        ami: ami-67f35804
+        region: ap-southeast-1
+        zone: ap-southeast-1a
+  aws-ap-southeast-2a:
+    location: Asia Pacific (Sydney)
+    country: AU
+    provider: aws
+    spec:
+      aws:
+        ami: ami-62a4a101
+        region: ap-southeast-2
+        zone: ap-southeast-2a
+  aws-ap-south-1a:
+    location: Asia Pacific (Mumbai)
+    country: AU
+    provider: aws
+    spec:
+      aws:
+        ami: ami-9ea7d1f1
+        region: ap-south-1
+        zone: ap-south-1a
+  aws-sa-east-1a:
+    location: South America (São Paulo)
+    country: BR
+    provider: aws
+    spec:
+      aws:
+        ami: ami-e3b8228f
+        region: sa-east-1
+        zone: sa-east-1a

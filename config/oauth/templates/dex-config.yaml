@@ -1,0 +1,47 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dex
+  namespace: oauth
+data:
+  config.yaml: |
+    issuer: http://auth.{{ .Values.KubermaticURL | trim }}
+    oauth2:
+      responseTypes:
+        - code
+        - token
+        - id_token
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    web:
+      http: 0.0.0.0:5556
+      # tlsCert: /etc/dex/tls/tls.crt
+      # tlsKey: /etc/dex/tls/tls.key
+    connectors:
+    # oauth2:
+    #   skipApprovalScreen: true
+{{ toYaml .Values.OAuth.Connectors | indent 7 }}
+{{ if .Values.OAuth.StaticClients }}
+    staticClients:
+    {{- range $key, $val := .Values.OAuth.StaticClients }}
+    - id: {{$val.id}}
+      name: {{$val.name}}
+      secret: {{$val.secret}}
+      redirectURIs:
+      {{- range $val.redirectURIs }}
+      - {{ . | quote }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+    enablePasswordDB: true
+{{ if .Values.OAuth.StaticPassword }}
+    staticPasswords:
+    {{- range $key, $val := .Values.OAuth.StaticPassword }}
+    - email: {{$val.Email| quote}}
+      hash: {{$val.Hash| quote}}
+      username: {{$val.Username| quote}}
+      userID: {{$val.UserID | quote}}
+    {{- end }}
+{{- end }}

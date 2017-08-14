@@ -1,13 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
-/kubermatic-api
-/kubermatic-cluster-controller
 .env
 .idea
 *.iml*
-.kubeconfig
-secrets.yaml
-template/coreos
-vendor
 !handler/fixtures/*
-_build/*
-_artifacts/*

@@ -1,0 +1,70 @@
+workspace:
+  base: /go
+  path: src/github.com/kubermatic/kubermatic/bare-metal-provider
+
+pipeline:
+  sftp_cache_restore:
+    server: 10.50.0.10:22
+    image: plugins/sftp-cache
+    path: /home/drone-sftp-cache/cache
+    restore: true
+    mount:
+      - glide-home
+
+  install_dependencies:
+    image: golang:1.8
+    commands:
+      - mkdir -p glide-home
+      - go get -u github.com/Masterminds/glide
+      - glide --home glide-home/ install --strip-vendor
+
+  sftp_cache_save:
+    server: 10.50.0.10:22
+    image: plugins/sftp-cache
+    path: /home/drone-sftp-cache/cache
+    rebuild: true
+    mount:
+      - glide-home
+
+  remove_glide:
+    image: golang:1.8
+    commands:
+      - rm -rf glide-home
+
+  build:
+    image: golang:1.8
+    commands:
+      - CGO_ENABLED=0 GOBUILD="go build" make build
+
+  lint:
+    image: golang:1.8
+    commands:
+      - go get github.com/alecthomas/gometalinter
+      - gometalinter --install
+      - make check
+
+  test:
+    image: golang:1.8
+    commands:
+      - make test
+
+  push_always:
+    image: plugins/docker
+    repo: kubermatic/bare-metal-provider
+    tags:
+      - dev
+      - ${DRONE_COMMIT_SHA}
+
+  push_latest:
+    image: plugins/docker
+    repo: kubermatic/bare-metal-provider
+    tags: latest
+    when:
+      branch: master
+
+  push_tagged_version:
+    image: plugins/docker
+    repo: kubermatic/bare-metal-provider
+    tags: ${DRONE_TAG##v}
+    when:
+      event: tag
