@@ -27,7 +27,6 @@ type Routing struct {
 	logger              log.Logger
 	masterTPRClient     extensions.Clientset
 	authenticator       Authenticator
-	updates             []api.MasterUpdate
 	versions            map[string]*api.MasterVersion
 }
 
@@ -40,7 +39,6 @@ func NewRouting(
 	authenticator Authenticator,
 	masterTPRClient extensions.Clientset,
 	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
 ) Routing {
 	return Routing{
 		ctx:                 ctx,
@@ -51,7 +49,6 @@ func NewRouting(
 		masterTPRClient:     masterTPRClient,
 		authenticator:       authenticator,
 		versions:            versions,
-		updates:             updates,
 	}
 }
 

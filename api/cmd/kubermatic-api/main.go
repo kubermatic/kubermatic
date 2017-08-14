@@ -10,11 +10,21 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+<<<<<<< HEAD:api/cmd/kubermatic-api/main.go
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/handler"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
+=======
+	"github.com/kubermatic/api"
+	"github.com/kubermatic/api/controller/version"
+	"github.com/kubermatic/api/extensions"
+	"github.com/kubermatic/api/handler"
+	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/api/provider/cloud"
+	"github.com/kubermatic/api/provider/kubernetes"
+>>>>>>> no need for the update file:cmd/kubermatic-api/main.go
 
 	"github.com/kubermatic/kubermatic/api/metrics"
 	"k8s.io/client-go/rest"
@@ -73,9 +83,20 @@ func main() {
 
 	// start server
 	ctx := context.Background()
-	_ = *versionsFile
-	_ = *updatesFile
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, nil, nil)
+
+	// load versions
+	versions := make(map[string]*api.MasterVersion)
+	if *versionsFile != "" {
+		var err error
+		versions, err = version.LoadVersions(*updatesFile)
+		if err != nil {
+			glog.Fatal(fmt.Sprintf("failed to load updates yaml %q: %v", *updatesFile, err))
+		}
+
+		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
+	}
+
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, versions)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
