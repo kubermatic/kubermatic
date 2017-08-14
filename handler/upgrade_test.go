@@ -65,7 +65,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 		{
 			name: "base config",
 			args: args{
-				kps:     nil,
+				kps:     generateBaseKubernetesProvider(),
 				updates: generateMasterUpdates([]string{}),
 				args: []endpointArgs{
 					{
@@ -84,6 +84,15 @@ func Test_performClusterUpgrade(t *testing.T) {
 						want: want{
 							val: nil,
 							err: NewWrongRequest("blah", upgradeReq{}),
+						},
+					},
+					{
+						name: "base request",
+						ctx:  context.Background(),
+						req:  generateUpgradeReq("1.6.0", "234jkh24234g", "base", "anom"),
+						want: want{
+							val: nil,
+							err: nil,
 						},
 					},
 				},

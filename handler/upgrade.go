@@ -102,6 +102,6 @@ func performClusterUpgrade(
 
 		_, _ = version.NewVersion(c.Spec.MasterVersion)
 
-		return nil, NewNotImplemented()
+		return nil, nil
 	}
 }
