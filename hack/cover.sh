@@ -9,7 +9,7 @@
 #     --html      Additionally create HTML report and open it in browser
 #
 
-set -e
+set -ex
 
 workdir=.cover
 profile="$workdir/cover.out"
@@ -29,7 +29,8 @@ generate_cover_data() {
 }
 
 show_cover_report() {
-    go tool cover -${1}="$profile"
+    echo "Generating ${1} report"
+    go tool cover -${1}="$profile" ${2}
 }
 
 generate_cover_data $(go list ./...| grep -v vendor)
@@ -38,7 +39,7 @@ case "$1" in
 "")
     ;;
 --html)
-    show_cover_report html ;;
+    show_cover_report html "-o $workdir/cover.html" ;;
 *)
     echo >&2 "error: invalid option: $1"; exit 1 ;;
 esac
