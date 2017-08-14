@@ -13,14 +13,15 @@ set -e
 
 workdir=.cover
 profile="$workdir/cover.out"
+mode=set
 
 generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
 
     for pkg in "$@"; do
-        go test -coverprofile="$f" "$pkg"
         f="$workdir/$(echo $pkg | tr / -).cover"
+        go test -covermode="$mode" -coverprofile="$f" "$pkg"
     done
 
     echo "mode: $mode" >"$profile"
