@@ -36,6 +36,11 @@ func NewInDcNotFound(kind, dc, name string) error {
 	return HTTPError{http.StatusNotFound, fmt.Sprintf("%s %q in dc %q not found", kind, name, dc)}
 }
 
+// NewUnknownVersion creates a HTTP 404 error for a kind in a datacenter.
+func NewUnknownVersion(version string) error {
+	return HTTPError{http.StatusMethodNotAllowed, fmt.Sprintf("Unknown version '%s'", version)}
+}
+
 // NewBadRequest creates a HTTP 400 error.
 func NewBadRequest(msg string, options ...interface{}) error {
 	return HTTPError{http.StatusBadRequest, fmt.Sprintf(msg, options...)}
