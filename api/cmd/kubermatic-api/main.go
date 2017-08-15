@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 
-	"github.com/kubermatic/kubermatic/metrics"
+	"github.com/kubermatic/kubermatic/api/metrics"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )

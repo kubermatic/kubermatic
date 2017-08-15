@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 
-	"github.com/kubermatic/kubermatic/metrics"
+	"github.com/kubermatic/kubermatic/api/metrics"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
