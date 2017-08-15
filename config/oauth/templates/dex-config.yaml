@@ -5,8 +5,9 @@ metadata:
   namespace: oauth
 data:
   config.yaml: |
-    issuer: http://auth.{{ .Values.KubermaticURL | trim }}
+    issuer: {{ .Values.TokenIssuer | trim }}
     oauth2:
+      skipApprovalScreen: true
       responseTypes:
         - code
         - token
@@ -17,11 +18,7 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
-      # tlsCert: /etc/dex/tls/tls.crt
-      # tlsKey: /etc/dex/tls/tls.key
     connectors:
-    # oauth2:
-    #   skipApprovalScreen: true
 {{ toYaml .Values.OAuth.Connectors | indent 7 }}
 {{ if .Values.OAuth.StaticClients }}
     staticClients:
