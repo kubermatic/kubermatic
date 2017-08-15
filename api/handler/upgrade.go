@@ -10,8 +10,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	version "github.com/hashicorp/go-version"
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/provider"
+	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/provider"
 )
 
 func getClusterUpgrades(

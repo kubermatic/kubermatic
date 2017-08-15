@@ -10,21 +10,13 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-<<<<<<< HEAD:api/cmd/kubermatic-api/main.go
+	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/controller/version"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/handler"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
-=======
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/controller/version"
-	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/handler"
-	"github.com/kubermatic/api/provider"
-	"github.com/kubermatic/api/provider/cloud"
-	"github.com/kubermatic/api/provider/kubernetes"
->>>>>>> no need for the update file:cmd/kubermatic-api/main.go
 
 	"github.com/kubermatic/kubermatic/api/metrics"
 	"k8s.io/client-go/rest"

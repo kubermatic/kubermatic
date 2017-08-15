@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"context"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"

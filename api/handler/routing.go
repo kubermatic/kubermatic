@@ -8,14 +8,9 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-<<<<<<< HEAD:api/handler/routing.go
+	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
-=======
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/extensions"
-	"github.com/kubermatic/api/provider"
->>>>>>> refactoring:handler/routing.go
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -118,16 +113,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
-<<<<<<< HEAD:api/handler/routing.go
 		Methods("POST").
-=======
-		Methods(http.MethodGet).
-		Path("/api/v2/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.authenticator.IsAuthenticated(r.nodesHandlerV2()))
-
-	mux.
-		Methods(http.MethodPost).
->>>>>>> refactor: removed string representation of HTTP:handler/routing.go
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
 
@@ -154,21 +140,7 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-<<<<<<< HEAD:api/handler/routing.go
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
-=======
-		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodesHandler()))
-
-	mux.
-		Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
-		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodeInfoHandler()))
-
-	mux.
-		Methods(http.MethodPost).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
-		Handler(r.authenticator.IsAuthenticated(r.createAddonHandler()))
->>>>>>> refactor: removed string representation of HTTP:handler/routing.go
 
 	mux.
 		Methods(http.MethodGet).
@@ -339,15 +311,6 @@ func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodeReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
-func (r Routing) createAddonHandler() http.Handler {
-	return httptransport.NewServer(
-		createAddonEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)

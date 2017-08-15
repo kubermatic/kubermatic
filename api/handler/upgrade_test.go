@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	version "github.com/hashicorp/go-version"
-	"github.com/kubermatic/api"
-	"github.com/kubermatic/api/provider"
-	"github.com/kubermatic/api/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/provider"
+	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 )
 
 func Test_performClusterUpgrade(t *testing.T) {
