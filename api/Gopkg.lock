@@ -161,6 +161,12 @@
   revision = "ac112f7d75a0714af1bd86ab17749b31f7809640"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  revision = "03c5bf6be031b6dd45afec16b1cf94fc8938bc77"
+
+[[projects]]
   name = "github.com/howeyc/gopass"
   packages = ["."]
   revision = "3ca23474a7c7203e0a0a070fd33508f6efdb9b3d"
