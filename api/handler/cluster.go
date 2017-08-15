@@ -1,18 +1,21 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
-	"context"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func newClusterEndpointV2(
@@ -23,13 +26,17 @@ func newClusterEndpointV2(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(newClusterReqV2)
 
-		if req.Cloud == nil {
+		if req.Cluster == nil {
+			return nil, NewBadRequest("no cluster spec given")
+		}
+
+		if req.Cluster.Cloud == nil {
 			return nil, NewBadRequest("no cloud spec given")
 		}
 
-		dc, found := dcs[req.Cloud.Region]
+		dc, found := dcs[req.Cluster.Cloud.DatacenterName]
 		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.Cloud.Region)
+			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.Cluster.Cloud.DatacenterName)
 		}
 
 		kp, found := kps[dc.Seed]
@@ -41,35 +48,10 @@ func newClusterEndpointV2(
 			return nil, NewBadRequest("please provide at least one key")
 		}
 
-		switch req.Cloud.Name {
-		// Move from implementation use fingerprint / name but not both
-		case provider.AWSCloudProvider:
-			req.Cloud.AWS = &api.AWSCloudSpec{
-				AccessKeyID:     req.Cloud.User,
-				SecretAccessKey: req.Cloud.Secret,
-				// TODO: More keys!
-				SSHKeyName: req.SSHKeys[0],
-			}
-		case provider.DigitaloceanCloudProvider:
-			req.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
-				Token:   req.Cloud.Secret,
-				SSHKeys: req.SSHKeys,
-			}
-		case provider.FakeCloudProvider:
-			req.Cloud.Fake = &api.FakeCloudSpec{
-				Token: req.Cloud.Secret,
-			}
-		case provider.BringYourOwnCloudProvider:
-			req.Cloud.BringYourOwn = &api.BringYourOwnCloudSpec{
-				PrivateIntf: req.Cloud.BringYourOwn.PrivateIntf,
-			}
-		}
-
-		req.Cloud.DatacenterName = req.Cloud.Region
-		c, err := kp.NewClusterWithCloud(req.user, req.Spec, req.Cloud)
+		c, err := kp.NewClusterWithCloud(req.user, req.Cluster)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
-				return nil, NewConflict("cluster", req.Cloud.Region, req.Spec.HumanReadableName)
+				return nil, NewConflict("cluster", req.Cluster.Cloud.DatacenterName, req.Cluster.HumanReadableName)
 			}
 			return nil, err
 		}
@@ -87,7 +69,6 @@ func newClusterEndpointV2(
 					continue
 				}
 				key.Clusters = append(key.Clusters, c.Metadata.Name)
-				// TODO(realfake): This takes a long time look forward to async / batch implementation
 				_, err := sshClient.Update(&key)
 				if err != nil {
 					return nil, err
@@ -116,9 +97,6 @@ func newClusterEndpoint(
 		if !found {
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
-
-		// Hacky shit to to bridge between V1<->V2 endpoint!
-		req.cluster.Spec.Cloud = &api.CloudSpec{Region: req.dc}
 
 		c, err := kp.NewCluster(req.user, &req.cluster.Spec)
 		if err != nil {
@@ -244,29 +222,26 @@ func deleteClusterEndpoint(
 		}
 
 		var deleteErrors []error
-		if cp != nil {
-			// This code requires the valid credentials of the
-			// CloudProvider (eg. AWS, DO, ...) however, when
-			// there is an error the customer cluster laying on
-			// our side does not get deleted properly.
-			// We will save errors and later return them after
-			// the cluster on our side got deleted.
-			nodes, err := cp.Nodes(ctx, c)
+		if cp != nil && c.Status.Phase == api.RunningClusterStatusPhase {
+			c, err := c.GetClient()
 			if err != nil {
-				err = fmt.Errorf("error getting nodes: %v", err)
-				deleteErrors = append(deleteErrors, err)
+				return nil, fmt.Errorf("failed to get cluster client: %v", err)
+			}
+			err = c.Nodes().DeleteCollection(&v1.DeleteOptions{}, v1.ListOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete nodes: %v", err)
 			}
 
-			for _, node := range nodes {
-				err := cp.DeleteNodes(ctx, c, []string{node.Metadata.UID})
+			for {
+				nodes, err := c.Nodes().List(v1.ListOptions{})
 				if err != nil {
-					deleteErrors = append(deleteErrors, err)
+					glog.Errorf("failed to get nodes: %v", err)
+					continue
 				}
-			}
-
-			err = cp.CleanUp(c)
-			if err != nil {
-				deleteErrors = append(deleteErrors, err)
+				if len(nodes.Items) == 0 {
+					break
+				}
+				time.Sleep(NodeDeletionWaitInterval)
 			}
 		}
 
@@ -278,7 +253,6 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		// TODO(realfake): Duplicated code move to function
 		sshClient := masterClientset.SSHKeyTPR(req.user.Name)
 		keys, err := sshClient.List()
 		if err != nil {
@@ -304,28 +278,6 @@ func deleteClusterEndpoint(
 		}
 
 		return nil, err
-	}
-}
-
-func createAddonEndpoint(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createAddonRequest)
-
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		addon, err := kp.CreateAddon(req.user, req.cluster, req.addonName)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return addon, nil
 	}
 }
 
@@ -356,8 +308,7 @@ func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error
 
 type newClusterReqV2 struct {
 	userReq
-	Cloud   *api.CloudSpec   `json:"cloud"`
-	Spec    *api.ClusterSpec `json:"spec"`
+	Cluster *api.ClusterSpec `json:"cluster"`
 	SSHKeys []string         `json:"ssh_keys"`
 }
 
@@ -459,34 +410,6 @@ func decodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 	req.dcReq = dr.(dcReq)
 
 	req.cluster = mux.Vars(r)["cluster"]
-
-	return req, nil
-}
-
-type createAddonRequest struct {
-	dcReq
-	addonName string
-	cluster   string
-}
-
-func decodeCreateAddonRequest(c context.Context, r *http.Request) (interface{}, error) {
-	var req createAddonRequest
-
-	dr, err := decodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.dcReq = dr.(dcReq)
-	req.cluster = mux.Vars(r)["cluster"]
-
-	var addon struct {
-		Name string `json:"name"`
-	}
-
-	if err = json.NewDecoder(r.Body).Decode(&addon); err != nil {
-		return nil, err
-	}
-	req.addonName = addon.Name
 
 	return req, nil
 }

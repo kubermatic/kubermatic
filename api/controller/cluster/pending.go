@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/resources"
+	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
@@ -335,7 +336,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		"apiserver":          masterVersion.ApiserverDeploymentYaml,
 		"controller-manager": masterVersion.ControllerDeploymentYaml,
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
-		"node-controller":    masterVersion.KubeMachineDeploymentYaml,
+		"node-controller":    masterVersion.NodeControllerDeploymentYaml,
 		"addon-manager":      masterVersion.AddonManagerDeploymentYaml,
 	}
 
@@ -377,9 +378,21 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
-	cms := map[string]func(c *api.Cluster) (*v1.ConfigMap, error){}
-	if c.Spec.Cloud != nil && c.Spec.Cloud.AWS != nil {
-		cms["aws-cloud-config"] = resources.LoadAwsCloudConfigConfigMap
+	var dc *provider.DatacenterMeta
+	cms := map[string]func(c *api.Cluster, datacenter *provider.DatacenterMeta) (*v1.ConfigMap, error){}
+	if c.Spec.Cloud != nil {
+		cdc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
+		if !found {
+			return fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
+		}
+		dc = &cdc
+
+		if c.Spec.Cloud.AWS != nil {
+			cms["cloud-config"] = resources.LoadAwsCloudConfigConfigMap
+		}
+		if c.Spec.Cloud.Openstack != nil {
+			cms["cloud-config"] = resources.LoadOpenstackCloudConfigConfigMap
+		}
 	}
 
 	for s, gen := range cms {
@@ -394,7 +407,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 			continue
 		}
 
-		cm, err := gen(c)
+		cm, err := gen(c, dc)
 		if err != nil {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}

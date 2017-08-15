@@ -6,6 +6,7 @@ import (
 	"fmt"
 	texttemplate "text/template"
 
+	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/template"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -33,6 +34,8 @@ func (t *Template) Execute(data, v interface{}) error {
 	if err := t.tpl.Execute(&buf, data); err != nil {
 		return fmt.Errorf("failed executing template: %v", err)
 	}
+
+	glog.Info(buf.String())
 
 	jsonBytes, err := yaml.ToJSON(buf.Bytes())
 	if err != nil {

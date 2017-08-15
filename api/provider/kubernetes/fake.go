@@ -83,14 +83,13 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
-	spec.Cloud = cloud
+func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	c, err := p.NewCluster(user, spec)
 	if err != nil {
 		return nil, err
 	}
 
-	return p.SetCloud(user, c.Metadata.Name, cloud)
+	return p.SetCloud(user, c.Metadata.Name, c.Spec.Cloud)
 }
 
 func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
@@ -107,7 +106,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 		return nil, fmt.Errorf("cluster %s already exists", cluster)
 	}
 
-	dc, found := p.dcs[spec.Cloud.Region]
+	dc, found := p.dcs[spec.Cloud.DatacenterName]
 	if !found {
 		return nil, errors.NewBadRequest("Unregistered datacenter")
 	}

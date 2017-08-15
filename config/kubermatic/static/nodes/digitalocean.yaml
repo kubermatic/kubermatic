@@ -1,0 +1,104 @@
+apiVersion: "nodeset.k8s.io/v1alpha1"
+kind: NodeClass
+metadata:
+  name: {{ .Name }}
+nodeController: kube-machine
+config:
+  dockerMachineFlags:
+    digitalocean-access-token: "{{ .Cluster.Spec.Cloud.Digitalocean.Token }}"
+    digitalocean-region: "{{ .Datacenter.Spec.Digitalocean.Region }}"
+    digitalocean-size: "{{ .NodeSpec.Digitalocean.Size }}"
+    digitalocean-image: "coreos-stable"
+    digitalocean-ssh-user: "core"
+  provider: "digitalocean"
+  provisioning:
+    users:
+      - name: "apiserver"
+        ssh_keys:
+          {{range .Keys}}- {{.PublicKey}}
+          {{end -}}
+          - "{{ .Cluster.Status.ApiserverSSHKey.PublicKey | apiBytesToString }} apiserver@{{ .Cluster.Address.ExternalName }}"
+        sudo: true
+    commands:
+      - "sudo systemctl start download-kubelet.service"
+      - "sudo systemctl start setup-network-environment.service"
+      - "sudo systemctl enable kubelet && sudo systemctl start kubelet"
+    files:
+      - path: "/etc/kubernetes/bootstrap.kubeconfig"
+        permissions: "0640"
+        owner: "root"
+        content: |-
+{{ .Kubeconfig | indent 10 }}
+      - path: "/etc/systemd/system/download-kubelet.service"
+        permissions: "0640"
+        owner: "root"
+        content: |-
+          [Unit]
+          Description=Download Kubelet and requirements
+          After=network.target
+
+          [Service]
+          Type=oneshot
+          ExecStartPre=/usr/bin/mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
+          ExecStartPre=/bin/bash -c "/usr/bin/curl -L -o /tmp/cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-v0.5.2.tgz && tar -xvf /tmp/cni-amd64.tgz -C /opt/cni/bin/"
+          ExecStartPre=/usr/bin/curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
+          ExecStartPre=/usr/bin/chmod +x /opt/bin/socat
+          ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.v1.6.7
+          ExecStartPost=/usr/bin/chmod +x /opt/bin/kubelet
+          RemainAfterExit=true
+
+          [Install]
+          WantedBy=multi-user.target
+
+      - path: "/etc/systemd/system/setup-network-environment.service"
+        permissions: "0640"
+        owner: "root"
+        content: |-
+          [Unit]
+          Description=Setup Network Environment
+          Documentation=https://github.com/kelseyhightower/setup-network-environment
+          Requires=network.target
+          After=network.target
+
+          [Service]
+          ExecStartPre=-/usr/bin/mkdir -p /opt/bin
+          ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/kelseyhightower/setup-network-environment/releases/download/v1.0.0/setup-network-environment
+
+          ExecStartPre=/usr/bin/chmod +x /opt/bin/setup-network-environment
+          ExecStart=/opt/bin/setup-network-environment
+          RemainAfterExit=yes
+          Type=oneshot
+
+      - path: "/etc/systemd/system/kubelet.service"
+        permissions: "0640"
+        owner: "root"
+        content: |-
+          [Unit]
+          Description=Kubelet
+          Requires=network.target download-kubelet.service setup-network-environment.service
+          After=network.target download-kubelet.service setup-network-environment.service
+
+          [Service]
+          Restart=always
+          RestartSec=10
+          Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
+          EnvironmentFile=/etc/network-environment
+          ExecStart=/opt/bin/kubelet \
+            --api-servers={{.Cluster.Address.URL}} \
+            --container-runtime=docker \
+            --allow-privileged=true \
+            --pod-manifest-path=/etc/kubernetes/manifests \
+            --cni-conf-dir=/etc/cni/net.d \
+            --network-plugin=cni \
+            --node-ip=${DEFAULT_IPV4} \
+            --cluster-dns=10.10.10.10 \
+            --cluster_domain=cluster.local \
+            --kubeconfig=/etc/kubernetes/kubeconfig \
+            {{ if .Cluster.Spec.Cloud.AWS -}}
+            --cloud-provider=aws \
+            {{ end -}}
+            --experimental-bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
+            --cert-dir=/etc/kubernetes/
+
+          [Install]
+          WantedBy=multi-user.target

@@ -5,16 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+)
+
+const (
+	// NodeDeletionWaitInterval defines how long to wait between the checks if the node has already gone
+	NodeDeletionWaitInterval = 500 * time.Millisecond
 )
 
 func nodesEndpoint(
@@ -34,148 +41,16 @@ func nodesEndpoint(
 			return nil, err
 		}
 
-		_, cp, err := provider.ClusterCloudProvider(cps, c)
-		if err != nil {
-			return nil, err
-		}
-		if cp == nil {
-			return []*api.Node{}, nil
-		}
-
-		return cp.Nodes(ctx, c)
-	}
-}
-
-func nodesEndpointV2(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(nodesReq)
-
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		c, err := kp.Cluster(req.user, req.cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		_, cp, err := provider.ClusterCloudProvider(cps, c)
-		if err != nil {
-			return nil, err
-		}
-		if cp == nil {
-			return []*api.Node{}, nil
-		}
-
 		client, err := c.GetClient()
 		if err != nil {
 			return nil, err
 		}
 
-		cpNodes, err := cp.Nodes(ctx, c)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch nodes from cloud provider: %v", err)
-		}
-		knodes, err := client.Nodes().List(metav1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch nodes from apiserver: %v", err)
-		}
-
-		getK8sNode := func(nodeName string) (*v1.Node, error) {
-			for _, knode := range knodes.Items {
-				if nodeName == knode.Name {
-					return &knode, nil
-				}
-			}
-			return nil, fmt.Errorf("node %q not found on apiserver", nodeName)
-		}
-
-		getNodeCondition := func(n *v1.Node) api.NodeCondition {
-			messages := []string{}
-			for _, d := range n.Status.Conditions {
-				if d.Status != v1.ConditionFalse && d.Type != v1.NodeReady {
-					messages = append(messages, d.Message)
-				}
-			}
-			return api.NodeCondition{
-				Healthy:     len(messages) == 0,
-				Description: strings.Join(messages, ", "),
-			}
-		}
-
-		for i := range cpNodes {
-			k8node, err := getK8sNode(cpNodes[i].Metadata.Name)
-			if err == nil {
-				cpNodes[i].Status.Versions = &api.NodeVersions{
-					ContainerRuntime: k8node.Status.NodeInfo.ContainerRuntimeVersion,
-					Kernel:           k8node.Status.NodeInfo.KernelVersion,
-					Kubelet:          k8node.Status.NodeInfo.KubeletVersion,
-					KubeProxy:        k8node.Status.NodeInfo.KubeProxyVersion,
-					OS:               k8node.Status.NodeInfo.OSImage,
-				}
-
-				cpNodes[i].Status.CPU = k8node.Status.Allocatable.Cpu().Value()
-				cpNodes[i].Status.Memory = k8node.Status.Allocatable.Memory().String()
-				cpNodes[i].Status.Condition = getNodeCondition(k8node)
-			} else {
-				cpNodes[i].Status.Condition = api.NodeCondition{
-					Healthy:     false,
-					Description: "The node did not joined the cluster so far",
-				}
-			}
-		}
-
-		return cpNodes, nil
-	}
-}
-
-func kubernetesNodesEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(nodesReq)
-
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		c, err := kp.Cluster(req.user, req.cluster)
+		nodes, err := client.Nodes().List(metav1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
-
-		client, err := c.GetClient()
-		if err != nil {
-			return nil, err
-		}
-
-		return client.Nodes().List(metav1.ListOptions{})
-	}
-}
-
-func kubernetesNodeInfoEndpoint(kps map[string]provider.KubernetesProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(nodeReq)
-
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
-		c, err := kp.Cluster(req.user, req.cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := c.GetClient()
-		if err != nil {
-			return nil, err
-		}
-
-		return client.Nodes().Get(req.uid, metav1.GetOptions{})
+		return nodes.Items, err
 	}
 }
 
@@ -205,30 +80,30 @@ func deleteNodeEndpoint(
 			return []*api.Node{}, nil
 		}
 
-		client, err := c.GetClient()
-		if err != nil {
-			return nil, err
-		}
+		deleteNodeLocking := func(clientset *kubernetes.Clientset, name string) error {
+			err := clientset.Nodes().Delete(name, &metav1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
 
-		nodes, err := cp.Nodes(ctx, c)
-		if err != nil {
-			return nil, err
-		}
+			for {
+				_, err := clientset.Nodes().Get(name, metav1.GetOptions{})
+				if err != nil {
+					if errors.IsNotFound(err) {
+						return nil
+					}
 
-		for _, node := range nodes {
-			if node.Metadata.UID == req.uid {
-				err = client.Nodes().Delete(node.Metadata.Name, &metav1.DeleteOptions{})
-				if err != nil {
-					glog.Errorf("failed to delete node %q from cluster: %v", node.Metadata.Name, err)
+					return fmt.Errorf("failed to get nodes: %v", err)
 				}
-				err = kp.DeleteNode(req.user, req.cluster, node)
-				if err != nil {
-					glog.Errorf("failed to delete node tpr %q: %v", node.Metadata.Name, err)
-				}
+				time.Sleep(NodeDeletionWaitInterval)
 			}
 		}
 
-		return nil, cp.DeleteNodes(ctx, c, []string{req.uid})
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get client: %v", err)
+		}
+		return nil, deleteNodeLocking(client, req.nodeName)
 	}
 }
 
@@ -239,7 +114,6 @@ func createNodesEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
-
 		kp, found := kps[req.dc]
 		if !found {
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
@@ -278,20 +152,42 @@ func createNodesEndpoint(
 			}
 		}
 
-		nodes, err := cp.CreateNodes(ctx, c, &req.Spec, req.Instances, keys)
+		nclient, err := c.GetNodesetClient()
 		if err != nil {
 			return nil, err
 		}
-
-		for _, node := range nodes {
-			node.Metadata.User = req.user.Name
-			_, err = kp.CreateNode(req.user, req.cluster, node)
+		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.GetNodeClassName(&req.Spec), metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			nc, err = cp.CreateNodeClass(c, &req.Spec, keys)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		return nodes, nil
+		client, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		for i := 1; i <= req.Instances; i++ {
+			n := &v1.Node{}
+			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Metadata.Name, rand.String(5))
+			n.Labels = map[string]string{
+				"node.k8s.io/controller": "kube-machine",
+				metav1.LabelArch:         "amd64",
+				metav1.LabelOS:           "linux",
+				metav1.LabelHostname:     n.Name,
+			}
+			n.Annotations = map[string]string{
+				"node.k8s.io/node-class": nc.Name,
+			}
+
+			n, err = client.Nodes().Create(n)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
 	}
 }
 
@@ -335,7 +231,7 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 
 type nodeReq struct {
 	nodesReq
-	uid string
+	nodeName string
 }
 
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -346,7 +242,7 @@ func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.nodesReq = cr.(nodesReq)
-	req.uid = mux.Vars(r)["node"]
+	req.nodeName = mux.Vars(r)["node"]
 
 	return req, nil
 }

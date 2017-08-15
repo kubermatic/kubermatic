@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/kube-node/nodeset/pkg/client/clientset_v1alpha1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -25,14 +26,18 @@ type Metadata struct {
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
 type DigitaloceanNodeSpec struct {
-	// Type specifies the name of the image used to create the node.
-	Type string `json:"type"`
 	// Size is the size of the node (DigitalOcean node type).
 	Size string `json:"size"`
 	// SSHKeyFingerprints  represent the fingerprints of the keys.
 	// DigitalOcean utilizes the fingerprints to identify public
 	// SSHKeys stored within the DigitalOcean platform.
 	SSHKeyFingerprints []string `json:"sshKeys,omitempty"`
+}
+
+// OpenstackNodeSpec specifies a open stack node.
+type OpenstackNodeSpec struct {
+	Flavor string `json:"flavor"`
+	Image  string `json:"image"`
 }
 
 // BringYourOwnNodeSpec specifies a bring your own node
@@ -56,21 +61,40 @@ type FakeNodeSpec struct {
 
 // AWSNodeSpec specifies an aws node.
 type AWSNodeSpec struct {
-	Type           string                 `json:"type"`
-	DiskSize       int64                  `json:"disk_size"`
-	ContainerLinux ContainerLinuxNodeSpec `json:"container_linux"`
+	RootSize     int64  `json:"root_size"`
+	InstanceType string `json:"instance_type"`
+	VolumeType   string `json:"volume_type"`
+	AMI          string `json:"ami"`
+}
+
+// ContainerLinuxSpec specifies Container Linux options
+type ContainerLinuxSpec struct {
+	DisableAutoUpdate bool `json:"disable_auto_update"`
+}
+
+// UbuntuSpec specifies ubuntu options
+type UbuntuSpec struct {
+	Version           string `json:"version"`
+	DisableAutoUpdate bool   `json:"disable_auto_update"`
+}
+
+// OperatingSystemSpec specifies operations system options
+type OperatingSystemSpec struct {
+	ContainerLinux ContainerLinuxSpec `json:"container_linux"`
+	SSHUser        string             `json:"ssh_user"`
 }
 
 // NodeSpec mutually stores data of a cloud specific node.
 type NodeSpec struct {
-	// DatacenterName contains the name of the datacenter the node is located in.
-	DatacenterName string `json:"dc"`
+	// OperatingSystem defines
+	OperatingSystem OperatingSystemSpec `json:"operating_system"`
 
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnNodeSpec `json:"bringyourown,omitempty"`
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
+	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
 }
 
 // NodeCondition stores information about the node condition
@@ -118,6 +142,17 @@ type DigitaloceanCloudSpec struct {
 	SSHKeys []string `json:"sshKeys"`
 }
 
+// OpenstackCloudSpec specifies access data to an openstack cloud.
+type OpenstackCloudSpec struct {
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	Tenant         string `json:"tenant"`
+	Domain         string `json:"domain"`
+	Network        string `json:"network"`
+	SecurityGroups string `json:"security_groups"`
+	FloatingIPPool string `json:"floating_ip_pool"`
+}
+
 // ContainerLinuxClusterSpec specifies container linux configuration for nodes - cluster wide
 type ContainerLinuxClusterSpec struct {
 	AutoUpdate bool `json:"auto_update"`
@@ -130,19 +165,16 @@ type ContainerLinuxNodeSpec struct {
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID         string                    `json:"access_key_id"`
-	SecretAccessKey     string                    `json:"secret_access_key"`
-	VPCId               string                    `json:"vpc_id"`
-	SSHKeyName          string                    `json:"ssh_key_name"`
-	SubnetID            string                    `json:"subnet_id"`
-	InternetGatewayID   string                    `json:"internet_gateway_id"`
-	RouteTableID        string                    `json:"route_table_id"`
-	RoleName            string                    `json:"role_name"`
-	PolicyName          string                    `json:"policy"`
-	InstanceProfileName string                    `json:"instance_profile_name"`
-	AvailabilityZone    string                    `json:"availability_zone"`
-	SecurityGroupID     string                    `json:"security_group_id"`
-	ContainerLinux      ContainerLinuxClusterSpec `json:"container_linux"`
+	AccessKeyID         string `json:"access_key_id"`
+	SecretAccessKey     string `json:"secret_access_key"`
+	VPCID               string `json:"vpc_id"`
+	SubnetID            string `json:"subnet_id"`
+	RoleName            string `json:"role_name"`
+	RouteTableID        string `json:"route_table_id"`
+	InstanceProfileName string `json:"instance_profile_name"`
+	SecurityGroup       string `json:"security_group"`
+
+	AvailabilityZone string `json:"availability_zone"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -181,16 +213,12 @@ type CloudSpec struct {
 	// Network holds the network specification object.
 	Network NetworkSpec `json:"-"`
 
-	User   string `json:"user,omitempty"`
-	Secret string `json:"secret,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Region string `json:"region,omitempty"`
-
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	BareMetal    *BareMetalCloudSpec    `json:"baremetal,omitempty"`
+	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -399,6 +427,26 @@ func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
 	return client, nil
 }
 
+// GetNodesetClient returns a client interact with nodeset resources
+func (c *Cluster) GetNodesetClient() (clientset_v1alpha1.Interface, error) {
+	cfg, err := c.getClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	ccfg, err := cfg.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := clientset_v1alpha1.NewForConfig(ccfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 // DigitialoceanDatacenterSpec specifies a data center of digital ocean.
 type DigitialoceanDatacenterSpec struct {
 	Region string `json:"region"`
@@ -417,6 +465,12 @@ type AWSDatacenterSpec struct {
 type BareMetalDatacenterSpec struct {
 }
 
+// OpenstackDatacenterSpec specifies a generic bare metal datacenter.
+type OpenstackDatacenterSpec struct {
+	AvailabilityZone string `json:"availability_zone"`
+	AuthURL          string `json:"auth_url"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Country      string                       `json:"country,omitempty"`
@@ -426,6 +480,7 @@ type DatacenterSpec struct {
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	BareMetal    *BareMetalDatacenterSpec     `json:"baremetal,omitempty"`
+	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
@@ -437,18 +492,18 @@ type Datacenter struct {
 
 // MasterVersion is the object representing a Kubernetes Master version.
 type MasterVersion struct {
-	Name                       string            `yaml:"name"`
-	ID                         string            `yaml:"id"`
-	Default                    bool              `yaml:"default"`
-	AllowedNodeVersions        []string          `yaml:"allowedNodeVersions"`
-	EtcdOperatorDeploymentYaml string            `yaml:"etcdOperatorDeploymentYaml"`
-	EtcdClusterYaml            string            `yaml:"etcdClusterYaml"`
-	ApiserverDeploymentYaml    string            `yaml:"apiserverDeploymentYaml"`
-	ControllerDeploymentYaml   string            `yaml:"controllerDeploymentYaml"`
-	SchedulerDeploymentYaml    string            `yaml:"schedulerDeploymentYaml"`
-	KubeMachineDeploymentYaml  string            `yaml:"kubeMachineDeploymentYaml"`
-	AddonManagerDeploymentYaml string            `yaml:"addonManagerDeploymentYaml"`
-	Values                     map[string]string `yaml:"values"`
+	Name                         string            `yaml:"name"`
+	ID                           string            `yaml:"id"`
+	Default                      bool              `yaml:"default"`
+	AllowedNodeVersions          []string          `yaml:"allowedNodeVersions"`
+	EtcdOperatorDeploymentYaml   string            `yaml:"etcdOperatorDeploymentYaml"`
+	EtcdClusterYaml              string            `yaml:"etcdClusterYaml"`
+	ApiserverDeploymentYaml      string            `yaml:"apiserverDeploymentYaml"`
+	ControllerDeploymentYaml     string            `yaml:"controllerDeploymentYaml"`
+	SchedulerDeploymentYaml      string            `yaml:"schedulerDeploymentYaml"`
+	NodeControllerDeploymentYaml string            `yaml:"nodeControllerDeploymentYaml"`
+	AddonManagerDeploymentYaml   string            `yaml:"addonManagerDeploymentYaml"`
+	Values                       map[string]string `yaml:"values"`
 }
 
 // NodeVersion is the object representing a Kubernetes Kubelet version.

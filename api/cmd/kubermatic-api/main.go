@@ -33,7 +33,7 @@ var (
 func main() {
 	flag.Parse()
 
-	dcs, err := provider.DatacentersMeta(*dcFile)
+	dcs, err := provider.LoadDatacentersMeta(*dcFile)
 	if err != nil {
 		glog.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", *dcFile, err))
 	}

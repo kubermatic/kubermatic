@@ -3,9 +3,9 @@ package provider
 import (
 	"fmt"
 
+	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
-	"golang.org/x/net/context"
 )
 
 // Constants defining known cloud providers.
@@ -15,6 +15,10 @@ const (
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
 	BareMetalCloudProvider    = "baremetal"
+	OpenstackCloudProvider    = "openstack"
+
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
 )
 
 // User represents an API user that is used for authentication.
@@ -25,16 +29,16 @@ type User struct {
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
-	InitializeCloudSpec(*api.Cluster) error
 	MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error)
 	UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error)
 }
 
 // NodeProvider declares methods for creating/listing nodes.
 type NodeProvider interface {
-	CreateNodes(context.Context, *api.Cluster, *api.NodeSpec, int, []extensions.UserSSHKey) ([]*api.Node, error)
-	Nodes(context.Context, *api.Cluster) ([]*api.Node, error)
-	DeleteNodes(ctx context.Context, c *api.Cluster, UIDs []string) error
+	Initialize(*api.CloudSpec, string) (*api.CloudSpec, error)
+	CleanUp(*api.CloudSpec) error
+	CreateNodeClass(*api.Cluster, *api.NodeSpec, []extensions.UserSSHKey) (*v1alpha1.NodeClass, error)
+	GetNodeClassName(*api.NodeSpec) string
 }
 
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes
@@ -42,8 +46,6 @@ type NodeProvider interface {
 type CloudProvider interface {
 	CloudSpecProvider
 	NodeProvider
-
-	CleanUp(*api.Cluster) error
 }
 
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
@@ -52,8 +54,8 @@ type KubernetesProvider interface {
 	// Deprecated in favor of NewClusterWithCloud
 	NewCluster(user User, spec *api.ClusterSpec) (*api.Cluster, error)
 
-	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec and given CloudSpec.
-	NewClusterWithCloud(user User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error)
+	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
+	NewClusterWithCloud(user User, spec *api.ClusterSpec) (*api.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
@@ -62,30 +64,17 @@ type KubernetesProvider interface {
 	// Deprecated in favor of NewClusterWithCloud
 	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 
-	// Cluster returns all clusters for a given user.
+	// Clusters returns all clusters for a given user.
 	Clusters(user User) ([]*api.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
-
-	// CreateAddon creates an addon ThirdPartyResource
-	CreateAddon(user User, cluster string, addonName string) (*extensions.ClusterAddon, error)
-
-	// CreateNode creates a node ThirdPartyResource
-	CreateNode(user User, cluster string, node *api.Node) (*extensions.ClNode, error)
-
-	// DeleteNode deletes a node ThirdPartyResource
-	DeleteNode(user User, cluster string, node *api.Node) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	if spec == nil {
 		return "", nil
-	}
-
-	if spec.Name != "" {
-		return spec.Name, nil
 	}
 
 	clouds := []string{}
@@ -103,6 +92,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	}
 	if spec.BareMetal != nil {
 		clouds = append(clouds, BareMetalCloudProvider)
+	}
+	if spec.Openstack != nil {
+		clouds = append(clouds, OpenstackCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -154,6 +146,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.BareMetal != nil {
 		clouds = append(clouds, BareMetalCloudProvider)
 	}
+	if spec.Openstack != nil {
+		clouds = append(clouds, OpenstackCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -180,6 +175,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.BareMetal != nil {
 		clouds = append(clouds, BareMetalCloudProvider)
+	}
+	if spec.Openstack != nil {
+		clouds = append(clouds, OpenstackCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

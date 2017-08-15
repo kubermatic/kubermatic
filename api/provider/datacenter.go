@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 // DigitaloceanSpec describes a digital ocean datacenter
@@ -13,11 +13,17 @@ type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
 }
 
+// OpenstackSpec describes a open stack datacenter
+type OpenstackSpec struct {
+	AuthURL          string `yaml:"auth_url"`
+	AvailabilityZone string `yaml:"availability_zone"`
+}
+
 // AWSSpec describes a digital ocean datacenter
 type AWSSpec struct {
-	Region string `yaml:"region"`
-	AMI    string `yaml:"ami"`
-	Zone   string `yaml:"zone"`
+	Region        string `yaml:"region"`
+	AMI           string `yaml:"ami"`
+	ZoneCharacter string `yaml:"zone_character"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
@@ -37,6 +43,7 @@ type DatacenterSpec struct {
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
 	BareMetal    *BareMetalSpec    `yaml:"baremetal"`
+	Openstack    *OpenstackSpec    `yaml:"openstack"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.
@@ -53,8 +60,8 @@ type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `yaml:"datacenters"`
 }
 
-// DatacentersMeta loads datacenter metadata from the given path.
-func DatacentersMeta(path string) (map[string]DatacenterMeta, error) {
+// LoadDatacentersMeta loads datacenter metadata from the given path.
+func LoadDatacentersMeta(path string) (map[string]DatacenterMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err

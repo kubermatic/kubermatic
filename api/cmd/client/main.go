@@ -77,10 +77,9 @@ func newClusterRequest() clusterRequest {
 }
 
 func (c *clusterRequest) applyDO() {
-	c.Cloud.Name = "digitalocean"
-	c.Cloud.Region = "do-ams2"
-	c.Cloud.Secret = "a9c807e5951fb3a7d5541fe5ecbfafaaa2d1ea8a9f3804a837e21586ab9c198d"
-	c.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{}
+	c.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
+		Token: "a9c807e5951fb3a7d5541fe5ecbfafaaa2d1ea8a9f3804a837e21586ab9c198d",
+	}
 }
 
 type nodeRequest struct {
@@ -91,9 +90,7 @@ type nodeRequest struct {
 func newNodeRequest(cl api.Cluster) *nodeRequest {
 	return &nodeRequest{
 		Instances: instanceCount,
-		Spec: api.NodeSpec{
-			DatacenterName: cl.Spec.Cloud.DatacenterName,
-		},
+		Spec:      api.NodeSpec{},
 	}
 }
 

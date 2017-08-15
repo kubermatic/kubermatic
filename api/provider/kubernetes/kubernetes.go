@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 	"k8s.io/client-go/pkg/apis/rbac"
 	"k8s.io/client-go/rest"
 )
-
-var _ provider.KubernetesProvider = (*kubernetesProvider)(nil)
 
 const (
 	updateRetries = 5
@@ -66,7 +63,7 @@ func NewKubernetesProvider(
 	}
 }
 
-func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec, cloud *api.CloudSpec) (*api.Cluster, error) {
+func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	var err error
 
 	// call cluster before lock is taken
@@ -102,9 +99,9 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 		},
 	}
 
-	dc, found := p.dcs[cloud.Region]
+	dc, found := p.dcs[spec.Cloud.DatacenterName]
 	if !found {
-		return nil, errors.NewBadRequest("Unregistered datacenter")
+		return nil, errors.NewBadRequest("Unknown datacenter")
 	}
 
 	c := &api.Cluster{
@@ -112,11 +109,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 			User: user.Name,
 			Name: clusterName,
 		},
-		Spec: api.ClusterSpec{
-			HumanReadableName: spec.HumanReadableName,
-			WorkerName:        spec.WorkerName,
-			Cloud:             cloud,
-		},
+		Spec: *spec,
 		Status: api.ClusterStatus{
 			LastTransitionTime: time.Now(),
 			Phase:              api.PendingClusterStatusPhase,
@@ -126,21 +119,17 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	}
 
 	c.Spec.WorkerName = p.workerName
-
-	prov, found := p.cps[cloud.Name]
-	if !found {
-		return nil, fmt.Errorf("Unable to find provider %s for cluster %s", c.Spec.Cloud.Name, c.Metadata.Name)
-	}
-
-	err = prov.InitializeCloudSpec(c)
+	_, prov, err := provider.ClusterCloudProvider(p.cps, c)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"cannot set %s cloud config for cluster %q: %v",
-			cloud.Name,
-			c.Metadata.Name,
-			err,
-		)
+		return nil, err
 	}
+
+	cloud, err := prov.Initialize(c.Spec.Cloud, clusterName)
+	if err != nil {
+		return nil, fmt.Errorf("could not initialize cloud provider: %v", err)
+	}
+
+	c.Spec.Cloud = cloud
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
@@ -150,20 +139,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	if err != nil {
 		return nil, err
 	}
-
-	// ensure the NS is deleted when any error occurs
-	defer func(prov provider.CloudProvider, c *api.Cluster, err error) {
-		if err != nil {
-			err = prov.CleanUp(c)
-			if err != nil {
-				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
-			}
-			err = p.kuberntesClient.Namespaces().Delete(NamespaceName(c.Metadata.Name), &metav1.DeleteOptions{})
-			if err != nil {
-				glog.Errorf("failed to delete cluster after failed creation for cluster %s: %v", c.Metadata.Name, err)
-			}
-		}
-	}(prov, c, err)
 
 	return UnmarshalCluster(p.cps, ns)
 }
@@ -287,34 +262,23 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 		if err != nil {
 			return nil, err
 		}
-
 		c.Spec.Cloud = cloud
-		provName, prov, err := provider.ClusterCloudProvider(p.cps, c)
+		_, cp, err := provider.ClusterCloudProvider(p.cps, c)
 		if err != nil {
 			return nil, err
 		}
-
-		err = prov.InitializeCloudSpec(c)
+		cloud, err := cp.Initialize(cloud, c.Metadata.Name)
 		if err != nil {
-			cleanupErr := prov.CleanUp(c)
+			cleanupErr := cp.CleanUp(cloud)
 			if cleanupErr != nil {
-				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
+				glog.Errorf("failed to cleanup after initialize: %v", cleanupErr)
 			}
-			return nil, fmt.Errorf(
-				"cannot set %s cloud config for cluster %q: %v",
-				provName,
-				c.Metadata.Name,
-				err,
-			)
+			return nil, err
 		}
+		c.Spec.Cloud = cloud
 
 		err = p.ApplyCloudProvider(c, ns)
 		if err != nil {
-			cleanupErr := prov.CleanUp(c)
-			if cleanupErr != nil {
-				glog.Errorf("failed to do cloud provider cleanup after failed cloud provider initialization for cluster %s: %v", c.Metadata.Name, err)
-			}
-
 			return nil, err
 		}
 
@@ -344,10 +308,6 @@ func (p *kubernetesProvider) SetCloud(user provider.User, cluster string, cloud 
 // to create the config map by hand for now.
 // @TODO Remove with https://github.com/kubermatic/kubermatic/api/issues/220
 func (p *kubernetesProvider) ApplyCloudProvider(c *api.Cluster, ns *apiv1.Namespace) error {
-	if c.Spec.Cloud.GetAWS() == nil {
-		return nil
-	}
-
 	deps := []string{
 		"controller-manager",
 		"apiserver",
@@ -414,77 +374,22 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 
 func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) error {
 	// check permission by getting the cluster first
-	_, err := p.Cluster(user, cluster)
+	c, err := p.Cluster(user, cluster)
 	if err != nil {
 		return err
 	}
 
-	list, err := p.tprClient.ClusterAddons(NamespaceName(cluster)).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
+	_, cp, err := provider.ClusterCloudProvider(p.cps, c)
 	if err != nil {
 		return err
 	}
-	for _, item := range list.Items {
-		err = p.tprClient.ClusterAddons(NamespaceName(cluster)).Delete(item.Metadata.Name, nil)
+
+	if c.Spec.Cloud != nil {
+		err = cp.CleanUp(c.Spec.Cloud)
 		if err != nil {
 			return err
 		}
 	}
 
 	return p.kuberntesClient.Namespaces().Delete(NamespaceName(cluster), &metav1.DeleteOptions{})
-}
-
-func (p *kubernetesProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
-	_, err := p.Cluster(user, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create an instance of our TPR
-	addon := &extensions.ClusterAddon{
-		Metadata: metav1.ObjectMeta{
-			Name: fmt.Sprintf("addon-%s-%s", strings.Replace(addonName, "/", "", -1), rand.String(4)),
-		},
-		Name:  addonName,
-		Phase: extensions.PendingAddonStatusPhase,
-	}
-
-	return p.tprClient.ClusterAddons(fmt.Sprintf("cluster-%s", cluster)).Create(addon)
-}
-
-func (p *kubernetesProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
-	_, err := p.Cluster(user, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	meta := metav1.ObjectMeta{
-		Name:        node.Metadata.UID,
-		Annotations: node.Metadata.Annotations,
-	}
-
-	if meta.Annotations == nil {
-		meta.Annotations = map[string]string{
-			"user": node.Metadata.User,
-		}
-	} else {
-		meta.Annotations["user"] = node.Metadata.User
-	}
-
-	n := &extensions.ClNode{
-		Metadata: meta,
-		Status:   node.Status,
-		Spec:     node.Spec,
-	}
-
-	// TODO: Use proper cluster generator
-	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Create(n)
-}
-
-func (p *kubernetesProvider) DeleteNode(user provider.User, cluster string, node *api.Node) error {
-	_, err := p.Cluster(user, cluster)
-	if err != nil {
-		return err
-	}
-
-	return p.tprClient.Nodes(fmt.Sprintf("cluster-%s", cluster)).Delete(node.Metadata.Name, &metav1.DeleteOptions{})
 }

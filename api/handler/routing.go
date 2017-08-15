@@ -109,11 +109,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
-		Methods("GET").
-		Path("/api/v2/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.authenticator.IsAuthenticated(r.nodesHandlerV2()))
-
-	mux.
 		Methods("POST").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
@@ -131,17 +126,7 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods("GET").
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodesHandler()))
-
-	mux.
-		Methods("GET").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes/{node}").
-		Handler(r.authenticator.IsAuthenticated(r.getKubernetesNodeInfoHandler()))
-
-	mux.
-		Methods("POST").
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/addon").
-		Handler(r.authenticator.IsAuthenticated(r.createAddonHandler()))
+		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
 		Methods("GET").
@@ -188,24 +173,6 @@ func (r Routing) getAWSKeyHandler() http.Handler {
 	return httptransport.NewServer(
 		datacenterKeyEndpoint(r.datacenters),
 		decodeDcKeyListRequest,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
-func (r Routing) getKubernetesNodesHandler() http.Handler {
-	return httptransport.NewServer(
-		kubernetesNodesEndpoint(r.kubernetesProviders),
-		decodeNodesReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
-func (r Routing) getKubernetesNodeInfoHandler() http.Handler {
-	return httptransport.NewServer(
-		kubernetesNodeInfoEndpoint(r.kubernetesProviders),
-		decodeNodeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
@@ -313,16 +280,6 @@ func (r Routing) nodesHandler() http.Handler {
 	)
 }
 
-// nodesHandlerV2 returns all nodes from a cluster
-func (r Routing) nodesHandlerV2() http.Handler {
-	return httptransport.NewServer(
-		nodesEndpointV2(r.kubernetesProviders, r.cloudProviders),
-		decodeNodesReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
 // createNodesHandler let's you create nodes.
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
@@ -338,15 +295,6 @@ func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodeReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
-func (r Routing) createAddonHandler() http.Handler {
-	return httptransport.NewServer(
-		createAddonEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeCreateAddonRequest,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)

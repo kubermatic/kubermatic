@@ -39,7 +39,7 @@ spec:
               mountPath: {{.Values.DatacentersMountPath}}
               readOnly: true
             - name: node-files
-              mountPath: /opt/template/coreos
+              mountPath: /opt/template/nodes
               readOnly: true
             # @TODO Remove with https://github.com/kubermatic/kubermatic/api/issues/220
             - name: master-files

@@ -22,7 +22,7 @@ import (
 func createTestEndpoint(user provider.User) http.Handler {
 	ctx := context.Background()
 
-	dcs, err := provider.DatacentersMeta("./fixtures/datacenters.yaml")
+	dcs, err := provider.LoadDatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
 		log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", "./fixtures/datacenters.yaml", err))
 	}

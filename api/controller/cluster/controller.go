@@ -57,6 +57,7 @@ type clusterController struct {
 	masterResourcesPath   string
 	externalURL           string
 	apiserverExternalPort int
+	dcs                   map[string]provider.DatacenterMeta
 
 	// store namespaces with the role=kubermatic-cluster label
 	nsController cache.Controller
@@ -119,6 +120,7 @@ func NewController(
 	externalURL string,
 	workerName string,
 	apiserverExternalPort int,
+	dcs map[string]provider.DatacenterMeta,
 ) (controller.Controller, error) {
 	cc := &clusterController{
 		dc:                    dc,
@@ -134,6 +136,7 @@ func NewController(
 		externalURL:           externalURL,
 		workerName:            workerName,
 		apiserverExternalPort: apiserverExternalPort,
+		dcs: dcs,
 	}
 
 	eventBroadcaster := record.NewBroadcaster()

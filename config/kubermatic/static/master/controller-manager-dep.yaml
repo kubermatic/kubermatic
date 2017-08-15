@@ -31,13 +31,14 @@ spec:
           "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
           "--cluster-cidr=172.25.0.0/16",
           {{ if eq .CloudProvider "aws" }}
-          "--cloud-provider=aws",
-          "--cloud-config=/etc/kubermatic/aws/aws-cloud-config",
+          "--cloud-config=/etc/kubernetes/cloud/config",
+          {{ end }}
+          {{ if eq .CloudProvider "openstack" }}
+          "--cloud-config=/etc/kubernetes/cloud/config",
           {{ end }}
           "--allocate-node-cidrs=true",
           "--v=4"
         ]
-        {{ if eq .CloudProvider "aws" }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -45,12 +46,13 @@ spec:
           initialDelaySeconds: 15
           timeoutSeconds: 1
         env:
+        {{ if eq .CloudProvider "aws" }}
         - name: AWS_ACCESS_KEY_ID
           value: {{.Cluster.Spec.Cloud.AWS.AccessKeyID}}
         - name: AWS_SECRET_ACCESS_KEY
           value: {{.Cluster.Spec.Cloud.AWS.SecretAccessKey}}
         - name: AWS_VPC_ID
-          value: {{.Cluster.Spec.Cloud.AWS.VPCId}}
+          value: {{.Cluster.Spec.Cloud.AWS.VPCID}}
         - name: AWS_AVAILABILITY_ZONE
           value: {{.Cluster.Spec.Cloud.AWS.AvailabilityZone}}
         {{ end }}
@@ -59,16 +61,27 @@ spec:
           mountPath: /var/run/kubernetes/auth
           readOnly: true
         {{ if eq .CloudProvider "aws" }}
-        - name: aws-cloud-config
-          mountPath: /etc/kubermatic/aws
+        - name: cloud-config
+          mountPath: /etc/kubernetes/cloud
           readOnly: true
         {{ end }}
+        {{ if eq .CloudProvider "openstack" }}
+        - name: cloud-config
+          mountPath: /etc/kubernetes/cloud
+          readOnly: true
+        {{ end }}
+
       volumes:
       - name: controller-manager
         secret:
           secretName: controller-manager
       {{ if eq .CloudProvider "aws" }}
-      - name: aws-cloud-config
+      - name: cloud-config
         configMap:
-          name: aws-cloud-config
+          name: cloud-config
+      {{ end }}
+      {{ if eq .CloudProvider "openstack" }}
+      - name: cloud-config
+        configMap:
+          name: cloud-config
       {{ end }}
