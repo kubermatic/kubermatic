@@ -23,7 +23,7 @@ spec:
         role: k8sniff-ingress-lb
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: "8081"
+        prometheus.io/port: "8085"
     spec:
       serviceAccountName: k8sniff
     {{ if .Values.IsBareMetal }}
@@ -42,7 +42,7 @@ spec:
         ports:
         - containerPort: 8443
           name: https
-        - containerPort: 8081
+        - containerPort: 8085
           name: metrics
         {{ end }}
         volumeMounts:

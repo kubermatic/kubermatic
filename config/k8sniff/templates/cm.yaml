@@ -14,6 +14,6 @@ data:
       "metrics": {
         "host": "0.0.0.0",
         "path": "/metrics",
-        "port": 8081
+        "port": 8085
       }
     }
