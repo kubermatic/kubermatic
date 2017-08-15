@@ -18,19 +18,13 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+{{ if .Values.OAuth.Connectors }}
     connectors:
 {{ toYaml .Values.OAuth.Connectors | indent 7 }}
+{{- end }}
 {{ if .Values.OAuth.StaticClients }}
     staticClients:
-    {{- range $key, $val := .Values.OAuth.StaticClients }}
-    - id: {{$val.id}}
-      name: {{$val.name}}
-      secret: {{$val.secret}}
-      redirectURIs:
-      {{- range $val.redirectURIs }}
-      - {{ . | quote }}
-      {{- end }}
-    {{- end }}
+{{ toYaml .Values.OAuth.StaticClients | indent 7 }}
 {{- end }}
     enablePasswordDB: true
 {{ if .Values.OAuth.StaticPassword }}
