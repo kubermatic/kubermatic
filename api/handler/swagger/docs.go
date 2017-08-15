@@ -1,5 +1,5 @@
 
-package main
+package swagger
 //This file is generated automatically. Do not try to edit it manually.
 
 var resourceListingJson = `{
