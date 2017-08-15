@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	prometheusAddr        = flag.String("prometheus-address", "127.0.0.1:1337", "The Address on which the prometheus handler should be exposed")
-	prometheusPath        = flag.String("prometheus-path", "/metrics", "The path on the host, on which the handler is avaliable")
+	prometheusAddr        = flag.String("prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
+	prometheusPath        = flag.String("prometheus-path", "/metrics", "The path on the host, on which the handler is available")
 	kubeConfig            = flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
 	masterResources       = flag.String("master-resources", "", "The master resources path (Required).")
 	externalURL           = flag.String("external-url", "", "The external url for the apiserver host and the the dc.(Required)")
