@@ -38,6 +38,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/beorn7/perks"
+  packages = ["quantile"]
+  revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
+
+[[projects]]
+  branch = "master"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
   revision = "a4973d9a4225417aecf5d450a9522f00c1f7130f"
@@ -199,10 +205,40 @@
   revision = "d5b7844b561a7bc640052f1b935f7b800330d7e0"
 
 [[projects]]
+  name = "github.com/matttproud/golang_protobuf_extensions"
+  packages = ["pbutil"]
+  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/pquerna/cachecontrol"
   packages = [".","cacheobject"]
   revision = "5475d973ea70916980bee28c2b674f3dc3eaed0a"
+
+[[projects]]
+  name = "github.com/prometheus/client_golang"
+  packages = ["prometheus","prometheus/promhttp"]
+  revision = "c5b7fccd204277076155f10851dad72b76a49317"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/client_model"
+  packages = ["go"]
+  revision = "6f3806018612930941127f2a7c6c453ba2c527d2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/common"
+  packages = ["expfmt","internal/bitbucket.org/ww/goautoneg","model"]
+  revision = "61f87aac8082fa8c3c5655c7608d7478d46ac2ad"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/procfs"
+  packages = [".","xfs"]
+  revision = "e645f4e5aaa8506fc71d6edbc5c4ff02c04c46f2"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -282,6 +318,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "783b43d75b5efb2b5370666a9bec021729eb3accc9895d0e7c7ab68262a5e6f0"
+  inputs-digest = "e95e2088f0cefbc05728bb18de99bc34962b108ecae9c87af1e8ac9bfb39058f"
   solver-name = "gps-cdcl"
   solver-version = 1
