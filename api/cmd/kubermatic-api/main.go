@@ -16,11 +16,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 
+	"github.com/kubermatic/kubermatic/metrics"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
+	prometheusAddr   = flag.String("prometheus-address", "127.0.0.1:1337", "The Address on which the prometheus handler should be exposed")
+	prometheusPath   = flag.String("prometheus-path", "/metrics", "The path on the host, on which the handler is avaliable")
 	workerName       = flag.String("worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	kubeConfig       = flag.String("kubeconfig", "", "The kubeconfig file path with one context per Kubernetes provider")
 	dcFile           = flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
@@ -71,6 +74,7 @@ func main() {
 	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient)
 	router := mux.NewRouter()
 	r.Register(router)
+	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
 	glog.Info(fmt.Sprintf("Listening on %s", *address))
 	glog.Fatal(http.ListenAndServe(*address, handlers.CombinedLoggingHandler(os.Stdout, router)))
 }
