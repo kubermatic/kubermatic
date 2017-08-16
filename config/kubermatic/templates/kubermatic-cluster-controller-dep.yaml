@@ -10,6 +10,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
       labels:
         role: cluster-controller
         version: v1
@@ -26,7 +27,9 @@ spec:
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
           '-versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}',
           '-updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}',
-          '-apiserver-external-port={{ .Values.ApiserverExternalPort }}'
+          '-apiserver-external-port={{ .Values.ApiserverExternalPort }}',
+          '-prometheus-address=0.0.0.0:8085',
+          '-prometheus-path=/metrics'
           ]
           image: kubermatic/api:{{.Values.KubermaticControllerImageTag}}
           imagePullPolicy: Always
