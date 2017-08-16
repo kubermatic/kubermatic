@@ -8,6 +8,8 @@ metadata:
   {{- template "aws" . }}
 {{ else if eq .Values.StorageProvider "gke" }}
   {{- template "gke" . }}
+{{ else if eq .Values.StorageProvider "openstack-cinder" }}
+  {{- template "openstack-cinder" . }}
 {{ else if eq .Values.StorageProvider "bare-metal" }}
   {{- template "bare-metal" . }}
 {{ end }}

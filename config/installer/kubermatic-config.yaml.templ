@@ -5,27 +5,27 @@ metadata:
   namespace: kubermatic-installer
 data:
   values.yaml: |-
-    KubermaticURL: "url"
-    Kubeconfig: "kubeconfig"
-    KubermaticDatacenters: "datacenters"
+    KubermaticURL: "<url>"
+    Kubeconfig: "<kubeconfig>"
+    KubermaticDatacenters: "<datacenters>"
 
     # Is this a bare-metal setup?
     #IsBareMetal: true
 
     # Bare-Metal-Provider is needed?
-    #BareMetalProviderURL: "baremetalurl"
+    #BareMetalProviderURL: "<baremetalurl>"
 
     ### Storage
-    StorageProvider: "storageprovider"
+    StorageProvider: "<storageprovider>"
     ### For GKE or AWS:
-    #StorageZone: "storagezone"
+    #StorageZone: "<storagezone>"
     ### For bare-metal
-    #StorageURL: "baremetalstorageurl"
+    #StorageURL: "<baremetalstorageurl>"
 
 
     # Do you want to deploy prometheus?
     #Prometheus: true
-    #PrometheusAuth: "prometheusauth"
+    #PrometheusAuth: "<prometheusauth>"
 
     # Do you want to deploy logging (elasticsearch/Kibana)?
     #Logging: true

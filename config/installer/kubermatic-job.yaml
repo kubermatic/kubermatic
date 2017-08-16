@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubermatic-installer-v1.4
+  namespace: kubermatic-installer
+  labels:
+    release: v1.4
+spec:
+  template:
+    metadata:
+      name: kubermatic-installer-v1.4
+      labels:
+        release: v1.4
+    spec:
+      containers:
+      - name: kubermatic-installer
+        image: kubermatic/installer:1.4
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: kubermatic-config
+            mountPath: /kubermatic/config
+            readOnly: true
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: dockercfg
+      volumes:
+      - name: kubermatic-config
+        configMap:
+          name: kubermatic-config
