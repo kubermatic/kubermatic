@@ -4,13 +4,19 @@
 ---
 
 ## Development environment
-To setup your enviroment clock [here](docs/setup.md).
+To setup your enviroment click [here](docs/setup.md).
 
 ### Dependencies
+#### Bootstrap project
+
+```
+make bootstrap
+```
+
 #### Update dependencies
 
 ```bash
-glide update --strip-vendor
+dep ensure -update
 ```
 
 ### Running locally
@@ -40,6 +46,7 @@ make fix
 ```bash
 make test
 ```
+
 #### E2E-tests
 Locally run:
 ```bash
