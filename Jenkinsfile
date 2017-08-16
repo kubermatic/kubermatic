@@ -62,5 +62,25 @@ goBuildNode(pipeline){
     // Success or failure, always send notifications
     notifyBuild(currentBuild.result)
   }
+}
 
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+    // Default values
+    def colorName = 'RED'
+    def colorCode = '#FF0000'
+    def msg = "${buildStatus}: ${env.BUILD_URL}display/redirect"
+
+    // Override default values based on build status
+    if (buildStatus == 'STARTED') {
+      color = 'YELLOW'
+        colorCode = '#FFFF00'
+    } else if (buildStatus == 'SUCCESSFUL') {
+      color = 'GREEN'
+        colorCode = '#00FF00'
+    }
+  // Send notifications
+  slackSend (color: colorCode, message: msg)
 }
