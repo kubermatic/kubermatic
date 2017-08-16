@@ -1,9 +1,9 @@
 FROM alpine:3.6
 
 # Install Curl & bash
-RUN	apk add --no-cache curl bash
+RUN apk add --no-cache curl bash
 
-ENV HELM_VERSION v2.5.0
+ENV HELM_VERSION v2.5.1
 
 # Download & install helm
 RUN curl -LO https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && \

@@ -11,6 +11,13 @@ parameters:
   zone: {{.Values.StorageZone}}
 {{- end }}
 
+{{- define "openstack-cinder" }}
+provisioner: kubernetes.io/cinder
+parameters:
+  type: fast
+  availability: {{.Values.StorageZone}}
+{{- end }}
+
 {{- define "bare-metal" }}
 provisioner: kubernetes.io/glusterfs
 parameters:
