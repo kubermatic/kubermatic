@@ -4,7 +4,7 @@
 ---
 
 ## Development environment
-To setup your enviroment clock [here](docs/setup.md).
+To setup your enviroment click [here](docs/setup.md).
 
 ### Dependencies
 #### Bootstrap project
