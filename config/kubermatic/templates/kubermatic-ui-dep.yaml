@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: webserver
-          image: kubermatic/ui:{{.Values.KubermaticDashboardImageTag}}
+          image: kubermatic/ui-v2:{{.Values.KubermaticDashboardImageTag}}
           imagePullPolicy: Always
           resources:
             requests:
