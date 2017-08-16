@@ -23,7 +23,8 @@ spec:
           '-kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}',
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
           '-token-issuer={{ .Values.TokenIssuer }}',
-          '-client-id={{ .Values.ClientID }}'
+          '-client-id={{ .Values.ClientID }}',
+          '-prometheus-address=0.0.0.0:8085'
           ]
           image: kubermatic/api:{{.Values.KubermaticAPIImageTag}}
           imagePullPolicy: Always

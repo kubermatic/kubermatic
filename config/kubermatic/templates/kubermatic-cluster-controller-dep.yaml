@@ -26,7 +26,8 @@ spec:
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
           '-versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}',
           '-updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}',
-          '-apiserver-external-port={{ .Values.ApiserverExternalPort }}'
+          '-apiserver-external-port={{ .Values.ApiserverExternalPort }}',
+          '-prometheus-address=0.0.0.0:8085'
           ]
           image: kubermatic/api:{{.Values.KubermaticControllerImageTag}}
           imagePullPolicy: Always
