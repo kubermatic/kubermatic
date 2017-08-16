@@ -24,6 +24,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: k8sniff
     {{ if .Values.IsBareMetal }}
