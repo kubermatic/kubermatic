@@ -9,8 +9,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: "{{ .Values.PrometheusMetricsPort }}"
-        prometheus.io/path: "{{ .Values.PrometheusMetricsPath }}"
+        prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
       labels:
         role: kubermatic-api
         version: v1
@@ -25,14 +25,14 @@ spec:
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
           '-token-issuer={{ .Values.TokenIssuer }}',
           '-client-id={{ .Values.ClientID }}',
-          '-prometheus-address=0.0.0.0:{{ .Values.PrometheusMetricsPort }}',
-          '-prometheus-path={{ .Values.PrometheusMetricsPath }}'
+          '-prometheus-address=0.0.0.0:8085',
+          '-prometheus-path=/metrics'
           ]
           image: kubermatic/api:{{.Values.KubermaticAPIImageTag}}
           imagePullPolicy: Always
           ports:
             - name: metrics
-              containerPort: {{ .Values.PrometheusMetricsPort }}
+              containerPort: 8085
             - name: http
               containerPort: 8080
               protocol: TCP
