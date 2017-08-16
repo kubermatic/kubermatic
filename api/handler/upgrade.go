@@ -108,6 +108,18 @@ func performClusterUpgrade(
 		c.Spec.MasterVersion = req.to
 		c.Status.Phase = api.UpdatingMasterClusterStatusPhase
 
+		// kp.SetCloud(req.user, req.cluster, &c.Spec)
+
+		cc, err := c.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		ns := cc.Namespaces()
+		// ns.Update(ns)
+
+		//.Update()
+
 		return nil, nil
 	}
 }
