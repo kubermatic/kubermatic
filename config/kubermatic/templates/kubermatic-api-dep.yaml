@@ -7,6 +7,9 @@ spec:
   replicas: {{.Values.KubermaticAPIReplicaCount}}
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: "8085"
       labels:
         role: kubermatic-api
         version: v1
@@ -25,6 +28,8 @@ spec:
           image: kubermatic/api:{{.Values.KubermaticAPIImageTag}}
           imagePullPolicy: Always
           ports:
+            - name: metrics
+              containerPort: 8085
             - name: http
               containerPort: 8080
               protocol: TCP
