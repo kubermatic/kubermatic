@@ -80,6 +80,10 @@ func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
 	}
 }
 
+func (p *kubernetesFakeProvider) UpgradeCluster(user provider.User, cluster, version string) error {
+	return nil
+}
+
 func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }

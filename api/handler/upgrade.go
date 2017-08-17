@@ -92,7 +92,7 @@ func performClusterUpgrade(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		_, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -105,21 +105,6 @@ func performClusterUpgrade(
 			return nil, NewUnknownVersion(req.to)
 		}
 
-		c.Spec.MasterVersion = req.to
-		c.Status.Phase = api.UpdatingMasterClusterStatusPhase
-
-		// kp.SetCloud(req.user, req.cluster, &c.Spec)
-
-		cc, err := c.GetClient()
-		if err != nil {
-			return nil, err
-		}
-
-		ns := cc.Namespaces()
-		// ns.Update(ns)
-
-		//.Update()
-
-		return nil, nil
+		return nil, kp.UpgradeCluster(req.user, req.cluster, req.to)
 	}
 }
