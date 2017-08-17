@@ -42,7 +42,6 @@ var (
 	versionsFile     = flag.String("versions", "versions.yaml", "The versions.yaml file path")
 	updatesFile      = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	clientID         = flag.String("client-id", "", "OpenID client ID")
-    //staticContent    = flag.String("staticPath", "./swagger-ui", "Path to folder with Swagger UI")
 )
 
 func main() {
