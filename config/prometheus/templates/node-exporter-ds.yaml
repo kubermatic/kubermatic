@@ -19,3 +19,6 @@ spec:
           name: scrape
       hostNetwork: true
       hostPID: true
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
