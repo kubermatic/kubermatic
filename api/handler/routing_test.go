@@ -42,7 +42,7 @@ func createTestEndpoint(user provider.User) http.Handler {
 
 	authenticator := NewTestAuthenticator(user)
 
-	routing := NewRouting(ctx, dcs, kps, cps, authenticator, fake.ClientsetWithExtensions(), nil)
+	routing := NewRouting(ctx, dcs, kps, cps, authenticator, fake.ClientsetWithExtensions(), nil, nil)
 	routing.Register(router)
 
 	return router

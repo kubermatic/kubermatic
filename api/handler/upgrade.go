@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sort"
 
+	kversion "github.com/kubermatic/kubermatic/api/controller/version"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-kit/kit/endpoint"
@@ -80,6 +82,7 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 func performClusterUpgrade(
 	kps map[string]provider.KubernetesProvider,
 	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(upgradeReq)
@@ -92,7 +95,7 @@ func performClusterUpgrade(
 			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		_, err := kp.Cluster(req.user, req.cluster)
+		k, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -103,6 +106,13 @@ func performClusterUpgrade(
 		_, ok = versions[req.to]
 		if !ok {
 			return nil, NewUnknownVersion(req.to)
+		}
+
+		_, err = kversion.
+			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{}).
+			Search(k.Spec.MasterVersion, req.to)
+		if err != nil {
+			return nil, NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
 		}
 
 		return nil, kp.UpgradeCluster(req.user, req.cluster, req.to)

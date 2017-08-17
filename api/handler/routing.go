@@ -23,6 +23,7 @@ type Routing struct {
 	masterTPRClient     extensions.Clientset
 	authenticator       Authenticator
 	versions            map[string]*api.MasterVersion
+	updates             []api.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
@@ -34,6 +35,7 @@ func NewRouting(
 	authenticator Authenticator,
 	masterTPRClient extensions.Clientset,
 	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 ) Routing {
 	return Routing{
 		ctx:                 ctx,
@@ -44,6 +46,7 @@ func NewRouting(
 		masterTPRClient:     masterTPRClient,
 		authenticator:       authenticator,
 		versions:            versions,
+		updates:             updates,
 	}
 }
 
@@ -329,7 +332,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 // performClusterUpgrage starts a cluster upgrade to a specific version
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		performClusterUpgrade(r.kubernetesProviders, r.versions),
+		performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates),
 		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

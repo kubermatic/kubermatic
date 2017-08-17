@@ -28,6 +28,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 	type args struct {
 		kps      map[string]provider.KubernetesProvider
 		versions map[string]*api.MasterVersion
+		updates  []api.MasterUpdate
 		args     []endpointArgs
 	}
 
@@ -92,7 +93,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  generateUpgradeReq("1.6.0", "234jkh24234g", "base", "anom"),
 						want: want{
 							val: nil,
-							err: nil,
+							err: NewUnknownUpgradePath("0.0.1", "1.6.0"),
 						},
 					},
 				},
@@ -102,7 +103,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := performClusterUpgrade(tt.args.kps, tt.args.versions)
+			fn := performClusterUpgrade(tt.args.kps, tt.args.versions, tt.args.updates)
 			for _, ttE := range tt.args.args {
 				t.Run(ttE.name, func(t *testing.T) {
 					got, err := fn(ttE.ctx, ttE.req)
