@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api/controller/version"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/handler"
 	"github.com/kubermatic/kubermatic/api/provider"
@@ -30,6 +31,8 @@ var (
 	address          = flag.String("address", ":8080", "The address to listen on")
 	masterKubeconfig = flag.String("master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
 	tokenIssuer      = flag.String("token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	versionsFile     = flag.String("versions", "versions.yaml", "The versions.yaml file path")
+	updatesFile      = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	clientID         = flag.String("client-id", "", "OpenID client ID")
 )
 
@@ -71,7 +74,20 @@ func main() {
 
 	// start server
 	ctx := context.Background()
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient)
+
+	// load versions
+	versions, err := version.LoadVersions(*versionsFile)
+	if err != nil {
+		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
+	}
+
+	// load updates
+	updates, err := version.LoadUpdates(*updatesFile)
+	if err != nil {
+		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
+	}
+
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

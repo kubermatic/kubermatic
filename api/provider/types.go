@@ -69,6 +69,9 @@ type KubernetesProvider interface {
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user User, cluster string) error
+
+	// UpgradeCluster upgrades a Cluster to a specific version
+	UpgradeCluster(user User, cluster, version string) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

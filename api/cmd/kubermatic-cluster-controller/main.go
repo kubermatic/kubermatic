@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/controller/version"
 	"github.com/kubermatic/kubermatic/api/extensions"
@@ -55,13 +54,9 @@ func main() {
 	}
 
 	// load updates
-	updates := []api.MasterUpdate{}
-	if *updatesFile != "" {
-		var err error
-		updates, err = version.LoadUpdates(*updatesFile)
-		if err != nil {
-			glog.Fatal(fmt.Sprintf("failed to load updates yaml %q: %v", *updatesFile, err))
-		}
+	updates, err := version.LoadUpdates(*updatesFile)
+	if err != nil {
+		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
 	// create controller for each context

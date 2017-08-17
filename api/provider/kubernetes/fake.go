@@ -40,6 +40,7 @@ func NewKubernetesFakeProvider(
 				},
 				Spec: api.ClusterSpec{
 					HumanReadableName: "sttts",
+					MasterVersion:     "0.0.1",
 					Cloud: &api.CloudSpec{
 						DatacenterName: "fake-fra1",
 						Fake: &api.FakeCloudSpec{
@@ -77,6 +78,10 @@ func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
 		Country:  "US",
 		Provider: "fake",
 	}
+}
+
+func (p *kubernetesFakeProvider) UpgradeCluster(user provider.User, cluster, version string) error {
+	return nil
 }
 
 func (p *kubernetesFakeProvider) Country() string {

@@ -393,3 +393,21 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 
 	return p.kuberntesClient.Namespaces().Delete(NamespaceName(cluster), &metav1.DeleteOptions{})
 }
+
+func (p *kubernetesProvider) UpgradeCluster(user provider.User, cluster, version string) error {
+	c, ns, err := p.clusterAndNS(user, cluster)
+	if err != nil {
+		return err
+	}
+
+	c.Spec.MasterVersion = version
+	c.Status.Phase = api.UpdatingMasterClusterStatusPhase
+
+	ns, err = MarshalCluster(p.cps, c, ns)
+	if err != nil {
+		return err
+	}
+	ns, err = p.kuberntesClient.Namespaces().Update(ns)
+
+	return err
+}

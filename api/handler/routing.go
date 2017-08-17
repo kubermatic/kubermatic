@@ -8,6 +8,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
@@ -21,6 +22,8 @@ type Routing struct {
 	logger              log.Logger
 	masterTPRClient     extensions.Clientset
 	authenticator       Authenticator
+	versions            map[string]*api.MasterVersion
+	updates             []api.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
@@ -31,6 +34,8 @@ func NewRouting(
 	cps map[string]provider.CloudProvider,
 	authenticator Authenticator,
 	masterTPRClient extensions.Clientset,
+	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 ) Routing {
 	return Routing{
 		ctx:                 ctx,
@@ -40,71 +45,73 @@ func NewRouting(
 		logger:              log.NewLogfmtLogger(os.Stderr),
 		masterTPRClient:     masterTPRClient,
 		authenticator:       authenticator,
+		versions:            versions,
+		updates:             updates,
 	}
 }
 
 // Register registers all known endpoints in the given router.
 func (r Routing) Register(mux *mux.Router) {
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/").
 		HandlerFunc(StatusOK)
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(StatusOK)
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc").
 		Handler(r.authenticator.IsAuthenticated(r.datacentersHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}").
 		Handler(r.authenticator.IsAuthenticated(r.datacenterHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.newClusterHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.newClusterHandlerV2()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.clustersHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.authenticator.IsAuthenticated(r.clusterHandler()))
 
 	mux.
-		Methods("PUT").
+		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/cloud").
 		Handler(r.authenticator.IsAuthenticated(r.setCloudHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.authenticator.IsAuthenticated(r.kubeconfigHandler()))
 
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteClusterHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
@@ -114,30 +121,42 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
 
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteNodeHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
+		Handler(r.authenticator.IsAuthenticated(r.getPossibleClusterUpgrades()))
+
+	mux.
+		Methods(http.MethodPut).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
+		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrage()))
+
+	mux.
+		Methods(http.MethodPost).
 		Path("/api/v1/ext/{dc}/keys").
 		Handler(r.authenticator.IsAuthenticated(r.getAWSKeyHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.listSSHKeys()))
+
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/ssh-keys").
 		Handler(r.authenticator.IsAuthenticated(r.createSSHKey()))
+
 	mux.
-		Methods("DELETE").
+		Methods(http.MethodDelete).
 		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.authenticator.IsAuthenticated(r.deleteSSHKey()))
 }
@@ -295,6 +314,26 @@ func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+	)
+}
+
+// getPossibleClusterUpgrades returns a list of possible cluster upgrades
+func (r Routing) getPossibleClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		getClusterUpgrades(r.kubernetesProviders, r.versions, r.updates),
+		decodeClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+	)
+}
+
+// performClusterUpgrage starts a cluster upgrade to a specific version
+func (r Routing) performClusterUpgrage() http.Handler {
+	return httptransport.NewServer(
+		performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates),
+		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
