@@ -1,6 +1,5 @@
 package handler
 
-
 type InterfaceType interface{}
 
 type SimpleAlias string
