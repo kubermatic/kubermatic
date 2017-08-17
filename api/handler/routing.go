@@ -322,7 +322,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 // getPossibleClusterUpgrades returns a list of possible cluster upgrades
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		getClusterUpgrades(r.kubernetesProviders, r.versions),
+		getClusterUpgrades(r.kubernetesProviders, r.versions, r.updates),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

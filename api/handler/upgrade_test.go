@@ -67,7 +67,8 @@ func Test_performClusterUpgrade(t *testing.T) {
 			name: "base config",
 			args: args{
 				kps:      generateBaseKubernetesProvider(),
-				versions: generateMasterVersions([]string{"1.6.0", "1.7.0"}),
+				versions: generateMasterVersions([]string{"0.0.1", "1.6.0", "1.7.0"}),
+
 				args: []endpointArgs{
 					{
 						name: "no request",
@@ -154,6 +155,27 @@ func generateUpgradeReq(to, cluster, dc, user string) upgradeReq {
 	}
 }
 
+type update struct {
+	from string
+	to   string
+}
+
+func generateMasterUpdates(updates []update) []api.MasterUpdate {
+	us := make([]api.MasterUpdate, len(updates))
+
+	for i, u := range updates {
+		us[i] = api.MasterUpdate{
+			From:    u.from,
+			To:      u.to,
+			Enabled: true,
+			Visible: true,
+			Promote: true,
+		}
+	}
+
+	return us
+}
+
 func generateMasterVersions(versions []string) map[string]*api.MasterVersion {
 	vs := make(map[string]*api.MasterVersion)
 
@@ -198,6 +220,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 	type args struct {
 		kps      map[string]provider.KubernetesProvider
 		versions map[string]*api.MasterVersion
+		updates  []api.MasterUpdate
 		args     []endpointArgs
 	}
 
@@ -272,7 +295,11 @@ func Test_getClusterUpgrades(t *testing.T) {
 			name: "upgradable",
 			args: args{
 				kps:      generateBaseKubernetesProvider(),
-				versions: generateMasterVersions([]string{"1.6.0", "1.7.0"}),
+				versions: generateMasterVersions([]string{"0.0.1", "1.6.0", "1.7.0"}),
+				updates: generateMasterUpdates([]update{
+					update{from: "0.0.1", to: "1.6.0"},
+					update{from: "1.6.0", to: "1.7.0"},
+				}),
 				args: []endpointArgs{
 					{
 						name: "no request",
@@ -308,7 +335,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := getClusterUpgrades(tt.args.kps, tt.args.versions)
+			fn := getClusterUpgrades(tt.args.kps, tt.args.versions, tt.args.updates)
 			for _, ttE := range tt.args.args {
 				t.Run(ttE.name, func(t *testing.T) {
 					got, err := fn(ttE.ctx, ttE.req)

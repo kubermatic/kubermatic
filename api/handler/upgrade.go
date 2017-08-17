@@ -19,6 +19,7 @@ import (
 func getClusterUpgrades(
 	kps map[string]provider.KubernetesProvider,
 	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(clusterReq)
@@ -44,8 +45,14 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
+		s := kversion.
+			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{})
+
 		possibleUpdates := make(version.Collection, 0)
 		for _, ver := range versions {
+			if _, err := s.Search(c.Spec.MasterVersion, ver.ID); err != nil {
+				continue
+			}
 			v, err := version.NewVersion(ver.ID)
 			if err != nil {
 				continue
@@ -56,6 +63,7 @@ func getClusterUpgrades(
 			}
 		}
 		sort.Sort(possibleUpdates)
+
 		return possibleUpdates, nil
 	}
 }
