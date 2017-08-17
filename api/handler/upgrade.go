@@ -117,7 +117,7 @@ func performClusterUpgrade(
 		}
 
 		_, err = kversion.
-			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{}).
+			NewUpdatePathSearch(versions, updates, kversion.SemverMatcher{}).
 			Search(k.Spec.MasterVersion, req.to)
 		if err != nil {
 			return nil, NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
