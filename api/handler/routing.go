@@ -11,6 +11,8 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
+	"fmt"
+	"path/filepath"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -50,7 +52,7 @@ func NewRouting(
 	}
 }
 
-// @Title GetStringByInt
+// @Title GetStringByInt1111
 // @Description get string by ID
 // @Accept  json
 // @Produce  json
@@ -60,7 +62,12 @@ func NewRouting(
 // @Failure 404 {object} APIError "Can not find ID"
 // @Router /testapi/get-string-by-int/{some_id} [get]
 func SwaggerHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello", r.URL.Path[1:])
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath := filepath.Dir(ex)
+	fmt.Fprintf(w, "Hello", exPath)
 }
 
 func (r Routing) Register(mux *mux.Router) {
@@ -77,9 +84,14 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
 	mux.
-		Methods("GET").
+		Methods(http.MethodGet).
 		Path("/api/v1/docs").
 		HandlerFunc(SwaggerHandler)
+	mux.
+		Methods(http.MethodGet).
+		PathPrefix("/swagger-ui/").
+		Handler(http.StripPrefix("/swagger-ui/", http.FileServer(http.Dir("./swagger-ui"))))
+
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc").

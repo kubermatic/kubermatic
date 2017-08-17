@@ -4,8 +4,8 @@
     "basePath": "http://loodse.com/",
     "apis": [
         {
-            "path": "/api",
-            "description": "Kubermatic API"
+            "path": "/testapi",
+            "description": "get string by ID"
         }
     ],
     "info": {
