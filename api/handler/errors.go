@@ -41,6 +41,11 @@ func NewUnknownVersion(version string) error {
 	return HTTPError{http.StatusMethodNotAllowed, fmt.Sprintf("Unknown version '%s'", version)}
 }
 
+// NewUnknownUpgradePath creates a HTTP 404 error for a kind in a datacenter.
+func NewUnknownUpgradePath(from, to string) error {
+	return HTTPError{http.StatusNotFound, fmt.Sprintf("There is no upgrade path from version %q to %q", from, to)}
+}
+
 // NewBadRequest creates a HTTP 400 error.
 func NewBadRequest(msg string, options ...interface{}) error {
 	return HTTPError{http.StatusBadRequest, fmt.Sprintf(msg, options...)}
