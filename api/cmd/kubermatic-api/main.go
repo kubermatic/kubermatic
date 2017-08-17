@@ -10,7 +10,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/version"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/handler"
@@ -77,18 +76,18 @@ func main() {
 	ctx := context.Background()
 
 	// load versions
-	versions := make(map[string]*api.MasterVersion)
-	if *versionsFile != "" {
-		var err error
-		versions, err = version.LoadVersions(*updatesFile)
-		if err != nil {
-			glog.Fatal(fmt.Sprintf("failed to load updates yaml %q: %v", *updatesFile, err))
-		}
-
+	versions, err := version.LoadVersions(*versionsFile)
+	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, versions)
+	// load updates
+	updates, err := version.LoadUpdates(*updatesFile)
+	if err != nil {
+		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
+	}
+
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
