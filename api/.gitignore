@@ -11,3 +11,5 @@ vendor
 !handler/fixtures/*
 _build/*
 _artifacts/*
+api/handler/swagger/index.json
+api/handler/swagger/api/index.json

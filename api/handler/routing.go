@@ -11,8 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
-	"fmt"
-	"path/filepath"
+	"io/ioutil"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -52,29 +51,11 @@ func NewRouting(
 	}
 }
 
-// @Title GetStringByInt1111
-// @Description get string by ID
-// @Accept  json
-// @Produce  json
-// @Param   some_id     path    int     true        "Some ID"
-// @Success 200 {object} string
-// @Failure 400 {object} APIError "We need ID!!"
-// @Failure 404 {object} APIError "Can not find ID"
-// @Router /testapi/get-string-by-int/{some_id} [get]
-func SwaggerHandler(w http.ResponseWriter, r *http.Request) {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exPath := filepath.Dir(ex)
-	fmt.Fprintf(w, "Hello", exPath)
-}
-
 func (r Routing) Register(mux *mux.Router) {
-	mux.
-		Methods(http.MethodGet).
-		Path("/").
-		HandlerFunc(StatusOK)
+	//mux.
+	//	Methods(http.MethodGet).
+	//	Path("/").
+	//	HandlerFunc(StatusOK)
 	mux.
 		Methods(http.MethodGet).
 		Path("/healthz").
@@ -85,8 +66,8 @@ func (r Routing) Register(mux *mux.Router) {
 		HandlerFunc(StatusOK)
 	mux.
 		Methods(http.MethodGet).
-		Path("/api/v1/docs").
-		HandlerFunc(SwaggerHandler)
+		Path("/").
+		HandlerFunc(ApiDescriptionHandler)
 	mux.
 		Methods(http.MethodGet).
 		PathPrefix("/swagger-ui/").
@@ -197,6 +178,16 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
+func ApiDescriptionHandler(w http.ResponseWriter, r *http.Request) {
+
+	file, e := ioutil.ReadFile("../api/handler/swagger/api/index.json")
+	if e != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(file)
+}
+
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		createSSHKeyEndpoint(r.masterTPRClient),
@@ -225,7 +216,15 @@ func (r Routing) getAWSKeyHandler() http.Handler {
 }
 
 // datacentersHandler serves a list of datacenters.
-// Admin only!
+// @Title DataCenterHandler
+// @Description datacentersHandler serves a list of datacenters.
+// @Accept  json
+// @Produce  json
+// @Param   some_id     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "We need ID!!"
+// @Failure 404 {object} APIError "Can not find ID"
+// @Router /api/v1/dc [get]
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		datacentersEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
@@ -237,6 +236,15 @@ func (r Routing) datacentersHandler() http.Handler {
 
 // datacenterHandler server information for a datacenter.
 // Admin only!
+// @Title datacenterHandler
+// @Description datacenterHandler server information for a datacenter.
+// @Accept  json
+// @Produce  json
+// @Param   some_id     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "We need datacenter"
+// @Failure 404 {object} APIError "Can not find datacenter"
+// @Router /api/v1/dc/{dc} [get]
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		datacenterEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
