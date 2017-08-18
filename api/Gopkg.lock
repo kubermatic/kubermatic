@@ -64,12 +64,6 @@
   revision = "09691a3b6378b740595c1002f40c34dd5f218a22"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/fvbock/endless"
-  packages = ["."]
-  revision = "447134032cb6a86814f570257390a379982dfc61"
-
-[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "73d445a93680fa1a78ae23a5839bad48f32ba1ee"
@@ -217,40 +211,10 @@
   revision = "d5b7844b561a7bc640052f1b935f7b800330d7e0"
 
 [[projects]]
-  name = "github.com/mattn/go-colorable"
-  packages = ["."]
-  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
-  version = "v0.0.9"
-
-[[projects]]
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
-  version = "v0.0.2"
-
-[[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mgutz/ansi"
-  packages = ["."]
-  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
-
-[[projects]]
-  branch = "mgutz/v2"
-  name = "github.com/mgutz/logxi/v1"
-  packages = ["."]
-  revision = "3753102df44ef6dc2552aea65b9666b593d68663"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   branch = "master"
@@ -281,12 +245,6 @@
   name = "github.com/prometheus/procfs"
   packages = [".","xfs"]
   revision = "e645f4e5aaa8506fc71d6edbc5c4ff02c04c46f2"
-
-[[projects]]
-  name = "github.com/rs/cors"
-  packages = ["."]
-  revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
-  version = "v1.2"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -366,6 +324,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c9a53907e113096b3d6bf5b9b961d37c1dddcbeff31a7746558671097d559cd0"
+  inputs-digest = "9736b4c460f867e292f2043c90418bd80d52875c3a43113e7aa65024d63957bc"
   solver-name = "gps-cdcl"
   solver-version = 1
