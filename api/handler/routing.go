@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
-	"io/ioutil"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -51,11 +50,12 @@ func NewRouting(
 	}
 }
 
+// Register declare router paths
 func (r Routing) Register(mux *mux.Router) {
-	//mux.
-	//	Methods(http.MethodGet).
-	//	Path("/").
-	//	HandlerFunc(StatusOK)
+	mux.
+		Methods(http.MethodGet).
+		Path("/").
+		HandlerFunc(APIDescriptionHandler)
 	mux.
 		Methods(http.MethodGet).
 		Path("/healthz").
@@ -64,10 +64,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
-	mux.
-		Methods(http.MethodGet).
-		Path("/").
-		HandlerFunc(ApiDescriptionHandler)
 	mux.
 		Methods(http.MethodGet).
 		PathPrefix("/swagger-ui/").
@@ -176,16 +172,6 @@ func (r Routing) listSSHKeys() http.Handler {
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
-}
-
-func ApiDescriptionHandler(w http.ResponseWriter, r *http.Request) {
-
-	file, e := ioutil.ReadFile("../api/handler/swagger/api/index.json")
-	if e != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Write(file)
 }
 
 func (r Routing) createSSHKey() http.Handler {
