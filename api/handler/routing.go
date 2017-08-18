@@ -55,6 +55,10 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodGet).
 		Path("/").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/").
 		HandlerFunc(APIDescriptionHandler)
 	mux.
 		Methods(http.MethodGet).

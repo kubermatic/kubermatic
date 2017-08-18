@@ -37,5 +37,5 @@ func APIDescriptionHandler(res http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(f)
+	res.Write(f)
 }
