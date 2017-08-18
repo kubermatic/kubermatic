@@ -3,7 +3,6 @@
 // @APIDescription Kubermatic REST API
 // @BasePath http://loodse.com/
 // @Contact info@loodse.com
-// @TermsOfServiceUrl https://github.com/kubermatic/api
 // @License TBD
 // @LicenseUrl https://github.com/kubermatic/api
 package main
