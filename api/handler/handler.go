@@ -36,7 +36,7 @@ func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 }
 
 // APIDescriptionHandler always return swagger index.json
-func APIDescriptionHandler(w http.ResponseWriter, _ *http.Request) {
+func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	f, err := ioutil.ReadFile("../api/handler/swagger/api/index.json")
 	if err != nil {
@@ -44,5 +44,9 @@ func APIDescriptionHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(f)
+	_, err1 := w.Write(f)
+	if err1 != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
 }
