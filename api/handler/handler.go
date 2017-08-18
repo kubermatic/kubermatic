@@ -44,9 +44,8 @@ func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_, err1 := w.Write(f)
-	if err1 != nil {
+	_, err = w.Write(f)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
 }
