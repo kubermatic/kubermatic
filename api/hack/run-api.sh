@@ -10,8 +10,8 @@ cd ${GOPATH}/src/github.com/kubermatic/kubermatic/api
   -master-kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -kubeconfig=$GOPATH/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -versions=../config/kubermatic/static/master/versions.yaml \
-  -updates=../config/kubermatic/static/master/updates.yaml \
+  -versions=$GOPATH/src/github.com/kubermatic/kubermatic/config/kubermatic/static/master/versions.yaml \
+  -updates=$GOPATH/src/github.com/kubermatic/kubermatic/config/kubermatic/static/master/updates.yaml \
   -worker-name="$(uname -n | tr -cd '[:alnum:]')" \
   -token-issuer=http://auth.int.kubermatic.io \
   -address=127.0.0.1:8080 \
