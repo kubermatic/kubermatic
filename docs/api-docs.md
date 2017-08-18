@@ -1,26 +1,28 @@
 ## Swagger/OpenAPI docs
 
-### Quick start giude
+### Quick start guide
 
-#### 1. Install & compile swagger
+#### 1. Install dependency
 ```
-go get github.com/yvasiyarov/swagger
-go install
+make install
 ```
 
 #### 2. Run swagger generator
 ```
-swagger -apiPackage="github.com/kubermatic/api/cmd/kubermatic-api" \
--mainApiFile="/Users/andrii/workspace/src/github.com/kubermatic/api/cmd/kubermatic-api/main.go" \
--format="swagger" \
--output="handler/api-docs" \
--controllerClass="(Handler|Controller)$"
+$ ./hack/gen-api-docs.sh
+2017/08/18 15:08:36 Start parsing
+2017/08/18 15:08:39 Finish parsing
+2017/08/18 15:08:39 Wrote api/index.json
+2017/08/18 15:08:39 Swagger UI files generated
 ```
 
-Results of output
+#### 3. Build project
 ```
-2017/08/07 11:27:43 Start parsing
-2017/08/07 11:27:46 Finish parsing
-2017/08/07 11:27:46 Swagger UI files generated
+$ make build
 ```
 
+#### Run api and navigate to swagger-ui
+```
+$ ./hack/run-api.sh
+$ open http://localhost:8080/swagger-ui/
+```
