@@ -2,7 +2,7 @@
 // @APITitle Kubermatic REST API
 // @APIDescription Kubermatic REST API
 // @BasePath http://loodse.com/
-// @Contact andrii.soldatenko@gmail.com
+// @Contact info@loodse.com
 // @TermsOfServiceUrl https://github.com/kubermatic/api
 // @License TBD
 // @LicenseUrl https://github.com/kubermatic/api
