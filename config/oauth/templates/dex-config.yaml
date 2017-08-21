@@ -5,7 +5,7 @@ metadata:
   namespace: oauth
 data:
   config.yaml: |
-    issuer: {{ .Values.TokenIssuer | trim }}
+    issuer: https://{{ .Values.KubermaticURL | trim }}/dex
     oauth2:
       skipApprovalScreen: true
       responseTypes:

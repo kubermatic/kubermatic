@@ -49,5 +49,4 @@ KubermaticAPIReplicaCount: "2"
 KubermaticUIReplicaCount: "2"
 
 ### OpenID connect options
-TokenIssuer: "https://kubermatic.eu.auth0.com/"
-ClientID: "xHLUljMUUEFP95wmlODWexe1rvOXuyTT"
+ClientID: "kubermatic"

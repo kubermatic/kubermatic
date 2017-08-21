@@ -9,16 +9,15 @@ metadata:
 spec:
   tls:
   - hosts:
-    - auth.{{ .Values.KubermaticURL | trim }}
-    secretName: dex-tls-secret
+    - {{ .Values.KubermaticURL | trim }}
   backend:
     serviceName: dex
     servicePort: 5556
   rules:
-  - host: auth.{{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.KubermaticURL | trim }}
     http:
       paths:
-      - path: /
+      - path: /dex
         backend:
           serviceName: dex
           servicePort: 5556
