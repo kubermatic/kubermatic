@@ -3,8 +3,16 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 )
+
+// APIError we need to work with github.com/yvasiyarov/swagger
+// based on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go
+type APIError struct {
+	ErrorCode    int
+	ErrorMessage string
+}
 
 // StatusOK returns a handler always returning http status code 200 (StatusOK).
 func StatusOK(res http.ResponseWriter, _ *http.Request) {
@@ -25,4 +33,19 @@ func createStatusResource(f func(context.Context, http.ResponseWriter, interface
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
+}
+
+// APIDescriptionHandler always return swagger index.json
+func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
+
+	f, err := ioutil.ReadFile("../api/handler/swagger/api/index.json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(f)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

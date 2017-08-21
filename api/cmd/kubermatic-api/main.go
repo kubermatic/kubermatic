@@ -1,3 +1,10 @@
+// @APIVersion 1.4.0
+// @APITitle Kubermatic REST API
+// @APIDescription Kubermatic REST API
+// @BasePath http://loodse.com/
+// @Contact info@loodse.com
+// @License TBD
+// @LicenseUrl https://github.com/kubermatic/api
 package main
 
 import (
