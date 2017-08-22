@@ -53,12 +53,6 @@ spec:
             "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
             "--ssh-user=apiserver",
             "--v=4" ]
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 15
-          timeoutSeconds: 1
         ports:
         - containerPort: {{ .Cluster.Address.ExternalPort }}
         - containerPort: 8080
