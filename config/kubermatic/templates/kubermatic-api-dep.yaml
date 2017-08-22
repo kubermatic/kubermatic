@@ -23,7 +23,7 @@ spec:
           '-logtostderr',
           '-kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}',
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
-          '-token-issuer={{ .Values.TokenIssuer }}',
+          '-token-issuer=https://{{ .Values.KubermaticURL }}/dex',
           '-client-id={{ .Values.ClientID }}',
           '-versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}',
           '-updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}',
