@@ -1,20 +1,20 @@
 {{- define "aws" }}
 provisioner: kubernetes.io/aws-ebs
 parameters:
-  type: gp2
+  type: {{.Values.StorageType}}
 {{- end }}
 
 {{- define "gke" }}
 provisioner: kubernetes.io/gce-pd
 parameters:
-  type: pd-ssd
+  type: {{.Values.StorageType}}
   zone: {{.Values.StorageZone}}
 {{- end }}
 
 {{- define "openstack-cinder" }}
 provisioner: kubernetes.io/cinder
 parameters:
-  type: fast
+  type: {{.Values.StorageType}}
   availability: {{.Values.StorageZone}}
 {{- end }}
 
