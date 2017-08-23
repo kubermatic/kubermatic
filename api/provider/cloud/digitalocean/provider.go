@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
@@ -92,5 +93,5 @@ func (do *digitalocean) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, key
 }
 
 func (do *digitalocean) GetNodeClassName(nSpec *api.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-digitalocean-%s-%s", "coreos", nSpec.Digitalocean.Size)
+	return fmt.Sprintf("kubermatic-%s-%s-%d", "coreos", nSpec.Digitalocean.Size, time.Now().Unix())
 }
