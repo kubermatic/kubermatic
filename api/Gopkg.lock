@@ -43,6 +43,12 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  name = "github.com/blang/semver"
+  packages = ["."]
+  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
+  version = "v3.5.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
@@ -324,6 +330,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9736b4c460f867e292f2043c90418bd80d52875c3a43113e7aa65024d63957bc"
+  inputs-digest = "dacc118ecec7cc4239796ddf78243a8531a27789f54eead4b40feaa783e6ff4e"
   solver-name = "gps-cdcl"
   solver-version = 1

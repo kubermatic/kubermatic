@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	version "github.com/hashicorp/go-version"
+	"github.com/blang/semver"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
@@ -189,11 +189,11 @@ func generateMasterVersions(versions []string) map[string]*api.MasterVersion {
 	return vs
 }
 
-func generateSemVerSlice(versions []string) version.Collection {
-	vs := make(version.Collection, 0)
+func generateSemVerSlice(versions []string) semver.Versions {
+	vs := make(semver.Versions, 0)
 
 	for _, v := range versions {
-		ver, err := version.NewVersion(v)
+		ver, err := semver.Parse(v)
 		if err != nil {
 			continue
 		}
@@ -284,7 +284,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						ctx:  context.Background(),
 						req:  generateClusterReq("234jkh24234g", "base", "anom"),
 						want: want{
-							val: version.Collection{},
+							val: semver.Versions{},
 							err: nil,
 						},
 					},
