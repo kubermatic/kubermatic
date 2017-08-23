@@ -9,9 +9,9 @@ import (
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	version "github.com/hashicorp/go-version"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
@@ -40,7 +40,7 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
-		current, err := version.NewVersion(c.Spec.MasterVersion)
+		current, err := semver.Parse(c.Spec.MasterVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -48,17 +48,17 @@ func getClusterUpgrades(
 		s := kversion.
 			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{})
 
-		possibleUpdates := make(version.Collection, 0)
+		possibleUpdates := make(semver.Versions, 0)
 		for _, ver := range versions {
 			if _, err := s.Search(c.Spec.MasterVersion, ver.ID); err != nil {
 				continue
 			}
-			v, err := version.NewVersion(ver.ID)
+			v, err := semver.Parse(ver.ID)
 			if err != nil {
 				continue
 			}
 
-			if current.LessThan(v) {
+			if current.LT(v) {
 				possibleUpdates = append(possibleUpdates, v)
 			}
 		}
