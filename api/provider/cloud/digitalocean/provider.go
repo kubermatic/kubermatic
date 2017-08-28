@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/template"
+	"github.com/kubermatic/kubermatic/api/uuid"
 )
 
 const (
@@ -93,5 +93,5 @@ func (do *digitalocean) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, key
 }
 
 func (do *digitalocean) GetNodeClassName(nSpec *api.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-%s-%s-%d", "coreos", nSpec.Digitalocean.Size, time.Now().Unix())
+	return fmt.Sprintf("kubermatic-%s-%s-%s", "coreos", nSpec.Digitalocean.Size, uuid.ShortUID(5))
 }
