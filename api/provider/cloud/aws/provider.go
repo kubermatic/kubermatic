@@ -3,7 +3,6 @@ package aws
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -16,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/template"
+	"github.com/kubermatic/kubermatic/api/uuid"
 )
 
 const (
@@ -415,7 +415,7 @@ func (a *amazonEc2) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []
 }
 
 func (a *amazonEc2) GetNodeClassName(nSpec *api.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-%d", time.Now().Unix())
+	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
 
 func (a *amazonEc2) getSession(cloud *api.CloudSpec) (*session.Session, error) {

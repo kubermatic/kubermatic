@@ -8,7 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/template"
-	"time"
+	"github.com/kubermatic/kubermatic/api/uuid"
 )
 
 const (
@@ -115,5 +115,5 @@ func (os *openstack) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys [
 }
 
 func (os *openstack) GetNodeClassName(nSpec *api.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-%d", time.Now().Unix())
+	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
