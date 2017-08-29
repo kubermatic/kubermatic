@@ -88,8 +88,9 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.clusterReq = dr.(clusterReq)
 
 	defer func() {
-		err := r.Body.Close()
-		panic(err)
+		if err := r.Body.Close(); err != nil {
+			panic(err)
+		}
 	}()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
