@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"sort"
 
@@ -11,7 +13,6 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
@@ -76,13 +77,30 @@ type upgradeReq struct {
 func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req upgradeReq
 
+	type ver struct {
+		To string
+	}
+
 	dr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.clusterReq = dr.(clusterReq)
 
-	req.to = mux.Vars(r)["to"]
+	defer r.Body.Close()
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	v := new(ver)
+
+	err = json.Unmarshal(b, v)
+	if err != nil {
+		return nil, err
+	}
+
+	req.to = v.To
 
 	return req, nil
 }
