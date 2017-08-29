@@ -77,10 +77,6 @@ type upgradeReq struct {
 func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req upgradeReq
 
-	type ver struct {
-		To string
-	}
-
 	dr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
@@ -97,7 +93,9 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 
-	v := new(ver)
+	v := new(struct {
+		To string
+	})
 
 	err = json.Unmarshal(b, v)
 	if err != nil {
