@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+command -v jq >/dev/null || { echo "'jq' is required to run this"; exit 1; }
+
 dumpdir="$(mktemp -d)"
 
 kubectl get --export -o=json ns | \
