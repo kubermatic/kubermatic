@@ -94,9 +94,6 @@ config:
             --cluster-dns=10.10.10.10 \
             --cluster_domain=cluster.local \
             --kubeconfig=/etc/kubernetes/kubeconfig \
-            {{ if .Cluster.Spec.Cloud.AWS -}}
-            --cloud-provider=aws \
-            {{ end -}}
             --experimental-bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
             --cert-dir=/etc/kubernetes/
 
