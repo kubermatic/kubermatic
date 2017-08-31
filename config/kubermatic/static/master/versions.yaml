@@ -14,11 +14,11 @@ versions:
     k8s-version: v1.6.7
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
-    kube-machine-version: latest
+    kube-machine-version: v0.1
     addon-manager-version: v1.6.0
 - name: 1.6.8
   id: 1.6.8
-  default: false
+  default: true
   allowedNodeVersions: [1.4.0]
   etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
   etcdClusterYaml: etcd-cluster.yaml
@@ -31,11 +31,11 @@ versions:
     k8s-version: v1.6.8
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
-    kube-machine-version: latest
+    kube-machine-version: v0.1
     addon-manager-version: v1.6.0
 - name: 1.6.9
   id: 1.6.9
-  default: true
+  default: false
   allowedNodeVersions: [1.4.0]
   etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
   etcdClusterYaml: etcd-cluster.yaml
@@ -48,5 +48,5 @@ versions:
     k8s-version: v1.6.9
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
-    kube-machine-version: latest
+    kube-machine-version: v0.1
     addon-manager-version: v1.6.0
