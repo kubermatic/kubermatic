@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-mkdir -p ./dump
+set -euo pipefail
+
+dumpdir="$(mktemp -d)"
 
 kubectl get --export -o=json ns | \
 jq '.items[] |
@@ -11,9 +13,9 @@ jq '.items[] |
         .metadata.resourceVersion,
         .metadata.creationTimestamp,
         .metadata.generation
-    )' > ./dump/namespaces.json
+    )' > $dumpdir/namespaces.json
 
-for ns in $(jq -r '.metadata.name' < ./dump/namespaces.json);do
+for ns in $(jq -r '.metadata.name' < $dumpdir/namespaces.json);do
     echo "Namespace: $ns"
     kubectl --namespace="${ns}" get --export -o=json deployment,ingress,daemonset,secrets,configmap,service,serviceaccount,statefulsets | \
     jq '.items[] |
@@ -31,5 +33,7 @@ for ns in $(jq -r '.metadata.name' < ./dump/namespaces.json);do
             .spec.template.spec.terminationGracePeriodSeconds,
             .spec.template.spec.restartPolicy,
             .spec.volumeName
-        )' >> "./dump/basic-resources.json"
+        )' >> "$dumpdir/basic-resources.json"
 done
+
+printf "backups stored in \n$dumpdir/namespaces.json\n$dumpdir/basic-resources.json\n"

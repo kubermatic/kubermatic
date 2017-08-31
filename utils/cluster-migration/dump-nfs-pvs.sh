@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
-mkdir -p ./dump
+set -euo pipefail
 
-for ns in $(jq -r '.metadata.name' < ./dump/namespaces.json);do
+dumpdir="$(mktemp -d)"
+
+kubectl get --export -o=json ns | \
+jq '.items[] |
+	select(.metadata.name!="kube-system") |
+	select(.metadata.name!="default") |
+	del(.status,
+        .metadata.uid,
+        .metadata.selfLink,
+        .metadata.resourceVersion,
+        .metadata.creationTimestamp,
+        .metadata.generation
+    )' > $dumpdir/namespaces.json
+
+for ns in $(jq -r '.metadata.name' < $dumpdir/namespaces.json);do
     echo "Namespace: $ns"
     kubectl --namespace="${ns}" get --export -o=json pvc | \
     jq '.items[] |
@@ -14,7 +28,7 @@ for ns in $(jq -r '.metadata.name' < ./dump/namespaces.json);do
             .metadata.generation,
             .metadata.annotation,
             .status
-        )' >> "./dump/pvc.json"
+        )' >> "$dumpdir/pvc.json"
 done
 
 kubectl get --export -o=json pv | \
@@ -28,4 +42,6 @@ jq '.items[] |
         .metadata.annotation,
         .status,
         .spec.claimRef
-    )' > "./dump/pv.json"
+    )' > "$dumpdir/pv.json"
+
+printf "backups stored in \n$dumpdir/pv.json\n$dumpdir/pvc.json\n"
