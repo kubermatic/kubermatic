@@ -33,14 +33,14 @@ goBuildNode(pipeline){
     }
 
     if (env.BRANCH_NAME == "develop" && env.GIT_TAG !=  "") {
-        pipeline.dockerBuild("docker", "${env.DOCKER_TAG} latest", "./api")
+        pipeline.dockerBuild("docker", "${env.DOCKER_TAG} ${env.GIT_COMMIT} latest", "./api")
     } else if (env.BRANCH_NAME == "develop") {
-        pipeline.dockerBuild("docker", "${env.DOCKER_TAG} develop", "./api")
+        pipeline.dockerBuild("docker", "${env.DOCKER_TAG} ${env.GIT_COMMIT} develop", "./api")
 
-        pipeline.deploy("docker", "dev", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.DOCKER_TAG}")
-        pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.DOCKER_TAG}")
+        pipeline.deploy("docker", "dev", "kubermatic", "deployment/kubermatic-api-v1", "api=kubermatic/api:${env.GIT_COMMIT}")
+        pipeline.deploy("docker", "dev", "kubermatic", "deployment/cluster-controller-v1", "cluster-controller=kubermatic/api:${env.GIT_COMMIT}")
     } else {
-      pipeline.dockerBuild("docker", "${env.DOCKER_TAG} dev", "./api")
+      pipeline.dockerBuild("docker", "${env.DOCKER_TAG} ${env.GIT_COMMIT} dev", "./api")
     }
 
     if (getCommitMessage().startsWith("!e2e")) {
