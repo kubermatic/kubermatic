@@ -54,16 +54,10 @@ vendor:
 ifndef HAS_GIT
 	$(error You must install git)
 endif
-	dep ensure
-
-bootstrap:
-ifndef HAS_GOMETALINTER
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install
-endif
 ifndef HAS_DEP
 	go get -u github.com/golang/dep/cmd/dep
 endif
+	dep ensure
 
 client-up:
 	mkdir -p $(CURDIR)/_artifacts
@@ -82,6 +76,10 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
+ifndef HAS_GOMETALINTER
+	go get -u github.com/alecthomas/gometalinter
+	gometalinter --install
+endif
 	{ \
 	set -e ;\
 	PACKAGES=$$(go list ./... | grep -v /vendor/) ;\
