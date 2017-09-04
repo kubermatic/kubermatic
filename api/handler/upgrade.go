@@ -14,6 +14,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/handler/errors"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
 
@@ -25,18 +26,18 @@ func getClusterUpgrades(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(clusterReq)
 		if !ok {
-			return nil, NewWrongRequest(request, clusterReq{})
+			return nil, errors.NewWrongRequest(request, clusterReq{})
 		}
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err
 		}
@@ -115,32 +116,32 @@ func performClusterUpgrade(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(upgradeReq)
 		if !ok {
-			return nil, NewWrongRequest(request, upgradeReq{})
+			return nil, errors.NewWrongRequest(request, upgradeReq{})
 		}
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		k, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err
 		}
 
 		_, ok = versions[req.to]
 		if !ok {
-			return nil, NewUnknownVersion(req.to)
+			return nil, errors.NewUnknownVersion(req.to)
 		}
 
 		_, err = kversion.
 			NewUpdatePathSearch(versions, updates, kversion.SemverMatcher{}).
 			Search(k.Spec.MasterVersion, req.to)
 		if err != nil {
-			return nil, NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
+			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
 		}
 
 		return nil, kp.UpgradeCluster(req.user, req.cluster, req.to)

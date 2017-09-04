@@ -1,5 +1,5 @@
-apiVersion: "etcd.coreos.com/v1"
-kind: "Cluster"
+apiVersion: "etcd.database.coreos.com/v1beta2"
+kind: "EtcdCluster"
 metadata:
   name: "etcd-cluster"
 spec:
@@ -7,8 +7,9 @@ spec:
   version: {{index .Version.Values "etcd-cluster-version"}}
   backup:
     # short snapshot interval for testing, do not use this in production!
-    backupIntervalInSecond: 300
-    maxBackups: 50
+    backupIntervalInSecond: 60
+    maxBackups: 5
     storageType: "PersistentVolume"
     pv:
-      volumeSizeInMB: 2048
+      volumeSizeInMB: 512
+      storageClass: generic

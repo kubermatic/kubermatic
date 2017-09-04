@@ -15,7 +15,7 @@ config:
     users:
       - name: "apiserver"
         ssh_keys:
-          {{range .Keys}}- {{.PublicKey}}
+          {{range .Keys}}- {{.Spec.PublicKey}}
           {{end -}}
           - "{{ .Cluster.Status.ApiserverSSHKey.PublicKey | apiBytesToString }} apiserver@{{ .Cluster.Address.ExternalName }}"
         sudo: true
@@ -93,11 +93,7 @@ config:
             --cluster-dns=10.10.10.10 \
             --cluster_domain=cluster.local \
             --kubeconfig=/etc/kubernetes/kubeconfig \
-            {{ if contains "v1.6" (index .Version.Values "k8s-version") -}}
-            --experimental-bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
-            {{ else -}}
             --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
-            {{ end -}}
             --require-kubeconfig \
             --cert-dir=/etc/kubernetes/
           [Install]

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/coreos/go-oidc"
+	oidc "github.com/coreos/go-oidc"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/provider"
 )

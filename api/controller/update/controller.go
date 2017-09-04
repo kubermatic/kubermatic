@@ -7,32 +7,63 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/resources"
-	"github.com/kubermatic/kubermatic/api/extensions"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
+
+	"k8s.io/api/apps/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	k "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientkubernetes "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
 
+// Interface is a interface for a update controller
+type Interface interface {
+	Sync(*api.Cluster) (*api.Cluster, error)
+}
+
+// New returns a update controller
+func New(
+	kubeClient clientkubernetes.Interface,
+	extClient crdclient.Interface,
+	masterResourcesPath,
+	overwriteHost,
+	dc string,
+	versions map[string]*api.MasterVersion,
+	updates []api.MasterUpdate,
+	depStore cache.Indexer,
+	etcdClusterStore cache.Indexer,
+) Interface {
+	return &controller{
+		client:              kubeClient,
+		extClient:           extClient,
+		masterResourcesPath: masterResourcesPath,
+		overwriteHost:       overwriteHost,
+		dc:                  dc,
+		versions:            versions,
+		updates:             updates,
+		depStore:            depStore,
+		etcdClusterStore:    etcdClusterStore,
+	}
+}
+
 // Controller represents an update controller
-type Controller struct {
-	Client              k.Interface
-	TprClient           extensions.Clientset
-	EtcdClusterClient   etcd.Clientset
-	MasterResourcesPath string
-	OverwriteHost       string
-	DC                  string
-	Versions            map[string]*api.MasterVersion
-	Updates             []api.MasterUpdate
-	DepStore            cache.Indexer
-	EtcdClusterStore    cache.Indexer
+type controller struct {
+	client              clientkubernetes.Interface
+	extClient           crdclient.Interface
+	masterResourcesPath string
+	overwriteHost       string
+	dc                  string
+	versions            map[string]*api.MasterVersion
+	updates             []api.MasterUpdate
+	depStore            cache.Indexer
+	etcdClusterStore    cache.Indexer
 }
 
 // Sync determines the current update state, and advances to the next phase as required
-func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
-	v, found := u.Versions[c.Spec.MasterVersion]
+func (u *controller) Sync(c *api.Cluster) (*api.Cluster, error) {
+	v, found := u.versions[c.Spec.MasterVersion]
 	if !found {
 		return nil, fmt.Errorf("unknown target master version %q", c.Spec.MasterVersion)
 	}
@@ -78,18 +109,18 @@ func (u *Controller) Sync(c *api.Cluster) (*api.Cluster, error) {
 	return c, nil
 }
 
-func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
+func (u *controller) updateDeployment(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.MasterResourcesPath, u.DC, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.masterResourcesPath, u.dc, yamlFile)
 		if err != nil {
 			return nil, err
 		}
 
 		ns := kubernetes.NamespaceName(c.Metadata.Name)
-		_, err = u.Client.ExtensionsV1beta1().Deployments(ns).Update(dep)
+		_, err = u.client.ExtensionsV1beta1().Deployments(ns).Update(dep)
 		if errors.IsNotFound(err) {
 			glog.Errorf("expected an %s deployment, but didn't find any for cluster %v. Creating a new one.", dep.Name, c.Metadata.Name)
-			_, err = u.Client.ExtensionsV1beta1().Deployments(ns).Create(dep)
+			_, err = u.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 			if err != nil {
 				return nil, fmt.Errorf("failed to re-create deployment for %s: %v", dep.Name, err)
 			}
@@ -102,24 +133,25 @@ func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, master
 	return c, nil
 }
 
-func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
+func (u *controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		newEtcd, err := resources.LoadEtcdClusterFile(masterVersion, u.MasterResourcesPath, yamlFile)
+		newEtcd, err := resources.LoadEtcdClusterFile(masterVersion, u.masterResourcesPath, yamlFile)
 		if err != nil {
 			return nil, err
 		}
-
-		oldEtcd, err := u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Get("etcd-cluster")
+		ns := fmt.Sprintf("cluster-%s", c.Metadata.Name)
+		var oldEtcd *etcdoperatorv1beta2.EtcdCluster
+		oldEtcd, err = u.extClient.EtcdoperatorV1beta2().EtcdClusters(ns).Get("etcd-cluster", metav1.GetOptions{})
 		if err != nil {
-			err = fmt.Errorf("failed to get current etcd cluster for %s: %v", newEtcd.Metadata.Name, err)
+			err = fmt.Errorf("failed to get current etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
 			return nil, err
 		}
 
 		oldEtcd.Spec.Version = newEtcd.Spec.Version
-		_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Update(oldEtcd)
+		_, err = u.extClient.EtcdoperatorV1beta2().EtcdClusters(ns).Update(oldEtcd)
 		if err != nil {
-			err = fmt.Errorf("failed to update etcd cluster for %s: %v", newEtcd.Metadata.Name, err)
+			err = fmt.Errorf("failed to update etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
 			return nil, err
 		}
@@ -128,11 +160,11 @@ func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, maste
 	return c, nil
 }
 
-func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
+func (u *controller) waitForEtcdCluster(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
-		obj, exists, err := u.EtcdClusterStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
+		obj, exists, err := u.etcdClusterStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
 		if err != nil {
 			return nil, false, err
 		}
@@ -141,7 +173,7 @@ func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 			c.Status.MasterUpdatePhase = fallbackPhase
 			return c, false, nil
 		}
-		etcd := obj.(*etcd.Cluster)
+		etcd := obj.(*etcdoperatorv1beta2.EtcdCluster)
 		//Ensure the etcd quorum
 		if etcd.Spec.Size/2+1 >= etcd.Status.Size {
 			return nil, false, nil
@@ -150,11 +182,11 @@ func (u *Controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 	return c, true, nil
 }
 
-func (u *Controller) waitForDeployments(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
+func (u *controller) waitForDeployments(c *api.Cluster, names []string, fallbackPhase api.MasterUpdatePhase) (*api.Cluster, bool, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
-		dep, exists, err := u.DepStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
+		dep, exists, err := u.depStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
 		if err != nil {
 			return nil, false, err
 		}

@@ -9,12 +9,13 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
-	"k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {

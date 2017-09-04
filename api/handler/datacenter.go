@@ -15,6 +15,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/handler/errors"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
 
@@ -92,13 +93,13 @@ func datacenterKeyEndpoint(
 
 		dc, found := dcs[req.dc]
 		if !found {
-			return nil, NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
 		//TODO: Make more generic.
 		// also for digitalocean ... or libmachine?
 		if dc.Spec.AWS == nil {
-			return nil, NewBadRequest("not aws", req.dc)
+			return nil, errors.NewBadRequest("not aws", req.dc)
 		}
 
 		config := aws.NewConfig().
@@ -129,11 +130,11 @@ func datacenterEndpoint(
 
 		dc, found := dcs[req.dc]
 		if !found {
-			return nil, NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
 		if _, isAdmin := req.user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
-			return nil, NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
 		_, kpFound := kps[req.dc]

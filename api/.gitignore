@@ -13,3 +13,7 @@ _build/*
 _artifacts/*
 handler/swagger/index.json
 handler/swagger/api/index.json
+/client-gen
+/codecgen_binary
+/defaulter-gen
+/deepcopy-gen

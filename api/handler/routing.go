@@ -9,7 +9,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/provider"
 )
 
@@ -20,7 +20,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
-	masterTPRClient     extensions.Clientset
+	masterExtClient     crdclient.Interface
 	authenticator       Authenticator
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
@@ -33,7 +33,7 @@ func NewRouting(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	authenticator Authenticator,
-	masterTPRClient extensions.Clientset,
+	masterExtClient crdclient.Interface,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 ) Routing {
@@ -43,7 +43,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
-		masterTPRClient:     masterTPRClient,
+		masterExtClient:     masterExtClient,
 		authenticator:       authenticator,
 		versions:            versions,
 		updates:             updates,
@@ -85,11 +85,6 @@ func (r Routing) Register(mux *mux.Router) {
 
 	mux.
 		Methods(http.MethodPost).
-		Path("/api/v1/dc/{dc}/cluster").
-		Handler(r.authenticator.IsAuthenticated(r.newClusterHandler()))
-
-	mux.
-		Methods(http.MethodPost).
 		Path("/api/v1/cluster").
 		Handler(r.authenticator.IsAuthenticated(r.newClusterHandlerV2()))
 
@@ -102,11 +97,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.authenticator.IsAuthenticated(r.clusterHandler()))
-
-	mux.
-		Methods(http.MethodPut).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/cloud").
-		Handler(r.authenticator.IsAuthenticated(r.setCloudHandler()))
 
 	mux.
 		Methods(http.MethodGet).
@@ -124,7 +114,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
 
@@ -171,7 +161,7 @@ func (r Routing) Register(mux *mux.Router) {
 
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		listSSHKeyEndpoint(r.masterTPRClient),
+		listSSHKeyEndpoint(r.masterExtClient),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -180,7 +170,7 @@ func (r Routing) listSSHKeys() http.Handler {
 
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		createSSHKeyEndpoint(r.masterTPRClient),
+		createSSHKeyEndpoint(r.masterExtClient),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
@@ -189,7 +179,7 @@ func (r Routing) createSSHKey() http.Handler {
 
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		deleteSSHKeyEndpoint(r.masterTPRClient),
+		deleteSSHKeyEndpoint(r.masterExtClient),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -244,20 +234,10 @@ func (r Routing) datacenterHandler() http.Handler {
 	)
 }
 
-// newClusterHandler creates a new cluster.
-func (r Routing) newClusterHandler() http.Handler {
-	return httptransport.NewServer(
-		newClusterEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeNewClusterReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
 // newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterTPRClient),
+		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterExtClient),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -269,16 +249,6 @@ func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		clusterEndpoint(r.kubernetesProviders, r.cloudProviders),
 		decodeClusterReq,
-		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-	)
-}
-
-// setCloudHandler updates a cluster.
-func (r Routing) setCloudHandler() http.Handler {
-	return httptransport.NewServer(
-		setCloudEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
-		decodeSetCloudReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 	)
@@ -307,7 +277,7 @@ func (r Routing) clustersHandler() http.Handler {
 // deleteClusterHandler deletes a cluster.
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient),
+		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterExtClient),
 		decodeDeleteClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -327,7 +297,7 @@ func (r Routing) nodesHandler() http.Handler {
 // createNodesHandler let's you create nodes.
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient, r.versions),
+		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterExtClient, r.versions),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

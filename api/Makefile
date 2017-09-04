@@ -25,8 +25,6 @@ $(CMD): vendor
 	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
 
 check: gofmt lint
-test: vendor
-	@$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
 
 clean:
 	@cd _build
@@ -82,7 +80,7 @@ ifndef HAS_GOMETALINTER
 endif
 	{ \
 	set -e ;\
-	PACKAGES=$$(go list ./... | grep -v /vendor/) ;\
+	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
 	echo "go vet" ;\
 	go vet $$PACKAGES ;\
 	echo "golint" ;\
@@ -102,7 +100,7 @@ endif
 	misspell -error -locale US $$GOFILES ;\
 	}
 
-cover:
+test:
 	./hack/cover.sh --html
 
 .PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)

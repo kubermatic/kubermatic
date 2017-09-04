@@ -1,4 +1,4 @@
-package handler
+package errors
 
 import (
 	"fmt"
@@ -64,4 +64,9 @@ func NewNotAuthorized() error {
 // NewNotImplemented creates a HTTP 501 'not implemented' error.
 func NewNotImplemented() error {
 	return HTTPError{http.StatusNotImplemented, "not implemented"}
+}
+
+// NewAlreadyExists creates a HTTP 409 already exists error
+func NewAlreadyExists(kind, name string) error {
+	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q already exists", kind, name)}
 }

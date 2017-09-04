@@ -6,12 +6,10 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions"
+	"github.com/kubermatic/kubermatic/api/handler/errors"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/uuid"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/pkg/apis/rbac"
 )
 
 var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
@@ -134,7 +132,7 @@ func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*a
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if _, found := p.clusters[cluster]; !found {
-		return nil, errors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return nil, errors.NewNotFound("cluster", cluster)
 	}
 
 	c := p.clusters[cluster]
@@ -168,7 +166,7 @@ func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster strin
 	defer p.mu.Unlock()
 
 	if _, found := p.clusters[cluster]; !found {
-		return errors.NewNotFound(rbac.Resource("cluster"), cluster)
+		return errors.NewNotFound("cluster", cluster)
 	}
 
 	delete(p.clusters, cluster)
@@ -177,16 +175,4 @@ func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster strin
 
 func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]string, error) {
 	return []string{}, nil
-}
-
-func (p *kubernetesFakeProvider) CreateAddon(user provider.User, cluster string, addonName string) (*extensions.ClusterAddon, error) {
-	return nil, nil
-}
-
-func (p *kubernetesFakeProvider) CreateNode(user provider.User, cluster string, node *api.Node) (*extensions.ClNode, error) {
-	return nil, nil
-}
-
-func (p *kubernetesFakeProvider) DeleteNode(user provider.User, cluster string, node *api.Node) error {
-	return nil
 }

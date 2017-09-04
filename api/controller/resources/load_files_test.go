@@ -34,7 +34,6 @@ func TestLoadServiceFile(t *testing.T) {
 	}
 
 	svcs := map[string]string{
-		"etcd":      "loadservicefile-etcd-result",
 		"apiserver": "loadservicefile-apiserver-result",
 	}
 

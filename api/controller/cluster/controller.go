@@ -10,26 +10,23 @@ import (
 	"github.com/kubermatic/kubermatic/api/controller"
 	"github.com/kubermatic/kubermatic/api/controller/update"
 	"github.com/kubermatic/kubermatic/api/controller/version"
-	"github.com/kubermatic/kubermatic/api/extensions"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	"github.com/kubermatic/kubermatic/api/provider"
 	kprovider "github.com/kubermatic/kubermatic/api/provider/kubernetes"
+
+	"k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	uruntime "k8s.io/apimachinery/pkg/util/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	rbacv1beta1 "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -49,11 +46,9 @@ const (
 
 type clusterController struct {
 	dc                    string
-	tprClient             extensions.Clientset
-	etcdClusterClient     etcd.Clientset
 	client                kubernetes.Interface
+	extClient             crdclient.Interface
 	queue                 *cache.FIFO // of namespace keys
-	recorder              record.EventRecorder
 	masterResourcesPath   string
 	externalURL           string
 	apiserverExternalPort int
@@ -96,7 +91,7 @@ type clusterController struct {
 	cps        map[string]provider.CloudProvider
 	workerName string
 
-	updateController      *update.Controller
+	updateController      update.Interface
 	versions              map[string]*api.MasterVersion
 	updates               []api.MasterUpdate
 	defaultMasterVersion  *api.MasterVersion
@@ -111,8 +106,7 @@ type clusterController struct {
 func NewController(
 	dc string,
 	client kubernetes.Interface,
-	tprClient extensions.Clientset,
-	etcdClusterClient etcd.Clientset,
+	crdClient crdclient.Interface,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -125,8 +119,7 @@ func NewController(
 	cc := &clusterController{
 		dc:                    dc,
 		client:                client,
-		tprClient:             tprClient,
-		etcdClusterClient:     etcdClusterClient,
+		extClient:             crdClient,
 		queue:                 cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                   cps,
 		updates:               updates,
@@ -138,14 +131,6 @@ func NewController(
 		apiserverExternalPort: apiserverExternalPort,
 		dcs: dcs,
 	}
-
-	eventBroadcaster := record.NewBroadcaster()
-	// TODO(realfake): Not shure which scheme we should use ??
-	cc.recorder = eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "clustermanager"})
-	eventBroadcaster.StartLogging(glog.Infof)
-	e := cc.client.CoreV1().Events("")
-	es := corev1.EventSinkImpl{Interface: e}
-	eventBroadcaster.StartRecordingToSink(&es)
 
 	nsLabels := map[string]string{
 		kprovider.RoleLabelKey: kprovider.ClusterRoleLabel,
@@ -211,7 +196,7 @@ func NewController(
 				return cc.client.ExtensionsV1beta1().Deployments(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&v1beta1.Deployment{},
+		&extv1beta1.Deployment{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -256,7 +241,7 @@ func NewController(
 				return cc.client.ExtensionsV1beta1().Ingresses(metav1.NamespaceAll).Watch(options)
 			},
 		},
-		&v1beta1.Ingress{},
+		&extv1beta1.Ingress{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -325,13 +310,13 @@ func NewController(
 	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return cc.etcdClusterClient.Cluster(metav1.NamespaceAll).List(options)
+				return cc.extClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return cc.etcdClusterClient.Cluster(metav1.NamespaceAll).Watch(options)
+				return cc.extClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).Watch(options)
 			},
 		},
-		&etcd.Cluster{},
+		&etcdoperatorv1beta2.EtcdCluster{},
 		fullResyncPeriod,
 		cache.ResourceEventHandlerFuncs{},
 		namespaceIndexer,
@@ -343,17 +328,17 @@ func NewController(
 	if err != nil {
 		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
-	cc.updateController = &update.Controller{
-		Client:              cc.client,
-		TprClient:           cc.tprClient,
-		EtcdClusterClient:   cc.etcdClusterClient,
-		MasterResourcesPath: cc.masterResourcesPath,
-		DC:                  cc.dc,
-		Versions:            cc.versions,
-		Updates:             cc.updates,
-		DepStore:            cc.depStore,
-		EtcdClusterStore:    cc.etcdClusterStore,
-	}
+	cc.updateController = update.New(
+		cc.client,
+		cc.extClient,
+		cc.masterResourcesPath,
+		"",
+		cc.dc,
+		cc.versions,
+		cc.updates,
+		cc.depStore,
+		cc.etcdClusterStore,
+	)
 	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {
@@ -363,29 +348,6 @@ func NewController(
 	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.EqualityMatcher{})
 
 	return cc, nil
-}
-
-func (cc *clusterController) recordClusterPhaseChange(ns *v1.Namespace, newPhase api.ClusterPhase) {
-	ref := &v1.ObjectReference{
-		Kind:      "Namespace",
-		Name:      ns.Name,
-		UID:       types.UID(ns.Name),
-		Namespace: ns.Name,
-	}
-	glog.V(2).Infof("Recording phase change %s event message for namespace %s", string(newPhase), ns.Name)
-	cc.recorder.Eventf(ref, v1.EventTypeNormal, string(newPhase), "Cluster phase is now: %s", newPhase)
-}
-
-func (cc *clusterController) recordClusterEvent(c *api.Cluster, reason, msg string, args ...interface{}) {
-	nsName := kprovider.NamespaceName(c.Metadata.Name)
-	ref := &v1.ObjectReference{
-		Kind:      "Namespace",
-		Name:      nsName,
-		UID:       types.UID(nsName),
-		Namespace: nsName,
-	}
-	glog.V(4).Infof("Recording event for namespace %q: %s", nsName, fmt.Sprintf(msg, args...))
-	cc.recorder.Eventf(ref, v1.EventTypeNormal, reason, msg, args)
 }
 
 func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
@@ -415,11 +377,6 @@ func (cc *clusterController) updateCluster(oldC, newC *api.Cluster) error {
 				continue
 			}
 			return err
-		}
-
-		// record phase change events
-		if oldC.Status.Phase != newC.Status.Phase {
-			cc.recordClusterPhaseChange(newNS, newC.Status.Phase)
 		}
 
 		return nil
@@ -588,7 +545,7 @@ func (cc *clusterController) syncInPhase(phase api.ClusterPhase) {
 }
 
 func (cc *clusterController) Run(stopCh <-chan struct{}) {
-	defer uruntime.HandleCrash()
+	defer utilruntime.HandleCrash()
 	glog.Info("Starting cluster controller")
 
 	go cc.nsController.Run(wait.NeverStop)

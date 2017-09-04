@@ -6,6 +6,9 @@ import (
 	"fmt"
 )
 
+// DefaultUserLabel is the default key when putting an encoded user into a resource label.
+const DefaultUserLabel = "kubermatic-user-hash"
+
 // UserToLabel encodes an arbitrary user string into a Kubernetes label value
 // compatible value. This is never decoded again. It shall be without
 // collisions, i.e. no hash. This is a one-way-function!

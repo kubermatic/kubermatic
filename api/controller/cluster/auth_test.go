@@ -1,9 +1,10 @@
 package cluster
 
 import (
-	"github.com/kubermatic/kubermatic/api"
 	"strings"
 	"testing"
+
+	"github.com/kubermatic/kubermatic/api"
 )
 
 func TestCreateServiceAccountKey(t *testing.T) {

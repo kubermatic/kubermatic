@@ -3,7 +3,6 @@ package metrics
 import (
 	"log"
 	"net/http"
-
 	"sync"
 
 	"github.com/golang/glog"

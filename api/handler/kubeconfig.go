@@ -7,8 +7,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/kubermatic/kubermatic/api/handler/errors"
 	"github.com/kubermatic/kubermatic/api/provider"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
@@ -21,13 +22,13 @@ func kubeconfigEndpoint(
 
 		kp, found := kps[req.dc]
 		if !found {
-			return nil, NewBadRequest("unknown kubernetes datacenter %q", req.dc)
+			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
 		c, err := kp.Cluster(req.user, req.cluster)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				return nil, NewInDcNotFound("cluster", req.dc, req.cluster)
+			if kerrors.IsNotFound(err) {
+				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
 			}
 			return nil, err
 		}

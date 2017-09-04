@@ -14,9 +14,14 @@ make bootstrap
 ```
 
 #### Update dependencies
-
+Sure that you want to update? And not just install dependencies?
 ```bash
 dep ensure -update
+```
+#### Update code generation
+
+```bash
+./hack/update-codegen.sh
 ```
 
 ### Running locally

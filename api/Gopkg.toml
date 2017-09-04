@@ -1,3 +1,5 @@
+required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/codecgen", "k8s.io/code-generator/cmd/deepcopy-gen"]
+
 [[constraint]]
   name = "github.com/Masterminds/semver"
 
@@ -6,6 +8,7 @@
 
 [[constraint]]
   name = "github.com/coreos/go-oidc"
+  revision = "a4973d9a4225417aecf5d450a9522f00c1f7130f"
 
 [[constraint]]
   name = "github.com/digitalocean/godo"
@@ -40,10 +43,6 @@
   name = "gopkg.in/yaml.v2"
 
 [[constraint]]
-  name = "k8s.io/client-go"
-  version = "3.0.0-beta.0"
-
-[[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "1.10.24"
 
@@ -52,3 +51,21 @@
 
 [[constraint]]
   name = "github.com/mgutz/logxi"
+
+[[constraint]]
+  name = "k8s.io/apiextensions-apiserver"
+  branch = "release-1.8"
+
+[[constraint]]
+  name = "github.com/kube-node/nodeset"
+  branch = "sttts-kube-gen"
+  source = "github.com/mrIncompetent/nodeset"
+
+[[constraint]]
+  branch = "release-5.0"
+  name = "k8s.io/client-go"
+
+[[constraint]]
+  name = "k8s.io/code-generator"
+  branch = "sttts-codegen-scripts"
+  source = "github.com/sttts/code-generator"

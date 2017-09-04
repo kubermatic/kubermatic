@@ -3,9 +3,10 @@ package provider
 import (
 	"fmt"
 
-	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 )
 
 // Constants defining known cloud providers.
@@ -37,7 +38,7 @@ type CloudSpecProvider interface {
 type NodeProvider interface {
 	Initialize(*api.CloudSpec, string) (*api.CloudSpec, error)
 	CleanUp(*api.CloudSpec) error
-	CreateNodeClass(*api.Cluster, *api.NodeSpec, []extensions.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
+	CreateNodeClass(*api.Cluster, *api.NodeSpec, []v1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	GetNodeClassName(*api.NodeSpec) string
 }
 
@@ -59,10 +60,6 @@ type KubernetesProvider interface {
 
 	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user User, cluster string) (*api.Cluster, error)
-
-	// SetCloud updates CloudSpec settings on the given cluster for the given user
-	// Deprecated in favor of NewClusterWithCloud
-	SetCloud(user User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
 	Clusters(user User) ([]*api.Cluster, error)

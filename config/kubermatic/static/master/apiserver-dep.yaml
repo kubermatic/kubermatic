@@ -46,18 +46,19 @@ spec:
             "--client-ca-file=/var/run/kubernetes/apiserver/root-ca.crt",
             "--kubelet-client-certificate=/var/run/kubernetes/apiserver/kubelet-client.crt",
             "--kubelet-client-key=/var/run/kubernetes/apiserver/kubelet-client.key",
-            {{ if eq .CloudProvider "aws" }}
-            "--kubelet-preferred-address-types=ExternalDNS,Hostname,InternalDNS,InternalIP,ExternalIP,LegacyHostIP",
-            {{ else }}
-            "--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP,LegacyHostIP",
-            {{ end }}
             {{ if eq .CloudProvider "openstack" }}
             "--cloud-config=/etc/kubernetes/cloud/config",
             "--cloud-provider=openstack",
+            "--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
             {{ end }}
             {{ if eq .CloudProvider "aws" }}
             "--cloud-config=/etc/kubernetes/cloud/config",
             "--cloud-provider=aws",
+            "--kubelet-preferred-address-types=InternalDNS,Hostname,InternalIP,ExternalDNS,ExternalIP",
+            {{ end }}
+            {{ if eq .CloudProvider "digitalocean" }}
+            "--ssh-preferred-address-types=InternalIP",
+            "--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
             {{ end }}
             "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
             "--ssh-user=apiserver",
@@ -66,7 +67,7 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 10
+          initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 5
         readinessProbe:

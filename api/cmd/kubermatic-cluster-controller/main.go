@@ -7,12 +7,11 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/controller/version"
-	"github.com/kubermatic/kubermatic/api/extensions"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	"github.com/kubermatic/kubermatic/api/metrics"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 
-	"github.com/kubermatic/kubermatic/api/metrics"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -65,6 +64,8 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	// Create crd's
+
 	for ctx := range clientcmdConfig.Contexts {
 		// create kube client
 		clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
@@ -82,27 +83,15 @@ func main() {
 		if err != nil {
 			glog.Fatal(err)
 		}
-		client, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			glog.Fatal(err)
-		}
-		tprClient, err := extensions.WrapClientsetWithExtensions(cfg)
-		if err != nil {
-			glog.Fatal(err)
-		}
-
-		etcdClusterClient, err := etcd.WrapClientsetWithExtensions(cfg)
-		if err != nil {
-			glog.Fatal(err)
-		}
+		client := kubernetes.NewForConfigOrDie(cfg)
+		extClient := crdclient.NewForConfigOrDie(cfg)
 
 		// start controller
 		cps := cloud.Providers(dcs)
 		ctrl, err := cluster.NewController(
 			ctx,
 			client,
-			tprClient,
-			etcdClusterClient,
+			extClient,
 			cps,
 			versions,
 			updates,
