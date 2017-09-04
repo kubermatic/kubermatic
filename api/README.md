@@ -55,6 +55,17 @@ make client-down #deletes all clusters from the given user
 ```
 When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 
+### Run api locally
+```bash
+make run-api
+```
+
+### Generate OpenAPI docs
+```bash
+make gen-api-docs
+```
+or more info at [API docs instruction](docs/api-docs.md)
+
 # Documentation
 - [AWS Account Creation](docs/aws-account-creation.md)
 - [Load Script Usage](docs/load-script-usage.md)

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -40,12 +41,14 @@ func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	f, err := ioutil.ReadFile("../api/handler/swagger/api/index.json")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintln(w, "swagger/api/index.json not found")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(f)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "Something goes wrong...:(")
 	}
 }
