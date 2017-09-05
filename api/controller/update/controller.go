@@ -104,23 +104,26 @@ func (u *Controller) updateDeployment(c *api.Cluster, yamlFiles []string, master
 
 func (u *Controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase api.MasterUpdatePhase) (*api.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		etcd, err := resources.LoadEtcdClusterFile(masterVersion, u.MasterResourcesPath, yamlFile)
+		newEtcd, err := resources.LoadEtcdClusterFile(masterVersion, u.MasterResourcesPath, yamlFile)
 		if err != nil {
 			return nil, err
 		}
 
-		_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Update(etcd)
-		if errors.IsNotFound(err) {
-			glog.Errorf("expected an %s etcd cluster, but didn't find any for cluster %v. Creating a new one.", etcd.Metadata.Name, c.Metadata.Name)
-			_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Create(etcd)
-			if err != nil {
-				return nil, fmt.Errorf("failed to re-create etcd cluster for %s: %v", etcd.Metadata.Name, err)
-			}
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to update etcd cluster  for %s: %v", etcd.Metadata.Name, err)
+		oldEtcd, err := u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Get("etcd-cluster")
+		if err != nil {
+			err = fmt.Errorf("failed to get current etcd cluster for %s: %v", newEtcd.Metadata.Name, err)
+			glog.Error(err)
+			return nil, err
+		}
+
+		oldEtcd.Spec.Version = newEtcd.Spec.Version
+		_, err = u.EtcdClusterClient.Cluster(fmt.Sprintf("cluster-%s", c.Metadata.Name)).Update(oldEtcd)
+		if err != nil {
+			err = fmt.Errorf("failed to update etcd cluster for %s: %v", newEtcd.Metadata.Name, err)
+			glog.Error(err)
+			return nil, err
 		}
 	}
-
 	c.Status.MasterUpdatePhase = nextPhase
 	return c, nil
 }

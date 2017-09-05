@@ -1,3 +1,4 @@
+# We only update the etcd-operator version explicitly, not the whole template
 versions:
 - name: 1.6.7
   id: 1.6.7

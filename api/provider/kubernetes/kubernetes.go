@@ -402,6 +402,8 @@ func (p *kubernetesProvider) UpgradeCluster(user provider.User, cluster, version
 
 	c.Spec.MasterVersion = version
 	c.Status.Phase = api.UpdatingMasterClusterStatusPhase
+	c.Status.LastTransitionTime = time.Now()
+	c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
 
 	ns, err = MarshalCluster(p.cps, c, ns)
 	if err != nil {
