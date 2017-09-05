@@ -50,6 +50,10 @@ spec:
             {{ else }}
             "--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP,LegacyHostIP",
             {{ end }}
+            {{ if eq .CloudProvider "openstack" }}
+            "--cloud-config=/etc/kubernetes/cloud/config",
+            "--cloud-provider=openstack",
+            {{ end }}
             "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
             "--ssh-user=apiserver",
             "--v=4" ]
@@ -70,6 +74,11 @@ spec:
         - name: token-users
           mountPath: /var/run/kubernetes/token-users
           readOnly: true
+        {{ if eq .CloudProvider "openstack" }}
+        - name: cloud-config
+          mountPath: /etc/kubernetes/cloud
+          readOnly: true
+        {{ end }}
       volumes:
       - name: apiserver
         secret:
@@ -79,3 +88,8 @@ spec:
         secret:
           secretName: token-users
           defaultMode: 0400
+      {{ if eq .CloudProvider "openstack" }}
+      - name: cloud-config
+        configMap:
+          name: cloud-config
+      {{ end }}

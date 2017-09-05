@@ -35,6 +35,7 @@ spec:
           {{ end }}
           {{ if eq .CloudProvider "openstack" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
+          "--cloud-provider=openstack",
           {{ end }}
           "--allocate-node-cidrs=true",
           "--v=4"
