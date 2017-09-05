@@ -13,6 +13,7 @@ versions:
   values:
     k8s-version: v1.6.7
     etcd-operator-version: v0.2.4fix
+    # We only update the version explicit, not the whole template
     etcd-cluster-version: 3.1.5
     kube-machine-version: v0.1
     addon-manager-version: v1.6.0
