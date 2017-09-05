@@ -167,12 +167,6 @@
   revision = "ac112f7d75a0714af1bd86ab17749b31f7809640"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-version"
-  packages = ["."]
-  revision = "03c5bf6be031b6dd45afec16b1cf94fc8938bc77"
-
-[[projects]]
   name = "github.com/howeyc/gopass"
   packages = ["."]
   revision = "3ca23474a7c7203e0a0a070fd33508f6efdb9b3d"
@@ -330,6 +324,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dacc118ecec7cc4239796ddf78243a8531a27789f54eead4b40feaa783e6ff4e"
+  inputs-digest = "5b921ec027cb5a4fe2e1ffc84fdd138f0ed1fed90074f02ee7d590356fdb4546"
   solver-name = "gps-cdcl"
   solver-version = 1

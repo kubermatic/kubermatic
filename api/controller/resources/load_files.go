@@ -147,17 +147,23 @@ disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AW
 
 // LoadOpenstackCloudConfigConfigMap returns the aws cloud config configMap for the cluster
 func LoadOpenstackCloudConfigConfigMap(c *api.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
+	//See https://github.com/kubernetes/kubernetes/issues/33128
 	config := fmt.Sprintf(`
 [Global]
-auth-url=%s
-Username="%s"
-password=%s
+auth-url = "%s"
+username = "%s"
+password = "%s"
 domain-name="%s"
+tenant-name = "%s"
+
+[BlockStorage]
+trust-device-path = false
 `,
 		dc.Spec.Openstack.AuthURL,
 		c.Spec.Cloud.Openstack.Username,
 		c.Spec.Cloud.Openstack.Password,
 		c.Spec.Cloud.Openstack.Domain,
+		c.Spec.Cloud.Openstack.Tenant,
 	)
 
 	cm := v1.ConfigMap{}
