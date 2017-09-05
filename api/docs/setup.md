@@ -8,7 +8,7 @@ git clone git@github.com:kubermatic/config
 git clone git@github.com:kubermatic/secrets
 cd api
 
-# Link cloud-init
+# Link nodeclasses
 sudo mkdir -p /opt/template/nodes/ 
 sudo ln -s $GOPATH/src/github.com/kubermatic/kubermatic/config/kubermatic/static/nodes/* /opt/template/nodes/
 
