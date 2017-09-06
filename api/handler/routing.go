@@ -124,7 +124,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
 
 	mux.
-		Methods("POST").
+		Methods(http.MethodPost).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
 
@@ -141,7 +141,7 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrage()))
+		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrade()))
 
 	mux.
 		Methods(http.MethodPost).
@@ -169,6 +169,14 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.deleteSSHKey()))
 }
 
+
+// @Title listSSHKeys
+// @Description listSSHKeys return list of ssh keys.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "Bad parameters, add user credentials"
+// @Router /api/v1/ssh-keys [get]
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		listSSHKeyEndpoint(r.masterTPRClient),
@@ -178,6 +186,14 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
+
+// @Title createSSHKey
+// @Description createSSHKey add ssh key.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "Bad parameters, add user credentials"
+// @Router /api/v1/ssh-keys [post]
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		createSSHKeyEndpoint(r.masterTPRClient),
@@ -187,6 +203,14 @@ func (r Routing) createSSHKey() http.Handler {
 	)
 }
 
+
+// @Title deleteSSHKey
+// @Description deleteSSHKey delete ssh key.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "Bad parameters"
+// @Router /api/v1/ssh-keys/{meta_name} [delete]
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		deleteSSHKeyEndpoint(r.masterTPRClient),
@@ -304,16 +328,6 @@ func (r Routing) clustersHandler() http.Handler {
 	)
 }
 
-// deleteClusterHandler deletes a cluster.
-// @Title deleteClusterHandler
-// @Description deleteClusterHandler deletes a cluster.
-// @Accept  json
-// @Produce  json
-// @Param   dc     path    int     true        "Some ID"
-// @Param   cluster     path    string     true        "Some ID"
-// @Success 200 {object} string
-// @Failure 400 {object} APIError "unknown kubernetes datacenter"
-// @Router /api/v1/dc/{dc}/cluster/{cluster} [delete]
 // deleteClusterHandler let's you create nodes.
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
@@ -365,6 +379,16 @@ func (r Routing) createNodesHandler() http.Handler {
 	)
 }
 
+// deleteClusterHandler let's you delete nodes.
+// @Title deleteClusterHandler
+// @Description deleteClusterHandler let's you delete nodes.
+// @Accept json
+// @Produce json
+// @Param   dc     path    int     true        "Some ID"
+// @Param   cluster     path    string     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "unknown kubernetes datacenter"
+// @Router /api/v1/dc/{dc}/cluster/{cluster} [delete]
 // deleteNodeHandler let's you delete nodes.
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
@@ -385,8 +409,8 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	)
 }
 
-// performClusterUpgrage starts a cluster upgrade to a specific version
-func (r Routing) performClusterUpgrage() http.Handler {
+// performClusterUpgrade starts a cluster upgrade to a specific version
+func (r Routing) performClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
 		performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates),
 		decodeUpgradeReq,
