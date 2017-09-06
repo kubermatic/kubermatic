@@ -305,6 +305,16 @@ func (r Routing) clustersHandler() http.Handler {
 }
 
 // deleteClusterHandler deletes a cluster.
+// @Title deleteClusterHandler
+// @Description deleteClusterHandler deletes a cluster.
+// @Accept  json
+// @Produce  json
+// @Param   dc     path    int     true        "Some ID"
+// @Param   cluster     path    string     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "unknown kubernetes datacenter"
+// @Router /api/v1/dc/{dc}/cluster/{cluster} [delete]
+// deleteClusterHandler let's you create nodes.
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient),
@@ -315,6 +325,17 @@ func (r Routing) deleteClusterHandler() http.Handler {
 }
 
 // nodesHandler returns all nodes from a user.
+// @Title createNodesHandler
+// @Description createNodesHandler create nodes.
+// @Accept  json
+// @Produce  json
+// @Param   dc     path    int     true        "Some ID"
+// @Param   cluster     path    string     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "unknown kubernetes datacenter"
+// @Router /api/v1/dc/{dc}/cluster/{cluster}/node [get]
+// createNodesHandler let's you create nodes.
+// nodesHandler returns all nodes from a user.
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		nodesEndpoint(r.kubernetesProviders, r.cloudProviders),
@@ -324,6 +345,16 @@ func (r Routing) nodesHandler() http.Handler {
 	)
 }
 
+// createNodesHandler create nodes.
+// @Title createNodesHandler
+// @Description createNodesHandler create nodes.
+// @Accept  json
+// @Produce  json
+// @Param   dc     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "cannot create nodes without cloud provider"
+// @Failure 400 {object} APIError "unknown kubernetes datacenter"
+// @Router /api/v1/dc/{dc}/cluster/{cluster}/node [post]
 // createNodesHandler let's you create nodes.
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
