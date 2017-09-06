@@ -169,7 +169,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.authenticator.IsAuthenticated(r.deleteSSHKey()))
 }
 
-
 // @Title listSSHKeys
 // @Description listSSHKeys return list of ssh keys.
 // @Accept  json
@@ -186,7 +185,6 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
-
 // @Title createSSHKey
 // @Description createSSHKey add ssh key.
 // @Accept  json
@@ -202,7 +200,6 @@ func (r Routing) createSSHKey() http.Handler {
 		httptransport.ServerErrorLogger(r.logger),
 	)
 }
-
 
 // @Title deleteSSHKey
 // @Description deleteSSHKey delete ssh key.
