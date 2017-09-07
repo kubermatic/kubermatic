@@ -55,6 +55,10 @@ spec:
             "--cloud-config=/etc/kubernetes/cloud/config",
             "--cloud-provider=openstack",
             {{ end }}
+            {{ if eq .CloudProvider "aws" }}
+            "--cloud-config=/etc/kubernetes/cloud/config",
+            "--cloud-provider=aws",
+            {{ end }}
             "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
             "--ssh-user=apiserver",
             "--v=4" ]
@@ -87,6 +91,11 @@ spec:
           mountPath: /etc/kubernetes/cloud
           readOnly: true
         {{ end }}
+        {{ if eq .CloudProvider "aws" }}
+        - name: cloud-config
+          mountPath: /etc/kubernetes/cloud
+          readOnly: true
+        {{ end }}
       volumes:
       - name: apiserver
         secret:
@@ -97,6 +106,11 @@ spec:
           secretName: token-users
           defaultMode: 0400
       {{ if eq .CloudProvider "openstack" }}
+      - name: cloud-config
+        configMap:
+          name: cloud-config
+      {{ end }}
+      {{ if eq .CloudProvider "aws" }}
       - name: cloud-config
         configMap:
           name: cloud-config
