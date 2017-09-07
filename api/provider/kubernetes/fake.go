@@ -61,7 +61,7 @@ func NewKubernetesFakeProvider(
 							Apiserver:  true,
 							Scheduler:  true,
 							Controller: false,
-							Etcd:       []bool{true},
+							Etcd:       true,
 						},
 					},
 				},

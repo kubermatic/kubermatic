@@ -1,76 +1,44 @@
 package cluster
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	"github.com/kubermatic/kubermatic/api/controller/resources"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	deps, err := cc.depStore.ByIndex("namespace", ns)
-	if err != nil {
-		return false, nil, err
-	}
-
-	etcds, err := cc.etcdClusterStore.ByIndex("namespace", ns)
-	if err != nil {
-		return false, nil, err
-	}
-
 	health := api.ClusterHealth{
-		ClusterHealthStatus: api.ClusterHealthStatus{
-			Etcd: []bool{false},
-		},
+		ClusterHealthStatus: api.ClusterHealthStatus{},
 	}
 
 	healthMapping := map[string]*bool{
-		"etcd-cluster":       &health.Etcd[0],
 		"apiserver":          &health.Apiserver,
 		"controller-manager": &health.Controller,
 		"scheduler":          &health.Scheduler,
+		"node-controller":    &health.NodeController,
 	}
 
-	allHealthy := true
-
-	for _, obj := range deps {
-		dep := obj.(*v1beta1.Deployment)
-		role := dep.Spec.Selector.MatchLabels["role"]
-		depHealth, err := cc.healthyDep(dep)
+	for name := range healthMapping {
+		healthy, err := cc.healthyDep(ns, name)
 		if err != nil {
-			return false, nil, err
+			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		allHealthy = allHealthy && depHealth
-		if !depHealth {
-			glog.V(6).Infof("Cluster %q dep %q is not healthy", c.Metadata.Name, dep.Name)
-		}
-		if m, found := healthMapping[role]; found {
-			*m = depHealth
-		}
+		*healthMapping[name] = healthy
 	}
 
-	for _, obj := range etcds {
-		etcd := obj.(*etcd.Cluster)
-
-		etcdHealth, err := cc.healthyEtcd(etcd)
-		if err != nil {
-			return false, nil, err
-		}
-		allHealthy = allHealthy && etcdHealth
-		if !etcdHealth {
-			glog.V(6).Infof("Cluster %q etcd %q is not healthy", c.Metadata.Name, etcd.Metadata.Name)
-		}
-		if m, found := healthMapping[etcd.Metadata.Name]; found {
-			*m = etcdHealth
-		}
+	var err error
+	health.Etcd, err = cc.healthyEtcd(ns, resources.EtcdClusterName)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
 
-	return allHealthy, &health, nil
+	return health.AllHealthy(), &health, nil
 }
 
 func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster, error) {

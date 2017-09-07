@@ -459,7 +459,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 
 	// get namespace
 	startTime := time.Now()
-	glog.V(4).Infof("Syncing cluster %q", key)
+	glog.V(4).Infof("Syncing key %q", key)
 	defer func() {
 		glog.V(4).Infof("Finished syncing namespace %q (%v)", key, time.Since(startTime))
 	}()
@@ -494,7 +494,7 @@ func (cc *clusterController) syncClusterNamespace(key string) error {
 	if err != nil {
 		return err
 	}
-
+	glog.V(4).Infof("Syncing cluster %q in phase %q", c.Metadata.Name, c.Status.Phase)
 	// state machine
 	var changedC *api.Cluster
 	switch c.Status.Phase {

@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-test/deep"
@@ -12,7 +13,7 @@ import (
 func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {
 	allHealthy, health, err := cc.clusterHealth(c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get cluster heath: %v", err)
 	}
 
 	diff := deep.Equal(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)

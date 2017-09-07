@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"time"
 
 	"github.com/kube-node/nodeset/pkg/client/clientset_v1alpha1"
@@ -9,6 +10,13 @@ import (
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+)
+
+var (
+	// ErrNotFound tells that something was not found
+	ErrNotFound = errors.New("not found")
+	// ErrInvalidType tells if a interface conversion failed due to invalid type
+	ErrInvalidType = errors.New("invalid type")
 )
 
 // Metadata is an object storing common metadata for persistable objects.
@@ -223,10 +231,20 @@ type CloudSpec struct {
 
 // ClusterHealthStatus stores health information of the components of a cluster.
 type ClusterHealthStatus struct {
-	Apiserver  bool   `json:"apiserver"`
-	Scheduler  bool   `json:"scheduler"`
-	Controller bool   `json:"controller"`
-	Etcd       []bool `json:"etcd"`
+	Apiserver      bool `json:"apiserver"`
+	Scheduler      bool `json:"scheduler"`
+	Controller     bool `json:"controller"`
+	NodeController bool `json:"node_controller"`
+	Etcd           bool `json:"etcd"`
+}
+
+// AllHealthy returns if all components are healthy
+func (h *ClusterHealthStatus) AllHealthy() bool {
+	return h.Etcd &&
+		h.NodeController &&
+		h.Controller &&
+		h.Apiserver &&
+		h.Scheduler
 }
 
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
