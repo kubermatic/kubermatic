@@ -14,6 +14,11 @@ import (
 	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
+const (
+	// EtcdClusterName is the name of the etcd cluster
+	EtcdClusterName = "etcd-cluster"
+)
+
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
 func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*extensionsv1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)

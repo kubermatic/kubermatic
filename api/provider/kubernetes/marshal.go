@@ -183,9 +183,8 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 		err := json.Unmarshal([]byte(healthJSON), &health)
 		if err != nil {
 			glog.Errorf("Error unmarshaling the cluster health of %q: %s", c.Metadata.Name, err.Error())
-		} else {
-			c.Status.Health = &health
 		}
+		c.Status.Health = &health
 	}
 
 	return &c, nil
