@@ -29,5 +29,6 @@ spec:
           httpGet:
             path: /healthz
             port: 10251
-          initialDelaySeconds: 15
-          timeoutSeconds: 1
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5

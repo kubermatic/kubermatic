@@ -44,8 +44,9 @@ spec:
           httpGet:
             path: /healthz
             port: 10252
-          initialDelaySeconds: 15
-          timeoutSeconds: 1
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
         env:
         {{ if eq .CloudProvider "aws" }}
         - name: AWS_ACCESS_KEY_ID
