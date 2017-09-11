@@ -49,6 +49,3 @@
 
 [[constraint]]
   name = "github.com/yvasiyarov/swagger"
-
-[[constraint]]
-  name = "github.com/mgutz/logxi"
