@@ -16,7 +16,7 @@ versions:
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
     kube-machine-version: v0.1.1
-    addon-manager-version: v1.6.0
+    addon-manager-version: v1.6.1
 - name: 1.6.8
   id: 1.6.8
   default: false
@@ -33,7 +33,7 @@ versions:
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
     kube-machine-version: v0.1.1
-    addon-manager-version: v1.6.0
+    addon-manager-version: v1.6.1
 - name: 1.6.9
   id: 1.6.9
   default: true
@@ -50,4 +50,4 @@ versions:
     etcd-operator-version: v0.2.4fix
     etcd-cluster-version: 3.1.5
     kube-machine-version: v0.1.1
-    addon-manager-version: v1.6.0
+    addon-manager-version: v1.6.1
