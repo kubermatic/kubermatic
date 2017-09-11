@@ -7,7 +7,7 @@ spec:
     matchLabels:
       role: apiserver
       version: v1
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -28,6 +28,7 @@ spec:
             "--apiserver-service-port={{ .Cluster.Address.ExternalPort }}",
             "--insecure-bind-address=0.0.0.0",
             "--insecure-port=8080",
+            "--apiserver-count=2",
             "--external-hostname=apiserver",
             "--etcd-servers=http://etcd-cluster-client:2379",
             "--storage-backend=etcd3",
@@ -57,13 +58,13 @@ spec:
             "--ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa",
             "--ssh-user=apiserver",
             "--v=4" ]
-#TODO: Investigate reason why this causes a panic: https://github.com/kubermatic/kubermatic/issues/406
-#        livenessProbe:
-#          httpGet:
-#            path: /healthz
-#            port: 8080
-#          initialDelaySeconds: 15
-#          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
         ports:
         - containerPort: {{ .Cluster.Address.ExternalPort }}
         - containerPort: 8080

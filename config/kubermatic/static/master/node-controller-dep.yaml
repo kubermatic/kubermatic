@@ -21,6 +21,16 @@ spec:
         imagePullPolicy: Always
         command: [ "/node-controller",
             "--master=http://apiserver:8080",
+            "--health-listen-address=:8081",
             "--v=4",
             "--logtostderr",
         ]
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+        ports:
+        - containerPort: 8081

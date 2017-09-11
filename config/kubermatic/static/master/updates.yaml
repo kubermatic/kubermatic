@@ -22,8 +22,8 @@ updates:
   promote: true
 - from: 1.6.x
   to: 1.6.9
-  automatic: false
-  rollbackAllowed: true
+  automatic: true
+  rollbackAllowed: false
   enabled: true
   visible: true
   promote: true
