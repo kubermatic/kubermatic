@@ -41,6 +41,7 @@ var (
 	versionsFile     = flag.String("versions", "versions.yaml", "The versions.yaml file path")
 	updatesFile      = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	clientID         = flag.String("client-id", "", "OpenID client ID")
+	_                = flag.String("swagger-path", "./swagger/api/index.json", "OpenID client ID")
 )
 
 func main() {
