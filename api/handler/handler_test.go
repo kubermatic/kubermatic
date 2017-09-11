@@ -36,9 +36,11 @@ func TestAPIDescriptionHandlerStatusOK(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name())
 
 	if _, err := tmpfile.Write([]byte("{'apiVersion': '1.4.0'}")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
 		t.Fatal(err)
 	}
 
