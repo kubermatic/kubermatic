@@ -51,4 +51,4 @@
   name = "github.com/yvasiyarov/swagger"
 
 [[constraint]]
-  name = "github.com/mgutz/logxi/v1"
+  name = "github.com/mgutz/logxi"
