@@ -17,19 +17,24 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 		ClusterHealthStatus: api.ClusterHealthStatus{},
 	}
 
-	healthMapping := map[string]*bool{
-		"apiserver":          &health.Apiserver,
-		"controller-manager": &health.Controller,
-		"scheduler":          &health.Scheduler,
-		"node-controller":    &health.NodeController,
+	type depInfo struct {
+		healthy  *bool
+		minReady int32
+	}
+
+	healthMapping := map[string]*depInfo{
+		"apiserver":          &depInfo{healthy: &health.Apiserver, minReady: 1},
+		"controller-manager": &depInfo{healthy: &health.Controller, minReady: 1},
+		"scheduler":          &depInfo{healthy: &health.Scheduler, minReady: 1},
+		"node-controller":    &depInfo{healthy: &health.NodeController, minReady: 1},
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDep(ns, name)
+		healthy, err := cc.healthyDep(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name] = healthy
+		*healthMapping[name].healthy = healthy
 	}
 
 	var err error
