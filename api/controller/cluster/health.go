@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (cc *clusterController) healthyDep(ns, name string) (bool, error) {
+func (cc *clusterController) healthyDep(ns, name string, minReady int32) (bool, error) {
 	key := fmt.Sprintf("%s/%s", ns, name)
 	obj, exists, err := cc.depStore.GetByKey(key)
 	if err != nil {
@@ -23,7 +23,7 @@ func (cc *clusterController) healthyDep(ns, name string) (bool, error) {
 		return false, api.ErrInvalidType
 	}
 
-	return dep.Status.AvailableReplicas == *dep.Spec.Replicas, nil
+	return dep.Status.AvailableReplicas == *dep.Spec.Replicas || dep.Status.AvailableReplicas >= minReady, nil
 }
 
 func (cc *clusterController) healthyEtcd(ns, name string) (bool, error) {
