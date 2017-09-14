@@ -32,6 +32,7 @@ spec:
           "--cluster-cidr=172.25.0.0/16",
           {{ if eq .CloudProvider "aws" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
+          "--cloud-provider=aws",
           {{ end }}
           {{ if eq .CloudProvider "openstack" }}
           "--cloud-config=/etc/kubernetes/cloud/config",

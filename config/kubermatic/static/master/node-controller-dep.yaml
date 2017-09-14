@@ -15,6 +15,7 @@ spec:
         release: {{index .Version.Values "kube-machine-version"}}
         version: v1
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
       - name: kube-machine
         image: kubenode/kube-machine:{{index .Version.Values "kube-machine-version"}}
