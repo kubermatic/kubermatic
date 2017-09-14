@@ -19,6 +19,13 @@ type OpenstackSpec struct {
 	AvailabilityZone string `yaml:"availability_zone"`
 }
 
+// OTCSpec describes a OTC datacenter
+type OTCSpec struct {
+	AvailabilityZone string `json:"availability_zone"`
+	Image            string `json:"image"`
+	AuthURL          string `json:"auth_url"`
+}
+
 // AWSSpec describes a digital ocean datacenter
 type AWSSpec struct {
 	Region        string `yaml:"region"`
@@ -44,6 +51,7 @@ type DatacenterSpec struct {
 	AWS          *AWSSpec          `yaml:"aws"`
 	BareMetal    *BareMetalSpec    `yaml:"baremetal"`
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
+	OTC          *OTCSpec          `yaml:"otc"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

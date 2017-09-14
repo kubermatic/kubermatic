@@ -48,6 +48,12 @@ type OpenstackNodeSpec struct {
 	Image  string `json:"image"`
 }
 
+// OTCNodeSpec specifies a otc node.
+type OTCNodeSpec struct {
+	Flavor string `json:"flavor"`
+	Image  string `json:"image"`
+}
+
 // BringYourOwnNodeSpec specifies a bring your own node
 type BringYourOwnNodeSpec struct {
 }
@@ -89,6 +95,7 @@ type UbuntuSpec struct {
 // OperatingSystemSpec specifies operations system options
 type OperatingSystemSpec struct {
 	ContainerLinux ContainerLinuxSpec `json:"container_linux"`
+	Ubuntu         UbuntuSpec         `json:"ubuntu"`
 	SSHUser        string             `json:"ssh_user"`
 }
 
@@ -103,6 +110,7 @@ type NodeSpec struct {
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	BareMetal    *BareMetalNodeSpec    `json:"baremetal,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
+	OTC          *OTCNodeSpec          `json:"otc,omitempty"`
 }
 
 // NodeCondition stores information about the node condition
@@ -161,14 +169,14 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floating_ip_pool"`
 }
 
-// ContainerLinuxClusterSpec specifies container linux configuration for nodes - cluster wide
-type ContainerLinuxClusterSpec struct {
-	AutoUpdate bool `json:"auto_update"`
-}
-
-// ContainerLinuxNodeSpec specifies container linux configuration for individual nodes
-type ContainerLinuxNodeSpec struct {
-	Version string `json:"version"`
+// OTCCloudSpec specifies access data to an OTC cloud.
+type OTCCloudSpec struct {
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	Project        string `json:"tenant"`
+	Domain         string `json:"domain"`
+	SubnetID       string `json:"subnet_id"`
+	SecurityGroups string `json:"security_groups"`
 }
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
@@ -227,6 +235,7 @@ type CloudSpec struct {
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	BareMetal    *BareMetalCloudSpec    `json:"baremetal,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
+	OTC          *OTCCloudSpec          `json:"otc,omitempty"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -489,6 +498,13 @@ type OpenstackDatacenterSpec struct {
 	AuthURL          string `json:"auth_url"`
 }
 
+// OTCDatacenterSpec specifies a generic bare metal datacenter.
+type OTCDatacenterSpec struct {
+	AvailabilityZone string `json:"availability_zone"`
+	Image            string `json:"image"`
+	AuthURL          string `json:"auth_url"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Country      string                       `json:"country,omitempty"`
@@ -499,6 +515,7 @@ type DatacenterSpec struct {
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	BareMetal    *BareMetalDatacenterSpec     `json:"baremetal,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
+	OTC          *OTCDatacenterSpec           `json:"otc,omitempty"`
 }
 
 // Datacenter is the object representing a Kubernetes infra datacenter.
