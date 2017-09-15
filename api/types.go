@@ -173,7 +173,7 @@ type OpenstackCloudSpec struct {
 type OTCCloudSpec struct {
 	Username       string `json:"username"`
 	Password       string `json:"password"`
-	Project        string `json:"tenant"`
+	Project        string `json:"project"`
 	Domain         string `json:"domain"`
 	SubnetID       string `json:"subnet_id"`
 	SecurityGroups string `json:"security_groups"`
