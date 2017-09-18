@@ -327,7 +327,7 @@ func (r Routing) nodesHandler() http.Handler {
 // createNodesHandler let's you create nodes.
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient),
+		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterTPRClient, r.versions),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

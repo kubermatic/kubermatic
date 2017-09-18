@@ -90,13 +90,13 @@ func (os *openstack) UnmarshalCloudSpec(annotations map[string]string) (*api.Clo
 	return &c, nil
 }
 
-func (os *openstack) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func (os *openstack) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := os.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
 	}
 
-	nc, err := resources.LoadNodeClassFile(tplPath, os.GetNodeClassName(nSpec), c, nSpec, dc, keys)
+	nc, err := resources.LoadNodeClassFile(tplPath, os.GetNodeClassName(nSpec), c, nSpec, dc, keys, version)
 	if err != nil {
 		return nil, fmt.Errorf("could not load nodeclass: %v", err)
 	}

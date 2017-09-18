@@ -111,6 +111,7 @@ func createNodesEndpoint(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	masterClientset extensions.Clientset,
+	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodesReq)
@@ -152,13 +153,18 @@ func createNodesEndpoint(
 			}
 		}
 
+		version, found := versions[c.Spec.MasterVersion]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster version %s", c.Spec.MasterVersion)
+		}
+
 		nclient, err := c.GetNodesetClient()
 		if err != nil {
 			return nil, err
 		}
 		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.GetNodeClassName(&req.Spec), metav1.GetOptions{})
 		if errors.IsNotFound(err) {
-			nc, err = cp.CreateNodeClass(c, &req.Spec, keys)
+			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
 			if err != nil {
 				return nil, err
 			}

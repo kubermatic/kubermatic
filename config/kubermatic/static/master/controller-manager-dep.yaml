@@ -26,7 +26,6 @@ spec:
           "--master=http://apiserver:8080",
           "--service-account-private-key-file=/var/run/kubernetes/auth/service-account.key",
           "--root-ca-file=/var/run/kubernetes/auth/root-ca.crt",
-          "--insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap",
           "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
           "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
           "--cluster-cidr=172.25.0.0/16",
@@ -39,6 +38,9 @@ spec:
           "--cloud-provider=openstack",
           {{ end }}
           "--allocate-node-cidrs=true",
+          {{ if contains "v1.6" (index .Version.Values "k8s-version") }}
+          "--insecure-experimental-approve-all-kubelet-csrs-for-group=system:bootstrappers",
+          {{ end }}
           "--v=4"
         ]
         livenessProbe:
