@@ -7,7 +7,7 @@ spec:
     matchLabels:
       role: apiserver
       version: v1
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -28,9 +28,9 @@ spec:
             "--apiserver-service-port={{ .Cluster.Address.ExternalPort }}",
             "--insecure-bind-address=0.0.0.0",
             "--insecure-port=8080",
-            "--apiserver-count=2",
             "--external-hostname=apiserver",
             "--etcd-servers=http://etcd-cluster-client:2379",
+            "--etcd-quorum-read=true",
             "--storage-backend=etcd3",
             "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
             "--authorization-mode=AlwaysAllow,RBAC",
