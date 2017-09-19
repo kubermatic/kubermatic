@@ -1,31 +1,26 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
+  name: nginx-ingress-lb
   labels:
-    k8s-app: nginx-ingress-controller
-  name: nginx-ingress-controller
+    name: nginx-ingress-lb
   namespace: nginx
 spec:
   template:
     metadata:
       labels:
-        k8s-app: nginx-ingress-controller
+        name: nginx-ingress-lb
       annotations:
-        prometheus.io/port: '9147'
+        prometheus.io/port: '10254'
         prometheus.io/scrape: 'true'
     spec:
     {{ if .Values.IsBareMetal }}
       hostNetwork: true
     {{ end }}
-      serviceAccountName: ingress
+      terminationGracePeriodSeconds: 60
       containers:
-      - args:
-        - /nginx-ingress-controller
-        - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
-        - --configmap=$(POD_NAMESPACE)/nginx-ingress-conf
-        image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.3
-        imagePullPolicy: Always
-        name: nginx-ingress-controller
+      - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.13
+        name: nginx-ingress-lb
         readinessProbe:
           httpGet:
             path: /healthz
@@ -38,6 +33,13 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           timeoutSeconds: 1
+        {{ if not .Values.IsBareMetal }}
+        ports:
+        - containerPort: 80
+          hostPort: 80
+        - containerPort: 443
+          hostPort: 443
+        {{ end }}
         env:
           - name: POD_NAME
             valueFrom:
@@ -47,35 +49,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        {{ if not .Values.IsBareMetal }}
-        ports:
-        - containerPort: 80
-          name: http
-        - containerPort: 443
-          name: https
-        {{ end }}
-        volumeMounts:
-        - name: template
-          mountPath: /etc/nginx/template
-      - image: kubermatic/nginx-request-exporter:latest
-        imagePullPolicy: Always
-        name: nginx-request-exporter
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 9147
-            scheme: HTTP
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 9147
-            scheme: HTTP
-          initialDelaySeconds: 10
-          timeoutSeconds: 1
-        ports:
-        - containerPort: 9147
-          name: metrics
-      volumes:
-      - name: template
-        configMap:
-          name: nginx-ingress-template
+        args:
+        - /nginx-ingress-controller
+        - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
