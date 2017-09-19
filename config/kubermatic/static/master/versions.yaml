@@ -53,7 +53,7 @@ versions:
     addon-manager-version: v1.6.2
 - name: 1.6.10
   id: 1.6.10
-  default: false
+  default: true
   allowedNodeVersions: [1.4.0]
   etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
   etcdClusterYaml: etcd-cluster.yaml
