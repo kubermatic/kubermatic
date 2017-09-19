@@ -68,20 +68,3 @@ versions:
     etcd-cluster-version: 3.1.5
     kube-machine-version: v0.1.3
     addon-manager-version: v1.6.2
-- name: 1.7.0
-  id: 1.7.0
-  default: true
-  allowedNodeVersions: [1.4.0]
-  etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
-  etcdClusterYaml: etcd-cluster.yaml
-  apiserverDeploymentYaml: apiserver-dep.yaml
-  controllerDeploymentYaml: controller-manager-dep.yaml
-  schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
-  addonManagerDeploymentYaml: addon-manager-dep.yaml
-  values:
-    k8s-version: v1.7.0
-    etcd-operator-version: v0.2.4fix
-    etcd-cluster-version: 3.1.5
-    kube-machine-version: v0.1.3
-    addon-manager-version: v1.7.0
