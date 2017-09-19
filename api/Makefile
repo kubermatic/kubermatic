@@ -99,5 +99,7 @@ lint:
 cover:
 	./hack/cover.sh --html
 
-.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)
+gen-api-docs:
+	./hack/gen-api-docs.sh
 
+.PHONY: build test check cover gen-api-docs e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)

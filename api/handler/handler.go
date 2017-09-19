@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -37,15 +39,17 @@ func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 
 // APIDescriptionHandler always return swagger index.json
 func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
-
-	f, err := ioutil.ReadFile("../api/handler/swagger/api/index.json")
+	swaggerPath := fmt.Sprint(flag.Lookup("swagger-path").Value)
+	f, err := ioutil.ReadFile(swaggerPath)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintln(w, "swagger/api/index.json not found")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(f)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "Something goes wrong...:(")
 	}
 }

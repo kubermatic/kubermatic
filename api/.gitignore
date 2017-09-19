@@ -13,3 +13,4 @@ _build/*
 _artifacts/*
 handler/swagger/index.json
 handler/swagger/api/index.json
+.cover/*
