@@ -11,7 +11,7 @@ import (
 )
 
 // LoadNodeClassFile parses and returns the given nodeclass template
-func LoadNodeClassFile(filename, name string, c *api.Cluster, nSpec *api.NodeSpec, dc provider.DatacenterMeta, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func LoadNodeClassFile(filename, name string, c *api.Cluster, nSpec *api.NodeSpec, dc provider.DatacenterMeta, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	t, err := k8stemplate.ParseFile(filename)
 	if err != nil {
 		return nil, err
@@ -36,6 +36,7 @@ func LoadNodeClassFile(filename, name string, c *api.Cluster, nSpec *api.NodeSpe
 		Name       string
 		Kubeconfig string
 		Keys       []extensions.UserSSHKey
+		Version    *api.MasterVersion
 	}{
 		Cluster:    c,
 		NodeSpec:   nSpec,
@@ -43,6 +44,7 @@ func LoadNodeClassFile(filename, name string, c *api.Cluster, nSpec *api.NodeSpe
 		Name:       name,
 		Kubeconfig: string(ycfg),
 		Keys:       keys,
+		Version:    version,
 	}
 
 	var nc v1alpha1.NodeClass

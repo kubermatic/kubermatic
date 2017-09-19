@@ -53,7 +53,7 @@ func (p *fakeCloudProvider) UnmarshalCloudSpec(as map[string]string) (*api.Cloud
 	return &c, nil
 }
 
-func (p *fakeCloudProvider) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func (p *fakeCloudProvider) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 

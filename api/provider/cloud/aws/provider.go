@@ -390,13 +390,13 @@ func (*amazonEc2) UnmarshalCloudSpec(annotations map[string]string) (spec *api.C
 	return spec, nil
 }
 
-func (a *amazonEc2) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func (a *amazonEc2) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
 	}
 
-	nc, err := resources.LoadNodeClassFile(tplPath, a.GetNodeClassName(nSpec), c, nSpec, dc, keys)
+	nc, err := resources.LoadNodeClassFile(tplPath, a.GetNodeClassName(nSpec), c, nSpec, dc, keys, version)
 	if err != nil {
 		return nil, fmt.Errorf("could not load nodeclass: %v", err)
 	}

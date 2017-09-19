@@ -37,7 +37,7 @@ type CloudSpecProvider interface {
 type NodeProvider interface {
 	Initialize(*api.CloudSpec, string) (*api.CloudSpec, error)
 	CleanUp(*api.CloudSpec) error
-	CreateNodeClass(*api.Cluster, *api.NodeSpec, []extensions.UserSSHKey) (*v1alpha1.NodeClass, error)
+	CreateNodeClass(*api.Cluster, *api.NodeSpec, []extensions.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	GetNodeClassName(*api.NodeSpec) string
 }
 

@@ -54,7 +54,7 @@ func (*baremetal) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudS
 	return &cs, nil
 }
 
-func (b *baremetal) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func (b *baremetal) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 

@@ -68,7 +68,7 @@ func (b *bringyourown) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec,
 	return &c, nil
 }
 
-func (b *bringyourown) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey) (*v1alpha1.NodeClass, error) {
+func (b *bringyourown) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []extensions.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 

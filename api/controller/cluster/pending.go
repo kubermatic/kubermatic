@@ -265,7 +265,7 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) error {
 
 	buffer := bytes.Buffer{}
 	writer := csv.NewWriter(&buffer)
-	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:kubelet-bootstrap"}); err != nil {
+	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil {
 		return err
 	}
 	if err := writer.Write([]string{c.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {

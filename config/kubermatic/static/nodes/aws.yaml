@@ -54,7 +54,7 @@ config:
           ExecStartPre=/bin/bash -c "/usr/bin/curl -L -o /tmp/cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-v0.5.2.tgz && tar -xvf /tmp/cni-amd64.tgz -C /opt/cni/bin/"
           ExecStartPre=/usr/bin/curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
           ExecStartPre=/usr/bin/chmod +x /opt/bin/socat
-          ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.v1.6.7
+          ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
           ExecStartPost=/usr/bin/chmod +x /opt/bin/kubelet
           RemainAfterExit=true
 
@@ -95,7 +95,6 @@ config:
           Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
           EnvironmentFile=/etc/network-environment
           ExecStart=/opt/bin/kubelet \
-            --api-servers={{.Cluster.Address.URL}} \
             --container-runtime=docker \
             --allow-privileged=true \
             --pod-manifest-path=/etc/kubernetes/manifests \
@@ -106,7 +105,12 @@ config:
             --cluster_domain=cluster.local \
             --kubeconfig=/etc/kubernetes/kubeconfig \
             --cloud-provider=aws \
+            {{ if contains "v1.6" (index .Version.Values "k8s-version") -}}
             --experimental-bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
+            {{ else -}}
+            --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
+            {{ end -}}
+            --require-kubeconfig \
             --cert-dir=/etc/kubernetes/
 
           [Install]
