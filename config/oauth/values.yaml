@@ -3,10 +3,10 @@
 DockercfgSecret: "" 
 
 # Dex image tag from quay.io
-DexImageTag: v2.4.1
+DexImageTag: v2.6.1
 
-OAuth:
-  StaticClients:
-    - dummy: dummy
-  StaticPassword:
-    - dummy: dummy
+#OAuth:
+#  StaticClients:
+#    - dummy: dummy
+#  StaticPassword:
+#    - dummy: dummy
