@@ -84,8 +84,8 @@ pipeline:
     image: gcr.io/google_containers/hyperkube-amd64:v1.6.10
     commands:
       - echo $KUBECONFIG | base64 -d > kubeconfig
-      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic deployment/kubermatic-api-v1 api=kubermatic/api:$DRONE_COMMIT
-      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$DRONE_COMMIT
+      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/kubermatic-api-v1 api=kubermatic/api:$DRONE_COMMIT
+      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$DRONE_COMMIT
     secrets: [ kubeconfig ]
     when:
       branch: develop
