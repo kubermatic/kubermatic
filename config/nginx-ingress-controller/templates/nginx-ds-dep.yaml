@@ -1,15 +1,22 @@
 apiVersion: extensions/v1beta1
+{{ if .Values.IsBareMetal }}
 kind: DaemonSet
+{{ else }}
+kind: Deployment
+{{ end }}
 metadata:
-  name: nginx-ingress-lb
+  name: nginx-ingress-controller
   labels:
-    name: nginx-ingress-lb
+    k8s-app: nginx-ingress-controller
   namespace: nginx
 spec:
+{{ if .Values.IsBareMetal }}
+  replicas: 1
+{{ end }}
   template:
     metadata:
       labels:
-        name: nginx-ingress-lb
+        k8s-app: nginx-ingress-controller
       annotations:
         prometheus.io/port: '10254'
         prometheus.io/scrape: 'true'
@@ -20,7 +27,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
       - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.13
-        name: nginx-ingress-lb
+        name: nginx-ingress-controller
         readinessProbe:
           httpGet:
             path: /healthz
