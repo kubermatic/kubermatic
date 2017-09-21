@@ -1,6 +1,4 @@
 ##### Kubermatic k8sniff
-### Docker Hub Secret
-DockercfgSecret: ""
 
 IsBareMetal: false
 K8sniffImageTag: "latest"
