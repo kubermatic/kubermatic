@@ -139,9 +139,6 @@ func (cc *clusterController) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api
 	c.Status.ApiserverSSHKey.PublicKey = k.PublicKey
 	c.Status.ApiserverSSHKey.PrivateKey = k.PrivateKey
 
-	//TODO: Deprecated: Remove at some point with Dashboard V2
-	c.Status.ApiserverSSH = string(k.PublicKey)
-
 	glog.V(4).Infof("Created apiserver ssh keys for %s", kubernetes.NamespaceName(c.Metadata.Name))
 	return c, nil
 }
