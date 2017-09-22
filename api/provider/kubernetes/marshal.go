@@ -47,7 +47,6 @@ const (
 	kubeletCertKeyAnnotation        = annotationPrefix + "kubelet-cert-key"       // kubermatic.io/kubelet-cert-key
 	apiserverSSHPrivKeyAnnotation   = annotationPrefix + "apiserver-ssh-priv-key" // kubermatic.io/apiserver-ssh-priv-key
 	apiserverSSHPubKeyAnnotation    = annotationPrefix + "apiserver-ssh-pub-key"  // kubermatic.io/apiserver-ssh-pub-key
-	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                // kubermatic.io/ssh-pub
 	serviceAccountKeyAnnotation     = annotationPrefix + "service-account-key"    // kubermatic.io/service-account-key
 	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"     // kubermatic.io/seed-provider-used
 	apiserverExternalNameAnnotation = annotationPrefix + "external-name"          // external-name

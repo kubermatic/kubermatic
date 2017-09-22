@@ -10,7 +10,9 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 )
 
-const masterFilesPath = "../../../config/kubermatic/static/master/"
+const (
+	masterResourcePath = "../../../config/kubermatic/static/master/"
+)
 
 func TestLoadServiceFile(t *testing.T) {
 	c := &api.Cluster{
@@ -37,7 +39,7 @@ func TestLoadServiceFile(t *testing.T) {
 	}
 
 	for app, r := range svcs {
-		res, err := LoadServiceFile(c, app, "../../../config/kubermatic/static/master/")
+		res, err := LoadServiceFile(c, app, masterResourcePath)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
@@ -68,7 +70,7 @@ func TestLoadPVCFile(t *testing.T) {
 	ing := map[string]string{}
 
 	for s, r := range ing {
-		res, err := LoadPVCFile(c, s, "../../../config/kubermatic/static/master/")
+		res, err := LoadPVCFile(c, s, masterResourcePath)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -139,7 +141,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "us-central1", s)
+		res, err := LoadDeploymentFile(c, v, masterResourcePath, "us-central1", s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -194,7 +196,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "us-central1", s)
+		res, err := LoadDeploymentFile(c, v, masterResourcePath, "us-central1", s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -241,7 +243,7 @@ func TestLoadServiceAccountFile(t *testing.T) {
 	}
 
 	for app, r := range apps {
-		res, err := LoadServiceAccountFile(app, "../../../config/kubermatic/static/master/")
+		res, err := LoadServiceAccountFile(app, masterResourcePath)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
@@ -256,7 +258,7 @@ func TestLoadClusterRoleBindingFile(t *testing.T) {
 	}
 
 	for app, r := range apps {
-		res, err := LoadClusterRoleBindingFile("cluster-jh8j81chn", app, "../../../config/kubermatic/static/master/")
+		res, err := LoadClusterRoleBindingFile("cluster-jh8j81chn", app, masterResourcePath)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", app, err)
 		}
