@@ -8,16 +8,11 @@ import (
 	"testing"
 
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/test"
 )
 
 const masterFilesPath = "../../../config/kubermatic/static/master/"
 
 func TestLoadServiceFile(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	c := &api.Cluster{
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{
@@ -30,8 +25,8 @@ func TestLoadServiceFile(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &api.ClusterAddress{
-			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -52,10 +47,6 @@ func TestLoadServiceFile(t *testing.T) {
 }
 
 func TestLoadPVCFile(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	c := &api.Cluster{
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{
@@ -68,8 +59,8 @@ func TestLoadPVCFile(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -106,10 +97,6 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	v := &api.MasterVersion{
 		Name:                       "1.5.3",
 		ID:                         "1.5.3",
@@ -138,8 +125,8 @@ func TestLoadDeploymentFile(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -152,7 +139,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "host2", s)
+		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "us-central1", s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -162,10 +149,6 @@ func TestLoadDeploymentFile(t *testing.T) {
 }
 
 func TestLoadDeploymentFileAWS(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	v := &api.MasterVersion{
 		Name:                       "1.5.3",
 		ID:                         "1.5.3",
@@ -197,8 +180,8 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -211,7 +194,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "host2", s)
+		res, err := LoadDeploymentFile(c, v, "../../../config/kubermatic/static/master/", "us-central1", s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -221,10 +204,6 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 }
 
 func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	c := &api.Cluster{
 		Spec: api.ClusterSpec{
 			Cloud: &api.CloudSpec{
@@ -242,8 +221,8 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 			Name: "jh8j81chn",
 		},
 		Address: &api.ClusterAddress{
-			URL:          "https://jh8j81chn.host2.int.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.host2.int.kubermatic.io",
+			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -257,10 +236,6 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 }
 
 func TestLoadServiceAccountFile(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	apps := map[string]string{
 		"etcd-operator": "loadserviceaccountfile-etcd-operator-result",
 	}
@@ -276,10 +251,6 @@ func TestLoadServiceAccountFile(t *testing.T) {
 }
 
 func TestLoadClusterRoleBindingFile(t *testing.T) {
-	if test.IsOnCi(masterFilesPath) {
-		t.Skip("cannot load master files. Maybe on CI?")
-	}
-
 	apps := map[string]string{
 		"etcd-operator": "loadclusterrolebindingfile-etcd-operator-result",
 	}
