@@ -28,11 +28,11 @@ const (
 	outputPath    = "/_artifacts/"
 )
 const (
-	authBaseURL = "https://auth.int.kubermatic.io/"
+	authBaseURL = "https://auth.dev.kubermatic.io/"
 	password    = "password"
 	username    = "demo1@cluster"
 	clientID    = "kubermatic"
-	redirectURI = "https://int.kubermatic.io/login"
+	redirectURI = "https://dev.kubermatic.io/login"
 )
 
 var jwtToken = ""

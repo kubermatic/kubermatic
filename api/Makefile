@@ -83,14 +83,22 @@ endif
 	{ \
 	set -e ;\
 	PACKAGES=$$(go list ./... | grep -v /vendor/) ;\
+	echo "go vet" ;\
 	go vet $$PACKAGES ;\
+	echo "golint" ;\
 	golint $$PACKAGES ;\
+	echo "errcheck -blank" ;\
 	errcheck -blank $$PACKAGES ;\
+	echo "varcheck" ;\
 	varcheck $$PACKAGES ;\
+	echo "structcheck" ;\
 	structcheck $$PACKAGES ;\
+	echo "gosimple" ;\
 	gosimple $$PACKAGES ;\
+	echo "unused" ;\
 	unused $$PACKAGES ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
+	echo "misspell -error -locale US" ;\
 	misspell -error -locale US $$GOFILES ;\
 	}
 

@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -48,7 +47,6 @@ const (
 	kubeletCertKeyAnnotation        = annotationPrefix + "kubelet-cert-key"       // kubermatic.io/kubelet-cert-key
 	apiserverSSHPrivKeyAnnotation   = annotationPrefix + "apiserver-ssh-priv-key" // kubermatic.io/apiserver-ssh-priv-key
 	apiserverSSHPubKeyAnnotation    = annotationPrefix + "apiserver-ssh-pub-key"  // kubermatic.io/apiserver-ssh-pub-key
-	apiserverPubSSHAnnotation       = annotationPrefix + "ssh-pub"                // kubermatic.io/ssh-pub
 	serviceAccountKeyAnnotation     = annotationPrefix + "service-account-key"    // kubermatic.io/service-account-key
 	seedProviderUsedAnnotation      = annotationPrefix + "seed-provider-used"     // kubermatic.io/seed-provider-used
 	apiserverExternalNameAnnotation = annotationPrefix + "external-name"          // external-name
@@ -96,10 +94,6 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 		phaseTS = time.Now() // gracefully use "now"
 	}
 
-	apiserverSSH, err := base64.StdEncoding.DecodeString(ns.Annotations[apiserverPubSSHAnnotation])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode apiserver pub ssh key: %v", err)
-	}
 	c := api.Cluster{
 		Metadata: api.Metadata{
 			Name:        ns.Labels[nameLabelKey],
@@ -135,7 +129,6 @@ func UnmarshalCluster(cps map[string]provider.CloudProvider, ns *v1.Namespace) (
 				PublicKey:  api.NewBytes(ns.Annotations[apiserverSSHPubKeyAnnotation]),
 				PrivateKey: api.NewBytes(ns.Annotations[apiserverSSHPrivKeyAnnotation]),
 			},
-			ApiserverSSH: string(apiserverSSH),
 		},
 		Seed: ns.Annotations[seedProviderUsedAnnotation],
 	}
@@ -295,8 +288,6 @@ func MarshalCluster(cps map[string]provider.CloudProvider, c *api.Cluster, ns *v
 	if c.Status.ServiceAccountKey != nil {
 		ns.Annotations[serviceAccountKeyAnnotation] = c.Status.ServiceAccountKey.Base64()
 	}
-
-	ns.Annotations[apiserverPubSSHAnnotation] = base64.StdEncoding.EncodeToString([]byte(c.Status.ApiserverSSH))
 
 	ns.Labels[RoleLabelKey] = ClusterRoleLabel
 	ns.Labels[nameLabelKey] = c.Metadata.Name

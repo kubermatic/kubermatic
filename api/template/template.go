@@ -1,22 +1,55 @@
 package template
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
+	"text/template"
+
 	"github.com/Masterminds/sprig"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
-	"io/ioutil"
-	"text/template"
+	"golang.org/x/crypto/ssh"
 )
 
 // FuncMap defines the available functions to kubermatic templates.
 var funcs = template.FuncMap{
-	"apiBytesToB64":    apiBytesToB64,
-	"apiBytesToString": apiBytesToString,
+	"apiBytesToB64":      apiBytesToB64,
+	"apiBytesToString":   apiBytesToString,
+	"pemEncodePublicKey": pemEncodePublicKey,
 }
 
 func apiBytesToB64(b api.Bytes) string {
 	return b.Base64()
+}
+
+func pemEncodePublicKey(b api.Bytes) string {
+	k, _, _, _, err := ssh.ParseAuthorizedKey(b)
+	if err != nil {
+		glog.Errorf("Failed to parse authorized key: %v", err)
+		return ""
+	}
+	ck := k.(ssh.CryptoPublicKey)
+	pk := ck.CryptoPublicKey()
+	rsakey, ok := pk.(*rsa.PublicKey)
+	if !ok {
+		glog.Errorf("key is not of type rsa.PublicKey")
+		return ""
+	}
+
+	publicBytes, err := x509.MarshalPKIXPublicKey(rsakey)
+	if err != nil {
+		glog.Errorf("failed to marshal public key: %v", err)
+		return ""
+	}
+	pemBytes := pem.EncodeToMemory(&pem.Block{
+		Bytes: publicBytes,
+		Type:  "PUBLIC KEY",
+	})
+
+	return string(pemBytes)
 }
 
 func apiBytesToString(b api.Bytes) string {
