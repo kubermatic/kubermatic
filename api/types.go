@@ -348,7 +348,6 @@ type ClusterStatus struct {
 	RootCA            SecretKeyCert `json:"rootCA"`
 	ApiserverCert     KeyCert       `json:"-"`
 	KubeletCert       KeyCert       `json:"-"`
-	ApiserverSSH      string        `json:"apiserverSSH"`
 	ApiserverSSHKey   SecretRSAKeys `json:"apiserver_ssh_key"`
 	ServiceAccountKey Bytes         `json:"-"`
 }

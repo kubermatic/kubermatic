@@ -70,9 +70,6 @@ func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	if c.Status.ApiserverSSH == "" {
-		t.Fatalf("deprecated apiserver ssh public key was not generated")
-	}
 	if c.Status.ApiserverSSHKey.PrivateKey == nil {
 		t.Fatalf("apiserver ssh private key was not generated")
 	}
