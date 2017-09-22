@@ -89,3 +89,46 @@ pipeline:
     secrets: [ kubeconfig ]
     when:
       branch: develop
+
+  slack-failure:
+    group: notify
+    image: kubermaticbot/drone-slack
+    webhook: https://hooks.slack.com/services/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
+    username: drone
+    icon_url: https://docs.tea-ci.org/logos/downstream.svg
+    recipient: ${DRONE_COMMIT_AUTHOR}
+    image_url: https://media.giphy.com/media/m6tmCnGCNvTby/giphy-downsized.gif
+    template: >
+        Your build failed! Shame. Shame. Shame.
+    author_recipient_mapping:
+      - mrIncompetent=henrik
+      - metalmatze=matthias
+      - andriisoldatenko=a_soldatenko
+      - guusvw=guus
+      - realfake=luk
+      - scheeles=sebastian
+      - chaosaffe=jason
+    when:
+      status: [ failure ]
+
+  slack-deploy:
+    group: notify
+    image: kubermaticbot/drone-slack
+    webhook: https://hooks.slack.com/services/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
+    username: drone
+    icon_url: https://docs.tea-ci.org/logos/downstream.svg
+    channel: dev
+    image_url: http://thecatapi.com/api/images/get?format=src&type=gif
+    template: >
+        We just deployed the API&Controller to dev!
+    author_recipient_mapping:
+      - mrIncompetent=henrik
+      - metalmatze=matthias
+      - andriisoldatenko=a_soldatenko
+      - guusvw=guus
+      - realfake=luk
+      - scheeles=sebastian
+      - chaosaffe=jason
+    when:
+      status: [ success ]
+      branch: develop
