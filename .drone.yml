@@ -118,7 +118,7 @@ pipeline:
     username: drone
     icon_url: https://docs.tea-ci.org/logos/downstream.svg
     channel: dev
-    image_url: http://thecatapi.com/api/images/get?format=src&type=gif
+    image_url: http://thecatapi.com/api/images/get?format=src&type=gif&asdasdasd=${DRONE_COMMIT}
     template: >
         We just deployed the API&Controller to dev!
     author_recipient_mapping:
