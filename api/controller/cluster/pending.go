@@ -463,7 +463,7 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) error {
 		return nil
 	}
 
-	_, err = cc.extClient.EtcdoperatorV1beta2().EtcdClusters(ns).Create(etcd)
+	_, err = cc.crdClient.EtcdoperatorV1beta2().EtcdClusters(ns).Create(etcd)
 	if err != nil {
 		return fmt.Errorf("failed to create etcd-cluster definition (crd): %v", err)
 	}

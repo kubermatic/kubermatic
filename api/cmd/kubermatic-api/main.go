@@ -67,7 +67,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	masterExtClient, err := crdclient.NewForConfig(config)
+	masterCrdClient, err := crdclient.NewForConfig(config)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterExtClient, versions, updates)
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterCrdClient, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

@@ -84,14 +84,14 @@ func main() {
 			glog.Fatal(err)
 		}
 		client := kubernetes.NewForConfigOrDie(cfg)
-		extClient := crdclient.NewForConfigOrDie(cfg)
+		crdClient := crdclient.NewForConfigOrDie(cfg)
 
 		// start controller
 		cps := cloud.Providers(dcs)
 		ctrl, err := cluster.NewController(
 			ctx,
 			client,
-			extClient,
+			crdClient,
 			cps,
 			versions,
 			updates,

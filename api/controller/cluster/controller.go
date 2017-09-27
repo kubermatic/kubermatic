@@ -47,7 +47,7 @@ const (
 type clusterController struct {
 	dc                    string
 	client                kubernetes.Interface
-	extClient             crdclient.Interface
+	crdClient             crdclient.Interface
 	queue                 *cache.FIFO // of namespace keys
 	masterResourcesPath   string
 	externalURL           string
@@ -119,7 +119,7 @@ func NewController(
 	cc := &clusterController{
 		dc:                    dc,
 		client:                client,
-		extClient:             crdClient,
+		crdClient:             crdClient,
 		queue:                 cache.NewFIFO(func(obj interface{}) (string, error) { return obj.(string), nil }),
 		cps:                   cps,
 		updates:               updates,
@@ -310,10 +310,10 @@ func NewController(
 	cc.etcdClusterStore, cc.etcdClusterController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return cc.extClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).List(options)
+				return cc.crdClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return cc.extClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).Watch(options)
+				return cc.crdClient.EtcdoperatorV1beta2().EtcdClusters(metav1.NamespaceAll).Watch(options)
 			},
 		},
 		&etcdoperatorv1beta2.EtcdCluster{},
@@ -330,7 +330,7 @@ func NewController(
 	}
 	cc.updateController = update.New(
 		cc.client,
-		cc.extClient,
+		cc.crdClient,
 		cc.masterResourcesPath,
 		"",
 		cc.dc,

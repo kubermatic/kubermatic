@@ -22,7 +22,7 @@ import (
 )
 
 type kubernetesProvider struct {
-	extClient       crdclient.Interface
+	crdClient       crdclient.Interface
 	kuberntesClient *kubernetes.Clientset
 
 	mu         sync.Mutex
@@ -44,7 +44,7 @@ func NewKubernetesProvider(
 		log.Fatal(err)
 	}
 
-	extClient := crdclient.NewForConfigOrDie(clientConfig)
+	crdClient := crdclient.NewForConfigOrDie(clientConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func NewKubernetesProvider(
 	return &kubernetesProvider{
 		cps:             cps,
 		kuberntesClient: client,
-		extClient:       extClient,
+		crdClient:       crdClient,
 		workerName:      workerName,
 		config:          clientConfig,
 		dcs:             dcs,

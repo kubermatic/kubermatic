@@ -20,7 +20,7 @@ type Routing struct {
 	kubernetesProviders map[string]provider.KubernetesProvider
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
-	masterExtClient     crdclient.Interface
+	masterCrdClient     crdclient.Interface
 	authenticator       Authenticator
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
@@ -33,7 +33,7 @@ func NewRouting(
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
 	authenticator Authenticator,
-	masterExtClient crdclient.Interface,
+	masterCrdClient crdclient.Interface,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 ) Routing {
@@ -43,7 +43,7 @@ func NewRouting(
 		kubernetesProviders: kps,
 		cloudProviders:      cps,
 		logger:              log.NewLogfmtLogger(os.Stderr),
-		masterExtClient:     masterExtClient,
+		masterCrdClient:     masterCrdClient,
 		authenticator:       authenticator,
 		versions:            versions,
 		updates:             updates,
@@ -161,7 +161,7 @@ func (r Routing) Register(mux *mux.Router) {
 
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		listSSHKeyEndpoint(r.masterExtClient),
+		listSSHKeyEndpoint(r.masterCrdClient),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -170,7 +170,7 @@ func (r Routing) listSSHKeys() http.Handler {
 
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		createSSHKeyEndpoint(r.masterExtClient),
+		createSSHKeyEndpoint(r.masterCrdClient),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
@@ -179,7 +179,7 @@ func (r Routing) createSSHKey() http.Handler {
 
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		deleteSSHKeyEndpoint(r.masterExtClient),
+		deleteSSHKeyEndpoint(r.masterCrdClient),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -237,7 +237,7 @@ func (r Routing) datacenterHandler() http.Handler {
 // newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterExtClient),
+		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterCrdClient),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -277,7 +277,7 @@ func (r Routing) clustersHandler() http.Handler {
 // deleteClusterHandler deletes a cluster.
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterExtClient),
+		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient),
 		decodeDeleteClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -297,7 +297,7 @@ func (r Routing) nodesHandler() http.Handler {
 // createNodesHandler let's you create nodes.
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterExtClient, r.versions),
+		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient, r.versions),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

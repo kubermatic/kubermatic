@@ -26,7 +26,7 @@ type Interface interface {
 // New returns a update controller
 func New(
 	kubeClient clientkubernetes.Interface,
-	extClient crdclient.Interface,
+	crdClient crdclient.Interface,
 	masterResourcesPath,
 	overwriteHost,
 	dc string,
@@ -37,7 +37,7 @@ func New(
 ) Interface {
 	return &controller{
 		client:              kubeClient,
-		extClient:           extClient,
+		crdClient:           crdClient,
 		masterResourcesPath: masterResourcesPath,
 		overwriteHost:       overwriteHost,
 		dc:                  dc,
@@ -51,7 +51,7 @@ func New(
 // Controller represents an update controller
 type controller struct {
 	client              clientkubernetes.Interface
-	extClient           crdclient.Interface
+	crdClient           crdclient.Interface
 	masterResourcesPath string
 	overwriteHost       string
 	dc                  string
@@ -141,7 +141,7 @@ func (u *controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, maste
 		}
 		ns := fmt.Sprintf("cluster-%s", c.Metadata.Name)
 		var oldEtcd *etcdoperatorv1beta2.EtcdCluster
-		oldEtcd, err = u.extClient.EtcdoperatorV1beta2().EtcdClusters(ns).Get("etcd-cluster", metav1.GetOptions{})
+		oldEtcd, err = u.crdClient.EtcdoperatorV1beta2().EtcdClusters(ns).Get("etcd-cluster", metav1.GetOptions{})
 		if err != nil {
 			err = fmt.Errorf("failed to get current etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
@@ -149,7 +149,7 @@ func (u *controller) updateEtcdCluster(c *api.Cluster, yamlFiles []string, maste
 		}
 
 		oldEtcd.Spec.Version = newEtcd.Spec.Version
-		_, err = u.extClient.EtcdoperatorV1beta2().EtcdClusters(ns).Update(oldEtcd)
+		_, err = u.crdClient.EtcdoperatorV1beta2().EtcdClusters(ns).Update(oldEtcd)
 		if err != nil {
 			err = fmt.Errorf("failed to update etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
