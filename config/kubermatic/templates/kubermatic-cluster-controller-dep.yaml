@@ -15,6 +15,7 @@ spec:
         role: cluster-controller
         version: v1
     spec:
+      serviceAccountName: kubermatic
       containers:
         - name: cluster-controller
           command: [
