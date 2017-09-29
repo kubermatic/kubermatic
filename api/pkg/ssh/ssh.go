@@ -1,7 +1,7 @@
 package ssh
 
 import (
-	"github.com/kubermatic/kubermatic/api/provider/kubernetes/util"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

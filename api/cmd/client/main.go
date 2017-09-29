@@ -18,7 +18,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/uuid"
+	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
 
 const (

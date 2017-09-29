@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/provider/kubernetes/util"
-	"github.com/kubermatic/kubermatic/api/uuid"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes/util"
+	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 	ssh "golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
