@@ -8,6 +8,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/handler/errors"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 )
@@ -48,7 +49,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, upgradeReq{}),
+							err: errors.NewWrongRequest(nil, upgradeReq{}),
 						},
 					},
 					{
@@ -57,7 +58,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", upgradeReq{}),
+							err: errors.NewWrongRequest("blah", upgradeReq{}),
 						},
 					},
 				},
@@ -76,7 +77,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, upgradeReq{}),
+							err: errors.NewWrongRequest(nil, upgradeReq{}),
 						},
 					},
 					{
@@ -85,7 +86,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", upgradeReq{}),
+							err: errors.NewWrongRequest("blah", upgradeReq{}),
 						},
 					},
 					{
@@ -94,7 +95,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 						req:  generateUpgradeReq("1.6.0", "234jkh24234g", "base", "anom"),
 						want: want{
 							val: nil,
-							err: NewUnknownUpgradePath("0.0.1", "1.6.0"),
+							err: errors.NewUnknownUpgradePath("0.0.1", "1.6.0"),
 						},
 					},
 				},
@@ -240,7 +241,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, clusterReq{}),
+							err: errors.NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -249,7 +250,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", clusterReq{}),
+							err: errors.NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 				},
@@ -267,7 +268,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, clusterReq{}),
+							err: errors.NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -276,7 +277,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", clusterReq{}),
+							err: errors.NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 					{
@@ -307,7 +308,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  nil,
 						want: want{
 							val: nil,
-							err: NewWrongRequest(nil, clusterReq{}),
+							err: errors.NewWrongRequest(nil, clusterReq{}),
 						},
 					},
 					{
@@ -316,7 +317,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 						req:  "blah",
 						want: want{
 							val: nil,
-							err: NewWrongRequest("blah", clusterReq{}),
+							err: errors.NewWrongRequest("blah", clusterReq{}),
 						},
 					},
 					{

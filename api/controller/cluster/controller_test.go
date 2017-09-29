@@ -5,19 +5,17 @@ import (
 	"log"
 
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	crdfakeclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/rest"
+	kfake "k8s.io/client-go/kubernetes/fake"
 )
 
 const TestDC string = "testdc"
 const TestExternalURL string = "localhost"
 const TestExternalPort int = 8443
 
-func newTestController() (*fake.Clientset, *clusterController) {
+func newTestController() (*crdfakeclient.Clientset, *clusterController) {
 	dcs, err := provider.LoadDatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
 		log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", "./fixtures/datacenters.yaml", err))
@@ -26,20 +24,12 @@ func newTestController() (*fake.Clientset, *clusterController) {
 	// create CloudProviders
 	cps := cloud.Providers(dcs)
 
-	tprClient, err := extensions.WrapClientsetWithExtensions(&rest.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	etcdClient, err := etcd.WrapClientsetWithExtensions(&rest.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	versions := buildMasterVerionsMap()
 	updates := buildMasterUpdates()
 
-	clientSet := fake.NewSimpleClientset()
-	cc, err := NewController(TestDC, clientSet, tprClient, etcdClient, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", TestExternalPort, dcs)
+	kubernetesClient := kfake.NewSimpleClientset()
+	clientSet := crdfakeclient.NewSimpleClientset()
+	cc, err := NewController(TestDC, kubernetesClient, clientSet, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", TestExternalPort, dcs)
 	if err != nil {
 		log.Fatal(err)
 	}

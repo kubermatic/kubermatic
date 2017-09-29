@@ -6,12 +6,12 @@ import (
 	"path"
 
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	"github.com/kubermatic/kubermatic/api/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/template/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
+	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 )
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
-func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*extensionsv1beta1.Deployment, error) {
+func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*v1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("could not identify cloud provider: %v", err)
@@ -49,7 +49,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 		return nil, err
 	}
 
-	var dep extensionsv1beta1.Deployment
+	var dep v1beta1.Deployment
 	err = t.Execute(data, &dep)
 	return &dep, err
 }
@@ -94,12 +94,12 @@ func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret
 }
 
 // LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*extensionsv1beta1.Ingress, error) {
+func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*v1beta1.Ingress, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-ingress.yaml"))
 	if err != nil {
 		return nil, err
 	}
-	var ingress extensionsv1beta1.Ingress
+	var ingress v1beta1.Ingress
 	data := struct {
 		Cluster *api.Cluster
 	}{
@@ -163,6 +163,7 @@ tenant-name = "%s"
 
 [BlockStorage]
 trust-device-path = false
+bs-version = "v2"
 `,
 		dc.Spec.Openstack.AuthURL,
 		c.Spec.Cloud.Openstack.Username,
@@ -180,8 +181,8 @@ trust-device-path = false
 	return &cm, nil
 }
 
-// LoadEtcdClusterFile loads a etcd-operator tpr from disk and returns a Cluster tpr struct
-func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile string) (*etcd.Cluster, error) {
+// LoadEtcdClusterFile loads a etcd-operator crd from disk and returns a Cluster crd struct
+func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile string) (*etcdoperatorv1beta2.EtcdCluster, error) {
 
 	data := struct {
 		Version *api.MasterVersion
@@ -194,7 +195,7 @@ func LoadEtcdClusterFile(v *api.MasterVersion, masterResourcesPath, yamlFile str
 		return nil, err
 	}
 
-	var c etcd.Cluster
+	var c etcdoperatorv1beta2.EtcdCluster
 	err = t.Execute(data, &c)
 	return &c, err
 }
@@ -212,7 +213,7 @@ func LoadServiceAccountFile(app, masterResourcesPath string) (*v1.ServiceAccount
 }
 
 // LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1beta1.ClusterRoleBinding, error) {
+func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, err
@@ -224,7 +225,7 @@ func LoadClusterRoleBindingFile(ns, app, masterResourcesPath string) (*v1beta1.C
 		Namespace: ns,
 	}
 
-	var r v1beta1.ClusterRoleBinding
+	var r rbacv1beta1.ClusterRoleBinding
 	err = t.Execute(data, &r)
 	return &r, err
 }

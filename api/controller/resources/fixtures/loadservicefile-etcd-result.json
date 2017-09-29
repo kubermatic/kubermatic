@@ -1,1 +1,0 @@
-{"kind":"Service","apiVersion":"v1","metadata":{"name":"etcd","creationTimestamp":null},"spec":{"ports":[{"name":"clients","protocol":"TCP","port":2379,"targetPort":0},{"name":"peer","protocol":"TCP","port":2380,"targetPort":0}],"selector":{"role":"etcd"},"type":"ClusterIP"},"status":{"loadBalancer":{}}}

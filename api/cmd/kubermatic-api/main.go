@@ -18,13 +18,15 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/controller/version"
-	"github.com/kubermatic/kubermatic/api/extensions"
 	"github.com/kubermatic/kubermatic/api/handler"
+	"github.com/kubermatic/kubermatic/api/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/crd"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
 
-	"github.com/kubermatic/kubermatic/api/metrics"
+	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -65,9 +67,16 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	masterTPRClient, err := extensions.WrapClientsetWithExtensions(config)
+	masterCrdClient, err := crdclient.NewForConfig(config)
 	if err != nil {
 		glog.Fatal(err)
+	}
+
+	// Create crd's
+	extclient := apiextclient.NewForConfigOrDie(config)
+	err = crd.EnsureCustomResourceDefinitions(extclient)
+	if err != nil {
+		glog.Error(err)
 	}
 
 	authenticator := handler.NewOpenIDAuthenticator(
@@ -94,7 +103,7 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterTPRClient, versions, updates)
+	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterCrdClient, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

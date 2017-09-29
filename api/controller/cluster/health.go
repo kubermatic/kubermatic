@@ -2,10 +2,12 @@ package cluster
 
 import (
 	"fmt"
+
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/resources"
-	"github.com/kubermatic/kubermatic/api/extensions/etcd"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
+
+	"k8s.io/api/extensions/v1beta1"
 )
 
 func (cc *clusterController) healthyDep(ns, name string, minReady int32) (bool, error) {
@@ -36,10 +38,10 @@ func (cc *clusterController) healthyEtcd(ns, name string) (bool, error) {
 		return false, api.ErrNotFound
 	}
 
-	e, ok := obj.(*etcd.Cluster)
+	e, ok := obj.(*etcdoperatorv1beta2.EtcdCluster)
 	if !ok {
 		return false, api.ErrInvalidType
 	}
 
-	return e.Status.Phase == etcd.ClusterPhaseRunning, nil
+	return e.Status.Phase == etcdoperatorv1beta2.ClusterPhaseRunning, nil
 }

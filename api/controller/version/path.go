@@ -5,7 +5,6 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
-
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/version/dijkstra"
 )

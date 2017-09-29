@@ -15,6 +15,7 @@ spec:
         role: kubermatic-api
         version: v1
     spec:
+      serviceAccountName: kubermatic
       containers:
         - name: api
           command: [

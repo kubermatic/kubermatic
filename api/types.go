@@ -4,12 +4,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/kube-node/nodeset/pkg/client/clientset_v1alpha1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	nodesetclient "github.com/kube-node/nodeset/pkg/client/clientset/versioned"
 )
 
 var (
@@ -436,7 +437,7 @@ func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
 		return nil, err
 	}
 
-	client, err := kubernetes.NewForConfig(ccfg)
+	client := kubernetes.NewForConfigOrDie(ccfg)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +446,7 @@ func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
 }
 
 // GetNodesetClient returns a client interact with nodeset resources
-func (c *Cluster) GetNodesetClient() (clientset_v1alpha1.Interface, error) {
+func (c *Cluster) GetNodesetClient() (nodesetclient.Interface, error) {
 	cfg, err := c.getClientConfig()
 	if err != nil {
 		return nil, err
@@ -456,7 +457,7 @@ func (c *Cluster) GetNodesetClient() (clientset_v1alpha1.Interface, error) {
 		return nil, err
 	}
 
-	client, err := clientset_v1alpha1.NewForConfig(ccfg)
+	client, err := nodesetclient.NewForConfig(ccfg)
 	if err != nil {
 		return nil, err
 	}

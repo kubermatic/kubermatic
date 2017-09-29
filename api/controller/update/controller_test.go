@@ -3,7 +3,7 @@ package update
 import (
 	"testing"
 
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/api/apps/v1beta1"
 )
 
 func Test_healthyDep(t *testing.T) {

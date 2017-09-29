@@ -3,10 +3,6 @@ kind: Deployment
 metadata:
   name: etcd-operator
 spec:
-  selector:
-    matchLabels:
-      role: etcd-operator
-      version: v1
   replicas: 1
   template:
     metadata:
@@ -18,11 +14,7 @@ spec:
       serviceAccountName: etcd-operator
       containers:
       - name: etcd-operator
-        image: kubermatic/etcd-operator:{{index .Version.Values "etcd-operator-version"}}
-        command:
-        - "/bin/sh"
-        - "-c"
-        - "/usr/local/bin/etcd-operator --storageclass=generic --analytics=false"
+        image: quay.io/coreos/etcd-operator:{{index .Version.Values "etcd-operator-version"}}
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:

@@ -26,7 +26,7 @@ $(CMD): vendor
 
 check: gofmt lint
 test: vendor
-	@$(GOTEST) -v $$($(GO) list ./... | grep -v /vendor/)
+	@$(GOTEST) -v ./...
 
 clean:
 	@cd _build
@@ -82,7 +82,7 @@ ifndef HAS_GOMETALINTER
 endif
 	{ \
 	set -e ;\
-	PACKAGES=$$(go list ./... | grep -v /vendor/) ;\
+	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
 	echo "go vet" ;\
 	go vet $$PACKAGES ;\
 	echo "golint" ;\

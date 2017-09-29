@@ -4,9 +4,9 @@ metadata:
   name: kubermatic
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: kubermatic
   namespace: kubermatic
 roleRef:
-  kind: ClusterRole
-  name: kubermatic
   apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin

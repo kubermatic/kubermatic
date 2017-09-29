@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-datadir
+  annotations:
+    volume.beta.kubernetes.io/storage-class: generic
+spec:
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests:
+      storage: "20Gi"
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis-master
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: master
+        tier: backend
+    spec:
+      containers:
+      - name: master
+        image: redis:4
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: datadir
+          mountPath: /data
+      volumes:
+        - name: datadir
+          persistentVolumeClaim:
+            claimName: redis-datadir

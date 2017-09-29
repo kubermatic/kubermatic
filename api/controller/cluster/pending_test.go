@@ -2,8 +2,9 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/kubermatic/kubermatic/api"
 	"testing"
+
+	"github.com/kubermatic/kubermatic/api"
 )
 
 func TestPendingCreateAddressesSuccessfully(t *testing.T) {

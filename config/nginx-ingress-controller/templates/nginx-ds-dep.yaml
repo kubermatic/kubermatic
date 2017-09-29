@@ -10,7 +10,7 @@ metadata:
     k8s-app: nginx-ingress-controller
   namespace: nginx
 spec:
-{{ if .Values.IsBareMetal }}
+{{ if not .Values.IsBareMetal }}
   replicas: 1
 {{ end }}
   template:
@@ -24,6 +24,7 @@ spec:
     {{ if .Values.IsBareMetal }}
       hostNetwork: true
     {{ end }}
+      serviceAccountName: nginx-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       containers:
       - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.13

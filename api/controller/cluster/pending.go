@@ -1,20 +1,21 @@
 package cluster
 
 import (
+	"bytes"
+	"encoding/csv"
 	"fmt"
 	"time"
 
-	"bytes"
-	"encoding/csv"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/controller/resources"
 	"github.com/kubermatic/kubermatic/api/provider"
 	"github.com/kubermatic/kubermatic/api/provider/kubernetes"
+
+	corev1 "k8s.io/api/core/v1"
+	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
+	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
-	extensionsv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
@@ -149,7 +150,7 @@ func (cc *clusterController) pendingCreateAddresses(c *api.Cluster) (*api.Cluste
 }
 
 func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
-	secrets := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret, error){
+	secrets := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*corev1.Secret, error){
 		"apiserver":          resources.LoadSecretFile,
 		"controller-manager": resources.LoadSecretFile,
 	}
@@ -175,15 +176,13 @@ func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to create secret for %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "pending", "Created secret %q", key)
 	}
 
 	return nil
 }
 
 func (cc *clusterController) launchingCheckServices(c *api.Cluster) error {
-	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error){
+	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*corev1.Service, error){
 		"apiserver": resources.LoadServiceFile,
 	}
 
@@ -209,15 +208,13 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to create service %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created service %q", s)
 	}
 
 	return nil
 }
 
 func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error {
-	serviceAccounts := map[string]func(app, masterResourcesPath string) (*v1.ServiceAccount, error){
+	serviceAccounts := map[string]func(app, masterResourcesPath string) (*corev1.ServiceAccount, error){
 		"etcd-operator": resources.LoadServiceAccountFile,
 	}
 
@@ -243,8 +240,6 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error
 		if err != nil {
 			return fmt.Errorf("failed to create service account %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created service account %q", s)
 	}
 
 	return nil
@@ -273,11 +268,11 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) error {
 	}
 	writer.Flush()
 
-	secret := &v1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"tokens.csv": buffer.Bytes(),
 		},
@@ -287,12 +282,11 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) error {
 	if err != nil {
 		return fmt.Errorf("failed to create user token secret: %v", err)
 	}
-	cc.recordClusterEvent(c, "launching", "Created secret %q", key)
 	return nil
 }
 
 func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) error {
-	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*v1beta1.ClusterRoleBinding, error){
+	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, error){
 		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
 
@@ -317,8 +311,6 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 		if err != nil {
 			return fmt.Errorf("failed to create cluster role binding %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created binding %q", s)
 	}
 
 	return nil
@@ -348,7 +340,7 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 	for s, yamlFile := range deps {
 		exists := false
 		for _, obj := range existingDeps {
-			dep := obj.(*extensionsv1beta1.Deployment)
+			dep := obj.(*extensionv1beta1.Deployment)
 			if role, found := dep.Spec.Selector.MatchLabels["role"]; found && role == s {
 				exists = true
 				break
@@ -368,8 +360,6 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to create deployment %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created dep %q", s)
 	}
 
 	return nil
@@ -379,7 +369,7 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	var dc *provider.DatacenterMeta
-	cms := map[string]func(c *api.Cluster, datacenter *provider.DatacenterMeta) (*v1.ConfigMap, error){}
+	cms := map[string]func(c *api.Cluster, datacenter *provider.DatacenterMeta) (*corev1.ConfigMap, error){}
 	if c.Spec.Cloud != nil {
 		cdc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
 		if !found {
@@ -416,15 +406,13 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to create cm %s; %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created cm %q", s)
 	}
 
 	return nil
 }
 
 func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
-	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*extensionsv1beta1.Ingress, error){
+	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*extensionv1beta1.Ingress, error){
 		"apiserver": resources.LoadIngressFile,
 	}
 
@@ -448,8 +436,6 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to create ingress %s: %v", s, err)
 		}
-
-		cc.recordClusterEvent(c, "launching", "Created ingress")
 	}
 	return nil
 }
@@ -466,7 +452,7 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) error {
 		return fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}
 
-	key := fmt.Sprintf("%s/%s", ns, etcd.Metadata.Name)
+	key := fmt.Sprintf("%s/%s", ns, etcd.ObjectMeta.Name)
 	_, exists, err := cc.etcdClusterStore.GetByKey(key)
 	if err != nil {
 		return err
@@ -477,12 +463,10 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) error {
 		return nil
 	}
 
-	_, err = cc.etcdClusterClient.Cluster(ns).Create(etcd)
+	_, err = cc.crdClient.EtcdoperatorV1beta2().EtcdClusters(ns).Create(etcd)
 	if err != nil {
-		return fmt.Errorf("failed to create ecd-cluster definition (tpr): %v", err)
+		return fmt.Errorf("failed to create etcd-cluster definition (crd): %v", err)
 	}
-
-	cc.recordClusterEvent(c, "launching", "Created etcd-cluster", etcd.Metadata.Name)
 
 	return nil
 }
