@@ -119,6 +119,7 @@ func (sb *UserSSHKeyBuilder) Build() (*UserSSHKey, error) {
 			PublicKey:   sb.publicKey,
 			Fingerprint: sshKeyHash,
 			Name:        sb.name,
+			Clusters:    []string{},
 		},
 	}
 	return userSSHKey, nil
