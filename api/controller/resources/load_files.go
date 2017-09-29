@@ -163,6 +163,7 @@ tenant-name = "%s"
 
 [BlockStorage]
 trust-device-path = false
+bs-version = "v2"
 `,
 		dc.Spec.Openstack.AuthURL,
 		c.Spec.Cloud.Openstack.Username,
