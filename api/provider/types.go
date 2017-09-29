@@ -17,6 +17,7 @@ const (
 	AWSCloudProvider          = "aws"
 	BareMetalCloudProvider    = "baremetal"
 	OpenstackCloudProvider    = "openstack"
+	OTCCloudProvider          = "otc"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -96,6 +97,9 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
 	}
+	if spec.OTC != nil {
+		clouds = append(clouds, OTCCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -149,6 +153,9 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
 	}
+	if spec.OTC != nil {
+		clouds = append(clouds, OTCCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -178,6 +185,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.OTC != nil {
+		clouds = append(clouds, OTCCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
