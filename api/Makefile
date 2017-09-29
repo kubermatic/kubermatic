@@ -25,6 +25,8 @@ $(CMD): vendor
 	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
 
 check: gofmt lint
+test: vendor
+	@$(GOTEST) -v ./...
 
 clean:
 	@cd _build
@@ -100,7 +102,7 @@ endif
 	misspell -error -locale US $$GOFILES ;\
 	}
 
-test:
+cover:
 	./hack/cover.sh --html
 
 .PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)
