@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
     - {{ .Values.KubermaticURL | trim }}
-    secretName: tls-secret
+    secretName: kubermatic-dashboard-tls
   backend:
     serviceName: dex
     servicePort: 5556
