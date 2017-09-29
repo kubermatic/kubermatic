@@ -11,7 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 )
 
-func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
+func (cc *controller) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	health := api.ClusterHealth{
 		ClusterHealthStatus: api.ClusterHealthStatus{},
@@ -46,7 +46,7 @@ func (cc *clusterController) clusterHealth(c *api.Cluster) (bool, *api.ClusterHe
 	return health.AllHealthy(), &health, nil
 }
 
-func (cc *clusterController) syncLaunchingCluster(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) syncLaunchingCluster(c *api.Cluster) (*api.Cluster, error) {
 	changedC, err := cc.checkTimeout(c)
 	if err != nil {
 		return nil, err

@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api"
 	crdfakeclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kfake "k8s.io/client-go/kubernetes/fake"
@@ -15,7 +16,7 @@ const TestDC string = "testdc"
 const TestExternalURL string = "localhost"
 const TestExternalPort int = 8443
 
-func newTestController() (*crdfakeclient.Clientset, *clusterController) {
+func newTestController() (*crdfakeclient.Clientset, *controller) {
 	dcs, err := provider.LoadDatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
 		log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", "./fixtures/datacenters.yaml", err))
@@ -27,14 +28,28 @@ func newTestController() (*crdfakeclient.Clientset, *clusterController) {
 	versions := buildMasterVerionsMap()
 	updates := buildMasterUpdates()
 
-	kubernetesClient := kfake.NewSimpleClientset()
-	clientSet := crdfakeclient.NewSimpleClientset()
-	cc, err := NewController(TestDC, kubernetesClient, clientSet, cps, versions, updates, "./../../master-resources/", TestExternalURL, "user1", TestExternalPort, dcs)
+	kubeClient := kfake.NewSimpleClientset()
+	crdClient := crdfakeclient.NewSimpleClientset()
+	informerGroup := seedinformer.New(kubeClient, crdClient)
+	cc, err := NewController(
+		TestDC,
+		kubeClient,
+		crdClient,
+		cps,
+		versions,
+		updates,
+		"./../../master-resources/",
+		TestExternalURL,
+		"user1",
+		TestExternalPort,
+		dcs,
+		informerGroup,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return clientSet, cc.(*clusterController)
+	return crdClient, cc.(*controller)
 }
 
 func buildMasterVerionsMap() map[string]*api.MasterVersion {

@@ -18,7 +18,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
 	if c.Status.RootCA.Key != nil {
 		return nil, nil
 	}
@@ -35,7 +35,7 @@ func (cc *clusterController) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, 
 	return c, nil
 }
 
-func (cc *clusterController) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) {
 	var updated bool
 
 	if c.Address.AdminToken == "" {
@@ -64,7 +64,7 @@ func (cc *clusterController) pendingCreateTokens(c *api.Cluster) (*api.Cluster, 
 	return nil, nil
 }
 
-func (cc *clusterController) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
 	var updated bool
 
 	certs, err := cert.ParseCertsPEM(c.Status.RootCA.Cert)
@@ -113,7 +113,7 @@ func (cc *clusterController) pendingCreateCertificates(c *api.Cluster) (*api.Clu
 	return nil, nil
 }
 
-func (cc *clusterController) pendingCreateServiceAccountKey(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateServiceAccountKey(c *api.Cluster) (*api.Cluster, error) {
 	if c.Status.ServiceAccountKey != nil {
 		return nil, nil
 	}
@@ -127,7 +127,7 @@ func (cc *clusterController) pendingCreateServiceAccountKey(c *api.Cluster) (*ap
 	return c, nil
 }
 
-func (cc *clusterController) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api.Cluster, error) {
 	if c.Status.ApiserverSSHKey.PublicKey != nil {
 		return nil, nil
 	}

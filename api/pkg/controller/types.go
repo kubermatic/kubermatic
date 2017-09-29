@@ -1,8 +1,8 @@
 package controller
 
-// Controller represents an control loop started with Run and terminated
+// Interface represents an control loop started with Run and terminated
 // by closing the stopCh.
-type Controller interface {
+type Interface interface {
 	// Run start the control loop, which terminates when stopCh is closed.
-	Run(stopCh <-chan struct{})
+	Run(workerCount int, stopCh chan struct{})
 }

@@ -9,7 +9,7 @@ import (
 // UpdateTimeout represent the duration to wait before considering an update failed
 const UpdateTimeout = time.Minute * 30
 
-func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) syncUpdatingClusterMaster(c *api.Cluster) (*api.Cluster, error) {
 	if c.Status.MasterUpdatePhase == api.FinishMasterUpdatePhase {
 		c.Status.MasterUpdatePhase = ""
 		c.Status.Phase = api.RunningClusterStatusPhase
@@ -18,7 +18,7 @@ func (cc *clusterController) syncUpdatingClusterMaster(c *api.Cluster) (*api.Clu
 
 	if time.Now().After(c.Status.LastTransitionTime.Add(UpdateTimeout)) {
 		if c.Status.LastDeployedMasterVersion == c.Spec.MasterVersion {
-			// Rollback failed, fail cluster
+			// Rollback failed, failed cluster
 			c.Status.Phase = api.FailedClusterStatusPhase
 		} else {
 			// Initiate Rollback
