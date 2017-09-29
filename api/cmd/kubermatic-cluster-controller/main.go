@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/controller/cluster"
-	"github.com/kubermatic/kubermatic/api/controller/version"
-	"github.com/kubermatic/kubermatic/api/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/provider"
-	"github.com/kubermatic/kubermatic/api/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
