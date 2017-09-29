@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
     - {{ .Values.KubermaticURL | trim }}
-    secretName: ui-tls-secret
+    secretName: kubermatic-dashboard-tls
   backend:
     serviceName: kubermatic-ui
     servicePort: 80
