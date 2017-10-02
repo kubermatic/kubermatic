@@ -11,11 +11,11 @@ import (
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
+	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientkubernetes "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 )
 
 // Interface is a interface for a update controller
@@ -28,23 +28,19 @@ func New(
 	kubeClient clientkubernetes.Interface,
 	crdClient crdclient.Interface,
 	masterResourcesPath,
-	overwriteHost,
 	dc string,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
-	depStore cache.Indexer,
-	etcdClusterStore cache.Indexer,
+	seedInformerGroup *seedinformer.Group,
 ) Interface {
 	return &controller{
 		client:              kubeClient,
 		crdClient:           crdClient,
 		masterResourcesPath: masterResourcesPath,
-		overwriteHost:       overwriteHost,
 		dc:                  dc,
 		versions:            versions,
 		updates:             updates,
-		depStore:            depStore,
-		etcdClusterStore:    etcdClusterStore,
+		seedInformerGroup:   seedInformerGroup,
 	}
 }
 
@@ -53,12 +49,10 @@ type controller struct {
 	client              clientkubernetes.Interface
 	crdClient           crdclient.Interface
 	masterResourcesPath string
-	overwriteHost       string
 	dc                  string
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
-	depStore            cache.Indexer
-	etcdClusterStore    cache.Indexer
+	seedInformerGroup   *seedinformer.Group
 }
 
 // Sync determines the current update state, and advances to the next phase as required
@@ -164,16 +158,10 @@ func (u *controller) waitForEtcdCluster(c *api.Cluster, names []string, fallback
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
-		obj, exists, err := u.etcdClusterStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
+		etcd, err := u.seedInformerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(name)
 		if err != nil {
 			return nil, false, err
 		}
-		if !exists {
-			glog.Errorf("expected an %s etcd cluster, but didn't find any for cluster %v.", name, c.Metadata.Name)
-			c.Status.MasterUpdatePhase = fallbackPhase
-			return c, false, nil
-		}
-		etcd := obj.(*etcdoperatorv1beta2.EtcdCluster)
 		//Ensure the etcd quorum
 		if etcd.Spec.Size/2+1 >= etcd.Status.Size {
 			return nil, false, nil
@@ -186,16 +174,11 @@ func (u *controller) waitForDeployments(c *api.Cluster, names []string, fallback
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	for _, name := range names {
-		dep, exists, err := u.depStore.GetByKey(fmt.Sprintf("%s/%s", ns, name))
+		dep, err := u.seedInformerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
 		if err != nil {
 			return nil, false, err
 		}
-		if !exists {
-			glog.Errorf("expected an %s deployment, but didn't find any for cluster %v.", name, c.Metadata.Name)
-			c.Status.MasterUpdatePhase = fallbackPhase
-			return c, false, nil
-		}
-		if !healthyDep(dep.(*v1beta1.Deployment)) {
+		if !healthyDep(dep) {
 			return nil, false, nil
 		}
 	}

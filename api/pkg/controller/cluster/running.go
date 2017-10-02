@@ -10,7 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 )
 
-func (cc *clusterController) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) syncRunningCluster(c *api.Cluster) (*api.Cluster, error) {
 	allHealthy, health, err := cc.clusterHealth(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster heath: %v", err)

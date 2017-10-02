@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -137,79 +136,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	}
 
 	return UnmarshalCluster(p.cps, ns)
-}
-
-// Deprecated in favor of NewClusterWithCloud
-// @TODO Remove with https://github.com/kubermatic/kubermatic/api/issues/220
-func (p *kubernetesProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
-	// call cluster before lock is taken
-	cs, err := p.Clusters(user)
-	if err != nil {
-		return nil, err
-	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	// sanity checks for a fresh cluster
-	switch {
-	case user.Name == "":
-		return nil, errors.NewBadRequest("cluster user is required")
-	case spec.HumanReadableName == "":
-		return nil, errors.NewBadRequest("cluster humanReadableName is required")
-	}
-
-	clusterName := rand.String(9)
-
-	for _, c := range cs {
-		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
-		}
-	}
-
-	ns := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        NamespaceName(clusterName),
-			Annotations: map[string]string{},
-			Labels:      map[string]string{},
-		},
-	}
-
-	c := &api.Cluster{
-		Metadata: api.Metadata{
-			User: user.Name,
-			Name: clusterName,
-		},
-		Spec: *spec,
-		Status: api.ClusterStatus{
-			LastTransitionTime: time.Now(),
-			Phase:              api.PendingClusterStatusPhase,
-		},
-		Address: &api.ClusterAddress{},
-	}
-	c.Spec.WorkerName = p.workerName
-
-	ns, err = MarshalCluster(p.cps, c, ns)
-	if err != nil {
-		return nil, err
-	}
-
-	ns, err = p.kuberntesClient.CoreV1().Namespaces().Create(ns)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err = UnmarshalCluster(p.cps, ns)
-
-	if err != nil {
-		delErr := p.kuberntesClient.CoreV1().Namespaces().Delete(NamespaceName(clusterName), &metav1.DeleteOptions{})
-		if delErr != nil {
-			glog.Errorf("failed to delete cluster after failed creation for cluster %s: %v", c.Metadata.Name, err)
-		}
-		return nil, err
-	}
-
-	return c, nil
 }
 
 func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *v1.Namespace, error) {

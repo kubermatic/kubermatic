@@ -145,7 +145,13 @@ kubernetesclustertag=%s
 disablesecuritygroupingress=false
 SubnetID=%s
 RouteTableID=%s
-disablestrictzonecheck=true`, c.Spec.Cloud.AWS.AvailabilityZone, c.Spec.Cloud.AWS.VPCID, c.Metadata.Name, c.Spec.Cloud.AWS.SubnetID, c.Spec.Cloud.AWS.RouteTableID),
+disablestrictzonecheck=true`,
+			c.Spec.Cloud.AWS.AvailabilityZone,
+			c.Spec.Cloud.AWS.VPCID,
+			c.Metadata.Name,
+			c.Spec.Cloud.AWS.SubnetID,
+			c.Spec.Cloud.AWS.RouteTableID,
+		),
 	}
 	return &cm, nil
 }

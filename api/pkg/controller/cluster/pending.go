@@ -15,10 +15,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
+func (cc *controller) syncPendingCluster(c *api.Cluster) (changedC *api.Cluster, err error) {
 	_, err = cc.checkTimeout(c)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func (cc *clusterController) syncPendingCluster(c *api.Cluster) (changedC *api.C
 }
 
 // pendingCreateAddresses will set the cluster hostname and the url under which the apiserver will be reachable
-func (cc *clusterController) pendingCreateAddresses(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateAddresses(c *api.Cluster) (*api.Cluster, error) {
 	var updated bool
 
 	if c.Address.ExternalName == "" {
@@ -149,7 +150,7 @@ func (cc *clusterController) pendingCreateAddresses(c *api.Cluster) (*api.Cluste
 	return nil, nil
 }
 
-func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
+func (cc *controller) launchingCheckSecrets(c *api.Cluster) error {
 	secrets := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*corev1.Secret, error){
 		"apiserver":          resources.LoadSecretFile,
 		"controller-manager": resources.LoadSecretFile,
@@ -157,14 +158,9 @@ func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range secrets {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.secretStore.GetByKey(key)
-		if err != nil {
+		_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(s)
+		if !errors.IsNotFound(err) {
 			return err
-		}
-		if exists {
-			glog.V(6).Infof("Skipping already existing secret %q", key)
-			continue
 		}
 
 		secret, err := gen(c, s, cc.masterResourcesPath)
@@ -181,22 +177,16 @@ func (cc *clusterController) launchingCheckSecrets(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckServices(c *api.Cluster) error {
+func (cc *controller) launchingCheckServices(c *api.Cluster) error {
 	services := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*corev1.Service, error){
 		"apiserver": resources.LoadServiceFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range services {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.serviceStore.GetByKey(key)
-		if err != nil {
+		_, err := cc.seedInformerGroup.ServiceInformer.Lister().Services(ns).Get(s)
+		if !errors.IsNotFound(err) {
 			return err
-		}
-
-		if exists {
-			glog.V(6).Infof("Skipping already existing service %q", key)
-			continue
 		}
 
 		service, err := gen(c, s, cc.masterResourcesPath)
@@ -213,22 +203,16 @@ func (cc *clusterController) launchingCheckServices(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error {
+func (cc *controller) launchingCheckServiceAccounts(c *api.Cluster) error {
 	serviceAccounts := map[string]func(app, masterResourcesPath string) (*corev1.ServiceAccount, error){
 		"etcd-operator": resources.LoadServiceAccountFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range serviceAccounts {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.saStore.GetByKey(key)
-		if err != nil {
+		_, err := cc.seedInformerGroup.ServiceAccountInformer.Lister().ServiceAccounts(ns).Get(s)
+		if !errors.IsNotFound(err) {
 			return err
-		}
-
-		if exists {
-			glog.V(6).Infof("Skipping already existing service account %q", key)
-			continue
 		}
 
 		sa, err := gen(s, cc.masterResourcesPath)
@@ -245,17 +229,12 @@ func (cc *clusterController) launchingCheckServiceAccounts(c *api.Cluster) error
 	return nil
 }
 
-func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) error {
-	name := "token-users"
+func (cc *controller) launchingCheckTokenUsers(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	key := fmt.Sprintf("%s/%s", ns, name)
-	_, exists, err := cc.secretStore.GetByKey(key)
-	if err != nil {
+	name := "token-users"
+	_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(name)
+	if !errors.IsNotFound(err) {
 		return err
-	}
-	if exists {
-		glog.V(6).Infof("Skipping already existing secret %q", key)
-		return nil
 	}
 
 	buffer := bytes.Buffer{}
@@ -285,7 +264,7 @@ func (cc *clusterController) launchingCheckTokenUsers(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) error {
+func (cc *controller) launchingCheckClusterRoleBindings(c *api.Cluster) error {
 	roleBindings := map[string]func(namespace, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, error){
 		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
@@ -297,14 +276,9 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 			return fmt.Errorf("failed to generate cluster role binding %s: %v", s, err)
 		}
 
-		_, exists, err := cc.clusterRoleBindingStore.GetByKey(binding.ObjectMeta.Name)
-		if err != nil {
+		_, err = cc.seedInformerGroup.ClusterRoleBindingInformer.Lister().Get(binding.ObjectMeta.Name)
+		if !errors.IsNotFound(err) {
 			return err
-		}
-
-		if exists {
-			glog.V(6).Infof("Skipping already existing cluster role binding %q", binding.ObjectMeta.Name)
-			continue
 		}
 
 		_, err = cc.client.RbacV1beta1().ClusterRoleBindings().Create(binding)
@@ -316,7 +290,7 @@ func (cc *clusterController) launchingCheckClusterRoleBindings(c *api.Cluster) e
 	return nil
 }
 
-func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
+func (cc *controller) launchingCheckDeployments(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
@@ -332,40 +306,27 @@ func (cc *clusterController) launchingCheckDeployments(c *api.Cluster) error {
 		"addon-manager":      masterVersion.AddonManagerDeploymentYaml,
 	}
 
-	existingDeps, err := cc.depStore.ByIndex("namespace", ns)
-	if err != nil {
-		return err
-	}
-
-	for s, yamlFile := range deps {
-		exists := false
-		for _, obj := range existingDeps {
-			dep := obj.(*extensionv1beta1.Deployment)
-			if role, found := dep.Spec.Selector.MatchLabels["role"]; found && role == s {
-				exists = true
-				break
-			}
-		}
-		if exists {
-			glog.V(7).Infof("Skipping already existing dep %q for cluster %q", s, c.Metadata.Name)
-			continue
-		}
-
+	for name, yamlFile := range deps {
 		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
 		if err != nil {
-			return fmt.Errorf("failed to generate deployment %s: %v", s, err)
+			return fmt.Errorf("failed to generate deployment %q: %v", name, err)
+		}
+
+		_, err = cc.seedInformerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
+		if !errors.IsNotFound(err) {
+			return err
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
-			return fmt.Errorf("failed to create deployment %s: %v", s, err)
+			return fmt.Errorf("failed to create deployment %q: %v", name, err)
 		}
 	}
 
 	return nil
 }
 
-func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
+func (cc *controller) launchingCheckConfigMaps(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 
 	var dc *provider.DatacenterMeta
@@ -386,15 +347,9 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	}
 
 	for s, gen := range cms {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.cmStore.GetByKey(key)
-		if err != nil {
+		_, err := cc.seedInformerGroup.ConfigMapInformer.Lister().ConfigMaps(ns).Get(s)
+		if !errors.IsNotFound(err) {
 			return err
-		}
-
-		if exists {
-			glog.V(6).Infof("Skipping already existing cm %q", key)
-			continue
 		}
 
 		cm, err := gen(c, dc)
@@ -411,22 +366,18 @@ func (cc *clusterController) launchingCheckConfigMaps(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
+func (cc *controller) launchingCheckIngress(c *api.Cluster) error {
 	ingress := map[string]func(c *api.Cluster, app, masterResourcesPath string) (*extensionv1beta1.Ingress, error){
 		"apiserver": resources.LoadIngressFile,
 	}
 
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	for s, gen := range ingress {
-		key := fmt.Sprintf("%s/%s", ns, s)
-		_, exists, err := cc.ingressStore.GetByKey(key)
-		if err != nil {
+		_, err := cc.seedInformerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
+		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		if exists {
-			glog.V(6).Infof("Skipping already existing ingress %q", key)
-			return nil
-		}
+
 		ingress, err := gen(c, s, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate %s: %v", s, err)
@@ -440,7 +391,7 @@ func (cc *clusterController) launchingCheckIngress(c *api.Cluster) error {
 	return nil
 }
 
-func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) error {
+func (cc *controller) launchingCheckEtcdCluster(c *api.Cluster) error {
 	ns := kubernetes.NamespaceName(c.Metadata.Name)
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
@@ -452,15 +403,9 @@ func (cc *clusterController) launchingCheckEtcdCluster(c *api.Cluster) error {
 		return fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}
 
-	key := fmt.Sprintf("%s/%s", ns, etcd.ObjectMeta.Name)
-	_, exists, err := cc.etcdClusterStore.GetByKey(key)
-	if err != nil {
+	_, err = cc.seedInformerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(etcd.ObjectMeta.Name)
+	if err != nil && !errors.IsNotFound(err) {
 		return err
-	}
-
-	if exists {
-		glog.V(7).Infof("Skipping already existing etcd-cluster for cluster %q", c.Metadata.Name)
-		return nil
 	}
 
 	_, err = cc.crdClient.EtcdoperatorV1beta2().EtcdClusters(ns).Create(etcd)
