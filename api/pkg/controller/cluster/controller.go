@@ -84,7 +84,7 @@ func NewController(
 		dc:                    dc,
 		client:                client,
 		crdClient:             crdClient,
-		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodeset"),
+		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "namespace"),
 		cps:                   cps,
 		updates:               updates,
 		versions:              versions,
