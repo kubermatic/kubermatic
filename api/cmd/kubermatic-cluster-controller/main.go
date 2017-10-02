@@ -70,10 +70,10 @@ func main() {
 	}
 
 	stop := make(chan struct{})
-	osc := make(chan os.Signal, 2)
-	signal.Notify(osc, []os.Signal{os.Interrupt, syscall.SIGTERM}...)
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, []os.Signal{os.Interrupt, syscall.SIGTERM}...)
 	go func() {
-		<-osc
+		<-sig
 		close(stop)
 	}()
 
