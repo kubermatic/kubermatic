@@ -71,7 +71,7 @@ func main() {
 
 	stop := make(chan struct{})
 	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, []os.Signal{os.Interrupt, syscall.SIGTERM}...)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sig
 		close(stop)
