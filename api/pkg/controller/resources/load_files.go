@@ -7,8 +7,10 @@ import (
 
 	"github.com/kubermatic/kubermatic/api"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
@@ -20,7 +22,7 @@ const (
 )
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
-func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*v1beta1.Deployment, error) {
+func LoadDeploymentFile(c *kubermaticv1.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*v1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("could not identify cloud provider: %v", err)
@@ -28,7 +30,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 	data := struct {
 		DC               string
 		AdvertiseAddress string
-		Cluster          *api.Cluster
+		Cluster          *kubermaticv1.Cluster
 		Version          *api.MasterVersion
 		CloudProvider    string
 	}{
@@ -55,7 +57,7 @@ func LoadDeploymentFile(c *api.Cluster, v *api.MasterVersion, masterResourcesPat
 }
 
 // LoadServiceFile returns the service for the given cluster and app
-func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Service, error) {
+func LoadServiceFile(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*v1.Service, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-service.yaml"))
 	if err != nil {
 		return nil, err
@@ -64,7 +66,7 @@ func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Servi
 	var service v1.Service
 
 	data := struct {
-		Cluster *api.Cluster
+		Cluster *kubermaticv1.Cluster
 	}{
 		Cluster: c,
 	}
@@ -75,7 +77,7 @@ func LoadServiceFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Servi
 }
 
 // LoadSecretFile returns the secret for the given cluster and app
-func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret, error) {
+func LoadSecretFile(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*v1.Secret, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-secret.yaml"))
 	if err != nil {
 		return nil, err
@@ -83,7 +85,7 @@ func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret
 
 	var secret v1.Secret
 	data := struct {
-		Cluster *api.Cluster
+		Cluster *kubermaticv1.Cluster
 	}{
 		Cluster: c,
 	}
@@ -94,14 +96,14 @@ func LoadSecretFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Secret
 }
 
 // LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*v1beta1.Ingress, error) {
+func LoadIngressFile(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*v1beta1.Ingress, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-ingress.yaml"))
 	if err != nil {
 		return nil, err
 	}
 	var ingress v1beta1.Ingress
 	data := struct {
-		Cluster *api.Cluster
+		Cluster *kubermaticv1.Cluster
 	}{
 		Cluster: c,
 	}
@@ -115,7 +117,7 @@ func LoadIngressFile(c *api.Cluster, app, masterResourcesPath string) (*v1beta1.
 }
 
 // LoadPVCFile returns the PVC for the given cluster & app
-func LoadPVCFile(c *api.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error) {
+func LoadPVCFile(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*v1.PersistentVolumeClaim, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-pvc.yaml"))
 	if err != nil {
 		return nil, err
@@ -125,14 +127,14 @@ func LoadPVCFile(c *api.Cluster, app, masterResourcesPath string) (*v1.Persisten
 	data := struct {
 		ClusterName string
 	}{
-		ClusterName: c.Metadata.Name,
+		ClusterName: c.Name,
 	}
 	err = t.Execute(data, &pvc)
 	return &pvc, err
 }
 
 // LoadAwsCloudConfigConfigMap returns the aws cloud config configMap for the cluster
-func LoadAwsCloudConfigConfigMap(c *api.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
+func LoadAwsCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
 	cm := v1.ConfigMap{}
 	cm.Name = "cloud-config"
 	cm.APIVersion = "v1"
@@ -148,7 +150,7 @@ RouteTableID=%s
 disablestrictzonecheck=true`,
 			c.Spec.Cloud.AWS.AvailabilityZone,
 			c.Spec.Cloud.AWS.VPCID,
-			c.Metadata.Name,
+			c.Name,
 			c.Spec.Cloud.AWS.SubnetID,
 			c.Spec.Cloud.AWS.RouteTableID,
 		),
@@ -157,7 +159,7 @@ disablestrictzonecheck=true`,
 }
 
 // LoadOpenstackCloudConfigConfigMap returns the aws cloud config configMap for the cluster
-func LoadOpenstackCloudConfigConfigMap(c *api.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
+func LoadOpenstackCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (*v1.ConfigMap, error) {
 	//See https://github.com/kubernetes/kubernetes/issues/33128
 	config := fmt.Sprintf(`
 [Global]

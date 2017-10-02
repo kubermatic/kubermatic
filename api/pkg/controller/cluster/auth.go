@@ -7,23 +7,24 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
+
+	"github.com/golang/glog"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"golang.org/x/crypto/ssh"
 
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
-
-	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"golang.org/x/crypto/ssh"
 )
 
-func (cc *controller) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateRootCA(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if c.Status.RootCA.Key != nil {
 		return nil, nil
 	}
 
-	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Metadata.Name, cc.dc, cc.externalURL))
+	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create root-ca: %v", err)
 	}
@@ -31,11 +32,11 @@ func (cc *controller) pendingCreateRootCA(c *api.Cluster) (*api.Cluster, error) 
 	c.Status.RootCA.Key = cert.EncodePrivateKeyPEM(k.Key)
 	c.Status.RootCA.Cert = cert.EncodeCertPEM(k.Cert)
 
-	glog.V(4).Infof("Created root ca for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	glog.V(4).Infof("Created root ca for %s", kubernetes.NamespaceName(c.Name))
 	return c, nil
 }
 
-func (cc *controller) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateTokens(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var updated bool
 
 	if c.Address.AdminToken == "" {
@@ -44,7 +45,7 @@ func (cc *controller) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) 
 			return nil, err
 		}
 		c.Address.AdminToken = adminToken
-		glog.V(4).Infof("Created admin token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		glog.V(4).Infof("Created admin token for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
 
@@ -54,7 +55,7 @@ func (cc *controller) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) 
 			return nil, err
 		}
 		c.Address.KubeletToken = kubeletToken
-		glog.V(4).Infof("Created kubelet token for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		glog.V(4).Infof("Created kubelet token for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
 
@@ -64,8 +65,12 @@ func (cc *controller) pendingCreateTokens(c *api.Cluster) (*api.Cluster, error) 
 	return nil, nil
 }
 
-func (cc *controller) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateCertificates(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var updated bool
+
+	if c.Address.ExternalName == "" {
+		return nil, errors.New("external name is undefined")
+	}
 
 	certs, err := cert.ParseCertsPEM(c.Status.RootCA.Cert)
 	if err != nil {
@@ -90,7 +95,7 @@ func (cc *controller) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, e
 
 		c.Status.ApiserverCert.Key = cert.EncodePrivateKeyPEM(apiKp.Key)
 		c.Status.ApiserverCert.Cert = cert.EncodeCertPEM(apiKp.Cert)
-		glog.V(4).Infof("Created apiserver certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		glog.V(4).Infof("Created apiserver certificate for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
 
@@ -102,7 +107,7 @@ func (cc *controller) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, e
 
 		c.Status.KubeletCert.Key = cert.EncodePrivateKeyPEM(kubeletKp.Key)
 		c.Status.KubeletCert.Cert = cert.EncodeCertPEM(kubeletKp.Cert)
-		glog.V(4).Infof("Created kubelet certificate for %s", kubernetes.NamespaceName(c.Metadata.Name))
+		glog.V(4).Infof("Created kubelet certificate for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
 
@@ -113,7 +118,7 @@ func (cc *controller) pendingCreateCertificates(c *api.Cluster) (*api.Cluster, e
 	return nil, nil
 }
 
-func (cc *controller) pendingCreateServiceAccountKey(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateServiceAccountKey(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if c.Status.ServiceAccountKey != nil {
 		return nil, nil
 	}
@@ -123,11 +128,11 @@ func (cc *controller) pendingCreateServiceAccountKey(c *api.Cluster) (*api.Clust
 		return nil, fmt.Errorf("error creating service account key: %v", err)
 	}
 	c.Status.ServiceAccountKey = key
-	glog.V(4).Infof("Created service account key for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	glog.V(4).Infof("Created service account key for %s", kubernetes.NamespaceName(c.Name))
 	return c, nil
 }
 
-func (cc *controller) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api.Cluster, error) {
+func (cc *controller) pendingCreateApiserverSSHKeys(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if c.Status.ApiserverSSHKey.PublicKey != nil {
 		return nil, nil
 	}
@@ -140,11 +145,11 @@ func (cc *controller) pendingCreateApiserverSSHKeys(c *api.Cluster) (*api.Cluste
 	c.Status.ApiserverSSHKey.PublicKey = k.PublicKey
 	c.Status.ApiserverSSHKey.PrivateKey = k.PrivateKey
 
-	glog.V(4).Infof("Created apiserver ssh keys for %s", kubernetes.NamespaceName(c.Metadata.Name))
+	glog.V(4).Infof("Created apiserver ssh keys for %s", kubernetes.NamespaceName(c.Name))
 	return c, nil
 }
 
-func createServiceAccountKey() (api.Bytes, error) {
+func createServiceAccountKey() (kubermaticv1.Bytes, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -155,10 +160,10 @@ func createServiceAccountKey() (api.Bytes, error) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: saKey,
 	}
-	return api.Bytes(pem.EncodeToMemory(&block)), nil
+	return kubermaticv1.Bytes(pem.EncodeToMemory(&block)), nil
 }
 
-func createSSHKey() (*api.SecretRSAKeys, error) {
+func createSSHKey() (*kubermaticv1.SecretRSAKeys, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -175,7 +180,7 @@ func createSSHKey() (*api.SecretRSAKeys, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &api.SecretRSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
+	return &kubermaticv1.SecretRSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
 }
 
 func generateRandomToken() (string, error) {

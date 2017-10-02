@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -40,18 +41,10 @@ const (
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
-func nodesEndpoint(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(nodesReq)
-
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
 
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
@@ -71,31 +64,14 @@ func nodesEndpoint(
 	}
 }
 
-func deleteNodeEndpoint(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(nodeReq)
 
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
-		}
-
-		_, cp, err := provider.ClusterCloudProvider(cps, c)
-		if err != nil {
-			return nil, err
-		}
-
-		if cp == nil {
-			return []*api.Node{}, nil
 		}
 
 		deleteNodeLocking := func(clientset *kubernetes.Clientset, name string) error {
@@ -125,60 +101,30 @@ func deleteNodeEndpoint(
 	}
 }
 
-func createNodesEndpoint(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-	masterClientset crdclient.Interface,
-	versions map[string]*api.MasterVersion,
-) endpoint.Endpoint {
+func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.DataProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(createNodesReq)
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
 
-		cpName, cp, err := provider.ClusterCloudProvider(cps, c)
+		keys, err := dp.ClusterSSHKeys(req.user.Name, c.Name)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve ssh keys: %v", err)
+		}
+		version, found := versions[c.Spec.MasterVersion]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster version %s", c.Spec.MasterVersion)
+		}
+
+		_, cp, err := provider.ClusterCloudProvider(cps, c)
 		if err != nil {
 			return nil, err
 		}
 		if cp == nil {
 			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
-		}
-
-		npName, err := provider.NodeCloudProviderName(&req.Spec)
-		if err != nil {
-			return nil, err
-		}
-		if npName != cpName {
-			return nil, errors.NewBadRequest("cluster cloud provider %q and node cloud provider %q do not match",
-				cpName, npName)
-		}
-
-		var keys []v1.UserSSHKey
-		opts, err := ssh.UserListOptions(user.Name)
-		if err != nil {
-			return nil, err
-		}
-		keyList, err := masterClientset.KubermaticV1().UserSSHKeies().List(opts)
-		if err != nil {
-			return nil, err
-		}
-		for _, key := range keyList.Items {
-			if (&key).IsUsedByCluster(req.cluster) {
-				keys = append(keys, key)
-			}
-		}
-
-		version, found := versions[c.Spec.MasterVersion]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster version %s", c.Spec.MasterVersion)
 		}
 
 		nclient, err := c.GetNodesetClient()
@@ -187,7 +133,7 @@ func createNodesEndpoint(
 		}
 		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.GetNodeClassName(&req.Spec), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
+			nc, err = cp.CreateNodeClass(c, &req.Spec, keys.Items, version)
 			if err != nil {
 				return nil, err
 			}
@@ -200,7 +146,7 @@ func createNodesEndpoint(
 
 		for i := 1; i <= req.Instances; i++ {
 			n := &apiv1.Node{}
-			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Metadata.Name, rand.String(5))
+			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Name, rand.String(5))
 			n.Labels = map[string]string{
 				"node.k8s.io/controller": "kube-machine",
 				LabelArch:                "amd64",

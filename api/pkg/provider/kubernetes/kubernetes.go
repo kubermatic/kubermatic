@@ -2,74 +2,46 @@ package kubernetes
 
 import (
 	"fmt"
-	"log"
-	"sync"
-	"time"
 
-	"github.com/kubermatic/kubermatic/api"
+	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	crdclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
-	"k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type kubernetesProvider struct {
-	crdClient       crdclient.Interface
-	kuberntesClient *kubernetes.Clientset
+	crdClient client.Interface
 
-	mu         sync.Mutex
 	cps        map[string]provider.CloudProvider
-	workerName string
-	config     *rest.Config
 	dcs        map[string]provider.DatacenterMeta
+	workerName string
 }
 
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
-	clientConfig *rest.Config,
+	crdClient client.Interface,
 	cps map[string]provider.CloudProvider,
 	workerName string,
 	dcs map[string]provider.DatacenterMeta,
-) provider.KubernetesProvider {
-	client, err := kubernetes.NewForConfig(clientConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	crdClient := crdclient.NewForConfigOrDie(clientConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+) provider.ClusterProvider {
 	return &kubernetesProvider{
-		cps:             cps,
-		kuberntesClient: client,
-		crdClient:       crdClient,
-		workerName:      workerName,
-		config:          clientConfig,
-		dcs:             dcs,
+		cps:        cps,
+		crdClient:  crdClient,
+		workerName: workerName,
+		dcs:        dcs,
 	}
 }
 
-func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
-	var err error
-
-	// call cluster before lock is taken
+func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
 	cs, err := p.Clusters(user)
 	if err != nil {
 		return nil, err
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	// sanity checks for a fresh cluster
 	switch {
@@ -81,18 +53,10 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *api.Clust
 
 	clusterName := rand.String(9)
 
-	for _, c := range cs {
+	for _, c := range cs.Items {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
-	}
-
-	ns := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        NamespaceName(clusterName),
-			Annotations: map[string]string{},
-			Labels:      map[string]string{},
-		},
 	}
 
 	dc, found := p.dcs[spec.Cloud.DatacenterName]
@@ -100,18 +64,19 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *api.Clust
 		return nil, errors.NewBadRequest("Unknown datacenter")
 	}
 
-	c := &api.Cluster{
-		Metadata: api.Metadata{
-			User: user.Name,
-			Name: clusterName,
+	c := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   clusterName,
+			Labels: map[string]string{kubermaticv1.WorkerNameLabelKey: p.workerName},
 		},
 		Spec: *spec,
-		Status: api.ClusterStatus{
-			LastTransitionTime: time.Now(),
-			Phase:              api.PendingClusterStatusPhase,
+		Status: kubermaticv1.ClusterStatus{
+			LastTransitionTime: metav1.Now(),
+			Phase:              kubermaticv1.PendingClusterStatusPhase,
+			Seed:               dc.Seed,
+			NamespaceName:      NamespaceName(clusterName),
 		},
-		Address: &api.ClusterAddress{},
-		Seed:    dc.Seed,
+		Address: &kubermaticv1.ClusterAddress{},
 	}
 
 	c.Spec.WorkerName = p.workerName
@@ -127,79 +92,21 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *api.Clust
 
 	c.Spec.Cloud = cloud
 
-	ns, err = MarshalCluster(p.cps, c, ns)
-	if err != nil {
-		return nil, err
-	}
-	ns, err = p.kuberntesClient.CoreV1().Namespaces().Create(ns)
+	c, err = p.crdClient.KubermaticV1().Clusters().Create(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return UnmarshalCluster(p.cps, ns)
+	return c, nil
 }
 
-func (p *kubernetesProvider) clusterAndNS(user auth.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	ns, err := p.kuberntesClient.CoreV1().Namespaces().Get(NamespaceName(cluster), metav1.GetOptions{})
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			return nil, nil, errors.NewNotFound("cluster", cluster)
-		}
-		return nil, nil, err
-	}
-
-	c, err := UnmarshalCluster(p.cps, ns)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_, isAdmin := user.Roles["admin"]
-	if c.Metadata.User != user.Name && !isAdmin {
-		// don't return Forbidden, not NotFound to obfuscate the existence
-		return nil, nil, errors.NewNotFound("cluster", cluster)
-	}
-
-	return c, ns, nil
+func (p *kubernetesProvider) Cluster(user provider.User, cluster string) (*kubermaticv1.Cluster, error) {
+	return p.crdClient.KubermaticV1().Clusters().Get(cluster, metav1.GetOptions{})
 }
 
-func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*api.Cluster, error) {
-	c, _, err := p.clusterAndNS(user, cluster)
-	return c, err
-}
-
-func (p *kubernetesProvider) Clusters(user auth.User) ([]*api.Cluster, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	l := map[string]string{
-		RoleLabelKey: ClusterRoleLabel,
-	}
-
-	if _, isAdmin := user.Roles["admin"]; !isAdmin {
-		l[userLabelKey] = LabelUser(user.Name)
-	}
-
-	nsList, err := p.kuberntesClient.CoreV1().Namespaces().List(metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: labels.Everything().String()})
-	if err != nil {
-		return nil, err
-	}
-
-	cs := make([]*api.Cluster, 0, len(nsList.Items))
-	for i := range nsList.Items {
-		ns := nsList.Items[i]
-		c, err := UnmarshalCluster(p.cps, &ns)
-		if err != nil {
-			log.Println(fmt.Sprintf("error unmarshaling namespace %s: %v", ns.Name, err))
-			continue
-		}
-
-		cs = append(cs, c)
-	}
-
-	return cs, nil
+func (p *kubernetesProvider) Clusters(user provider.User) (*kubermaticv1.ClusterList, error) {
+	//TODO: User - metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: labels.Everything().String()}
+	return p.crdClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 }
 
 func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error {
@@ -209,37 +116,19 @@ func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error
 		return err
 	}
 
-	_, cp, err := provider.ClusterCloudProvider(p.cps, c)
-	if err != nil {
-		return err
-	}
-
-	if c.Spec.Cloud != nil {
-		err = cp.CleanUp(c.Spec.Cloud)
-		if err != nil {
-			return err
-		}
-	}
-
-	return p.kuberntesClient.CoreV1().Namespaces().Delete(NamespaceName(cluster), &metav1.DeleteOptions{})
+	return p.crdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{})
 }
 
-func (p *kubernetesProvider) UpgradeCluster(user auth.User, cluster, version string) error {
-	c, ns, err := p.clusterAndNS(user, cluster)
+func (p *kubernetesProvider) InitiateClusterUpgrade(user provider.User, name, version string) (*kubermaticv1.Cluster, error) {
+	c, err := p.Cluster(user, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c.Spec.MasterVersion = version
-	c.Status.Phase = api.UpdatingMasterClusterStatusPhase
-	c.Status.LastTransitionTime = time.Now()
-	c.Status.MasterUpdatePhase = api.StartMasterUpdatePhase
+	c.Status.Phase = kubermaticv1.UpdatingMasterClusterStatusPhase
+	c.Status.LastTransitionTime = metav1.Now()
+	c.Status.MasterUpdatePhase = kubermaticv1.StartMasterUpdatePhase
 
-	ns, err = MarshalCluster(p.cps, c, ns)
-	if err != nil {
-		return err
-	}
-	ns, err = p.kuberntesClient.CoreV1().Namespaces().Update(ns)
-
-	return err
+	return p.crdClient.KubermaticV1().Clusters().Update(c)
 }

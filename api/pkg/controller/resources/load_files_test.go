@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/kubermatic/kubermatic/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -15,18 +18,18 @@ const (
 )
 
 func TestLoadServiceFile(t *testing.T) {
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				BareMetal: &api.BareMetalCloudSpec{
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				BareMetal: &kubermaticv1.BareMetalCloudSpec{
 					Name: "test",
 				},
 			},
 		},
-		Metadata: api.Metadata{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "de-test-01",
 		},
-		Address: &api.ClusterAddress{
+		Address: &kubermaticv1.ClusterAddress{
 			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
@@ -48,18 +51,18 @@ func TestLoadServiceFile(t *testing.T) {
 }
 
 func TestLoadPVCFile(t *testing.T) {
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				BareMetal: &api.BareMetalCloudSpec{
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				BareMetal: &kubermaticv1.BareMetalCloudSpec{
 					Name: "test",
 				},
 			},
 		},
-		Metadata: api.Metadata{
-			Name: "jh8j81chn",
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "de-test-01",
 		},
-		Address: &api.ClusterAddress{
+		Address: &kubermaticv1.ClusterAddress{
 			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
@@ -114,18 +117,18 @@ func TestLoadDeploymentFile(t *testing.T) {
 		},
 	}
 
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				BareMetal: &api.BareMetalCloudSpec{
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				BareMetal: &kubermaticv1.BareMetalCloudSpec{
 					Name: "test",
 				},
 			},
 		},
-		Metadata: api.Metadata{
-			Name: "jh8j81chn",
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "de-test-01",
 		},
-		Address: &api.ClusterAddress{
+		Address: &kubermaticv1.ClusterAddress{
 			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
@@ -166,10 +169,10 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 		},
 	}
 
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				AWS: &api.AWSCloudSpec{
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				AWS: &kubermaticv1.AWSCloudSpec{
 					AccessKeyID:      "my_AccessKeyID",
 					SecretAccessKey:  "my_SecretAccessKey",
 					VPCID:            "my_VPCId",
@@ -177,10 +180,10 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 				},
 			},
 		},
-		Metadata: api.Metadata{
-			Name: "jh8j81chn",
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "de-test-01",
 		},
-		Address: &api.ClusterAddress{
+		Address: &kubermaticv1.ClusterAddress{
 			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,
@@ -205,10 +208,10 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 }
 
 func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
-	c := &api.Cluster{
-		Spec: api.ClusterSpec{
-			Cloud: &api.CloudSpec{
-				AWS: &api.AWSCloudSpec{
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				AWS: &kubermaticv1.AWSCloudSpec{
 					AccessKeyID:      "my_AccessKeyID",
 					SecretAccessKey:  "my_SecretAccessKey",
 					VPCID:            "my_VPCId",
@@ -218,10 +221,10 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 				},
 			},
 		},
-		Metadata: api.Metadata{
-			Name: "jh8j81chn",
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "de-test-01",
 		},
-		Address: &api.ClusterAddress{
+		Address: &kubermaticv1.ClusterAddress{
 			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
 			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
 			ExternalPort: 8443,

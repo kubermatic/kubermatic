@@ -19,14 +19,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd"
-	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,7 +37,6 @@ var (
 	prometheusAddr   = flag.String("prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
 	prometheusPath   = flag.String("prometheus-path", "/metrics", "The path on the host, on which the handler is available")
 	workerName       = flag.String("worker-name", "", "Create clusters only processed by worker-name cluster controller")
-	kubeConfig       = flag.String("kubeconfig", "", "The kubeconfig file path with one context per Kubernetes provider")
 	dcFile           = flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	address          = flag.String("address", ":8080", "The address to listen on")
 	masterKubeconfig = flag.String("master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
@@ -56,11 +56,6 @@ func main() {
 
 	// create CloudProviders
 	cps := cloud.Providers(dcs)
-	// create KubernetesProvider for each context in the kubeconfig
-	kps, err := kubernetes.Providers(*kubeConfig, dcs, cps, *workerName)
-	if err != nil {
-		glog.Fatal(err)
-	}
 
 	var config *rest.Config
 	config, err = clientcmd.BuildConfigFromFlags("", *masterKubeconfig)
@@ -68,10 +63,8 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	masterCrdClient, err := crdclient.NewForConfig(config)
-	if err != nil {
-		glog.Fatal(err)
-	}
+	masterCrdClient := mastercrdclient.NewForConfigOrDie(config)
+	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, *workerName, dcs)
 
 	// Create crd's
 	extclient := apiextclient.NewForConfigOrDie(config)
@@ -104,7 +97,9 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	r := handler.NewRouting(ctx, dcs, kps, cps, authenticator, masterCrdClient, versions, updates)
+	dataProvider := kubermatic.New(masterCrdClient)
+
+	r := handler.NewRouting(ctx, dcs, kp, cps, authenticator, dataProvider, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

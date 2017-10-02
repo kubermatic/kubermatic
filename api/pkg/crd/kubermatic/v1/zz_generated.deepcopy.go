@@ -37,22 +37,466 @@ func init() {
 func RegisterDeepCopies(scheme *runtime.Scheme) error {
 	return scheme.AddGeneratedDeepCopyFuncs(
 		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*AWSCloudSpec).DeepCopyInto(out.(*AWSCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&AWSCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*BareMetalCloudSpec).DeepCopyInto(out.(*BareMetalCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&BareMetalCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*BringYourOwnCloudSpec).DeepCopyInto(out.(*BringYourOwnCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&BringYourOwnCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*CloudSpec).DeepCopyInto(out.(*CloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&CloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*Cluster).DeepCopyInto(out.(*Cluster))
+			return nil
+		}, InType: reflect.TypeOf(&Cluster{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterAddress).DeepCopyInto(out.(*ClusterAddress))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterAddress{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterHealth).DeepCopyInto(out.(*ClusterHealth))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterHealth{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterHealthStatus).DeepCopyInto(out.(*ClusterHealthStatus))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterHealthStatus{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterList).DeepCopyInto(out.(*ClusterList))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterList{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterSpec).DeepCopyInto(out.(*ClusterSpec))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*ClusterStatus).DeepCopyInto(out.(*ClusterStatus))
+			return nil
+		}, InType: reflect.TypeOf(&ClusterStatus{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*DigitaloceanCloudSpec).DeepCopyInto(out.(*DigitaloceanCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&DigitaloceanCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*FakeCloudSpec).DeepCopyInto(out.(*FakeCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&FakeCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*KeyCert).DeepCopyInto(out.(*KeyCert))
+			return nil
+		}, InType: reflect.TypeOf(&KeyCert{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*OpenstackCloudSpec).DeepCopyInto(out.(*OpenstackCloudSpec))
+			return nil
+		}, InType: reflect.TypeOf(&OpenstackCloudSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
 			in.(*SSHKeySpec).DeepCopyInto(out.(*SSHKeySpec))
 			return nil
 		}, InType: reflect.TypeOf(&SSHKeySpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*SecretKeyCert).DeepCopyInto(out.(*SecretKeyCert))
+			return nil
+		}, InType: reflect.TypeOf(&SecretKeyCert{})},
+		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
+			in.(*SecretRSAKeys).DeepCopyInto(out.(*SecretRSAKeys))
+			return nil
+		}, InType: reflect.TypeOf(&SecretRSAKeys{})},
 		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
 			in.(*UserSSHKey).DeepCopyInto(out.(*UserSSHKey))
 			return nil
 		}, InType: reflect.TypeOf(&UserSSHKey{})},
 		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
-			in.(*UserSSHKeyBuilder).DeepCopyInto(out.(*UserSSHKeyBuilder))
-			return nil
-		}, InType: reflect.TypeOf(&UserSSHKeyBuilder{})},
-		conversion.GeneratedDeepCopyFunc{Fn: func(in interface{}, out interface{}, c *conversion.Cloner) error {
 			in.(*UserSSHKeyList).DeepCopyInto(out.(*UserSSHKeyList))
 			return nil
 		}, InType: reflect.TypeOf(&UserSSHKeyList{})},
 	)
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *AWSCloudSpec) DeepCopyInto(out *AWSCloudSpec) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new AWSCloudSpec.
+func (in *AWSCloudSpec) DeepCopy() *AWSCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(AWSCloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *BareMetalCloudSpec) DeepCopyInto(out *BareMetalCloudSpec) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new BareMetalCloudSpec.
+func (in *BareMetalCloudSpec) DeepCopy() *BareMetalCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(BareMetalCloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *BringYourOwnCloudSpec) DeepCopyInto(out *BringYourOwnCloudSpec) {
+	*out = *in
+	in.ClientKeyCert.DeepCopyInto(&out.ClientKeyCert)
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new BringYourOwnCloudSpec.
+func (in *BringYourOwnCloudSpec) DeepCopy() *BringYourOwnCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(BringYourOwnCloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *CloudSpec) DeepCopyInto(out *CloudSpec) {
+	*out = *in
+	if in.Fake != nil {
+		in, out := &in.Fake, &out.Fake
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(FakeCloudSpec)
+			**out = **in
+		}
+	}
+	if in.Digitalocean != nil {
+		in, out := &in.Digitalocean, &out.Digitalocean
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(DigitaloceanCloudSpec)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.BringYourOwn != nil {
+		in, out := &in.BringYourOwn, &out.BringYourOwn
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(BringYourOwnCloudSpec)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.AWS != nil {
+		in, out := &in.AWS, &out.AWS
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(AWSCloudSpec)
+			**out = **in
+		}
+	}
+	if in.BareMetal != nil {
+		in, out := &in.BareMetal, &out.BareMetal
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(BareMetalCloudSpec)
+			**out = **in
+		}
+	}
+	if in.Openstack != nil {
+		in, out := &in.Openstack, &out.Openstack
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(OpenstackCloudSpec)
+			**out = **in
+		}
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new CloudSpec.
+func (in *CloudSpec) DeepCopy() *CloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(CloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *Cluster) DeepCopyInto(out *Cluster) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	in.Spec.DeepCopyInto(&out.Spec)
+	if in.Address != nil {
+		in, out := &in.Address, &out.Address
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ClusterAddress)
+			**out = **in
+		}
+	}
+	in.Status.DeepCopyInto(&out.Status)
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new Cluster.
+func (in *Cluster) DeepCopy() *Cluster {
+	if in == nil {
+		return nil
+	}
+	out := new(Cluster)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject is an autogenerated deepcopy function, copying the receiver, creating a new runtime.Object.
+func (in *Cluster) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	} else {
+		return nil
+	}
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterAddress) DeepCopyInto(out *ClusterAddress) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterAddress.
+func (in *ClusterAddress) DeepCopy() *ClusterAddress {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterAddress)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterHealth) DeepCopyInto(out *ClusterHealth) {
+	*out = *in
+	out.ClusterHealthStatus = in.ClusterHealthStatus
+	in.LastTransitionTime.DeepCopyInto(&out.LastTransitionTime)
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterHealth.
+func (in *ClusterHealth) DeepCopy() *ClusterHealth {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterHealth)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterHealthStatus) DeepCopyInto(out *ClusterHealthStatus) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterHealthStatus.
+func (in *ClusterHealthStatus) DeepCopy() *ClusterHealthStatus {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterHealthStatus)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterList) DeepCopyInto(out *ClusterList) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	out.ListMeta = in.ListMeta
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]Cluster, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterList.
+func (in *ClusterList) DeepCopy() *ClusterList {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterList)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject is an autogenerated deepcopy function, copying the receiver, creating a new runtime.Object.
+func (in *ClusterList) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	} else {
+		return nil
+	}
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
+	*out = *in
+	if in.Cloud != nil {
+		in, out := &in.Cloud, &out.Cloud
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(CloudSpec)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterSpec.
+func (in *ClusterSpec) DeepCopy() *ClusterSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
+	*out = *in
+	in.LastTransitionTime.DeepCopyInto(&out.LastTransitionTime)
+	if in.Health != nil {
+		in, out := &in.Health, &out.Health
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ClusterHealth)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	in.RootCA.DeepCopyInto(&out.RootCA)
+	in.ApiserverCert.DeepCopyInto(&out.ApiserverCert)
+	in.KubeletCert.DeepCopyInto(&out.KubeletCert)
+	in.ApiserverSSHKey.DeepCopyInto(&out.ApiserverSSHKey)
+	if in.ServiceAccountKey != nil {
+		in, out := &in.ServiceAccountKey, &out.ServiceAccountKey
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new ClusterStatus.
+func (in *ClusterStatus) DeepCopy() *ClusterStatus {
+	if in == nil {
+		return nil
+	}
+	out := new(ClusterStatus)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *DigitaloceanCloudSpec) DeepCopyInto(out *DigitaloceanCloudSpec) {
+	*out = *in
+	if in.SSHKeys != nil {
+		in, out := &in.SSHKeys, &out.SSHKeys
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new DigitaloceanCloudSpec.
+func (in *DigitaloceanCloudSpec) DeepCopy() *DigitaloceanCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(DigitaloceanCloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *FakeCloudSpec) DeepCopyInto(out *FakeCloudSpec) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new FakeCloudSpec.
+func (in *FakeCloudSpec) DeepCopy() *FakeCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(FakeCloudSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *KeyCert) DeepCopyInto(out *KeyCert) {
+	*out = *in
+	if in.Key != nil {
+		in, out := &in.Key, &out.Key
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	if in.Cert != nil {
+		in, out := &in.Cert, &out.Cert
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new KeyCert.
+func (in *KeyCert) DeepCopy() *KeyCert {
+	if in == nil {
+		return nil
+	}
+	out := new(KeyCert)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *OpenstackCloudSpec) DeepCopyInto(out *OpenstackCloudSpec) {
+	*out = *in
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new OpenstackCloudSpec.
+func (in *OpenstackCloudSpec) DeepCopy() *OpenstackCloudSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(OpenstackCloudSpec)
+	in.DeepCopyInto(out)
+	return out
 }
 
 // DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
@@ -72,6 +516,58 @@ func (in *SSHKeySpec) DeepCopy() *SSHKeySpec {
 		return nil
 	}
 	out := new(SSHKeySpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *SecretKeyCert) DeepCopyInto(out *SecretKeyCert) {
+	*out = *in
+	if in.Key != nil {
+		in, out := &in.Key, &out.Key
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	if in.Cert != nil {
+		in, out := &in.Cert, &out.Cert
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new SecretKeyCert.
+func (in *SecretKeyCert) DeepCopy() *SecretKeyCert {
+	if in == nil {
+		return nil
+	}
+	out := new(SecretKeyCert)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *SecretRSAKeys) DeepCopyInto(out *SecretRSAKeys) {
+	*out = *in
+	if in.PrivateKey != nil {
+		in, out := &in.PrivateKey, &out.PrivateKey
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	if in.PublicKey != nil {
+		in, out := &in.PublicKey, &out.PublicKey
+		*out = make(Bytes, len(*in))
+		copy(*out, *in)
+	}
+	return
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new SecretRSAKeys.
+func (in *SecretRSAKeys) DeepCopy() *SecretRSAKeys {
+	if in == nil {
+		return nil
+	}
+	out := new(SecretRSAKeys)
 	in.DeepCopyInto(out)
 	return out
 }
@@ -102,22 +598,6 @@ func (in *UserSSHKey) DeepCopyObject() runtime.Object {
 	} else {
 		return nil
 	}
-}
-
-// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
-func (in *UserSSHKeyBuilder) DeepCopyInto(out *UserSSHKeyBuilder) {
-	*out = *in
-	return
-}
-
-// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new UserSSHKeyBuilder.
-func (in *UserSSHKeyBuilder) DeepCopy() *UserSSHKeyBuilder {
-	if in == nil {
-		return nil
-	}
-	out := new(UserSSHKeyBuilder)
-	in.DeepCopyInto(out)
-	return out
 }
 
 // DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.

@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"sort"
 
-	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
+	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 func getClusterUpgrades(
-	kps map[string]provider.KubernetesProvider,
+	kp provider.ClusterProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
@@ -31,15 +31,10 @@ func getClusterUpgrades(
 			return nil, errors.NewWrongRequest(request, clusterReq{})
 		}
 
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
+				return nil, errors.NewNotFound("cluster", req.cluster)
 			}
 			return nil, err
 		}
@@ -111,7 +106,7 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 func performClusterUpgrade(
-	kps map[string]provider.KubernetesProvider,
+	kp provider.ClusterProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
@@ -122,15 +117,10 @@ func performClusterUpgrade(
 			return nil, errors.NewWrongRequest(request, upgradeReq{})
 		}
 
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
 		k, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
+				return nil, errors.NewNotFound("cluster", req.cluster)
 			}
 			return nil, err
 		}
@@ -147,6 +137,6 @@ func performClusterUpgrade(
 			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
 		}
 
-		return nil, kp.UpgradeCluster(user, req.cluster, req.to)
+		return kp.InitiateClusterUpgrade(user, req.cluster, req.to)
 	}
 }

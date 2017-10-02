@@ -10,7 +10,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -21,11 +21,11 @@ var funcs = template.FuncMap{
 	"pemEncodePublicKey": pemEncodePublicKey,
 }
 
-func apiBytesToB64(b api.Bytes) string {
+func apiBytesToB64(b kubermaticv1.Bytes) string {
 	return b.Base64()
 }
 
-func pemEncodePublicKey(b api.Bytes) string {
+func pemEncodePublicKey(b kubermaticv1.Bytes) string {
 	k, _, _, _, err := ssh.ParseAuthorizedKey(b)
 	if err != nil {
 		glog.Errorf("Failed to parse authorized key: %v", err)
@@ -52,7 +52,7 @@ func pemEncodePublicKey(b api.Bytes) string {
 	return string(pemBytes)
 }
 
-func apiBytesToString(b api.Bytes) string {
+func apiBytesToString(b kubermaticv1.Bytes) string {
 	return string(b)
 }
 

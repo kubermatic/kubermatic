@@ -1,11 +1,8 @@
 package kubernetes
 
 import (
-	"fmt"
-	"sync"
-	"time"
-
 	"github.com/kubermatic/kubermatic/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -13,11 +10,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-var _ provider.KubernetesProvider = (*kubernetesFakeProvider)(nil)
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type kubernetesFakeProvider struct {
-	mu       sync.Mutex
-	clusters map[string]*api.Cluster // by name
+	clusters map[string]*kubermaticv1.Cluster // by name
 	cps      map[string]provider.CloudProvider
 	dcs      map[string]provider.DatacenterMeta
 }
@@ -27,36 +24,34 @@ func NewKubernetesFakeProvider(
 	dc string,
 	cps map[string]provider.CloudProvider,
 	dcs map[string]provider.DatacenterMeta,
-) provider.KubernetesProvider {
+) provider.ClusterProvider {
 	return &kubernetesFakeProvider{
-		clusters: map[string]*api.Cluster{
+		clusters: map[string]*kubermaticv1.Cluster{
 			"234jkh24234g": {
-				Metadata: api.Metadata{
-					Name:     "234jkh24234g",
-					Revision: "42",
-					UID:      "4711",
-					User:     "sttts",
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "234jkh24234g",
+					UID:  "4711",
 				},
-				Spec: api.ClusterSpec{
+				Spec: kubermaticv1.ClusterSpec{
 					HumanReadableName: "sttts",
 					MasterVersion:     "0.0.1",
-					Cloud: &api.CloudSpec{
+					Cloud: &kubermaticv1.CloudSpec{
 						DatacenterName: "fake-fra1",
-						Fake: &api.FakeCloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "983475982374895723958",
 						},
 					},
 				},
-				Address: &api.ClusterAddress{
+				Address: &kubermaticv1.ClusterAddress{
 					URL:          "http://104.155.80.128:8888",
 					AdminToken:   "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
 					KubeletToken: "14c5c6cdd8bed3c849e10fc8ff1ba91571f4e06f",
 				},
-				Status: api.ClusterStatus{
-					Phase: api.RunningClusterStatusPhase,
-					Health: &api.ClusterHealth{
-						LastTransitionTime: time.Now().Add(-7 * time.Second),
-						ClusterHealthStatus: api.ClusterHealthStatus{
+				Status: kubermaticv1.ClusterStatus{
+					Phase: kubermaticv1.RunningClusterStatusPhase,
+					Health: &kubermaticv1.ClusterHealth{
+						LastTransitionTime: metav1.Now(),
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
 							Apiserver:  true,
 							Scheduler:  true,
 							Controller: false,
@@ -79,59 +74,19 @@ func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
 	}
 }
 
-func (p *kubernetesFakeProvider) UpgradeCluster(user auth.User, cluster, version string) error {
-	return nil
+func (p *kubernetesFakeProvider) InitiateClusterUpgrade(user auth.User, name, version string) (*kubermaticv1.Cluster, error) {
+	return nil, nil
 }
 
 func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
-	c, err := p.NewCluster(user, spec)
-	if err != nil {
-		return nil, err
-	}
-
-	return p.SetCloud(user, c.Metadata.Name, c.Spec.Cloud)
+func (p *kubernetesFakeProvider) NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
+	return p.clusters["234jkh24234g"], nil
 }
 
-func (p *kubernetesFakeProvider) NewCluster(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	id, err := uuid.UUID()
-	if err != nil {
-		return nil, err
-	}
-
-	cluster := rand.String(9)
-	if _, found := p.clusters[cluster]; found {
-		return nil, fmt.Errorf("cluster %s already exists", cluster)
-	}
-
-	dc, found := p.dcs[spec.Cloud.DatacenterName]
-	if !found {
-		return nil, errors.NewBadRequest("Unregistered datacenter")
-	}
-
-	c := &api.Cluster{
-		Metadata: api.Metadata{
-			Name:     cluster,
-			Revision: "0",
-			UID:      id,
-		},
-		Spec: *spec,
-		Seed: dc.Seed,
-	}
-
-	p.clusters[cluster] = c
-	return c, nil
-}
-
-func (p *kubernetesFakeProvider) Cluster(user auth.User, cluster string) (*api.Cluster, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*kubermaticv1.Cluster, error) {
 	if _, found := p.clusters[cluster]; !found {
 		return nil, errors.NewNotFound("cluster", cluster)
 	}
@@ -141,7 +96,7 @@ func (p *kubernetesFakeProvider) Cluster(user auth.User, cluster string) (*api.C
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) SetCloud(user auth.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) SetCloud(user auth.User, cluster string, cloud *kubermaticv1.CloudSpec) (*kubermaticv1.Cluster, error) {
 	c, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
@@ -150,22 +105,17 @@ func (p *kubernetesFakeProvider) SetCloud(user auth.User, cluster string, cloud 
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) Clusters(user auth.User) ([]*api.Cluster, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	cs := make([]*api.Cluster, 0, len(p.clusters))
+func (p *kubernetesFakeProvider) Clusters(user auth.User) (*kubermaticv1.ClusterList, error) {
+	res := &kubermaticv1.ClusterList{}
+	res.Items = make([]kubermaticv1.Cluster, 0, len(p.clusters))
 	for _, c := range p.clusters {
-		cs = append(cs, c)
+		res.Items = append(res.Items, *c)
 	}
 
-	return cs, nil
+	return res, nil
 }
 
 func (p *kubernetesFakeProvider) DeleteCluster(user auth.User, cluster string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	if _, found := p.clusters[cluster]; !found {
 		return errors.NewNotFound("cluster", cluster)
 	}

@@ -1,16 +1,10 @@
 package fake
 
 import (
-	"errors"
-
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-)
-
-const (
-	tokenAnnotationKey = "token"
 )
 
 type fakeCloudProvider struct {
@@ -24,36 +18,15 @@ func NewCloudProvider() provider.CloudProvider {
 	}
 }
 
-func (p *fakeCloudProvider) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpec, error) {
+func (p *fakeCloudProvider) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return cloud, nil
 }
 
-func (p *fakeCloudProvider) CleanUp(*api.CloudSpec) error {
+func (p *fakeCloudProvider) CleanUp(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
-	as := map[string]string{}
-	as[tokenAnnotationKey] = cloud.Fake.Token
-
-	return as, nil
-}
-
-func (p *fakeCloudProvider) UnmarshalCloudSpec(as map[string]string) (*api.CloudSpec, error) {
-	c := api.CloudSpec{
-		Fake: &api.FakeCloudSpec{},
-	}
-
-	var found bool
-	c.Fake.Token, found = as[tokenAnnotationKey]
-	if !found {
-		return nil, errors.New("no token found in fake cloud provider")
-	}
-
-	return &c, nil
-}
-
-func (p *fakeCloudProvider) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []v1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (p *fakeCloudProvider) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 
