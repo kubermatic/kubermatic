@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
-	controller2 "github.com/kubermatic/kubermatic/api/pkg/controller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -37,6 +36,12 @@ const (
 	runningSyncPeriod   = 1 * time.Minute
 	updatingSyncPeriod  = 5 * time.Second
 )
+
+// GroupRunStopper represents a control loop started with Run,
+// which can be terminated by closing the stop channel
+type GroupRunStopper interface {
+	Run(workerCount int, stop chan struct{})
+}
 
 type controller struct {
 	dc                    string
@@ -74,7 +79,7 @@ func NewController(
 	apiserverExternalPort int,
 	dcs map[string]provider.DatacenterMeta,
 	seedInformerGroup *seedinformer.Group,
-) (controller2.Interface, error) {
+) (GroupRunStopper, error) {
 	cc := &controller{
 		dc:                    dc,
 		client:                client,
