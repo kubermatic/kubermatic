@@ -1,12 +1,13 @@
 package v1
 
 import (
-	nodesetclient "github.com/kube-node/nodeset/pkg/client/clientset/versioned"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	nodesetclient "github.com/kube-node/nodeset/pkg/client/clientset/versioned"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cmdapi "k8s.io/client-go/tools/clientcmd/api"

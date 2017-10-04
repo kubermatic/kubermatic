@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +k8s:deepcopy-gen=package,register
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=etcd.database.coreos.com
-package v1beta2
+package v1
+
+type ClusterExpansion interface{}
+
+type UserSSHKeyExpansion interface{}
