@@ -38,7 +38,7 @@ pipeline:
       - cd api
       - CGO_ENABLED=0 make build
 
-  docker-always:
+  kubermatic-docker-always:
     group: push
     image: plugins/docker
     repo: kubermatic/api
@@ -50,7 +50,21 @@ pipeline:
     context: api
     secrets: [ docker_username, docker_password ]
 
-  docker-master:
+  addons-docker-master:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/addon-manager
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - master
+    dockerfile: addon-manager/Dockerfile
+    context: addon-manager
+    secrets: [ docker_username, docker_password ]
+    when:
+      branch: develop
+
+  kubermatic-docker-master:
     group: push
     image: plugins/docker
     repo: kubermatic/api
@@ -64,7 +78,7 @@ pipeline:
     when:
       branch: develop
 
-  docker-release:
+  kubermatic-docker-release:
     group: push
     image: plugins/docker
     repo: kubermatic/api
@@ -75,6 +89,22 @@ pipeline:
       - latest
     dockerfile: api/Dockerfile
     context: api
+    secrets: [ docker_username, docker_password ]
+    when:
+      event: [tag]
+      branch: release/*
+
+  addons-docker-master:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/addon-manager
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - ${DRONE_TAG}
+      - latest
+    dockerfile: addon-manager/Dockerfile
+    context: addon-manager
     secrets: [ docker_username, docker_password ]
     when:
       event: [tag]
