@@ -50,19 +50,17 @@ pipeline:
     context: api
     secrets: [ docker_username, docker_password ]
 
-  addons-docker-master:
+  addons-docker-always:
     group: push
     image: plugins/docker
     repo: kubermatic/addon-manager
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
     tags:
-      - master
+      - ${DRONE_COMMIT}
     dockerfile: addon-manager/Dockerfile
     context: addon-manager
     secrets: [ docker_username, docker_password ]
-    when:
-      branch: develop
 
   kubermatic-docker-master:
     group: push
@@ -74,6 +72,20 @@ pipeline:
       - master
     dockerfile: api/Dockerfile
     context: api
+    secrets: [ docker_username, docker_password ]
+    when:
+      branch: develop
+
+  addons-docker-master:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/addon-manager
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - master
+    dockerfile: addon-manager/Dockerfile
+    context: addon-manager
     secrets: [ docker_username, docker_password ]
     when:
       branch: develop
@@ -94,7 +106,7 @@ pipeline:
       event: [tag]
       branch: release/*
 
-  addons-docker-master:
+  addons-docker-release:
     group: push
     image: plugins/docker
     repo: kubermatic/addon-manager
