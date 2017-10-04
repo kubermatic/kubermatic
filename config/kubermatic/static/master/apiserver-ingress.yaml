@@ -5,9 +5,6 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "k8sniff"
 spec:
-  backend:
-    serviceName: apiserver
-    servicePort: secure
   rules:
   - host: {{ .Cluster.Address.ExternalName }}
     http:
