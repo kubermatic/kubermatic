@@ -48,7 +48,6 @@ config:
           [Service]
           Type=oneshot
           ExecStartPre=/bin/mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
-          ExecStartPre=/bin/bash -c "/usr/bin/curl -L -o /tmp/cni-amd64.tgz https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz && tar -xvf /tmp/cni-amd64.tgz -C /opt/cni/bin/"
           ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
           ExecStartPost=/bin/chmod +x /opt/bin/kubelet
           RemainAfterExit=true
