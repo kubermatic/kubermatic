@@ -18,8 +18,12 @@ ADD https://storage.googleapis.com/kubernetes-release/release/v1.7.6/bin/linux/a
 RUN chmod 755 /usr/local/bin/kubectl
 
 ADD kube-addons.sh /opt/
+ADD run.sh /opt/
+ADD cleanup.sh /opt/
 ADD namespace.yaml /opt/
 RUN chmod +x /opt/kube-addons.sh
+RUN chmod +x /opt/run.sh
+RUN chmod +x /opt/cleanup.sh
 ADD addons /etc/kubernetes/addons
 
-CMD ["/opt/kube-addons.sh"]
+CMD ["/opt/run.sh"]
