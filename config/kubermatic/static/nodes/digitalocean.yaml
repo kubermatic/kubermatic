@@ -74,8 +74,8 @@ config:
         content: |-
           [Unit]
           Description=Kubelet
-          Requires=network.target download-kubelet.service setup-network-environment.service
-          After=network.target download-kubelet.service setup-network-environment.service
+          Requires=network.target setup-network-environment.service
+          After=network.target setup-network-environment.service
 
           [Service]
           Restart=always
