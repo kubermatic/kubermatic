@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"sort"
 
-	"github.com/blang/semver"
+	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
 	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
@@ -39,7 +38,7 @@ func getClusterUpgrades(
 			return nil, err
 		}
 
-		current, err := semver.Parse(c.Spec.MasterVersion)
+		current, err := semver.NewVersion(c.Spec.MasterVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -47,21 +46,20 @@ func getClusterUpgrades(
 		s := kversion.
 			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{})
 
-		possibleUpdates := make(semver.Versions, 0)
+		possibleUpdates := make([]semver.Version, 0)
 		for _, ver := range versions {
-			if _, err := s.Search(c.Spec.MasterVersion, ver.ID); err != nil {
-				continue
-			}
-			v, err := semver.Parse(ver.ID)
+			v, err := semver.NewVersion(ver.ID)
 			if err != nil {
 				continue
 			}
+			if _, err := s.Search(current.Original(), v.Original()); err != nil {
+				continue
+			}
 
-			if current.LT(v) {
-				possibleUpdates = append(possibleUpdates, v)
+			if current.LessThan(v) {
+				possibleUpdates = append(possibleUpdates, *v)
 			}
 		}
-		sort.Sort(possibleUpdates)
 
 		return possibleUpdates, nil
 	}

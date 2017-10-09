@@ -84,7 +84,7 @@ func newTestController(
 
 func buildMasterVerionsMap() map[string]*api.MasterVersion {
 	return map[string]*api.MasterVersion{
-		"1.5.2": &api.MasterVersion{
+		"1.5.2": {
 			Name:                       "1.5.2",
 			ID:                         "1.5.2",
 			Default:                    false,
@@ -99,7 +99,7 @@ func buildMasterVerionsMap() map[string]*api.MasterVersion {
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"1.5.3": &api.MasterVersion{
+		"1.5.3": {
 			Name:                       "1.5.3",
 			ID:                         "1.5.3",
 			Default:                    true,
@@ -114,7 +114,7 @@ func buildMasterVerionsMap() map[string]*api.MasterVersion {
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"v1.6.0-rc.1": &api.MasterVersion{
+		"v1.6.0-rc.1": {
 			Name:                       "v1.6.0-rc.1",
 			ID:                         "v1.6.0-rc.1",
 			Default:                    false,

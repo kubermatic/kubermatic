@@ -31,7 +31,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.ClusterSpec{},
 	}
-	e := createTestEndpoint(getUser(false), []runtime.Object{cluster})
+	e := createTestEndpoint(getUser(false), []runtime.Object{cluster}, nil, nil)
 
 	e.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)

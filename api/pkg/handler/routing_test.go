@@ -9,17 +9,19 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api"
 	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
 
-func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object) http.Handler {
+func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versions map[string]*api.MasterVersion, updates []api.MasterUpdate,
+) http.Handler {
 	ctx := context.Background()
 
 	dcs:= buildDatacenterMeta()
@@ -31,7 +33,7 @@ func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object) http.
 	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, "", dcs)
 	dataProvider := kubermatic.New(masterCrdClient)
 
-	routing := NewRouting(ctx, dcs, kp, cps, authenticator, dataProvider, nil, nil)
+	routing := NewRouting(ctx, dcs, kp, cps, authenticator, dataProvider, versions, updates)
 	routing.Register(router)
 
 	return router
@@ -101,7 +103,7 @@ func checkStatusCode(code int, recorder *httptest.ResponseRecorder, t *testing.T
 func TestUpRoute(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false), []runtime.Object{})
+	e := createTestEndpoint(getUser(false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
 }
