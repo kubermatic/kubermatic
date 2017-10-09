@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: alertmanager
-        image: quay.io/prometheus/alertmanager:v0.7.1
+        image: quay.io/prometheus/alertmanager:v0.9.1
         args:
           - '-config.file=/etc/alertmanager/alertmanager.yml'
           - '-web.external-url=https://alerting.{{ .Values.KubermaticURL | trim }}'
