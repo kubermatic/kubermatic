@@ -4,12 +4,11 @@ metadata:
   name: prometheus
   namespace: monitoring
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - name: web
-    nodePort: 30900
-    port: 9090
     protocol: TCP
+    port: 9090
     targetPort: web
   selector:
     prometheus: prometheus
