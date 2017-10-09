@@ -163,7 +163,7 @@ func createServiceAccountKey() (kubermaticv1.Bytes, error) {
 	return kubermaticv1.Bytes(pem.EncodeToMemory(&block)), nil
 }
 
-func createSSHKey() (*kubermaticv1.SecretRSAKeys, error) {
+func createSSHKey() (*kubermaticv1.RSAKeys, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func createSSHKey() (*kubermaticv1.SecretRSAKeys, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &kubermaticv1.SecretRSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
+	return &kubermaticv1.RSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
 }
 
 func generateRandomToken() (string, error) {

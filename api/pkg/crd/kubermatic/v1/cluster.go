@@ -103,12 +103,11 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud *CloudSpec `json:"cloud,omitempty"`
-	// HumanReadableName is the cluster name provided by the user
-	HumanReadableName string `json:"humanReadableName"`
-	MasterVersion     string `json:"masterVersion"`
+	Cloud *CloudSpec `json:"cloud"`
 
-	WorkerName string `json:"-"` // a cluster used in development, compare --worker-name flag.
+	HumanReadableName string `json:"human_readable_name"` // HumanReadableName is the cluster name provided by the user
+	MasterVersion     string `json:"master_version"`
+	WorkerName        string `json:"worker_name"` // WorkerName is a cluster used in development, compare --worker-name flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.
@@ -128,13 +127,13 @@ type ClusterStatus struct {
 	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
 	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
 
-	RootCA            SecretKeyCert `json:"rootCA"`
-	ApiserverCert     KeyCert       `json:"-"`
-	KubeletCert       KeyCert       `json:"-"`
-	ApiserverSSHKey   SecretRSAKeys `json:"apiserver_ssh_key"`
-	ServiceAccountKey Bytes         `json:"-"`
-	Seed              string        `json:"seed,omitempty"`
-	NamespaceName     string        `json:"-"`
+	RootCA            KeyCert `json:"root_ca"`
+	ApiserverCert     KeyCert `json:"apiserver_cert"`
+	KubeletCert       KeyCert `json:"kubelet_cert"`
+	ApiserverSSHKey   RSAKeys `json:"apiserver_ssh_key"`
+	ServiceAccountKey Bytes   `json:"service_account_key"`
+	Seed              string  `json:"seed,omitempty"`
+	NamespaceName     string  `json:"namespace_name"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -156,27 +155,19 @@ type ClusterHealth struct {
 	LastTransitionTime  metav1.Time `json:"lastTransitionTime"`
 }
 
-// SecretKeyCert is a pair of key and cert where the key is not published to the API client.
-type SecretKeyCert struct {
-	Key  Bytes `json:"-"`
-	Cert Bytes `json:"cert"`
-}
-
 // KeyCert is a pair of key and cert.
 type KeyCert struct {
 	Key  Bytes `json:"key"`
 	Cert Bytes `json:"cert"`
 }
 
-// SecretRSAKeys is a pair of private and public key where the key is not published to the API client.
-type SecretRSAKeys struct {
-	PrivateKey Bytes `json:"-"`
+// RSAKeys is a pair of private and public key where the key is not published to the API client.
+type RSAKeys struct {
+	PrivateKey Bytes `json:"private_key"`
 	PublicKey  Bytes `json:"public_key"`
 }
 
-type (
-	Bytes []byte
-)
+type Bytes []byte
 
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
@@ -185,10 +176,7 @@ type FakeCloudSpec struct {
 
 // DigitaloceanCloudSpec specifies access data to digital ocean.
 type DigitaloceanCloudSpec struct {
-	// APIToken is used to authenticate with the DigitalOcean API.
-	Token string `json:"token"`
-	// SSHKeys are SSH keys used in the cloud-init generation to deploy to nodes.
-	SSHKeys []string `json:"sshKeys"`
+	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

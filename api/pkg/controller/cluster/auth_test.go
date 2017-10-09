@@ -62,7 +62,7 @@ func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
 	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
-			ApiserverSSHKey: kubermaticv1.SecretRSAKeys{},
+			ApiserverSSHKey: kubermaticv1.RSAKeys{},
 		},
 	}
 
@@ -89,7 +89,7 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
-			ApiserverSSHKey: kubermaticv1.SecretRSAKeys{
+			ApiserverSSHKey: kubermaticv1.RSAKeys{
 				PublicKey:  []byte("PUB_KEY"),
 				PrivateKey: []byte("PRIV_KEY"),
 			},
