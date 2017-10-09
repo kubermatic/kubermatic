@@ -171,7 +171,7 @@ func (cc *controller) launchingCheckSecrets(c *kubermaticv1.Cluster) error {
 		"controller-manager": resources.LoadSecretFile,
 	}
 
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	for s, gen := range secrets {
 		_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(s)
 		if !errors.IsNotFound(err) {
@@ -197,7 +197,7 @@ func (cc *controller) launchingCheckServices(c *kubermaticv1.Cluster) error {
 		"apiserver": resources.LoadServiceFile,
 	}
 
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	for s, gen := range services {
 		_, err := cc.seedInformerGroup.ServiceInformer.Lister().Services(ns).Get(s)
 		if !errors.IsNotFound(err) {
@@ -223,7 +223,7 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 		"etcd-operator": resources.LoadServiceAccountFile,
 	}
 
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	for s, gen := range serviceAccounts {
 		_, err := cc.seedInformerGroup.ServiceAccountInformer.Lister().ServiceAccounts(ns).Get(s)
 		if !errors.IsNotFound(err) {
@@ -245,7 +245,7 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 }
 
 func (cc *controller) launchingCheckTokenUsers(c *kubermaticv1.Cluster) error {
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	name := "token-users"
 	_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(name)
 	if !errors.IsNotFound(err) {
@@ -284,7 +284,7 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
 
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	for s, gen := range roleBindings {
 		binding, err := gen(ns, s, cc.masterResourcesPath)
 		if err != nil {
@@ -306,7 +306,7 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 }
 
 func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
@@ -342,7 +342,7 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
-	ns := c.Name
+	ns := c.Status.NamespaceName
 
 	var dc *provider.DatacenterMeta
 	cms := map[string]func(c *kubermaticv1.Cluster, datacenter *provider.DatacenterMeta) (*corev1.ConfigMap, error){}
@@ -386,7 +386,7 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 		"apiserver": resources.LoadIngressFile,
 	}
 
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	for s, gen := range ingress {
 		_, err := cc.seedInformerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
@@ -407,7 +407,7 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *controller) launchingCheckEtcdCluster(c *kubermaticv1.Cluster) error {
-	ns := c.Name
+	ns := c.Status.NamespaceName
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
