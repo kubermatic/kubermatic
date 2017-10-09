@@ -11,7 +11,7 @@ spec:
       name: node-exporter
     spec:
       containers:
-      - image: prom/node-exporter
+      - image: prom/node-exporter:v0.15.0
         name: node-exporter
         ports:
         - containerPort: 9100

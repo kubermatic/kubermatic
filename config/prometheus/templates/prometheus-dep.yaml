@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: prometheus
-        image: quay.io/prometheus/prometheus:v1.7.1
+        image: prom/prometheus:v1.8.0
         args:
           - '-storage.local.retention=576h'
           - '-storage.local.memory-chunks=500000'
