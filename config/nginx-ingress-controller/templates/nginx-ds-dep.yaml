@@ -27,7 +27,7 @@ spec:
       serviceAccountName: nginx-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       containers:
-      - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.13
+      - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.15
         name: nginx-ingress-controller
         readinessProbe:
           httpGet:
@@ -60,3 +60,4 @@ spec:
         args:
         - /nginx-ingress-controller
         - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+        - --default-ssl-certificate=default/kubermatic-tls-certificates

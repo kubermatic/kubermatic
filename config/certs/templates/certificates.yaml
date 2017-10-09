@@ -1,0 +1,26 @@
+## Example Certificate that uses multiple challenge mechanisms to obtain
+## a SAN certificate for multiple domains from the letsencrypt-staging issuer.
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: kubermatic-all
+spec:
+  # The name of the Kubernetes secret resource to store the signed TLS keypair
+  secretName: kubermatic-tls-certificates
+  # The Issuer to use for this certificate
+  issuer: letsencrypt-prod
+  # A list of domains to include on the TLS certificate
+  domains:
+  {{- range $key, $val := .Values.Certificates.Domains }}
+  - {{ $val }}
+  {{- end }}
+  acme:
+    # A pairing of domains to challenge types for the ACME provider to use
+    # when attempting to validate domain ownership for the listed domains
+    config:
+    - domains:
+      {{- range $key, $val := .Values.Certificates.Domains }}
+      - {{ $val }}
+      {{- end }}
+      http-01:
+        ingressClass: nginx

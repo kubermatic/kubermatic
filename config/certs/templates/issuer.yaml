@@ -1,0 +1,13 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v01.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: "info@loodse.com"
+    # Name of a secret used to store the ACME account private key
+    privateKey: letsencrypt-acme-account-key
+    # ACME dns-01 provider configurations
