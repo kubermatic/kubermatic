@@ -24,7 +24,7 @@ type SSHKeySpec struct {
 	Owner       string   `json:"owner"`
 	Name        string   `json:"name"`
 	Fingerprint string   `json:"fingerprint"`
-	PublicKey   string   `json:"public_key"`
+	PublicKey   string   `json:"publicKey"`
 	Clusters    []string `json:"clusters"`
 }
 

@@ -149,7 +149,7 @@ func deleteClusterEndpoint(
 
 type newClusterReqV2 struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
-	SSHKeys []string                  `json:"ssh_keys"`
+	SSHKeys []string                  `json:"sshKeys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {

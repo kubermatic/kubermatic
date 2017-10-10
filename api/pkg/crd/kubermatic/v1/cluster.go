@@ -105,18 +105,18 @@ type ClusterList struct {
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud"`
 
-	HumanReadableName string `json:"human_readable_name"` // HumanReadableName is the cluster name provided by the user
-	MasterVersion     string `json:"master_version"`
-	WorkerName        string `json:"worker_name"` // WorkerName is a cluster used in development, compare --worker-name flag.
+	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
+	MasterVersion     string `json:"masterVersion"`
+	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
 	URL          string `json:"url"`
-	ExternalName string `json:"external_name"`
-	ExternalPort int    `json:"external_port"`
-	KubeletToken string `json:"kubelet_token"`
-	AdminToken   string `json:"admin_token"`
+	ExternalName string `json:"externalName"`
+	ExternalPort int    `json:"externalPort"`
+	KubeletToken string `json:"kubeletToken"`
+	AdminToken   string `json:"adminToken"`
 }
 
 // ClusterStatus stores status information about a cluster.
@@ -127,13 +127,13 @@ type ClusterStatus struct {
 	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
 	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
 
-	RootCA            KeyCert `json:"root_ca"`
-	ApiserverCert     KeyCert `json:"apiserver_cert"`
-	KubeletCert       KeyCert `json:"kubelet_cert"`
-	ApiserverSSHKey   RSAKeys `json:"apiserver_ssh_key"`
-	ServiceAccountKey Bytes   `json:"service_account_key"`
+	RootCA            KeyCert `json:"rootCA"`
+	ApiserverCert     KeyCert `json:"apiserverCert"`
+	KubeletCert       KeyCert `json:"kubeletCert"`
+	ApiserverSSHKey   RSAKeys `json:"apiserverSshKey"`
+	ServiceAccountKey Bytes   `json:"serviceAccountKey"`
 	Seed              string  `json:"seed,omitempty"`
-	NamespaceName     string  `json:"namespace_name"`
+	NamespaceName     string  `json:"namespaceName"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -163,8 +163,8 @@ type KeyCert struct {
 
 // RSAKeys is a pair of private and public key where the key is not published to the API client.
 type RSAKeys struct {
-	PrivateKey Bytes `json:"private_key"`
-	PublicKey  Bytes `json:"public_key"`
+	PrivateKey Bytes `json:"privateKey"`
+	PublicKey  Bytes `json:"publicKey"`
 }
 
 type Bytes []byte
@@ -187,16 +187,16 @@ type BringYourOwnCloudSpec struct {
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID         string `json:"access_key_id"`
-	SecretAccessKey     string `json:"secret_access_key"`
-	VPCID               string `json:"vpc_id"`
-	SubnetID            string `json:"subnet_id"`
-	RoleName            string `json:"role_name"`
-	RouteTableID        string `json:"route_table_id"`
-	InstanceProfileName string `json:"instance_profile_name"`
-	SecurityGroup       string `json:"security_group"`
+	AccessKeyID         string `json:"accessKeyId"`
+	SecretAccessKey     string `json:"secretAccessKey"`
+	VPCID               string `json:"vpcId"`
+	SubnetID            string `json:"subnetId"`
+	RoleName            string `json:"roleName"`
+	RouteTableID        string `json:"routeTableId"`
+	InstanceProfileName string `json:"instanceProfileName"`
+	SecurityGroup       string `json:"securityGroup"`
 
-	AvailabilityZone string `json:"availability_zone"`
+	AvailabilityZone string `json:"availabilityZone"`
 }
 
 // BareMetalCloudSpec specifies access to a bare metal datacenter
@@ -211,8 +211,8 @@ type OpenstackCloudSpec struct {
 	Tenant         string `json:"tenant"`
 	Domain         string `json:"domain"`
 	Network        string `json:"network"`
-	SecurityGroups string `json:"security_groups"`
-	FloatingIPPool string `json:"floating_ip_pool"`
+	SecurityGroups string `json:"securityGroups"`
+	FloatingIPPool string `json:"floatingIpPool"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
@@ -220,7 +220,7 @@ type ClusterHealthStatus struct {
 	Apiserver      bool `json:"apiserver"`
 	Scheduler      bool `json:"scheduler"`
 	Controller     bool `json:"controller"`
-	NodeController bool `json:"node_controller"`
+	NodeController bool `json:"nodeController"`
 	Etcd           bool `json:"etcd"`
 }
 
