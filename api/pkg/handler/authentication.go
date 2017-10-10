@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	oidc "github.com/coreos/go-oidc"
+	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -23,7 +25,7 @@ const (
 
 // Authenticator is an interface for configurable authentication middlewares
 type Authenticator interface {
-	IsAuthenticated(h http.Handler) http.Handler
+	IsAuthenticated(transporthttp.DecodeRequestFunc) transporthttp.DecodeRequestFunc
 }
 
 // TokenExtractor is an interface token extraction
@@ -39,6 +41,12 @@ type openIDAuthenticator struct {
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
 func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) Authenticator {
+	// Sanity check for config!
+	_, err := oidc.NewProvider(context.Background(), issuer)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	return openIDAuthenticator{
 		issuer:         issuer,
 		tokenExtractor: extractor,
@@ -47,12 +55,12 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) A
 }
 
 // IsAuthenticated is a http middleware which checks against an openid server
-func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (o openIDAuthenticator) IsAuthenticated(h transporthttp.DecodeRequestFunc) transporthttp.DecodeRequestFunc {
+	return transporthttp.DecodeRequestFunc(func(ctx context.Context, r *http.Request) (request interface{}, err error) {
 		p, err := oidc.NewProvider(r.Context(), o.issuer)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
+			glog.Error(err)
+			return nil, errors.NewNotAuthorized()
 		}
 		idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
 		token := o.tokenExtractor.Extract(r)
@@ -60,14 +68,15 @@ func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
 
 		idToken, err := idTokenVerifier.Verify(r.Context(), token)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
+			glog.Error(err)
+			return nil, errors.NewNotAuthorized()
 		}
 
 		claims := map[string]interface{}{}
 		err = idToken.Claims(&claims)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			glog.Error(err)
+			return nil, errors.NewNotAuthorized()
 		}
 
 		user := provider.User{
@@ -76,7 +85,8 @@ func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
 		}
 
 		if user.Name == "" {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			glog.Error(err)
+			return nil, errors.NewNotAuthorized()
 		}
 
 		roles := []string{UserRoleKey}
@@ -98,7 +108,7 @@ func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
 		}
 
 		glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
+		return h(ctx, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
 	})
 }
 
@@ -165,8 +175,8 @@ func NewTestAuthenticator(user interface{}) Authenticator {
 }
 
 // IsAuthenticated is a http middleware which checks against an openid server
-func (o testAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, o.user)))
+func (o testAuthenticator) IsAuthenticated(h transporthttp.DecodeRequestFunc) transporthttp.DecodeRequestFunc {
+	return transporthttp.DecodeRequestFunc(func(ctx context.Context, r *http.Request) (request interface{}, err error) {
+		return h(ctx, r.WithContext(context.WithValue(r.Context(), UserContextKey, o.user)))
 	})
 }

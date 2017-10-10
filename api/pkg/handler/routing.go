@@ -76,122 +76,126 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc").
-		Handler(r.authenticator.IsAuthenticated(r.datacentersHandler()))
+		Handler(r.datacentersHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}").
-		Handler(r.authenticator.IsAuthenticated(r.datacenterHandler()))
+		Handler(r.datacenterHandler())
 
 	mux.
 		Methods(http.MethodPost).
 		Path("/api/v1/cluster").
-		Handler(r.authenticator.IsAuthenticated(r.newClusterHandlerV2()))
+		Handler(r.newClusterHandlerV2())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster").
-		Handler(r.authenticator.IsAuthenticated(r.clustersHandler()))
+		Handler(r.clustersHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(r.authenticator.IsAuthenticated(r.clusterHandler()))
+		Handler(r.clusterHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
-		Handler(r.authenticator.IsAuthenticated(r.kubeconfigHandler()))
+		Handler(r.kubeconfigHandler())
 
 	mux.
 		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(r.authenticator.IsAuthenticated(r.deleteClusterHandler()))
+		Handler(r.deleteClusterHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
+		Handler(r.nodesHandler())
 
 	mux.
 		Methods(http.MethodPost).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.authenticator.IsAuthenticated(r.createNodesHandler()))
+		Handler(r.createNodesHandler())
 
 	mux.
 		Methods(http.MethodDelete).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(r.authenticator.IsAuthenticated(r.deleteNodeHandler()))
+		Handler(r.deleteNodeHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
-		Handler(r.authenticator.IsAuthenticated(r.getPossibleClusterUpgrades()))
+		Handler(r.getPossibleClusterUpgrades())
 
 	mux.
 		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrage()))
+		Handler(r.performClusterUpgrage())
 
 	mux.
 		Methods(http.MethodPost).
 		Path("/api/v1/ext/{dc}/keys").
-		Handler(r.authenticator.IsAuthenticated(r.getAWSKeyHandler()))
+		Handler(r.getAWSKeyHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(r.authenticator.IsAuthenticated(r.nodesHandler()))
+		Handler(r.nodesHandler())
 
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/ssh-keys").
-		Handler(r.authenticator.IsAuthenticated(r.listSSHKeys()))
+		Handler(r.listSSHKeys())
 
 	mux.
 		Methods(http.MethodPost).
 		Path("/api/v1/ssh-keys").
-		Handler(r.authenticator.IsAuthenticated(r.createSSHKey()))
+		Handler(r.createSSHKey())
 
 	mux.
 		Methods(http.MethodDelete).
 		Path("/api/v1/ssh-keys/{meta_name}").
-		Handler(r.authenticator.IsAuthenticated(r.deleteSSHKey()))
+		Handler(r.deleteSSHKey())
 }
 
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		listSSHKeyEndpoint(r.masterCrdClient),
-		decodeListSSHKeyReq,
+		r.authenticator.IsAuthenticated(decodeListSSHKeyReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		createSSHKeyEndpoint(r.masterCrdClient),
-		decodeCreateSSHKeyReq,
+		r.authenticator.IsAuthenticated(decodeCreateSSHKeyReq),
 		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		deleteSSHKeyEndpoint(r.masterCrdClient),
-		decodeDeleteSSHKeyReq,
+		r.authenticator.IsAuthenticated(decodeDeleteSSHKeyReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
 func (r Routing) getAWSKeyHandler() http.Handler {
 	return httptransport.NewServer(
 		datacenterKeyEndpoint(r.datacenters),
-		decodeDcKeyListRequest,
+		r.authenticator.IsAuthenticated(decodeDcKeyListRequest),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -208,9 +212,10 @@ func (r Routing) getAWSKeyHandler() http.Handler {
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		datacentersEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
-		decodeDatacentersReq,
+		r.authenticator.IsAuthenticated(decodeDatacentersReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -228,9 +233,10 @@ func (r Routing) datacentersHandler() http.Handler {
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		datacenterEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders),
-		decodeDcReq,
+		r.authenticator.IsAuthenticated(decodeDcReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -238,9 +244,10 @@ func (r Routing) datacenterHandler() http.Handler {
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
 		newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterCrdClient),
-		decodeNewClusterReqV2,
+		r.authenticator.IsAuthenticated(decodeNewClusterReqV2),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -248,9 +255,10 @@ func (r Routing) newClusterHandlerV2() http.Handler {
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		clusterEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeClusterReq,
+		r.authenticator.IsAuthenticated(decodeClusterReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -258,9 +266,10 @@ func (r Routing) clusterHandler() http.Handler {
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		kubeconfigEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeKubeconfigReq,
+		r.authenticator.IsAuthenticated(decodeKubeconfigReq),
 		encodeKubeconfig,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -268,9 +277,10 @@ func (r Routing) kubeconfigHandler() http.Handler {
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		clustersEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeClustersReq,
+		r.authenticator.IsAuthenticated(decodeClustersReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -278,9 +288,10 @@ func (r Routing) clustersHandler() http.Handler {
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient),
-		decodeDeleteClusterReq,
+		r.authenticator.IsAuthenticated(decodeDeleteClusterReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -288,9 +299,10 @@ func (r Routing) deleteClusterHandler() http.Handler {
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		nodesEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeNodesReq,
+		r.authenticator.IsAuthenticated(decodeNodesReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -298,9 +310,10 @@ func (r Routing) nodesHandler() http.Handler {
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient, r.versions),
-		decodeCreateNodesReq,
+		r.authenticator.IsAuthenticated(decodeCreateNodesReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -308,9 +321,10 @@ func (r Routing) createNodesHandler() http.Handler {
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders),
-		decodeNodeReq,
+		r.authenticator.IsAuthenticated(decodeNodeReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -318,9 +332,10 @@ func (r Routing) deleteNodeHandler() http.Handler {
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		getClusterUpgrades(r.kubernetesProviders, r.versions, r.updates),
-		decodeClusterReq,
+		r.authenticator.IsAuthenticated(decodeClusterReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }
 
@@ -328,8 +343,9 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
 		performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates),
-		decodeUpgradeReq,
+		r.authenticator.IsAuthenticated(decodeUpgradeReq),
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
 	)
 }

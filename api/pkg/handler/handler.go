@@ -5,13 +5,38 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/golang/glog"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 )
 
 // APIError we need to work with github.com/yvasiyarov/swagger
 // based on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go
 type APIError struct {
-	ErrorCode    int
-	ErrorMessage string
+	ErrorCode    int    `json:"code"`
+	ErrorMessage string `json:"message"`
+}
+
+func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
+	errorCode := http.StatusInternalServerError
+	msg := err.Error()
+	if h, ok := err.(errors.HTTPError); ok {
+		errorCode = h.StatusCode()
+		msg = h.Error()
+	}
+	e := struct {
+		Error APIError `json:"error"`
+	}{
+		Error: APIError{
+			ErrorCode:    errorCode,
+			ErrorMessage: msg,
+		},
+	}
+	w.WriteHeader(errorCode)
+	err = encodeJSON(ctx, w, e)
+	if err != nil {
+		glog.Info(err)
+	}
 }
 
 // StatusOK returns a handler always returning http status code 200 (StatusOK).
