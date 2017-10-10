@@ -4,15 +4,14 @@ metadata:
   name: node-exporter
   namespace: monitoring
   labels:
-    k8s-app: node-exporter
+    team: kubermatic
 spec:
-  jobLabel: k8s-app
   selector:
     matchLabels:
-      k8s-app: node-exporter
+      app: node-exporter
   namespaceSelector:
     matchNames:
     - monitoring
   endpoints:
-  - port: http-metrics
+  - port: http
     interval: 30s
