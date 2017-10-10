@@ -131,7 +131,7 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.
 		Methods(http.MethodPut).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.performClusterUpgrage())
+		Handler(r.performClusterUpgrade())
 
 	mux.
 		Methods(http.MethodPost).
@@ -339,8 +339,8 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	)
 }
 
-// performClusterUpgrage starts a cluster upgrade to a specific version
-func (r Routing) performClusterUpgrage() http.Handler {
+// performClusterUpgrade starts a cluster upgrade to a specific version
+func (r Routing) performClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
 		performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates),
 		r.authenticator.IsAuthenticated(decodeUpgradeReq),

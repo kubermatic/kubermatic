@@ -162,7 +162,7 @@ type dcsReq struct {
 func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcsReq
 
-	ur, err := decodeUserReq(r)
+	ur, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ type dcReq struct {
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcReq
 
-	dr, err := decodeUserReq(r)
+	dr, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}

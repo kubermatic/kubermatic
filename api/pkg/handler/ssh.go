@@ -26,7 +26,7 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 	var req createSSHKeyReq
 
 	// Decode user info
-	ur, err := decodeUserReq(r)
+	ur, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}
@@ -65,11 +65,11 @@ type deleteSSHKeyReq struct {
 	metaName string
 }
 
-func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteSSHKeyReq
 
 	// Decode user info
-	ur, err := decodeUserReq(r)
+	ur, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}
@@ -108,11 +108,11 @@ type listSSHKeyReq struct {
 	userReq
 }
 
-func decodeListSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req listSSHKeyReq
 
 	// Decode user info
-	ur, err := decodeUserReq(r)
+	ur, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}

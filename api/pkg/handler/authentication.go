@@ -108,7 +108,7 @@ func (o openIDAuthenticator) IsAuthenticated(h transporthttp.DecodeRequestFunc) 
 		}
 
 		glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
-		return h(ctx, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
+		return h(context.WithValue(ctx, UserContextKey, user), r)
 	})
 }
 

@@ -225,7 +225,7 @@ type newClusterReqV2 struct {
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
 	var req newClusterReqV2
 
-	ur, err := decodeUserReq(r)
+	ur, err := decodeUserReq(c)
 	if err != nil {
 		return nil, err
 	}
