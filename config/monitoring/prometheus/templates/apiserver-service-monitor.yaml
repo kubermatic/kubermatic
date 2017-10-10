@@ -10,7 +10,6 @@ spec:
     matchLabels:
       role: apiserver
   namespaceSelector:
-    matchNames:
-      - ""
+    any: true
   endpoints:
   - port: insecure
