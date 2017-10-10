@@ -1,0 +1,28 @@
+#apiVersion: extensions/v1beta1
+#kind: Ingress
+#metadata:
+#  name: grafana
+#  namespace: monitoring
+#  annotations:
+#    kubernetes.io/ingress.class: "nginx"
+#    # type of authentication
+#    ingress.kubernetes.io/auth-type: basic
+#    # name of the secret that contains the user/password definitions
+#    ingress.kubernetes.io/auth-secret: basic-auth
+#    # message to display with an appropiate context why the authentication is required
+#    ingress.kubernetes.io/auth-realm: "Authentication Required"
+#spec:
+#  tls:
+#  - hosts:
+#    - monitoring.{{ .Values.KubermaticURL | trim }}
+#  backend:
+#    serviceName: grafana
+#    servicePort: 3000
+#  rules:
+#  - host: monitoring.{{ .Values.KubermaticURL | trim }}
+#    http:
+#      paths:
+#      - path: /
+#        backend:
+#          serviceName: grafana
+#          servicePort: 3000

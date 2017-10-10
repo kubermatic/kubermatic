@@ -1,0 +1,81 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:4.5.2
+        env:
+          - name: GF_AUTH_BASIC_ENABLED
+            value: "false"
+          - name: GF_AUTH_ANONYMOUS_ENABLED
+            value: "true"
+          - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+            value: Admin
+          - name: GF_SERVER_ROOT_URL
+            value: /
+          - name: GRAFANA_USER
+            valueFrom:
+              secretKeyRef:
+                name: grafana-credentials
+                key: user
+          - name: GRAFANA_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: grafana-credentials
+                key: password
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        ports:
+        - name: web
+          containerPort: 3000
+        resources:
+          requests:
+            memory: 100Mi
+            cpu: 100m
+          limits:
+            memory: 200Mi
+            cpu: 200m
+      - name: grafana-watcher
+        image: quay.io/coreos/grafana-watcher:v0.0.8
+        args:
+          - '--watch-dir=/var/grafana-dashboards-0'
+          - '--grafana-url=http://localhost:3000'
+        env:
+        - name: GRAFANA_USER
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: user
+        - name: GRAFANA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: password
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "32Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: grafana-dashboards-0
+          mountPath: /var/grafana-dashboards-0
+      volumes:
+      - name: grafana-data
+        persistentVolumeClaim:
+          claimName: grafana-pvc
+      - name: grafana-dashboards-0
+        configMap:
+          name: grafana-dashboards-0
