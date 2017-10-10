@@ -14,10 +14,7 @@ spec:
       hostNetwork: true
       hostPID: true
       containers:
-      - image:  quay.io/prometheus/node-exporter:v0.14.0
-        args:
-        - "-collector.procfs=/host/proc"
-        - "-collector.sysfs=/host/sys"
+      - image:  quay.io/prometheus/node-exporter:v0.15.0
         name: node-exporter
         ports:
         - containerPort: 9100
@@ -30,21 +27,6 @@ spec:
           limits:
             memory: 50Mi
             cpu: 200m
-        volumeMounts:
-        - name: proc
-          readOnly:  true
-          mountPath: /host/proc
-        - name: sys
-          readOnly: true
-          mountPath: /host/sys
       tolerations:
         - effect: NoSchedule
           operator: Exists
-      volumes:
-      - name: proc
-        hostPath:
-          path: /proc
-      - name: sys
-        hostPath:
-          path: /sys
-
