@@ -44,6 +44,10 @@ func nodesEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(nodesReq)
 
 		kp, found := kps[req.dc]
@@ -51,7 +55,7 @@ func nodesEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -74,6 +78,10 @@ func deleteNodeEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(nodeReq)
 
 		kp, found := kps[req.dc]
@@ -81,7 +89,7 @@ func deleteNodeEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -129,13 +137,17 @@ func createNodesEndpoint(
 	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(createNodesReq)
 		kp, found := kps[req.dc]
 		if !found {
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +170,7 @@ func createNodesEndpoint(
 		}
 
 		var keys []v1.UserSSHKey
-		opts, err := ssh.UserListOptions(req.user.Name)
+		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err
 		}
