@@ -3,12 +3,11 @@ workspace:
   path: src/github.com/kubermatic/kubermatic
 
 pipeline:
-  dependencies:
+  dep:
     image: metalmatze/dep:1.9
     commands:
       - cd api
-      - go get -u github.com/golang/dep/cmd/dep
-      - dep ensure -vendor-only
+      - dep ensure -v -vendor-only
 
   gofmt:
     group: lint
