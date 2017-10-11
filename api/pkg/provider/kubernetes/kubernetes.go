@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	crdclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -58,7 +59,7 @@ func NewKubernetesProvider(
 	}
 }
 
-func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	var err error
 
 	// call cluster before lock is taken
@@ -138,7 +139,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user provider.User, spec *api.C
 	return UnmarshalCluster(p.cps, ns)
 }
 
-func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
+func (p *kubernetesProvider) clusterAndNS(user auth.User, cluster string) (*api.Cluster, *v1.Namespace, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -164,12 +165,12 @@ func (p *kubernetesProvider) clusterAndNS(user provider.User, cluster string) (*
 	return c, ns, nil
 }
 
-func (p *kubernetesProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
+func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*api.Cluster, error) {
 	c, _, err := p.clusterAndNS(user, cluster)
 	return c, err
 }
 
-func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
+func (p *kubernetesProvider) Clusters(user auth.User) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -201,7 +202,7 @@ func (p *kubernetesProvider) Clusters(user provider.User) ([]*api.Cluster, error
 	return cs, nil
 }
 
-func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) error {
+func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error {
 	// check permission by getting the cluster first
 	c, err := p.Cluster(user, cluster)
 	if err != nil {
@@ -223,7 +224,7 @@ func (p *kubernetesProvider) DeleteCluster(user provider.User, cluster string) e
 	return p.kuberntesClient.CoreV1().Namespaces().Delete(NamespaceName(cluster), &metav1.DeleteOptions{})
 }
 
-func (p *kubernetesProvider) UpgradeCluster(user provider.User, cluster, version string) error {
+func (p *kubernetesProvider) UpgradeCluster(user auth.User, cluster, version string) error {
 	c, ns, err := p.clusterAndNS(user, cluster)
 	if err != nil {
 		return err

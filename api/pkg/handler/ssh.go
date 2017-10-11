@@ -92,7 +92,7 @@ func deleteSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 type listSSHKeyReq struct {
 }
 
-func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error) {
 	var req listSSHKeyReq
 	return req, nil
 }

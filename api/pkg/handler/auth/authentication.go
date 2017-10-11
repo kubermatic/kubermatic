@@ -10,7 +10,6 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 type contextKey int
@@ -69,7 +68,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 			idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
 			t := ctx.Value(userRawToken)
 			token, ok := t.(string)
-			if !ok || token != "" {
+			if !ok || token == "" {
 				return nil, errors.NewNotAuthorized()
 			}
 
@@ -87,7 +86,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 
-			user := provider.User{
+			user := User{
 				Name:  claims["sub"].(string),
 				Roles: map[string]struct{}{},
 			}

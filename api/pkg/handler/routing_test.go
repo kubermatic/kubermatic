@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/mux"
 	crdclientfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -40,7 +41,7 @@ func createTestEndpoint(user provider.User) http.Handler {
 
 	router := mux.NewRouter()
 
-	authenticator := NewTestAuthenticator(user)
+	authenticator := auth.NewTestAuthenticator(user)
 
 	routing := NewRouting(ctx, dcs, kps, cps, authenticator, crdclientfake.NewSimpleClientset(), nil, nil)
 	routing.Register(router)

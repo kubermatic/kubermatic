@@ -135,15 +135,10 @@ func generateBaseKubernetesProvider() map[string]provider.KubernetesProvider {
 	}
 }
 
-func generateClusterReq(cluster, dc, user string) clusterReq {
+func generateClusterReq(cluster, dc, _ string) clusterReq {
 	return clusterReq{
 		dcReq: dcReq{
 			dc: dc,
-			userReq: userReq{
-				user: provider.User{
-					Name: user,
-				},
-			},
 		},
 		cluster: cluster,
 	}

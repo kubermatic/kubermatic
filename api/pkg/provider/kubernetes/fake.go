@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
@@ -78,7 +79,7 @@ func (p *kubernetesFakeProvider) Spec() *api.DatacenterSpec {
 	}
 }
 
-func (p *kubernetesFakeProvider) UpgradeCluster(user provider.User, cluster, version string) error {
+func (p *kubernetesFakeProvider) UpgradeCluster(user auth.User, cluster, version string) error {
 	return nil
 }
 
@@ -86,7 +87,7 @@ func (p *kubernetesFakeProvider) Country() string {
 	return "Germany"
 }
 
-func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	c, err := p.NewCluster(user, spec)
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func (p *kubernetesFakeProvider) NewClusterWithCloud(user provider.User, spec *a
 	return p.SetCloud(user, c.Metadata.Name, c.Spec.Cloud)
 }
 
-func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.ClusterSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) NewCluster(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -128,7 +129,7 @@ func (p *kubernetesFakeProvider) NewCluster(user provider.User, spec *api.Cluste
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Cluster(user auth.User, cluster string) (*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if _, found := p.clusters[cluster]; !found {
@@ -140,7 +141,7 @@ func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*a
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) SetCloud(user provider.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
+func (p *kubernetesFakeProvider) SetCloud(user auth.User, cluster string, cloud *api.CloudSpec) (*api.Cluster, error) {
 	c, err := p.Cluster(user, cluster)
 	if err != nil {
 		return nil, err
@@ -149,7 +150,7 @@ func (p *kubernetesFakeProvider) SetCloud(user provider.User, cluster string, cl
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) Clusters(user provider.User) ([]*api.Cluster, error) {
+func (p *kubernetesFakeProvider) Clusters(user auth.User) ([]*api.Cluster, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -161,7 +162,7 @@ func (p *kubernetesFakeProvider) Clusters(user provider.User) ([]*api.Cluster, e
 	return cs, nil
 }
 
-func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster string) error {
+func (p *kubernetesFakeProvider) DeleteCluster(user auth.User, cluster string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -173,6 +174,6 @@ func (p *kubernetesFakeProvider) DeleteCluster(user provider.User, cluster strin
 	return nil
 }
 
-func (p *kubernetesFakeProvider) Nodes(user provider.User, cluster string) ([]string, error) {
+func (p *kubernetesFakeProvider) Nodes(user auth.User, cluster string) ([]string, error) {
 	return []string{}, nil
 }

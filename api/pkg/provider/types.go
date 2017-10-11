@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 )
 
 // Constants defining known cloud providers.
@@ -21,12 +22,6 @@ const (
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
 )
-
-// User represents an API user that is used for authentication.
-type User struct {
-	Name  string
-	Roles map[string]struct{}
-}
 
 // CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
 type CloudSpecProvider interface {
@@ -52,19 +47,19 @@ type CloudProvider interface {
 // KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
 type KubernetesProvider interface {
 	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
-	NewClusterWithCloud(user User, spec *api.ClusterSpec) (*api.Cluster, error)
+	NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user User, cluster string) (*api.Cluster, error)
+	Cluster(user auth.User, cluster string) (*api.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
-	Clusters(user User) ([]*api.Cluster, error)
+	Clusters(user auth.User) ([]*api.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
-	DeleteCluster(user User, cluster string) error
+	DeleteCluster(user auth.User, cluster string) error
 
 	// UpgradeCluster upgrades a Cluster to a specific version
-	UpgradeCluster(user User, cluster, version string) error
+	UpgradeCluster(user auth.User, cluster, version string) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
