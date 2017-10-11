@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,10 +19,7 @@ func kubeconfigEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(kubeconfigReq)
 
 		kp, found := kps[req.dc]

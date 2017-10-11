@@ -14,6 +14,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
@@ -24,10 +25,7 @@ func getClusterUpgrades(
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req, ok := request.(clusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, clusterReq{})
@@ -118,10 +116,7 @@ func performClusterUpgrade(
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req, ok := request.(upgradeReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, upgradeReq{})

@@ -15,6 +15,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
@@ -26,10 +27,7 @@ func datacentersEndpoint(
 ) endpoint.Endpoint {
 	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 
 		adcs := make([]api.Datacenter, 0, len(kps))
 		var keys []string
@@ -42,7 +40,7 @@ func datacentersEndpoint(
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
-			if _, isAdmin := user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
+			if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
 				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.Name)
 				continue
 			}
@@ -129,10 +127,7 @@ func datacenterEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(dcReq)
 
 		dc, found := dcs[req.dc]
@@ -140,7 +135,7 @@ func datacenterEndpoint(
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
-		if _, isAdmin := user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
+		if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
@@ -44,10 +45,7 @@ func nodesEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(nodesReq)
 
 		kp, found := kps[req.dc]
@@ -78,10 +76,7 @@ func deleteNodeEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(nodeReq)
 
 		kp, found := kps[req.dc]
@@ -137,10 +132,7 @@ func createNodesEndpoint(
 	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(createNodesReq)
 		kp, found := kps[req.dc]
 		if !found {

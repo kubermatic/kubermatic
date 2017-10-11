@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,10 +35,7 @@ func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 
 func createSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req, ok := request.(createSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
@@ -71,10 +69,7 @@ func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 
 func deleteSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req, ok := request.(deleteSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
@@ -104,11 +99,7 @@ func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error
 
 func listSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-
+		user := auth.GetUser(ctx)
 		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err

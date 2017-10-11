@@ -1,4 +1,4 @@
-package handler
+package auth
 
 import (
 	"context"
@@ -24,8 +24,10 @@ const (
 	AdminRoleKey = "admin"
 )
 
+// Authenticator  is responsible for extracting and verifying
+// data to authenticate
 type Authenticator interface {
-	Signer() endpoint.Middleware
+	Verifier() endpoint.Middleware
 	Extractor() transporthttp.RequestFunc
 }
 
@@ -55,7 +57,7 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) A
 	}
 }
 
-func (o openIDAuthenticator) Signer() endpoint.Middleware {
+func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			// This should only be called once!
@@ -65,7 +67,7 @@ func (o openIDAuthenticator) Signer() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 			idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
-			t := ctx.Value(userKey)
+			t := ctx.Value(userRawToken)
 			token, ok := t.(string)
 			if !ok || token != "" {
 				return nil, errors.NewNotAuthorized()
@@ -121,13 +123,13 @@ func (o openIDAuthenticator) Signer() endpoint.Middleware {
 
 type userToken int
 
-const userKey userToken = 0
+const userRawToken userToken = 0
 
 func (o openIDAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token := o.tokenExtractor.Extract(r)
 		glog.V(6).Infof("Extracted oauth token: %s", token)
-		return context.WithValue(ctx, userKey, token)
+		return context.WithValue(ctx, userRawToken, token)
 	}
 }
 
@@ -193,10 +195,10 @@ func NewTestAuthenticator(user interface{}) Authenticator {
 	return testAuthenticator{user: user}
 }
 
-func (o testAuthenticator) Signer() endpoint.Middleware {
+func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			t := ctx.Value(userKey)
+			t := ctx.Value(userRawToken)
 			token, ok := t.(string)
 			if !ok || token != "" {
 				return nil, errors.NewNotAuthorized()
@@ -208,6 +210,6 @@ func (o testAuthenticator) Signer() endpoint.Middleware {
 
 func (o testAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, _ *http.Request) context.Context {
-		return context.WithValue(ctx, userKey, o.user)
+		return context.WithValue(ctx, userRawToken, o.user)
 	}
 }

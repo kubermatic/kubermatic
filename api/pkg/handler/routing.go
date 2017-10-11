@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -22,7 +23,7 @@ type Routing struct {
 	cloudProviders      map[string]provider.CloudProvider
 	logger              log.Logger
 	masterCrdClient     crdclient.Interface
-	authenticator       Authenticator
+	authenticator       auth.Authenticator
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
 }
@@ -33,7 +34,7 @@ func NewRouting(
 	dcs map[string]provider.DatacenterMeta,
 	kps map[string]provider.KubernetesProvider,
 	cps map[string]provider.CloudProvider,
-	authenticator Authenticator,
+	authenticator auth.Authenticator,
 	masterCrdClient crdclient.Interface,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -161,7 +162,7 @@ func (r Routing) Register(mux *mux.Router) {
 }
 
 func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
-	return endpoint.Chain(r.authenticator.Signer())(e)
+	return endpoint.Chain(r.authenticator.Verifier())(e)
 }
 
 func (r Routing) listSSHKeys() http.Handler {

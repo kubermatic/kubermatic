@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
@@ -25,10 +26,7 @@ func newClusterEndpointV2(
 	masterClientset crdclient.Interface,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(newClusterReqV2)
 
 		if req.Cluster == nil {
@@ -93,10 +91,7 @@ func clusterEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(clusterReq)
 
 		kp, found := kps[req.dc]
@@ -121,10 +116,7 @@ func clustersEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(clustersReq)
 
 		kp, found := kps[req.dc]
@@ -147,10 +139,7 @@ func deleteClusterEndpoint(
 	masterClientset crdclient.Interface,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user, err := GetUser(ctx)
-		if err != nil {
-			return nil, err
-		}
+		user := auth.GetUser(ctx)
 		req := request.(deleteClusterReq)
 
 		kp, found := kps[req.dc]
