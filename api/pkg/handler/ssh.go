@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	crdclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"k8s.io/api/core/v1"

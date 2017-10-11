@@ -15,9 +15,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 func datacentersEndpoint(

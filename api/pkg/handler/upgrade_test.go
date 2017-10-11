@@ -8,12 +8,15 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func Test_performClusterUpgrade(t *testing.T) {
+var contextWithUser = context.WithValue(context.Background(), auth.UserContextKey, getUser(false))
+
+func TestPerformClusterUpgrade(t *testing.T) {
 	type want struct {
 		val interface{}
 		err error
@@ -45,7 +48,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 				args: []endpointArgs{
 					{
 						name: "no request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  nil,
 						want: want{
 							val: nil,
@@ -54,7 +57,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 					},
 					{
 						name: "wrong request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  "blah",
 						want: want{
 							val: nil,
@@ -73,7 +76,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 				args: []endpointArgs{
 					{
 						name: "no request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  nil,
 						want: want{
 							val: nil,
@@ -82,7 +85,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 					},
 					{
 						name: "wrong request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  "blah",
 						want: want{
 							val: nil,
@@ -91,7 +94,7 @@ func Test_performClusterUpgrade(t *testing.T) {
 					},
 					{
 						name: "base request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  generateUpgradeReq("1.6.0", "234jkh24234g", "base", "anom"),
 						want: want{
 							val: nil,
@@ -200,7 +203,7 @@ func generateSemVerSlice(versions []string) semver.Versions {
 	return vs
 }
 
-func Test_getClusterUpgrades(t *testing.T) {
+func TestGetClusterUpgrades(t *testing.T) {
 	type want struct {
 		val interface{}
 		err error
@@ -232,7 +235,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 				args: []endpointArgs{
 					{
 						name: "no request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  nil,
 						want: want{
 							val: nil,
@@ -241,7 +244,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 					},
 					{
 						name: "wrong request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  "blah",
 						want: want{
 							val: nil,
@@ -259,7 +262,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 				args: []endpointArgs{
 					{
 						name: "no request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  nil,
 						want: want{
 							val: nil,
@@ -268,7 +271,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 					},
 					{
 						name: "wrong request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  "blah",
 						want: want{
 							val: nil,
@@ -277,7 +280,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 					},
 					{
 						name: "base request - empty response",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  generateClusterReq("234jkh24234g", "base", "anom"),
 						want: want{
 							val: semver.Versions{},
@@ -299,7 +302,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 				args: []endpointArgs{
 					{
 						name: "no request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  nil,
 						want: want{
 							val: nil,
@@ -308,7 +311,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 					},
 					{
 						name: "wrong request",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  "blah",
 						want: want{
 							val: nil,
@@ -317,7 +320,7 @@ func Test_getClusterUpgrades(t *testing.T) {
 					},
 					{
 						name: "base request - empty response",
-						ctx:  context.Background(),
+						ctx:  contextWithUser,
 						req:  generateClusterReq("234jkh24234g", "base", "anom"),
 						want: want{
 							val: generateSemVerSlice([]string{"1.6.0", "1.7.0"}),

@@ -17,12 +17,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusOK {
-		t.Errorf("Expected status code to be 200, got %d", res.Code)
-		t.Error(res.Body.String())
-		return
-	}
+	checkStatusCode(http.StatusOK, res, t)
 
 	b, err := yaml.YAMLToJSON(res.Body.Bytes())
 	if err != nil {
@@ -49,17 +44,7 @@ func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
 	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Errorf("Expected status code to be 400, got: %d", res.Code)
-		t.Error(res.Body.String())
-		return
-	}
-
-	exp := `unknown kubernetes datacenter "testtest"`
-	if res.Body.String() != exp {
-		t.Errorf("Expected error to be: '%s', got: '%s'", exp, res.Body.String())
-	}
+	checkStatusCode(http.StatusBadRequest, res, t)
 }
 
 func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
@@ -69,15 +54,5 @@ func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
 	e := createTestEndpoint(getUser(false))
 
 	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusNotFound {
-		t.Errorf("Expected status code to be 404, got %d", res.Code)
-		t.Error(res.Body.String())
-		return
-	}
-
-	//exp := `cluster "testtest" in dc "fake-1" not found`
-	//if res.Body.String() != exp {
-	//	t.Errorf("Expected error to be: '%s', got: '%s'", exp, res.Body.String())
-	//}
+	checkStatusCode(http.StatusNotFound, res, t)
 }

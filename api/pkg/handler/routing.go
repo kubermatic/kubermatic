@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
 
 // Routing represents an object which binds endpoints to http handlers.

@@ -25,17 +25,7 @@ func TestCreateNodesEndpointNotExistingDC(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/v1/dc/testtest/cluster/234jkh24234g/node", encodeReq(t, reqObj))
 
 	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Errorf("Expected status code to be 400, got %d", res.Code)
-		t.Error(res.Body.String())
-		return
-	}
-
-	exp := "unknown kubernetes datacenter \"testtest\""
-	if res.Body.String() != exp {
-		t.Errorf("Expected error to be %q, got %q", exp, res.Body.String())
-	}
+	checkStatusCode(http.StatusBadRequest, res, t)
 }
 
 func TestKubernetesNodeInfoEndpoint(t *testing.T) {

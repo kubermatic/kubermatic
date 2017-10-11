@@ -14,9 +14,9 @@ import (
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 func getClusterUpgrades(

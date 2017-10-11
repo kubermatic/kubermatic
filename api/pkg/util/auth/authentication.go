@@ -186,11 +186,11 @@ func (c combinedExtractor) Extract(r *http.Request) string {
 }
 
 type testAuthenticator struct {
-	user interface{}
+	user User
 }
 
-// NewTestAuthenticator returns an testing authentication middleware
-func NewTestAuthenticator(user interface{}) Authenticator {
+// NewFakeAuthenticator returns an testing authentication middleware
+func NewFakeAuthenticator(user User) Authenticator {
 	return testAuthenticator{user: user}
 }
 
@@ -198,8 +198,8 @@ func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			t := ctx.Value(userRawToken)
-			token, ok := t.(string)
-			if !ok || token != "" {
+			token, ok := t.(User)
+			if !ok {
 				return nil, errors.NewNotAuthorized()
 			}
 			return next(context.WithValue(ctx, UserContextKey, token), request)
