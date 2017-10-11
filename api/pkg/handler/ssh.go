@@ -18,23 +18,14 @@ import (
 )
 
 type createSSHKeyReq struct {
-	userReq
 	*v1.UserSSHKey
 }
 
-func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createSSHKeyReq
-
-	// Decode user info
-	ur, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = ur.(userReq)
 	req.UserSSHKey = &v1.UserSSHKey{}
-
 	// Decode
-	if err = json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
 		return nil, errors.NewBadRequest("Error parsing the input, got %q", err.Error())
 	}
 
@@ -43,6 +34,10 @@ func decodeCreateSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 
 func createSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req, ok := request.(createSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
@@ -50,7 +45,7 @@ func createSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 
 		key, err := v1.NewUserSSHKeyBuilder().
 			SetName(req.Spec.Name).
-			SetOwner(req.user.Name).
+			SetOwner(user.Name).
 			SetRawKey(req.Spec.PublicKey).
 			Build()
 		if err != nil {
@@ -61,20 +56,11 @@ func createSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 }
 
 type deleteSSHKeyReq struct {
-	userReq
 	metaName string
 }
 
-func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteSSHKeyReq
-
-	// Decode user info
-	ur, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = ur.(userReq)
-
 	var ok bool
 	if req.metaName, ok = mux.Vars(r)["meta_name"]; !ok {
 		return nil, fmt.Errorf("delte key needs a parameter 'meta_name'")
@@ -85,6 +71,10 @@ func decodeDeleteSSHKeyReq(_ context.Context, r *http.Request) (interface{}, err
 
 func deleteSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req, ok := request.(deleteSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
@@ -95,8 +85,8 @@ func deleteSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 			glog.V(5).Info(err)
 			return nil, fmt.Errorf("can't access key %q", req.metaName)
 		}
-		if key.Spec.Owner != req.user.Name {
-			err = fmt.Errorf("user %q is not permitted to delete the key %q", req.user.Name, req.metaName)
+		if key.Spec.Owner != user.Name {
+			err = fmt.Errorf("user %q is not permitted to delete the key %q", user.Name, req.metaName)
 			glog.Warning(err)
 			return nil, err
 		}
@@ -105,31 +95,21 @@ func deleteSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 }
 
 type listSSHKeyReq struct {
-	userReq
 }
 
-func decodeListSSHKeyReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req listSSHKeyReq
-
-	// Decode user info
-	ur, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.userReq = ur.(userReq)
-
 	return req, nil
 }
 
 func listSSHKeyEndpoint(c crdclient.Interface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(listSSHKeyReq)
-		if !ok {
-			return nil, errors.NewBadRequest("Bad parameters, add user credentials")
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
 		}
 
-		opts, err := ssh.UserListOptions(req.user.Name)
+		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err
 		}

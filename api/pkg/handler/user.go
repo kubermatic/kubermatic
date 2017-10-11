@@ -1,21 +1,18 @@
 package handler
 
 import (
-	"net/http"
+	"context"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-type userReq struct {
-	user provider.User
-}
-
-func decodeUserReq(r *http.Request) (interface{}, error) {
-	obj := r.Context().Value(UserContextKey)
-	user := obj.(provider.User)
-	req := userReq{
-		user: user,
+func GetUser(ctx context.Context) (provider.User, error) {
+	obj := ctx.Value(UserContextKey)
+	user, ok := obj.(provider.User)
+	if !ok {
+		return provider.User{}, errors.NewNotAuthorized()
 	}
 
-	return req, nil
+	return user, nil
 }

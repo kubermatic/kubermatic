@@ -18,6 +18,10 @@ func kubeconfigEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(kubeconfigReq)
 
 		kp, found := kps[req.dc]
@@ -25,7 +29,7 @@ func kubeconfigEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)

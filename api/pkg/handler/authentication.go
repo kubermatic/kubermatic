@@ -6,7 +6,10 @@ import (
 	"strings"
 
 	oidc "github.com/coreos/go-oidc"
+	"github.com/go-kit/kit/endpoint"
+	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -21,9 +24,9 @@ const (
 	AdminRoleKey = "admin"
 )
 
-// Authenticator is an interface for configurable authentication middlewares
 type Authenticator interface {
-	IsAuthenticated(h http.Handler) http.Handler
+	Signer() endpoint.Middleware
+	Extractor() transporthttp.RequestFunc
 }
 
 // TokenExtractor is an interface token extraction
@@ -39,6 +42,12 @@ type openIDAuthenticator struct {
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
 func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) Authenticator {
+	// Sanity check for config!
+	_, err := oidc.NewProvider(context.Background(), issuer)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	return openIDAuthenticator{
 		issuer:         issuer,
 		tokenExtractor: extractor,
@@ -46,60 +55,80 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) A
 	}
 }
 
-// IsAuthenticated is a http middleware which checks against an openid server
-func (o openIDAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p, err := oidc.NewProvider(r.Context(), o.issuer)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-		idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
-		token := o.tokenExtractor.Extract(r)
-		glog.V(6).Infof("Extracted oauth token: %s", token)
+func (o openIDAuthenticator) Signer() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			// This should only be called once!
+			p, err := oidc.NewProvider(ctx, o.issuer)
+			if err != nil {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
+			idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
+			t := ctx.Value(userKey)
+			token, ok := t.(string)
+			if !ok || token != "" {
+				return nil, errors.NewNotAuthorized()
+			}
 
-		idToken, err := idTokenVerifier.Verify(r.Context(), token)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
+			idToken, err := idTokenVerifier.Verify(ctx, token)
+			if err != nil {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
 
-		claims := map[string]interface{}{}
-		err = idToken.Claims(&claims)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-		}
+			// Verified
+			claims := map[string]interface{}{}
+			err = idToken.Claims(&claims)
+			if err != nil {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
 
-		user := provider.User{
-			Name:  claims["sub"].(string),
-			Roles: map[string]struct{}{},
-		}
+			user := provider.User{
+				Name:  claims["sub"].(string),
+				Roles: map[string]struct{}{},
+			}
 
-		if user.Name == "" {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-		}
+			if user.Name == "" {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
 
-		roles := []string{UserRoleKey}
-		md, ok := claims["app_metadata"].(map[string]interface{})
-		if ok && md != nil {
-			metaRoles, ok := md["roles"].([]interface{})
-			if ok && metaRoles != nil {
-				for _, r := range metaRoles {
-					s, ok := r.(string)
-					if ok && s != "" && s != UserRoleKey {
-						roles = append(roles, s)
+			roles := []string{UserRoleKey}
+			md, ok := claims["app_metadata"].(map[string]interface{})
+			if ok && md != nil {
+				metaRoles, ok := md["roles"].([]interface{})
+				if ok && metaRoles != nil {
+					for _, r := range metaRoles {
+						s, ok := r.(string)
+						if ok && s != "" && s != UserRoleKey {
+							roles = append(roles, s)
+						}
 					}
 				}
 			}
-		}
 
-		for _, r := range roles {
-			user.Roles[r] = struct{}{}
-		}
+			for _, r := range roles {
+				user.Roles[r] = struct{}{}
+			}
 
-		glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, user)))
-	})
+			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
+			return next(context.WithValue(ctx, UserContextKey, user), request)
+		}
+	}
+}
+
+type userToken int
+
+const userKey userToken = 0
+
+func (o openIDAuthenticator) Extractor() transporthttp.RequestFunc {
+	return func(ctx context.Context, r *http.Request) context.Context {
+		token := o.tokenExtractor.Extract(r)
+		glog.V(6).Infof("Extracted oauth token: %s", token)
+		return context.WithValue(ctx, userKey, token)
+	}
 }
 
 // NewHeaderBearerTokenExtractor returns a token extractor which extracts the token from the given header
@@ -164,9 +193,21 @@ func NewTestAuthenticator(user interface{}) Authenticator {
 	return testAuthenticator{user: user}
 }
 
-// IsAuthenticated is a http middleware which checks against an openid server
-func (o testAuthenticator) IsAuthenticated(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserContextKey, o.user)))
-	})
+func (o testAuthenticator) Signer() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			t := ctx.Value(userKey)
+			token, ok := t.(string)
+			if !ok || token != "" {
+				return nil, errors.NewNotAuthorized()
+			}
+			return next(context.WithValue(ctx, UserContextKey, token), request)
+		}
+	}
+}
+
+func (o testAuthenticator) Extractor() transporthttp.RequestFunc {
+	return func(ctx context.Context, _ *http.Request) context.Context {
+		return context.WithValue(ctx, userKey, o.user)
+	}
 }

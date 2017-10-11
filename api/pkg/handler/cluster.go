@@ -25,6 +25,10 @@ func newClusterEndpointV2(
 	masterClientset crdclient.Interface,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(newClusterReqV2)
 
 		if req.Cluster == nil {
@@ -49,7 +53,7 @@ func newClusterEndpointV2(
 			return nil, errors.NewBadRequest("please provide at least one key")
 		}
 
-		c, err := kp.NewClusterWithCloud(req.user, req.Cluster)
+		c, err := kp.NewClusterWithCloud(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				return nil, errors.NewConflict("cluster", req.Cluster.Cloud.DatacenterName, req.Cluster.HumanReadableName)
@@ -58,7 +62,7 @@ func newClusterEndpointV2(
 		}
 
 		// TODO(realfake): Duplicated code move to function
-		opts, err := ssh.UserListOptions(req.user.Name)
+		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -89,6 +93,10 @@ func clusterEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(clusterReq)
 
 		kp, found := kps[req.dc]
@@ -96,7 +104,7 @@ func clusterEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -113,6 +121,10 @@ func clustersEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(clustersReq)
 
 		kp, found := kps[req.dc]
@@ -120,7 +132,7 @@ func clustersEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		cs, err := kp.Clusters(req.user)
+		cs, err := kp.Clusters(user)
 		if err != nil {
 			return nil, err
 		}
@@ -135,6 +147,10 @@ func deleteClusterEndpoint(
 	masterClientset crdclient.Interface,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user, err := GetUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 		req := request.(deleteClusterReq)
 
 		kp, found := kps[req.dc]
@@ -143,7 +159,7 @@ func deleteClusterEndpoint(
 		}
 
 		//Delete all nodes in the cluster
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -180,7 +196,7 @@ func deleteClusterEndpoint(
 			}
 		}
 
-		err = kp.DeleteCluster(req.user, req.cluster)
+		err = kp.DeleteCluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -188,7 +204,7 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		opts, err := ssh.UserListOptions(req.user.Name)
+		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -217,20 +233,12 @@ func deleteClusterEndpoint(
 }
 
 type newClusterReqV2 struct {
-	userReq
 	Cluster *api.ClusterSpec `json:"cluster"`
 	SSHKeys []string         `json:"ssh_keys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
 	var req newClusterReqV2
-
-	ur, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = ur.(userReq)
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
@@ -244,7 +252,6 @@ type clustersReq struct {
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req clustersReq
-
 	dr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
