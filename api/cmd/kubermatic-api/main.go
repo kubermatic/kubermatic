@@ -26,6 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -79,12 +80,12 @@ func main() {
 		glog.Error(err)
 	}
 
-	authenticator := handler.NewOpenIDAuthenticator(
+	authenticator := auth.NewOpenIDAuthenticator(
 		*tokenIssuer,
 		*clientID,
-		handler.NewCombinedExtractor(
-			handler.NewHeaderBearerTokenExtractor("Authorization"),
-			handler.NewQueryParamBearerTokenExtractor("token"),
+		auth.NewCombinedExtractor(
+			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 	)
 

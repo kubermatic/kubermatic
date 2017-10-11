@@ -7,8 +7,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
@@ -18,6 +19,7 @@ func kubeconfigEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req := request.(kubeconfigReq)
 
 		kp, found := kps[req.dc]
@@ -25,7 +27,7 @@ func kubeconfigEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)

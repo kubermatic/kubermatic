@@ -12,9 +12,10 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	apiv1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +45,7 @@ func nodesEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req := request.(nodesReq)
 
 		kp, found := kps[req.dc]
@@ -51,7 +53,7 @@ func nodesEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -74,6 +76,7 @@ func deleteNodeEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req := request.(nodeReq)
 
 		kp, found := kps[req.dc]
@@ -81,7 +84,7 @@ func deleteNodeEndpoint(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -129,13 +132,14 @@ func createNodesEndpoint(
 	versions map[string]*api.MasterVersion,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req := request.(createNodesReq)
 		kp, found := kps[req.dc]
 		if !found {
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +162,7 @@ func createNodesEndpoint(
 		}
 
 		var keys []v1.UserSSHKey
-		opts, err := ssh.UserListOptions(req.user.Name)
+		opts, err := ssh.UserListOptions(user.Name)
 		if err != nil {
 			return nil, err
 		}

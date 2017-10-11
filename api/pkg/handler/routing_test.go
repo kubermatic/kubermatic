@@ -17,19 +17,17 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
 
-func createTestEndpoint(user provider.User) http.Handler {
+func createTestEndpoint(user auth.User) http.Handler {
 	ctx := context.Background()
-
 	dcs, err := provider.LoadDatacentersMeta("./fixtures/datacenters.yaml")
 	if err != nil {
 		log.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", "./fixtures/datacenters.yaml", err))
 	}
-
 	// create CloudProviders
 	cps := cloud.Providers(dcs)
-
 	kps, err := kubernetes.Providers("./fixtures/kubecfg.yaml", dcs, cps, "user1")
 	if err != nil {
 		log.Fatal(err)
@@ -37,11 +35,8 @@ func createTestEndpoint(user provider.User) http.Handler {
 
 	// override the default master k8s provider since it would be a "real" k8s provider, not a fake one.
 	kps["master"] = kubernetes.NewKubernetesFakeProvider("master", cps, dcs)
-
 	router := mux.NewRouter()
-
-	authenticator := NewTestAuthenticator(user)
-
+	authenticator := auth.NewFakeAuthenticator(user)
 	routing := NewRouting(ctx, dcs, kps, cps, authenticator, crdclientfake.NewSimpleClientset(), nil, nil)
 	routing.Register(router)
 
@@ -76,8 +71,8 @@ func encodeReq(t *testing.T, req interface{}) *bytes.Reader {
 	return bytes.NewReader(b)
 }
 
-func getUser(admin bool) provider.User {
-	u := provider.User{
+func getUser(admin bool) auth.User {
+	u := auth.User{
 		Name: "Thomas Tester",
 		Roles: map[string]struct{}{
 			"user": {},
@@ -89,13 +84,18 @@ func getUser(admin bool) provider.User {
 	return u
 }
 
+func checkStatusCode(code int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	if recorder.Code != code {
+		t.Errorf("Expected status code to be %d, got: %d", code, recorder.Code)
+		t.Error(recorder.Body.String())
+		return
+	}
+}
+
 func TestUpRoute(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()
 	e := createTestEndpoint(getUser(false))
 	e.ServeHTTP(res, req)
-
-	if res.Code != http.StatusOK {
-		t.Errorf("Expected route to return code 200, got %d", res.Code)
-	}
+	checkStatusCode(http.StatusOK, res, t)
 }

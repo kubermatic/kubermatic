@@ -14,8 +14,9 @@ import (
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 func getClusterUpgrades(
@@ -24,6 +25,7 @@ func getClusterUpgrades(
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req, ok := request.(clusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, clusterReq{})
@@ -34,7 +36,7 @@ func getClusterUpgrades(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		c, err := kp.Cluster(req.user, req.cluster)
+		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -114,6 +116,7 @@ func performClusterUpgrade(
 	updates []api.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req, ok := request.(upgradeReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, upgradeReq{})
@@ -124,7 +127,7 @@ func performClusterUpgrade(
 			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
 		}
 
-		k, err := kp.Cluster(req.user, req.cluster)
+		k, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
@@ -144,6 +147,6 @@ func performClusterUpgrade(
 			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
 		}
 
-		return nil, kp.UpgradeCluster(req.user, req.cluster, req.to)
+		return nil, kp.UpgradeCluster(user, req.cluster, req.to)
 	}
 }

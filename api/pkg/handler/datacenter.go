@@ -15,8 +15,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 func datacentersEndpoint(
@@ -26,7 +27,7 @@ func datacentersEndpoint(
 ) endpoint.Endpoint {
 	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(dcsReq)
+		user := auth.GetUser(ctx)
 
 		adcs := make([]api.Datacenter, 0, len(kps))
 		var keys []string
@@ -39,8 +40,8 @@ func datacentersEndpoint(
 			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
-			if _, isAdmin := req.user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
-				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, req.user.Name)
+			if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
+				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.Name)
 				continue
 			}
 
@@ -126,6 +127,7 @@ func datacenterEndpoint(
 	cps map[string]provider.CloudProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
 		req := request.(dcReq)
 
 		dc, found := dcs[req.dc]
@@ -133,7 +135,7 @@ func datacenterEndpoint(
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
-		if _, isAdmin := req.user.Roles[AdminRoleKey]; dc.Private && !isAdmin {
+		if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
@@ -156,34 +158,20 @@ func datacenterEndpoint(
 }
 
 type dcsReq struct {
-	userReq
 }
 
 func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcsReq
 
-	ur, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = ur.(userReq)
-
 	return req, nil
 }
 
 type dcReq struct {
-	userReq
 	dc string
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req dcReq
-
-	dr, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = dr.(userReq)
 
 	req.dc = mux.Vars(r)["dc"]
 	return req, nil
