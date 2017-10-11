@@ -51,12 +51,123 @@ func NewRouting(
 	}
 }
 
-func (r Routing) withDefaultAuthenticatedChain(e endpoint.Endpoint, dec httptransport.DecodeRequestFunc) http.Handler {
+// Register declare router paths
+func (r Routing) Register(mux *mux.Router) {
+	mux.
+		Methods(http.MethodGet).
+		Path("/").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/").
+		HandlerFunc(APIDescriptionHandler)
+	mux.
+		Methods(http.MethodGet).
+		Path("/healthz").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/healthz").
+		HandlerFunc(StatusOK)
+	mux.
+		Methods(http.MethodGet).
+		PathPrefix("/swagger-ui/").
+		Handler(http.StripPrefix("/swagger-ui/", http.FileServer(http.Dir("./swagger-ui"))))
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc").
+		Handler(r.datacentersHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}").
+		Handler(r.datacenterHandler())
+
+	mux.
+		Methods(http.MethodPost).
+		Path("/api/v1/cluster").
+		Handler(r.newClusterHandlerV2())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster").
+		Handler(r.clustersHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Handler(r.clusterHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Handler(r.kubeconfigHandler())
+
+	mux.
+		Methods(http.MethodDelete).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Handler(r.deleteClusterHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
+		Handler(r.nodesHandler())
+
+	mux.
+		Methods(http.MethodPost).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
+		Handler(r.createNodesHandler())
+
+	mux.
+		Methods(http.MethodDelete).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
+		Handler(r.deleteNodeHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
+		Handler(r.getPossibleClusterUpgrades())
+
+	mux.
+		Methods(http.MethodPut).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
+		Handler(r.performClusterUpgrage())
+
+	mux.
+		Methods(http.MethodPost).
+		Path("/api/v1/ext/{dc}/keys").
+		Handler(r.getAWSKeyHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
+		Handler(r.nodesHandler())
+
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/ssh-keys").
+		Handler(r.listSSHKeys())
+
+	mux.
+		Methods(http.MethodPost).
+		Path("/api/v1/ssh-keys").
+		Handler(r.createSSHKey())
+
+	mux.
+		Methods(http.MethodDelete).
+		Path("/api/v1/ssh-keys/{meta_name}").
+		Handler(r.deleteSSHKey())
+}
+
+func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
+	return endpoint.Chain(r.authenticator.Signer())(e)
+}
+
+func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Signer(),
-		)(e),
-		dec,
+		r.auth(listSSHKeyEndpoint(r.masterCrdClient)),
+		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
@@ -64,103 +175,196 @@ func (r Routing) withDefaultAuthenticatedChain(e endpoint.Endpoint, dec httptran
 	)
 }
 
-// Register declare router paths
-func (r Routing) Register(mux *mux.Router) {
-	mux.Methods(http.MethodGet).
-		Path("/").
-		HandlerFunc(StatusOK)
+func (r Routing) createSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.auth(createSSHKeyEndpoint(r.masterCrdClient)),
+		decodeCreateSSHKeyReq,
+		createStatusResource(encodeJSON),
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		Path("/api/").
-		HandlerFunc(APIDescriptionHandler)
+func (r Routing) deleteSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.auth(deleteSSHKeyEndpoint(r.masterCrdClient)),
+		decodeDeleteSSHKeyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		Path("/healthz").
-		HandlerFunc(StatusOK)
+func (r Routing) getAWSKeyHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(datacenterKeyEndpoint(r.datacenters)),
+		decodeDcKeyListRequest,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		Path("/api/healthz").
-		HandlerFunc(StatusOK)
+// datacentersHandler serves a list of datacenters.
+// @Title DataCenterHandler
+// @Description datacentersHandler serves a list of datacenters.
+// @Accept  json
+// @Produce  json
+// @Param   some_id     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "We need ID!!"
+// @Failure 404 {object} APIError "Can not find ID"
+// @Router /api/v1/dc [get]
+func (r Routing) datacentersHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(datacentersEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders)),
+		decodeDatacentersReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		PathPrefix("/swagger-ui/").
-		Handler(http.StripPrefix("/swagger-ui/", http.FileServer(http.Dir("./swagger-ui"))))
+// datacenterHandler server information for a datacenter.
+// Admin only!
+// @Title datacenterHandler
+// @Description datacenterHandler server information for a datacenter.
+// @Accept  json
+// @Produce  json
+// @Param   some_id     path    int     true        "Some ID"
+// @Success 200 {object} string
+// @Failure 400 {object} APIError "We need datacenter"
+// @Failure 404 {object} APIError "Can not find datacenter"
+// @Router /api/v1/dc/{dc} [get]
+func (r Routing) datacenterHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(datacenterEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders)),
+		decodeDcReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
-		Handler(r.kubeconfigHandler())
+// newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
+func (r Routing) newClusterHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterCrdClient)),
+		decodeNewClusterReqV2,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
 
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc").
-		Handler(r.withDefaultAuthenticatedChain(datacentersEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders), decodeDatacentersReq))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}").
-		Handler(r.withDefaultAuthenticatedChain(datacenterEndpoint(r.datacenters, r.kubernetesProviders, r.cloudProviders), decodeDcReq))
-
-	mux.Methods(http.MethodPost).
-		Path("/api/v1/cluster").
-		Handler(r.withDefaultAuthenticatedChain(newClusterEndpointV2(r.kubernetesProviders, r.datacenters, r.masterCrdClient), decodeNewClusterReqV2))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster").
-		Handler(r.withDefaultAuthenticatedChain(clustersEndpoint(r.kubernetesProviders, r.cloudProviders), decodeClustersReq))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(r.withDefaultAuthenticatedChain(clusterEndpoint(r.kubernetesProviders, r.cloudProviders), decodeClusterReq))
-
-	mux.Methods(http.MethodDelete).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
-		Handler(r.withDefaultAuthenticatedChain(deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient), decodeDeleteClusterReq))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.withDefaultAuthenticatedChain(nodesEndpoint(r.kubernetesProviders, r.cloudProviders), decodeNodesReq))
-
-	mux.Methods(http.MethodPost).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
-		Handler(r.withDefaultAuthenticatedChain(createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient, r.versions), decodeCreateNodesReq))
-
-	mux.Methods(http.MethodDelete).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(r.withDefaultAuthenticatedChain(deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders), decodeNodeReq))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
-		Handler(r.withDefaultAuthenticatedChain(getClusterUpgrades(r.kubernetesProviders, r.versions, r.updates), decodeClusterReq))
-
-	mux.Methods(http.MethodPut).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.withDefaultAuthenticatedChain(performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates), decodeUpgradeReq))
-
-	mux.Methods(http.MethodPost).
-		Path("/api/v1/ext/{dc}/keys").
-		Handler(r.withDefaultAuthenticatedChain(datacenterKeyEndpoint(r.datacenters), decodeDcKeyListRequest))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(r.withDefaultAuthenticatedChain(nodesEndpoint(r.kubernetesProviders, r.cloudProviders), decodeNodesReq))
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/ssh-keys").
-		Handler(r.withDefaultAuthenticatedChain(listSSHKeyEndpoint(r.masterCrdClient), decodeListSSHKeyReq))
-
-	mux.Methods(http.MethodPost).
-		Path("/api/v1/ssh-keys").
-		Handler(r.withDefaultAuthenticatedChain(createSSHKeyEndpoint(r.masterCrdClient), decodeCreateSSHKeyReq))
-
-	mux.Methods(http.MethodDelete).
-		Path("/api/v1/ssh-keys/{meta_name}").
-		Handler(r.withDefaultAuthenticatedChain(deleteSSHKeyEndpoint(r.masterCrdClient), decodeDeleteSSHKeyReq))
+// clusterHandler returns a cluster object.
+func (r Routing) clusterHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(clusterEndpoint(r.kubernetesProviders, r.cloudProviders)),
+		decodeClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
 }
 
 // kubeconfigHandler returns the cubeconfig for the cluster.
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		endpoint.Chain(r.authenticator.Signer())(kubeconfigEndpoint(r.kubernetesProviders, r.cloudProviders)),
+		r.auth(kubeconfigEndpoint(r.kubernetesProviders, r.cloudProviders)),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// clustersHandler lists all clusters from a user.
+func (r Routing) clustersHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(clustersEndpoint(r.kubernetesProviders, r.cloudProviders)),
+		decodeClustersReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// deleteClusterHandler deletes a cluster.
+func (r Routing) deleteClusterHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(deleteClusterEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient)),
+		decodeDeleteClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// nodesHandler returns all nodes from a user.
+func (r Routing) nodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(nodesEndpoint(r.kubernetesProviders, r.cloudProviders)),
+		decodeNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// createNodesHandler let's you create nodes.
+func (r Routing) createNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(createNodesEndpoint(r.kubernetesProviders, r.cloudProviders, r.masterCrdClient, r.versions)),
+		decodeCreateNodesReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// deleteNodeHandler let's you delete nodes.
+func (r Routing) deleteNodeHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(deleteNodeEndpoint(r.kubernetesProviders, r.cloudProviders)),
+		decodeNodeReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// getPossibleClusterUpgrades returns a list of possible cluster upgrades
+func (r Routing) getPossibleClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		r.auth(getClusterUpgrades(r.kubernetesProviders, r.versions, r.updates)),
+		decodeClusterReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+// performClusterUpgrage starts a cluster upgrade to a specific version
+func (r Routing) performClusterUpgrage() http.Handler {
+	return httptransport.NewServer(
+		r.auth(performClusterUpgrade(r.kubernetesProviders, r.versions, r.updates)),
+		decodeUpgradeReq,
+		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
 		httptransport.ServerBefore(r.authenticator.Extractor()),
