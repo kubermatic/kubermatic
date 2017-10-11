@@ -3,19 +3,16 @@ package handler
 import (
 	"context"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-type userReq struct {
-	user provider.User
-}
-
-func decodeUserReq(ctx context.Context) (interface{}, error) {
+func GetUser(ctx context.Context) (provider.User, error) {
 	obj := ctx.Value(UserContextKey)
-	user := obj.(provider.User)
-	req := userReq{
-		user: user,
+	user, ok := obj.(provider.User)
+	if !ok {
+		return provider.User{}, errors.NewNotAuthorized()
 	}
 
-	return req, nil
+	return user, nil
 }
