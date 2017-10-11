@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // APIError we need to work with github.com/yvasiyarov/swagger

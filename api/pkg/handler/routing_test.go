@@ -14,7 +14,7 @@ import (
 
 	"github.com/gorilla/mux"
 	crdclientfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
