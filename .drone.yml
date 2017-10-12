@@ -73,7 +73,7 @@ pipeline:
     context: api
     secrets: [ docker_username, docker_password ]
     when:
-      branch: develop
+      branch: master
 
   addons-docker-master:
     group: push
@@ -87,7 +87,7 @@ pipeline:
     context: addon-manager
     secrets: [ docker_username, docker_password ]
     when:
-      branch: develop
+      branch: master
 
   kubermatic-docker-release:
     group: push
@@ -130,7 +130,7 @@ pipeline:
       - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$DRONE_COMMIT
     secrets: [ kubeconfig ]
     when:
-      branch: develop
+      branch: master
 
   slack-failure:
     group: notify
@@ -173,4 +173,4 @@ pipeline:
       - chaosaffe=jason
     when:
       status: [ success ]
-      branch: develop
+      branch: master
