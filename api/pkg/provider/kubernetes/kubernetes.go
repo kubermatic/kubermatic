@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	UsernameLabelKey = "user"
+	usernameLabelKey = "user"
 )
 
 type kubernetesProvider struct {
@@ -73,7 +73,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 			Name: clusterName,
 			Labels: map[string]string{
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				UsernameLabelKey:                user.Name,
+				usernameLabelKey:                user.Name,
 			},
 		},
 		Spec: *spec,
@@ -112,7 +112,7 @@ func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermati
 	if err != nil {
 		return nil, err
 	}
-	if c.Labels[UsernameLabelKey] != user.Name && !user.IsAdmin() {
+	if c.Labels[usernameLabelKey] != user.Name && !user.IsAdmin() {
 		return nil, errors.NewNotAuthorized()
 	}
 	return c, nil
@@ -121,7 +121,7 @@ func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermati
 func (p *kubernetesProvider) Clusters(user auth.User) (*kubermaticv1.ClusterList, error) {
 	filter := map[string]string{}
 	if !user.IsAdmin() {
-		filter[UsernameLabelKey] = user.Name
+		filter[usernameLabelKey] = user.Name
 	}
 	selector := labels.SelectorFromSet(labels.Set(filter)).String()
 	options := metav1.ListOptions{LabelSelector: selector, FieldSelector: labels.Everything().String()}

@@ -10,6 +10,7 @@ type User struct {
 	Roles map[string]struct{}
 }
 
+// IsAdmin tells if the user has the admin role
 func (u *User) IsAdmin() bool {
 	_, ok := u.Roles[AdminRoleKey]
 	return ok
