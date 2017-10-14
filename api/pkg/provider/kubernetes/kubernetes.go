@@ -8,10 +8,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	crdclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
+)
+
+const (
+	UsernameLabelKey = "user"
 )
 
 type kubernetesProvider struct {
@@ -66,8 +70,11 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   clusterName,
-			Labels: map[string]string{kubermaticv1.WorkerNameLabelKey: p.workerName},
+			Name: clusterName,
+			Labels: map[string]string{
+				kubermaticv1.WorkerNameLabelKey: p.workerName,
+				UsernameLabelKey:                user.Name,
+			},
 		},
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
@@ -100,13 +107,25 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 	return c, nil
 }
 
-func (p *kubernetesProvider) Cluster(user provider.User, cluster string) (*kubermaticv1.Cluster, error) {
-	return p.crdClient.KubermaticV1().Clusters().Get(cluster, metav1.GetOptions{})
+func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error) {
+	c, err := p.crdClient.KubermaticV1().Clusters().Get(cluster, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if c.Labels[UsernameLabelKey] != user.Name && !user.IsAdmin() {
+		return nil, errors.NewNotAuthorized()
+	}
+	return c, nil
 }
 
-func (p *kubernetesProvider) Clusters(user provider.User) (*kubermaticv1.ClusterList, error) {
-	//TODO: User - metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(l)).String(), FieldSelector: labels.Everything().String()}
-	return p.crdClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
+func (p *kubernetesProvider) Clusters(user auth.User) (*kubermaticv1.ClusterList, error) {
+	filter := map[string]string{}
+	if !user.IsAdmin() {
+		filter[UsernameLabelKey] = user.Name
+	}
+	selector := labels.SelectorFromSet(labels.Set(filter)).String()
+	options := metav1.ListOptions{LabelSelector: selector, FieldSelector: labels.Everything().String()}
+	return p.crdClient.KubermaticV1().Clusters().List(options)
 }
 
 func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error {
@@ -119,7 +138,7 @@ func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error
 	return p.crdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{})
 }
 
-func (p *kubernetesProvider) InitiateClusterUpgrade(user provider.User, name, version string) (*kubermaticv1.Cluster, error) {
+func (p *kubernetesProvider) InitiateClusterUpgrade(user auth.User, name, version string) (*kubermaticv1.Cluster, error) {
 	c, err := p.Cluster(user, name)
 	if err != nil {
 		return nil, err

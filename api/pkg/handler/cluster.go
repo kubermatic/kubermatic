@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -72,7 +72,6 @@ func clusterEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 func clustersEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(clustersReq)
 		cs, err := kp.Clusters(user)
 		if err != nil {
 			return nil, err
@@ -161,35 +160,18 @@ func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-type clustersReq struct {
-	userReq
-}
+type clustersReq struct{}
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req clustersReq
-	dr, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = dr.(userReq)
-
-	return req, nil
+	return clustersReq{}, nil
 }
 
 type clusterReq struct {
-	userReq
 	cluster string
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req clusterReq
-
-	dr, err := decodeUserReq(r)
-	if err != nil {
-		return nil, err
-	}
-	req.userReq = dr.(userReq)
 	req.cluster = mux.Vars(r)["cluster"]
-
 	return req, nil
 }

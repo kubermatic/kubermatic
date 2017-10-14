@@ -10,6 +10,11 @@ type User struct {
 	Roles map[string]struct{}
 }
 
+func (u *User) IsAdmin() bool {
+	_, ok := u.Roles[AdminRoleKey]
+	return ok
+}
+
 // GetUser retrieves a user from a context
 // If there was an error this function will panic.
 func GetUser(ctx context.Context) User {

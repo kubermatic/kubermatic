@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestDatacentersEndpoint(t *testing.T) {

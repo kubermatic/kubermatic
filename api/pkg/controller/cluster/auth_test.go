@@ -1,15 +1,15 @@
 package cluster
 
 import (
+	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	"errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 )
 
 func TestCreateServiceAccountKey(t *testing.T) {
@@ -138,7 +138,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{},
 					KubeletCert:   kubermaticv1.KeyCert{},
 				},
@@ -157,7 +157,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{},
 					KubeletCert:   kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
 				},
@@ -176,7 +176,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
 					KubeletCert:   kubermaticv1.KeyCert{},
 				},
@@ -195,7 +195,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{},
 					KubeletCert:   kubermaticv1.KeyCert{},
 				},
@@ -214,7 +214,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{},
 					KubeletCert:   kubermaticv1.KeyCert{},
 				},
@@ -233,7 +233,7 @@ func TestPendingCreateCertificates(t *testing.T) {
 					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
 				},
 				Status: kubermaticv1.ClusterStatus{
-					RootCA:        kubermaticv1.SecretKeyCert{},
+					RootCA:        kubermaticv1.KeyCert{},
 					ApiserverCert: kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
 					KubeletCert:   kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
 				},
@@ -279,7 +279,7 @@ func TestPendingCreateRootCASuccessfully(t *testing.T) {
 	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
-			RootCA: kubermaticv1.SecretKeyCert{},
+			RootCA: kubermaticv1.KeyCert{},
 		},
 	}
 
@@ -301,7 +301,7 @@ func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
 	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
-			RootCA: kubermaticv1.SecretKeyCert{
+			RootCA: kubermaticv1.KeyCert{
 				Cert: kubermaticv1.Bytes([]byte("CERT")),
 				Key:  kubermaticv1.Bytes([]byte("KEY")),
 			},

@@ -9,11 +9,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type createSSHKeyReq struct {
@@ -39,7 +37,7 @@ func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
 
-		return dp.CreateSSHKey(req.Spec.Name, req.user.Name, req.Spec.PublicKey)
+		return dp.CreateSSHKey(req.Spec.Name, user.Name, req.Spec.PublicKey)
 	}
 }
 
@@ -65,11 +63,11 @@ func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
 
-		k, err := dp.SSHKey(req.user.Name, req.metaName)
+		k, err := dp.SSHKey(user.Name, req.metaName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load ssh key: %v", err)
 		}
-		return nil, dp.DeleteSSHKey(req.user.Name, k.Name)
+		return nil, dp.DeleteSSHKey(user.Name, k.Name)
 	}
 }
 

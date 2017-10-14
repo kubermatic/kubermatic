@@ -10,12 +10,11 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/kubermatic/kubermatic/api"
 	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func getClusterUpgrades(

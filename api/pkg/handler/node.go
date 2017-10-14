@@ -10,13 +10,10 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
-	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
 	apiv1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,7 +107,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		keys, err := dp.ClusterSSHKeys(req.user.Name, c.Name)
+		keys, err := dp.ClusterSSHKeys(user.Name, c.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve ssh keys: %v", err)
 		}

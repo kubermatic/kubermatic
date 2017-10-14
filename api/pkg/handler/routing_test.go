@@ -16,15 +16,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versions map[string]*api.MasterVersion, updates []api.MasterUpdate,
 ) http.Handler {
 	ctx := context.Background()
 
-	dcs:= buildDatacenterMeta()
+	dcs := buildDatacenterMeta()
 	// create CloudProviders
 	cps := cloud.Providers(dcs)
 	router := mux.NewRouter()
@@ -79,9 +79,13 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 	}
 }
 
+const (
+	testUsername = "user1"
+)
+
 func getUser(admin bool) auth.User {
 	u := auth.User{
-		Name: "Thomas Tester",
+		Name: testUsername,
 		Roles: map[string]struct{}{
 			"user": {},
 		},
@@ -92,9 +96,9 @@ func getUser(admin bool) auth.User {
 	return u
 }
 
-func checkStatusCode(code int, recorder *httptest.ResponseRecorder, t *testing.T) {
-	if recorder.Code != code {
-		t.Errorf("Expected status code to be %d, got: %d", code, recorder.Code)
+func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	if recorder.Code != wantStatusCode {
+		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
 		return
 	}

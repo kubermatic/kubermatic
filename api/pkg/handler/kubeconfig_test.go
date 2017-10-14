@@ -20,10 +20,11 @@ func TestKubeConfigEndpoint(t *testing.T) {
 	res := httptest.NewRecorder()
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "foo",
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
 		},
 		Status: kubermaticv1.ClusterStatus{
-			RootCA: kubermaticv1.SecretKeyCert{Cert: []byte("foo")},
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 		},
 		Address: &kubermaticv1.ClusterAddress{
 			AdminToken: "admintoken",

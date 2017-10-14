@@ -6,9 +6,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/uuid"
-	"k8s.io/apimachinery/pkg/util/rand"
-)
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -86,7 +83,7 @@ func (p *kubernetesFakeProvider) NewClusterWithCloud(user auth.User, spec *kuber
 	return p.clusters["234jkh24234g"], nil
 }
 
-func (p *kubernetesFakeProvider) Cluster(user provider.User, cluster string) (*kubermaticv1.Cluster, error) {
+func (p *kubernetesFakeProvider) Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error) {
 	if _, found := p.clusters[cluster]; !found {
 		return nil, errors.NewNotFound("cluster", cluster)
 	}

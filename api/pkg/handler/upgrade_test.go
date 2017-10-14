@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -27,7 +27,8 @@ func TestGetClusterUpgrades(t *testing.T) {
 			name: "upgrade available",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "foo",
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
 				},
 				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
 			},
@@ -76,6 +77,35 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "no available",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
+				},
+				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
+			},
+			wantUpdates: []string{},
+			versions: map[string]*api.MasterVersion{
+				"1.6.0": {
+					Name:                       "v1.6.0",
+					ID:                         "1.6.0",
+					Default:                    false,
+					AllowedNodeVersions:        []string{"1.3.0"},
+					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+					EtcdClusterYaml:            "etcd-cluster.yaml",
+					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
+					Values: map[string]string{
+						"k8s-version":  "v1.6.0",
+						"etcd-version": "3.2.8",
+					},
+				},
+			},
+			updates: []api.MasterUpdate{},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -90,13 +120,16 @@ func TestGetClusterUpgrades(t *testing.T) {
 			}
 
 			gotUpdates := []string{}
-			json.Unmarshal(res.Body.Bytes(), &gotUpdates)
+			err := json.Unmarshal(res.Body.Bytes(), &gotUpdates)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			sort.Strings(gotUpdates)
 			sort.Strings(test.wantUpdates)
 
-			if !reflect.DeepEqual(gotUpdates, test.wantUpdates) || !reflect.DeepEqual(test.wantUpdates, gotUpdates) {
-				t.Errorf("unexpected upgrades response. Want: %v Got %v", test.wantUpdates, gotUpdates)
+			if diff := deep.Equal(gotUpdates, test.wantUpdates); diff != nil {
+				t.Errorf("got different upgrade response than expected. Diff: %v", diff)
 			}
 		})
 	}

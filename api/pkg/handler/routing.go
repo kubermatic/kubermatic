@@ -16,15 +16,15 @@ import (
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx                 context.Context
-	datacenters         map[string]provider.DatacenterMeta
-	cloudProviders map[string]provider.CloudProvider
-	clusterProviderprovider.ClusterProvider
-	logger              log.Logger
+	ctx             context.Context
+	datacenters     map[string]provider.DatacenterMeta
+	cloudProviders  map[string]provider.CloudProvider
+	clusterProvider provider.ClusterProvider
+	logger          log.Logger
 	dataProvider    provider.DataProvider
-	authenticator       auth.Authenticator
-	versions            map[string]*api.MasterVersion
-	updates             []api.MasterUpdate
+	authenticator   auth.Authenticator
+	versions        map[string]*api.MasterVersion
+	updates         []api.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
@@ -133,11 +133,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods(http.MethodPut).
 		Path("/api/v1/cluster/{cluster}/upgrade").
 		Handler(r.performClusterUpgrage())
-
-	mux.
-		Methods(http.MethodPost).
-		Path("/api/v1/ext/{dc}/keys").
-		Handler(r.getAWSKeyHandler())
 
 	mux.
 		Methods(http.MethodGet).
