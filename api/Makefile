@@ -17,7 +17,7 @@ HAS_GIT:= $(shell command -v git 2> /dev/null)
 
 default: all
 
-all: check test cover build
+all: check test build
 
 build: $(CMD)
 
