@@ -83,9 +83,9 @@ const (
 	testUsername = "user1"
 )
 
-func getUser(admin bool) auth.User {
+func getUser(name string, admin bool) auth.User {
 	u := auth.User{
-		Name: testUsername,
+		Name: name,
 		Roles: map[string]struct{}{
 			"user": {},
 		},
@@ -107,7 +107,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 func TestUpRoute(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
 }
