@@ -157,3 +157,86 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 		})
 	}
 }
+
+func TestPendingRegisterFinalizers(t *testing.T) {
+	tests := []struct {
+		name       string
+		cluster    *kubermaticv1.Cluster
+		wantUpdate bool
+	}{
+		{
+			name: "added all",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "henrik1",
+					Finalizers: []string{},
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-henrik1",
+				},
+			},
+			wantUpdate: true,
+		},
+		{
+			name: "added missing",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+					Finalizers: []string{
+						cloudProviderCleanupFinalizer,
+					},
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-henrik1",
+				},
+			},
+			wantUpdate: true,
+		},
+		{
+			name: "added none",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+					Finalizers: []string{
+						cloudProviderCleanupFinalizer,
+						nodeDeletionFinalizer,
+					},
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-henrik1",
+				},
+			},
+			wantUpdate: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+			gotCluster, err := f.controller.pendingRegisterFinalizers(test.cluster)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !test.wantUpdate {
+				if gotCluster != nil {
+					t.Error("cluster got updated althoug no change should have been made")
+				}
+				return
+			}
+
+			for _, wantFinalizer := range []string{cloudProviderCleanupFinalizer, nodeDeletionFinalizer} {
+				found := false
+				for _, gotFinalizer := range gotCluster.Finalizers {
+					if gotFinalizer == wantFinalizer {
+						found = true
+					}
+				}
+				if !found {
+					t.Errorf("missing finalizer. %s", wantFinalizer)
+				}
+			}
+		})
+	}
+}

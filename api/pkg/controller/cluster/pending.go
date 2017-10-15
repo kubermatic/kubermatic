@@ -17,6 +17,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	nodeDeletionFinalizer         = "kubermatic.io/delete-nodes"
+	cloudProviderCleanupFinalizer = "kubermatic.io/cleanup-cloud-provider"
+)
+
 func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kubermaticv1.Cluster, err error) {
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
@@ -24,6 +29,12 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 
 	//Every function with the prefix 'pending' *WILL* modify the cluster struct and cause an update
 	//Every function with the prefix 'launching' *WONT* modify the cluster struct and should not cause an update
+	// Add finalizers
+	changedC, err = cc.pendingRegisterFinalizers(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
 	// Set the hostname & url
 	changedC, err = cc.pendingCreateAddresses(c)
 	if err != nil || changedC != nil {
@@ -137,6 +148,35 @@ func (cc *controller) launchingCreateNamespace(c *kubermaticv1.Cluster) error {
 	}
 	_, err = cc.client.CoreV1().Namespaces().Create(ns)
 	return err
+}
+
+// pendingRegisterFinalizers adds all finalizers we need
+func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var updated bool
+
+	finalizers := []string{
+		nodeDeletionFinalizer,
+		cloudProviderCleanupFinalizer,
+	}
+
+	for _, f := range finalizers {
+		exists := false
+		for _, e := range c.Finalizers {
+			if e == f {
+				exists = true
+			}
+		}
+		if !exists {
+			c.Finalizers = append(c.Finalizers, f)
+			updated = true
+		}
+	}
+
+	if updated {
+		glog.V(4).Infof("Added finalizers to cluster %s", c.Name)
+		return c, nil
+	}
+	return nil, nil
 }
 
 // pendingCreateAddresses will set the cluster hostname and the url under which the apiserver will be reachable
