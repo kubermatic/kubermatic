@@ -102,11 +102,10 @@ func (p *kubernetesFakeProvider) SetCloud(user auth.User, cluster string, cloud 
 	return c, nil
 }
 
-func (p *kubernetesFakeProvider) Clusters(user auth.User) (*kubermaticv1.ClusterList, error) {
-	res := &kubermaticv1.ClusterList{}
-	res.Items = make([]kubermaticv1.Cluster, 0, len(p.clusters))
+func (p *kubernetesFakeProvider) Clusters(user auth.User) ([]*kubermaticv1.Cluster, error) {
+	res := make([]*kubermaticv1.Cluster, 0, len(p.clusters))
 	for _, c := range p.clusters {
-		res.Items = append(res.Items, *c)
+		res = append(res, c)
 	}
 
 	return res, nil

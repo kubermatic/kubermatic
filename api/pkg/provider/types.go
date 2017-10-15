@@ -26,7 +26,7 @@ const (
 type NodeProvider interface {
 	Initialize(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
 	CleanUp(*kubermaticv1.CloudSpec) error
-	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
+	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	GetNodeClassName(*api.NodeSpec) string
 }
 
@@ -45,7 +45,7 @@ type ClusterProvider interface {
 	Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
-	Clusters(user auth.User) (*kubermaticv1.ClusterList, error)
+	Clusters(user auth.User) ([]*kubermaticv1.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user auth.User, cluster string) error
@@ -59,9 +59,9 @@ type DataProvider interface {
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
 	AssignSSHKeysToCluster(user string, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster
-	ClusterSSHKeys(user string, cluster string) (*kubermaticv1.UserSSHKeyList, error)
+	ClusterSSHKeys(user string, cluster string) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKeys returns the user ssh keys
-	SSHKeys(user string) (*kubermaticv1.UserSSHKeyList, error)
+	SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKey returns a ssh key by name
 	SSHKey(user, name string) (*kubermaticv1.UserSSHKey, error)
 	// CreateSSHKey creates a ssh key

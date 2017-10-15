@@ -22,7 +22,7 @@ func (b *bringyourown) CleanUp(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *bringyourown) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (b *bringyourown) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 

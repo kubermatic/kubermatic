@@ -130,7 +130,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 		}
 		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.GetNodeClassName(&req.Spec), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			nc, err = cp.CreateNodeClass(c, &req.Spec, keys.Items, version)
+			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
 			if err != nil {
 				return nil, err
 			}

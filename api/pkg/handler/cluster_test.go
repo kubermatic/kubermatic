@@ -188,14 +188,14 @@ func TestClustersEndpoint(t *testing.T) {
 			e.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
-			gotClusterList := kubermaticv1.ClusterList{}
-			err := json.Unmarshal(res.Body.Bytes(), &gotClusterList)
+			gotClusters := []kubermaticv1.Cluster{}
+			err := json.Unmarshal(res.Body.Bytes(), &gotClusters)
 			if err != nil {
 				t.Fatal(err, res.Body.String())
 			}
 
 			gotClusterNames := []string{}
-			for _, c := range gotClusterList.Items {
+			for _, c := range gotClusters {
 				gotClusterNames = append(gotClusterNames, c.Name)
 			}
 

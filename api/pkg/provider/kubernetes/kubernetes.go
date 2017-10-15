@@ -42,7 +42,7 @@ func NewKubernetesProvider(
 }
 
 func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
-	cs, err := p.Clusters(user)
+	clusters, err := p.Clusters(user)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 
 	clusterName := rand.String(9)
 
-	for _, c := range cs.Items {
+	for _, c := range clusters {
 		if c.Spec.HumanReadableName == spec.HumanReadableName {
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
@@ -118,14 +118,22 @@ func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermati
 	return c, nil
 }
 
-func (p *kubernetesProvider) Clusters(user auth.User) (*kubermaticv1.ClusterList, error) {
+func (p *kubernetesProvider) Clusters(user auth.User) ([]*kubermaticv1.Cluster, error) {
 	filter := map[string]string{}
 	if !user.IsAdmin() {
 		filter[usernameLabelKey] = user.Name
 	}
 	selector := labels.SelectorFromSet(labels.Set(filter)).String()
 	options := metav1.ListOptions{LabelSelector: selector, FieldSelector: labels.Everything().String()}
-	return p.crdClient.KubermaticV1().Clusters().List(options)
+	clusterList, err := p.crdClient.KubermaticV1().Clusters().List(options)
+	if err != nil {
+		return nil, err
+	}
+	res := []*kubermaticv1.Cluster{}
+	for i := range clusterList.Items {
+		res = append(res, &clusterList.Items[i])
+	}
+	return res, nil
 }
 
 func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error {

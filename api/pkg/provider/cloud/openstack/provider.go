@@ -34,7 +34,7 @@ func (os *openstack) CleanUp(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (os *openstack) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (os *openstack) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := os.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)

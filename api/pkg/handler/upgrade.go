@@ -45,7 +45,7 @@ func getClusterUpgrades(
 		s := kversion.
 			NewUpdatePathSearch(versions, updates, kversion.EqualityMatcher{})
 
-		possibleUpdates := make([]semver.Version, 0)
+		possibleUpdates := []semver.Version{}
 		for _, ver := range versions {
 			v, err := semver.NewVersion(ver.ID)
 			if err != nil {

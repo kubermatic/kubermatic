@@ -26,7 +26,7 @@ func (p *fakeCloudProvider) CleanUp(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (p *fakeCloudProvider) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 

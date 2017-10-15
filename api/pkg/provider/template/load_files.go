@@ -12,7 +12,7 @@ import (
 )
 
 // LoadNodeClassFile parses and returns the given nodeclass template
-func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *api.NodeSpec, dc provider.DatacenterMeta, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *api.NodeSpec, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	t, err := k8stemplate.ParseFile(filename)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *ap
 		Datacenter provider.DatacenterMeta
 		Name       string
 		Kubeconfig string
-		Keys       []kubermaticv1.UserSSHKey
+		Keys       []*kubermaticv1.UserSSHKey
 		Version    *api.MasterVersion
 	}{
 		Cluster:    c,

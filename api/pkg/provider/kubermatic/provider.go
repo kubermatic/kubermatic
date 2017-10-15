@@ -45,30 +45,38 @@ func (p *kubermaticProvider) AssignSSHKeysToCluster(user string, names []string,
 }
 
 // ClusterSSHKeys returns the ssh keys of a cluster
-func (p *kubermaticProvider) ClusterSSHKeys(user string, cluster string) (*kubermaticv1.UserSSHKeyList, error) {
-	list, err := p.SSHKeys(user)
+func (p *kubermaticProvider) ClusterSSHKeys(user string, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
+	keys, err := p.SSHKeys(user)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterkeys := []kubermaticv1.UserSSHKey{}
-	for _, k := range list.Items {
+	clusterKeys := []*kubermaticv1.UserSSHKey{}
+	for _, k := range keys {
 		if k.IsUsedByCluster(cluster) {
-			clusterkeys = append(clusterkeys, k)
+			clusterKeys = append(clusterKeys, k)
 		}
 	}
-	list.Items = clusterkeys
-	return list, nil
+	return clusterKeys, nil
 }
 
 // SSHKeys returns the user ssh keys
-func (p *kubermaticProvider) SSHKeys(user string) (*kubermaticv1.UserSSHKeyList, error) {
+func (p *kubermaticProvider) SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, error) {
 	opts, err := ssh.UserListOptions(user)
 	if err != nil {
 		return nil, err
 	}
 	glog.V(7).Infof("searching for users SSH keys with label selector: (%s)", opts.LabelSelector)
-	return p.client.KubermaticV1().UserSSHKeies().List(opts)
+	list, err := p.client.KubermaticV1().UserSSHKeies().List(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	res := []*kubermaticv1.UserSSHKey{}
+	for i := range list.Items {
+		res = append(res, &list.Items[i])
+	}
+	return res, nil
 }
 
 // SSHKey returns a ssh key by name

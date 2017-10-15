@@ -325,7 +325,7 @@ func (a *amazonEc2) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kub
 	return cloud, nil
 }
 
-func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
