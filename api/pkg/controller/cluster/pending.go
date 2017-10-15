@@ -20,6 +20,7 @@ import (
 const (
 	nodeDeletionFinalizer         = "kubermatic.io/delete-nodes"
 	cloudProviderCleanupFinalizer = "kubermatic.io/cleanup-cloud-provider"
+	namespaceDeletionFinalizer    = "kubermatic.io/delete-ns"
 )
 
 func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kubermaticv1.Cluster, err error) {
@@ -157,6 +158,7 @@ func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kuber
 	finalizers := []string{
 		nodeDeletionFinalizer,
 		cloudProviderCleanupFinalizer,
+		namespaceDeletionFinalizer,
 	}
 
 	for _, f := range finalizers {

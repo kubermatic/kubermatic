@@ -216,6 +216,16 @@ func (cc *controller) syncCluster(key string) error {
 		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
 	}
 
+	// if a cluster got deleted, we must set the phase to deleting and return.
+	if cluster.DeletionTimestamp != nil && cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
+		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
+		err = cc.updateCluster(originalData, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to update cluster to deleting phase %q: %v", cluster.Name, err)
+		}
+		return nil
+	}
+
 	glog.V(4).Infof("Syncing cluster %q in phase %q", cluster.Name, cluster.Status.Phase)
 
 	// state machine
@@ -230,7 +240,7 @@ func (cc *controller) syncCluster(key string) error {
 	case kubermaticv1.UpdatingMasterClusterStatusPhase:
 		changedC, err = cc.syncUpdatingClusterMaster(cluster)
 	case kubermaticv1.DeletingClusterStatusPhase:
-		changedC, err = nil, nil
+		changedC, err = cc.syncDeletingCluster(cluster)
 	default:
 		return fmt.Errorf("invalid phase %q", cluster.Status.Phase)
 	}

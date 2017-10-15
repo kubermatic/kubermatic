@@ -3,12 +3,9 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -16,7 +13,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider) endpoint.Endpoint {
@@ -90,7 +86,6 @@ func deleteClusterEndpoint(
 		req := request.(clusterReq)
 
 		//Delete all nodes in the cluster
-		//TODO: Finalizer
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
@@ -99,50 +94,7 @@ func deleteClusterEndpoint(
 			return nil, err
 		}
 
-		_, cp, err := provider.ClusterCloudProvider(cps, c)
-		if err != nil {
-			return nil, err
-		}
-
-		var deleteErrors []error
-		if cp != nil && c.Status.Phase == kubermaticv1.RunningClusterStatusPhase {
-			c, err := c.GetClient()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster client: %v", err)
-			}
-			err = c.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{})
-			if err != nil {
-				return nil, fmt.Errorf("failed to delete nodes: %v", err)
-			}
-
-			for {
-				nodes, err := c.CoreV1().Nodes().List(metav1.ListOptions{})
-				if err != nil {
-					glog.Errorf("failed to get nodes: %v", err)
-					continue
-				}
-				if len(nodes.Items) == 0 {
-					break
-				}
-				time.Sleep(NodeDeletionWaitInterval)
-			}
-		}
-
-		err = kp.DeleteCluster(user, req.cluster)
-		if err != nil {
-			if kerrors.IsNotFound(err) {
-				if kerrors.IsNotFound(err) {
-					return nil, errors.NewNotFound("cluster", req.cluster)
-				}
-			}
-			return nil, err
-		}
-
-		if len(deleteErrors) > 0 {
-			err = fmt.Errorf("Please manually clean up any Storage, Nodes or Load Balancers associated with %q, got errors while cleaning up: %v", req.cluster, deleteErrors)
-		}
-
-		return nil, err
+		return nil, kp.DeleteCluster(user, c.Name)
 	}
 }
 

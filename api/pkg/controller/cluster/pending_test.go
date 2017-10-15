@@ -202,6 +202,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 					Finalizers: []string{
 						cloudProviderCleanupFinalizer,
 						nodeDeletionFinalizer,
+						namespaceDeletionFinalizer,
 					},
 				},
 				Address: &kubermaticv1.ClusterAddress{},
@@ -226,7 +227,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 				return
 			}
 
-			for _, wantFinalizer := range []string{cloudProviderCleanupFinalizer, nodeDeletionFinalizer} {
+			for _, wantFinalizer := range []string{cloudProviderCleanupFinalizer, nodeDeletionFinalizer, namespaceDeletionFinalizer} {
 				found := false
 				for _, gotFinalizer := range gotCluster.Finalizers {
 					if gotFinalizer == wantFinalizer {
