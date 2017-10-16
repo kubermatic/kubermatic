@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"gopkg.in/square/go-jose.v2/json"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,11 +34,11 @@ const (
 
 	workerPeriod        = time.Second
 	pendingSyncPeriod   = 10 * time.Second
+	timeoutSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
 	updatingSyncPeriod  = 5 * time.Second
 	deletingSyncPeriod  = 5 * time.Second
-	timeoutSyncPeriod   = 10 * time.Second
 )
 
 // GroupRunStopper represents a control loop started with Run,
@@ -214,6 +215,9 @@ func (cc *controller) timeoutWorker() {
 func (cc *controller) syncCluster(key string) error {
 	cluster, err := cc.masterCrdClient.KubermaticV1().Clusters().Get(key, metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("unable to retrieve cluster %q: %v", key, err)
 	}
 
@@ -312,7 +316,7 @@ func (cc *controller) handleErr(err error, key interface{}) {
 	cc.queue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping node %q out of the queue: %v", key, err)
+	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
 func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {

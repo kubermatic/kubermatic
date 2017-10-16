@@ -24,6 +24,11 @@ func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (changedC *ku
 	if err != nil || changedC != nil {
 		return changedC, err
 	}
+
+	err = cc.deletingClusterResource(c)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -94,4 +99,22 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kuberm
 	}
 
 	return nil, nil
+}
+
+func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
+	if len(c.Finalizers) != 0 {
+		return nil
+	}
+
+	err := cc.masterCrdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{})
+	// Only delete finalizer if namespace is really gone
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
