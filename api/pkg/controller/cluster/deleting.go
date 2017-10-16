@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/util/kubernetes"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +28,10 @@ func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (changedC *ku
 }
 
 func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
+		return nil, nil
+	}
+
 	clusterClient, err := c.GetClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster client: %v", err)
@@ -38,12 +43,8 @@ func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 	}
 
 	if len(nodes.Items) == 0 {
-		for i, f := range c.Finalizers {
-			if f == nodeDeletionFinalizer {
-				c.Finalizers = append(c.Finalizers[:i], c.Finalizers[i+1:]...)
-				return c, nil
-			}
-		}
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, nodeDeletionFinalizer)
+		return c, nil
 	}
 
 	err = clusterClient.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{})
@@ -55,6 +56,10 @@ func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 }
 
 func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if !kuberneteshelper.HasFinalizer(c, cloudProviderCleanupFinalizer) {
+		return nil, nil
+	}
+
 	_, cp, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
 		return nil, err
@@ -64,27 +69,21 @@ func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*ku
 		return nil, err
 	}
 
-	for i, f := range c.Finalizers {
-		if f == cloudProviderCleanupFinalizer {
-			c.Finalizers = append(c.Finalizers[:i], c.Finalizers[i+1:]...)
-			return c, nil
-		}
-	}
-
-	return nil, nil
+	c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, cloudProviderCleanupFinalizer)
+	return c, nil
 }
 
 func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
+		return nil, nil
+	}
+
 	ns, err := cc.seedInformerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
 	// Only delete finalizer if namespace is really gone
 	if err != nil {
 		if errors.IsNotFound(err) {
-			for i, f := range c.Finalizers {
-				if f == namespaceDeletionFinalizer {
-					c.Finalizers = append(c.Finalizers[:i], c.Finalizers[i+1:]...)
-					return c, nil
-				}
-			}
+			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, namespaceDeletionFinalizer)
+			return c, nil
 		} else {
 			return nil, err
 		}

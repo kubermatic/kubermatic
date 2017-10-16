@@ -36,6 +36,7 @@ const (
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
 	updatingSyncPeriod  = 5 * time.Second
+	deletingSyncPeriod  = 5 * time.Second
 	timeoutSyncPeriod   = 10 * time.Second
 )
 
@@ -153,13 +154,23 @@ func NewController(
 	return cc, nil
 }
 
-func (cc *controller) updateCluster(originalData []byte, c *kubermaticv1.Cluster) error {
-	modifiedData, err := json.Marshal(c)
+func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
+	currentCluster, err := cc.masterInformerGroup.ClusterInformer.Lister().Get(modifiedCluster.Name)
 	if err != nil {
 		return err
 	}
 
-	patchData, err := jsonmergepatch.CreateThreeWayJSONMergePatch(nil, modifiedData, originalData)
+	currentData, err := json.Marshal(currentCluster)
+	if err != nil {
+		return err
+	}
+
+	modifiedData, err := json.Marshal(modifiedCluster)
+	if err != nil {
+		return err
+	}
+
+	patchData, err := jsonmergepatch.CreateThreeWayJSONMergePatch(originalData, modifiedData, currentData)
 	if err != nil {
 		return err
 	}
@@ -168,7 +179,7 @@ func (cc *controller) updateCluster(originalData []byte, c *kubermaticv1.Cluster
 		return nil
 	}
 
-	_, err = cc.masterCrdClient.KubermaticV1().Clusters().Patch(c.Name, types.MergePatchType, patchData)
+	_, err = cc.masterCrdClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
 	return err
 }
 
@@ -328,6 +339,7 @@ func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.DeletingClusterStatusPhase) }, deletingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
 	go wait.Until(cc.timeoutWorker, timeoutSyncPeriod, stopCh)
 
