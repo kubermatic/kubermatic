@@ -1,0 +1,14 @@
+name: kube-state-metrics
+version: 0.1.0
+description: Kube-State-Metrics for Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+  - prometheus
+  - kube-state-metrics
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+  labels:
+    team: kubermatic
+spec:
+  selector:
+    matchLabels:
+      app: kube-state-metrics
+  namespaceSelector:
+    matchNames:
+    - monitoring
+  endpoints:
+  - port: http
+    interval: 30s
