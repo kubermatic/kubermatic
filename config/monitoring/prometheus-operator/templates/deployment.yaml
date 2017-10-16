@@ -16,7 +16,7 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        image: quay.io/coreos/prometheus-operator:v0.13.0
+        image: {{ .Values.prometheusOperator.image.repository }}:{{ .Values.prometheusOperator.image.tag }}
         name: prometheus-operator
         ports:
         - containerPort: 8080

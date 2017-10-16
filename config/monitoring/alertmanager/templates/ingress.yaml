@@ -2,8 +2,8 @@
 #apiVersion: extensions/v1beta1
 #kind: Ingress
 #metadata:
-#  name: grafana
-#  namespace: monitoring
+#  name: alertmanager
+#  namespace: prometheus
 #  annotations:
 #    kubernetes.io/ingress.class: "nginx"
 #    # type of authentication
@@ -15,16 +15,16 @@
 #spec:
 #  tls:
 #  - hosts:
-#    - monitoring.{{ .Values.KubermaticURL | trim }}
+#    - alerting.{{ .Values.KubermaticURL | trim }}
 #  backend:
-#    serviceName: grafana
-#    servicePort: 3000
+#    serviceName: alertmanager
+#    servicePort: 9093
 #  rules:
-#  - host: monitoring.{{ .Values.KubermaticURL | trim }}
+#  - host: alerting.{{ .Values.KubermaticURL | trim }}
 #    http:
 #      paths:
 #      - path: /
 #        backend:
-#          serviceName: grafana
-#          servicePort: 3000
+#          serviceName: alertmanager
+#          servicePort: http
 */}}

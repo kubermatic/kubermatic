@@ -1,0 +1,3 @@
+prometheus:
+  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+  version: 'v1.8.0'

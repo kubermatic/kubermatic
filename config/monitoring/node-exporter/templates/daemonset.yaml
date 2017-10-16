@@ -14,8 +14,8 @@ spec:
       hostNetwork: true
       hostPID: true
       containers:
-      - image:  quay.io/prometheus/node-exporter:v0.15.0
-        name: node-exporter
+      - name: node-exporter
+        image: "{{ .Values.nodeexporter.image.repository }}:{{ .Values.nodeexporter.image.tag}}"
         ports:
         - containerPort: 9100
           hostPort: 9100

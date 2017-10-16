@@ -7,7 +7,7 @@ metadata:
     app: prometheus
 spec:
   replicas: 1
-  version: v1.8.0
+  version: {{ .Values.prometheus.version }}
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:

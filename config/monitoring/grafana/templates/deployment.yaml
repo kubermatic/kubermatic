@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana/grafana:4.5.2
+        image: {{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}
         env:
           - name: GF_AUTH_BASIC_ENABLED
             value: "false"
@@ -49,7 +49,7 @@ spec:
             memory: 200Mi
             cpu: 200m
       - name: grafana-watcher
-        image: quay.io/coreos/grafana-watcher:v0.0.8
+        image: {{ .Values.grafana.watcher.image.repository }}:{{ .Values.grafana.watcher.image.tag }}
         args:
           - '--watch-dir=/var/grafana-dashboards-0'
           - '--grafana-url=http://localhost:3000'

@@ -7,4 +7,4 @@ metadata:
     app: alertmanager
 spec:
   replicas: 1
-  version: v0.9.1
+  version: {{ .Values.alertmanager.version }}

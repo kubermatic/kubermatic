@@ -13,7 +13,7 @@ spec:
       serviceAccountName: kube-state-metrics
       containers:
       - name: kube-state-metrics
-        image: quay.io/coreos/kube-state-metrics:v1.0.1
+        image: {{ .Values.kubestatemetrics.image.repository }}:{{ .Values.kubestatemetrics.image.tag }}
         args:
         - '--collectors'
         - 'daemonsets,deployments,jobs,limitranges,nodes,pods,replicasets,replicationcontrollers,resourcequotas,services,statefulsets,persistentvolumeclaims'
@@ -34,7 +34,7 @@ spec:
             memory: 200Mi
             cpu: 200m
       - name: addon-resizer
-        image: gcr.io/google_containers/addon-resizer:1.0
+        image: {{ .Values.kubestatemetrics.resizer.image.repository }}:{{ .Values.kubestatemetrics.resizer.image.tag }}
         resources:
           limits:
             cpu: 100m
