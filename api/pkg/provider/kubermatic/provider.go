@@ -8,8 +8,9 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
-
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -83,6 +84,9 @@ func (p *kubermaticProvider) SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, e
 func (p *kubermaticProvider) SSHKey(user, name string) (*kubermaticv1.UserSSHKey, error) {
 	k, err := p.client.KubermaticV1().UserSSHKeies().Get(name, metav1.GetOptions{})
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil, errors.NewNotFound("ssh-key", k.Name)
+		}
 		return nil, err
 	}
 	if k.Spec.Owner == user {
@@ -106,6 +110,14 @@ func (p *kubermaticProvider) CreateSSHKey(name, owner, pubkey string) (*kubermat
 }
 
 // DeleteSSHKey deletes a ssh key
-func (p *kubermaticProvider) DeleteSSHKey(name, user string) error {
-	panic("implement me")
+func (p *kubermaticProvider) DeleteSSHKey(user, name string) error {
+	k, err := p.SSHKey(user, name)
+	if err != nil {
+		return err
+	}
+	err = p.client.KubermaticV1().UserSSHKeies().Delete(k.Name, &metav1.DeleteOptions{})
+	if kerrors.IsNotFound(err) {
+		return errors.NewNotFound("ssh-key", k.Name)
+	}
+	return err
 }

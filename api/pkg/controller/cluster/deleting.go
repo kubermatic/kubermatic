@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/util/kubernetes"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -25,11 +25,7 @@ func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (changedC *ku
 		return changedC, err
 	}
 
-	err = cc.deletingClusterResource(c)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return nil, cc.deletingClusterResource(c)
 }
 
 func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -89,9 +85,8 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kuberm
 		if errors.IsNotFound(err) {
 			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, namespaceDeletionFinalizer)
 			return c, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	if ns.DeletionTimestamp == nil {
@@ -111,9 +106,8 @@ func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 
 	return nil

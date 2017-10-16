@@ -8,8 +8,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/util/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
