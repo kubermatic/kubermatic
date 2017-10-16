@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: prometheus-operator
+    app: prometheus-operator
   name: prometheus-operator
   namespace: monitoring
 spec:
@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        k8s-app: prometheus-operator
+        app: prometheus-operator
     spec:
       containers:
       - args:

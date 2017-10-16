@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    team: kubermatic
+spec:
+  jobLabel: prometheus
+  selector:
+    matchLabels:
+      app: prometheus
+  namespaceSelector:
+    matchNames:
+    - monitoring
+  endpoints:
+  - port: web
+    interval: 30s

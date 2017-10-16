@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: grafana
   namespace: monitoring
+  labels:
+    app: grafana
 spec:
   replicas: 1
   revisionHistoryLimit: 3

@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: prometheus
   namespace: monitoring
+  labels:
+    app: prometheus
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +13,4 @@ spec:
     port: 9090
     targetPort: web
   selector:
-    prometheus: prometheus
+    app: prometheus
