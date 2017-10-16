@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/util/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -162,13 +163,7 @@ func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kuber
 	}
 
 	for _, f := range finalizers {
-		exists := false
-		for _, e := range c.Finalizers {
-			if e == f {
-				exists = true
-			}
-		}
-		if !exists {
+		if !kuberneteshelper.HasFinalizer(c, f) {
 			c.Finalizers = append(c.Finalizers, f)
 			updated = true
 		}
