@@ -33,7 +33,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
 			},
-			wantUpdates: []string{"1.6.1"},
+			wantUpdates: []string{"1.6.1", "1.7.0"},
 			versions: map[string]*api.MasterVersion{
 				"1.6.0": {
 					Name:                       "v1.6.0",
@@ -65,11 +65,35 @@ func TestGetClusterUpgrades(t *testing.T) {
 						"etcd-version": "3.2.8",
 					},
 				},
+				"1.7.0": {
+					Name:                       "v1.7.0",
+					ID:                         "1.7.0",
+					Default:                    false,
+					AllowedNodeVersions:        []string{"1.3.0"},
+					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
+					EtcdClusterYaml:            "etcd-cluster.yaml",
+					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
+					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
+					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
+					Values: map[string]string{
+						"k8s-version":  "v1.7.0",
+						"etcd-version": "3.2.8",
+					},
+				},
 			},
 			updates: []api.MasterUpdate{
 				{
 					From:            "1.6.0",
 					To:              "1.6.1",
+					Automatic:       false,
+					RollbackAllowed: false,
+					Enabled:         true,
+					Visible:         true,
+					Promote:         true,
+				},
+				{
+					From:            "1.6.x",
+					To:              "1.7.0",
 					Automatic:       false,
 					RollbackAllowed: false,
 					Enabled:         true,

@@ -150,7 +150,7 @@ func NewController(
 			automaticUpdates = append(automaticUpdates, u)
 		}
 	}
-	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.EqualityMatcher{})
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.SemverMatcher{})
 
 	return cc, nil
 }
