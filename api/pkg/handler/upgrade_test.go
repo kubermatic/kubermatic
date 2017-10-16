@@ -16,6 +16,7 @@ import (
 )
 
 func TestGetClusterUpgrades(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		cluster     *kubermaticv1.Cluster

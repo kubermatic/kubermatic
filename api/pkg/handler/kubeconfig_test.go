@@ -15,6 +15,7 @@ import (
 )
 
 func TestKubeConfigEndpoint(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/cluster/foo/kubeconfig", nil)
 
 	res := httptest.NewRecorder()

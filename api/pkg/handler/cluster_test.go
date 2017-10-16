@@ -14,6 +14,7 @@ import (
 )
 
 func TestClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		clusterName  string
@@ -104,6 +105,7 @@ func TestClusterEndpoint(t *testing.T) {
 }
 
 func TestClustersEndpoint(t *testing.T) {
+	t.Parallel()
 	clusterList := []runtime.Object{
 		&kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
