@@ -81,8 +81,8 @@ const (
 
 //+genclient
 //+genclient:nonNamespaced
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // Cluster is the object representing a cluster.
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -93,8 +93,9 @@ type Cluster struct {
 	Status  ClusterStatus   `json:"status,omitempty"`
 }
 
-// Cluster specifies a list of clusters
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterList specifies a list of clusters
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
