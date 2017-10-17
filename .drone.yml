@@ -24,7 +24,7 @@ pipeline:
       - make lint
 
   verify-codegen:
-    group: lint
+    group: codegen
     image: golang:1.9
     commands:
       - cd api
