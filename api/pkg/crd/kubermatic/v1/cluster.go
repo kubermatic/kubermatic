@@ -279,13 +279,14 @@ type BareMetalCloudSpec struct {
 
 // OpenstackCloudSpec specifies access data to an openstack cloud.
 type OpenstackCloudSpec struct {
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Tenant         string `json:"tenant"`
-	Domain         string `json:"domain"`
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
-	FloatingIPPool string `json:"floatingIpPool"`
+	Username             string `json:"username"`
+	Password             string `json:"password"`
+	Tenant               string `json:"tenant"`
+	Domain               string `json:"domain"`
+	Network              string `json:"network"`
+	SecurityGroups       string `json:"securityGroups"`
+	SecurityGroupCreated bool   `json:"securityGroupCreated"`
+	FloatingIPPool       string `json:"floatingIpPool"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
