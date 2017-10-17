@@ -15,7 +15,7 @@ spec:
       hostPID: true
       containers:
       - name: node-exporter
-        image: "{{ .Values.nodeexporter.image.repository }}:{{ .Values.nodeexporter.image.tag}}"
+        image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag}}"
         ports:
         - containerPort: 9100
           hostPort: 9100

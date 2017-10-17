@@ -1,4 +1,4 @@
-kubestatemetrics:
+kubeStateMetrics:
   image:
     repository: quay.io/coreos/kube-state-metrics
     tag: v1.0.1
