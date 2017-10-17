@@ -1,7 +1,7 @@
 updates:
-- from: 1.6.x
-  to: 1.6.10
-  automatic: true
+- from: 1.7.x
+  to: 1.7.7
+  automatic: false
   rollbackAllowed: false
   enabled: true
   visible: true
