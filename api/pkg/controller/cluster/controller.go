@@ -184,6 +184,8 @@ func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 	return err
 }
 
+// timeoutWorker is a worker function which gets called every timeoutSyncPeriod and sets the phase of a cluster to
+// FailedClusterStatusPhase if the cluster did not came up within launchTimeout
 func (cc *controller) timeoutWorker() {
 	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
 	if err != nil {

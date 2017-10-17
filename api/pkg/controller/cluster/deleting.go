@@ -11,6 +11,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// syncDeletingCluster is the function which handles clusters in the deleting phase.
+// It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
+// If this function does not return a pointer to a cluster or a error, the cluster is deleted.
 func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (changedC *kubermaticv1.Cluster, err error) {
 	changedC, err = cc.deletingNodeCleanup(c)
 	if err != nil || changedC != nil {
@@ -96,6 +99,7 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kuberm
 	return nil, nil
 }
 
+// deletingClusterResource deletes the cluster resource. Needed since Finalizers are broken in 1.7.
 func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
 	if len(c.Finalizers) != 0 {
 		return nil
