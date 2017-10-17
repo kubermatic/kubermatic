@@ -17,6 +17,11 @@ spec:
     - namespace: monitoring
       name: alertmanager
       port: web
+  ruleSelector:
+    matchLabels:
+      role: prometheus-rulefiles
+      prometheus: prometheus
   resources:
     requests:
-      memory: 400Mi
+      memory: 1G
+

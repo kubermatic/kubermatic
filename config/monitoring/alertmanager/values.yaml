@@ -1,2 +1,16 @@
 alertmanager:
   version: v0.9.1
+  config:
+    global:
+      slack_api_url: https://
+    route:
+      receiver: 'default'
+      group_by: ['alertname', 'cluster']
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+    receivers:
+    - name: 'default'
+      slack_configs:
+      - channel: '#alerting'
+        send_resolved: true
