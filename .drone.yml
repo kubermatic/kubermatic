@@ -23,6 +23,13 @@ pipeline:
       - cd api
       - make lint
 
+  verify-codegen:
+    group: lint
+    image: golang:1.9
+    commands:
+      - cd api
+      - ./hack/verify-codegen.sh
+
   test:
     group: build
     image: golang:1.9
