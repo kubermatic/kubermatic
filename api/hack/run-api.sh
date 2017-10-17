@@ -10,7 +10,6 @@ cd ${GOPATH}/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
   -master-kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
-  -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -worker-name="$(uname -n | tr -cd '[:alnum:]')" \

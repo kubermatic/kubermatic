@@ -61,7 +61,6 @@ func Test_healthyDep(t *testing.T) {
 			want: false,
 		},
 		{
-
 			name: "90%",
 			args: args{
 				dep: &v1beta1.Deployment{

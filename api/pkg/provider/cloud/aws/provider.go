@@ -12,23 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
 
 const (
-	accessKeyIDAnnotationKey     = "acccess-key-id"
-	secretAccessKeyAnnotationKey = "secret-access-key"
-	subnetIDKey                  = "subnet-id"
-	vpcIDKey                     = "vpc-id"
-	routeTableIDKey              = "route-table-id"
-	roleNameKey                  = "role-name"
-	instanceProfileNameKey       = "instance-profile-name"
-	availabilityZoneKey          = "availability-zone"
-	securityGroupKey             = "security-group"
-
 	tplPath = "/opt/template/nodes/aws.yaml"
 
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
@@ -278,7 +268,7 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 	return rOut.Role, cipOut.InstanceProfile, nil
 }
 
-func (a *amazonEc2) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpec, error) {
+func (a *amazonEc2) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	client, err := a.getEC2client(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
@@ -335,62 +325,7 @@ func (a *amazonEc2) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpe
 	return cloud, nil
 }
 
-func (*amazonEc2) MarshalCloudSpec(cs *api.CloudSpec) (map[string]string, error) {
-	return map[string]string{
-		accessKeyIDAnnotationKey:     cs.AWS.AccessKeyID,
-		secretAccessKeyAnnotationKey: cs.AWS.SecretAccessKey,
-		subnetIDKey:                  cs.AWS.SubnetID,
-		vpcIDKey:                     cs.AWS.VPCID,
-		routeTableIDKey:              cs.AWS.RouteTableID,
-		roleNameKey:                  cs.AWS.RoleName,
-		instanceProfileNameKey:       cs.AWS.InstanceProfileName,
-		availabilityZoneKey:          cs.AWS.AvailabilityZone,
-		securityGroupKey:             cs.AWS.SecurityGroup,
-	}, nil
-}
-
-func (*amazonEc2) UnmarshalCloudSpec(annotations map[string]string) (spec *api.CloudSpec, err error) {
-	spec = &api.CloudSpec{
-		AWS: &api.AWSCloudSpec{},
-	}
-	var ok bool
-	if spec.AWS.AccessKeyID, ok = annotations[accessKeyIDAnnotationKey]; !ok {
-		return nil, errors.New("no access key ID found")
-	}
-
-	if spec.AWS.SecretAccessKey, ok = annotations[secretAccessKeyAnnotationKey]; !ok {
-		return nil, errors.New("no secret key found")
-	}
-
-	if spec.AWS.SubnetID, ok = annotations[subnetIDKey]; !ok {
-		return nil, errors.New("no subnet ID found")
-	}
-
-	if spec.AWS.VPCID, ok = annotations[vpcIDKey]; !ok {
-		return nil, errors.New("no vpc ID found")
-	}
-
-	if spec.AWS.RouteTableID, ok = annotations[routeTableIDKey]; !ok {
-		return nil, errors.New("no route table ID found")
-	}
-
-	if spec.AWS.RoleName, ok = annotations[roleNameKey]; !ok {
-		return nil, errors.New("no role ID found")
-	}
-
-	if spec.AWS.InstanceProfileName, ok = annotations[instanceProfileNameKey]; !ok {
-		return nil, errors.New("no instance profile ID found")
-	}
-
-	if spec.AWS.AvailabilityZone, ok = annotations[availabilityZoneKey]; !ok {
-		return nil, errors.New("no availability zone found")
-	}
-	spec.AWS.SecurityGroup = annotations[securityGroupKey]
-
-	return spec, nil
-}
-
-func (a *amazonEc2) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []v1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
@@ -418,7 +353,7 @@ func (a *amazonEc2) GetNodeClassName(nSpec *api.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
 
-func (a *amazonEc2) getSession(cloud *api.CloudSpec) (*session.Session, error) {
+func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
 	dc, found := a.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
@@ -430,7 +365,7 @@ func (a *amazonEc2) getSession(cloud *api.CloudSpec) (*session.Session, error) {
 	return session.NewSession(config)
 }
 
-func (a *amazonEc2) getEC2client(cloud *api.CloudSpec) (*ec2.EC2, error) {
+func (a *amazonEc2) getEC2client(cloud *kubermaticv1.CloudSpec) (*ec2.EC2, error) {
 	sess, err := a.getSession(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get amazonEc2 session: %v", err)
@@ -438,7 +373,7 @@ func (a *amazonEc2) getEC2client(cloud *api.CloudSpec) (*ec2.EC2, error) {
 	return ec2.New(sess), nil
 }
 
-func (a *amazonEc2) getIAMClient(cloud *api.CloudSpec) (*iam.IAM, error) {
+func (a *amazonEc2) getIAMClient(cloud *kubermaticv1.CloudSpec) (*iam.IAM, error) {
 	sess, err := a.getSession(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get amazonEc2 session: %v", err)
@@ -446,7 +381,7 @@ func (a *amazonEc2) getIAMClient(cloud *api.CloudSpec) (*iam.IAM, error) {
 	return iam.New(sess), nil
 }
 
-func (a *amazonEc2) CleanUp(cloud *api.CloudSpec) error {
+func (a *amazonEc2) CleanUp(cloud *kubermaticv1.CloudSpec) error {
 	ec2client, err := a.getEC2client(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get ec2 client: %v", err)

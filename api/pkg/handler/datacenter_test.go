@@ -4,27 +4,31 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestDatacentersEndpoint(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, "./fixtures/responses/datacenters.json")
+	compareWithResult(t, res, "[{\"metadata\":{\"name\":\"regular-do1\",\"revision\":\"1\"},\"spec\":{\"country\":\"NL\",\"location\":\"Amsterdam\",\"provider\":\"digitalocean\",\"digitalocean\":{\"region\":\"ams2\"}}}]")
 }
 
 func TestDatacenterEndpointNotFound(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -33,10 +37,11 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 }
 
 func TestDatacenterEndpointPrivate(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -45,30 +50,32 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 }
 
 func TestDatacenterEndpointAdmin(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
+	t.Parallel()
+	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(true))
+	e := createTestEndpoint(getUser(testUsername, true), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, "./fixtures/responses/datacenter_private.json")
+	compareWithResult(t, res, "{\"metadata\":{\"name\":\"private-do1\",\"revision\":\"1\"},\"spec\":{\"country\":\"NL\",\"location\":\"US \",\"provider\":\"digitalocean\",\"digitalocean\":{\"region\":\"ams2\"}}}")
 
 }
 
 func TestDatacenterEndpointFound(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/dc/us-west-2", nil)
+	t.Parallel()
+	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, "./fixtures/responses/datacenter_public.json")
+	compareWithResult(t, res, "{\"metadata\":{\"name\":\"regular-do1\",\"revision\":\"1\"},\"spec\":{\"country\":\"NL\",\"location\":\"Amsterdam\",\"provider\":\"digitalocean\",\"digitalocean\":{\"region\":\"ams2\"}}}")
 }

@@ -53,19 +53,29 @@ required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/
   name = "github.com/mgutz/logxi"
 
 [[constraint]]
-  name = "k8s.io/apiextensions-apiserver"
-  branch = "release-1.8"
-
-[[constraint]]
   name = "github.com/kube-node/nodeset"
   branch = "sttts-kube-gen"
   source = "github.com/mrIncompetent/nodeset"
 
 [[constraint]]
-  branch = "release-5.0"
+  name = "k8s.io/apimachinery"
+  branch = "release-1.8"
+
+[[constraint]]
   name = "k8s.io/client-go"
+  branch = "release-5.0"
+
+[[constraint]]
+  name = "k8s.io/apiextensions-apiserver"
+  branch = "release-1.8"
 
 [[constraint]]
   name = "k8s.io/code-generator"
-  branch = "sttts-codegen-scripts"
-  source = "github.com/sttts/code-generator"
+  branch = "release-1.8"
+
+# goland/dep does not follow k8s.io/code-generator's Godeps.json and gengo's master
+# version does not work with release-1.8 k8s.io/code-generator. So we have to
+# override it.
+[[override]]
+  name = "k8s.io/gengo"
+  revision = "9e661e9308f078838e266cca1c673922088c0ea4"

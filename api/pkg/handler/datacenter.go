@@ -2,15 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -20,16 +15,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func datacentersEndpoint(
-	dcs map[string]provider.DatacenterMeta,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 
-		adcs := make([]api.Datacenter, 0, len(kps))
+		adcs := []api.Datacenter{}
 		var keys []string
 		for k := range dcs {
 			keys = append(keys, k)
@@ -37,7 +28,6 @@ func datacentersEndpoint(
 		sort.Strings(keys)
 
 		for _, dcName := range keys {
-			_, kpFound := kps[dcName]
 			dc := dcs[dcName]
 
 			if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
@@ -57,7 +47,7 @@ func datacentersEndpoint(
 					Revision: "1",
 				},
 				Spec: *spec,
-				Seed: kpFound,
+				Seed: false,
 			}
 			adcs = append(adcs, adc)
 		}
@@ -66,66 +56,7 @@ func datacentersEndpoint(
 	}
 }
 
-type dcKeyListReq struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Token    string `json:"token,omitempty"`
-	dcReq
-}
-
-func decodeDcKeyListRequest(c context.Context, r *http.Request) (interface{}, error) {
-	var req dcKeyListReq
-
-	dr, err := decodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.dcReq = dr.(dcReq)
-
-	err = json.NewDecoder(r.Body).Decode(&req)
-	return req, err
-}
-
-func datacenterKeyEndpoint(
-	dcs map[string]provider.DatacenterMeta,
-) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(dcKeyListReq)
-
-		dc, found := dcs[req.dc]
-		if !found {
-			return nil, errors.NewNotFound("datacenter", req.dc)
-		}
-
-		//TODO: Make more generic.
-		// also for digitalocean ... or libmachine?
-		if dc.Spec.AWS == nil {
-			return nil, errors.NewBadRequest("not aws", req.dc)
-		}
-
-		config := aws.NewConfig().
-			WithMaxRetries(10).
-			WithRegion(dc.Spec.AWS.Region).
-			WithCredentials(credentials.NewStaticCredentials(req.Username, req.Password, ""))
-		s := session.New(config)
-		client := ec2.New(s)
-		keys, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{})
-
-		//Empty slices are getting marshaled to null...
-		//We always want to return an array to the frontend!
-		if len(keys.KeyPairs) == 0 {
-			keys.KeyPairs = make([]*ec2.KeyPairInfo, 0)
-		}
-
-		return keys, err
-	}
-}
-
-func datacenterEndpoint(
-	dcs map[string]provider.DatacenterMeta,
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(dcReq)
@@ -139,8 +70,6 @@ func datacenterEndpoint(
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
-		_, kpFound := kps[req.dc]
-
 		spec, err := apiSpec(&dc)
 		if err != nil {
 			return nil, fmt.Errorf("api spec error in dc %q: %v", req.dc, err)
@@ -152,7 +81,7 @@ func datacenterEndpoint(
 				Revision: "1",
 			},
 			Spec: *spec,
-			Seed: kpFound,
+			Seed: false,
 		}, nil
 	}
 }

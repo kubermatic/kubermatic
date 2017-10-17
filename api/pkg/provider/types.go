@@ -3,10 +3,9 @@ package provider
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
+	"github.com/kubermatic/kubermatic/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
 
@@ -23,47 +22,56 @@ const (
 	DefaultKubeletPort = 10250
 )
 
-// CloudSpecProvider declares methods for converting a cloud spec to/from annotations.
-type CloudSpecProvider interface {
-	MarshalCloudSpec(*api.CloudSpec) (annotations map[string]string, err error)
-	UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error)
-}
-
 // NodeProvider declares methods for creating/listing nodes.
 type NodeProvider interface {
-	Initialize(*api.CloudSpec, string) (*api.CloudSpec, error)
-	CleanUp(*api.CloudSpec) error
-	CreateNodeClass(*api.Cluster, *api.NodeSpec, []v1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
+	Initialize(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
+	CleanUp(*kubermaticv1.CloudSpec) error
+	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	GetNodeClassName(*api.NodeSpec) string
 }
 
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudProvider interface {
-	CloudSpecProvider
 	NodeProvider
 }
 
-// KubernetesProvider declares the set of methods for interacting with a Kubernetes cluster.
-type KubernetesProvider interface {
+// ClusterProvider declares the set of methods for interacting with a Kubernetes cluster.
+type ClusterProvider interface {
 	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
-	NewClusterWithCloud(user auth.User, spec *api.ClusterSpec) (*api.Cluster, error)
+	NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user auth.User, cluster string) (*api.Cluster, error)
+	Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
-	Clusters(user auth.User) ([]*api.Cluster, error)
+	Clusters(user auth.User) ([]*kubermaticv1.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user auth.User, cluster string) error
 
-	// UpgradeCluster upgrades a Cluster to a specific version
-	UpgradeCluster(user auth.User, cluster, version string) error
+	// InitiateClusterUpgrade upgrades a Cluster to a specific version
+	InitiateClusterUpgrade(user auth.User, cluster, version string) (*kubermaticv1.Cluster, error)
+}
+
+// DataProvider declares the set of methods for interacting with kubermatic resources
+type DataProvider interface {
+	// AssignSSHKeysToCluster assigns a ssh key to a cluster
+	AssignSSHKeysToCluster(user string, names []string, cluster string) error
+	// ClusterSSHKeys returns the ssh keys of a cluster
+	ClusterSSHKeys(user string, cluster string) ([]*kubermaticv1.UserSSHKey, error)
+	// SSHKeys returns the user ssh keys
+	SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, error)
+	// SSHKey returns a ssh key by name
+	SSHKey(user, name string) (*kubermaticv1.UserSSHKey, error)
+	// CreateSSHKey creates a ssh key
+	CreateSSHKey(name, owner, pubkey string) (*kubermaticv1.UserSSHKey, error)
+	// DeleteSSHKey deletes a ssh key
+	DeleteSSHKey(name, user string) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
-func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
+func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
@@ -98,7 +106,7 @@ func ClusterCloudProviderName(spec *api.CloudSpec) (string, error) {
 
 // ClusterCloudProvider returns the provider for the given cluster where
 // one of Cluster.Spec.Cloud.* is set.
-func ClusterCloudProvider(cps map[string]CloudProvider, c *api.Cluster) (string, CloudProvider, error) {
+func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster) (string, CloudProvider, error) {
 	name, err := ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return "", nil, err

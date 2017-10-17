@@ -8,19 +8,21 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
-	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
+	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
 	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	kprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"gopkg.in/square/go-jose.v2/json"
 
-	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -32,9 +34,11 @@ const (
 
 	workerPeriod        = time.Second
 	pendingSyncPeriod   = 10 * time.Second
+	timeoutSyncPeriod   = 10 * time.Second
 	launchingSyncPeriod = 2 * time.Second
 	runningSyncPeriod   = 1 * time.Minute
 	updatingSyncPeriod  = 5 * time.Second
+	deletingSyncPeriod  = 5 * time.Second
 )
 
 // GroupRunStopper represents a control loop started with Run,
@@ -46,14 +50,16 @@ type GroupRunStopper interface {
 type controller struct {
 	dc                    string
 	client                kubernetes.Interface
-	crdClient             crdclient.Interface
+	seedCrdClient         seedcrdclient.Interface
+	masterCrdClient       mastercrdclient.Interface
 	masterResourcesPath   string
 	externalURL           string
 	apiserverExternalPort int
 	dcs                   map[string]provider.DatacenterMeta
 
-	queue             workqueue.RateLimitingInterface
-	seedInformerGroup *seedinformer.Group
+	queue               workqueue.RateLimitingInterface
+	seedInformerGroup   *seedinformer.Group
+	masterInformerGroup *masterinformer.Group
 
 	cps        map[string]provider.CloudProvider
 	workerName string
@@ -69,7 +75,8 @@ type controller struct {
 func NewController(
 	dc string,
 	client kubernetes.Interface,
-	crdClient crdclient.Interface,
+	seedCrdClient seedcrdclient.Interface,
+	masterCrdClient mastercrdclient.Interface,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
@@ -78,12 +85,14 @@ func NewController(
 	workerName string,
 	apiserverExternalPort int,
 	dcs map[string]provider.DatacenterMeta,
+	masterInformerGroup *masterinformer.Group,
 	seedInformerGroup *seedinformer.Group,
 ) (GroupRunStopper, error) {
 	cc := &controller{
 		dc:                    dc,
 		client:                client,
-		crdClient:             crdClient,
+		seedCrdClient:         seedCrdClient,
+		masterCrdClient:       masterCrdClient,
 		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "namespace"),
 		cps:                   cps,
 		updates:               updates,
@@ -92,11 +101,12 @@ func NewController(
 		externalURL:           externalURL,
 		workerName:            workerName,
 		apiserverExternalPort: apiserverExternalPort,
-		dcs:               dcs,
-		seedInformerGroup: seedInformerGroup,
+		dcs:                 dcs,
+		masterInformerGroup: masterInformerGroup,
+		seedInformerGroup:   seedInformerGroup,
 	}
 
-	cc.seedInformerGroup.NamespaceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	cc.masterInformerGroup.ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
@@ -127,7 +137,7 @@ func NewController(
 	}
 	cc.updateController = update.New(
 		cc.client,
-		cc.crdClient,
+		cc.seedCrdClient,
 		cc.masterResourcesPath,
 		cc.dc,
 		cc.versions,
@@ -140,18 +150,28 @@ func NewController(
 			automaticUpdates = append(automaticUpdates, u)
 		}
 	}
-	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.EqualityMatcher{})
+	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.SemverMatcher{})
 
 	return cc, nil
 }
 
-func (cc *controller) updateNamespace(originalData []byte, ns *v1.Namespace) error {
-	modifiedData, err := json.Marshal(ns)
+func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
+	currentCluster, err := cc.masterInformerGroup.ClusterInformer.Lister().Get(modifiedCluster.Name)
 	if err != nil {
 		return err
 	}
 
-	patchData, err := strategicpatch.CreateTwoWayMergePatch(originalData, modifiedData, v1.Namespace{})
+	currentData, err := json.Marshal(currentCluster)
+	if err != nil {
+		return err
+	}
+
+	modifiedData, err := json.Marshal(modifiedCluster)
+	if err != nil {
+		return err
+	}
+
+	patchData, err := jsonmergepatch.CreateThreeWayJSONMergePatch(originalData, modifiedData, currentData)
 	if err != nil {
 		return err
 	}
@@ -160,60 +180,84 @@ func (cc *controller) updateNamespace(originalData []byte, ns *v1.Namespace) err
 		return nil
 	}
 
-	_, err = cc.client.CoreV1().Namespaces().Patch(ns.Name, types.StrategicMergePatchType, patchData)
+	_, err = cc.masterCrdClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
 	return err
 }
 
-func (cc *controller) checkTimeout(c *api.Cluster) (*api.Cluster, error) {
-	now := time.Now()
-	timeSinceCreation := now.Sub(c.Status.LastTransitionTime)
-	if timeSinceCreation > launchTimeout {
-		glog.Infof("Launch timeout for cluster %q after %v", c.Metadata.Name, timeSinceCreation)
-		c.Status.Phase = api.FailedClusterStatusPhase
-		c.Status.LastTransitionTime = now
-		return c, nil
+// timeoutWorker is a worker function which gets called every timeoutSyncPeriod and sets the phase of a cluster to
+// FailedClusterStatusPhase if the cluster did not came up within launchTimeout
+func (cc *controller) timeoutWorker() {
+	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
+	if err != nil {
+		glog.Errorf("failed to get cluster list: %v", err)
 	}
 
-	return nil, nil
+	for _, cluster := range clusters {
+		if cluster.Status.Phase != kubermaticv1.LaunchingClusterStatusPhase {
+			continue
+		}
+		now := metav1.Now()
+		sinceSinceLaunching := now.Sub(cluster.Status.LastTransitionTime.Time)
+		if sinceSinceLaunching > launchTimeout {
+			originalData, err := json.Marshal(cluster)
+			if err != nil {
+				glog.Errorf("failed to marshal cluster %s: %v", cluster.Name, err)
+				continue
+			}
+			glog.Infof("Launch timeout for cluster %q after %v", cluster.Name, sinceSinceLaunching)
+			cluster.Status.Phase = kubermaticv1.FailedClusterStatusPhase
+			cluster.Status.LastTransitionTime = now
+			if err := cc.updateCluster(originalData, cluster); err != nil {
+				glog.Errorf("failed to update failed cluster %q: %v", cluster.Name, err)
+			}
+		}
+	}
 }
 
 func (cc *controller) syncCluster(key string) error {
-	ns, err := cc.client.CoreV1().Namespaces().Get(key, metav1.GetOptions{})
+	cluster, err := cc.masterCrdClient.KubermaticV1().Clusters().Get(key, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("unable to retrieve namespace %q from lister: %v", key, err)
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("unable to retrieve cluster %q: %v", key, err)
 	}
 
-	if ns.Labels[kprovider.RoleLabelKey] != kprovider.ClusterRoleLabel {
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
+		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
 	}
-	if ns.Labels[kprovider.WorkerNameLabelKey] != cc.workerName {
+
+	originalData, err := json.Marshal(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
+	}
+
+	// if a cluster got deleted, we must set the phase to deleting and return.
+	if cluster.DeletionTimestamp != nil && cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
+		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
+		err = cc.updateCluster(originalData, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to update cluster to deleting phase %q: %v", cluster.Name, err)
+		}
 		return nil
 	}
 
-	originalData, err := json.Marshal(ns)
-	if err != nil {
-		return fmt.Errorf("failed to marshal namespace %s: %v", key, err)
-	}
-
-	cluster, err := kprovider.UnmarshalCluster(cc.cps, ns)
-	if err != nil {
-		return err
-	}
-	glog.V(4).Infof("Syncing cluster %q in phase %q", cluster.Metadata.Name, cluster.Status.Phase)
+	glog.V(4).Infof("Syncing cluster %q in phase %q", cluster.Name, cluster.Status.Phase)
 
 	// state machine
-	var changedC *api.Cluster
+	var changedC *kubermaticv1.Cluster
 	switch cluster.Status.Phase {
-	case api.PendingClusterStatusPhase:
+	case kubermaticv1.PendingClusterStatusPhase:
 		changedC, err = cc.syncPendingCluster(cluster)
-	case api.LaunchingClusterStatusPhase:
+	case kubermaticv1.LaunchingClusterStatusPhase:
 		changedC, err = cc.syncLaunchingCluster(cluster)
-	case api.RunningClusterStatusPhase:
+	case kubermaticv1.RunningClusterStatusPhase:
 		changedC, err = cc.syncRunningCluster(cluster)
-	case api.UpdatingMasterClusterStatusPhase:
+	case kubermaticv1.UpdatingMasterClusterStatusPhase:
 		changedC, err = cc.syncUpdatingClusterMaster(cluster)
-	case api.DeletingClusterStatusPhase:
-		changedC, err = nil, nil
+	case kubermaticv1.DeletingClusterStatusPhase:
+		changedC, err = cc.syncDeletingCluster(cluster)
 	default:
 		return fmt.Errorf("invalid phase %q", cluster.Status.Phase)
 	}
@@ -223,13 +267,9 @@ func (cc *controller) syncCluster(key string) error {
 
 	// sync back to namespace if cc was changed
 	if changedC != nil {
-		ns, err = kprovider.MarshalCluster(cc.cps, changedC, ns)
+		err = cc.updateCluster(originalData, changedC)
 		if err != nil {
-			return fmt.Errorf("failed to marshal cluster %s: %v", changedC.Metadata.Name, err)
-		}
-		err = cc.updateNamespace(originalData, ns)
-		if err != nil {
-			return fmt.Errorf("failed to update changed namespace for cluster %q: %v", cluster.Metadata.Name, err)
+			return fmt.Errorf("failed to update changed cluster %q: %v", cluster.Name, err)
 		}
 	}
 
@@ -278,37 +318,36 @@ func (cc *controller) handleErr(err error, key interface{}) {
 	cc.queue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping node %q out of the queue: %v", key, err)
+	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
-func (cc *controller) syncInPhase(phase api.ClusterPhase) {
-	namespaces, err := cc.seedInformerGroup.NamespaceInformer.Lister().List(labels.Everything())
+func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
+	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
 	if err != nil {
-		glog.Errorf("Error listing namespaces: %v", err)
+		glog.Errorf("Error listing clusters: %v", err)
 	}
 
-	for _, ns := range namespaces {
-		if v, found := ns.Labels[kprovider.RoleLabelKey]; !found || v != kprovider.ClusterRoleLabel {
-			continue
-		}
-		if kprovider.ClusterPhase(ns) == phase {
-			cc.queue.Add(ns.Name)
+	for _, c := range clusters {
+		if c.Status.Phase == phase {
+			cc.queue.Add(c.Name)
 		}
 	}
 }
 
 func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
 	defer utilruntime.HandleCrash()
-	glog.Info("Starting cluster controller")
+	glog.Infof("Starting cluster controller with %d workers", workerCount)
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, workerPeriod, stopCh)
 	}
 
-	go wait.Until(func() { cc.syncInPhase(api.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(api.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(api.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(api.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.DeletingClusterStatusPhase) }, deletingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
+	go wait.Until(cc.timeoutWorker, timeoutSyncPeriod, stopCh)
 
 	<-stopCh
 

@@ -1,10 +1,15 @@
 package cluster
 
 import (
+	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestCreateServiceAccountKey(t *testing.T) {
@@ -54,19 +59,19 @@ func TestSSHKeyCert(t *testing.T) {
 }
 
 func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Status: api.ClusterStatus{
-			ApiserverSSHKey: api.SecretRSAKeys{},
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			ApiserverSSHKey: kubermaticv1.RSAKeys{},
 		},
 	}
 
-	c, err := cc.pendingCreateRootCA(c)
+	c, err := f.controller.pendingCreateRootCA(c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c, err = cc.pendingCreateApiserverSSHKeys(c)
+	c, err = f.controller.pendingCreateApiserverSSHKeys(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -81,22 +86,22 @@ func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Status: api.ClusterStatus{
-			ApiserverSSHKey: api.SecretRSAKeys{
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			ApiserverSSHKey: kubermaticv1.RSAKeys{
 				PublicKey:  []byte("PUB_KEY"),
 				PrivateKey: []byte("PRIV_KEY"),
 			},
 		},
 	}
 
-	c, err := cc.pendingCreateRootCA(c)
+	c, err := f.controller.pendingCreateRootCA(c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	changedC, err := cc.pendingCreateApiserverSSHKeys(c)
+	changedC, err := f.controller.pendingCreateApiserverSSHKeys(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -111,15 +116,174 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 
 }
 
+func TestPendingCreateCertificates(t *testing.T) {
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	tests := []struct {
+		name               string
+		cluster            *kubermaticv1.Cluster
+		err                error
+		createRootCA       bool
+		clusterReturnIsNil bool
+	}{
+		{
+			name:               "successful both",
+			err:                nil,
+			createRootCA:       true,
+			clusterReturnIsNil: false,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{},
+					KubeletCert:   kubermaticv1.KeyCert{},
+				},
+			},
+		},
+		{
+			name:               "successful partial apiserver",
+			err:                nil,
+			createRootCA:       true,
+			clusterReturnIsNil: false,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{},
+					KubeletCert:   kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
+				},
+			},
+		},
+		{
+			name:               "successful partial kubelet",
+			err:                nil,
+			createRootCA:       true,
+			clusterReturnIsNil: false,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
+					KubeletCert:   kubermaticv1.KeyCert{},
+				},
+			},
+		},
+		{
+			name:               "root-ca is missing",
+			err:                errors.New("failed to parse root-ca cert: data does not contain any valid RSA or ECDSA certificates"),
+			createRootCA:       false,
+			clusterReturnIsNil: true,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{},
+					KubeletCert:   kubermaticv1.KeyCert{},
+				},
+			},
+		},
+		{
+			name:               "external name is missing",
+			err:                errors.New("external name is undefined"),
+			clusterReturnIsNil: true,
+			createRootCA:       true,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{},
+					KubeletCert:   kubermaticv1.KeyCert{},
+				},
+			},
+		},
+		{
+			name:               "already exists",
+			err:                nil,
+			clusterReturnIsNil: true,
+			createRootCA:       true,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					ExternalName: "6vcgjl87w.us-central1.develop.kubermatic.io",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA:        kubermaticv1.KeyCert{},
+					ApiserverCert: kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
+					KubeletCert:   kubermaticv1.KeyCert{Key: []byte("foo"), Cert: []byte("bar")},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var err error
+			if test.createRootCA {
+				test.cluster, err = f.controller.pendingCreateRootCA(test.cluster)
+				if err != nil {
+					t.Errorf("could not create root ca")
+				}
+			}
+			c, err := f.controller.pendingCreateCertificates(test.cluster)
+			if !reflect.DeepEqual(test.err, err) {
+				t.Errorf("error was %q instead of %q", err, test.err)
+			}
+			if test.clusterReturnIsNil && c != nil {
+				t.Error("cluster was not nil")
+			}
+			if !test.clusterReturnIsNil && test.err == nil {
+				if c.Status.ApiserverCert.Cert == nil {
+					t.Error("apiserver cert is nil")
+				}
+				if c.Status.ApiserverCert.Key == nil {
+					t.Error("apiserver cert key is nil")
+				}
+				if c.Status.KubeletCert.Cert == nil {
+					t.Error("kubelet cert is nil")
+				}
+				if c.Status.KubeletCert.Key == nil {
+					t.Error("kubelet cert key is nil")
+				}
+			}
+
+		})
+	}
+}
+
 func TestPendingCreateRootCASuccessfully(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Status: api.ClusterStatus{
-			RootCA: api.SecretKeyCert{},
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{},
 		},
 	}
 
-	c, err := cc.pendingCreateRootCA(c)
+	c, err := f.controller.pendingCreateRootCA(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -134,17 +298,17 @@ func TestPendingCreateRootCASuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Status: api.ClusterStatus{
-			RootCA: api.SecretKeyCert{
-				Cert: api.Bytes([]byte("CERT")),
-				Key:  api.Bytes([]byte("KEY")),
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{
+				Cert: kubermaticv1.Bytes([]byte("CERT")),
+				Key:  kubermaticv1.Bytes([]byte("KEY")),
 			},
 		},
 	}
 
-	changedC, err := cc.pendingCreateRootCA(c)
+	changedC, err := f.controller.pendingCreateRootCA(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -159,12 +323,12 @@ func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
 }
 
 func TestPendingCreateTokensSuccessfully(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Address: &api.ClusterAddress{},
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Address: &kubermaticv1.ClusterAddress{},
 	}
 
-	changedC, err := cc.pendingCreateTokens(c)
+	changedC, err := f.controller.pendingCreateTokens(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -179,15 +343,15 @@ func TestPendingCreateTokensSuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateTokensAlreadyExists(t *testing.T) {
-	_, cc := newTestController()
-	c := &api.Cluster{
-		Address: &api.ClusterAddress{
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	c := &kubermaticv1.Cluster{
+		Address: &kubermaticv1.ClusterAddress{
 			KubeletToken: "KubeletToken",
 			AdminToken:   "AdminToken",
 		},
 	}
 
-	changedC, err := cc.pendingCreateTokens(c)
+	changedC, err := f.controller.pendingCreateTokens(c)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -199,5 +363,61 @@ func TestPendingCreateTokensAlreadyExists(t *testing.T) {
 	if c.Address.KubeletToken != "KubeletToken" || c.Address.AdminToken != "AdminToken" {
 		t.Fatalf("tokens were overwritten")
 	}
+}
 
+func TestPendingCreateServiceAccountKey(t *testing.T) {
+	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	tests := []struct {
+		name               string
+		cluster            *kubermaticv1.Cluster
+		err                error
+		clusterReturnIsNil bool
+	}{
+		{
+			name:               "successful",
+			err:                nil,
+			clusterReturnIsNil: false,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					ServiceAccountKey: nil,
+				},
+			},
+		},
+		{
+			name:               "already exists",
+			err:                nil,
+			clusterReturnIsNil: true,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					ServiceAccountKey: []byte("foo"),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var err error
+			c, err := f.controller.pendingCreateServiceAccountKey(test.cluster)
+			if !reflect.DeepEqual(test.err, err) {
+				t.Errorf("error was %q instead of %q", err, test.err)
+			}
+			if test.clusterReturnIsNil && c != nil {
+				t.Error("cluster was not nil")
+			}
+			if !test.clusterReturnIsNil && test.err == nil {
+				if c.Status.ServiceAccountKey == nil {
+					t.Error("service account key is nil")
+				}
+			}
+
+		})
+	}
 }

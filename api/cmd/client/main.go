@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
 
@@ -42,7 +42,7 @@ type client struct {
 	token          string
 	baseURL        string
 	kubeconfigFile string
-	cluster        *api.Cluster
+	cluster        *kubermaticv1.Cluster
 	client         *http.Client
 	seeds          []api.Datacenter
 }
@@ -62,22 +62,22 @@ func (c *client) setAuth(r *http.Request) {
 }
 
 type clusterRequest struct {
-	Cloud   *api.CloudSpec   `json:"cloud"`
-	Spec    *api.ClusterSpec `json:"spec"`
-	SSHKeys []string         `json:"ssh_keys"`
+	Cloud   *kubermaticv1.CloudSpec   `json:"cloud"`
+	Spec    *kubermaticv1.ClusterSpec `json:"spec"`
+	SSHKeys []string                  `json:"ssh_keys"`
 }
 
 func newClusterRequest() clusterRequest {
 	return clusterRequest{
-		Cloud: &api.CloudSpec{},
-		Spec: &api.ClusterSpec{
+		Cloud: &kubermaticv1.CloudSpec{},
+		Spec: &kubermaticv1.ClusterSpec{
 			HumanReadableName: "e2e-" + uuid.ShortUID(4),
 		},
 	}
 }
 
 func (c *clusterRequest) applyDO() {
-	c.Cloud.Digitalocean = &api.DigitaloceanCloudSpec{
+	c.Cloud.Digitalocean = &kubermaticv1.DigitaloceanCloudSpec{
 		Token: "a9c807e5951fb3a7d5541fe5ecbfafaaa2d1ea8a9f3804a837e21586ab9c198d",
 	}
 }
@@ -87,50 +87,50 @@ type nodeRequest struct {
 	Spec      api.NodeSpec `json:"spec"`
 }
 
-func newNodeRequest(cl api.Cluster) *nodeRequest {
+func newNodeRequest(cl kubermaticv1.Cluster) *nodeRequest {
 	return &nodeRequest{
 		Instances: instanceCount,
 		Spec:      api.NodeSpec{},
 	}
 }
 
-func (n *nodeRequest) applyDO(cl api.Cluster) {
+func (n *nodeRequest) applyDO(cl kubermaticv1.Cluster) {
 	n.Spec.Digitalocean = &api.DigitaloceanNodeSpec{
 		Size: "2gb",
 	}
 }
 
 // createNodes creates nodes
-func (c *client) createNodes(cluster api.Cluster) error {
+func (c *client) createNodes(cluster kubermaticv1.Cluster) error {
 	n := newNodeRequest(cluster)
 	n.applyDO(cluster)
-	return c.smartDo(fmt.Sprintf("/dc/%s/cluster/%s/node", cluster.Seed, cluster.Metadata.Name), n, nil)
+	return c.smartDo(fmt.Sprintf("cluster/%s/node", cluster.Name), n, nil)
 }
 
-func newSSHKey() *v1.UserSSHKey {
-	return &v1.UserSSHKey{
-		Spec: v1.SSHKeySpec{
+func newSSHKey() *kubermaticv1.UserSSHKey {
+	return &kubermaticv1.UserSSHKey{
+		Spec: kubermaticv1.SSHKeySpec{
 			Name:      "e2e-test-key-" + uuid.ShortUID(4),
 			PublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDhtMw2eqE8vNitm9XZ6TAE5dL+pk3rLRA/39Pko0RRB1h6isevlAbG560t9vwAu7w3F59O0zbmbnN/0C0qcaz1sxZfdAPGCUESppYsxL2t7lhoaCCoK5pHXB8Iv3e8wPyuuugfXP0tS4oXI72tnmj9SJYCF3lxh02HLl2v0RsRto0Ojsx7anP98IcVsZWoRk3Xfh0UIoup2bwZ8F1DCtNrshu5pYr1zRklM7ANIrqzjHYjVwu/GGTkuUccEoiU8833hIHSd74Itdvk7p5iHeLRhu02rFLxCtG5BUiagpxg3ErvYMFrjQHO2wLggSRbKtqdWCSeAPV9Rf4GFSLtsBaXfUqb2PimAIPqXfMucEmUDWumWSbyZDPjZ+p7fLEI+BLsnT9NyFHjLqToUmYDz+a/8j8wt6iFC08/5z2SPu/71kEJlOYBgOW8KxhCotw1S07qnlvfdc4BXViXxeu9iYwVlv/257LQvmKzyfVqwMTouHw+jbNDOrFz+ozBs8frKYwXDuWDwzPyBDzkrloU8WUso1Mgiw/4vGCNx5x5yk7oAfzGjYlh3Dyvw/2SulpMuxoYnRkIlVVW6QYueFS4v+be/Ch6HkxBuqNZ2M8Z8X2GODaHIfAIlfWc8+xJNceAcSKou8Vda/LCSwHITl15TL0iKoWvlIutuXKOQ4gST81YQw== luk.burchard@gmail.com",
 		},
 	}
 }
 
-func (c *client) createSSHKey(key *v1.UserSSHKey) error {
+func (c *client) createSSHKey(key *kubermaticv1.UserSSHKey) error {
 	return c.smartDo("/ssh-keys", key, key)
 }
 
 // waitNS waits for the Namespace to get created.
-func (c *client) waitNS(cl api.Cluster) error {
+func (c *client) waitNS(cl kubermaticv1.Cluster) error {
 	for {
-		var clusterState api.Cluster
-		err := c.smartDo("/dc/"+cl.Seed+"/cluster/"+cl.Metadata.Name, nil, &clusterState)
+		var clusterState kubermaticv1.Cluster
+		err := c.smartDo("/cluster/"+cl.Name, nil, &clusterState)
 		if err != nil {
 			return err
 		}
 
 		// Check if cluster NS is created and running
-		if clusterState.Address.URL != "" && clusterState.Status.Phase == api.RunningClusterStatusPhase {
+		if clusterState.Address.URL != "" && clusterState.Status.Phase == kubermaticv1.RunningClusterStatusPhase {
 			break
 		}
 		log.Println("Waiting for NS to get created ....")
@@ -141,9 +141,9 @@ func (c *client) waitNS(cl api.Cluster) error {
 }
 
 // deleteCluster deletes all clusters for a given user
-func (c *client) deleteCluster(cluster api.Cluster) error {
-	log.Printf("Deleting %q\n", cluster.Metadata.Name)
-	req, err := http.NewRequest("DELETE", c.baseURL+"/dc/"+cluster.Seed+"/cluster/"+cluster.Metadata.Name, nil)
+func (c *client) deleteCluster(cluster kubermaticv1.Cluster) error {
+	log.Printf("Deleting %q\n", cluster.Name)
+	req, err := http.NewRequest("DELETE", c.baseURL+"/cluster/"+cluster.Name, nil)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (c *client) up() error {
 	request.SSHKeys = []string{key.ObjectMeta.Name}
 	request.applyDO()
 
-	var cluster api.Cluster
+	var cluster kubermaticv1.Cluster
 	err = c.smartDo("/cluster", request, &cluster)
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func (c *client) up() error {
 }
 
 func (c *client) getKubeConfig() ([]byte, error) {
-	u := c.baseURL + "/dc/" + c.cluster.Seed + "/cluster/" + c.cluster.Metadata.Name + "/kubeconfig"
+	u := c.baseURL + "/cluster/" + c.cluster.Name + "/kubeconfig"
 	u += "?token=" + c.token
 
 	req, err := http.NewRequest("GET", u, nil)
@@ -263,7 +263,7 @@ func (c *client) smartDo(apiPath string, data interface{}, into interface{}) err
 func (c *client) purge() error {
 	waitAll := sync.WaitGroup{}
 	for _, s := range c.seeds {
-		var clusters []api.Cluster
+		var clusters []kubermaticv1.Cluster
 		err := c.smartDo("/dc/"+s.Metadata.Name+"/cluster", nil, &clusters)
 		if err != nil {
 			return err
@@ -273,7 +273,7 @@ func (c *client) purge() error {
 		done := make(chan struct{}, 5)
 		waitAll.Add(len(clusters))
 		for _, cluster := range clusters {
-			go func(cl api.Cluster) {
+			go func(cl kubermaticv1.Cluster) {
 				// Place ticket
 				done <- struct{}{}
 				err := c.deleteCluster(cl)

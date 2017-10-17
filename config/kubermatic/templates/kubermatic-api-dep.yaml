@@ -22,7 +22,6 @@ spec:
           '/kubermatic-api',
           '-v=4',
           '-logtostderr',
-          '-kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}',
           '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
           '-token-issuer=https://{{ .Values.KubermaticURL }}/dex',
           '-client-id={{ .Values.ClientID }}',
