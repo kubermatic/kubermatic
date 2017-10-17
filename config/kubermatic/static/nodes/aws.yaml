@@ -20,7 +20,7 @@ config:
     amazonec2-device-name: "/dev/xvda"
     amazonec2-instance-type: "{{ .NodeSpec.AWS.InstanceType }}"
     amazonec2-ami: "{{ default .NodeSpec.AWS.AMI .Datacenter.Spec.AWS.AMI }}"
-    amazonec2-tags: "KubernetesCluster,{{ .Cluster.Metadata.Name }}"
+    amazonec2-tags: "KubernetesCluster,{{ .Cluster.Name }}"
   provider: "amazonec2"
   provisioning:
     users:

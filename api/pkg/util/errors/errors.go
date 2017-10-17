@@ -58,7 +58,7 @@ func NewConflict(kind, dc, name string) error {
 
 // NewNotAuthorized creates a HTTP 403 error.
 func NewNotAuthorized() error {
-	return HTTPError{http.StatusForbidden, "not authorized"}
+	return HTTPError{http.StatusUnauthorized, "not authorized"}
 }
 
 // NewNotImplemented creates a HTTP 501 'not implemented' error.

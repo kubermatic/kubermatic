@@ -10,7 +10,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
-	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
+	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
 	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -78,7 +80,7 @@ func main() {
 	}()
 
 	for dc := range clientcmdConfig.Contexts {
-		// create kube client
+		// create kube kubeclient
 		clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
 		if err != nil {
 			glog.Fatal(err)
@@ -94,17 +96,20 @@ func main() {
 		if err != nil {
 			glog.Fatal(err)
 		}
-		client := kubernetes.NewForConfigOrDie(cfg)
-		crdClient := crdclient.NewForConfigOrDie(cfg)
+		kubeclient := kubernetes.NewForConfigOrDie(cfg)
+		seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
+		masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
 
-		informerGroup := seedinformer.New(client, crdClient)
+		seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
+		masterInformerGroup := masterinformer.New(masterCrdClient)
 
 		// start controller
 		cps := cloud.Providers(dcs)
 		ctrl, err := cluster.NewController(
 			dc,
-			client,
-			crdClient,
+			kubeclient,
+			seedCrdClient,
+			masterCrdClient,
 			cps,
 			versions,
 			updates,
@@ -113,7 +118,8 @@ func main() {
 			*workerName,
 			*apiserverExternalPort,
 			dcs,
-			informerGroup,
+			masterInformerGroup,
+			seedInformerGroup,
 		)
 		if err != nil {
 			glog.Fatal(err)
@@ -121,8 +127,9 @@ func main() {
 
 		go ctrl.Run(*workerCount, stop)
 
-		informerGroup.Run(stop)
-		cache.WaitForCacheSync(stop, informerGroup.HasSynced)
+		seedInformerGroup.Run(stop)
+		masterInformerGroup.Run(stop)
+		cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
 	}
 
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

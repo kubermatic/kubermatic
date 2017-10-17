@@ -3,18 +3,19 @@ package cluster
 import (
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (cc *controller) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Metadata.Name)
-	health := api.ClusterHealth{
-		ClusterHealthStatus: api.ClusterHealthStatus{},
+func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
+	ns := kubernetes.NamespaceName(c.Name)
+	health := kubermaticv1.ClusterHealth{
+		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
 	}
 
 	type depInfo struct {
@@ -46,11 +47,8 @@ func (cc *controller) clusterHealth(c *api.Cluster) (bool, *api.ClusterHealth, e
 	return health.AllHealthy(), &health, nil
 }
 
-func (cc *controller) syncLaunchingCluster(c *api.Cluster) (*api.Cluster, error) {
-	changedC, err := cc.checkTimeout(c)
-	if err != nil {
-		return nil, err
-	}
+func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var changedC *kubermaticv1.Cluster
 
 	// check that all deployments are healthy
 	allHealthy, health, err := cc.clusterHealth(c)
@@ -60,20 +58,20 @@ func (cc *controller) syncLaunchingCluster(c *api.Cluster) (*api.Cluster, error)
 
 	if health != nil && (c.Status.Health == nil ||
 		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
-		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Metadata.Name, c.Status.Health, health)
+		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Name, c.Status.Health, health)
 		c.Status.Health = health
-		c.Status.Health.LastTransitionTime = time.Now()
+		c.Status.Health.LastTransitionTime = metav1.Now()
 		changedC = c
 	}
 
 	if !allHealthy {
-		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Metadata.Name, c.Status.Health)
+		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Name, c.Status.Health)
 		return changedC, nil
 	}
 
 	// no error until now? We are running.
-	c.Status.Phase = api.RunningClusterStatusPhase
-	c.Status.LastTransitionTime = time.Now()
+	c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+	c.Status.LastTransitionTime = metav1.Now()
 
 	return c, nil
 }

@@ -35,6 +35,13 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
+			plural:  kubermaticv1.ClusterPlural,
+			kind:    reflect.TypeOf(kubermaticv1.Cluster{}).Name(),
+			group:   kubermaticv1.GroupName,
+			version: kubermaticv1.SchemeGroupVersion.Version,
+			scope:   apiextensionsv1beta1.ClusterScoped,
+		},
+		{
 			plural:  etcdoperatorv1beta2.EtcdClusterPlural,
 			kind:    reflect.TypeOf(etcdoperatorv1beta2.EtcdCluster{}).Name(),
 			group:   etcdoperatorv1beta2.GroupName,

@@ -1,21 +1,14 @@
 package digitalocean
 
 import (
-	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
-)
-
-const (
-	tokenAnnotationKey   = "token"
-	sshKeysAnnotationKey = "ssh-keys"
 )
 
 const (
@@ -33,42 +26,15 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) Initialize(cloud *api.CloudSpec, name string) (*api.CloudSpec, error) {
+func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return cloud, nil
 }
 
-func (do *digitalocean) CleanUp(*api.CloudSpec) error {
+func (do *digitalocean) CleanUp(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (do *digitalocean) MarshalCloudSpec(cloud *api.CloudSpec) (map[string]string, error) {
-	as := map[string]string{
-		tokenAnnotationKey:   cloud.Digitalocean.Token,
-		sshKeysAnnotationKey: strings.Join(cloud.Digitalocean.SSHKeys, ","),
-	}
-	return as, nil
-}
-
-func (do *digitalocean) UnmarshalCloudSpec(annotations map[string]string) (*api.CloudSpec, error) {
-	c := api.CloudSpec{
-		Digitalocean: &api.DigitaloceanCloudSpec{
-			SSHKeys: []string{},
-		},
-	}
-
-	var ok bool
-	if c.Digitalocean.Token, ok = annotations[tokenAnnotationKey]; !ok {
-		return nil, errors.New("no token found")
-	}
-
-	if s, ok := annotations[sshKeysAnnotationKey]; ok && s != "" {
-		c.Digitalocean.SSHKeys = strings.Split(s, ",")
-	}
-
-	return &c, nil
-}
-
-func (do *digitalocean) CreateNodeClass(c *api.Cluster, nSpec *api.NodeSpec, keys []v1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (do *digitalocean) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := do.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.Digitalocean == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)

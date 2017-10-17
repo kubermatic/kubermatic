@@ -14,23 +14,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
-func kubeconfigEndpoint(
-	kps map[string]provider.KubernetesProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(kubeconfigReq)
 
-		kp, found := kps[req.dc]
-		if !found {
-			return nil, errors.NewBadRequest("unknown kubernetes datacenter %q", req.dc)
-		}
-
 		c, err := kp.Cluster(user, req.cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewInDcNotFound("cluster", req.dc, req.cluster)
+				return nil, errors.NewNotFound("cluster", req.cluster)
 			}
 			return nil, err
 		}

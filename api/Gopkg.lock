@@ -4,14 +4,14 @@
 [[projects]]
   name = "github.com/Masterminds/semver"
   packages = ["."]
-  revision = "517734cc7d6470c0d07130e40fd40bdeb9bcd3fd"
-  version = "v1.3.1"
+  revision = "15d8430ab86497c5c0da827b748823945e1cf1e1"
+  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/Masterminds/sprig"
   packages = ["."]
-  revision = "4c164950cd0a8d3724ddb78982e2c56dc7f47112"
-  version = "v2.13.0"
+  revision = "efda631a76d70875162cdc25ffa0d0164bf69758"
+  version = "v2.14.0"
 
 [[projects]]
   name = "github.com/PuerkitoBio/purell"
@@ -34,20 +34,14 @@
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
   packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/ec2","service/iam","service/sts"]
-  revision = "b69f447375c7fa0047ebcdd8ae5d585d5aac2f71"
-  version = "v1.10.51"
+  revision = "6538303c6cc5d32ff3189285305b6357929d5c9b"
+  version = "v1.12.11"
 
 [[projects]]
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
-
-[[projects]]
-  name = "github.com/blang/semver"
-  packages = ["."]
-  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
-  version = "v3.5.1"
 
 [[projects]]
   name = "github.com/coreos/go-oidc"
@@ -73,6 +67,12 @@
   version = "1.0.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  revision = "944e07253867aacae43c04b2e6a239005443f33a"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -81,14 +81,14 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "20b96f641a5ea98f2f8619ff4f3e061cff4833bd"
-  version = "v1.28.2"
+  revision = "5b3e00af70a9484542169a976dcab8d03e601a17"
+  version = "v1.30.0"
 
 [[projects]]
   name = "github.com/go-kit/kit"
   packages = ["endpoint","log","transport/http"]
-  revision = "a9ca6725cbbea455e61c6bc8a1ed28e81eb3493b"
-  version = "v0.5.0"
+  revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
+  version = "v0.6.0"
 
 [[projects]]
   name = "github.com/go-logfmt/logfmt"
@@ -112,7 +112,7 @@
   branch = "master"
   name = "github.com/go-openapi/spec"
   packages = ["."]
-  revision = "7abd5745472fff5eb3685386d5fb8bf38683154d"
+  revision = "48c2a7185575f9103a5a3863eff950bb776899d2"
 
 [[projects]]
   branch = "master"
@@ -135,8 +135,8 @@
 [[projects]]
   name = "github.com/gogo/protobuf"
   packages = ["proto","sortkeys"]
-  revision = "100ba4e885062801d56799d78530b73b178a78f3"
-  version = "v0.4"
+  revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
+  version = "v0.5"
 
 [[projects]]
   branch = "master"
@@ -190,7 +190,7 @@
   branch = "master"
   name = "github.com/gregjones/httpcache"
   packages = [".","diskcache"]
-  revision = "316c5e0ff04e0ce21cfae9fbbb2ab39c7fc74e71"
+  revision = "c1f8028e62adb3d518b823a2f8e6a95c38bdd3aa"
 
 [[projects]]
   branch = "master"
@@ -213,20 +213,19 @@
 [[projects]]
   name = "github.com/imdario/mergo"
   packages = ["."]
-  revision = "3e95a51e0639b4cf372f2ccf74c86749d747fbdc"
-  version = "0.2.2"
+  revision = "7fe0c75c13abdee74b09fcacef5ea1c6bba6a874"
+  version = "0.2.4"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
-  revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
-  version = "0.2.2"
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
-  revision = "6ed27152e0428abfde127acb33b08b03a1e67cac"
-  version = "1.0.2"
+  revision = "6240e1e7983a85228f7fd9c3e1b6932d46ec58e2"
+  version = "1.0.3"
 
 [[projects]]
   branch = "master"
@@ -293,7 +292,7 @@
   branch = "master"
   name = "github.com/prometheus/common"
   packages = ["expfmt","internal/bitbucket.org/ww/goautoneg","model"]
-  revision = "2f17f4a9d485bf34b4bfaccc273805040e4f86c8"
+  revision = "1bab55dd05dbff384524a6a1c99006d9eb5f139b"
 
 [[projects]]
   branch = "master"
@@ -317,37 +316,37 @@
   branch = "master"
   name = "github.com/ugorji/go"
   packages = ["codec/codecgen"]
-  revision = "54210f4e076c57f351166f0ed60e67d3fca57a36"
+  revision = "f26fc641ec9d52a2161443cf9bb9fd53b9062a22"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","pbkdf2","scrypt","ssh","ssh/terminal"]
-  revision = "847319b7fc94cab682988f93da778204da164588"
+  revision = "9419663f5a44be8b34ca85f08abc5fe1be11f8a3"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","lex/httplex"]
-  revision = "0744d001aa8470aaa53df28d32e5ceeb8af9bd70"
+  revision = "1087133bc4af3073e18add999345c6ae75918503"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","internal"]
-  revision = "13449ad91cb26cb47661c1b080790392170385fd"
+  revision = "bb50c06baba3d0c76f9d125c0719093e315b5b44"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "429f518978ab01db8bb6f44b66785088e7fba58b"
+  revision = "686000749eaec0b8855b8eef5336cf63899fe51d"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable","width"]
-  revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
+  revision = "c01e4764d870b77f8abe5096ee19ad20d80e8075"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -377,7 +376,7 @@
   branch = "master"
   name = "k8s.io/api"
   packages = ["admissionregistration/v1alpha1","apps/v1beta1","apps/v1beta2","authentication/v1","authentication/v1beta1","authorization/v1","authorization/v1beta1","autoscaling/v1","autoscaling/v2beta1","batch/v1","batch/v1beta1","batch/v2alpha1","certificates/v1beta1","core/v1","extensions/v1beta1","networking/v1","policy/v1beta1","rbac/v1","rbac/v1alpha1","rbac/v1beta1","scheduling/v1alpha1","settings/v1alpha1","storage/v1","storage/v1beta1"]
-  revision = "81aa34336d28aadc3a8e8da7dfd9258c5157e5e4"
+  revision = "409c3b2393cd3359f275bd8b883b4d9c5aec41f6"
 
 [[projects]]
   branch = "release-1.8"
@@ -386,29 +385,27 @@
   revision = "89b2a556a65053a90552eaed26f810df4a266367"
 
 [[projects]]
-  branch = "master"
+  branch = "release-1.8"
   name = "k8s.io/apimachinery"
-  packages = ["pkg/api/equality","pkg/api/errors","pkg/api/meta","pkg/api/resource","pkg/apis/meta/internalversion","pkg/apis/meta/v1","pkg/apis/meta/v1/unstructured","pkg/apis/meta/v1alpha1","pkg/conversion","pkg/conversion/queryparams","pkg/conversion/unstructured","pkg/fields","pkg/labels","pkg/runtime","pkg/runtime/schema","pkg/runtime/serializer","pkg/runtime/serializer/json","pkg/runtime/serializer/protobuf","pkg/runtime/serializer/recognizer","pkg/runtime/serializer/streaming","pkg/runtime/serializer/versioning","pkg/selection","pkg/types","pkg/util/cache","pkg/util/clock","pkg/util/diff","pkg/util/errors","pkg/util/framer","pkg/util/intstr","pkg/util/json","pkg/util/mergepatch","pkg/util/net","pkg/util/rand","pkg/util/runtime","pkg/util/sets","pkg/util/strategicpatch","pkg/util/validation","pkg/util/validation/field","pkg/util/wait","pkg/util/yaml","pkg/version","pkg/watch","third_party/forked/golang/json","third_party/forked/golang/reflect"]
-  revision = "3b05bbfa0a45413bfa184edbf9af617e277962fb"
+  packages = ["pkg/api/equality","pkg/api/errors","pkg/api/meta","pkg/api/resource","pkg/apis/meta/internalversion","pkg/apis/meta/v1","pkg/apis/meta/v1/unstructured","pkg/apis/meta/v1alpha1","pkg/conversion","pkg/conversion/queryparams","pkg/conversion/unstructured","pkg/fields","pkg/labels","pkg/runtime","pkg/runtime/schema","pkg/runtime/serializer","pkg/runtime/serializer/json","pkg/runtime/serializer/protobuf","pkg/runtime/serializer/recognizer","pkg/runtime/serializer/streaming","pkg/runtime/serializer/versioning","pkg/selection","pkg/types","pkg/util/cache","pkg/util/clock","pkg/util/diff","pkg/util/errors","pkg/util/framer","pkg/util/intstr","pkg/util/json","pkg/util/jsonmergepatch","pkg/util/mergepatch","pkg/util/net","pkg/util/rand","pkg/util/runtime","pkg/util/sets","pkg/util/validation","pkg/util/validation/field","pkg/util/wait","pkg/util/yaml","pkg/version","pkg/watch","third_party/forked/golang/reflect"]
+  revision = "019ae5ada31de202164b118aee88ee2d14075c31"
 
 [[projects]]
   branch = "release-5.0"
   name = "k8s.io/client-go"
   packages = ["discovery","discovery/fake","informers","informers/admissionregistration","informers/admissionregistration/v1alpha1","informers/apps","informers/apps/v1beta1","informers/apps/v1beta2","informers/autoscaling","informers/autoscaling/v1","informers/autoscaling/v2beta1","informers/batch","informers/batch/v1","informers/batch/v1beta1","informers/batch/v2alpha1","informers/certificates","informers/certificates/v1beta1","informers/core","informers/core/v1","informers/extensions","informers/extensions/v1beta1","informers/internalinterfaces","informers/networking","informers/networking/v1","informers/policy","informers/policy/v1beta1","informers/rbac","informers/rbac/v1","informers/rbac/v1alpha1","informers/rbac/v1beta1","informers/scheduling","informers/scheduling/v1alpha1","informers/settings","informers/settings/v1alpha1","informers/storage","informers/storage/v1","informers/storage/v1beta1","kubernetes","kubernetes/fake","kubernetes/scheme","kubernetes/typed/admissionregistration/v1alpha1","kubernetes/typed/admissionregistration/v1alpha1/fake","kubernetes/typed/apps/v1beta1","kubernetes/typed/apps/v1beta1/fake","kubernetes/typed/apps/v1beta2","kubernetes/typed/apps/v1beta2/fake","kubernetes/typed/authentication/v1","kubernetes/typed/authentication/v1/fake","kubernetes/typed/authentication/v1beta1","kubernetes/typed/authentication/v1beta1/fake","kubernetes/typed/authorization/v1","kubernetes/typed/authorization/v1/fake","kubernetes/typed/authorization/v1beta1","kubernetes/typed/authorization/v1beta1/fake","kubernetes/typed/autoscaling/v1","kubernetes/typed/autoscaling/v1/fake","kubernetes/typed/autoscaling/v2beta1","kubernetes/typed/autoscaling/v2beta1/fake","kubernetes/typed/batch/v1","kubernetes/typed/batch/v1/fake","kubernetes/typed/batch/v1beta1","kubernetes/typed/batch/v1beta1/fake","kubernetes/typed/batch/v2alpha1","kubernetes/typed/batch/v2alpha1/fake","kubernetes/typed/certificates/v1beta1","kubernetes/typed/certificates/v1beta1/fake","kubernetes/typed/core/v1","kubernetes/typed/core/v1/fake","kubernetes/typed/extensions/v1beta1","kubernetes/typed/extensions/v1beta1/fake","kubernetes/typed/networking/v1","kubernetes/typed/networking/v1/fake","kubernetes/typed/policy/v1beta1","kubernetes/typed/policy/v1beta1/fake","kubernetes/typed/rbac/v1","kubernetes/typed/rbac/v1/fake","kubernetes/typed/rbac/v1alpha1","kubernetes/typed/rbac/v1alpha1/fake","kubernetes/typed/rbac/v1beta1","kubernetes/typed/rbac/v1beta1/fake","kubernetes/typed/scheduling/v1alpha1","kubernetes/typed/scheduling/v1alpha1/fake","kubernetes/typed/settings/v1alpha1","kubernetes/typed/settings/v1alpha1/fake","kubernetes/typed/storage/v1","kubernetes/typed/storage/v1/fake","kubernetes/typed/storage/v1beta1","kubernetes/typed/storage/v1beta1/fake","listers/admissionregistration/v1alpha1","listers/apps/v1beta1","listers/apps/v1beta2","listers/autoscaling/v1","listers/autoscaling/v2beta1","listers/batch/v1","listers/batch/v1beta1","listers/batch/v2alpha1","listers/certificates/v1beta1","listers/core/v1","listers/extensions/v1beta1","listers/networking/v1","listers/policy/v1beta1","listers/rbac/v1","listers/rbac/v1alpha1","listers/rbac/v1beta1","listers/scheduling/v1alpha1","listers/settings/v1alpha1","listers/storage/v1","listers/storage/v1beta1","pkg/version","rest","rest/watch","testing","tools/auth","tools/cache","tools/clientcmd","tools/clientcmd/api","tools/clientcmd/api/latest","tools/clientcmd/api/v1","tools/metrics","tools/pager","tools/reference","transport","util/cert","util/cert/triple","util/flowcontrol","util/homedir","util/integer","util/workqueue"]
-  revision = "afb4606c45bae77c4dc2c15291d4d7d6d792196c"
+  revision = "1fb83015bea362f028381bc0fcfb2a4e3eb7390b"
 
 [[projects]]
-  branch = "sttts-codegen-scripts"
+  branch = "release-1.8"
   name = "k8s.io/code-generator"
   packages = ["cmd/client-gen","cmd/client-gen/args","cmd/client-gen/generators","cmd/client-gen/generators/fake","cmd/client-gen/generators/scheme","cmd/client-gen/generators/util","cmd/client-gen/path","cmd/client-gen/types","cmd/deepcopy-gen"]
-  revision = "9255fdedbdf0ad39e210a6d6553b811f669cc11d"
-  source = "github.com/sttts/code-generator"
+  revision = "0c5165a97e055df28cca8bbcb8b7c8ae1019b3f1"
 
 [[projects]]
-  branch = "master"
   name = "k8s.io/gengo"
   packages = ["args","examples/deepcopy-gen/generators","examples/set-gen/sets","generator","namer","parser","types"]
-  revision = "75356185a9af8f0464efa792e2e9508d5b4be83c"
+  revision = "9e661e9308f078838e266cca1c673922088c0ea4"
 
 [[projects]]
   branch = "master"
@@ -419,6 +416,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f68ea512e9c3961eded25933c1bf327aac75b8272d877428663b56fc79b90540"
+  inputs-digest = "4c4dfdbb278407a3e8cae73c784679486a8a8046a95230bae6175444f2cdc8e2"
   solver-name = "gps-cdcl"
   solver-version = 1

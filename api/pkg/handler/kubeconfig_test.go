@@ -7,14 +7,33 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 func TestKubeConfigEndpoint(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/234jkh24234g/kubeconfig", nil)
+	t.Parallel()
+	req := httptest.NewRequest("GET", "/api/v1/cluster/foo/kubeconfig", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+		},
+		Address: &kubermaticv1.ClusterAddress{
+			AdminToken: "admintoken",
+			URL:        "https://foo.bar:8443",
+		},
+		Spec: kubermaticv1.ClusterSpec{},
+	}
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{cluster}, nil, nil)
 
 	e.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
@@ -25,34 +44,34 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		return
 	}
 
-	var c *v1.Config
+	var c *cmdv1.Config
 	if err := json.Unmarshal(b, &c); err != nil {
 		t.Error(res.Body.String())
 		t.Error(err)
 		return
 	}
 
-	if c.CurrentContext != "234jkh24234g" {
-		t.Errorf("Expected response to be the default fake cluster, got %+v", c)
+	if c.Clusters[0].Name != cluster.Name {
+		t.Error("kubeconfig Clusters[0].Name is wrong")
 	}
-}
 
-func TestKubeConfigEndpointNotExistingDC(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/dc/testtest/cluster/234jkh24234g/kubeconfig", nil)
+	if c.Clusters[0].Cluster.Server != cluster.Address.URL {
+		t.Error("kubeconfig Clusters[0].Cluster.Server is wrong")
+	}
 
-	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
+	if string(c.Clusters[0].Cluster.CertificateAuthorityData) != string(cluster.Status.RootCA.Cert) {
+		t.Error("kubeconfig Clusters[0].Cluster.CertificateAuthorityData is wrong")
+	}
 
-	e.ServeHTTP(res, req)
-	checkStatusCode(http.StatusBadRequest, res, t)
-}
+	if c.CurrentContext != cluster.Name {
+		t.Error("kubeconfig current-context is wrong")
+	}
 
-func TestKubeConfigEndpointNotExistingCluster(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/dc/fake-1/cluster/testtest/kubeconfig", nil)
+	if c.AuthInfos[0].Name != cluster.Name {
+		t.Error("kubeconfig AuthInfos[0].Name is wrong")
+	}
 
-	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(false))
-
-	e.ServeHTTP(res, req)
-	checkStatusCode(http.StatusNotFound, res, t)
+	if c.AuthInfos[0].AuthInfo.Token != cluster.Address.AdminToken {
+		t.Error("kubeconfig AuthInfos[0].AuthInfo.Token is wrong")
+	}
 }

@@ -9,9 +9,9 @@ import (
 	rbacv1beta1 "k8s.io/client-go/informers/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes"
 
-	crdClient "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	crdinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
+	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	crdinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/etcd/v1beta2"
 	appsv1beta1 "k8s.io/client-go/informers/apps/v1beta1"
 )
 
@@ -31,7 +31,7 @@ type Group struct {
 }
 
 // New returns a instance of Group
-func New(kubeClient kubernetes.Interface, crdClient crdClient.Interface) *Group {
+func New(kubeClient kubernetes.Interface, crdClient crdclient.Interface) *Group {
 	coreInformers := coreinformers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
 	g := Group{}
 	g.NamespaceInformer = coreInformers.Core().V1().Namespaces()
@@ -45,7 +45,7 @@ func New(kubeClient kubernetes.Interface, crdClient crdClient.Interface) *Group 
 	g.ClusterRoleBindingInformer = coreInformers.Rbac().V1beta1().ClusterRoleBindings()
 
 	crdInformers := crdinformers.NewSharedInformerFactory(crdClient, 5*time.Minute)
-	g.EtcdClusterInformer = crdInformers.Etcdoperator().V1beta2().EtcdClusters()
+	g.EtcdClusterInformer = crdInformers.Etcd().V1beta2().EtcdClusters()
 
 	return &g
 }
