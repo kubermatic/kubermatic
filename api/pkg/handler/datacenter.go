@@ -16,7 +16,6 @@ import (
 )
 
 func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
-	// TODO: Move out static function (range over dcs)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 
@@ -47,7 +46,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 					Revision: "1",
 				},
 				Spec: *spec,
-				Seed: false,
+				Seed: dc.IsSeed,
 			}
 			adcs = append(adcs, adc)
 		}
