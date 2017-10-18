@@ -31,7 +31,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "fullname" . }}
+  name: cluster-admin
 subjects:
 - name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
