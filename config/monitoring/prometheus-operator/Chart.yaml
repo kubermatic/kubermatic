@@ -1,0 +1,14 @@
+name: prometheus-operator
+version: 0.1.0
+description: Prometheus Operator for Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+  - prometheus
+  - prometheus-operator
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

@@ -1,0 +1,4 @@
+prometheusOperator:
+  image:
+    repository: quay.io/coreos/prometheus-operator
+    tag: v0.13.0

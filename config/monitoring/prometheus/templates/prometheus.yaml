@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  version: {{ .Values.prometheus.version }}
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      team: kubermatic
+  alerting:
+    alertmanagers:
+    - namespace: monitoring
+      name: alertmanager
+      port: web
+  ruleSelector:
+    matchLabels:
+      role: prometheus-rulefiles
+      prometheus: prometheus
+  resources:
+    requests:
+      memory: 1G
+

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-kubermatic-rules
+  namespace: monitoring
+  labels:
+    role: prometheus-rulefiles
+    prometheus: prometheus
+data:
+{{ (.Files.Glob "rules/*").AsConfig | indent 2 }}
