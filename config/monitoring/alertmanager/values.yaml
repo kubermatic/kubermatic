@@ -1,5 +1,7 @@
 alertmanager:
   version: v0.9.1
+  # admin:loodse123
+  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
   config:
     global:
       slack_api_url: https://
