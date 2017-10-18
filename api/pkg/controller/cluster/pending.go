@@ -426,7 +426,7 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
 	for s, gen := range ingress {
 		_, err := cc.seedInformerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
-		if err != nil && !errors.IsNotFound(err) {
+		if !errors.IsNotFound(err) {
 			return err
 		}
 
@@ -456,7 +456,7 @@ func (cc *controller) launchingCheckEtcdCluster(c *kubermaticv1.Cluster) error {
 	}
 
 	_, err = cc.seedInformerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(etcd.ObjectMeta.Name)
-	if err != nil && !errors.IsNotFound(err) {
+	if !errors.IsNotFound(err) {
 		return err
 	}
 
