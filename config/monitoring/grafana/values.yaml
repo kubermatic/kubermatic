@@ -1,6 +1,6 @@
 grafana:
-  user: YWRtaW4=
-  password: YWRtaW4=
+  user: YWRtaW4= # admin
+  password: bG9vZHNlMTIz # loodse123
   image:
     repository: grafana/grafana
     tag: 4.5.2
