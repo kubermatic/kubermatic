@@ -19,10 +19,6 @@ spec:
         env:
           - name: GF_AUTH_BASIC_ENABLED
             value: "false"
-          - name: GF_AUTH_ANONYMOUS_ENABLED
-            value: "true"
-          - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-            value: Admin
           - name: GF_SERVER_ROOT_URL
             value: /
           - name: GRAFANA_USER
