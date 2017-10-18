@@ -1,0 +1,14 @@
+name: node-exporter
+version: 0.1.0
+description: Prometheus Node Exporter for Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+  - prometheus
+  - node-exporter
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

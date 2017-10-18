@@ -1,0 +1,18 @@
+alertmanager:
+  version: v0.9.1
+  # admin:loodse123
+  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+  config:
+    global:
+      slack_api_url: https://
+    route:
+      receiver: 'default'
+      group_by: ['alertname', 'cluster']
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+    receivers:
+    - name: 'default'
+      slack_configs:
+      - channel: '#alerting'
+        send_resolved: true

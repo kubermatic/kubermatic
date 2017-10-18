@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+  - hosts:
+    - grafana.{{ .Values.KubermaticURL | trim }}
+  backend:
+    serviceName: grafana
+    servicePort: 3000
+  rules:
+  - host: grafana.{{ .Values.KubermaticURL | trim }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: grafana
+          servicePort: 3000

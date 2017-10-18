@@ -1,0 +1,14 @@
+name: grafana
+version: 0.1.0
+description: Grafana for Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+  - grafana
+  - prometheus
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com
