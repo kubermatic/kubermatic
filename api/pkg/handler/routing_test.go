@@ -41,6 +41,17 @@ func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versi
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 	return map[string]provider.DatacenterMeta{
+		"us-central1": {
+			Location: "us-central",
+			Country:  "US",
+			Private:  false,
+			IsSeed:   true,
+			Spec: provider.DatacenterSpec{
+				Digitalocean: &provider.DigitaloceanSpec{
+					Region: "ams2",
+				},
+			},
+		},
 		"private-do1": {
 			Location: "US ",
 			Seed:     "us-central1",
