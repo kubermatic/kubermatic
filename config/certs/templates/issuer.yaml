@@ -9,5 +9,7 @@ spec:
     # Email address used for ACME registration
     email: "info@loodse.com"
     # Name of a secret used to store the ACME account private key
-    privateKey: letsencrypt-acme-account-key
-    # ACME dns-01 provider configurations
+    privateKeySecretRef:
+      name: letsencrypt-acme-account-key
+    # Enable the HTTP-01 challenge provider
+    http01: {}

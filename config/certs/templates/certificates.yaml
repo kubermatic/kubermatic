@@ -8,9 +8,10 @@ spec:
   # The name of the Kubernetes secret resource to store the signed TLS keypair
   secretName: kubermatic-tls-certificates
   # The Issuer to use for this certificate
-  issuer: letsencrypt-prod
+  issuerRef:
+    name: letsencrypt-prod
   # A list of domains to include on the TLS certificate
-  domains:
+  dnsNames:
   {{- range $key, $val := .Values.Certificates.Domains }}
   - {{ $val }}
   {{- end }}
@@ -22,5 +23,5 @@ spec:
       {{- range $key, $val := .Values.Certificates.Domains }}
       - {{ $val }}
       {{- end }}
-      http-01:
+      http01:
         ingressClass: nginx
