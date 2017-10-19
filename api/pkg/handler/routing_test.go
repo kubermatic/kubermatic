@@ -96,13 +96,13 @@ const (
 
 func getUser(name string, admin bool) auth.User {
 	u := auth.User{
-		Name: name,
+		ID: name,
 		Roles: map[string]struct{}{
 			"user": {},
 		},
 	}
 	if admin {
-		u.Roles["admin"] = struct{}{}
+		u.Roles[auth.AdminRoleKey] = struct{}{}
 	}
 	return u
 }

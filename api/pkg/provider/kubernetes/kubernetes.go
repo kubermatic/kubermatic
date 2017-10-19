@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	usernameLabelKey = "user"
+	userLabelKey = "user"
 )
 
 type kubernetesProvider struct {
@@ -49,7 +49,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 
 	// sanity checks for a fresh cluster
 	switch {
-	case user.Name == "":
+	case user.ID == "":
 		return nil, errors.NewBadRequest("cluster user is required")
 	case spec.HumanReadableName == "":
 		return nil, errors.NewBadRequest("cluster humanReadableName is required")
@@ -73,7 +73,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 			Name: clusterName,
 			Labels: map[string]string{
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				usernameLabelKey:                user.Name,
+				userLabelKey:                    user.ID,
 			},
 		},
 		Spec: *spec,
@@ -82,6 +82,8 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 			Phase:              kubermaticv1.PendingClusterStatusPhase,
 			Seed:               dc.Seed,
 			NamespaceName:      NamespaceName(clusterName),
+			UserEmail:          user.Email,
+			UserName:           user.Name,
 		},
 		Address: &kubermaticv1.ClusterAddress{},
 	}
@@ -112,7 +114,7 @@ func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermati
 	if err != nil {
 		return nil, err
 	}
-	if c.Labels[usernameLabelKey] != user.Name && !user.IsAdmin() {
+	if c.Labels[userLabelKey] != user.ID && !user.IsAdmin() {
 		return nil, errors.NewNotAuthorized()
 	}
 	return c, nil
@@ -121,7 +123,7 @@ func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermati
 func (p *kubernetesProvider) Clusters(user auth.User) ([]*kubermaticv1.Cluster, error) {
 	filter := map[string]string{}
 	if !user.IsAdmin() {
-		filter[usernameLabelKey] = user.Name
+		filter[userLabelKey] = user.ID
 	}
 	selector := labels.SelectorFromSet(labels.Set(filter)).String()
 	options := metav1.ListOptions{LabelSelector: selector, FieldSelector: labels.Everything().String()}

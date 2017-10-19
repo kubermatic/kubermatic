@@ -139,6 +139,9 @@ type ClusterStatus struct {
 
 	// Conditions Represents the latest available observations of the cluster's current state.
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+
+	UserName  string `json:"userName"`
+	UserEmail string `json:"userEmail"`
 }
 
 type ClusterConditionType string

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	oidc "github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc"
 	"github.com/go-kit/kit/endpoint"
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
@@ -20,7 +20,7 @@ const (
 	// UserRoleKey is the role key for the default role "user"
 	UserRoleKey = "user"
 	// AdminRoleKey is the role key for the admin role
-	AdminRoleKey = "admin"
+	AdminRoleKey = "kubermatic:admin"
 )
 
 // Authenticator  is responsible for extracting and verifying
@@ -87,25 +87,24 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 			}
 
 			user := User{
-				Name:  claims["sub"].(string),
+				ID:    claims["sub"].(string),
+				Name:  claims["name"].(string),
+				Email: claims["email"].(string),
 				Roles: map[string]struct{}{},
 			}
 
-			if user.Name == "" {
+			if user.ID == "" {
 				glog.Error(err)
 				return nil, errors.NewNotAuthorized()
 			}
 
 			roles := []string{UserRoleKey}
-			md, ok := claims["app_metadata"].(map[string]interface{})
-			if ok && md != nil {
-				metaRoles, ok := md["roles"].([]interface{})
-				if ok && metaRoles != nil {
-					for _, r := range metaRoles {
-						s, ok := r.(string)
-						if ok && s != "" && s != UserRoleKey {
-							roles = append(roles, s)
-						}
+			claimGroups, ok := claims["groups"].([]interface{})
+			if ok && claimGroups != nil {
+				for _, g := range claimGroups {
+					s, ok := g.(string)
+					if ok && s != "" && s != UserRoleKey {
+						roles = append(roles, s)
 					}
 				}
 			}
@@ -114,7 +113,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				user.Roles[r] = struct{}{}
 			}
 
-			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.Name, strings.Join(roles, ","))
+			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.ID, strings.Join(roles, ","))
 			return next(context.WithValue(ctx, UserContextKey, user), request)
 		}
 	}
