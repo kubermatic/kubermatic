@@ -4,11 +4,12 @@ metadata:
   name: drone-tls
 spec:
   # The name of the Kubernetes secret resource to store the signed TLS keypair
-  secretName: drone-tls-certificates
+  secretName: drone-tls-certificate
   # The Issuer to use for this certificate
-  issuer: letsencrypt-prod
+  issuerRef:
+    name: letsencrypt-prod
   # A list of domains to include on the TLS certificate
-  domains:
+  dnsNames:
   - {{ .Values.ingressHost }}
   acme:
     # A pairing of domains to challenge types for the ACME provider to use
@@ -16,5 +17,5 @@ spec:
     config:
     - domains:
       - {{ .Values.ingressHost }}
-      http-01:
+      http01:
         ingressClass: nginx
