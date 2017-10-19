@@ -80,7 +80,7 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 				Revision: "1",
 			},
 			Spec: *spec,
-			Seed: false,
+			Seed: dc.IsSeed,
 		}, nil
 	}
 }
