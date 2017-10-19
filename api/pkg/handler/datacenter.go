@@ -29,8 +29,8 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 		for _, dcName := range keys {
 			dc := dcs[dcName]
 
-			if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
-				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.Name)
+			if dc.Private && !user.IsAdmin() {
+				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.ID)
 				continue
 			}
 
@@ -65,7 +65,7 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 
-		if _, isAdmin := user.Roles[auth.AdminRoleKey]; dc.Private && !isAdmin {
+		if dc.Private && !user.IsAdmin() {
 			return nil, errors.NewNotFound("datacenter", req.dc)
 		}
 

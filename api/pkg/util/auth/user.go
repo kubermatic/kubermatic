@@ -6,7 +6,9 @@ import (
 
 // User represents an API user that is used for authentication.
 type User struct {
+	ID    string
 	Name  string
+	Email string
 	Roles map[string]struct{}
 }
 
