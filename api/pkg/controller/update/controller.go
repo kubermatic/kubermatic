@@ -90,7 +90,7 @@ func (u *controller) Sync(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error
 		}
 
 		c.Status.MasterUpdatePhase = ""
-		c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+		c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 		c.Status.LastTransitionTime = metav1.Now()
 		return c, nil
 	}
