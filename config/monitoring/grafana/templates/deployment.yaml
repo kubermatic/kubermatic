@@ -17,20 +17,20 @@ spec:
       - name: grafana
         image: {{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}
         env:
-          - name: GF_AUTH_BASIC_ENABLED
-            value: "false"
-          - name: GF_SERVER_ROOT_URL
-            value: /
-          - name: GRAFANA_USER
-            valueFrom:
-              secretKeyRef:
-                name: grafana-credentials
-                key: user
-          - name: GRAFANA_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: grafana-credentials
-                key: password
+        - name: GF_AUTH_BASIC_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "false"
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: user
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: password
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/grafana-storage
