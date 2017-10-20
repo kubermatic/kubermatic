@@ -8,7 +8,7 @@ spec:
   tls:
   - hosts:
     - {{ .Values.ingressHost }}
-    secretName: drone-tls-certificates
+    secretName: drone-tls-certificate
   backend:
     serviceName: drone-server
     servicePort: 80
