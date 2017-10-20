@@ -15,7 +15,7 @@ versions:
     k8s-version: v1.7.0
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
-    kube-machine-version: 49af05e14469fc264dc0c1684f2009f0383d6371
+    kube-machine-version: v0.2.1
     addon-manager-version: v1.7.1
 - name: 1.7.7
   id: 1.7.7
@@ -32,5 +32,5 @@ versions:
     k8s-version: v1.7.7
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
-    kube-machine-version: 49af05e14469fc264dc0c1684f2009f0383d6371
+    kube-machine-version: v0.2.1
     addon-manager-version: v1.7.2
