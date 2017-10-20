@@ -57,17 +57,17 @@ type ClusterProvider interface {
 // DataProvider declares the set of methods for interacting with kubermatic resources
 type DataProvider interface {
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
-	AssignSSHKeysToCluster(user string, names []string, cluster string) error
+	AssignSSHKeysToCluster(user auth.User, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster
-	ClusterSSHKeys(user string, cluster string) ([]*kubermaticv1.UserSSHKey, error)
+	ClusterSSHKeys(user auth.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKeys returns the user ssh keys
-	SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, error)
+	SSHKeys(user auth.User) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKey returns a ssh key by name
-	SSHKey(user, name string) (*kubermaticv1.UserSSHKey, error)
+	SSHKey(user auth.User, name string) (*kubermaticv1.UserSSHKey, error)
 	// CreateSSHKey creates a ssh key
-	CreateSSHKey(name, owner, pubkey string) (*kubermaticv1.UserSSHKey, error)
+	CreateSSHKey(name, pubkey string, user auth.User) (*kubermaticv1.UserSSHKey, error)
 	// DeleteSSHKey deletes a ssh key
-	DeleteSSHKey(name, user string) error
+	DeleteSSHKey(name string, user auth.User) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

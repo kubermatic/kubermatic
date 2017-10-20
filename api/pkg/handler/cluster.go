@@ -40,7 +40,7 @@ func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider)
 			return nil, err
 		}
 
-		err = dp.AssignSSHKeysToCluster(user.ID, req.SSHKeys, c.Name)
+		err = dp.AssignSSHKeysToCluster(user, req.SSHKeys, c.Name)
 		if err != nil {
 			return nil, err
 		}

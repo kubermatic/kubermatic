@@ -37,7 +37,7 @@ func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
 
-		return dp.CreateSSHKey(req.Spec.Name, user.ID, req.Spec.PublicKey)
+		return dp.CreateSSHKey(req.Spec.Name, req.Spec.PublicKey, user)
 	}
 }
 
@@ -63,11 +63,11 @@ func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
 
-		k, err := dp.SSHKey(user.ID, req.metaName)
+		k, err := dp.SSHKey(user, req.metaName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load ssh key: %v", err)
 		}
-		return nil, dp.DeleteSSHKey(user.ID, k.Name)
+		return nil, dp.DeleteSSHKey(k.Name, user)
 	}
 }
 
@@ -82,6 +82,6 @@ func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error
 func listSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		return dp.SSHKeys(user.ID)
+		return dp.SSHKeys(user)
 	}
 }
