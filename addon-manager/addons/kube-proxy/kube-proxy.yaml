@@ -21,7 +21,8 @@ spec:
           "/hyperkube",
           "proxy",
           "--kubeconfig=/etc/kubernetes/kubeconfig",
-          "--v=2"
+          "--v=2",
+          "--cluster-cidr=172.25.0.0/16"
         ]
         securityContext:
           privileged: true
