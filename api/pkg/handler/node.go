@@ -107,7 +107,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		keys, err := dp.ClusterSSHKeys(user.ID, c.Name)
+		keys, err := dp.ClusterSSHKeys(user, c.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve ssh keys: %v", err)
 		}

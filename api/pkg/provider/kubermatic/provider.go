@@ -8,6 +8,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
+	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +26,7 @@ func New(client mastercrdclient.Interface) provider.DataProvider {
 	}
 }
 
-func (p *kubermaticProvider) assignSSHKeyToCluster(user, name, cluster string) error {
+func (p *kubermaticProvider) assignSSHKeyToCluster(user auth.User, name, cluster string) error {
 	k, err := p.SSHKey(user, name)
 	if err != nil {
 		return err
@@ -36,7 +37,7 @@ func (p *kubermaticProvider) assignSSHKeyToCluster(user, name, cluster string) e
 }
 
 // AssignSSHKeysToCluster assigns a ssh key to a cluster
-func (p *kubermaticProvider) AssignSSHKeysToCluster(user string, names []string, cluster string) error {
+func (p *kubermaticProvider) AssignSSHKeysToCluster(user auth.User, names []string, cluster string) error {
 	for _, name := range names {
 		if err := p.assignSSHKeyToCluster(user, name, cluster); err != nil {
 			return fmt.Errorf("failed to assign key %s to cluster: %v", name, err)
@@ -46,7 +47,7 @@ func (p *kubermaticProvider) AssignSSHKeysToCluster(user string, names []string,
 }
 
 // ClusterSSHKeys returns the ssh keys of a cluster
-func (p *kubermaticProvider) ClusterSSHKeys(user string, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
+func (p *kubermaticProvider) ClusterSSHKeys(user auth.User, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
 	keys, err := p.SSHKeys(user)
 	if err != nil {
 		return nil, err
@@ -62,11 +63,16 @@ func (p *kubermaticProvider) ClusterSSHKeys(user string, cluster string) ([]*kub
 }
 
 // SSHKeys returns the user ssh keys
-func (p *kubermaticProvider) SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, error) {
-	opts, err := ssh.UserListOptions(user)
-	if err != nil {
-		return nil, err
+func (p *kubermaticProvider) SSHKeys(user auth.User) ([]*kubermaticv1.UserSSHKey, error) {
+	opts := metav1.ListOptions{}
+	var err error
+	if !user.IsAdmin() {
+		opts, err = ssh.UserListOptions(user.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	glog.V(7).Infof("searching for users SSH keys with label selector: (%s)", opts.LabelSelector)
 	list, err := p.client.KubermaticV1().UserSSHKeies().List(opts)
 	if err != nil {
@@ -81,7 +87,7 @@ func (p *kubermaticProvider) SSHKeys(user string) ([]*kubermaticv1.UserSSHKey, e
 }
 
 // SSHKey returns a ssh key by name
-func (p *kubermaticProvider) SSHKey(user, name string) (*kubermaticv1.UserSSHKey, error) {
+func (p *kubermaticProvider) SSHKey(user auth.User, name string) (*kubermaticv1.UserSSHKey, error) {
 	k, err := p.client.KubermaticV1().UserSSHKeies().Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -89,17 +95,17 @@ func (p *kubermaticProvider) SSHKey(user, name string) (*kubermaticv1.UserSSHKey
 		}
 		return nil, err
 	}
-	if k.Spec.Owner == user {
+	if k.Spec.Owner == user.ID || user.IsAdmin() {
 		return k, nil
 	}
 	return nil, errors.NewNotFound("ssh-key", name)
 }
 
 // CreateSSHKey creates a ssh key
-func (p *kubermaticProvider) CreateSSHKey(name, owner, pubkey string) (*kubermaticv1.UserSSHKey, error) {
+func (p *kubermaticProvider) CreateSSHKey(name, pubkey string, user auth.User) (*kubermaticv1.UserSSHKey, error) {
 	key, err := ssh.NewUserSSHKeyBuilder().
 		SetName(name).
-		SetOwner(owner).
+		SetOwner(user.ID).
 		SetRawKey(pubkey).
 		Build()
 	if err != nil {
@@ -110,7 +116,7 @@ func (p *kubermaticProvider) CreateSSHKey(name, owner, pubkey string) (*kubermat
 }
 
 // DeleteSSHKey deletes a ssh key
-func (p *kubermaticProvider) DeleteSSHKey(user, name string) error {
+func (p *kubermaticProvider) DeleteSSHKey(name string, user auth.User) error {
 	k, err := p.SSHKey(user, name)
 	if err != nil {
 		return err

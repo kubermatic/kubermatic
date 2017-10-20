@@ -61,28 +61,38 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		name         string
 		wantKeyNames []string
 		username     string
+		admin        bool
 	}{
 		{
 			name:         "got user1 keys",
 			wantKeyNames: []string{"user1-1", "user1-2"},
 			username:     testUsername,
+			admin:        false,
 		},
 		{
 			name:         "got user2 keys",
 			wantKeyNames: []string{"user2-1"},
 			username:     "user2",
+			admin:        false,
 		},
 		{
 			name:         "got no keys",
 			wantKeyNames: []string{},
 			username:     "does-not-exist",
+			admin:        false,
+		},
+		{
+			name:         "admin got all keys",
+			wantKeyNames: []string{"user1-1", "user1-2", "user2-1"},
+			username:     testUsername,
+			admin:        true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v1/ssh-keys", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(test.username, false), keyList, nil, nil)
+			e := createTestEndpoint(getUser(test.username, test.admin), keyList, nil, nil)
 			e.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
