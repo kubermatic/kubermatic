@@ -26,8 +26,8 @@ data:
     staticClients:
 {{ toYaml .Values.OAuth.StaticClients | indent 7 }}
 {{- end }}
-    enablePasswordDB: true
 {{ if .Values.OAuth.StaticPassword }}
+    enablePasswordDB: true
     staticPasswords:
     {{- range $key, $val := .Values.OAuth.StaticPassword }}
     - email: {{$val.Email| quote}}
