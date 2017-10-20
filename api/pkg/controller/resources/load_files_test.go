@@ -30,8 +30,8 @@ func TestLoadServiceFile(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -63,8 +63,8 @@ func TestLoadPVCFile(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -129,8 +129,8 @@ func TestLoadDeploymentFile(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -184,8 +184,8 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
@@ -225,8 +225,8 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 			Name: "de-test-01",
 		},
 		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.us-central1.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.us-central1.dev.kubermatic.io",
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 			ExternalPort: 8443,
 		},
 	}
