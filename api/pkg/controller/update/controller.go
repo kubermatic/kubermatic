@@ -82,9 +82,9 @@ func (u *controller) Sync(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error
 		if !ready || err != nil {
 			return c, err
 		}
-		return u.updateDeployment(c, []string{v.ControllerDeploymentYaml, v.SchedulerDeploymentYaml}, v, kubermaticv1.ControllersMasterUpdatePhase)
+		return u.updateDeployment(c, []string{v.ControllerDeploymentYaml, v.SchedulerDeploymentYaml, v.AddonManagerDeploymentYaml, v.NodeControllerDeploymentYaml}, v, kubermaticv1.ControllersMasterUpdatePhase)
 	case kubermaticv1.ControllersMasterUpdatePhase:
-		c, ready, err := u.waitForDeployments(c, []string{"controller-manager", "scheduler"}, kubermaticv1.EtcdClusterUpdatePhase)
+		c, ready, err := u.waitForDeployments(c, []string{"controller-manager", "scheduler", "addon-manager", "node-controller"}, kubermaticv1.EtcdClusterUpdatePhase)
 		if !ready || err != nil {
 			return c, err
 		}
