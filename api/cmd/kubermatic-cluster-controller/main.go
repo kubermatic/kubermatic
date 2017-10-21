@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
@@ -18,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
+	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -99,6 +101,13 @@ func main() {
 		kubeclient := kubernetes.NewForConfigOrDie(cfg)
 		seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
 		masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
+
+		// Create crd's
+		extclient := apiextclient.NewForConfigOrDie(cfg)
+		err = crd.EnsureCustomResourceDefinitions(extclient)
+		if err != nil {
+			glog.Error(err)
+		}
 
 		seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
 		masterInformerGroup := masterinformer.New(masterCrdClient)
