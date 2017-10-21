@@ -16,12 +16,13 @@ spec:
       hostNetwork: true
       containers:
       - name: kube-proxy
-        image: "kubermatic/hyperkube-amd64:v1.7.0"
+        image: "kubermatic/hyperkube-amd64:v1.7.7"
         command: [
           "/hyperkube",
           "proxy",
           "--kubeconfig=/etc/kubernetes/kubeconfig",
-          "--v=2"
+          "--v=2",
+          "--cluster-cidr=172.25.0.0/16"
         ]
         securityContext:
           privileged: true
@@ -29,7 +30,13 @@ spec:
         - name: etc-kubernetes
           mountPath: /etc/kubernetes
           readOnly: true
+        - name: dbus
+          mountPath: /var/run/dbus/system_bus_socket
+          readOnly: false
       volumes:
       - name: etc-kubernetes
         hostPath:
           path: /etc/kubernetes
+      - name: dbus
+        hostPath:
+          path: /var/run/dbus/system_bus_socket
