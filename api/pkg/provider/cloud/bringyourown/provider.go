@@ -15,7 +15,7 @@ func NewCloudProvider() provider.CloudProvider {
 }
 
 func (b *bringyourown) Validate(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+	return nil
 }
 
 func (b *bringyourown) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {

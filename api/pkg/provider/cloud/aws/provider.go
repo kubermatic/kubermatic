@@ -31,8 +31,17 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-func (a *amazonEc2) Validate(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+func (a *amazonEc2) Validate(cloud *kubermaticv1.CloudSpec) error {
+	_, err := a.getEC2client(cloud)
+	if err != nil {
+		return err
+	}
+	_, err = a.getIAMClient(cloud)
+	if err != nil {
+		return err
+	}
+	// TODO(realfake): More to follow!?
+	return nil
 }
 
 // NewCloudProvider returns a new amazonEc2 provider.

@@ -23,7 +23,7 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 }
 
 func (b *baremetal) Validate(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+	return nil
 }
 
 func (b *baremetal) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
