@@ -22,18 +22,14 @@ const (
 	DefaultKubeletPort = 10250
 )
 
-// NodeProvider declares methods for creating/listing nodes.
-type NodeProvider interface {
-	Initialize(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
-	CleanUp(*kubermaticv1.CloudSpec) error
-	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
-	GetNodeClassName(*api.NodeSpec) string
-}
-
 // CloudProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudProvider interface {
-	NodeProvider
+	Initialize(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
+	Validate(*kubermaticv1.CloudSpec) error
+	CleanUp(*kubermaticv1.CloudSpec) error
+	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
+	GetNodeClassName(*api.NodeSpec) string
 }
 
 // ClusterProvider declares the set of methods for interacting with a Kubernetes cluster.

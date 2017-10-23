@@ -32,6 +32,10 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+func (os *openstack) Validate(*kubermaticv1.CloudSpec) error {
+	panic("implement me")
+}
+
 func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {

@@ -26,6 +26,10 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+func (do *digitalocean) Validate(*kubermaticv1.CloudSpec) error {
+	panic("implement me")
+}
+
 func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return cloud, nil
 }
