@@ -41,6 +41,9 @@ spec:
               containerPort: 8080
               protocol: TCP
           volumeMounts:
+            - name: node-files
+              mountPath: /opt/template/nodes
+              readOnly: true
             - name: kubeconfig
               mountPath: {{.Values.KubeConfigMountPath}}
               readOnly: true
@@ -60,6 +63,9 @@ spec:
       imagePullSecrets:
         - name: dockercfg
       volumes:
+        - name: node-files
+          secret:
+            secretName: node-files
         - name: kubeconfig
           secret:
             secretName: kubeconfig
