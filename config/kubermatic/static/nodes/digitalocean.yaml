@@ -31,48 +31,32 @@ config:
         owner: "root"
         content: |-
 {{ .Kubeconfig | indent 10 }}
-      - path: "/etc/systemd/system/download-kubelet.service"
+      - path: "/opt/bin/bootstrap.sh"
         permissions: "0640"
         owner: "root"
         content: |-
-          [Unit]
-          Description=Download Kubelet and requirements
-          After=network.target
+          #!/bin/bash
 
-          [Service]
-          Type=oneshot
-          ExecStartPre=/usr/bin/mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
-          ExecStartPre=/usr/bin/curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
-          ExecStartPre=/usr/bin/chmod +x /opt/bin/socat
-          ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
-          ExecStartPost=/usr/bin/chmod +x /opt/bin/kubelet
-          RemainAfterExit=true
+          set -xeuo pipefail
 
-          [Install]
-          WantedBy=multi-user.target
+          mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
 
-      - path: "/etc/systemd/system/setup-network-environment.service"
-        permissions: "0640"
-        owner: "root"
-        content: |-
-          [Unit]
-          Description=Setup Network Environment
-          Documentation=https://github.com/kelseyhightower/setup-network-environment
-          Requires=network.target
-          After=network.target
+          if [ ! -f /opt/bin/socat ]; then
+            curl -L -o /opt/bin/socat https://s3-eu-west-1.amazonaws.com/kubermatic/coreos/socat
+            chmod +x /opt/bin/socat
+          fi
 
-          [Service]
-          ExecStartPre=-/usr/bin/mkdir -p /opt/bin
-          ExecStartPre=/usr/bin/wget -N -P /opt/bin https://github.com/kelseyhightower/setup-network-environment/releases/download/v1.0.0/setup-network-environment
+          if [ ! -f /opt/bin/kubelet ]; then
+            curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
+            chmod +x /opt/bin/kubelet
+          fi
 
-          ExecStartPre=/usr/bin/chmod +x /opt/bin/setup-network-environment
-          ExecStart=/opt/bin/setup-network-environment
-          RemainAfterExit=yes
+          if [ ! -f /opt/bin/setup-network-environment ]; then
+            wget -N -P /opt/bin https://github.com/kelseyhightower/setup-network-environment/releases/download/v1.0.0/setup-network-environment
+            chmod +x /opt/bin/setup-network-environment
+          fi
 
-          Restart=on-failure
-          RestartSec=10
-          StartLimitInterval=60
-          StartLimitBurst=5
+          /opt/bin/setup-network-environment
 
       - path: "/etc/systemd/system/kubelet.service"
         permissions: "0640"
@@ -80,15 +64,18 @@ config:
         content: |-
           [Unit]
           Description=Kubelet
-          Requires=network.target setup-network-environment.service
-          After=network.target setup-network-environment.service
-          PartOf=network.target setup-network-environment.service
+          Requires=network.target
+          After=network.target
+          PartOf=network.target
 
           [Service]
           Restart=always
           RestartSec=10
+          StartLimitInterval=600
+          StartLimitBurst=50
           Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
           EnvironmentFile=/etc/network-environment
+          PreExecStart=/usr/bin/bash /opt/bin/bootstrap.sh
           ExecStart=/opt/bin/kubelet \
             --container-runtime=docker \
             --allow-privileged=true \
