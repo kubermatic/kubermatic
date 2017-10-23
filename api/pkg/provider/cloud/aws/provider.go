@@ -32,12 +32,21 @@ type amazonEc2 struct {
 }
 
 func (a *amazonEc2) Validate(cloud *kubermaticv1.CloudSpec) error {
-	_, err := a.getEC2client(cloud)
+	dc, ok := a.dcs[cloud.DatacenterName]
+	if !ok {
+		return fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+	}
+	client, err := a.getEC2client(cloud)
 	if err != nil {
 		return err
 	}
 	_, err = a.getIAMClient(cloud)
-	// TODO(realfake): More to follow!?
+
+	vpc, err := getVpc(cloud.AWS.VPCID, client)
+	if err != nil {
+		return err
+	}
+	_, err = getSubnet(cloud.AWS.SubnetID, client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
 	return err
 }
 
