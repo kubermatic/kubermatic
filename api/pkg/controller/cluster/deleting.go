@@ -56,7 +56,8 @@ func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return nil, fmt.Errorf("failed to delete nodes: %v", err)
 	}
 
-	return nil, nil
+	//Returning the cluster prevents the controller to proceed to the next step...
+	return c, nil
 }
 
 func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -96,7 +97,8 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kuberm
 		return nil, cc.client.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
 	}
 
-	return nil, nil
+	//Returning the cluster prevents the controller to proceed to the next step...
+	return c, nil
 }
 
 // deletingClusterResource deletes the cluster resource. Needed since Finalizers are broken in 1.7.
