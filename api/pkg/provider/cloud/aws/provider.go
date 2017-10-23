@@ -37,11 +37,8 @@ func (a *amazonEc2) Validate(cloud *kubermaticv1.CloudSpec) error {
 		return err
 	}
 	_, err = a.getIAMClient(cloud)
-	if err != nil {
-		return err
-	}
 	// TODO(realfake): More to follow!?
-	return nil
+	return err
 }
 
 // NewCloudProvider returns a new amazonEc2 provider.
