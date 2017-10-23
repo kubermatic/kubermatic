@@ -1,14 +1,17 @@
 package digitalocean
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/digitalocean/godo"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -26,8 +29,10 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) Validate(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
+	client := godo.NewClient(oauth2.NewClient(context.Background(), token(cloud.Digitalocean.Token)))
+	_, _, err := client.Account.Get(context.Background())
+	return err
 }
 
 func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
@@ -64,4 +69,12 @@ func (do *digitalocean) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.Node
 
 func (do *digitalocean) GetNodeClassName(nSpec *api.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s-%s-%s", "coreos", nSpec.Digitalocean.Size, uuid.ShortUID(5))
+}
+
+var _ oauth2.TokenSource = (*token)(nil)
+
+type token string
+
+func (t token) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{AccessToken: string(t)}, nil
 }

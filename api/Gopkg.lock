@@ -55,6 +55,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/digitalocean/godo"
+  packages = [".","context"]
+  revision = "77ea48de76a7b31b234d854f15d003c68bb2fb90"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [".","log"]
   revision = "5741799b275a3c4a5a9623a993576d7545cf7b5c"
@@ -155,6 +161,12 @@
   name = "github.com/google/btree"
   packages = ["."]
   revision = "316fb6d3f031ae8f4d457c6c5186b9e3ded70435"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
@@ -320,6 +332,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/tent/http-link-go"
+  packages = ["."]
+  revision = "ac974c61c2f990f4115b119354b5e0b47550e888"
+
+[[projects]]
+  branch = "master"
   name = "github.com/ugorji/go"
   packages = ["codec/codecgen"]
   revision = "f26fc641ec9d52a2161443cf9bb9fd53b9062a22"
@@ -422,6 +440,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2cc16c2d3e20ffaf7b2617ecb6a4dfe414176ef3358c3044bbf5e160cfc8d24f"
+  inputs-digest = "68de71e44031225cd4cc0080e66ea5f081f6d5d285789f0dd03cc94a5f053832"
   solver-name = "gps-cdcl"
   solver-version = 1
