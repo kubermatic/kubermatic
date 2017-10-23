@@ -24,6 +24,9 @@ const (
 type ClusterPhase string
 
 const (
+	// NoneClusterStatusPhase is an not assigned cluster phase, the controller will assign a default.
+	NoneClusterStatusPhase ClusterPhase = ""
+
 	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
 	UnknownClusterStatusPhase ClusterPhase = "Unknown"
 
