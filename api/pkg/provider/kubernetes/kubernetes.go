@@ -94,12 +94,10 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(c.Spec.Cloud, clusterName)
+	err = prov.Validate(c.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("could not initialize cloud provider: %v", err)
+		return nil, fmt.Errorf("could not validate cloud provider: %v", err)
 	}
-
-	c.Spec.Cloud = cloud
 
 	c, err = p.crdClient.KubermaticV1().Clusters().Create(c)
 	if err != nil {
