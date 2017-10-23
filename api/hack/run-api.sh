@@ -13,7 +13,7 @@ cd ${GOPATH}/src/github.com/kubermatic/kubermatic/api
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -worker-name="$(uname -n | tr -cd '[:alnum:]')" \
-  -token-issuer=https://develop.kubermatic.io/dex \
+  -token-issuer=https://dev.kubermatic.io/dex \
   -prometheus-address=127.0.0.1:18085 \
   -address=127.0.0.1:8080 \
   -client-id=kubermatic \
