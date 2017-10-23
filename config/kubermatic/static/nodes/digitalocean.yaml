@@ -10,6 +10,8 @@ config:
     digitalocean-size: "{{ .NodeSpec.Digitalocean.Size }}"
     digitalocean-image: "coreos-stable"
     digitalocean-ssh-user: "core"
+    digitalocean-private-networking: "true"
+    digitalocean-tags: "kubermatic,kubermatic-cluster-{{ .Cluster.Name }}"
   provider: "digitalocean"
   provisioning:
     users:
