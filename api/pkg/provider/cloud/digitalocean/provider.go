@@ -30,7 +30,9 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
-	client := godo.NewClient(oauth2.NewClient(context.Background(), token(cloud.Digitalocean.Token)))
+	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cloud.Digitalocean.Token})
+	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+
 	_, _, err := client.Account.Get(context.Background())
 	return err
 }
@@ -69,12 +71,4 @@ func (do *digitalocean) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.Node
 
 func (do *digitalocean) GetNodeClassName(nSpec *api.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s-%s-%s", "coreos", nSpec.Digitalocean.Size, uuid.ShortUID(5))
-}
-
-var _ oauth2.TokenSource = (*token)(nil)
-
-type token string
-
-func (t token) Token() (*oauth2.Token, error) {
-	return &oauth2.Token{AccessToken: string(t)}, nil
 }
