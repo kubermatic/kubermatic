@@ -131,13 +131,8 @@ func (r Routing) Register(mux *mux.Router) {
 
 	mux.
 		Methods(http.MethodPut).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.authenticator.IsAuthenticated(r.performClusterUpgrade()))
-
-	mux.
-		Methods(http.MethodPost).
-		Path("/api/v1/ext/{dc}/keys").
-		Handler(r.authenticator.IsAuthenticated(r.getAWSKeyHandler()))
+		Path("/api/v1/cluster/{cluster}/upgrade").
+		Handler(r.performClusterUpgrade())
 
 	mux.
 		Methods(http.MethodGet).
