@@ -1,6 +1,7 @@
 package baremetal
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
@@ -22,7 +23,11 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	}
 }
 
-func (b *baremetal) Validate(*kubermaticv1.CloudSpec) error {
+func (b *baremetal) Validate(cloud *kubermaticv1.CloudSpec) error {
+	_, ok := b.datacenters[cloud.DatacenterName]
+	if !ok {
+		return fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+	}
 	return nil
 }
 
