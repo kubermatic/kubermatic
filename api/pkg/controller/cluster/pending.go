@@ -28,16 +28,6 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
-	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
-	if err != nil {
-		return nil, err
-	}
-
-	cloud, err := prov.Initialize(c.Spec.Cloud, c.ClusterName)
-	if err != nil {
-		return nil, err
-	}
-	c.Spec.Cloud = cloud
 
 	//Every function with the prefix 'pending' *WILL* modify the cluster struct and cause an update
 	//Every function with the prefix 'launching' *WONT* modify the cluster struct and should not cause an update

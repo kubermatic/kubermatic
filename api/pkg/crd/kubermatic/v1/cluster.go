@@ -27,6 +27,9 @@ const (
 	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
 	UnknownClusterStatusPhase ClusterPhase = "Unknown"
 
+	// CreatingClusterStatusPhase means that the cluster will be verified and the cloud resources will be created.
+	CreatingClusterStatusPhase ClusterPhase = "Creating"
+
 	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
 	PendingClusterStatusPhase ClusterPhase = "Pending"
 
