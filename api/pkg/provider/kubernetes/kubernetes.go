@@ -79,7 +79,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
 			LastTransitionTime: metav1.Now(),
-			Phase:              kubermaticv1.ValidatingClusterStatusPhase,
+			Phase:              kubermaticv1.PendingClusterStatusPhase,
 			Seed:               dc.Seed,
 			NamespaceName:      NamespaceName(clusterName),
 			UserEmail:          user.Email,
