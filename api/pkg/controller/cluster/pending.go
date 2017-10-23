@@ -132,20 +132,29 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 	}
 
 	// This part should only be set once
-	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
+	changedC, err = cc.createCloudProvider(c)
 	if err != nil {
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(c.Spec.Cloud, c.ClusterName)
+	changedC.Status.LastTransitionTime = metav1.Now()
+	changedC.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+	return changedC, nil
+}
+
+func (cc *controller) createCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	changedC := cluster.DeepCopy()
+	_, prov, err := provider.ClusterCloudProvider(cc.cps, changedC)
 	if err != nil {
 		return nil, err
 	}
-	c.Spec.Cloud = cloud
 
-	c.Status.LastTransitionTime = metav1.Now()
-	c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
-	return c, nil
+	cloud, err := prov.Initialize(changedC.Spec.Cloud, changedC.ClusterName)
+	if err != nil {
+		return nil, err
+	}
+	changedC.Spec.Cloud = cloud
+	return changedC, nil
 }
 
 // launchingCreateNamespace will create the cluster namespace

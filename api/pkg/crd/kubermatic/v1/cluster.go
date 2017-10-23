@@ -27,10 +27,7 @@ const (
 	// NoneClusterStatusPhase is an not assigned cluster phase, the controller will assign a default.
 	NoneClusterStatusPhase ClusterPhase = ""
 
-	// UnknownClusterStatusPhase means that the phase label is missing on the Namespace.
-	UnknownClusterStatusPhase ClusterPhase = "Unknown"
-
-	// ValidatingClusterStatusPhase means that the cluster will be verified and the cloud resources will be created.
+	// ValidatingClusterStatusPhase means that the cluster will be verified.
 	ValidatingClusterStatusPhase ClusterPhase = "Validating"
 
 	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
@@ -45,17 +42,11 @@ const (
 	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
 	RunningClusterStatusPhase ClusterPhase = "Running"
 
-	// PausedClusterStatusPhase means that the cluster was paused after the idle time.
-	PausedClusterStatusPhase ClusterPhase = "Paused"
-
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 
 	// UpdatingMasterClusterStatusPhase means that the cluster controller is updating the master components of the cluster.
 	UpdatingMasterClusterStatusPhase ClusterPhase = "Updatingmaster"
-
-	// UpdatingNodesClusterStatusPhase means that the cluster controller is updating the nodes of the cluster.
-	UpdatingNodesClusterStatusPhase ClusterPhase = "Updatingnodes"
 )
 
 // MasterUpdatePhase represents the current master update phase.
