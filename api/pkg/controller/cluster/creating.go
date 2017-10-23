@@ -17,12 +17,6 @@ func (cc *controller) syncValidatingCluster(c *kubermaticv1.Cluster) (*kubermati
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(c.Spec.Cloud, c.ClusterName)
-	if err != nil {
-		return nil, err
-	}
-	c.Spec.Cloud = cloud
-
 	c.Status.Phase = kubermaticv1.PendingClusterStatusPhase
 	c.Status.LastTransitionTime = metav1.Now()
 

@@ -131,6 +131,18 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 		return nil, err
 	}
 
+	// This part should only be set once
+	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
+	if err != nil {
+		return nil, err
+	}
+
+	cloud, err := prov.Initialize(c.Spec.Cloud, c.ClusterName)
+	if err != nil {
+		return nil, err
+	}
+	c.Spec.Cloud = cloud
+
 	c.Status.LastTransitionTime = metav1.Now()
 	c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 	return c, nil
