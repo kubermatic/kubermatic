@@ -32,11 +32,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
-	client, err := os.getClient(cloud)
-	if err != nil {
-		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
-	}
+func (os *openstack) validateSecurityGroup(client *gophercloud.ProviderClient, cloud *kubermaticv1.CloudSpec) error {
 	if cloud.Openstack.SecurityGroups != "" {
 		//User specified a security group
 		securityGroups := strings.Split(cloud.Openstack.SecurityGroups, ",")
@@ -47,9 +43,18 @@ func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
 		if err != nil {
 			return err
 		}
-		cloud.Openstack.SecurityGroups = strings.Join(securityGroups, ",")
 	}
 	return nil
+}
+
+func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
+	client, err := os.getClient(cloud)
+	if err != nil {
+		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
+	}
+	err = os.validateSecurityGroup(client, cloud)
+
+	return err
 }
 
 func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
