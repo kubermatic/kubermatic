@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (cc *controller) syncCreatingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *controller) syncValidatingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
 		return nil, err
