@@ -68,7 +68,11 @@ config:
           ExecStartPre=/usr/bin/chmod +x /opt/bin/setup-network-environment
           ExecStart=/opt/bin/setup-network-environment
           RemainAfterExit=yes
-          Type=oneshot
+
+          Restart=on-failure
+          RestartSec=10
+          StartLimitInterval=60
+          StartLimitBurst=5
 
       - path: "/etc/systemd/system/kubelet.service"
         permissions: "0640"
@@ -78,6 +82,7 @@ config:
           Description=Kubelet
           Requires=network.target setup-network-environment.service
           After=network.target setup-network-environment.service
+          PartOf=network.target setup-network-environment.service
 
           [Service]
           Restart=always
