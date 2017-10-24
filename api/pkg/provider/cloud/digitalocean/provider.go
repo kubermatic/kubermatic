@@ -37,7 +37,7 @@ func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cloud.Digitalocean.Token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 
-	_, _, err := client.Droplets.Get(context.Background(), 1)
+	_, _, err := client.Regions.List(context.Background(), nil)
 	return err
 }
 
