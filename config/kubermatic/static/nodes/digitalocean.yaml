@@ -22,8 +22,6 @@ config:
           - "{{ .Cluster.Status.ApiserverSSHKey.PublicKey | apiBytesToString }} apiserver@{{ .Cluster.Address.ExternalName }}"
         sudo: true
     commands:
-      - "sudo systemctl start download-kubelet.service"
-      - "sudo systemctl start setup-network-environment.service"
       - "sudo systemctl enable kubelet && sudo systemctl start kubelet"
     files:
       - path: "/etc/kubernetes/bootstrap.kubeconfig"
@@ -46,13 +44,15 @@ config:
             chmod +x /opt/bin/socat
           fi
 
-          if [ ! -f /opt/bin/kubelet ]; then
-            curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
+          if [ ! -f /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} ]; then
+            curl -L -o /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
+            cp /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} /opt/bin/kubelet
             chmod +x /opt/bin/kubelet
           fi
 
-          if [ ! -f /opt/bin/setup-network-environment ]; then
-            wget -N -P /opt/bin https://github.com/kelseyhightower/setup-network-environment/releases/download/v1.0.0/setup-network-environment
+          if [ ! -f /opt/bin/setup-network-environment.v1.0.0 ]; then
+            curl -L -o /opt/bin/setup-network-environment.v1.0.0 https://github.com/kelseyhightower/setup-network-environment/releases/download/v1.0.0/setup-network-environment
+            cp /opt/bin/setup-network-environment.v1.0.0 /opt/bin/setup-network-environment
             chmod +x /opt/bin/setup-network-environment
           fi
 
@@ -66,7 +66,6 @@ config:
           Description=Kubelet
           Requires=network.target
           After=network.target
-          PartOf=network.target
 
           [Service]
           Restart=always
