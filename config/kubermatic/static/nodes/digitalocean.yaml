@@ -22,6 +22,7 @@ config:
           - "{{ .Cluster.Status.ApiserverSSHKey.PublicKey | apiBytesToString }} apiserver@{{ .Cluster.Address.ExternalName }}"
         sudo: true
     commands:
+      - "sudo /usr/bin/bash /opt/bin/bootstrap.sh"
       - "sudo systemctl enable kubelet && sudo systemctl start kubelet"
     files:
       - path: "/etc/kubernetes/bootstrap.kubeconfig"
@@ -30,7 +31,7 @@ config:
         content: |-
 {{ .Kubeconfig | indent 10 }}
       - path: "/opt/bin/bootstrap.sh"
-        permissions: "0640"
+        permissions: "0750"
         owner: "root"
         content: |-
           #!/bin/bash
@@ -74,7 +75,7 @@ config:
           StartLimitBurst=50
           Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
           EnvironmentFile=/etc/network-environment
-          PreExecStart=/usr/bin/bash /opt/bin/bootstrap.sh
+          ExecStartPre=/usr/bin/bash /opt/bin/bootstrap.sh
           ExecStart=/opt/bin/kubelet \
             --container-runtime=docker \
             --allow-privileged=true \
