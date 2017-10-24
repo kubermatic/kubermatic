@@ -115,14 +115,14 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 	}
 
 	err = cc.launchingCheckConfigMaps(c)
-	if err != nil || changedC != nil {
-		return changedC, err
+	if err != nil {
+		return nil, err
 	}
 
 	// check that all deployments are available
 	err = cc.launchingCheckDeployments(c)
-	if err != nil || changedC != nil {
-		return changedC, err
+	if err != nil {
+		return nil, err
 	}
 
 	// check that all deployments are available
@@ -137,9 +137,9 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 		return nil, err
 	}
 
-	changedC.Status.LastTransitionTime = metav1.Now()
-	changedC.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
-	return changedC, nil
+	c.Status.LastTransitionTime = metav1.Now()
+	c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+	return c, nil
 }
 
 func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
