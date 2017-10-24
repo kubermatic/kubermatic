@@ -48,7 +48,9 @@ spec:
             - name: datacenters
               mountPath: {{.Values.DatacentersMountPath}}
               readOnly: true
-            # @TODO Remove with https://github.com/kubermatic/kubermatic/api/issues/220
+            - name: node-files
+              mountPath: /opt/template/nodes
+              readOnly: true
             - name: master-files
               mountPath: {{.Values.MasterResourcesMountPath}}
               readOnly: true
@@ -68,7 +70,9 @@ spec:
         - name: datacenter-secrets
           secret:
             secretName: datacenter-secrets
-        # @TODO Remove with https://github.com/kubermatic/kubermatic/api/issues/220
+        - name: node-files
+          secret:
+            secretName: node-files
         - name: master-files
           secret:
             secretName: master-files
