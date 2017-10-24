@@ -23,7 +23,7 @@ func (p *fakeCloudProvider) Validate(*kubermaticv1.CloudSpec) error {
 }
 
 func (p *fakeCloudProvider) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return cloud, nil
+	return nil, nil
 }
 
 func (p *fakeCloudProvider) CleanUp(*kubermaticv1.CloudSpec) error {

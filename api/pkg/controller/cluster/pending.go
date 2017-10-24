@@ -33,8 +33,8 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 	//Every function with the prefix 'launching' *WONT* modify the cluster struct and should not cause an update
 	// Setup required infrastructure at cloud provider
 	changedC, err = cc.pendingInitializeCloudProvider(c)
-	if err != nil {
-		return nil, err
+	if err != nil || changedC != nil {
+		return changedC, err
 	}
 
 	// Add finalizers
@@ -152,8 +152,11 @@ func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Clust
 	if err != nil {
 		return nil, err
 	}
-	cluster.Spec.Cloud = cloud
-	return cluster, nil
+	if cloud != nil {
+		cluster.Spec.Cloud = cloud
+		return cluster, nil
+	}
+	return nil, nil
 }
 
 // launchingCreateNamespace will create the cluster namespace

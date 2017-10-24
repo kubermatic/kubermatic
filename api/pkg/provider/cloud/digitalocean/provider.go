@@ -42,7 +42,7 @@ func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
 }
 
 func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return cloud, nil
+	return nil, nil
 }
 
 func (do *digitalocean) CleanUp(*kubermaticv1.CloudSpec) error {

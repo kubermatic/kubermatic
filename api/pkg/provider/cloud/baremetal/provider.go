@@ -32,7 +32,7 @@ func (b *baremetal) Validate(cloud *kubermaticv1.CloudSpec) error {
 }
 
 func (b *baremetal) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return cloud, nil
+	return nil, nil
 }
 
 func (b *baremetal) CleanUp(*kubermaticv1.CloudSpec) error {
