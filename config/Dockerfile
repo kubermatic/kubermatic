@@ -15,8 +15,12 @@ COPY efk-logging /kubermatic/efk-logging
 COPY k8sniff /kubermatic/k8sniff
 COPY kubermatic /kubermatic/kubermatic
 COPY nginx-ingress-controller /kubermatic/nginx-ingress-controller
-COPY prometheus /kubermatic/prometheus
+COPY oauth /kubermatic/oauth
 COPY storage /kubermatic/storage
+COPY drone /kubermatic/drone
+COPY cert-manager /kubermatic/cert-manager
+COPY certs /kubermatic/certs
+COPY monitoring /kubermatic/monitotring
 
 COPY deploy_helm_charts.sh /kubermatic/
 COPY kubermatic-values.yaml /kubermatic/

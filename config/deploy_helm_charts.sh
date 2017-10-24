@@ -7,6 +7,10 @@ helm upgrade -i k8sniff -f kubermatic-values.yaml -f config/values.yaml k8sniff/
 helm upgrade -i kubermatic -f kubermatic-values.yaml -f config/values.yaml kubermatic/
 helm upgrade -i storage -f kubermatic-values.yaml -f config/values.yaml storage/
 helm upgrade -i nginx-ingress-controller -f kubermatic-values.yaml -f config/values.yaml nginx-ingress-controller/
+helm upgrade -i oauth -f kubermatic-values.yaml -f config/values.yaml oauth/
+helm upgrade -i drone -f kubermatic-values.yaml -f config/values.yaml drone/
+helm upgrade -i certs -f kubermatic-values.yaml -f config/values.yaml certs/
+helm upgrade -i cert-manager -f kubermatic-values.yaml -f config/values.yaml cert-manager/
 
 # Logging
 if grep -q '\bLogging\b' config/values.yaml; then
