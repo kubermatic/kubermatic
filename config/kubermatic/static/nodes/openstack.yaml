@@ -29,7 +29,6 @@ config:
         sudo: true
     commands:
       - "sudo apt-get update && sudo apt-get install -y socat"
-      - "sudo systemctl start download-kubelet.service"
       - "sudo systemctl enable kubelet && sudo systemctl start kubelet"
     files:
       - path: "/etc/kubernetes/bootstrap.kubeconfig"
@@ -37,23 +36,21 @@ config:
         owner: "root"
         content: |-
 {{ .Kubeconfig | indent 10 }}
-      - path: "/etc/systemd/system/download-kubelet.service"
+      - path: "/opt/bin/bootstrap.sh"
         permissions: "0640"
         owner: "root"
         content: |-
-          [Unit]
-          Description=Download Kubelet and requirements
-          After=network.target
+          #!/bin/bash
 
-          [Service]
-          Type=oneshot
-          ExecStartPre=/bin/mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
-          ExecStart=/usr/bin/curl -L -o /opt/bin/kubelet https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
-          ExecStartPost=/bin/chmod +x /opt/bin/kubelet
-          RemainAfterExit=true
+          set -xeuo pipefail
 
-          [Install]
-          WantedBy=multi-user.target
+          mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
+
+          if [ ! -f /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} ]; then
+            curl -L -o /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
+            cp /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} /opt/bin/kubelet
+            chmod +x /opt/bin/kubelet
+          fi
 
       - path: "/etc/systemd/system/kubelet.service"
         permissions: "0640"
@@ -67,7 +64,10 @@ config:
           [Service]
           Restart=always
           RestartSec=10
+          StartLimitInterval=600
+          StartLimitBurst=50
           Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
+          PreExecStart=/usr/bin/bash /opt/bin/bootstrap.sh
           ExecStart=/opt/bin/kubelet \
             --container-runtime=docker \
             --allow-privileged=true \

@@ -88,5 +88,6 @@ config:
             --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
             --require-kubeconfig \
             --cert-dir=/etc/kubernetes/
+
           [Install]
           WantedBy=multi-user.target
