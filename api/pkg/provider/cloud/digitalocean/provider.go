@@ -30,10 +30,6 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
-	dc, found := do.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.Digitalocean == nil {
-		return fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
-	}
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cloud.Digitalocean.Token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 

@@ -16,6 +16,11 @@ func (cc *controller) syncValidatingCluster(c *kubermaticv1.Cluster) (*kubermati
 		return nil, err
 	}
 
+	err = cc.validatingCheckDatacenter(c)
+	if err != nil {
+		return nil, err
+	}
+
 	c.Status.Phase = kubermaticv1.PendingClusterStatusPhase
 	c.Status.LastTransitionTime = metav1.Now()
 
@@ -31,6 +36,15 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 	err = prov.Validate(c.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("cloud provider data could not be validated successfully: %v", err)
+	}
+
+	return nil
+}
+
+func (cc *controller) validatingCheckDatacenter(c *kubermaticv1.Cluster) error {
+	_, ok := cc.dcs[c.Spec.Cloud.DatacenterName]
+	if !ok {
+		return fmt.Errorf("could not find datacenter %s", c.Spec.Cloud.DatacenterName)
 	}
 
 	return nil
