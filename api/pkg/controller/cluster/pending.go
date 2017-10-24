@@ -31,6 +31,12 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 
 	//Every function with the prefix 'pending' *WILL* modify the cluster struct and cause an update
 	//Every function with the prefix 'launching' *WONT* modify the cluster struct and should not cause an update
+	// Setup required infrastructure at cloud provider
+	changedC, err = cc.pendingInitializeCloudProvider(c)
+	if err != nil {
+		return nil, err
+	}
+
 	// Add finalizers
 	changedC, err = cc.pendingRegisterFinalizers(c)
 	if err != nil || changedC != nil {
@@ -131,30 +137,23 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kub
 		return nil, err
 	}
 
-	// This part should only be set once
-	changedC, err = cc.createCloudProvider(c)
-	if err != nil {
-		return nil, err
-	}
-
 	changedC.Status.LastTransitionTime = metav1.Now()
 	changedC.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 	return changedC, nil
 }
 
-func (cc *controller) createCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	changedC := cluster.DeepCopy()
-	_, prov, err := provider.ClusterCloudProvider(cc.cps, changedC)
+func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	_, prov, err := provider.ClusterCloudProvider(cc.cps, cluster)
 	if err != nil {
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(changedC.Spec.Cloud, changedC.ClusterName)
+	cloud, err := prov.Initialize(cluster.Spec.Cloud, cluster.Name)
 	if err != nil {
 		return nil, err
 	}
-	changedC.Spec.Cloud = cloud
-	return changedC, nil
+	cluster.Spec.Cloud = cloud
+	return cluster, nil
 }
 
 // launchingCreateNamespace will create the cluster namespace
