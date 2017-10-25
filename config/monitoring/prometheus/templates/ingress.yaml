@@ -25,4 +25,4 @@ spec:
       - path: /
         backend:
           serviceName: prometheus
-          servicePort: http
+          servicePort: web

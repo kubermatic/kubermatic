@@ -25,4 +25,4 @@ spec:
       - path: /
         backend:
           serviceName: alertmanager
-          servicePort: http
+          servicePort: web
