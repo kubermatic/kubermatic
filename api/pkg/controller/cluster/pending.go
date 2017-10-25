@@ -24,116 +24,101 @@ const (
 	namespaceDeletionFinalizer    = "kubermatic.io/delete-ns"
 )
 
-func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (changedC *kubermaticv1.Cluster, err error) {
+func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if c.Spec.MasterVersion == "" {
 		c.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
 
 	//Every function with the prefix 'pending' *WILL* modify the cluster struct and cause an update
 	//Every function with the prefix 'launching' *WONT* modify the cluster struct and should not cause an update
+
 	// Setup required infrastructure at cloud provider
-	changedC, err = cc.pendingInitializeCloudProvider(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingInitializeCloudProvider(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Add finalizers
-	changedC, err = cc.pendingRegisterFinalizers(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingRegisterFinalizers(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Set the hostname & url
-	changedC, err = cc.pendingCreateAddresses(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateAddresses(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Generate the kubelet and admin token
-	changedC, err = cc.pendingCreateTokens(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateTokens(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Create the root ca
-	changedC, err = cc.pendingCreateRootCA(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateRootCA(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Create the certificates
-	changedC, err = cc.pendingCreateCertificates(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateCertificates(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Create the service account key
-	changedC, err = cc.pendingCreateServiceAccountKey(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateServiceAccountKey(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Create the ssh keys for the apiserver
-	changedC, err = cc.pendingCreateApiserverSSHKeys(c)
-	if err != nil || changedC != nil {
+	if changedC, err := cc.pendingCreateApiserverSSHKeys(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
 	// Create the namespace
-	err = cc.launchingCreateNamespace(c)
-	if err != nil {
+	if err := cc.launchingCreateNamespace(c); err != nil {
 		return nil, err
 	}
 
 	// Create secret for user tokens
-	err = cc.launchingCheckTokenUsers(c)
-	if err != nil {
+	if err := cc.launchingCheckTokenUsers(c); err != nil {
 		return nil, err
 	}
 
 	// check that all service accounts are created
-	err = cc.launchingCheckServiceAccounts(c)
-	if err != nil {
+	if err := cc.launchingCheckServiceAccounts(c); err != nil {
 		return nil, err
 	}
 
 	// check that all role bindings are created
-	err = cc.launchingCheckClusterRoleBindings(c)
-	if err != nil {
+	if err := cc.launchingCheckClusterRoleBindings(c); err != nil {
 		return nil, err
 	}
 
 	// check that all services are available
-	err = cc.launchingCheckServices(c)
-	if err != nil {
+	if err := cc.launchingCheckServices(c); err != nil {
 		return nil, err
 	}
 
-	err = cc.launchingCheckSecrets(c)
-	if err != nil {
+	// check that all secrets are available
+	if err := cc.launchingCheckSecrets(c); err != nil {
 		return nil, err
 	}
 
-	err = cc.launchingCheckConfigMaps(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// check that all deployments are available
-	err = cc.launchingCheckDeployments(c)
-	if err != nil {
+	// check that all configmaps are available
+	if err := cc.launchingCheckConfigMaps(c); err != nil {
 		return nil, err
 	}
 
 	// check that all deployments are available
-	err = cc.launchingCheckIngress(c)
-	if err != nil {
+	if err := cc.launchingCheckDeployments(c); err != nil {
 		return nil, err
 	}
 
 	// check that all deployments are available
-	err = cc.launchingCheckEtcdCluster(c)
-	if err != nil {
+	if err := cc.launchingCheckIngress(c); err != nil {
+		return nil, err
+	}
+
+	// check that the etcd-cluster cr is available
+	if err := cc.launchingCheckEtcdCluster(c); err != nil {
 		return nil, err
 	}
 

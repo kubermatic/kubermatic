@@ -52,9 +52,7 @@ func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
-	err = os.validateSecurityGroup(client, cloud)
-
-	return err
+	return os.validateSecurityGroup(client, cloud)
 }
 
 func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {

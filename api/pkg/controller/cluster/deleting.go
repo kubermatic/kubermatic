@@ -14,17 +14,16 @@ import (
 // syncDeletingCluster is the function which handles clusters in the deleting phase.
 // It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
 // If this function does not return a pointer to a cluster or a error, the cluster is deleted.
-func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (changedC *kubermaticv1.Cluster, err error) {
-	changedC, err = cc.deletingNodeCleanup(c)
-	if err != nil || changedC != nil {
+func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if changedC, err := cc.deletingNodeCleanup(c); err != nil || changedC != nil {
 		return changedC, err
 	}
-	changedC, err = cc.deletingCloudProviderCleanup(c)
-	if err != nil || changedC != nil {
+
+	if changedC, err := cc.deletingCloudProviderCleanup(c); err != nil || changedC != nil {
 		return changedC, err
 	}
-	changedC, err = cc.deletingNamespaceCleanup(c)
-	if err != nil || changedC != nil {
+
+	if changedC, err := cc.deletingNamespaceCleanup(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 

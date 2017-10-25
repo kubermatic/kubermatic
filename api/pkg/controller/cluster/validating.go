@@ -10,14 +10,12 @@ import (
 )
 
 func (cc *controller) syncValidatingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	//Should be called last due to increased number of external api usage on some cloud providers
-	err := cc.validatingCheckCloudSpec(c)
-	if err != nil {
+	if err := cc.validatingCheckDatacenter(c); err != nil {
 		return nil, err
 	}
 
-	err = cc.validatingCheckDatacenter(c)
-	if err != nil {
+	//Should be called last due to increased number of external api usage on some cloud providers
+	if err := cc.validatingCheckCloudSpec(c); err != nil {
 		return nil, err
 	}
 
@@ -33,8 +31,7 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	err = prov.Validate(c.Spec.Cloud)
-	if err != nil {
+	if err = prov.Validate(c.Spec.Cloud); err != nil {
 		return fmt.Errorf("cloud provider data could not be validated successfully: %v", err)
 	}
 
@@ -42,8 +39,7 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *controller) validatingCheckDatacenter(c *kubermaticv1.Cluster) error {
-	_, ok := cc.dcs[c.Spec.Cloud.DatacenterName]
-	if !ok {
+	if _, ok := cc.dcs[c.Spec.Cloud.DatacenterName]; !ok {
 		return fmt.Errorf("could not find datacenter %s", c.Spec.Cloud.DatacenterName)
 	}
 
