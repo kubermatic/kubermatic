@@ -8,9 +8,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: http
+  - name: web
     port: 9093
     protocol: TCP
-    targetPort: http
+    targetPort: 9093
   selector:
     app: alertmanager
