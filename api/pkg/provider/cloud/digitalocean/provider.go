@@ -1,14 +1,17 @@
 package digitalocean
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/digitalocean/godo"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -26,8 +29,16 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
+	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cloud.Digitalocean.Token})
+	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+
+	_, _, err := client.Regions.List(context.Background(), nil)
+	return err
+}
+
 func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return cloud, nil
+	return nil, nil
 }
 
 func (do *digitalocean) CleanUp(*kubermaticv1.CloudSpec) error {

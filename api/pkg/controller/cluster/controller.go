@@ -248,6 +248,11 @@ func (cc *controller) syncCluster(key string) error {
 	// state machine
 	var changedC *kubermaticv1.Cluster
 	switch cluster.Status.Phase {
+	case kubermaticv1.NoneClusterStatusPhase:
+		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
+		changedC = cluster
+	case kubermaticv1.ValidatingClusterStatusPhase:
+		changedC, err = cc.syncValidatingCluster(cluster)
 	case kubermaticv1.PendingClusterStatusPhase:
 		changedC, err = cc.syncPendingCluster(cluster)
 	case kubermaticv1.LaunchingClusterStatusPhase:

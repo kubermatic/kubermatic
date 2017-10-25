@@ -31,6 +31,31 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
+func (a *amazonEc2) Validate(cloud *kubermaticv1.CloudSpec) error {
+	client, err := a.getEC2client(cloud)
+	if err != nil {
+		return err
+	}
+
+	if _, err = a.getIAMClient(cloud); err != nil {
+		return err
+	}
+
+	if cloud.AWS.VPCID != "" {
+		if _, err = getVPCByID(cloud.AWS.VPCID, client); err != nil {
+			return err
+		}
+	}
+
+	if cloud.AWS.SubnetID != "" {
+		if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // NewCloudProvider returns a new amazonEc2 provider.
 func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
 	return &amazonEc2{
@@ -74,26 +99,22 @@ func getRouteTable(vpc *ec2.Vpc, client *ec2.EC2) (*ec2.RouteTable, error) {
 	return out.RouteTables[0], nil
 }
 
-func getVpc(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
-	if vpcID != "" {
-		vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
-			Filters: []*ec2.Filter{
-				{Name: aws.String("vpc-id"), Values: []*string{aws.String(vpcID)}},
-			},
-		})
+func getVPCByID(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
+	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
+		Filters: []*ec2.Filter{
+			{Name: aws.String("vpc-id"), Values: []*string{aws.String(vpcID)}},
+		},
+	})
 
-		if err != nil {
-			return nil, fmt.Errorf("failed to list vpc's: %v", err)
-		}
-
-		if len(vpcOut.Vpcs) != 1 {
-			return nil, fmt.Errorf("unable to find specified vpc with id %q", vpcID)
-		}
-
-		return vpcOut.Vpcs[0], nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to list vpc's: %v", err)
 	}
 
-	return getDefaultVpc(client)
+	if len(vpcOut.Vpcs) != 1 {
+		return nil, fmt.Errorf("unable to find specified vpc with id %q", vpcID)
+	}
+
+	return vpcOut.Vpcs[0], nil
 }
 
 func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
@@ -118,28 +139,24 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 	return sOut.Subnets[0], nil
 }
 
-func getSubnet(subnetID string, client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
-	if subnetID != "" {
-		sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
-			Filters: []*ec2.Filter{
-				{
-					Name: aws.String("subnet-id"), Values: []*string{aws.String(subnetID)},
-				},
+func getSubnetByID(subnetID string, client *ec2.EC2) (*ec2.Subnet, error) {
+	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("subnet-id"), Values: []*string{aws.String(subnetID)},
 			},
-		})
+		},
+	})
 
-		if err != nil {
-			return nil, fmt.Errorf("failed to list subnets: %v", err)
-		}
-
-		if len(sOut.Subnets) != 1 {
-			return nil, fmt.Errorf("unable to find subnet with id %q", subnetID)
-		}
-
-		return sOut.Subnets[0], nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to list subnets: %v", err)
 	}
 
-	return getDefaultSubnet(client, vpc, zone)
+	if len(sOut.Subnets) != 1 {
+		return nil, fmt.Errorf("unable to find subnet with id %q", subnetID)
+	}
+
+	return sOut.Subnets[0], nil
 }
 
 func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error) {
@@ -268,29 +285,53 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 	return rOut.Role, cipOut.InstanceProfile, nil
 }
 
+func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
+	return cloud.AWS.SubnetID != "" &&
+		cloud.AWS.VPCID != "" &&
+		cloud.AWS.AvailabilityZone != "" &&
+		cloud.AWS.InstanceProfileName != "" &&
+		cloud.AWS.RoleName != "" &&
+		cloud.AWS.SecurityGroup != "" &&
+		cloud.AWS.RouteTableID != ""
+}
+
 func (a *amazonEc2) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+	if isInitialized(cloud) {
+		return nil, nil
+	}
+
 	client, err := a.getEC2client(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
 	}
 
-	vpc, err := getVpc(cloud.AWS.VPCID, client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get default vpc: %v", err)
+	var vpc *ec2.Vpc
+	if cloud.AWS.VPCID == "" {
+		vpc, err = getDefaultVpc(client)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default vpc: %v", err)
+		}
+		cloud.AWS.VPCID = *vpc.VpcId
+	} else {
+		vpc, err = getVPCByID(cloud.AWS.VPCID, client)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get vpc: %v", err)
+		}
 	}
-	cloud.AWS.VPCID = *vpc.VpcId
 
 	dc, ok := a.dcs[cloud.DatacenterName]
 	if !ok {
 		return nil, fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
 	}
 
-	subnet, err := getSubnet(cloud.AWS.SubnetID, client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get default subnet: %v", err)
+	if cloud.AWS.SubnetID == "" {
+		subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default subnet: %v", err)
+		}
+		cloud.AWS.SubnetID = *subnet.SubnetId
+		cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 	}
-	cloud.AWS.SubnetID = *subnet.SubnetId
-	cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 
 	if cloud.AWS.SecurityGroup == "" {
 		securityGroup, err := addSecurityGroup(client, vpc, name)

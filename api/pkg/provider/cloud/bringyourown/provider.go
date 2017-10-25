@@ -14,8 +14,12 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
+func (b *bringyourown) Validate(*kubermaticv1.CloudSpec) error {
+	return nil
+}
+
 func (b *bringyourown) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return cloud, nil
+	return nil, nil
 }
 
 func (b *bringyourown) CleanUp(*kubermaticv1.CloudSpec) error {

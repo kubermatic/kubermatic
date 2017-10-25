@@ -79,7 +79,6 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
 			LastTransitionTime: metav1.Now(),
-			Phase:              kubermaticv1.PendingClusterStatusPhase,
 			Seed:               dc.Seed,
 			NamespaceName:      NamespaceName(clusterName),
 			UserEmail:          user.Email,
@@ -94,12 +93,9 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(c.Spec.Cloud, clusterName)
-	if err != nil {
-		return nil, fmt.Errorf("could not initialize cloud provider: %v", err)
+	if err = prov.Validate(c.Spec.Cloud); err != nil {
+		return nil, fmt.Errorf("cloud provider data could not be validated successfully: %v", err)
 	}
-
-	c.Spec.Cloud = cloud
 
 	c, err = p.crdClient.KubermaticV1().Clusters().Create(c)
 	if err != nil {

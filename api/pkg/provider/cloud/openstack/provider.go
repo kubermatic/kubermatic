@@ -32,6 +32,29 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+func (os *openstack) validateSecurityGroup(client *gophercloud.ProviderClient, cloud *kubermaticv1.CloudSpec) error {
+	if cloud.Openstack.SecurityGroups != "" {
+		//User specified a security group
+		securityGroups := strings.Split(cloud.Openstack.SecurityGroups, ",")
+		for i, g := range securityGroups {
+			securityGroups[i] = strings.TrimSpace(g)
+		}
+		err := validateSecurityGroupsExist(client, securityGroups)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
+	client, err := os.getClient(cloud)
+	if err != nil {
+		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
+	}
+	return os.validateSecurityGroup(client, cloud)
+}
+
 func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
@@ -176,23 +199,20 @@ func createKubermaticSecurityGroup(client *gophercloud.ProviderClient, clusterNa
 	return g, nil
 }
 
+func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
+	return cloud.Openstack.SecurityGroups != ""
+}
+
 func (os *openstack) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+	if isInitialized(cloud) {
+		return nil, nil
+	}
+
 	client, err := os.getClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
-	if cloud.Openstack.SecurityGroups != "" {
-		//User specified a security group
-		securityGroups := strings.Split(cloud.Openstack.SecurityGroups, ",")
-		for i, g := range securityGroups {
-			securityGroups[i] = strings.TrimSpace(g)
-		}
-		err := validateSecurityGroupsExist(client, securityGroups)
-		if err != nil {
-			return nil, err
-		}
-		cloud.Openstack.SecurityGroups = strings.Join(securityGroups, ",")
-	} else {
+	if cloud.Openstack.SecurityGroups == "" {
 		g, err := createKubermaticSecurityGroup(client, name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
