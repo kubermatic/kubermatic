@@ -17,7 +17,6 @@ COPY kubermatic /kubermatic/kubermatic
 COPY nginx-ingress-controller /kubermatic/nginx-ingress-controller
 COPY oauth /kubermatic/oauth
 COPY storage /kubermatic/storage
-COPY drone /kubermatic/drone
 COPY cert-manager /kubermatic/cert-manager
 COPY certs /kubermatic/certs
 COPY monitoring /kubermatic/monitotring
