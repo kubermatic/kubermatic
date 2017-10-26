@@ -17,6 +17,8 @@ type DigitaloceanSpec struct {
 type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`
+	// Used for automatic network creation
+	DNSServers []string `yaml:"dns_servers"`
 }
 
 // AWSSpec describes a digital ocean datacenter
