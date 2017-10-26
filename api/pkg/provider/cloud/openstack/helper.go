@@ -21,6 +21,8 @@ const (
 	subnetCIDR         = "192.168.1.0/24"
 	subnetFirstAddress = "192.168.1.2"
 	subnetLastAddress  = "192.168.1.254"
+
+	kubermaticNamePrefix = "kubermatic-"
 )
 
 var (
@@ -61,14 +63,12 @@ func getAllNetworks(client *gophercloud.ProviderClient) ([]networkWithExternalEx
 	}
 
 	var allNetworks []networkWithExternalExt
-
 	allPages, err := osnetworks.List(netClient, nil).AllPages()
 	if err != nil {
 		return nil, err
 	}
 
-	err = osnetworks.ExtractNetworksInto(allPages, &allNetworks)
-	if err != nil {
+	if err = osnetworks.ExtractNetworksInto(allPages, &allNetworks); err != nil {
 		return nil, err
 	}
 
@@ -105,6 +105,15 @@ func getExternalNetwork(client *gophercloud.ProviderClient) (*networkWithExterna
 	return nil, errNotFound
 }
 
+func securityGroupExistInList(name string, list []ossecuritygroups.SecGroup) bool {
+	for _, gs := range list {
+		if gs.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func validateSecurityGroupsExist(client *gophercloud.ProviderClient, securityGroups []string) error {
 	existingGroups, err := getAllSecurityGroups(client)
 	if err != nil {
@@ -112,13 +121,7 @@ func validateSecurityGroupsExist(client *gophercloud.ProviderClient, securityGro
 	}
 
 	for _, sg := range securityGroups {
-		found := false
-		for _, esg := range existingGroups {
-			if esg.Name == sg {
-				found = true
-			}
-		}
-		if !found {
+		if !securityGroupExistInList(sg, existingGroups) {
 			return fmt.Errorf("specified security group %s not found", sg)
 		}
 	}
@@ -156,7 +159,7 @@ func createKubermaticSecurityGroup(client *gophercloud.ProviderClient, clusterNa
 	}
 
 	gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-		Name:        "kubermatic-" + clusterName,
+		Name:        kubermaticNamePrefix + clusterName,
 		Description: "Contains security rules for the kubermatic worker nodes",
 	})
 	if gres.Err != nil {
@@ -198,8 +201,8 @@ func createKubermaticSecurityGroup(client *gophercloud.ProviderClient, clusterNa
 		if rres.Err != nil {
 			return nil, rres.Err
 		}
-		_, err := rres.Extract()
-		if err != nil {
+
+		if _, err := rres.Extract(); err != nil {
 			return nil, err
 		}
 	}
@@ -263,7 +266,7 @@ func createKubermaticSubnet(client *gophercloud.ProviderClient, clusterName, net
 
 	iTrue := true
 	res := ossubnets.Create(netClient, ossubnets.CreateOpts{
-		Name:       "kubermatic-" + clusterName,
+		Name:       kubermaticNamePrefix + clusterName,
 		NetworkID:  networkID,
 		IPVersion:  gophercloud.IPv4,
 		CIDR:       subnetCIDR,
@@ -298,8 +301,9 @@ func createKubermaticRouter(client *gophercloud.ProviderClient, clusterName, ext
 	gwi := osrouters.GatewayInfo{
 		NetworkID: extNetwork.ID,
 	}
+
 	res := osrouters.Create(netClient, osrouters.CreateOpts{
-		Name:         "kubermatic-" + clusterName,
+		Name:         kubermaticNamePrefix + clusterName,
 		AdminStateUp: &iTrue,
 		GatewayInfo:  &gwi,
 	})

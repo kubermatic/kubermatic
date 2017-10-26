@@ -137,8 +137,7 @@ func (os *openstack) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*ku
 		}
 		cloud.Openstack.RouterID = router.ID
 
-		_, err = attachSubnetToRouter(client, subnet.ID, router.ID)
-		if err != nil {
+		if _, err = attachSubnetToRouter(client, subnet.ID, router.ID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)
 		}
 	}
@@ -154,26 +153,23 @@ func (os *openstack) CleanUp(cloud *kubermaticv1.CloudSpec) error {
 
 	if cloud.Openstack.SecurityGroupCreated {
 		for _, g := range strings.Split(cloud.Openstack.SecurityGroups, ",") {
-			err := deleteSecurityGroup(client, strings.TrimSpace(g))
-			if err != nil {
+			if err := deleteSecurityGroup(client, strings.TrimSpace(g)); err != nil {
 				return fmt.Errorf("failed to delete security group %q: %v", g, err)
 			}
 		}
 	}
 
 	if cloud.Openstack.NetworkCreated {
-		_, err = detachSubnetFromRouter(client, cloud.Openstack.SubnetID, cloud.Openstack.RouterID)
-		if err != nil {
+
+		if _, err = detachSubnetFromRouter(client, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
 			return fmt.Errorf("failed to detach subnet from router: %v", err)
 		}
 
-		err = deleteNetworkByName(client, cloud.Openstack.Network)
-		if err != nil {
+		if err = deleteNetworkByName(client, cloud.Openstack.Network); err != nil {
 			return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
 		}
 
-		err = deleteRouter(client, cloud.Openstack.RouterID)
-		if err != nil {
+		if err = deleteRouter(client, cloud.Openstack.RouterID); err != nil {
 			return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
 		}
 	}
