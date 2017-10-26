@@ -218,7 +218,7 @@ func createKubermaticNetwork(client *gophercloud.ProviderClient, clusterName str
 
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
-		Name:         "kubermatic" + clusterName,
+		Name:         kubermaticNamePrefix + clusterName,
 		AdminStateUp: &iTrue,
 	})
 	if res.Err != nil {
