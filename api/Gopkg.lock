@@ -261,8 +261,8 @@
   branch = "sttts-kube-gen"
   name = "github.com/kube-node/nodeset"
   packages = ["pkg/client/clientset/versioned","pkg/client/clientset/versioned/scheme","pkg/client/clientset/versioned/typed/nodeset/v1alpha1","pkg/nodeset/v1alpha1"]
-  revision = "06ddca8253db661a05a28739ba4bfc1d01a399d7"
-  source = "github.com/mrIncompetent/nodeset"
+  revision = "12c4a391796fb12fbb17ce4009f0de0e80f395ee"
+  source = "github.com/sttts/nodeset"
 
 [[projects]]
   branch = "master"
@@ -440,6 +440,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6e042415e6d39ac306486c14da137fe08a26cf5c4ea43d26f6703a89fe83c70c"
+  inputs-digest = "1da149cfe97b5b834f2e0199db1359abc93a4cf6f1959957f356ea7d188d0e12"
   solver-name = "gps-cdcl"
   solver-version = 1

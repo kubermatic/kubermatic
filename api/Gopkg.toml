@@ -55,7 +55,7 @@ required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/
 [[constraint]]
   name = "github.com/kube-node/nodeset"
   branch = "sttts-kube-gen"
-  source = "github.com/mrIncompetent/nodeset"
+  source = "github.com/sttts/nodeset"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
