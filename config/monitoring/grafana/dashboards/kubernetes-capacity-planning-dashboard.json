@@ -6,50 +6,24 @@
     "canStar": true,
     "slug": "kubernetes-capacity-planning",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-10-31T16:21:24Z",
-    "updated": "2017-10-31T16:21:24Z",
+    "created": "2017-11-01T16:28:45Z",
+    "updated": "2017-11-01T16:42:28Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 4
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.4.1"
-      },
-      {
-        "id": "graph",
-        "name": "Graph",
-        "type": "panel",
-        "version": ""
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
       "list": []
     },
     "description": "",
     "editable": true,
     "gnetId": 22,
-    "graphTooltip": 0,
-    "hideControls": false,
+    "graphTooltip": 1,
+    "hideControls": true,
     "id": null,
     "links": [],
-    "refresh": false,
+    "refresh": "1m",
     "rows": [
       {
         "collapse": false,
@@ -96,7 +70,7 @@
                 "intervalFactor": 10,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 50
+                "step": 1200
               }
             ],
             "thresholds": [],
@@ -176,7 +150,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 1m",
                 "refId": "A",
-                "step": 20,
+                "step": 480,
                 "target": ""
               },
               {
@@ -184,7 +158,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 5m",
                 "refId": "B",
-                "step": 20,
+                "step": 480,
                 "target": ""
               },
               {
@@ -192,7 +166,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 15m",
                 "refId": "C",
-                "step": 20,
+                "step": 480,
                 "target": ""
               }
             ],
@@ -291,7 +265,7 @@
                 "legendFormat": "memory usage",
                 "metric": "memo",
                 "refId": "A",
-                "step": 10,
+                "step": 120,
                 "target": ""
               },
               {
@@ -301,7 +275,7 @@
                 "legendFormat": "memory buffers",
                 "metric": "memo",
                 "refId": "B",
-                "step": 10,
+                "step": 120,
                 "target": ""
               },
               {
@@ -311,7 +285,7 @@
                 "legendFormat": "memory cached",
                 "metric": "memo",
                 "refId": "C",
-                "step": 10,
+                "step": 120,
                 "target": ""
               },
               {
@@ -321,7 +295,7 @@
                 "legendFormat": "memory free",
                 "metric": "memo",
                 "refId": "D",
-                "step": 10,
+                "step": 120,
                 "target": ""
               }
             ],
@@ -424,7 +398,7 @@
                 "intervalFactor": 2,
                 "metric": "",
                 "refId": "A",
-                "step": 60,
+                "step": 1800,
                 "target": ""
               }
             ],
@@ -507,7 +481,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "read",
                 "refId": "A",
-                "step": 20,
+                "step": 240,
                 "target": ""
               },
               {
@@ -515,14 +489,14 @@
                 "intervalFactor": 4,
                 "legendFormat": "written",
                 "refId": "B",
-                "step": 20
+                "step": 240
               },
               {
                 "expr": "sum(rate(node_disk_io_time_ms[5m]))",
                 "intervalFactor": 4,
                 "legendFormat": "io time",
                 "refId": "C",
-                "step": 20
+                "step": 240
               }
             ],
             "thresholds": [],
@@ -623,7 +597,7 @@
                 "expr": "(sum(node_filesystem_size{device!=\"rootfs\"}) - sum(node_filesystem_free{device!=\"rootfs\"})) / sum(node_filesystem_size{device!=\"rootfs\"})",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 60,
+                "step": 1800,
                 "target": ""
               }
             ],
@@ -698,7 +672,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 10,
+                "step": 240,
                 "target": ""
               }
             ],
@@ -785,7 +759,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "B",
-                "step": 10,
+                "step": 240,
                 "target": ""
               }
             ],
@@ -875,7 +849,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "Current number of Pods",
                 "refId": "A",
-                "step": 10
+                "step": 120
               },
               {
                 "expr": "sum(kube_node_status_capacity_pods)",
@@ -883,7 +857,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "Maximum capacity of pods",
                 "refId": "B",
-                "step": 10
+                "step": 120
               }
             ],
             "thresholds": [],
@@ -985,7 +959,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 60,
+                "step": 1800,
                 "target": ""
               }
             ],
@@ -1018,7 +992,7 @@
       "list": []
     },
     "time": {
-      "from": "now-1h",
+      "from": "now-24h",
       "to": "now"
     },
     "timepicker": {
@@ -1048,7 +1022,7 @@
     },
     "timezone": "browser",
     "title": "Kubernetes Capacity Planning",
-    "version": 1
+    "version": 4
   },
   "overwrite": true
 }

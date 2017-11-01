@@ -6,48 +6,23 @@
     "canStar": true,
     "slug": "deployment",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-10-31T16:21:24Z",
-    "updated": "2017-10-31T16:21:24Z",
+    "created": "2017-11-01T16:28:45Z",
+    "updated": "2017-11-01T16:38:38Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 8
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.4.1"
-      },
-      {
-        "id": "graph",
-        "name": "Graph",
-        "type": "panel",
-        "version": ""
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
       "list": []
     },
     "editable": true,
     "gnetId": null,
-    "graphTooltip": 1,
-    "hideControls": false,
+    "graphTooltip": 2,
+    "hideControls": true,
     "id": null,
     "links": [],
+    "refresh": "30s",
     "rows": [
       {
         "collapse": false,
@@ -111,10 +86,11 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$deployment_namespace\",pod_name=~\"$deployment_name.*\"}[3m])) ",
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$deployment_namespace\",pod_name=~\"$deployment_name.*\"}[3m]))  ",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -189,9 +165,10 @@
             "targets": [
               {
                 "expr": "sum(container_memory_usage_bytes{namespace=\"$deployment_namespace\",pod_name=~\"$deployment_name.*\"}) / 1024^3",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -266,9 +243,10 @@
             "targets": [
               {
                 "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"$deployment_namespace\",pod_name=~\"$deployment_name.*\"}[3m])) + sum(rate(container_network_receive_bytes_total{namespace=\"$deployment_namespace\",pod_name=~\"$deployment_name.*\"}[3m])) ",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -355,11 +333,12 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "max(kube_deployment_spec_replicas{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_spec_replicas{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "metric": "kube_deployment_spec_replicas",
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -433,10 +412,11 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -510,11 +490,12 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "max(kube_deployment_status_observed_generation{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_status_observed_generation{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -588,11 +569,12 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "max(kube_deployment_metadata_generation{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_metadata_generation{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 600
+                "step": 1800
               }
             ],
             "thresholds": "",
@@ -656,39 +638,44 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "max(kube_deployment_status_replicas{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_status_replicas{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "current replicas",
                 "refId": "A",
-                "step": 30
+                "step": 120
               },
               {
-                "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "available",
                 "refId": "B",
-                "step": 30
+                "step": 120
               },
               {
-                "expr": "max(kube_deployment_status_replicas_unavailable{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_status_replicas_unavailable{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "unavailable",
                 "refId": "C",
-                "step": 30
+                "step": 120
               },
               {
-                "expr": "min(kube_deployment_status_replicas_updated{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "min(kube_deployment_status_replicas_updated{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "updated",
                 "refId": "D",
-                "step": 30
+                "step": 120
               },
               {
-                "expr": "max(kube_deployment_spec_replicas{deployment=\"$deployment_name\",namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "expr": "max(kube_deployment_spec_replicas{deployment=\"$deployment_name\",exported_namespace=\"$deployment_namespace\"}) without (instance, pod)",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "desired",
                 "refId": "E",
-                "step": 30
+                "step": 120
               }
             ],
             "thresholds": [],
@@ -745,7 +732,10 @@
       "list": [
         {
           "allValue": ".*",
-          "current": {},
+          "current": {
+            "text": "kubermatic",
+            "value": "kubermatic"
+          },
           "datasource": "prometheus",
           "hide": 0,
           "includeAll": false,
@@ -753,10 +743,10 @@
           "multi": false,
           "name": "deployment_namespace",
           "options": [],
-          "query": "label_values(kube_deployment_metadata_generation, namespace)",
+          "query": "label_values(kube_deployment_metadata_generation, exported_namespace)",
           "refresh": 1,
           "regex": "",
-          "sort": 0,
+          "sort": 1,
           "tagValuesQuery": null,
           "tags": [],
           "tagsQuery": "",
@@ -765,7 +755,10 @@
         },
         {
           "allValue": null,
-          "current": {},
+          "current": {
+            "text": "kubermatic-api-v1",
+            "value": "kubermatic-api-v1"
+          },
           "datasource": "prometheus",
           "hide": 0,
           "includeAll": false,
@@ -773,10 +766,10 @@
           "multi": false,
           "name": "deployment_name",
           "options": [],
-          "query": "label_values(kube_deployment_metadata_generation{namespace=\"$deployment_namespace\"}, deployment)",
+          "query": "label_values(kube_deployment_metadata_generation{exported_namespace=\"$deployment_namespace\"}, deployment)",
           "refresh": 1,
           "regex": "",
-          "sort": 0,
+          "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
           "tagsQuery": "deployment",
@@ -786,7 +779,7 @@
       ]
     },
     "time": {
-      "from": "now-6h",
+      "from": "now-24h",
       "to": "now"
     },
     "timepicker": {
@@ -816,7 +809,7 @@
     },
     "timezone": "browser",
     "title": "Deployment",
-    "version": 1
+    "version": 8
   },
   "overwrite": true
 }

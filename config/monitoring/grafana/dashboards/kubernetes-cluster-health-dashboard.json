@@ -6,42 +6,23 @@
     "canStar": true,
     "slug": "kubernetes-cluster-health",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-10-31T16:21:25Z",
-    "updated": "2017-10-31T16:21:25Z",
+    "created": "2017-11-01T16:28:45Z",
+    "updated": "2017-11-01T17:03:07Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 6
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.4.1"
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
       "list": []
     },
     "editable": true,
     "gnetId": null,
     "graphTooltip": 0,
-    "hideControls": false,
+    "hideControls": true,
     "id": null,
     "links": [],
+    "refresh": "10s",
     "rows": [
       {
         "collapse": false,
@@ -49,7 +30,7 @@
         "panels": [
           {
             "cacheTimeout": null,
-            "colorBackground": false,
+            "colorBackground": true,
             "colorValue": true,
             "colors": [
               "rgba(50, 172, 45, 0.97)",
@@ -96,7 +77,7 @@
             "span": 3,
             "sparkline": {
               "fillColor": "rgba(31, 118, 189, 0.18)",
-              "full": false,
+              "full": true,
               "lineColor": "rgb(31, 120, 193)",
               "show": false
             },
@@ -127,7 +108,7 @@
                 "value": ""
               }
             ],
-            "valueName": "avg"
+            "valueName": "current"
           },
           {
             "cacheTimeout": null,
@@ -272,7 +253,7 @@
                 "step": 600
               }
             ],
-            "thresholds": "3,5",
+            "thresholds": "0,1",
             "title": "Alerts Pending",
             "type": "singlestat",
             "valueFontSize": "80%",
@@ -733,7 +714,7 @@
     },
     "timezone": "",
     "title": "Kubernetes Cluster Health",
-    "version": 1
+    "version": 6
   },
   "overwrite": true
 }

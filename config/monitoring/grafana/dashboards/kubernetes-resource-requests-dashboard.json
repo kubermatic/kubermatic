@@ -6,47 +6,21 @@
     "canStar": true,
     "slug": "kubernetes-resource-requests",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-10-31T16:21:26Z",
-    "updated": "2017-10-31T16:21:26Z",
+    "created": "2017-11-01T16:28:46Z",
+    "updated": "2017-11-01T19:10:08Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 2
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.4.1"
-      },
-      {
-        "id": "graph",
-        "name": "Graph",
-        "type": "panel",
-        "version": ""
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
       "list": []
     },
     "description": "",
     "editable": true,
     "gnetId": null,
-    "graphTooltip": 0,
-    "hideControls": false,
+    "graphTooltip": 1,
+    "hideControls": true,
     "id": null,
     "links": [],
     "rows": [
@@ -92,14 +66,14 @@
                 "intervalFactor": 2,
                 "legendFormat": "Allocatable CPU Cores",
                 "refId": "A",
-                "step": 20
+                "step": 120
               },
               {
                 "expr": "max(sum(kube_pod_container_resource_requests_cpu_cores) by (instance))",
                 "intervalFactor": 2,
                 "legendFormat": "Requested CPU Cores",
                 "refId": "B",
-                "step": 20
+                "step": 120
               }
             ],
             "thresholds": [],
@@ -196,10 +170,11 @@
             "targets": [
               {
                 "expr": "max(sum(kube_pod_container_resource_requests_cpu_cores) by (instance)) / min(sum(kube_node_status_allocatable_cpu_cores) by (instance)) * 100",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 240
+                "step": 1800
               }
             ],
             "thresholds": "80, 90",
@@ -213,7 +188,7 @@
                 "value": "null"
               }
             ],
-            "valueName": "avg"
+            "valueName": "current"
           }
         ],
         "repeat": null,
@@ -265,14 +240,14 @@
                 "intervalFactor": 2,
                 "legendFormat": "Allocatable Memory",
                 "refId": "A",
-                "step": 20
+                "step": 120
               },
               {
                 "expr": "max(sum(kube_pod_container_resource_requests_memory_bytes) by (instance))",
                 "intervalFactor": 2,
                 "legendFormat": "Requested Memory",
                 "refId": "B",
-                "step": 20
+                "step": 120
               }
             ],
             "thresholds": [],
@@ -369,10 +344,11 @@
             "targets": [
               {
                 "expr": "max(sum(kube_pod_container_resource_requests_memory_bytes) by (instance)) / min(sum(kube_node_status_allocatable_memory_bytes) by (instance)) * 100",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "",
                 "refId": "A",
-                "step": 240
+                "step": 1800
               }
             ],
             "thresholds": "80, 90",
@@ -386,7 +362,7 @@
                 "value": "null"
               }
             ],
-            "valueName": "avg"
+            "valueName": "current"
           }
         ],
         "repeat": null,
@@ -404,7 +380,7 @@
       "list": []
     },
     "time": {
-      "from": "now-3h",
+      "from": "now-24h",
       "to": "now"
     },
     "timepicker": {
@@ -434,7 +410,7 @@
     },
     "timezone": "browser",
     "title": "Kubernetes Resource Requests",
-    "version": 1
+    "version": 2
   },
   "overwrite": true
 }

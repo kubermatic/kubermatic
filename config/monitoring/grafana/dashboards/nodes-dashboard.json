@@ -6,50 +6,24 @@
     "canStar": true,
     "slug": "nodes",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-10-31T16:21:26Z",
-    "updated": "2017-10-31T16:21:26Z",
+    "created": "2017-11-01T16:28:46Z",
+    "updated": "2017-11-01T19:14:15Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 2
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.4.1"
-      },
-      {
-        "id": "graph",
-        "name": "Graph",
-        "type": "panel",
-        "version": ""
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
       "list": []
     },
     "description": "Dashboard to get an overview of one server",
     "editable": true,
     "gnetId": 22,
-    "graphTooltip": 0,
-    "hideControls": false,
+    "graphTooltip": 1,
+    "hideControls": true,
     "id": null,
     "links": [],
-    "refresh": false,
+    "refresh": "1m",
     "rows": [
       {
         "collapse": false,
@@ -96,7 +70,7 @@
                 "intervalFactor": 10,
                 "legendFormat": "{{cpu}}",
                 "refId": "A",
-                "step": 50
+                "step": 1200
               }
             ],
             "thresholds": [],
@@ -176,7 +150,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 1m",
                 "refId": "A",
-                "step": 20,
+                "step": 480,
                 "target": ""
               },
               {
@@ -184,7 +158,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 5m",
                 "refId": "B",
-                "step": 20,
+                "step": 480,
                 "target": ""
               },
               {
@@ -192,7 +166,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "load 15m",
                 "refId": "C",
-                "step": 20,
+                "step": 480,
                 "target": ""
               }
             ],
@@ -297,7 +271,7 @@
                 "legendFormat": "memory used",
                 "metric": "",
                 "refId": "C",
-                "step": 10
+                "step": 120
               },
               {
                 "expr": "node_memory_Buffers{instance=\"$server\"}",
@@ -306,7 +280,7 @@
                 "legendFormat": "memory buffers",
                 "metric": "",
                 "refId": "E",
-                "step": 10
+                "step": 120
               },
               {
                 "expr": "node_memory_Cached{instance=\"$server\"}",
@@ -314,7 +288,7 @@
                 "legendFormat": "memory cached",
                 "metric": "",
                 "refId": "F",
-                "step": 10
+                "step": 120
               },
               {
                 "expr": "node_memory_MemFree{instance=\"$server\"}",
@@ -322,7 +296,7 @@
                 "legendFormat": "memory free",
                 "metric": "",
                 "refId": "D",
-                "step": 10
+                "step": 120
               }
             ],
             "thresholds": [],
@@ -423,7 +397,7 @@
                 "expr": "((node_memory_MemTotal{instance=\"$server\"} - node_memory_MemFree{instance=\"$server\"}  - node_memory_Buffers{instance=\"$server\"} - node_memory_Cached{instance=\"$server\"}) / node_memory_MemTotal{instance=\"$server\"}) * 100",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 60,
+                "step": 1800,
                 "target": ""
               }
             ],
@@ -506,7 +480,7 @@
                 "intervalFactor": 4,
                 "legendFormat": "read",
                 "refId": "A",
-                "step": 20,
+                "step": 240,
                 "target": ""
               },
               {
@@ -514,14 +488,14 @@
                 "intervalFactor": 4,
                 "legendFormat": "written",
                 "refId": "B",
-                "step": 20
+                "step": 240
               },
               {
                 "expr": "sum by (instance) (rate(node_disk_io_time_ms{instance=\"$server\"}[2m]))",
                 "intervalFactor": 4,
                 "legendFormat": "io time",
                 "refId": "C",
-                "step": 20
+                "step": 240
               }
             ],
             "thresholds": [],
@@ -622,7 +596,7 @@
                 "expr": "(sum(node_filesystem_size{device!=\"rootfs\",instance=\"$server\"}) - sum(node_filesystem_free{device!=\"rootfs\",instance=\"$server\"})) / sum(node_filesystem_size{device!=\"rootfs\",instance=\"$server\"})",
                 "intervalFactor": 2,
                 "refId": "A",
-                "step": 60,
+                "step": 1800,
                 "target": ""
               }
             ],
@@ -697,7 +671,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "{{device}}",
                 "refId": "A",
-                "step": 10,
+                "step": 240,
                 "target": ""
               }
             ],
@@ -784,7 +758,7 @@
                 "intervalFactor": 2,
                 "legendFormat": "{{device}}",
                 "refId": "B",
-                "step": 10,
+                "step": 240,
                 "target": ""
               }
             ],
@@ -841,7 +815,11 @@
       "list": [
         {
           "allValue": null,
-          "current": {},
+          "current": {
+            "tags": [],
+            "text": "10.156.0.3:9100",
+            "value": "10.156.0.3:9100"
+          },
           "datasource": "prometheus",
           "hide": 0,
           "includeAll": false,
@@ -862,7 +840,7 @@
       ]
     },
     "time": {
-      "from": "now-1h",
+      "from": "now-24h",
       "to": "now"
     },
     "timepicker": {
@@ -892,7 +870,7 @@
     },
     "timezone": "browser",
     "title": "Nodes",
-    "version": 1
+    "version": 2
   },
   "overwrite": true
 }
