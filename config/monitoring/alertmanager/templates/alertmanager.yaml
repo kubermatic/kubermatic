@@ -6,5 +6,6 @@ metadata:
   labels:
     app: alertmanager
 spec:
-  replicas: 1
+  replicas: 3
   version: {{ .Values.alertmanager.version }}
+  externalUrl: alertmanager.{{ .Values.KubermaticURL | trim }}
