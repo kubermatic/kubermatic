@@ -6,23 +6,40 @@
     "canStar": true,
     "slug": "nodes",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-11-01T16:28:46Z",
-    "updated": "2017-11-01T19:14:15Z",
+    "created": "2017-11-02T11:54:59Z",
+    "updated": "2017-11-02T12:39:28Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 2
+    "version": 6
   },
   "dashboard": {
     "annotations": {
-      "list": []
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
     },
-    "description": "Dashboard to get an overview of one server",
     "editable": true,
-    "gnetId": 22,
+    "gnetId": null,
     "graphTooltip": 1,
     "hideControls": true,
     "id": null,
-    "links": [],
+    "links": [
+      {
+        "icon": "external link",
+        "tags": [],
+        "title": "Prometheus Node Exporter",
+        "type": "link",
+        "url": "https://github.com/prometheus/node_exporter"
+      }
+    ],
     "refresh": "1m",
     "rows": [
       {
@@ -30,7 +47,6 @@
         "height": "250px",
         "panels": [
           {
-            "alerting": {},
             "aliasColors": {},
             "bars": false,
             "dashLength": 10,
@@ -38,17 +54,17 @@
             "datasource": "prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 4,
             "grid": {},
-            "id": 3,
+            "id": 42,
             "legend": {
               "avg": false,
-              "current": false,
+              "current": true,
               "max": false,
               "min": false,
               "show": true,
               "total": false,
-              "values": false
+              "values": true
             },
             "lines": true,
             "linewidth": 2,
@@ -65,117 +81,22 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "100 - (avg by (cpu) (irate(node_cpu{mode=\"idle\", instance=\"$server\"}[5m])) * 100)",
-                "hide": false,
-                "intervalFactor": 10,
-                "legendFormat": "{{cpu}}",
+                "expr": "sum(sum(irate(node_cpu{mode!=\"idle\",instance=~\"$node\"}[5m])) without (mode)) by (instance)",
+                "format": "time_series",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "metric": "",
                 "refId": "A",
-                "step": 1200
+                "step": 240
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Idle cpu",
+            "title": "CPU Percentage",
             "tooltip": {
-              "msResolution": false,
-              "shared": true,
-              "sort": 0,
-              "value_type": "cumulative"
-            },
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "percent",
-                "label": "cpu usage",
-                "logBase": 1,
-                "max": 100,
-                "min": 0,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          },
-          {
-            "alerting": {},
-            "aliasColors": {},
-            "bars": false,
-            "dashLength": 10,
-            "dashes": false,
-            "datasource": "prometheus",
-            "editable": true,
-            "error": false,
-            "fill": 1,
-            "grid": {},
-            "id": 9,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 2,
-            "links": [],
-            "nullPointMode": "connected",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "span": 6,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "node_load1{instance=\"$server\"}",
-                "intervalFactor": 4,
-                "legendFormat": "load 1m",
-                "refId": "A",
-                "step": 480,
-                "target": ""
-              },
-              {
-                "expr": "node_load5{instance=\"$server\"}",
-                "intervalFactor": 4,
-                "legendFormat": "load 5m",
-                "refId": "B",
-                "step": 480,
-                "target": ""
-              },
-              {
-                "expr": "node_load15{instance=\"$server\"}",
-                "intervalFactor": 4,
-                "legendFormat": "load 15m",
-                "refId": "C",
-                "step": 480,
-                "target": ""
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "System load",
-            "tooltip": {
-              "msResolution": false,
+              "msResolution": true,
               "shared": true,
               "sort": 0,
               "value_type": "cumulative"
@@ -191,10 +112,108 @@
             "yaxes": [
               {
                 "format": "percentunit",
+                "label": "",
+                "logBase": 1,
+                "max": "1",
+                "min": 0,
+                "show": true
+              },
+              {
+                "format": "short",
                 "label": null,
                 "logBase": 1,
                 "max": null,
                 "min": null,
+                "show": false
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "fill": 4,
+            "grid": {
+              "leftLogBase": 1,
+              "leftMax": null,
+              "leftMin": 0,
+              "rightLogBase": 1,
+              "rightMax": null,
+              "rightMin": null
+            },
+            "id": 17,
+            "legend": {
+              "avg": false,
+              "current": true,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 6,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "calculatedInterval": "2s",
+                "datasourceErrors": {},
+                "errors": {},
+                "expr": "(node_memory_MemTotal - node_memory_MemAvailable{instance=~\"$node\"}) / node_memory_MemTotal",
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "metric": "node_memory_MemAvailable",
+                "prometheusLink": "http://10.196.94.100:9090/graph#%5B%7B%22expr%22%3A%22node_memory_Committed_AS%7Binstance%3D%5C%2210.196.94.38%3A9100%5C%22%7D%20%2F%201048576%22%2C%22range_input%22%3A%223601s%22%2C%22end_input%22%3A%222016-1-16%207%3A13%22%2C%22step_input%22%3A%22%22%2C%22stacked%22%3Afalse%2C%22tab%22%3A0%7D%5D",
+                "refId": "A",
+                "step": 240,
+                "target": ""
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Memory",
+            "tooltip": {
+              "msResolution": true,
+              "shared": true,
+              "sort": 0,
+              "value_type": "cumulative"
+            },
+            "type": "graph",
+            "x-axis": true,
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "y-axis": true,
+            "y_formats": [
+              "mbytes",
+              "short"
+            ],
+            "yaxes": [
+              {
+                "format": "percentunit",
+                "label": "",
+                "logBase": 1,
+                "max": 1,
+                "min": 0,
                 "show": true
               },
               {
@@ -217,32 +236,40 @@
       },
       {
         "collapse": false,
-        "height": "250px",
+        "height": "200px",
         "panels": [
           {
-            "alerting": {},
-            "aliasColors": {},
+            "aliasColors": {
+              "10.196.94.100:9100": "#BA43A9",
+              "10.196.94.36:9100": "#82B5D8",
+              "10.196.94.38:9100": "#3F6833",
+              "10.196.94.46:9100": "#0A437C",
+              "10.196.94.48:9100": "#EAB839"
+            },
             "bars": false,
             "dashLength": 10,
             "dashes": false,
             "datasource": "prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
-            "grid": {},
-            "id": 4,
+            "fill": 4,
+            "grid": {
+              "leftLogBase": 1,
+              "leftMax": null,
+              "leftMin": 0,
+              "rightLogBase": 1,
+              "rightMax": null,
+              "rightMin": null
+            },
+            "id": 14,
             "legend": {
-              "alignAsTable": false,
               "avg": false,
-              "current": false,
-              "hideEmpty": false,
-              "hideZero": false,
+              "current": true,
               "max": false,
               "min": false,
-              "rightSide": false,
               "show": true,
               "total": false,
-              "values": false
+              "values": true
             },
             "lines": true,
             "linewidth": 2,
@@ -254,62 +281,60 @@
             "renderer": "flot",
             "seriesOverrides": [
               {
-                "alias": "node_memory_SwapFree{instance=\"172.17.0.1:9100\",job=\"prometheus\"}",
-                "yaxis": 2
+                "alias": "10.196.94.38:9100",
+                "yaxis": 1
               }
             ],
             "spaceLength": 10,
-            "span": 9,
-            "stack": true,
+            "span": 6,
+            "stack": false,
             "steppedLine": false,
             "targets": [
               {
-                "expr": "node_memory_MemTotal{instance=\"$server\"} - node_memory_MemFree{instance=\"$server\"} - node_memory_Buffers{instance=\"$server\"} - node_memory_Cached{instance=\"$server\"}",
-                "hide": false,
+                "calculatedInterval": "2s",
+                "datasourceErrors": {},
+                "errors": {},
+                "expr": "node_load1{instance=~\"$node\"}",
+                "interval": "",
+                "intervalFactor": 10,
+                "legendFormat": "load1",
+                "metric": "",
+                "prometheusLink": "http://10.196.94.101:9090/graph#%5B%7B%22expr%22%3A%22node_load1%22%2C%22range_input%22%3A%223601s%22%2C%22end_input%22%3A%222016-1-19%2020%3A15%22%2C%22step_input%22%3A%22%22%2C%22stacked%22%3Afalse%2C%22tab%22%3A0%7D%5D",
+                "refId": "A",
+                "step": 1200
+              },
+              {
+                "expr": "node_load5{instance=~\"$node\"}",
                 "interval": "",
                 "intervalFactor": 2,
-                "legendFormat": "memory used",
+                "legendFormat": "load5",
+                "metric": "",
+                "refId": "B",
+                "step": 240
+              },
+              {
+                "expr": "node_load15{instance=~\"$node\"}",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "load15",
                 "metric": "",
                 "refId": "C",
-                "step": 120
-              },
-              {
-                "expr": "node_memory_Buffers{instance=\"$server\"}",
-                "interval": "",
-                "intervalFactor": 2,
-                "legendFormat": "memory buffers",
-                "metric": "",
-                "refId": "E",
-                "step": 120
-              },
-              {
-                "expr": "node_memory_Cached{instance=\"$server\"}",
-                "intervalFactor": 2,
-                "legendFormat": "memory cached",
-                "metric": "",
-                "refId": "F",
-                "step": 120
-              },
-              {
-                "expr": "node_memory_MemFree{instance=\"$server\"}",
-                "intervalFactor": 2,
-                "legendFormat": "memory free",
-                "metric": "",
-                "refId": "D",
-                "step": 120
+                "step": 240
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Memory usage",
+            "title": "Load1 average",
             "tooltip": {
               "msResolution": false,
               "shared": true,
               "sort": 0,
-              "value_type": "individual"
+              "value_type": "cumulative"
             },
+            "transparent": false,
             "type": "graph",
+            "x-axis": true,
             "xaxis": {
               "buckets": null,
               "mode": "time",
@@ -317,13 +342,18 @@
               "show": true,
               "values": []
             },
+            "y-axis": true,
+            "y_formats": [
+              "short",
+              "short"
+            ],
             "yaxes": [
               {
-                "format": "bytes",
+                "format": "short",
                 "label": null,
                 "logBase": 1,
                 "max": null,
-                "min": "0",
+                "min": null,
                 "show": true
               },
               {
@@ -337,6 +367,123 @@
             ]
           },
           {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "decimals": 0,
+            "editable": true,
+            "error": false,
+            "fill": 4,
+            "grid": {
+              "leftLogBase": 1,
+              "leftMax": null,
+              "leftMin": 0,
+              "rightLogBase": 1,
+              "rightMax": null,
+              "rightMin": null
+            },
+            "id": 11,
+            "legend": {
+              "avg": false,
+              "current": true,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 6,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "calculatedInterval": "2s",
+                "datasourceErrors": {},
+                "errors": {},
+                "expr": "node_procs_blocked{instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "legendFormat": "Blocked - {{instance}}",
+                "metric": "",
+                "prometheusLink": "http://10.196.94.100:9090/graph#%5B%7B%22expr%22%3A%22sum(rate(node_cpu%7Binstance%3D%5C%2210.196.94.38%3A9100%5C%22%2Cmode!%3D%5C%22idle%5C%22%7D%5B1m%5D)%20*%20100)%20by%20(node_cpu)%20%2F8%22%2C%22range_input%22%3A%223600s%22%2C%22end_input%22%3A%222016-1-16%207%3A10%22%2C%22step_input%22%3A%22%22%2C%22stacked%22%3Afalse%2C%22tab%22%3A0%7D%5D",
+                "refId": "A",
+                "step": 240
+              },
+              {
+                "expr": "node_procs_running{instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "legendFormat": "Running - {{instance}}",
+                "refId": "B",
+                "step": 240
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Node Procs",
+            "tooltip": {
+              "msResolution": false,
+              "shared": true,
+              "sort": 0,
+              "value_type": "cumulative"
+            },
+            "type": "graph",
+            "x-axis": true,
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "y-axis": true,
+            "y_formats": [
+              "percent",
+              "short"
+            ],
+            "yaxes": [
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Load Average",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "250px",
+        "panels": [
+          {
             "cacheTimeout": null,
             "colorBackground": false,
             "colorValue": false,
@@ -348,15 +495,15 @@
             "datasource": "prometheus",
             "editable": true,
             "error": false,
-            "format": "percent",
+            "format": "s",
             "gauge": {
-              "maxValue": 100,
+              "maxValue": null,
               "minValue": 0,
-              "show": true,
+              "show": false,
               "thresholdLabels": false,
               "thresholdMarkers": true
             },
-            "id": 5,
+            "id": 32,
             "interval": null,
             "links": [],
             "mappingType": 1,
@@ -384,6 +531,14 @@
                 "to": "null"
               }
             ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.2:9100",
+                "value": "10.156.0.2:9100"
+              }
+            },
             "span": 3,
             "sparkline": {
               "fillColor": "rgba(31, 118, 189, 0.18)",
@@ -394,15 +549,1237 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "((node_memory_MemTotal{instance=\"$server\"} - node_memory_MemFree{instance=\"$server\"}  - node_memory_Buffers{instance=\"$server\"} - node_memory_Cached{instance=\"$server\"}) / node_memory_MemTotal{instance=\"$server\"}) * 100",
+                "expr": "time() - node_boot_time{instance=~\"$node\"}",
                 "intervalFactor": 2,
+                "metric": "node_boot_time",
                 "refId": "A",
-                "step": 1800,
-                "target": ""
+                "step": 1800
               }
             ],
-            "thresholds": "80, 90",
-            "title": "Memory usage",
+            "thresholds": "0.75,0.9",
+            "title": "Uptime: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 27,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.2:9100",
+                "value": "10.156.0.2:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1 - avg(irate(node_cpu{mode=\"idle\",instance=~\"$node\"}[5m]))",
+                "format": "time_series",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.8,0.9",
+            "title": "CPU Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 28,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.2:9100",
+                "value": "10.156.0.2:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "avg((node_memory_MemTotal - node_memory_MemAvailable{instance=~\"$node\"}) / node_memory_MemTotal)",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Memory Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 31,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.2:9100",
+                "value": "10.156.0.2:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1-node_filesystem_free{mountpoint=\"/\", instance=~\"$node\"} / node_filesystem_size{mountpoint=\"/\", instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Disk Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          }
+        ],
+        "repeat": "node",
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "New row",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "250px",
+        "panels": [
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "format": "s",
+            "gauge": {
+              "maxValue": null,
+              "minValue": 0,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 61,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.3:9100",
+                "value": "10.156.0.3:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": false
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "time() - node_boot_time{instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "metric": "node_boot_time",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Uptime: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 62,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.3:9100",
+                "value": "10.156.0.3:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1 - avg(irate(node_cpu{mode=\"idle\",instance=~\"$node\"}[5m]))",
+                "format": "time_series",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.8,0.9",
+            "title": "CPU Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 63,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.3:9100",
+                "value": "10.156.0.3:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "avg((node_memory_MemTotal - node_memory_MemAvailable{instance=~\"$node\"}) / node_memory_MemTotal)",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Memory Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 64,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.3:9100",
+                "value": "10.156.0.3:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1-node_filesystem_free{mountpoint=\"/\", instance=~\"$node\"} / node_filesystem_size{mountpoint=\"/\", instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Disk Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": 1509625971695,
+        "repeatRowId": 3,
+        "showTitle": false,
+        "title": "New row",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "250px",
+        "panels": [
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "format": "s",
+            "gauge": {
+              "maxValue": null,
+              "minValue": 0,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 65,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.4:9100",
+                "value": "10.156.0.4:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": false
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "time() - node_boot_time{instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "metric": "node_boot_time",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Uptime: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 66,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.4:9100",
+                "value": "10.156.0.4:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1 - avg(irate(node_cpu{mode=\"idle\",instance=~\"$node\"}[5m]))",
+                "format": "time_series",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.8,0.9",
+            "title": "CPU Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 67,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.4:9100",
+                "value": "10.156.0.4:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "avg((node_memory_MemTotal - node_memory_MemAvailable{instance=~\"$node\"}) / node_memory_MemTotal)",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Memory Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": true,
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "datasource": "prometheus",
+            "decimals": 2,
+            "editable": true,
+            "error": false,
+            "format": "percentunit",
+            "gauge": {
+              "maxValue": 1,
+              "minValue": 0,
+              "show": true,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 68,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "repeatIteration": 1480186910019,
+            "scopedVars": {
+              "node": {
+                "selected": false,
+                "text": "10.156.0.4:9100",
+                "value": "10.156.0.4:9100"
+              }
+            },
+            "span": 3,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": true,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "1-node_filesystem_free{mountpoint=\"/\", instance=~\"$node\"} / node_filesystem_size{mountpoint=\"/\", instance=~\"$node\"}",
+                "intervalFactor": 2,
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "0.75,0.9",
+            "title": "Disk Usage: $node",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": 1509625971695,
+        "repeatRowId": 3,
+        "showTitle": false,
+        "title": "New row",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "25px",
+        "panels": [
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "rgba(245, 54, 54, 0.9)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(50, 172, 45, 0.97)"
+            ],
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "format": "bytes",
+            "gauge": {
+              "maxValue": 1023,
+              "minValue": 0,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "height": "100",
+            "id": 23,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "span": 4,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "sum(node_memory_MemTotal{instance=~\"$node\"})",
+                "intervalFactor": 2,
+                "legendFormat": "",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "",
+            "title": "Total Memory",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "avg"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "rgba(245, 54, 54, 0.9)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(50, 172, 45, 0.97)"
+            ],
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "format": "bytes",
+            "gauge": {
+              "maxValue": 1023,
+              "minValue": null,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "height": "100",
+            "id": 24,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "span": 4,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "sum(node_memory_MemFree{instance=~\"$node\"})",
+                "intervalFactor": 2,
+                "legendFormat": "",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "",
+            "title": "Total Memory Free",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "avg"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "rgba(245, 54, 54, 0.9)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(50, 172, 45, 0.97)"
+            ],
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "format": "bytes",
+            "gauge": {
+              "maxValue": 1023,
+              "minValue": 0,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "height": "100",
+            "id": 25,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "span": 4,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "sum(node_memory_MemAvailable{instance=~\"$node\"})",
+                "intervalFactor": 2,
+                "legendFormat": "",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "thresholds": "",
+            "title": "Total Memory Available",
             "type": "singlestat",
             "valueFontSize": "80%",
             "valueMaps": [
@@ -419,25 +1796,22 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "New row",
+        "title": "Memory 2",
         "titleSize": "h6"
       },
       {
         "collapse": false,
-        "height": "250px",
+        "height": 250,
         "panels": [
           {
-            "alerting": {},
             "aliasColors": {},
             "bars": false,
             "dashLength": 10,
             "dashes": false,
             "datasource": "prometheus",
-            "editable": true,
-            "error": false,
+            "description": "",
             "fill": 1,
-            "grid": {},
-            "id": 6,
+            "id": 51,
             "legend": {
               "avg": false,
               "current": false,
@@ -448,66 +1822,46 @@
               "values": false
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
             "renderer": "flot",
-            "seriesOverrides": [
-              {
-                "alias": "read",
-                "yaxis": 1
-              },
-              {
-                "alias": "{instance=\"172.17.0.1:9100\"}",
-                "yaxis": 2
-              },
-              {
-                "alias": "io time",
-                "yaxis": 2
-              }
-            ],
+            "seriesOverrides": [],
             "spaceLength": 10,
-            "span": 9,
+            "span": 12,
             "stack": false,
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum by (instance) (rate(node_disk_bytes_read{instance=\"$server\"}[2m]))",
-                "hide": false,
-                "intervalFactor": 4,
-                "legendFormat": "read",
-                "refId": "A",
-                "step": 240,
-                "target": ""
+                "expr": "sum(rate(node_network_receive_bytes{instance=~\"$node\",device!~\"lo\"}[5m])) by (instance)",
+                "format": "time_series",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "refId": "A"
               },
               {
-                "expr": "sum by (instance) (rate(node_disk_bytes_written{instance=\"$server\"}[2m]))",
-                "intervalFactor": 4,
-                "legendFormat": "written",
-                "refId": "B",
-                "step": 240
-              },
-              {
-                "expr": "sum by (instance) (rate(node_disk_io_time_ms{instance=\"$server\"}[2m]))",
-                "intervalFactor": 4,
-                "legendFormat": "io time",
-                "refId": "C",
-                "step": 240
+                "expr": "sum(rate(node_network_transmit_bytes{instance=~\"$node\",device!~\"lo\"}[5m])) by (instance) * -1",
+                "format": "time_series",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "refId": "B"
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Disk I/O",
+            "title": "Network",
             "tooltip": {
-              "msResolution": false,
               "shared": true,
               "sort": 0,
-              "value_type": "cumulative"
+              "value_type": "individual"
             },
+            "transparent": false,
             "type": "graph",
             "xaxis": {
               "buckets": null,
@@ -525,6 +1879,200 @@
                 "min": null,
                 "show": true
               },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Dashboard Row",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "250px",
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "editable": true,
+            "error": false,
+            "fill": 1,
+            "grid": {
+              "leftLogBase": 1,
+              "leftMax": null,
+              "leftMin": 0,
+              "rightLogBase": 1,
+              "rightMax": null,
+              "rightMin": null
+            },
+            "id": 12,
+            "legend": {
+              "avg": false,
+              "current": true,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 6,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "calculatedInterval": "2m",
+                "datasourceErrors": {},
+                "errors": {},
+                "expr": "sum(rate(node_disk_bytes_read{instance=~\"$node\"}[5m])) by (instance) ",
+                "format": "time_series",
+                "hide": false,
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "metric": "",
+                "prometheusLink": "http://10.196.94.100:9090/graph#%5B%7B%22expr%22%3A%22rate(node_disk_read_time_ms%7Binstance%3D%5C%2210.196.94.100%3A9100%5C%22%2Cdevice!%3D%5C%22sr0%5C%22%7D%5B30s%5D)%22%2C%22range_input%22%3A%2286400s%22%2C%22end_input%22%3A%222016-1-7%2014%3A58%22%2C%22step_input%22%3A%22%22%2C%22stacked%22%3Afalse%2C%22tab%22%3A0%7D%5D",
+                "refId": "A",
+                "step": 240
+              },
+              {
+                "calculatedInterval": "2m",
+                "datasourceErrors": {},
+                "errors": {},
+                "expr": "sum(rate(node_disk_bytes_written{instance=~\"$node\"}[5m])) by (instance) *-1",
+                "format": "time_series",
+                "hide": false,
+                "intervalFactor": 2,
+                "legendFormat": "{{instance}}",
+                "metric": "",
+                "prometheusLink": "http://10.196.94.100:9090/graph#%5B%7B%22expr%22%3A%22rate(node_disk_read_time_ms%7Binstance%3D%5C%2210.196.94.100%3A9100%5C%22%2Cdevice!%3D%5C%22sr0%5C%22%7D%5B30s%5D)%22%2C%22range_input%22%3A%2286400s%22%2C%22end_input%22%3A%222016-1-7%2014%3A58%22%2C%22step_input%22%3A%22%22%2C%22stacked%22%3Afalse%2C%22tab%22%3A0%7D%5D",
+                "refId": "B",
+                "step": 240
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Disk Time",
+            "tooltip": {
+              "msResolution": false,
+              "shared": true,
+              "sort": 0,
+              "value_type": "cumulative"
+            },
+            "type": "graph",
+            "x-axis": true,
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "y-axis": true,
+            "y_formats": [
+              "ms",
+              "short"
+            ],
+            "yaxes": [
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "fill": 1,
+            "id": 60,
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 6,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "expr": "sum(rate(node_disk_io_time_ms{instance=~\"$node\"}[5m])) by (instance)",
+                "format": "time_series",
+                "instant": false,
+                "interval": "",
+                "intervalFactor": 4,
+                "legendFormat": "{{instance}}",
+                "refId": "A"
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Disk Time",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
               {
                 "format": "ms",
                 "label": null,
@@ -532,270 +2080,14 @@
                 "max": null,
                 "min": null,
                 "show": true
-              }
-            ]
-          },
-          {
-            "cacheTimeout": null,
-            "colorBackground": false,
-            "colorValue": false,
-            "colors": [
-              "rgba(50, 172, 45, 0.97)",
-              "rgba(237, 129, 40, 0.89)",
-              "rgba(245, 54, 54, 0.9)"
-            ],
-            "datasource": "prometheus",
-            "editable": true,
-            "error": false,
-            "format": "percentunit",
-            "gauge": {
-              "maxValue": 1,
-              "minValue": 0,
-              "show": true,
-              "thresholdLabels": false,
-              "thresholdMarkers": true
-            },
-            "id": 7,
-            "interval": null,
-            "links": [],
-            "mappingType": 1,
-            "mappingTypes": [
-              {
-                "name": "value to text",
-                "value": 1
               },
               {
-                "name": "range to text",
-                "value": 2
-              }
-            ],
-            "maxDataPoints": 100,
-            "nullPointMode": "connected",
-            "nullText": null,
-            "postfix": "",
-            "postfixFontSize": "50%",
-            "prefix": "",
-            "prefixFontSize": "50%",
-            "rangeMaps": [
-              {
-                "from": "null",
-                "text": "N/A",
-                "to": "null"
-              }
-            ],
-            "span": 3,
-            "sparkline": {
-              "fillColor": "rgba(31, 118, 189, 0.18)",
-              "full": false,
-              "lineColor": "rgb(31, 120, 193)",
-              "show": false
-            },
-            "tableColumn": "",
-            "targets": [
-              {
-                "expr": "(sum(node_filesystem_size{device!=\"rootfs\",instance=\"$server\"}) - sum(node_filesystem_free{device!=\"rootfs\",instance=\"$server\"})) / sum(node_filesystem_size{device!=\"rootfs\",instance=\"$server\"})",
-                "intervalFactor": 2,
-                "refId": "A",
-                "step": 1800,
-                "target": ""
-              }
-            ],
-            "thresholds": "0.75, 0.9",
-            "title": "Disk space usage",
-            "type": "singlestat",
-            "valueFontSize": "80%",
-            "valueMaps": [
-              {
-                "op": "=",
-                "text": "N/A",
-                "value": "null"
-              }
-            ],
-            "valueName": "current"
-          }
-        ],
-        "repeat": null,
-        "repeatIteration": null,
-        "repeatRowId": null,
-        "showTitle": false,
-        "title": "New row",
-        "titleSize": "h6"
-      },
-      {
-        "collapse": false,
-        "height": "250px",
-        "panels": [
-          {
-            "alerting": {},
-            "aliasColors": {},
-            "bars": false,
-            "dashLength": 10,
-            "dashes": false,
-            "datasource": "prometheus",
-            "editable": true,
-            "error": false,
-            "fill": 1,
-            "grid": {},
-            "id": 8,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 2,
-            "links": [],
-            "nullPointMode": "connected",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [
-              {
-                "alias": "transmitted ",
-                "yaxis": 2
-              }
-            ],
-            "spaceLength": 10,
-            "span": 6,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "rate(node_network_receive_bytes{instance=\"$server\",device!~\"lo\"}[5m])",
-                "hide": false,
-                "intervalFactor": 2,
-                "legendFormat": "{{device}}",
-                "refId": "A",
-                "step": 240,
-                "target": ""
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "Network received",
-            "tooltip": {
-              "msResolution": false,
-              "shared": true,
-              "sort": 0,
-              "value_type": "cumulative"
-            },
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "bytes",
+                "format": "short",
                 "label": null,
                 "logBase": 1,
                 "max": null,
                 "min": null,
-                "show": true
-              },
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          },
-          {
-            "alerting": {},
-            "aliasColors": {},
-            "bars": false,
-            "dashLength": 10,
-            "dashes": false,
-            "datasource": "prometheus",
-            "editable": true,
-            "error": false,
-            "fill": 1,
-            "grid": {},
-            "id": 10,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 2,
-            "links": [],
-            "nullPointMode": "connected",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [
-              {
-                "alias": "transmitted ",
-                "yaxis": 2
-              }
-            ],
-            "spaceLength": 10,
-            "span": 6,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "rate(node_network_transmit_bytes{instance=\"$server\",device!~\"lo\"}[5m])",
-                "hide": false,
-                "intervalFactor": 2,
-                "legendFormat": "{{device}}",
-                "refId": "B",
-                "step": 240,
-                "target": ""
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "Network transmitted",
-            "tooltip": {
-              "msResolution": false,
-              "shared": true,
-              "sort": 0,
-              "value_type": "cumulative"
-            },
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
+                "show": false
               }
             ]
           }
@@ -804,7 +2096,7 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "New row",
+        "title": "Disk",
         "titleSize": "h6"
       }
     ],
@@ -816,21 +2108,22 @@
         {
           "allValue": null,
           "current": {
-            "tags": [],
-            "text": "10.156.0.3:9100",
-            "value": "10.156.0.3:9100"
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
           },
           "datasource": "prometheus",
           "hide": 0,
-          "includeAll": false,
-          "label": null,
-          "multi": false,
-          "name": "server",
+          "includeAll": true,
+          "label": "Node",
+          "multi": true,
+          "name": "node",
           "options": [],
-          "query": "label_values(node_boot_time, instance)",
+          "query": "label_values(node_boot_time,instance)",
           "refresh": 1,
           "regex": "",
-          "sort": 0,
+          "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
           "tagsQuery": "",
@@ -844,6 +2137,10 @@
       "to": "now"
     },
     "timepicker": {
+      "collapse": false,
+      "enable": true,
+      "notice": false,
+      "now": true,
       "refresh_intervals": [
         "5s",
         "10s",
@@ -856,6 +2153,7 @@
         "2h",
         "1d"
       ],
+      "status": "Stable",
       "time_options": [
         "5m",
         "15m",
@@ -866,11 +2164,12 @@
         "2d",
         "7d",
         "30d"
-      ]
+      ],
+      "type": "timepicker"
     },
-    "timezone": "browser",
+    "timezone": "utc",
     "title": "Nodes",
-    "version": 2
+    "version": 6
   },
   "overwrite": true
 }
