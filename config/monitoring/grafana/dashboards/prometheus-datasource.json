@@ -1,0 +1,19 @@
+{
+  "id": null,
+  "orgId": null,
+  "name": "prometheus",
+  "type": "prometheus",
+  "typeLogoUrl": "",
+  "access": "proxy",
+  "url": "http://prometheus.monitoring.svc:9090",
+  "password": "",
+  "user": "",
+  "database": "",
+  "basicAuth": false,
+  "basicAuthUser": "",
+  "basicAuthPassword": "",
+  "withCredentials": false,
+  "isDefault": false,
+  "jsonData": {},
+  "secureJsonFields": {}
+}
