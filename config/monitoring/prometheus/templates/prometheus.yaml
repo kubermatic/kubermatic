@@ -24,4 +24,3 @@ spec:
   resources:
     requests:
       memory: 1G
-
