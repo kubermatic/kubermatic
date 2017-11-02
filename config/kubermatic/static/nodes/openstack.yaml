@@ -48,7 +48,7 @@ config:
           mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
 
           if [ ! -f /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} ]; then
-            curl -L -o /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} https://storage.googleapis.com/kubelet/kubelet.{{index .Version.Values "k8s-version"}}
+            curl -L -o /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} https://storage.googleapis.com/kubernetes-release/release/{{index .Version.Values "k8s-version"}}/bin/linux/amd64/kubelet
             cp /opt/bin/kubelet.{{index .Version.Values "k8s-version"}} /opt/bin/kubelet
             chmod +x /opt/bin/kubelet
           fi

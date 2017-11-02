@@ -16,6 +16,7 @@ import (
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -184,6 +185,30 @@ func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kuber
 	return nil, nil
 }
 
+func (cc *controller) getFreeNodePort() (int, error) {
+	services, err := cc.seedInformerGroup.ServiceInformer.Lister().List(labels.Everything())
+	if err != nil {
+		return 0, err
+	}
+	allocatedPorts := map[int]struct{}{}
+
+	for _, s := range services {
+		for _, p := range s.Spec.Ports {
+			if p.NodePort != 0 {
+				allocatedPorts[int(p.NodePort)] = struct{}{}
+			}
+		}
+	}
+
+	for i := 30000; i < 32767; i++ {
+		if _, exists := allocatedPorts[i]; !exists {
+			return i, nil
+		}
+	}
+
+	return 0, fmt.Errorf("no free nodeport left")
+}
+
 // pendingCreateAddresses will set the cluster hostname and the url under which the apiserver will be reachable
 func (cc *controller) pendingCreateAddresses(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var updated bool
@@ -194,7 +219,11 @@ func (cc *controller) pendingCreateAddresses(c *kubermaticv1.Cluster) (*kubermat
 	}
 
 	if c.Address.ExternalPort == 0 {
-		c.Address.ExternalPort = cc.apiserverExternalPort
+		port, err := cc.getFreeNodePort()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get nodeport: %v", err)
+		}
+		c.Address.ExternalPort = port
 		updated = true
 	}
 
@@ -239,7 +268,8 @@ func (cc *controller) launchingCheckSecrets(c *kubermaticv1.Cluster) error {
 
 func (cc *controller) launchingCheckServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*corev1.Service, error){
-		"apiserver": resources.LoadServiceFile,
+		"apiserver":          resources.LoadServiceFile,
+		"apiserver-external": resources.LoadServiceFile,
 	}
 
 	ns := c.Status.NamespaceName

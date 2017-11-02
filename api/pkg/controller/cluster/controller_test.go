@@ -17,9 +17,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const TestDC string = "testdc"
-const TestExternalURL string = "localhost"
-const TestExternalPort int = 8443
+const TestDC = "testdc"
+const TestExternalURL = "localhost"
+const TestExternalPort = 30000
 
 type fake struct {
 	controller   *controller
