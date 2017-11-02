@@ -3,7 +3,7 @@ grafana:
   password: bG9vZHNlMTIz # loodse123
   image:
     repository: grafana/grafana
-    tag: 4.5.2
+    tag: 4.6.1
   watcher:
     image:
       repository: quay.io/coreos/grafana-watcher
