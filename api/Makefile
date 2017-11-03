@@ -2,9 +2,6 @@ REPO=kubermatic/api
 GO?=CGO_ENABLED=0 go
 CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILDFLAGS += -i -v
-LDFLAGS += -X main.Version=$(DRONE_TAG)
-LDFLAGS += -X main.Revision=$(DRONE_COMMIT)
-LDFLAGS += -X "main.BuildDate=$(DATE)"
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
