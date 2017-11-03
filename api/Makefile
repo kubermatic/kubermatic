@@ -1,13 +1,9 @@
 REPO=kubermatic/api
-SHELL:=/bin/bash
-GO?=go
-GOBUILD=$(GO) build
-GOTEST=$(GO) test
-GOINSTALL=$(GO) install
+GO?=CGO_ENABLED=0 go
 CMD=kubermatic-api kubermatic-cluster-controller client
-GOBUILDFLAGS= -i
+GOBUILDFLAGS += -i -v
+LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
-GOFLAGS=
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
@@ -22,11 +18,11 @@ all: check test build
 build: $(CMD)
 
 $(CMD): vendor
-	$(GOFLAGS) $(GOBUILD) $(GOBUILDFLAGS) -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
+	$(GO) build $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)' -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
 
 check: gofmt lint
 test: vendor
-	@$(GOTEST) -v ./...
+	@$(GO) test -v ./...
 
 clean:
 	@cd _build
@@ -35,7 +31,7 @@ clean:
 
 install: vendor
 	@for PRODUCT in $(CMD); do \
-		$(GOINSTALL) github.com/kubermatic/kubermatic/api/cmd/$$PRODUCT ; \
+		$(GO) install -v -ldflags '-w $(LDFLAGS)' github.com/kubermatic/kubermatic/api/cmd/$$PRODUCT ; \
 	done
 
 docker-build:
@@ -106,4 +102,3 @@ cover:
 	./hack/cover.sh --html
 
 .PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push bootstrap $(CMD)
-
