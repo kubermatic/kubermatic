@@ -22,6 +22,14 @@ pipeline:
       - cd api
       - make gofmt
 
+  license-validation:
+    group: lint
+    image: golang:1.9
+    commands:
+      - cd api
+      - go get -u github.com/frapposelli/wwhrd
+      - wwhrd check -f ../allowed_licensed.yaml
+
   lint:
     group: lint
     image: metalmatze/gometalinter:1.9
