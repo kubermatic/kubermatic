@@ -1,0 +1,17 @@
+
+blacklist:
+  - GPL-2.0
+
+whitelist:
+  - Apache-2.0
+  - MIT
+  - NewBSD
+  - FreeBSD
+  - LGPL-3.0
+  - MPL-2.0
+
+exceptions:
+  - github.com/kr/logfmt
+  - github.com/davecgh/go-spew/spew/testdata
+  - github.com/howeyc/gopass
+  - github.com/davecgh/go-spew/spew
