@@ -134,11 +134,12 @@ func main() {
 			glog.Fatal(err)
 		}
 
-		go ctrl.Run(*workerCount, stop)
-
 		seedInformerGroup.Run(stop)
 		masterInformerGroup.Run(stop)
 		cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
+
+		go ctrl.Run(*workerCount, stop)
+
 	}
 
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
