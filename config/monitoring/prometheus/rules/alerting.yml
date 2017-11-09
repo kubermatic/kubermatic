@@ -1,5 +1,5 @@
 groups:
-- name: alerting.rules
+- name: alerting
   rules:
   - alert: InstanceDown
     expr: up == 0

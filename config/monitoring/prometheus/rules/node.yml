@@ -1,5 +1,5 @@
 groups:
-- name: node-alerting.rules
+- name: node
   rules:
   - alert: DiskWillFillIn4Hours
     expr: predict_linear(node_filesystem_free{name="node-exporter"}[1h], 4 * 3600) < 0
