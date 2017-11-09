@@ -88,6 +88,7 @@ config:
             --kubeconfig=/etc/kubernetes/kubeconfig \
             --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
             --require-kubeconfig \
+            --system-reserved=cpu=50m,memory=100Mi \
             --cert-dir=/etc/kubernetes/
 
           [Install]
