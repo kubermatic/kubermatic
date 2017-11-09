@@ -1,5 +1,5 @@
 REPO=kubermatic/api
-GO?=CGO_ENABLED=0 go
+GO?=go
 CMD=kubermatic-api kubermatic-cluster-controller client
 GOBUILDFLAGS += -i -v
 LDFLAGS += -extldflags '-static'
