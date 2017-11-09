@@ -6,7 +6,7 @@ metadata:
   labels:
     app: prometheus
 spec:
-  replicas: 1
+  replicas: 2
   version: {{ .Values.prometheus.version }}
   serviceAccountName: prometheus
   serviceMonitorSelector:
