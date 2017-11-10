@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	nodesetv1alpha1 "github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -145,13 +146,13 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			n := &apiv1.Node{}
 			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Name, rand.String(5))
 			n.Labels = map[string]string{
-				"node.k8s.io/controller": "kube-machine",
-				LabelArch:                "amd64",
-				LabelOS:                  "linux",
-				LabelHostname:            n.Name,
+				LabelArch:     "amd64",
+				LabelOS:       "linux",
+				LabelHostname: n.Name,
 			}
+
 			n.Annotations = map[string]string{
-				"node.k8s.io/node-class": nc.Name,
+				nodesetv1alpha1.NodeClassNameAnnotationKey: nc.Name,
 			}
 
 			n, err = client.CoreV1().Nodes().Create(n)
