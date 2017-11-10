@@ -14,16 +14,23 @@
 
 FROM debian:jessie
 
+RUN apt-get update
+RUN apt-get install -y jq
+
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.7.9/bin/linux/amd64/kubectl /usr/local/bin/
 RUN chmod 755 /usr/local/bin/kubectl
 
 ADD kube-addons.sh /opt/
+
 ADD run.sh /opt/
-ADD cleanup.sh /opt/
+ADD migrate.sh /opt/
 ADD namespace.yaml /opt/
+ADD addons /etc/kubernetes/addons
+ADD migrations /etc/kubermatic/migrations
+
 RUN chmod +x /opt/kube-addons.sh
 RUN chmod +x /opt/run.sh
-RUN chmod +x /opt/cleanup.sh
-ADD addons /etc/kubernetes/addons
+RUN chmod +x /opt/migrate.sh
+RUN chmod +x /etc/kubermatic/migrations/*
 
 CMD ["/opt/run.sh"]
