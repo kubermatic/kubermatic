@@ -179,7 +179,7 @@ pipeline:
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     channel: dev
-    image_url: http://thecatapi.com/api/images/get?api_key=MjQyOTIx&size=med&format=src&type=gif&random-param=${DRONE_COMMIT}
+    image_url: http://thecatapi.com/api/images/get?api_key=MjQyOTIx&size=small&format=src&type=gif&random-param=${DRONE_COMMIT}
     template: >
         We just deployed the API&Controller to dev!
         This commit has been brought to you by ${DRONE_COMMIT_AUTHOR} <3
