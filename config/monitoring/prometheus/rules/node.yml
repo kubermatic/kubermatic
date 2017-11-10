@@ -2,13 +2,13 @@ groups:
 - name: node
   rules:
   - alert: NodeDiskWillFillIn4Hours
-    expr: predict_linear(node_filesystem_free{name="node-exporter"}[1h], 4 * 3600) < 0
-    for: 5m
+    expr: predict_linear(node_filesystem_free{job="node-exporter"}[1h], 4 * 3600) < 0
+    for: 15m
     labels:
       severity: page
   - alert: NodeDiskWillFillIn8Hours
-    expr: predict_linear(node_filesystem_free{name="node-exporter"}[1h], 8 * 3600) < 0
-    for: 5m
+    expr: predict_linear(node_filesystem_free{job="node-exporter"}[1h], 8 * 3600) < 0
+    for: 15m
     labels:
       severity: notify
   - alert: NodeExporterDown

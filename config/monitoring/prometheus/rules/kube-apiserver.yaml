@@ -1,7 +1,7 @@
 groups:
 - name: kube-apiserver
   rules:
-  - alert: KubernetesApiserverDown
+  - alert: KubernetesApiServerDown
     expr: absent(up{job="apiserver"} == 1)
     for: 5m
     labels:
