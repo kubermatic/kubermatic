@@ -9,13 +9,6 @@ groups:
     annotations:
       summary: Prometheus Scrape Targets are down
       description: '{{ $value }}% or more of {{ $labels.job }} targets are down.'
-#  - alert: PrometheusDeadMansSwitch
-#    expr: vector(1)
-#    labels:
-#      severity: none
-#    annotations:
-#      summary: Alerting DeadMansSwitch
-#      description: This is a DeadMansSwitch meant to ensure that the entire Alerting pipeline is functional.
   - alert: TooManyOpenFileDescriptors
     expr: 100 * (process_open_fds / process_max_fds) > 95
     for: 10m
