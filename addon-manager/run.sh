@@ -1,3 +1,3 @@
 #!/bin/bash
-/opt/cleanup.sh
+/opt/migrate.sh
 /opt/kube-addons.sh
