@@ -13,5 +13,5 @@ spec:
     matchNames:
     - monitoring
   endpoints:
-  - port: http
+  - port: web
     interval: 15s
