@@ -31,7 +31,7 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-func (a *amazonEc2) Validate(cloud *kubermaticv1.CloudSpec) error {
+func (a *amazonEc2) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	client, err := a.getEC2client(cloud)
 	if err != nil {
 		return err
@@ -295,7 +295,7 @@ func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
 		cloud.AWS.RouteTableID != ""
 }
 
-func (a *amazonEc2) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	if isInitialized(cloud) {
 		return nil, nil
 	}
@@ -422,7 +422,7 @@ func (a *amazonEc2) getIAMClient(cloud *kubermaticv1.CloudSpec) (*iam.IAM, error
 	return iam.New(sess), nil
 }
 
-func (a *amazonEc2) CleanUp(cloud *kubermaticv1.CloudSpec) error {
+func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	ec2client, err := a.getEC2client(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get ec2 client: %v", err)

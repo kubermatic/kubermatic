@@ -30,7 +30,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (os *openstack) Validate(cloud *kubermaticv1.CloudSpec) error {
+func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	client, err := os.getClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -85,7 +85,7 @@ func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
 		cloud.Openstack.FloatingIPPool != ""
 }
 
-func (os *openstack) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	if isInitialized(cloud) {
 		return nil, nil
 	}
@@ -145,7 +145,7 @@ func (os *openstack) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*ku
 	return cloud, nil
 }
 
-func (os *openstack) CleanUp(cloud *kubermaticv1.CloudSpec) error {
+func (os *openstack) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	client, err := os.getClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)

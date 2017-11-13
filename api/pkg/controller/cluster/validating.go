@@ -31,7 +31,7 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	if err = prov.Validate(c.Spec.Cloud); err != nil {
+	if err = prov.ValidateCloudSpec(c.Spec.Cloud); err != nil {
 		return fmt.Errorf("cloud provider data could not be validated successfully: %v", err)
 	}
 

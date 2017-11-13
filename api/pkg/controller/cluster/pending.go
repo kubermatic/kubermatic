@@ -133,7 +133,7 @@ func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Clust
 		return nil, err
 	}
 
-	cloud, err := prov.Initialize(cluster.Spec.Cloud, cluster.Name)
+	cloud, err := prov.InitializeCloudProvider(cluster.Spec.Cloud, cluster.Name)
 	if err != nil {
 		return nil, err
 	}
