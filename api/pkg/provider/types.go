@@ -22,12 +22,22 @@ const (
 	DefaultKubeletPort = 10250
 )
 
-// CloudProvider converts both a cloud spec and is able to create/retrieve nodes
-// on a cloud provider.
+// CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	Initialize(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
-	Validate(*kubermaticv1.CloudSpec) error
-	CleanUp(*kubermaticv1.CloudSpec) error
+	CloudSpecProvider
+	NodeProvider
+}
+
+// CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
+// on a cloud provider.
+type CloudSpecProvider interface {
+	InitializeCloudProvider(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
+	ValidateCloudSpec(*kubermaticv1.CloudSpec) error
+	CleanUpCloudProvider(*kubermaticv1.CloudSpec) error
+}
+
+// NodeProvider declares a set of methods to manage NodeClasses
+type NodeProvider interface {
 	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	GetNodeClassName(*api.NodeSpec) string
 }

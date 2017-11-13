@@ -29,7 +29,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
+func (do *digitalocean) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cloud.Digitalocean.Token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 
@@ -37,11 +37,11 @@ func (do *digitalocean) Validate(cloud *kubermaticv1.CloudSpec) error {
 	return err
 }
 
-func (do *digitalocean) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+func (do *digitalocean) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return nil, nil
 }
 
-func (do *digitalocean) CleanUp(*kubermaticv1.CloudSpec) error {
+func (do *digitalocean) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 

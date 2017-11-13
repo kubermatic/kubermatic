@@ -93,7 +93,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		return nil, err
 	}
 
-	if err = prov.Validate(c.Spec.Cloud); err != nil {
+	if err = prov.ValidateCloudSpec(c.Spec.Cloud); err != nil {
 		return nil, fmt.Errorf("cloud provider data could not be validated successfully: %v", err)
 	}
 
