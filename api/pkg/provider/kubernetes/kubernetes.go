@@ -68,6 +68,10 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		return nil, errors.NewBadRequest("Unknown datacenter")
 	}
 
+	if spec.SeedDatacenterName == "" {
+		spec.SeedDatacenterName = dc.Seed
+	}
+
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterName,
@@ -79,7 +83,7 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
 			LastTransitionTime: metav1.Now(),
-			Seed:               dc.Seed,
+			Seed:               spec.SeedDatacenterName,
 			NamespaceName:      NamespaceName(clusterName),
 			UserEmail:          user.Email,
 			UserName:           user.Name,
