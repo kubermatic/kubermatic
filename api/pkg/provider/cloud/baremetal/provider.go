@@ -22,15 +22,15 @@ func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.C
 	}
 }
 
-func (b *baremetal) Validate(cloud *kubermaticv1.CloudSpec) error {
+func (b *baremetal) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *baremetal) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+func (b *baremetal) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return nil, nil
 }
 
-func (b *baremetal) CleanUp(*kubermaticv1.CloudSpec) error {
+func (b *baremetal) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 

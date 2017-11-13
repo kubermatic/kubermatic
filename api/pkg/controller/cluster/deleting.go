@@ -69,7 +69,7 @@ func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*ku
 		return nil, err
 	}
 
-	if err = cp.CleanUp(c.Spec.Cloud); err != nil {
+	if err = cp.CleanUpCloudProvider(c.Spec.Cloud); err != nil {
 		return nil, err
 	}
 

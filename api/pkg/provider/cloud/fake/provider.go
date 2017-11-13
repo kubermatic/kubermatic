@@ -18,15 +18,15 @@ func NewCloudProvider() provider.CloudProvider {
 	}
 }
 
-func (p *fakeCloudProvider) Validate(*kubermaticv1.CloudSpec) error {
+func (p *fakeCloudProvider) ValidateCloudSpec(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) Initialize(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+func (p *fakeCloudProvider) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	return nil, nil
 }
 
-func (p *fakeCloudProvider) CleanUp(*kubermaticv1.CloudSpec) error {
+func (p *fakeCloudProvider) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
