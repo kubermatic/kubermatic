@@ -11,6 +11,7 @@ import (
 
 // APIError we need to work with github.com/yvasiyarov/swagger
 // based on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go
+// swagger:response APIError
 type APIError struct {
 	ErrorCode    int    `json:"code"`
 	ErrorMessage string `json:"message"`

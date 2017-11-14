@@ -11,8 +11,13 @@ const (
 //+genclient
 //+genclient:nonNamespaced
 
-// UserSSHKey specifies a users UserSSHKey
+// UserSSHKeys specifies a list of users ssh key
+// swagger:response UserSSHKeys
+type UserSSHKeys []*UserSSHKey
+
+// UserSSHKey specifies a users ssh key
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// swagger:response UserSSHKey
 type UserSSHKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

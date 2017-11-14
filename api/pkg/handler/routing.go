@@ -153,6 +153,19 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Chain(r.authenticator.Verifier())(e)
 }
 
+// swagger:route GET /api/v1/ssh-keys ssh keys list getlistSSHKeys
+//
+// Lists SSH keys from the user
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKeys
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.auth(listSSHKeyEndpoint(r.dataProvider)),
