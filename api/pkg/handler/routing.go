@@ -57,22 +57,16 @@ func (r Routing) Register(mux *mux.Router) {
 		Methods(http.MethodGet).
 		Path("/").
 		HandlerFunc(StatusOK)
-	mux.
-		Methods(http.MethodGet).
-		Path("/api/").
-		HandlerFunc(APIDescriptionHandler)
+
 	mux.
 		Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(StatusOK)
+
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
-	mux.
-		Methods(http.MethodGet).
-		PathPrefix("/swagger-ui/").
-		Handler(http.StripPrefix("/swagger-ui/", http.FileServer(http.Dir("./swagger-ui"))))
 
 	mux.
 		Methods(http.MethodGet).
@@ -192,16 +186,6 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// datacentersHandler serves a list of datacenters.
-// @Title DataCenterHandler
-// @Description datacentersHandler serves a list of datacenters.
-// @Accept  json
-// @Produce  json
-// @Param   some_id     path    int     true        "Some ID"
-// @Success 200 {object} string
-// @Failure 400 {object} APIError "We need ID!!"
-// @Failure 404 {object} APIError "Can not find ID"
-// @Router /api/v1/dc [get]
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(datacentersEndpoint(r.datacenters)),
@@ -213,17 +197,6 @@ func (r Routing) datacentersHandler() http.Handler {
 	)
 }
 
-// datacenterHandler server information for a datacenter.
-// Admin only!
-// @Title datacenterHandler
-// @Description datacenterHandler server information for a datacenter.
-// @Accept  json
-// @Produce  json
-// @Param   some_id     path    int     true        "Some ID"
-// @Success 200 {object} string
-// @Failure 400 {object} APIError "We need datacenter"
-// @Failure 404 {object} APIError "Can not find datacenter"
-// @Router /api/v1/dc/{dc} [get]
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(datacenterEndpoint(r.datacenters)),
