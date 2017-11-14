@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+export  KUBECONFIG=/kubermatic/kubeconfig
 pushd /kubermatic > /dev/null
 
-helm init --service-account=kubermatic-installer --upgrade
+kubectl create namespace kubermatic-installer
+kubectl create serviceaccount tiller --namespace kubermatic-installer
+kubectl create -f role-tiller.yaml
+kubectl create -f rolebinding-tiller.yaml
+helm init --service-account tiller --tiller-namespace kubermatic-installer --upgrade
 sleep 10
 helm upgrade -i k8sniff -f kubermatic-values.yaml -f config/values.yaml k8sniff/
 helm upgrade -i kubermatic -f kubermatic-values.yaml -f config/values.yaml kubermatic/
