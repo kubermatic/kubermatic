@@ -23,11 +23,9 @@ kubectl delete -f installer-assets/tiller-clusterrolebinding.yaml
 kubectl create -f installer-assets/tiller-clusterrolebinding.yaml
 
 helm ${HELM_OPTS} init --service-account tiller --upgrade
-helm ${HELM_OPTS} version || true
-while [ $? -ne 0 ]
+until helm ${HELM_OPTS} version
 do
-  sleep 1
-  helm ${HELM_OPTS} version || true
+   sleep 5
 done
 
 helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} storage/
