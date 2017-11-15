@@ -38,6 +38,8 @@ helm ${HELM_OPTS} upgrade -i --namespace=cert-manager cert-manager -f ${VALUESFI
 helm ${HELM_OPTS} upgrade -i certs -f ${VALUESFILE} certs/
 
 ############# PROMETHEUS #############
+# All monitoring charts require the monitoring ns.
+kubectl create namespace monitoring || true
 helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} monitoring/prometheus-operator/
 helm ${HELM_OPTS} upgrade -i node-exporter -f ${VALUESFILE} monitoring/node-exporter/
 helm ${HELM_OPTS} upgrade -i kube-state-metrics -f ${VALUESFILE} monitoring/kube-state-metrics/
