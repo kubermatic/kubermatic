@@ -26,7 +26,8 @@ COPY cert-manager /kubermatic/cert-manager
 COPY certs /kubermatic/certs
 COPY monitoring /kubermatic/monitoring
 
-COPY installer-assets /kubermatic/installer-assets
+COPY installer /kubermatic/installer
+
 COPY deploy_helm_charts.sh /kubermatic/
 
 CMD ["/kubermatic/deploy_helm_charts.sh"]

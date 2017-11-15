@@ -9,12 +9,12 @@ if [ ! -f ${VALUESFILE} ]; then
     exit 1
 fi
 
-kubectl apply -f installer-assets/installer-ns.yaml
-kubectl apply -f installer-assets/tiller-serviceaccount.yaml
+kubectl apply -f installer/namespace.yaml
+kubectl apply -f installer/tiller-serviceaccount.yaml
 
 # You cannot update clusterrolebindings so we recreate them
-kubectl delete -f installer-assets/tiller-clusterrolebinding.yaml
-kubectl create -f installer-assets/tiller-clusterrolebinding.yaml
+kubectl delete -f installer/tiller-clusterrolebinding.yaml
+kubectl create -f installer/tiller-clusterrolebinding.yaml
 
 helm ${HELM_OPTS} init --service-account tiller --upgrade
 until helm ${HELM_OPTS} version
