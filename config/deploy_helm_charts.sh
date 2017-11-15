@@ -1,31 +1,53 @@
 #!/usr/bin/env bash
-export  KUBECONFIG=/kubermatic/kubeconfig
-pushd /kubermatic > /dev/null
+set -euo pipefail
 
-kubectl create namespace kubermatic-installer
-kubectl create serviceaccount tiller --namespace kubermatic-installer
-kubectl create -f role-tiller.yaml
-kubectl create -f rolebinding-tiller.yaml
-helm init --service-account tiller --tiller-namespace kubermatic-installer --upgrade
-sleep 10
-helm upgrade -i storage -f kubermatic-values.yaml -f config/values.yaml storage/
-helm upgrade -i k8sniff -f kubermatic-values.yaml -f config/values.yaml k8sniff/
-helm upgrade -i nginx-ingress-controller -f kubermatic-values.yaml -f config/values.yaml nginx-ingress-controller/
-helm upgrade -i oauth -f kubermatic-values.yaml -f config/values.yaml oauth/
-helm upgrade -i kubermatic -f kubermatic-values.yaml -f config/values.yaml kubermatic/
-helm upgrade -i --namespace=cert-manager cert-manager -f kubermatic-values.yaml -f config/values.yaml cert-manager/
-helm upgrade -i certs -f kubermatic-values.yaml -f config/values.yaml certs/
+KUBECONFIG=/kubermatic/kubeconfig
+VALUESFILE=/kubermatic/values.yaml
+HELM_OPTS="--tiller-namespace=kubermatic-installer"
 
-# Logging
-if grep -q '\bLogging\b' config/values.yaml; then
-  helm upgrade -i efk-logging -f kubermatic-values.yaml -f config/values.yaml efk-logging/
+if [ ! -f ${VALUESFILE} ]; then
+    echo "${VALUESFILE} does not exist."
+    exit 1
 fi
-#Monitoring
-if grep -q '\bPrometheus\b' config/values.yaml; then
-  helm upgrade -i prometheus -f kubermatic-values.yaml -f config/values.yaml monitoring/prometheus/
+
+if [ ! -f ${KUBECONFIG} ]; then
+    echo "${KUBECONFIG} does not exist."
+    exit 1
 fi
-# Bare metal
-if grep -q '\bIsBareMetal\b' config/values.yaml; then
-  helm upgrade -i coreos-ipxe-server -f kubermatic-values.yaml -f config/values.yaml coreos-ipxe-server/
-  helm upgrade -i bare-metal-provider -f kubermatic-values.yaml -f config/values.yaml bare-metal-provider/
-fi
+
+kubectl apply -f installer-assets/installer-ns.yaml
+kubectl apply -f installer-assets/tiller-serviceaccount.yaml
+
+# You cannot update clusterrolebindings so we recreate them
+kubectl delete -f installer-assets/tiller-clusterrolebinding.yaml
+kubectl create -f installer-assets/tiller-clusterrolebinding.yaml
+
+helm ${HELM_OPTS} init --service-account tiller --upgrade
+helm ${HELM_OPTS} version || true
+while [ $? -ne 0 ]
+do
+  sleep 1
+  helm ${HELM_OPTS} version || true
+done
+
+helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} storage/
+helm ${HELM_OPTS} upgrade -i k8sniff -f ${VALUESFILE} k8sniff/
+#helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} nginx-ingress-controller/
+helm ${HELM_OPTS} upgrade -i oauth -f ${VALUESFILE} oauth/
+helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} kubermatic/
+helm ${HELM_OPTS} upgrade -i --namespace=cert-manager cert-manager -f ${VALUESFILE} cert-manager/
+helm ${HELM_OPTS} upgrade -i certs -f ${VALUESFILE} certs/
+
+## Logging
+#if grep -q '\bLogging\b' ${VALUESFILE}; then
+#  helm ${HELM_OPTS} upgrade -i efk-logging -f ${VALUESFILE} efk-logging/
+#fi
+##Monitoring
+#if grep -q '\bPrometheus\b' ${VALUESFILE}; then
+#  helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} monitoring/prometheus/
+#fi
+## Bare metal
+#if grep -q '\bIsBareMetal\b' ${VALUESFILE}; then
+#  helm ${HELM_OPTS} upgrade -i coreos-ipxe-server -f ${VALUESFILE} coreos-ipxe-server/
+#  helm ${HELM_OPTS} upgrade -i bare-metal-provider -f ${VALUESFILE} bare-metal-provider/
+#fi
