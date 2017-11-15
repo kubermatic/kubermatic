@@ -16,5 +16,5 @@ spec:
       targetPort: 443
       protocol: TCP
   selector:
-    k8s-app: nginx-ingress-controller
+    app: ingress-nginx
 {{ end }}
