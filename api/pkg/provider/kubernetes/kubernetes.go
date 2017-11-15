@@ -63,12 +63,11 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 		}
 	}
 
-	dc, found := p.dcs[spec.Cloud.DatacenterName]
-	if !found {
-		return nil, errors.NewBadRequest("Unknown datacenter")
-	}
-
 	if spec.SeedDatacenterName == "" {
+		dc, found := p.dcs[spec.Cloud.DatacenterName]
+		if !found {
+			return nil, errors.NewBadRequest("Unknown datacenter")
+		}
 		spec.SeedDatacenterName = dc.Seed
 	}
 
