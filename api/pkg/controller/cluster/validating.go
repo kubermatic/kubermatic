@@ -39,8 +39,22 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *controller) validatingCheckDatacenter(c *kubermaticv1.Cluster) error {
-	if _, ok := cc.dcs[c.Spec.Cloud.DatacenterName]; !ok {
-		return fmt.Errorf("could not find datacenter %s", c.Spec.Cloud.DatacenterName)
+	//Validate seed datacenter
+	seedDc, found := cc.dcs[c.Spec.SeedDatacenterName]
+	if !found {
+		return fmt.Errorf("could not find given seed datacenter %q", c.Spec.SeedDatacenterName)
+	}
+	if !seedDc.IsSeed {
+		return fmt.Errorf("given seed datacenter %q is not configured as a seed datacenter", c.Spec.SeedDatacenterName)
+	}
+
+	//Validate node datacenter
+	dc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
+	if !found {
+		return fmt.Errorf("could not find node datacenter %q", c.Spec.Cloud.DatacenterName)
+	}
+	if dc.IsSeed {
+		return fmt.Errorf("given datacenter %q is not configured as a node datacenter", c.Spec.SeedDatacenterName)
 	}
 
 	return nil
