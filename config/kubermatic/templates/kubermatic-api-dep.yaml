@@ -18,19 +18,19 @@ spec:
       serviceAccountName: kubermatic
       containers:
         - name: api
-          command: [
-          '/kubermatic-api',
-          '-v=4',
-          '-logtostderr',
-          '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
-          '-token-issuer=https://{{ .Values.KubermaticURL }}/dex',
-          '-client-id={{ .Values.ClientID }}',
-          '-versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}',
-          '-updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}',
-          '-prometheus-address=0.0.0.0:8085',
-          '-prometheus-path=/metrics'
-          ]
-          image: kubermatic/api:{{.Values.KubermaticAPIImageTag}}
+          command:
+          - /kubermatic-api
+          args:
+          - -v=4
+          - -logtostderr
+          - -datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}
+          - -token-issuer=https://{{ .Values.KubermaticURL }}/dex
+          - -client-id={{ .Values.ClientID }}
+          - -versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}
+          - -updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}
+          - -prometheus-address=0.0.0.0:8085
+          - -prometheus-path=/metrics
+          image: 'kubermatic/api:{{ .Values.KubermaticAPIImageTag }}'
           imagePullPolicy: Always
           ports:
             - name: metrics
