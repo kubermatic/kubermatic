@@ -25,8 +25,7 @@ COPY cert-manager /kubermatic/cert-manager
 COPY certs /kubermatic/certs
 COPY monitoring /kubermatic/monitoring
 
+COPY installer-assets /kubermatic/installer-assets
 COPY deploy_helm_charts.sh /kubermatic/
-COPY role-tiller.yaml /kubermatic/
-COPY rolebinding-tiller.yaml /kubermatic/
 
 CMD ["/kubermatic/deploy_helm_charts.sh"]
