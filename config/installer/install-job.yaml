@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: kubermatic-installer
+  generateName: installer
   namespace: kubermatic-installer
 spec:
   template:
