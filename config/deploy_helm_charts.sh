@@ -30,7 +30,7 @@ done
 
 helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} storage/
 helm ${HELM_OPTS} upgrade -i k8sniff -f ${VALUESFILE} k8sniff/
-#helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} nginx-ingress-controller/
+helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} nginx-ingress-controller/
 helm ${HELM_OPTS} upgrade -i oauth -f ${VALUESFILE} oauth/
 helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} kubermatic/
 helm ${HELM_OPTS} upgrade -i --namespace=cert-manager cert-manager -f ${VALUESFILE} cert-manager/
