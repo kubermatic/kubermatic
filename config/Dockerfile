@@ -23,7 +23,7 @@ COPY oauth /kubermatic/oauth
 COPY storage /kubermatic/storage
 COPY cert-manager /kubermatic/cert-manager
 COPY certs /kubermatic/certs
-COPY monitoring /kubermatic/monitotring
+COPY monitoring /kubermatic/monitoring
 
 COPY deploy_helm_charts.sh /kubermatic/
 COPY role-tiller.yaml /kubermatic/
