@@ -18,21 +18,21 @@ spec:
       serviceAccountName: kubermatic
       containers:
         - name: cluster-controller
-          command: [
-          '/kubermatic-cluster-controller',
-          '-v=4',
-          '-logtostderr',
-          '-external-url={{ .Values.KubermaticURL | trim }}',
-          '-kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}',
-          '-master-resources={{.Values.MasterResourcesMountPath }}',
-          '-datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}',
-          '-versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}',
-          '-updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}',
-          '-apiserver-external-port={{ .Values.ApiserverExternalPort }}',
-          '-prometheus-address=0.0.0.0:8085',
-          '-prometheus-path=/metrics'
-          ]
-          image: kubermatic/api:{{.Values.KubermaticControllerImageTag}}
+          command:
+          - /kubermatic-cluster-controller
+          args:
+          - -v=4
+          - -logtostderr
+          - -external-url={{ .Values.KubermaticURL | trim }}
+          - -kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}
+          - -master-resources={{.Values.MasterResourcesMountPath }}
+          - -datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}
+          - -versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}
+          - -updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}
+          - -apiserver-external-port={{ .Values.ApiserverExternalPort }}
+          - -prometheus-address=0.0.0.0:8085
+          - -prometheus-path=/metrics
+          image: 'kubermatic/api:{{.Values.KubermaticControllerImageTag}}'
           imagePullPolicy: Always
           ports:
             - name: metrics
