@@ -1,12 +1,15 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: nginx-ingress-clusterrole-nisa-binding
+  name: tiller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: nginx-ingress-clusterrole
+  name: cluster-admin
 subjects:
   - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
-    namespace: ingress-nginx
+    name: tiller
+    namespace: kubermatic-installer
+  - kind: ServiceAccount
+    name: tiller
+    namespace: kube-system

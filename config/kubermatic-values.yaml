@@ -1,6 +1,0 @@
-### Kubermatic Docker-image tag (API/Controller/Dashboard/Bare-Metal-Provider)
-KubermaticAPIImageTag: "v1.4"
-KubermaticControllerImageTag: "v1.4"
-KubermaticDashboardImageTag: "v1.0.2"
-KubermaticBareMetalProviderImageTag: "v1.0.2"
-K8sniffImageTag: "latest"
