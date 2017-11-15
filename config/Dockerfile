@@ -26,7 +26,6 @@ COPY certs /kubermatic/certs
 COPY monitoring /kubermatic/monitotring
 
 COPY deploy_helm_charts.sh /kubermatic/
-COPY kubermatic-values.yaml /kubermatic/
 COPY role-tiller.yaml /kubermatic/
 COPY rolebinding-tiller.yaml /kubermatic/
 
