@@ -28,6 +28,10 @@ func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider)
 			return nil, errors.NewBadRequest("no cloud spec given")
 		}
 
+		if req.Cluster.Cloud.DatacenterName == "" && req.Cluster.SeedDatacenterName == "" {
+			return nil, errors.NewBadRequest("no datacenter given")
+		}
+
 		// As we don't provision byo nodes, we need to allow 0 keys.
 		if len(req.SSHKeys) < 1 && req.Cluster.Cloud.BringYourOwn == nil {
 			return nil, errors.NewBadRequest("please provide at least one key")
