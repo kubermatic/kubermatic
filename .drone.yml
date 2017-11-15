@@ -107,7 +107,7 @@ pipeline:
     when:
       branch: master
 
-  kubermatic-docker-master:
+  kubermatic-installer-docker-master:
     group: push
     image: plugins/docker
     repo: kubermatic/installer
