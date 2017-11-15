@@ -6,9 +6,7 @@ kind: Deployment
 {{ end }}
 metadata:
   name: nginx-ingress-controller
-  labels:
-    k8s-app: nginx-ingress-controller
-  namespace: nginx
+  namespace: ingress-nginx
 spec:
 {{ if not .Values.IsBareMetal }}
   replicas: 1
@@ -16,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        k8s-app: nginx-ingress-controller
+        app: ingress-nginx
       annotations:
         prometheus.io/port: '10254'
         prometheus.io/scrape: 'true'
@@ -25,39 +23,48 @@ spec:
       hostNetwork: true
     {{ end }}
       serviceAccountName: nginx-ingress-serviceaccount
-      terminationGracePeriodSeconds: 60
       containers:
-      - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.15
-        name: nginx-ingress-controller
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 10254
-            scheme: HTTP
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10254
-            scheme: HTTP
-          initialDelaySeconds: 10
-          timeoutSeconds: 1
-        {{ if not .Values.IsBareMetal }}
-        ports:
-        - containerPort: 80
-          hostPort: 80
-        - containerPort: 443
-          hostPort: 443
-        {{ end }}
-        env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-        args:
-        - /nginx-ingress-controller
-        - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
-        - --default-ssl-certificate=default/kubermatic-tls-certificates
+        - name: nginx-ingress-controller
+          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0-beta.17
+          args:
+            - /nginx-ingress-controller
+            - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+            - --configmap=$(POD_NAMESPACE)/nginx-configuration
+            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
+            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
+            - --default-ssl-certificate=default/kubermatic-tls-certificates
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          {{ if not .Values.IsBareMetal }}
+          ports:
+          - name: http
+            containerPort: 80
+          - name: https
+            containerPort: 443
+          {{ end }}
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1

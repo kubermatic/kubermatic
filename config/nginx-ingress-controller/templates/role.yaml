@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: nginx-ingress-role
-  namespace: nginx
+  namespace: ingress-nginx
 rules:
   - apiGroups:
       - ""
@@ -38,5 +38,3 @@ rules:
       - endpoints
     verbs:
       - get
-      - create
-      - update

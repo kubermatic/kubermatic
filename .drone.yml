@@ -69,6 +69,18 @@ pipeline:
     context: api
     secrets: [ docker_username, docker_password ]
 
+  kubermatic-installer-docker-always:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/installer
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - ${DRONE_COMMIT}
+    dockerfile: config/Dockerfile
+    context: config
+    secrets: [ docker_username, docker_password ]
+
   addons-docker-always:
     group: push
     image: plugins/docker
@@ -91,6 +103,20 @@ pipeline:
       - master
     dockerfile: api/Dockerfile
     context: api
+    secrets: [ docker_username, docker_password ]
+    when:
+      branch: master
+
+  kubermatic-docker-master:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/installer
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - master
+    dockerfile: config/Dockerfile
+    context: config
     secrets: [ docker_username, docker_password ]
     when:
       branch: master
@@ -120,6 +146,22 @@ pipeline:
       - latest
     dockerfile: api/Dockerfile
     context: api
+    secrets: [ docker_username, docker_password ]
+    when:
+      event: [tag]
+      branch: release/*
+
+  kubermatic-installer-docker-release:
+    group: push
+    image: plugins/docker
+    repo: kubermatic/installer
+    password: ${DOCKER_PASSWORD}
+    username: ${DOCKER_USERNAME}
+    tags:
+      - ${DRONE_TAG}
+      - latest
+    dockerfile: config/Dockerfile
+    context: config
     secrets: [ docker_username, docker_password ]
     when:
       event: [tag]
