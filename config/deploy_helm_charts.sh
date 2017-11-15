@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-KUBECONFIG=/kubermatic/kubeconfig
-VALUESFILE=/kubermatic/values.yaml
+VALUESFILE=/kubermatic/values/values.yaml
 HELM_OPTS="--tiller-namespace=kubermatic-installer"
 
 if [ ! -f ${VALUESFILE} ]; then
     echo "${VALUESFILE} does not exist."
-    exit 1
-fi
-
-if [ ! -f ${KUBECONFIG} ]; then
-    echo "${KUBECONFIG} does not exist."
     exit 1
 fi
 
