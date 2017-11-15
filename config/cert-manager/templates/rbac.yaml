@@ -34,6 +34,6 @@ roleRef:
   name: {{ template "fullname" . }}
 subjects:
 - name: {{ template "fullname" . }}
-  namespace: {{ .Release.Namespace | quote }}
+  namespace: cert-manager
   kind: ServiceAccount
 {{- end -}}
