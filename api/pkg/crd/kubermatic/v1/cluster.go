@@ -104,9 +104,10 @@ type ClusterList struct {
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud"`
 
-	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
-	MasterVersion     string `json:"masterVersion"`
-	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
+	HumanReadableName  string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
+	MasterVersion      string `json:"masterVersion"`
+	WorkerName         string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
+	SeedDatacenterName string `json:"seedDatacenterName"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
