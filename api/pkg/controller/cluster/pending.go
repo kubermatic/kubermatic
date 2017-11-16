@@ -388,15 +388,8 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 
 func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
-
-	var dc *provider.DatacenterMeta
 	cms := map[string]func(c *kubermaticv1.Cluster, datacenter *provider.DatacenterMeta) (*corev1.ConfigMap, error){}
 	if c.Spec.Cloud != nil {
-		cdc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
-		if !found {
-			return fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
-		}
-		dc = &cdc
 
 		if c.Spec.Cloud.AWS != nil {
 			cms["cloud-config"] = resources.LoadAwsCloudConfigConfigMap
@@ -412,7 +405,8 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 			return err
 		}
 
-		cm, err := gen(c, dc)
+		dc := cc.dcs[c.Spec.Cloud.DatacenterName]
+		cm, err := gen(c, &dc)
 		if err != nil {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}
