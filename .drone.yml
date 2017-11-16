@@ -199,7 +199,7 @@ pipeline:
     image: gcr.io/google_containers/hyperkube-amd64:v1.7.10
     commands:
       - echo $KUBECONFIG | base64 -d > /kubeconfig
-      - KUBECONFIG=/kubeconfig /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/kubermatic-api-v1 api=kubermatic/api:$DRONE_COMMIT
+      - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
     secrets: [ kubeconfig ]
     when:
       branch: master
