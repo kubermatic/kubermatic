@@ -30,4 +30,4 @@ COPY installer /kubermatic/installer
 
 COPY deploy_helm_charts.sh /kubermatic/
 
-CMD ["/kubermatic/deploy_helm_charts.sh", "/kubermatic"]
+CMD ["/kubermatic/deploy_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]
