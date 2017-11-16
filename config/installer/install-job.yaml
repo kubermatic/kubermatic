@@ -12,6 +12,12 @@ spec:
       containers:
       - name: kubermatic-installer
         image: kubermatic/installer:master
+        command:
+        - /kubermatic/deploy_helm_charts.sh
+        args:
+        - /kubermatic/values/values.yaml
+        - /kubermatic
+        - /kubermatic/versions-values.yaml
         imagePullPolicy: Always
         volumeMounts:
           - name: values
