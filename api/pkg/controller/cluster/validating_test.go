@@ -86,6 +86,24 @@ func TestValidatingCheckDatacenter(t *testing.T) {
 			},
 		},
 		{
+			name: "BringYourOwn node dc is set",
+			ret:  errors.New("node dc is not allowed when using bringyourown"),
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status:  kubermaticv1.ClusterStatus{},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: "us-central1",
+					Cloud: &kubermaticv1.CloudSpec{
+						DatacenterName: "regular-do1",
+						BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
+					},
+				},
+			},
+		},
+		{
 			name: "successful",
 			ret:  nil,
 			cluster: &kubermaticv1.Cluster{
@@ -98,6 +116,24 @@ func TestValidatingCheckDatacenter(t *testing.T) {
 					SeedDatacenterName: "us-central1",
 					Cloud: &kubermaticv1.CloudSpec{
 						DatacenterName: "regular-do1",
+					},
+				},
+			},
+		},
+		{
+			name: "successful - BringYourOwn",
+			ret:  nil,
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "henrik1",
+				},
+				Address: &kubermaticv1.ClusterAddress{},
+				Status:  kubermaticv1.ClusterStatus{},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: "us-central1",
+					Cloud: &kubermaticv1.CloudSpec{
+						DatacenterName: "",
+						BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
 					},
 				},
 			},
