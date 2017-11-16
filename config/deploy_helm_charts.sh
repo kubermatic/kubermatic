@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
+if [ "$#" -lt 2 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
-Usage: $(basename $0) <path-to-charts>
+Usage: $(basename $0) <path-to-values-file> <path-to-charts>
 
-  <path-to-charts>    the path to the directory where the kubermatic charts are located
+  <path-to-values-file>   the path to the values.yaml which should be used
+  <path-to-charts>        the path to the directory where the kubermatic charts are located
 
 Examples:
-  $(basename $0) /kubermatic
+  $(basename $0) /kubermatic/values/values.yaml /kubermatic
 EOF
   exit 0
 fi
 
-VALUESFILE=/kubermatic/values/values.yaml
 HELM_OPTS="--tiller-namespace=kubermatic-installer"
-CHARTS_PATH="$1"
+VALUESFILE="$1"
+CHARTS_PATH="$2"
 
 if [ ! -f ${VALUESFILE} ]; then
     echo "${VALUESFILE} does not exist."
+    exit 1
+fi
+
+if [ ! -d ${CHARTS_PATH} ]; then
+    echo "${CHARTS_PATH} does not exist."
     exit 1
 fi
 
