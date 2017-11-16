@@ -1,0 +1,7 @@
+### Image Tags - We replace them during ci to have build a config container with pinned versions
+KubermaticAPIImageTag: "{API_IMAGE_TAG}"
+KubermaticControllerImageTag: "{CONTROLLER_IMAGE_TAG}"
+KubermaticBareMetalProviderImageTag: "{BARE_METAL_PROVIDER_IMAGE_TAG}"
+
+KubermaticDashboardImageTag: "master"
+K8sniffImageTag: "v1.1"

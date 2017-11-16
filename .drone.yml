@@ -57,6 +57,16 @@ pipeline:
       - cd api
       - CGO_ENABLED=0 make build
 
+  write-version:
+    group: build
+    image: ubuntu
+    commands:
+      - cd config
+      - sed -i.bak "s/{API_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
+      - sed -i.bak "s/{CONTROLLER_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
+      - sed -i.bak "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
+      - cat versions-values.yaml
+
   kubermatic-docker-always:
     group: push
     image: plugins/docker
@@ -185,11 +195,10 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.6.10
+    image: gcr.io/google_containers/hyperkube-amd64:v1.7.10
     commands:
-      - echo $KUBECONFIG | base64 -d > kubeconfig
-      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/kubermatic-api-v1 api=kubermatic/api:$DRONE_COMMIT
-      - /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/cluster-controller-v1 cluster-controller=kubermatic/api:$DRONE_COMMIT
+      - echo $KUBECONFIG | base64 -d > /kubeconfig
+      - KUBECONFIG=/kubeconfig /hyperkube kubectl --kubeconfig kubeconfig -n kubermatic set image deployment/kubermatic-api-v1 api=kubermatic/api:$DRONE_COMMIT
     secrets: [ kubeconfig ]
     when:
       branch: master
