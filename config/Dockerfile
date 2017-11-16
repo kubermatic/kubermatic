@@ -29,5 +29,6 @@ COPY monitoring /kubermatic/monitoring
 COPY installer /kubermatic/installer
 
 COPY deploy_helm_charts.sh /kubermatic/
+COPY versions-values.yaml /kubermatic/versions-values.yaml
 
 CMD ["/kubermatic/deploy_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]
