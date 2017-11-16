@@ -62,9 +62,10 @@ pipeline:
     image: ubuntu
     commands:
       - cd config
-      - sed -i.bak "s/{API_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
-      - sed -i.bak "s/{CONTROLLER_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
-      - sed -i.bak "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${${DRONE_TAG}=${DRONE_COMMIT}}/g" versions-values.yaml
+      - sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+      - sed -i "s/{CONTROLLER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+      - sed -i "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+      - sed -i "s/{DASHBOARD_IMAGE_TAG}/${DRONE_TAG=master}/g" versions-values.yaml
       - cat versions-values.yaml
 
   kubermatic-docker-always:
