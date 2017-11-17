@@ -15,31 +15,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// swagger:route GET /pets pets users listPets
-//
-// Lists pets filtered by some parameters.
-//
-// This will show all available pets by default.
-// You can get the pets that are out of stock
-//
-//     Consumes:
-//     - application/json
-//     - application/x-protobuf
-//
-//     Produces:
-//     - application/json
-//     - application/x-protobuf
-//
-//     Schemes: http, https, ws, wss
-//
-//     Security:
-//       api_key:
-//       oauth: read, write
-//
-//     Responses:
-//       default: genericError
-//       200: someResponse
-//       422: validationError
 func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)

@@ -1,6 +1,268 @@
 {
   "swagger": "2.0",
   "paths": {
+    "/api/v1/cluster": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "get"
+        ],
+        "operationId": "clustersHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "list"
+        ],
+        "operationId": "clusterHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "delete"
+        ],
+        "operationId": "deleteClusterHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "kubeconfig",
+          "get"
+        ],
+        "operationId": "kubeconfigHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}/node": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "nodes",
+          "get"
+        ],
+        "operationId": "nodesHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "list"
+        ],
+        "operationId": "createNodesHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}/node/{node}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "nodes",
+          "delete"
+        ],
+        "operationId": "deleteNodeHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}/upgrade": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "upgrade"
+        ],
+        "operationId": "performClusterUpgrage",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/cluster/{cluster}/upgrades": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "upgrade",
+          "versions"
+        ],
+        "operationId": "getPossibleClusterUpgrades",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/dc": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "datacenter",
+          "list"
+        ],
+        "operationId": "datacentersHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "datacenter",
+          "list"
+        ],
+        "operationId": "datacenterHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -16,7 +278,31 @@
           "keys",
           "list"
         ],
-        "operationId": "getlistSSHKeys",
+        "operationId": "listSSHKeys",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKeys"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a SSH keys for the user",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "create"
+        ],
+        "operationId": "createSSHKey",
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKeys"
@@ -27,49 +313,28 @@
         }
       }
     },
-    "/pets": {
-      "get": {
-        "description": "This will show all available pets by default.\nYou can get the pets that are out of stock",
-        "consumes": [
-          "application/json",
-          "application/x-protobuf"
-        ],
+    "/api/v1/ssh-keys/{meta_name}": {
+      "delete": {
+        "description": "Deletes a SSH keys for the user",
         "produces": [
-          "application/json",
-          "application/x-protobuf"
+          "application/json"
         ],
         "schemes": [
           "http",
-          "https",
-          "ws",
-          "wss"
+          "https"
         ],
         "tags": [
-          "pets",
-          "users"
+          "ssh",
+          "keys",
+          "delete"
         ],
-        "summary": "Lists pets filtered by some parameters.",
-        "operationId": "listPets",
-        "security": [
-          {
-            "api_key": []
-          },
-          {
-            "oauth": [
-              "read",
-              "write"
-            ]
-          }
-        ],
+        "operationId": "deleteSSHKey",
         "responses": {
           "200": {
-            "$ref": "#/responses/someResponse"
-          },
-          "422": {
-            "$ref": "#/responses/validationError"
+            "$ref": "#/responses/UserSSHKeys"
           },
           "default": {
-            "$ref": "#/responses/genericError"
+            "$ref": "#/responses/APIError"
           }
         }
       }
