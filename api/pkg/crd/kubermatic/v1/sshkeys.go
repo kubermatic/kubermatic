@@ -11,10 +11,6 @@ const (
 //+genclient
 //+genclient:nonNamespaced
 
-// UserSSHKeys specifies a list of users ssh key
-// swagger:response UserSSHKeys
-type UserSSHKeys []*UserSSHKey
-
 // UserSSHKey specifies a users ssh key
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // swagger:response UserSSHKey
