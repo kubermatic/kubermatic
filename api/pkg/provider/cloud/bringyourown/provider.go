@@ -30,6 +30,10 @@ func (b *bringyourown) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeS
 	return nil, nil
 }
 
-func (b *bringyourown) GetNodeClassName(nSpec *api.NodeSpec) string {
+func (b *bringyourown) NodeClassName(nSpec *api.NodeSpec) string {
 	return ""
+}
+
+func (b *bringyourown) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
+	return nil
 }
