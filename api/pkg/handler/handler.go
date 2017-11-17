@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/golang/glog"
@@ -58,19 +57,4 @@ func createStatusResource(f func(context.Context, http.ResponseWriter, interface
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
-}
-
-// APIDescriptionHandler always return swagger index.json
-func APIDescriptionHandler(w http.ResponseWriter, r *http.Request) {
-
-	f, err := ioutil.ReadFile("../api/handler/swagger/api/index.json")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(f)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
 }
