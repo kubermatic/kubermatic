@@ -114,6 +114,14 @@
           "get"
         ],
         "operationId": "kubeconfigHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/KubeConfig"
@@ -209,6 +217,21 @@
           "upgrade"
         ],
         "operationId": "performClusterUpgrage",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "To",
+            "in": "body",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -221,6 +244,9 @@
     },
     "/api/v1/cluster/{cluster}/upgrades": {
       "get": {
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],

@@ -48,7 +48,7 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 		user := auth.GetUser(ctx)
 		req := request.(nodesReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 		user := auth.GetUser(ctx)
 		req := request.(nodeReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(createNodesReq)
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +169,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 }
 
 type nodesReq struct {
-	clusterReq
+	ClusterReq
 }
 
 func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -179,13 +179,13 @@ func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.clusterReq = cr.(clusterReq)
+	req.ClusterReq = cr.(ClusterReq)
 
 	return req, nil
 }
 
 type createNodesReq struct {
-	clusterReq
+	ClusterReq
 	Instances int          `json:"instances"`
 	Spec      api.NodeSpec `json:"spec"`
 }
@@ -197,7 +197,7 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 	if err != nil {
 		return nil, err
 	}
-	req.clusterReq = cr.(clusterReq)
+	req.ClusterReq = cr.(ClusterReq)
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err

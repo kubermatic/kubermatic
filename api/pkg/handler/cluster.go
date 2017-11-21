@@ -57,11 +57,11 @@ func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider)
 func clusterEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(clusterReq)
-		c, err := kp.Cluster(user, req.cluster)
+		req := request.(ClusterReq)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
@@ -88,13 +88,13 @@ func deleteClusterEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(clusterReq)
+		req := request.(ClusterReq)
 
 		//Delete all nodes in the cluster
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
@@ -123,12 +123,14 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 	return clustersReq{}, nil
 }
 
-type clusterReq struct {
-	cluster string
+// swagger:parameters performClusterUpgrage
+type ClusterReq struct {
+	// in: path
+	Cluster string
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req clusterReq
-	req.cluster = mux.Vars(r)["cluster"]
+	var req ClusterReq
+	req.Cluster = mux.Vars(r)["cluster"]
 	return req, nil
 }

@@ -22,12 +22,12 @@ type KubeConfig = v1.Config
 func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(kubeconfigReq)
+		req := request.(KubeconfigReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
@@ -36,18 +36,19 @@ func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-type kubeconfigReq struct {
-	clusterReq
+// swagger:parameters kubeconfigHandler
+type KubeconfigReq struct {
+	ClusterReq
 }
 
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req kubeconfigReq
+	var req KubeconfigReq
 
 	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.clusterReq = cr.(clusterReq)
+	req.ClusterReq = cr.(ClusterReq)
 
 	return req, nil
 }

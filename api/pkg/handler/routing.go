@@ -457,6 +457,9 @@ func (r Routing) deleteNodeHandler() http.Handler {
 //     Produces:
 //     - application/json
 //
+//     Consumes:
+//     - application/json
+//
 //     Schemes: http, https
 //
 //     Responses:
