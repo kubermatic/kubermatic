@@ -329,7 +329,7 @@ func (r Routing) clusterHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKey
+//       200: KubeConfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(kubeconfigEndpoint(r.clusterProvider)),
@@ -351,7 +351,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKey
+//       200: KubeCluster
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(clustersEndpoint(r.clusterProvider)),
@@ -395,7 +395,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKey
+//       200: NodeList
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(nodesEndpoint(r.clusterProvider)),
@@ -430,7 +430,7 @@ func (r Routing) createNodesHandler() http.Handler {
 }
 
 // deleteNodeHandler let's you delete nodes.
-// swagger:route GET /api/v1/cluster/{cluster}/node/{node} nodes delete deleteNodeHandler
+// swagger:route DELETE /api/v1/cluster/{cluster}/node/{node} nodes delete deleteNodeHandler
 //
 //     Produces:
 //     - application/json
@@ -461,7 +461,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKey
+//       200: Versions
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		r.auth(getClusterUpgrades(r.clusterProvider, r.versions, r.updates)),

@@ -39,6 +39,10 @@ const (
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
+// NodeList is an alias for the swagger definition
+// swagger:response NodeList
+type NodeList = apiv1.NodeList
+
 func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
