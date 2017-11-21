@@ -1,5 +1,19 @@
 //go:generate swagger generate spec
-
+// Terms Of Service:
+//
+// there are no TOS at this moment, use at your own risk we take no responsibility
+//
+//     Schemes: https
+//     Host: localhost
+//     Version: 0.0.1
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+// swagger:meta
 package main
 
 import (

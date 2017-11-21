@@ -1,5 +1,20 @@
 {
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
   "swagger": "2.0",
+  "info": {
+    "description": "go:generate swagger generate spec",
+    "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
+    "version": "0.0.1"
+  },
+  "host": "localhost",
   "paths": {
     "/api/healthz": {
       "get": {
