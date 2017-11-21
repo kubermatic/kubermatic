@@ -165,7 +165,7 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.auth(listSSHKeyEndpoint(r.dataProvider)),
@@ -189,7 +189,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(createSSHKeyEndpoint(r.dataProvider)),
@@ -213,7 +213,7 @@ func (r Routing) createSSHKey() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(deleteSSHKeyEndpoint(r.dataProvider)),
@@ -236,7 +236,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(datacentersEndpoint(r.datacenters)),
@@ -259,7 +259,7 @@ func (r Routing) datacentersHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(datacenterEndpoint(r.datacenters)),
@@ -283,7 +283,7 @@ func (r Routing) datacenterHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
 		r.auth(newClusterEndpointV2(r.clusterProvider, r.dataProvider)),
@@ -307,7 +307,7 @@ func (r Routing) newClusterHandlerV2() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(clusterEndpoint(r.clusterProvider)),
@@ -322,8 +322,6 @@ func (r Routing) clusterHandler() http.Handler {
 // kubeconfigHandler returns the cubeconfig for the cluster.
 // swagger:route GET /api/v1/cluster/{cluster}/kubeconfig kubeconfig get kubeconfigHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -331,7 +329,7 @@ func (r Routing) clusterHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(kubeconfigEndpoint(r.clusterProvider)),
@@ -346,8 +344,6 @@ func (r Routing) kubeconfigHandler() http.Handler {
 // clustersHandler lists all clusters from a user.
 // swagger:route GET /api/v1/cluster cluster get clustersHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -355,7 +351,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(clustersEndpoint(r.clusterProvider)),
@@ -370,8 +366,6 @@ func (r Routing) clustersHandler() http.Handler {
 // deleteClusterHandler deletes a cluster.
 // swagger:route DELETE /api/v1/cluster/{cluster} cluster delete deleteClusterHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -379,7 +373,7 @@ func (r Routing) clustersHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(deleteClusterEndpoint(r.clusterProvider, r.cloudProviders)),
@@ -394,8 +388,6 @@ func (r Routing) deleteClusterHandler() http.Handler {
 // nodesHandler returns all nodes from a user.
 // swagger:route GET /api/v1/cluster/{cluster}/node nodes get nodesHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -403,7 +395,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(nodesEndpoint(r.clusterProvider)),
@@ -418,8 +410,6 @@ func (r Routing) nodesHandler() http.Handler {
 // createNodesHandler let's you create nodes.
 // swagger:route POST /api/v1/cluster/{cluster}/node ssh keys list createNodesHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -427,7 +417,7 @@ func (r Routing) nodesHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(createNodesEndpoint(r.clusterProvider, r.cloudProviders, r.dataProvider, r.versions)),
@@ -442,8 +432,6 @@ func (r Routing) createNodesHandler() http.Handler {
 // deleteNodeHandler let's you delete nodes.
 // swagger:route GET /api/v1/cluster/{cluster}/node/{node} nodes delete deleteNodeHandler
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -451,7 +439,7 @@ func (r Routing) createNodesHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(deleteNodeEndpoint(r.clusterProvider)),
@@ -466,8 +454,6 @@ func (r Routing) deleteNodeHandler() http.Handler {
 // getPossibleClusterUpgrades returns a list of possible cluster upgrades
 // swagger:route GET /api/v1/cluster/{cluster}/upgrades cluster upgrade versions getPossibleClusterUpgrades
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -475,7 +461,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		r.auth(getClusterUpgrades(r.clusterProvider, r.versions, r.updates)),
@@ -490,8 +476,6 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 // performClusterUpgrage starts a cluster upgrade to a specific version
 // swagger:route PUT /api/v1/cluster/{cluster}/upgrade cluster upgrade performClusterUpgrage
 //
-//
-//
 //     Produces:
 //     - application/json
 //
@@ -499,7 +483,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 //
 //     Responses:
 //       default: APIError
-//       200: UserSSHKeys
+//       200: UserSSHKey
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
 		r.auth(performClusterUpgrade(r.clusterProvider, r.versions, r.updates)),

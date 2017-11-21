@@ -40,6 +40,12 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 }
 
 // StatusOK returns a handler always returning http status code 200 (StatusOK).
+// swagger:route GET /api/healthz status health StatusOK
+//
+// Return a HTTP 200 if everythings fine
+//
+//     Schemes: http, https
+//
 func StatusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
