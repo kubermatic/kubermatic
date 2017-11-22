@@ -2,12 +2,8 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -101,36 +97,4 @@ func deleteClusterEndpoint(
 
 		return nil, kp.DeleteCluster(user, c.Name)
 	}
-}
-
-type NewClusterReqV2 struct {
-	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
-	SSHKeys []string                  `json:"sshKeys"`
-}
-
-func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewClusterReqV2
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-type ClustersReq struct{}
-
-func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	return ClustersReq{}, nil
-}
-
-// swagger:parameters performClusterUpgrage
-type ClusterReq struct {
-	// in: path
-	Cluster string
-}
-
-func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ClusterReq
-	req.Cluster = mux.Vars(r)["cluster"]
-	return req, nil
 }

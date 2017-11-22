@@ -2,9 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
@@ -66,48 +63,6 @@ func getClusterUpgrades(
 
 		return possibleUpdates, nil
 	}
-}
-
-// swagger:parameters performClusterUpgrage
-type UpgradeReq struct {
-	// UpgradeReq contains parameter for an update request
-	//
-	ClusterReq
-	// in: body
-	To string
-}
-
-func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpgradeReq
-
-	dr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = dr.(ClusterReq)
-
-	defer func() {
-		if err := r.Body.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	v := new(struct {
-		To string
-	})
-
-	err = json.Unmarshal(b, v)
-	if err != nil {
-		return nil, err
-	}
-
-	req.To = v.To
-
-	return req, nil
 }
 
 func performClusterUpgrade(

@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 	nodesetv1alpha1 "github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -166,60 +163,4 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 		}
 		return nil, nil
 	}
-}
-
-type NodesReq struct {
-	ClusterReq
-}
-
-func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	return req, nil
-}
-
-type CreateNodesReq struct {
-	ClusterReq
-	Instances int          `json:"instances"`
-	Spec      api.NodeSpec `json:"spec"`
-}
-
-func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-type NodeReq struct {
-	NodesReq
-	NodeName string
-}
-
-func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeReq
-
-	cr, err := decodeNodesReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.NodesReq = cr.(NodesReq)
-	req.NodeName = mux.Vars(r)["node"]
-
-	return req, nil
 }

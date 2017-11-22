@@ -36,23 +36,6 @@ func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-// swagger:parameters kubeconfigHandler
-type KubeconfigReq struct {
-	ClusterReq
-}
-
-func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req KubeconfigReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	return req, nil
-}
-
 func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")

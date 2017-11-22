@@ -3,12 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
-	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -83,26 +81,6 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 			Seed: dc.IsSeed,
 		}, nil
 	}
-}
-
-type DCsReq struct {
-}
-
-func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCsReq
-
-	return req, nil
-}
-
-type DCReq struct {
-	DC string
-}
-
-func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCReq
-
-	req.DC = mux.Vars(r)["dc"]
-	return req, nil
 }
 
 func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
