@@ -14,37 +14,26 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
+// KubeConfig is an alias for the swagger definition
+// TODO(GvW): the go-swagger tool don't parse this correct
+// swagger:response KubeConfig
+type KubeConfig = v1.Config
+
 func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(kubeconfigReq)
+		req := request.(KubeconfigReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
 		cfg := c.GetKubeconfig()
 		return cfg, nil
 	}
-}
-
-type kubeconfigReq struct {
-	clusterReq
-}
-
-func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req kubeconfigReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.clusterReq = cr.(clusterReq)
-
-	return req, nil
 }
 
 func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {

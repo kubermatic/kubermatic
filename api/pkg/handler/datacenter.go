@@ -3,12 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
-	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -58,51 +56,31 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(dcReq)
+		req := request.(DCReq)
 
-		dc, found := dcs[req.dc]
+		dc, found := dcs[req.DC]
 		if !found {
-			return nil, errors.NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
 		if dc.Private && !user.IsAdmin() {
-			return nil, errors.NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
 		spec, err := apiSpec(&dc)
 		if err != nil {
-			return nil, fmt.Errorf("api spec error in dc %q: %v", req.dc, err)
+			return nil, fmt.Errorf("api spec error in dc %q: %v", req.DC, err)
 		}
 
 		return &api.Datacenter{
 			Metadata: api.Metadata{
-				Name:     req.dc,
+				Name:     req.DC,
 				Revision: "1",
 			},
 			Spec: *spec,
 			Seed: dc.IsSeed,
 		}, nil
 	}
-}
-
-type dcsReq struct {
-}
-
-func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req dcsReq
-
-	return req, nil
-}
-
-type dcReq struct {
-	dc string
-}
-
-func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req dcReq
-
-	req.dc = mux.Vars(r)["dc"]
-	return req, nil
 }
 
 func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {

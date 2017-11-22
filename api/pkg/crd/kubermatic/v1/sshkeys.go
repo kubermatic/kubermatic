@@ -13,6 +13,7 @@ const (
 
 // UserSSHKey specifies a users UserSSHKey
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// swagger:response UserSSHKey
 type UserSSHKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
