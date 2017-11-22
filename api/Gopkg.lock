@@ -133,6 +133,12 @@
   version = "v1.6.0"
 
 [[projects]]
+  name = "github.com/go-swagger/go-swagger"
+  packages = ["."]
+  revision = "b015bda48dfc648fdd95e7bc81dbb5cefc17c975"
+  version = "0.13.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/go-test/deep"
   packages = ["."]
@@ -445,6 +451,10 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
   inputs-digest = "e0b4f923e6ec51b771bc340e8ad987a8c6527903912e063484b1647cea37e6d2"
+=======
+  inputs-digest = "26ccdb28d1b4a016113ee65e990e1c069bf6f6b9cc488c57fc358aba413a0774"
+>>>>>>> add go-swagger to vendors
   solver-name = "gps-cdcl"
   solver-version = 1
