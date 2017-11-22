@@ -63,7 +63,7 @@ helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermat
 helm ${HELM_OPTS} upgrade -i cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
 helm ${HELM_OPTS} upgrade -i certs -f ${VALUESFILE} ${CHARTS_PATH}/certs/
 
-############# PROMETHEUS #############
+############# MONITORING #############
 # All monitoring charts require the monitoring ns.
 kubectl create namespace monitoring || true
 helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus-operator/
