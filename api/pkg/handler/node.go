@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 	nodesetv1alpha1 "github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -39,12 +36,16 @@ const (
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
+// NodeList is an alias for the swagger definition
+// swagger:response NodeList
+type NodeList = apiv1.NodeList
+
 func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(nodesReq)
+		req := request.(NodesReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -65,9 +66,9 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(nodeReq)
+		req := request.(NodeReq)
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -95,15 +96,15 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get client: %v", err)
 		}
-		return nil, deleteNodeLocking(client, req.nodeName)
+		return nil, deleteNodeLocking(client, req.NodeName)
 	}
 }
 
 func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.DataProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(createNodesReq)
-		c, err := kp.Cluster(user, req.cluster)
+		req := request.(CreateNodesReq)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -162,60 +163,4 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 		}
 		return nil, nil
 	}
-}
-
-type nodesReq struct {
-	clusterReq
-}
-
-func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req nodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.clusterReq = cr.(clusterReq)
-
-	return req, nil
-}
-
-type createNodesReq struct {
-	clusterReq
-	Instances int          `json:"instances"`
-	Spec      api.NodeSpec `json:"spec"`
-}
-
-func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createNodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.clusterReq = cr.(clusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-type nodeReq struct {
-	nodesReq
-	nodeName string
-}
-
-func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req nodeReq
-
-	cr, err := decodeNodesReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.nodesReq = cr.(nodesReq)
-	req.nodeName = mux.Vars(r)["node"]
-
-	return req, nil
 }
