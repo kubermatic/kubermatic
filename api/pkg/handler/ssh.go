@@ -14,12 +14,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-type createSSHKeyReq struct {
+type CreateSSHKeyReq struct {
 	*v1.UserSSHKey
 }
 
 func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createSSHKeyReq
+	var req CreateSSHKeyReq
 	req.UserSSHKey = &v1.UserSSHKey{}
 	// Decode
 	if err := json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
@@ -32,7 +32,7 @@ func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req, ok := request.(createSSHKeyReq)
+		req, ok := request.(CreateSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
@@ -41,14 +41,14 @@ func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	}
 }
 
-type deleteSSHKeyReq struct {
-	metaName string
+type DeleteSSHKeyReq struct {
+	MetaName string
 }
 
 func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req deleteSSHKeyReq
+	var req DeleteSSHKeyReq
 	var ok bool
-	if req.metaName, ok = mux.Vars(r)["meta_name"]; !ok {
+	if req.MetaName, ok = mux.Vars(r)["meta_name"]; !ok {
 		return nil, fmt.Errorf("delte key needs a parameter 'meta_name'")
 	}
 
@@ -58,12 +58,12 @@ func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req, ok := request.(deleteSSHKeyReq)
+		req, ok := request.(DeleteSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("Bad parameters")
 		}
 
-		k, err := dp.SSHKey(user, req.metaName)
+		k, err := dp.SSHKey(user, req.MetaName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load ssh key: %v", err)
 		}
@@ -71,11 +71,11 @@ func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	}
 }
 
-type listSSHKeyReq struct {
+type ListSSHKeyReq struct {
 }
 
 func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error) {
-	var req listSSHKeyReq
+	var req ListSSHKeyReq
 	return req, nil
 }
 

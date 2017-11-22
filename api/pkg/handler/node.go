@@ -46,7 +46,7 @@ type NodeList = apiv1.NodeList
 func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(nodesReq)
+		req := request.(NodesReq)
 
 		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
@@ -69,7 +69,7 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(nodeReq)
+		req := request.(NodeReq)
 
 		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
@@ -99,14 +99,14 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get client: %v", err)
 		}
-		return nil, deleteNodeLocking(client, req.nodeName)
+		return nil, deleteNodeLocking(client, req.NodeName)
 	}
 }
 
 func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.DataProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(createNodesReq)
+		req := request.(CreateNodesReq)
 		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
@@ -168,12 +168,12 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 	}
 }
 
-type nodesReq struct {
+type NodesReq struct {
 	ClusterReq
 }
 
 func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req nodesReq
+	var req NodesReq
 
 	cr, err := decodeClusterReq(c, r)
 	if err != nil {
@@ -184,14 +184,14 @@ func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-type createNodesReq struct {
+type CreateNodesReq struct {
 	ClusterReq
 	Instances int          `json:"instances"`
 	Spec      api.NodeSpec `json:"spec"`
 }
 
 func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createNodesReq
+	var req CreateNodesReq
 
 	cr, err := decodeClusterReq(c, r)
 	if err != nil {
@@ -206,20 +206,20 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-type nodeReq struct {
-	nodesReq
-	nodeName string
+type NodeReq struct {
+	NodesReq
+	NodeName string
 }
 
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req nodeReq
+	var req NodeReq
 
 	cr, err := decodeNodesReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.nodesReq = cr.(nodesReq)
-	req.nodeName = mux.Vars(r)["node"]
+	req.NodesReq = cr.(NodesReq)
+	req.NodeName = mux.Vars(r)["node"]
 
 	return req, nil
 }

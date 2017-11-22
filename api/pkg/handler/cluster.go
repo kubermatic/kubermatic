@@ -18,7 +18,7 @@ import (
 func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(newClusterReqV2)
+		req := request.(NewClusterReqV2)
 
 		if req.Cluster == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
@@ -103,13 +103,13 @@ func deleteClusterEndpoint(
 	}
 }
 
-type newClusterReqV2 struct {
+type NewClusterReqV2 struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
-	var req newClusterReqV2
+	var req NewClusterReqV2
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
@@ -117,10 +117,10 @@ func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-type clustersReq struct{}
+type ClustersReq struct{}
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	return clustersReq{}, nil
+	return ClustersReq{}, nil
 }
 
 // swagger:parameters performClusterUpgrage

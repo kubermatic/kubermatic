@@ -58,25 +58,25 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(dcReq)
+		req := request.(DCReq)
 
-		dc, found := dcs[req.dc]
+		dc, found := dcs[req.DC]
 		if !found {
-			return nil, errors.NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
 		if dc.Private && !user.IsAdmin() {
-			return nil, errors.NewNotFound("datacenter", req.dc)
+			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
 		spec, err := apiSpec(&dc)
 		if err != nil {
-			return nil, fmt.Errorf("api spec error in dc %q: %v", req.dc, err)
+			return nil, fmt.Errorf("api spec error in dc %q: %v", req.DC, err)
 		}
 
 		return &api.Datacenter{
 			Metadata: api.Metadata{
-				Name:     req.dc,
+				Name:     req.DC,
 				Revision: "1",
 			},
 			Spec: *spec,
@@ -85,23 +85,23 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 	}
 }
 
-type dcsReq struct {
+type DCsReq struct {
 }
 
 func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req dcsReq
+	var req DCsReq
 
 	return req, nil
 }
 
-type dcReq struct {
-	dc string
+type DCReq struct {
+	DC string
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req dcReq
+	var req DCReq
 
-	req.dc = mux.Vars(r)["dc"]
+	req.DC = mux.Vars(r)["dc"]
 	return req, nil
 }
 
