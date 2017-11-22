@@ -2,9 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
@@ -17,6 +14,10 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+// Versions is an alias for the swagger defininiton
+// swagger:response Versions
+type Versions = []semver.Version
+
 func getClusterUpgrades(
 	kp provider.ClusterProvider,
 	versions map[string]*api.MasterVersion,
@@ -24,15 +25,15 @@ func getClusterUpgrades(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req, ok := request.(clusterReq)
+		req, ok := request.(ClusterReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, clusterReq{})
+			return nil, errors.NewWrongRequest(request, ClusterReq{})
 		}
 
-		c, err := kp.Cluster(user, req.cluster)
+		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
@@ -64,44 +65,6 @@ func getClusterUpgrades(
 	}
 }
 
-type upgradeReq struct {
-	clusterReq
-	to string
-}
-
-func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req upgradeReq
-
-	dr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.clusterReq = dr.(clusterReq)
-
-	defer func() {
-		if err := r.Body.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	v := new(struct {
-		To string
-	})
-
-	err = json.Unmarshal(b, v)
-	if err != nil {
-		return nil, err
-	}
-
-	req.to = v.To
-
-	return req, nil
-}
-
 func performClusterUpgrade(
 	kp provider.ClusterProvider,
 	versions map[string]*api.MasterVersion,
@@ -109,31 +72,31 @@ func performClusterUpgrade(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req, ok := request.(upgradeReq)
+		req, ok := request.(UpgradeReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, upgradeReq{})
+			return nil, errors.NewWrongRequest(request, UpgradeReq{})
 		}
 
-		k, err := kp.Cluster(user, req.cluster)
+		k, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.cluster)
+				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
 		}
 
-		_, ok = versions[req.to]
+		_, ok = versions[req.To]
 		if !ok {
-			return nil, errors.NewUnknownVersion(req.to)
+			return nil, errors.NewUnknownVersion(req.To)
 		}
 
 		_, err = kversion.
 			NewUpdatePathSearch(versions, updates, kversion.SemverMatcher{}).
-			Search(k.Spec.MasterVersion, req.to)
+			Search(k.Spec.MasterVersion, req.To)
 		if err != nil {
-			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.to)
+			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.To)
 		}
 
-		return kp.InitiateClusterUpgrade(user, req.cluster, req.to)
+		return kp.InitiateClusterUpgrade(user, req.Cluster, req.To)
 	}
 }
