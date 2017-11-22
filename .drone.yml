@@ -43,6 +43,13 @@ pipeline:
       - cd api
       - ./hack/verify-codegen.sh
 
+  verify-swagger-spec:
+    group: lint
+    image: golang:1.9
+    commands:
+      - cd api
+      - ./hack/verify-swagger.sh
+
   test:
     group: build
     image: golang:1.9
