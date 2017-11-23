@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubermatic-api
+  namespace: monitoring
+  labels:
+    team: kubermatic
+spec:
+  jobLabel: prom-job
+  selector:
+    matchLabels:
+      app: kubermatic-api
+  namespaceSelector:
+    matchNames:
+    - kubermatic
+  endpoints:
+  - port: metrics
+    interval: 30s
