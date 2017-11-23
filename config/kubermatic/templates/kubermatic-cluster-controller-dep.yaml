@@ -7,10 +7,6 @@ spec:
   replicas: 1
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: "8085"
-        prometheus.io/path: "/metrics"
       labels:
         role: cluster-controller
         version: v1
@@ -35,9 +31,8 @@ spec:
           image: 'kubermatic/api:{{.Values.KubermaticControllerImageTag}}'
           imagePullPolicy: Always
           ports:
-            - name: metrics
-              containerPort: 8085
             - name: http
+              containerPort: 8085
               containerPort: 8080
               protocol: TCP
           volumeMounts:
