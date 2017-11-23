@@ -7,10 +7,6 @@ spec:
   replicas: {{.Values.KubermaticAPIReplicaCount}}
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: "8085"
-        prometheus.io/path: "/metrics"
       labels:
         role: kubermatic-api
         version: v1

@@ -3,11 +3,19 @@ kind: Service
 metadata:
   namespace: kubermatic
   name: kubermatic-api
+  labels:
+    app: kubermatic-api
+    prom-job: kubermatic-api
 spec:
   type: NodePort
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8080
       protocol: TCP
+    - name: metrics
+      port: 8085
+      protocol: TCP
+      targetPort: 8085
   selector:
     role: kubermatic-api
