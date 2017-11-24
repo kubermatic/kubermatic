@@ -92,7 +92,7 @@
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["endpoint","log","metrics","transport/http"]
+  packages = ["endpoint","log","transport/http"]
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
   version = "v0.6.0"
 
@@ -445,6 +445,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "492752191fd690c168eec3871fc3f131efda455f2e7eda1eb639f8d00de04fb7"
+  inputs-digest = "3cc464d721fa827552e12388a61abad6eeed0e24cc0d25212ee25480564a94cb"
   solver-name = "gps-cdcl"
   solver-version = 1
