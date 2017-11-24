@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
@@ -15,9 +19,10 @@ import (
 	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
 	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
-	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -73,75 +78,118 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	stop := make(chan struct{})
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sig
-		close(stop)
-	}()
+	var g run.Group
 
-	for dc := range clientcmdConfig.Contexts {
-		// create kube kubeclient
-		clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
-		if err != nil {
-			glog.Fatal(err)
-		}
-		clientConfig := clientcmd.NewNonInteractiveClientConfig(
-			*clientcmdConfig,
-			dc,
-			&clientcmd.ConfigOverrides{},
-			nil,
-		)
+	// This group is forver waiting in a goroutine for signals to stop
+	{
+		sig := make(chan os.Signal, 2)
+		g.Add(func() error {
+			signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+			glog.Info("Waiting for signal to stop")
+			<-sig
+			return nil
+		}, func(err error) {
+			close(sig)
+		})
+	}
+	// This group is running an internal http server with metrics and other debug information
+	{
+		m := http.NewServeMux()
+		m.Handle(*prometheusPath, promhttp.Handler())
 
-		cfg, err := clientConfig.ClientConfig()
-		if err != nil {
-			glog.Fatal(err)
-		}
-		kubeclient := kubernetes.NewForConfigOrDie(cfg)
-		seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
-		masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
-
-		// Create crd's
-		extclient := apiextclient.NewForConfigOrDie(cfg)
-		err = crd.EnsureCustomResourceDefinitions(extclient)
-		if err != nil {
-			glog.Error(err)
+		s := http.Server{
+			Addr:    *prometheusAddr,
+			Handler: m,
 		}
 
-		seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
-		masterInformerGroup := masterinformer.New(masterCrdClient)
+		g.Add(func() error {
+			glog.Infof("Starting the internal http server: %s\n", *prometheusAddr)
+			return s.ListenAndServe()
+		}, func(err error) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
 
-		// start controller
-		cps := cloud.Providers(dcs)
-		ctrl, err := cluster.NewController(
-			dc,
-			kubeclient,
-			seedCrdClient,
-			masterCrdClient,
-			cps,
-			versions,
-			updates,
-			*masterResources,
-			*externalURL,
-			*workerName,
-			*apiserverExternalPort,
-			dcs,
-			masterInformerGroup,
-			seedInformerGroup,
-		)
-		if err != nil {
-			glog.Fatal(err)
-		}
+			glog.Info("Shutting down the internal http server")
+			if err := s.Shutdown(ctx); err != nil {
+				glog.Error("failed to shutdown the internal http server gracefully:", err)
+			}
+		})
+	}
+	// This group is running the actual controller logic
+	{
+		stop := make(chan struct{})
 
-		seedInformerGroup.Run(stop)
-		masterInformerGroup.Run(stop)
-		cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
+		g.Add(func() error {
+			for dc := range clientcmdConfig.Contexts {
+				// create kubeclient
+				clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
+				if err != nil {
+					glog.Fatal(err)
+				}
+				clientConfig := clientcmd.NewNonInteractiveClientConfig(
+					*clientcmdConfig,
+					dc,
+					&clientcmd.ConfigOverrides{},
+					nil,
+				)
 
-		go ctrl.Run(*workerCount, stop)
+				cfg, err := clientConfig.ClientConfig()
+				if err != nil {
+					glog.Fatal(err)
+				}
+				kubeclient := kubernetes.NewForConfigOrDie(cfg)
+				seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
+				masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
 
+				// Create crd's
+				extclient := apiextclient.NewForConfigOrDie(cfg)
+				err = crd.EnsureCustomResourceDefinitions(extclient)
+				if err != nil {
+					glog.Error(err)
+				}
+
+				seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
+				masterInformerGroup := masterinformer.New(masterCrdClient)
+
+				// start controller
+				cps := cloud.Providers(dcs)
+				ctrl, err := cluster.NewController(
+					dc,
+					kubeclient,
+					seedCrdClient,
+					masterCrdClient,
+					cps,
+					versions,
+					updates,
+					*masterResources,
+					*externalURL,
+					*workerName,
+					*apiserverExternalPort,
+					dcs,
+					masterInformerGroup,
+					seedInformerGroup,
+				)
+				if err != nil {
+					glog.Fatal(err)
+				}
+
+				seedInformerGroup.Run(stop)
+				masterInformerGroup.Run(stop)
+				go cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
+
+				glog.Info("Starting controller")
+				go ctrl.Run(*workerCount, stop)
+			}
+			<-stop
+			return nil
+		}, func(err error) {
+			glog.Info("Stopping controllers")
+			stop <- struct{}{}
+		})
 	}
 
-	go metrics.ServeForever(*prometheusAddr, *prometheusPath)
-	<-stop
+	// Running all groups concurrently in goroutines until the first exists
+	if err := g.Run(); err != nil {
+		log.Println(err)
+	}
 }
