@@ -117,75 +117,75 @@ func main() {
 	}
 	// This group is running the actual controller logic
 	{
-		stop := make(chan struct{})
+		for dc := range clientcmdConfig.Contexts {
+			// create kubeclient
+			clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			clientConfig := clientcmd.NewNonInteractiveClientConfig(
+				*clientcmdConfig,
+				dc,
+				&clientcmd.ConfigOverrides{},
+				nil,
+			)
 
-		g.Add(func() error {
-			for dc := range clientcmdConfig.Contexts {
-				// create kubeclient
-				clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
-				if err != nil {
-					glog.Fatal(err)
-				}
-				clientConfig := clientcmd.NewNonInteractiveClientConfig(
-					*clientcmdConfig,
-					dc,
-					&clientcmd.ConfigOverrides{},
-					nil,
-				)
+			cfg, err := clientConfig.ClientConfig()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			kubeclient := kubernetes.NewForConfigOrDie(cfg)
+			seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
+			masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
 
-				cfg, err := clientConfig.ClientConfig()
-				if err != nil {
-					glog.Fatal(err)
-				}
-				kubeclient := kubernetes.NewForConfigOrDie(cfg)
-				seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
-				masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
+			// Create crd's
+			extclient := apiextclient.NewForConfigOrDie(cfg)
+			err = crd.EnsureCustomResourceDefinitions(extclient)
+			if err != nil {
+				glog.Error(err)
+			}
 
-				// Create crd's
-				extclient := apiextclient.NewForConfigOrDie(cfg)
-				err = crd.EnsureCustomResourceDefinitions(extclient)
-				if err != nil {
-					glog.Error(err)
-				}
+			seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
+			masterInformerGroup := masterinformer.New(masterCrdClient)
 
-				seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
-				masterInformerGroup := masterinformer.New(masterCrdClient)
+			// start controller
+			cps := cloud.Providers(dcs)
+			ctrl, err := cluster.NewController(
+				dc,
+				kubeclient,
+				seedCrdClient,
+				masterCrdClient,
+				cps,
+				versions,
+				updates,
+				*masterResources,
+				*externalURL,
+				*workerName,
+				*apiserverExternalPort,
+				dcs,
+				masterInformerGroup,
+				seedInformerGroup,
+			)
+			if err != nil {
+				glog.Fatal(err)
+			}
 
-				// start controller
-				cps := cloud.Providers(dcs)
-				ctrl, err := cluster.NewController(
-					dc,
-					kubeclient,
-					seedCrdClient,
-					masterCrdClient,
-					cps,
-					versions,
-					updates,
-					*masterResources,
-					*externalURL,
-					*workerName,
-					*apiserverExternalPort,
-					dcs,
-					masterInformerGroup,
-					seedInformerGroup,
-				)
-				if err != nil {
-					glog.Fatal(err)
-				}
+			stop := make(chan struct{})
 
+			g.Add(func() error {
 				seedInformerGroup.Run(stop)
 				masterInformerGroup.Run(stop)
-				go cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
+				cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
 
 				glog.Info("Starting controller")
-				go ctrl.Run(*workerCount, stop)
-			}
-			<-stop
-			return nil
-		}, func(err error) {
-			glog.Info("Stopping controllers")
-			stop <- struct{}{}
-		})
+				ctrl.Run(*workerCount, stop)
+
+				return nil
+			}, func(err error) {
+				glog.Info("Stopping controllers")
+				close(stop)
+			})
+		}
 	}
 
 	// Running all groups concurrently in goroutines until the first exists
