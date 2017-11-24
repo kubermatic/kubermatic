@@ -78,6 +78,8 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	metrics := NewClusterControllerMetrics()
+
 	var g run.Group
 
 	// This group is forever waiting in a goroutine for signals to stop
@@ -117,6 +119,11 @@ func main() {
 	}
 	// This group is running the actual controller logic
 	{
+		clusterMetrics := cluster.ControllerMetrics{
+			Clusters: metrics.Clusters,
+			Workers:  metrics.Workers,
+		}
+
 		for dc := range clientcmdConfig.Contexts {
 			// create kubeclient
 			clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
@@ -165,6 +172,7 @@ func main() {
 				dcs,
 				masterInformerGroup,
 				seedInformerGroup,
+				clusterMetrics,
 			)
 			if err != nil {
 				glog.Fatal(err)
