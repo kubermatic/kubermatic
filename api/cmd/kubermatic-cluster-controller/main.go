@@ -80,7 +80,7 @@ func main() {
 
 	var g run.Group
 
-	// This group is forver waiting in a goroutine for signals to stop
+	// This group is forever waiting in a goroutine for signals to stop
 	{
 		sig := make(chan os.Signal, 2)
 		g.Add(func() error {
