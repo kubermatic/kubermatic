@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/update"
@@ -69,6 +70,13 @@ type controller struct {
 	updates               []api.MasterUpdate
 	defaultMasterVersion  *api.MasterVersion
 	automaticUpdateSearch *version.UpdatePathSearch
+
+	metrics ControllerMetrics
+}
+
+type ControllerMetrics struct {
+	Clusters metrics.Gauge
+	Workers  metrics.Gauge
 }
 
 // NewController creates a cluster controller.
@@ -87,6 +95,7 @@ func NewController(
 	dcs map[string]provider.DatacenterMeta,
 	masterInformerGroup *masterinformer.Group,
 	seedInformerGroup *seedinformer.Group,
+	metrics ControllerMetrics,
 ) (GroupRunStopper, error) {
 	cc := &controller{
 		dc:                    dc,
@@ -104,6 +113,7 @@ func NewController(
 		dcs:                 dcs,
 		masterInformerGroup: masterInformerGroup,
 		seedInformerGroup:   seedInformerGroup,
+		metrics:             metrics,
 	}
 
 	cc.masterInformerGroup.ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -329,8 +339,10 @@ func (cc *controller) handleErr(err error, key interface{}) {
 func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
 	if err != nil {
+		cc.metrics.Clusters.Set(0)
 		glog.Errorf("Error listing clusters: %v", err)
 	}
+	cc.metrics.Clusters.Set(float64(len(clusters)))
 
 	for _, c := range clusters {
 		if c.Status.Phase == phase {
@@ -341,6 +353,8 @@ func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 
 func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
 	defer utilruntime.HandleCrash()
+
+	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
 
 	for i := 0; i < workerCount; i++ {

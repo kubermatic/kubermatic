@@ -64,6 +64,7 @@ func newTestController(
 		dcs,
 		masterInformerGroup,
 		seedInformerGroup,
+		ControllerMetrics{},
 	)
 	if err != nil {
 		log.Fatal(err)

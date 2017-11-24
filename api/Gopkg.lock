@@ -92,7 +92,7 @@
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["endpoint","log","transport/http"]
+  packages = ["endpoint","log","metrics","metrics/internal/lv","metrics/prometheus","transport/http"]
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
   version = "v0.6.0"
 
@@ -445,6 +445,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3cc464d721fa827552e12388a61abad6eeed0e24cc0d25212ee25480564a94cb"
+  inputs-digest = "e0b4f923e6ec51b771bc340e8ad987a8c6527903912e063484b1647cea37e6d2"
   solver-name = "gps-cdcl"
   solver-version = 1
