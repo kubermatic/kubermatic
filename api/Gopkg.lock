@@ -92,7 +92,7 @@
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["endpoint","log","transport/http"]
+  packages = ["endpoint","log","metrics","transport/http"]
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
   version = "v0.6.0"
 
@@ -276,6 +276,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/oklog/run"
+  packages = ["."]
+  revision = "4dadeb3030eda0273a12382bb2348ffc7c9d1a39"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -439,6 +445,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cd200f47e9c6401bc3db7be8d37534a75e63235eb0e24072d31ab39723e98f00"
+  inputs-digest = "492752191fd690c168eec3871fc3f131efda455f2e7eda1eb639f8d00de04fb7"
   solver-name = "gps-cdcl"
   solver-version = 1
