@@ -276,6 +276,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/oklog/run"
+  packages = ["."]
+  revision = "4dadeb3030eda0273a12382bb2348ffc7c9d1a39"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -439,6 +445,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cd200f47e9c6401bc3db7be8d37534a75e63235eb0e24072d31ab39723e98f00"
+  inputs-digest = "3cc464d721fa827552e12388a61abad6eeed0e24cc0d25212ee25480564a94cb"
   solver-name = "gps-cdcl"
   solver-version = 1
