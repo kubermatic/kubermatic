@@ -158,7 +158,7 @@ func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // CreateSSHKeyReq represent a request for specific data to create a new SSH key
-// swagger:parameters createSSHKey
+// TODO(GvW): currently not parsable by swagger
 type CreateSSHKeyReq struct {
 	// in: body
 	*kubermaticv1.UserSSHKey

@@ -66,6 +66,14 @@
           "list"
         ],
         "operationId": "clusterHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -90,6 +98,14 @@
           "delete"
         ],
         "operationId": "deleteClusterHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -146,6 +162,14 @@
           "get"
         ],
         "operationId": "nodesHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/NodeList"
@@ -169,6 +193,29 @@
           "list"
         ],
         "operationId": "createNodesHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "x-go-name": "Instances",
+            "name": "instances",
+            "in": "body",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/definitions/NodeSpec",
+            "x-go-name": "Spec",
+            "name": "spec",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -193,6 +240,20 @@
           "delete"
         ],
         "operationId": "deleteNodeHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NodeName",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -260,6 +321,14 @@
           "versions"
         ],
         "operationId": "getPossibleClusterUpgrades",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/Versions"
@@ -308,6 +377,14 @@
           "list"
         ],
         "operationId": "datacenterHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "DC",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -384,6 +461,14 @@
           "delete"
         ],
         "operationId": "deleteSSHKey",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "MetaName",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/UserSSHKey"
@@ -439,6 +524,30 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "AWSNodeSpec": {
+      "type": "object",
+      "title": "AWSNodeSpec specifies an aws node.",
+      "properties": {
+        "ami": {
+          "type": "string",
+          "x-go-name": "AMI"
+        },
+        "instance_type": {
+          "type": "string",
+          "x-go-name": "InstanceType"
+        },
+        "root_size": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RootSize"
+        },
+        "volume_type": {
+          "type": "string",
+          "x-go-name": "VolumeType"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
+    },
     "BareMetalCloudSpec": {
       "description": "BareMetalCloudSpec specifies access to a bare metal datacenter",
       "type": "object",
@@ -449,6 +558,38 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "BareMetalNodeSpec": {
+      "description": "BareMetalNodeSpec specifies a node instanciated by the bare-metal-provider",
+      "type": "object",
+      "properties": {
+        "cpus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CPU"
+          },
+          "x-go-name": "CPUs"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "public_ip": {
+          "type": "string",
+          "x-go-name": "PublicIP"
+        },
+        "space": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Space"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "BringYourOwnCloudSpec": {
       "type": "object",
@@ -464,6 +605,11 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "BringYourOwnNodeSpec": {
+      "description": "BringYourOwnNodeSpec specifies a bring your own node",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
+    },
     "Bytes": {
       "type": "array",
       "items": {
@@ -471,6 +617,23 @@
         "format": "uint8"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "CPU": {
+      "description": "CPU represents the CPU resources available on a node",
+      "type": "object",
+      "properties": {
+        "cores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Cores"
+        },
+        "frequency": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Frequency"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "CauseType": {
       "description": "CauseType is a machine readable value providing more detail about what\noccurred in a status response. An operation may have multiple causes for a\nstatus (whether Failure or Success).",
@@ -692,6 +855,17 @@
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "ContainerLinuxSpec": {
+      "description": "ContainerLinuxSpec specifies Container Linux options",
+      "type": "object",
+      "properties": {
+        "disable_auto_update": {
+          "type": "boolean",
+          "x-go-name": "DisableAutoUpdate"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
+    },
     "DigitaloceanCloudSpec": {
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to digital ocean.",
@@ -703,6 +877,26 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "DigitaloceanNodeSpec": {
+      "type": "object",
+      "title": "DigitaloceanNodeSpec specifies a digital ocean node.",
+      "properties": {
+        "size": {
+          "description": "Size is the size of the node (DigitalOcean node type).",
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "sshKeys": {
+          "description": "SSHKeyFingerprints  represent the fingerprints of the keys.\nDigitalOcean utilizes the fingerprints to identify public\nSSHKeys stored within the DigitalOcean platform.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SSHKeyFingerprints"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
+    },
     "FakeCloudSpec": {
       "type": "object",
       "title": "FakeCloudSpec specifies access data for a fake cloud.",
@@ -713,6 +907,21 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "FakeNodeSpec": {
+      "type": "object",
+      "title": "FakeNodeSpec specifies a fake node.",
+      "properties": {
+        "os": {
+          "type": "string",
+          "x-go-name": "OS"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "Initializer": {
       "type": "object",
@@ -761,6 +970,34 @@
       "type": "string",
       "title": "MasterUpdatePhase represents the current master update phase.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "NodeSpec": {
+      "type": "object",
+      "title": "NodeSpec mutually stores data of a cloud specific node.",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/AWSNodeSpec"
+        },
+        "baremetal": {
+          "$ref": "#/definitions/BareMetalNodeSpec"
+        },
+        "bringyourown": {
+          "$ref": "#/definitions/BringYourOwnNodeSpec"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/DigitaloceanNodeSpec"
+        },
+        "fake": {
+          "$ref": "#/definitions/FakeNodeSpec"
+        },
+        "openstack": {
+          "$ref": "#/definitions/OpenstackNodeSpec"
+        },
+        "operating_system": {
+          "$ref": "#/definitions/OperatingSystemSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "OpenstackCloudSpec": {
       "type": "object",
@@ -812,6 +1049,35 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "OpenstackNodeSpec": {
+      "type": "object",
+      "title": "OpenstackNodeSpec specifies a open stack node.",
+      "properties": {
+        "flavor": {
+          "type": "string",
+          "x-go-name": "Flavor"
+        },
+        "image": {
+          "type": "string",
+          "x-go-name": "Image"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
+    },
+    "OperatingSystemSpec": {
+      "description": "OperatingSystemSpec specifies operations system options",
+      "type": "object",
+      "properties": {
+        "container_linux": {
+          "$ref": "#/definitions/ContainerLinuxSpec"
+        },
+        "ssh_user": {
+          "type": "string",
+          "x-go-name": "SSHUser"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "OwnerReference": {
       "description": "OwnerReference contains enough information to let you identify an owning\nobject. Currently, an owning object must be in the same namespace, so there\nis no namespace field.",
