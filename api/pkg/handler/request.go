@@ -22,7 +22,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters performClusterUpgrage
+// swagger:parameters deleteClusterHandler clusterHandler getPossibleClusterUpgrades
 type ClusterReq struct {
 	// in: path
 	Cluster string
@@ -35,7 +35,9 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // NewClusterReqV2 represent a request for clusters specific data
+// swagger:parameters newClusterHandlerV2
 type NewClusterReqV2 struct {
+	// in: body
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
 }
@@ -60,7 +62,9 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 }
 
 // DCReq represent a request for datacenter specific data
+// swagger:parameters datacenterHandler
 type DCReq struct {
+	// in: path
 	DC string
 }
 
@@ -90,6 +94,7 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 }
 
 // NodesReq represent a request for nodes specific data
+// swagger:parameters nodesHandler
 type NodesReq struct {
 	ClusterReq
 }
@@ -107,8 +112,10 @@ func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // CreateNodesReq represent a request for specific data to create a node
+// swagger:parameters createNodesHandler
 type CreateNodesReq struct {
 	ClusterReq
+	// in: body
 	Instances int          `json:"instances"`
 	Spec      api.NodeSpec `json:"spec"`
 }
@@ -130,8 +137,10 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 }
 
 // NodeReq represent a request for node specific data
+// swagger:parameters deleteNodeHandler
 type NodeReq struct {
 	NodesReq
+	// in: path
 	NodeName string
 }
 
@@ -149,7 +158,9 @@ func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // CreateSSHKeyReq represent a request for specific data to create a new SSH key
+// swagger:parameters createSSHKey
 type CreateSSHKeyReq struct {
+	// in: body
 	*kubermaticv1.UserSSHKey
 }
 
@@ -165,7 +176,9 @@ func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 }
 
 // DeleteSSHKeyReq represent a request for deleting a SSH key
+// swagger:parameters deleteSSHKey
 type DeleteSSHKeyReq struct {
+	// in: path
 	MetaName string
 }
 
