@@ -1,4 +1,7 @@
-required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/codecgen", "k8s.io/code-generator/cmd/deepcopy-gen"]
+required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/codecgen", "k8s.io/code-generator/cmd/deepcopy-gen", "github.com/go-swagger/go-swagger/cmd/swagger"]
+
+[[constraint]]
+  name = "github.com/go-swagger/go-swagger"
 
 [[constraint]]
   name = "github.com/Masterminds/semver"

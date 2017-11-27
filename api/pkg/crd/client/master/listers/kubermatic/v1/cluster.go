@@ -5,7 +5,6 @@ package v1
 import (
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
@@ -39,8 +38,7 @@ func (s *clusterLister) List(selector labels.Selector) (ret []*v1.Cluster, err e
 
 // Get retrieves the Cluster from the index for a given name.
 func (s *clusterLister) Get(name string) (*v1.Cluster, error) {
-	key := &v1.Cluster{ObjectMeta: meta_v1.ObjectMeta{Name: name}}
-	obj, exists, err := s.indexer.Get(key)
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}
