@@ -82,7 +82,7 @@ endif
 	echo "go vet" ;\
 	go vet $$PACKAGES ;\
 	echo "golint" ;\
-	golint $$PACKAGES ;\
+	golint -set_exit_status $$PACKAGES ;\
 	echo "errcheck -blank" ;\
 	errcheck -blank $$PACKAGES ;\
 	echo "varcheck" ;\
