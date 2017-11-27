@@ -221,6 +221,7 @@ pipeline:
     image_url: https://media.giphy.com/media/m6tmCnGCNvTby/giphy-downsized.gif
     template: >
         Your build failed! Shame. Shame. Shame.
+        ${DRONE_BUILD_LINK}
     author_recipient_mapping:
       - mrIncompetent=henrik
       - metalmatze=matthias
