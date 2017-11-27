@@ -25,7 +25,7 @@ const (
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
 	CloudSpecProvider
-	NodeSpecValidator
+	NodeClassProvider
 }
 
 // CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
@@ -36,8 +36,8 @@ type CloudSpecProvider interface {
 	CleanUpCloudProvider(*kubermaticv1.CloudSpec) error
 }
 
-// NodeSpecValidator declares a set of methods to manage NodeClasses
-type NodeSpecValidator interface {
+// NodeClassProvider declares a set of methods to manage NodeClasses
+type NodeClassProvider interface {
 	ValidateNodeSpec(*kubermaticv1.CloudSpec, *api.NodeSpec) error
 	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
 	NodeClassName(*api.NodeSpec) string
