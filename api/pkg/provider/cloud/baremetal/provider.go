@@ -38,6 +38,10 @@ func (b *baremetal) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec
 	return nil, nil
 }
 
-func (b *baremetal) GetNodeClassName(nSpec *api.NodeSpec) string {
+func (b *baremetal) NodeClassName(nSpec *api.NodeSpec) string {
 	return ""
+}
+
+func (b *baremetal) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
+	return nil
 }

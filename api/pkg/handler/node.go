@@ -126,11 +126,17 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
 		}
 
+		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Spec)
+		if err != nil {
+			return nil, err
+		}
+
 		nclient, err := c.GetNodesetClient()
 		if err != nil {
 			return nil, err
 		}
-		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.GetNodeClassName(&req.Spec), metav1.GetOptions{})
+
+		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.NodeClassName(&req.Spec), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
 			if err != nil {
