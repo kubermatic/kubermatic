@@ -14,12 +14,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// ClustersReq represent a request for clusters specific data
 type ClustersReq struct{}
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	return ClustersReq{}, nil
 }
 
+// ClusterReq represent a request for cluster specific data
 // swagger:parameters performClusterUpgrage
 type ClusterReq struct {
 	// in: path
@@ -32,6 +34,7 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// NewClusterReqV2 represent a request for clusters specific data
 type NewClusterReqV2 struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
@@ -46,6 +49,7 @@ func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
+// DCsReq represent a request for datacenters specific data
 type DCsReq struct {
 }
 
@@ -55,6 +59,7 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+// DCReq represent a request for datacenter specific data
 type DCReq struct {
 	DC string
 }
@@ -66,6 +71,7 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// KubeconfigReq represent a request for kubeconfig specific data
 // swagger:parameters kubeconfigHandler
 type KubeconfigReq struct {
 	ClusterReq
@@ -83,6 +89,7 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+// NodesReq represent a request for nodes specific data
 type NodesReq struct {
 	ClusterReq
 }
@@ -99,6 +106,7 @@ func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// CreateNodesReq represent a request for specific data to create a node
 type CreateNodesReq struct {
 	ClusterReq
 	Instances int          `json:"instances"`
@@ -121,6 +129,7 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+// NodeReq represent a request for node specific data
 type NodeReq struct {
 	NodesReq
 	NodeName string
@@ -139,6 +148,7 @@ func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// CreateSSHKeyReq represent a request for specific data to create a new SSH key
 type CreateSSHKeyReq struct {
 	*kubermaticv1.UserSSHKey
 }
@@ -154,6 +164,7 @@ func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
+// DeleteSSHKeyReq represent a request for deleting a SSH key
 type DeleteSSHKeyReq struct {
 	MetaName string
 }
@@ -168,6 +179,7 @@ func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
+// ListSSHKeyReq represent a request for listing all user SSH keys
 type ListSSHKeyReq struct {
 }
 
@@ -176,6 +188,7 @@ func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error
 	return req, nil
 }
 
+// UpgradeReq represent a request for cluster upgrade specific data
 // swagger:parameters performClusterUpgrage
 type UpgradeReq struct {
 	// UpgradeReq contains parameter for an update request
