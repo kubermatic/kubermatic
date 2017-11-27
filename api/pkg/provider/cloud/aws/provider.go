@@ -372,7 +372,7 @@ func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
 	}
 
-	nc, err := resources.LoadNodeClassFile(tplPath, a.GetNodeClassName(nSpec), c, nSpec, dc, keys, version)
+	nc, err := resources.LoadNodeClassFile(tplPath, a.NodeClassName(nSpec), c, nSpec, dc, keys, version)
 	if err != nil {
 		return nil, fmt.Errorf("could not load nodeclass: %v", err)
 	}
@@ -390,7 +390,7 @@ func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec
 	return cnc, nil
 }
 
-func (a *amazonEc2) GetNodeClassName(nSpec *api.NodeSpec) string {
+func (a *amazonEc2) NodeClassName(nSpec *api.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
 
@@ -488,5 +488,9 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	return nil
+}
+
+func (a *amazonEc2) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
 	return nil
 }

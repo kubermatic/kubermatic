@@ -51,7 +51,7 @@ func (do *digitalocean) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.Node
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
 	}
 
-	nc, err := resources.LoadNodeClassFile(tplPath, do.GetNodeClassName(nSpec), c, nSpec, dc, keys, version)
+	nc, err := resources.LoadNodeClassFile(tplPath, do.NodeClassName(nSpec), c, nSpec, dc, keys, version)
 	if err != nil {
 		return nil, fmt.Errorf("could not load nodeclass: %v", err)
 	}
@@ -69,6 +69,10 @@ func (do *digitalocean) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.Node
 	return cnc, nil
 }
 
-func (do *digitalocean) GetNodeClassName(nSpec *api.NodeSpec) string {
+func (do *digitalocean) NodeClassName(nSpec *api.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s-%s-%s", "coreos", nSpec.Digitalocean.Size, uuid.ShortUID(5))
+}
+
+func (do *digitalocean) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
+	return nil
 }
