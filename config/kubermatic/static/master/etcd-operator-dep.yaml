@@ -15,6 +15,8 @@ spec:
       containers:
       - name: etcd-operator
         image: quay.io/coreos/etcd-operator:{{index .Version.Values "etcd-operator-version"}}
+        command:
+        - etcd-operator
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:
