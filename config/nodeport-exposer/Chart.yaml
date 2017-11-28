@@ -1,0 +1,13 @@
+name: nodeport-exposer
+version: 0.1.0
+description: Kubermatic nodeport-exposer
+keywords:
+  - k8s
+  - kubermatic
+  - nodeport-exposer
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/nodeport-exposer
+maintainers:
+  - name: Henrik Schmidt
+    email: henrik@loodse.com
