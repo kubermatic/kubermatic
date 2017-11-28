@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiserver-external
+  annotations:
+    nodeport-exposer.k8s.io/expose: "true"
+spec:
+  type: NodePort
+  ports:
+    - name: secure
+      port: {{ .Cluster.Address.ExternalPort }}
+      nodePort: {{ .Cluster.Address.ExternalPort }}
+      protocol: TCP
+  selector:
+    role: apiserver

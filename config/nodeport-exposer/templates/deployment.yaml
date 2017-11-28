@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nodeport-exposer
+  namespace: {{ .Values.NodePortExposer.Namespace }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: nodeport-exposer
+    spec:
+      serviceAccountName: nodeport-exposer
+      containers:
+      - name: nodeport-exposer
+        image: {{ .Values.NodePortExposer.Image }}:{{ .Values.NodePortExposer.ImageTag }}
+        command: ["/nodeport-exposer"]
+        args: [
+          "-logtostderr",
+          "-v=4",
+          "-lb-service-name={{ .Values.NodePortExposer.Namespace }}/{{ .Values.NodePortExposer.LBServiceName }}"
+        ]

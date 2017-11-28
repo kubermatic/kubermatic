@@ -47,9 +47,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	return health.AllHealthy(), &health, nil
 }
 
-func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	var changedC *kubermaticv1.Cluster
-
+func (cc *controller) launchingClusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	// check that all deployments are healthy
 	allHealthy, health, err := cc.clusterHealth(c)
 	if err != nil {
@@ -61,12 +59,41 @@ func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermatic
 		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Name, c.Status.Health, health)
 		c.Status.Health = health
 		c.Status.Health.LastTransitionTime = metav1.Now()
-		changedC = c
 	}
 
 	if !allHealthy {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Name, c.Status.Health)
-		return changedC, nil
+		return c, nil
+	}
+
+	return nil, nil
+}
+
+// launchingClusterReachable checks if the cluster is reachable via its external name
+func (cc *controller) launchingClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	client, err := c.GetClient()
+	if err != nil {
+		return nil, err
+	}
+	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != nil {
+		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
+		return c, nil
+	}
+
+	return nil, nil
+}
+
+func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+
+	changedC, err := cc.launchingClusterHealth(c)
+	if err != nil || changedC != nil {
+		return changedC, err
+	}
+
+	changedC, err = cc.launchingClusterReachable(c)
+	if err != nil || changedC != nil {
+		return changedC, err
 	}
 
 	// no error until now? We are running.

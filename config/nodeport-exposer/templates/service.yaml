@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-nodeport-service
+  namespace: {{ .Values.NodePortExposer.Namespace }}
+  annotations:
+    nodeport-exposer.k8s.io/expose: "true"
+spec:
+  selector:
+    app: MyApp
+  ports:
+  - protocol: TCP
+    port: 30061
+    targetPort: 9376
+    nodePort: 30061
+  type: NodePort
