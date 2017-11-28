@@ -82,7 +82,7 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   values:
     k8s-version: v1.7.11
-    etcd-operator-version: v0.6.0
+    etcd-operator-version: v0.7.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.7.4
