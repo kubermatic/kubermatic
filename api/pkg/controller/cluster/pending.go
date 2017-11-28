@@ -251,8 +251,11 @@ func (cc *controller) launchingCheckSecrets(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
 	for s, gen := range secrets {
 		_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(s)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		secret, err := gen(c, s, cc.masterResourcesPath)
@@ -278,8 +281,11 @@ func (cc *controller) launchingCheckServices(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
 	for s, gen := range services {
 		_, err := cc.seedInformerGroup.ServiceInformer.Lister().Services(ns).Get(s)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		service, err := gen(c, s, cc.masterResourcesPath)
@@ -304,8 +310,11 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 	ns := c.Status.NamespaceName
 	for s, gen := range serviceAccounts {
 		_, err := cc.seedInformerGroup.ServiceAccountInformer.Lister().ServiceAccounts(ns).Get(s)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		sa, err := gen(s, cc.masterResourcesPath)
@@ -370,8 +379,11 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 		}
 
 		_, err = cc.seedInformerGroup.ClusterRoleBindingInformer.Lister().Get(binding.ObjectMeta.Name)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		_, err = cc.client.RbacV1beta1().ClusterRoleBindings().Create(binding)
@@ -406,8 +418,11 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 		}
 
 		_, err = cc.seedInformerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
@@ -434,8 +449,11 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 
 	for s, gen := range cms {
 		_, err := cc.seedInformerGroup.ConfigMapInformer.Lister().ConfigMaps(ns).Get(s)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		dc := cc.dcs[c.Spec.Cloud.DatacenterName]
@@ -461,8 +479,11 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
 	for s, gen := range ingress {
 		_, err := cc.seedInformerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
-		if !errors.IsNotFound(err) {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
+		}
+		if err == nil {
+			continue
 		}
 
 		ingress, err := gen(c, s, cc.masterResourcesPath)
