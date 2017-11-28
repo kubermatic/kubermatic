@@ -23,6 +23,9 @@ const (
 	nodeDeletionFinalizer         = "kubermatic.io/delete-nodes"
 	cloudProviderCleanupFinalizer = "kubermatic.io/cleanup-cloud-provider"
 	namespaceDeletionFinalizer    = "kubermatic.io/delete-ns"
+
+	minNodePort = 30000
+	maxNodePort = 32767
 )
 
 func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -200,7 +203,7 @@ func (cc *controller) getFreeNodePort() (int, error) {
 		}
 	}
 
-	for i := 30000; i < 32767; i++ {
+	for i := minNodePort; i < maxNodePort; i++ {
 		if _, exists := allocatedPorts[i]; !exists {
 			return i, nil
 		}
