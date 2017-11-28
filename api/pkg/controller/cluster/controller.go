@@ -74,6 +74,7 @@ type controller struct {
 	metrics ControllerMetrics
 }
 
+// ControllerMetrics contains metrics about the clusters & workers
 type ControllerMetrics struct {
 	Clusters metrics.Gauge
 	Workers  metrics.Gauge
