@@ -68,3 +68,4 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.7.4
+    pod-network-bridge: v0.1

@@ -114,6 +114,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 			"k8s-version":           "v1.5.3",
 			"etcd-operator-version": "v0.2.4fix",
 			"etcd-cluster-version":  "3.1.5",
+			"pod-network-bridge":    "v0.1",
 		},
 	}
 
@@ -166,6 +167,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 			"k8s-version":           "v1.5.3",
 			"etcd-operator-version": "v0.2.4fix",
 			"etcd-cluster-version":  "3.1.5",
+			"pod-network-bridge":    "v0.1",
 		},
 	}
 

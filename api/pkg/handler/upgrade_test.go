@@ -46,8 +46,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 					Values: map[string]string{
-						"k8s-version":  "v1.6.0",
-						"etcd-version": "3.2.8",
+						"k8s-version":        "v1.6.0",
+						"etcd-version":       "3.2.8",
+						"pod-network-bridge": "v0.1",
 					},
 				},
 				"1.6.1": {
@@ -61,8 +62,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 					Values: map[string]string{
-						"k8s-version":  "v1.6.1",
-						"etcd-version": "3.2.8",
+						"k8s-version":        "v1.6.1",
+						"etcd-version":       "3.2.8",
+						"pod-network-bridge": "v0.1",
 					},
 				},
 				"1.7.0": {
@@ -76,8 +78,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 					Values: map[string]string{
-						"k8s-version":  "v1.7.0",
-						"etcd-version": "3.2.8",
+						"k8s-version":        "v1.7.0",
+						"etcd-version":       "3.2.8",
+						"pod-network-bridge": "v0.1",
 					},
 				},
 			},
@@ -124,8 +127,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 					Values: map[string]string{
-						"k8s-version":  "v1.6.0",
-						"etcd-version": "3.2.8",
+						"k8s-version":        "v1.6.0",
+						"etcd-version":       "3.2.8",
+						"pod-network-bridge": "v0.1",
 					},
 				},
 			},
