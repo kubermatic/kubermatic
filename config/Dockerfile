@@ -25,6 +25,7 @@ COPY storage /kubermatic/storage
 COPY cert-manager /kubermatic/cert-manager
 COPY certs /kubermatic/certs
 COPY monitoring /kubermatic/monitoring
+COPY nodeport-exposer /kubermatic/nodeport-exposer
 
 COPY installer /kubermatic/installer
 
