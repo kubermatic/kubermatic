@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 KUBECTL=${KUBECTL_BIN:-/usr/local/bin/kubectl}
 KUBECTL_OPTS=${KUBECTL_OPTS:-}
