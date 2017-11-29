@@ -55,6 +55,7 @@ spec:
             "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
             "--authorization-mode=AlwaysAllow,RBAC",
             "--anonymous-auth=false",
+            "--external-hostname={{ .Cluster.Address.ExternalName }}",
             "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
             "--experimental-bootstrap-token-auth=true",
             "--service-account-key-file=/var/run/kubernetes/apiserver/service-account.key",
