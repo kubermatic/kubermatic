@@ -56,7 +56,6 @@ done
 
 ############# Kubermatic #############
 helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} ${CHARTS_PATH}/storage/
-helm ${HELM_OPTS} upgrade -i k8sniff -f ${VALUESFILE} ${CHARTS_PATH}/k8sniff/
 helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
 helm ${HELM_OPTS} upgrade -i oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
 helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
