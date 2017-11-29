@@ -76,7 +76,7 @@ pipeline:
       - cat versions-values.yaml
 
   kubermatic-docker-always:
-    group: push
+    group: push-always
     image: plugins/docker
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
@@ -88,7 +88,7 @@ pipeline:
     secrets: [ docker_username, docker_password ]
 
   kubermatic-installer-docker-always:
-    group: push
+    group: push-always
     image: plugins/docker
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
@@ -100,7 +100,7 @@ pipeline:
     secrets: [ docker_username, docker_password ]
 
   addons-docker-always:
-    group: push
+    group: push-always
     image: plugins/docker
     repo: kubermatic/addon-manager
     password: ${DOCKER_PASSWORD}
@@ -112,7 +112,7 @@ pipeline:
     secrets: [ docker_username, docker_password ]
 
   kubermatic-docker-master:
-    group: push
+    group: push-master
     image: plugins/docker
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
@@ -126,7 +126,7 @@ pipeline:
       branch: master
 
   kubermatic-installer-docker-master:
-    group: push
+    group: push-master
     image: plugins/docker
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
@@ -140,7 +140,7 @@ pipeline:
       branch: master
 
   addons-docker-master:
-    group: push
+    group: push-master
     image: plugins/docker
     repo: kubermatic/addon-manager
     password: ${DOCKER_PASSWORD}
@@ -154,7 +154,7 @@ pipeline:
       branch: master
 
   kubermatic-docker-release:
-    group: push
+    group: push-release
     image: plugins/docker
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
@@ -170,7 +170,7 @@ pipeline:
       branch: release/*
 
   kubermatic-installer-docker-release:
-    group: push
+    group: push-release
     image: plugins/docker
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
@@ -186,7 +186,7 @@ pipeline:
       branch: release/*
 
   addons-docker-release:
-    group: push
+    group: push-release
     image: plugins/docker
     repo: kubermatic/addon-manager
     password: ${DOCKER_PASSWORD}
