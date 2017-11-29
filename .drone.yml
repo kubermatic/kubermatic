@@ -203,7 +203,7 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.7.10
+    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
     commands:
       - echo $KUBECONFIG_DEV | base64 -d > /kubeconfig
       - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
@@ -213,10 +213,10 @@ pipeline:
 
   deploy-cloud-master:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.7.10
+    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
     commands:
       - echo $KUBECONFIG_CLOUD | base64 -d > /kubeconfig
-      - kubectl --kubeconfig /kubeconfig config use-context europe-west3-c-1
+      - /hyperkube kubectl --kubeconfig /kubeconfig config use-context europe-west3-c-1
       - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
     secrets: [ kubeconfig_cloud ]
     when:
