@@ -18,6 +18,9 @@ spec:
       containers:
       - name: heapster
         image: gcr.io/google_containers/heapster-amd64:v1.4.0
+        ports:
+        - containerPort: 8082
+          protocol: TCP
         imagePullPolicy: IfNotPresent
         command:
         - /heapster
