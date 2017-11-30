@@ -70,6 +70,7 @@ func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Prov
 		Username:         cloud.Openstack.Username,
 		Password:         cloud.Openstack.Password,
 		DomainName:       cloud.Openstack.Domain,
+		TenantName:       cloud.Openstack.Tenant,
 	}
 
 	osProvider, err := goopenstack.AuthenticatedClient(opts)
