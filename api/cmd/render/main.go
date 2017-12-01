@@ -214,6 +214,14 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 	m.Checkpointer = mustCreateAssetFromTemplate(internal.CheckpointerTemplate, conf)
 	m.KubeSystemSARoleBinding = mustCreateAssetFromTemplate(internal.KubeSystemSARoleBindingTemplate, conf)
 
+	m.CACert = cluster.Status.RootCA.Cert
+	m.CAKey = cluster.Status.RootCA.Key
+	m.KubeletCert = cluster.Status.KubeletCert.Cert
+	m.KubeletKey = cluster.Status.KubeletCert.Key
+	m.APIServerCert = cluster.Status.ApiserverCert.Cert
+	m.APIServerKey = cluster.Status.ApiserverCert.Key
+	//m.ServiceAccountPrivKey
+	//m.ServiceAccountPubKey
 	// TODO(realfake): bootstrap etcd is missing
 }
 func translateClusterToBootkube(cluster *v1.Cluster) *Config {
