@@ -17,7 +17,11 @@ config:
     openstack-net-name: "{{ .Cluster.Spec.Cloud.Openstack.Network }}"
     openstack-sec-groups: "{{ .Cluster.Spec.Cloud.Openstack.SecurityGroups }}"
     openstack-ssh-user: "ubuntu"
+    {{if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.7" }}
+    engine-install-url: "https://packages.docker.com/1.12/install.sh"
+    {{ else }}
     engine-install-url: "https://get.docker.com"
+    {{ end }}
   provider: openstack
   provisioning:
     users:
