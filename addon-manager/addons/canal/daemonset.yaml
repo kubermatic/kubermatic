@@ -24,6 +24,11 @@ spec:
       hostNetwork: true
       serviceAccountName: canal
       tolerations:
+        # this taint is set by all kubelets running `--cloud-provider=external`
+        # so we should tolerate it to schedule the canal pods
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          value: "true"
+          effect: NoSchedule
         # Allow the pod to run on the master.  This is required for
         # the master to communicate with pods.
         - key: node-role.kubernetes.io/master
@@ -31,12 +36,15 @@ spec:
         # Mark the pod as a critical add-on for rescheduling.
         - key: "CriticalAddonsOnly"
           operator: "Exists"
+      # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
+      # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
+      terminationGracePeriodSeconds: 0
       containers:
         # Runs calico/node container on each Kubernetes node.  This
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: quay.io/calico/node:v2.5.1
+          image: quay.io/calico/node:v2.6.2
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -101,7 +109,7 @@ spec:
         # This container installs the Calico CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: quay.io/calico/cni:v1.10.0
+          image: quay.io/calico/cni:v1.11.0
           command: ["/install-cni.sh"]
           env:
             - name: CNI_CONF_NAME
@@ -124,7 +132,7 @@ spec:
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
-          image: quay.io/coreos/flannel:v0.8.0
+          image: quay.io/coreos/flannel:v0.9.1
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
           securityContext:
             privileged: true

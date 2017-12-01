@@ -16,7 +16,7 @@ spec:
       hostNetwork: true
       containers:
       - name: kube-proxy
-        image: "kubermatic/hyperkube-amd64:v1.7.7"
+        image: "kubermatic/hyperkube-amd64:v1.8.4"
         command: [
           "/hyperkube",
           "proxy",
