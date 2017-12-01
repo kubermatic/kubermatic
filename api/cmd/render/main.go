@@ -130,9 +130,7 @@ type Config struct {
 	DNSServiceIP           net.IP
 	EtcdServiceIP          net.IP
 	EtcdServiceName        string
-	SelfHostKubelet        bool
 	SelfHostedEtcd         bool
-	CalicoNetworkPolicy    bool
 	CloudProvider          string
 	BootstrapSecretsSubdir string
 	Images                 ImageVersions
@@ -182,12 +180,23 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 	m.ControllerManager = mustCreateAssetFromTemplate(internal.ControllerManagerTemplate, conf)
 	m.APIServer = mustCreateAssetFromTemplate(internal.APIServerTemplate, conf)
 	m.Proxy = mustCreateAssetFromTemplate(internal.ProxyTemplate, conf)
-	m.KubeFlannelCfg = mustCreateAssetFromTemplate(internal.KubeFlannelCfgTemplate, conf)
-	m.KubeFlannel = mustCreateAssetFromTemplate(internal.KubeFlannelTemplate, conf)
 	m.KubeDNSSvc = mustCreateAssetFromTemplate(internal.DNSSvcTemplate, conf)
 	m.BootstrapAPIServer = mustCreateAssetFromTemplate(internal.BootstrapAPIServerTemplate, conf)
 	m.BootstrapControllerManager = mustCreateAssetFromTemplate(internal.BootstrapControllerManagerTemplate, conf)
 	m.BootstrapScheduler = mustCreateAssetFromTemplate(internal.BootstrapSchedulerTemplate, conf)
+
+	// Canal
+	//m.KubeFlannelCfg = mustCreateAssetFromTemplate(internal.KubeFlannelCfgTemplate, conf)
+	//m.KubeFlannel = mustCreateAssetFromTemplate(internal.KubeFlannelTemplate, conf)
+	m.CalicoCfg = mustCreateAssetFromTemplate(internal.CalicoCfgTemplate, conf)
+	m.CalicoRole = mustCreateAssetFromTemplate(internal.CalicoRoleTemplate, conf)
+	m.CalicoRoleBinding = mustCreateAssetFromTemplate(internal.CalicoRoleBindingTemplate, conf)
+	m.CalicoSA = mustCreateAssetFromTemplate(internal.CalicoServiceAccountTemplate, conf)
+	m.CalicoPolicyOnly = mustCreateAssetFromTemplate(internal.CalicoPolicyOnlyTemplate, conf)
+	m.CalicoBGPConfigsCRD = mustCreateAssetFromTemplate(internal.CalicoBGPConfigsCRD, conf)
+	m.CalicoFelixConfigsCRD = mustCreateAssetFromTemplate(internal.CalicoFelixConfigsCRD, conf)
+	m.CalicoNetworkPoliciesCRD = mustCreateAssetFromTemplate(internal.CalicoNetworkPoliciesCRD, conf)
+	m.CalicoIPPoolsCRD = mustCreateAssetFromTemplate(internal.CalicoIPPoolsCRD, conf)
 
 	// Self hosted etcd
 	m.EtcdOperator = mustCreateAssetFromTemplate(internal.EtcdOperatorTemplate, conf)
@@ -267,9 +276,7 @@ func translateClusterToBootkube(cluster *v1.Cluster) *Config {
 		DNSServiceIP:           dnsServiceIP,
 		EtcdServiceIP:          etcdServiceIP,
 		EtcdServiceName:        defaultEtcdServiceName,
-		SelfHostKubelet:        false,
 		SelfHostedEtcd:         true,
-		CalicoNetworkPolicy:    false,
 		CloudProvider:          providerName,
 		BootstrapSecretsSubdir: path.Base(bootstrapSecretsDir),
 		Images:                 DefaultImages,

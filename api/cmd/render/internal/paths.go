@@ -29,8 +29,16 @@ const (
 	AssetPathKubeConfig                  = "auth/kubeconfig"
 	AssetPathManifests                   = "manifests"
 	AssetPathProxy                       = "manifests/kube-proxy.yaml"
-	AssetPathKubeFlannel                 = "manifests/kube-flannel.yaml"
-	AssetPathKubeFlannelCfg              = "manifests/kube-flannel-cfg.yaml"
+	AssetPathCalico                      = "manifests/calico.yaml"
+	AssetPathCalicoPolicyOnly            = "manifests/calico-policy-only.yaml"
+	AssetPathCalicoCfg                   = "manifests/calico-config.yaml"
+	AssetPathCalicoSA                    = "manifests/calico-service-account.yaml"
+	AssetPathCalicoRole                  = "manifests/calico-role.yaml"
+	AssetPathCalicoRoleBinding           = "manifests/calico-role-binding.yaml"
+	AssetPathCalicoBGPConfigsCRD         = "manifests/calico-bgp-configs-crd.yaml"
+	AssetPathCalicoFelixConfigsCRD       = "manifests/calico-felix-configs-crd.yaml"
+	AssetPathCalicoNetworkPoliciesCRD    = "manifests/calico-network-policies-crd.yaml"
+	AssetPathCalicoIPPoolsCRD            = "manifests/calico-ip-pools-crd.yaml"
 	AssetPathAPIServerSecret             = "manifests/kube-apiserver-secret.yaml"
 	AssetPathAPIServer                   = "manifests/kube-apiserver.yaml"
 	AssetPathControllerManager           = "manifests/kube-controller-manager.yaml"
@@ -80,8 +88,16 @@ type TemplateContent struct {
 	BootstrapEtcdTemplate               []byte
 	BootstrapEtcdSvcTemplate            []byte
 	EtcdCRDTemplate                     []byte
-	KubeFlannelCfgTemplate              []byte
-	KubeFlannelTemplate                 []byte
+	CalicoTemplate                      []byte
+	CalicoPolicyOnlyTemplate            []byte
+	CalicoCfgTemplate                   []byte
+	CalicoSATemplate                    []byte
+	CalicoRoleTemplate                  []byte
+	CalicoRoleBindingTemplate           []byte
+	CalicoBGPConfigsCRDTemplate         []byte
+	CalicoFelixConfigsCRDTemplate       []byte
+	CalicoNetworkPoliciesCRDTemplate    []byte
+	CalicoIPPoolsCRDTemplate            []byte
 }
 
 type Manifests struct {
@@ -130,6 +146,16 @@ type Manifests struct {
 	BootstrapEtcd               []byte
 	BootstrapEtcdService        []byte
 	MigrateEtcdCluster          []byte
+	Calico                      []byte
+	CalicoPolicyOnly            []byte
+	CalicoCfg                   []byte
+	CalicoSA                    []byte
+	CalicoRole                  []byte
+	CalicoRoleBinding           []byte
+	CalicoBGPConfigsCRD         []byte
+	CalicoFelixConfigsCRD       []byte
+	CalicoNetworkPoliciesCRD    []byte
+	CalicoIPPoolsCRD            []byte
 }
 
 func (m *Manifests) WriteToDir(basename string) error {
@@ -170,8 +196,6 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathKubeletCert), m.KubeletCert, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathKubeConfig), m.KubeConfig, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathProxy), m.Proxy, fileMode))
-	setError(ioutil.WriteFile(path.Join(basename, AssetPathKubeFlannel), m.KubeFlannel, fileMode))
-	setError(ioutil.WriteFile(path.Join(basename, AssetPathKubeFlannelCfg), m.KubeFlannelCfg, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathAPIServerSecret), m.APIServerSecret, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathAPIServer), m.APIServer, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathControllerManager), m.ControllerManager, fileMode))
@@ -196,6 +220,16 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathBootstrapEtcd), m.BootstrapEtcd, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathBootstrapEtcdService), m.BootstrapEtcdService, fileMode))
 	setError(ioutil.WriteFile(path.Join(basename, AssetPathMigrateEtcdCluster), m.MigrateEtcdCluster, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalico), m.Calico, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoPolicyOnly), m.CalicoPolicyOnly, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoCfg), m.CalicoCfg, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoSA), m.CalicoSA, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoRole), m.CalicoRole, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoRoleBinding), m.CalicoRoleBinding, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoBGPConfigsCRD), m.CalicoBGPConfigsCRD, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoFelixConfigsCRD), m.CalicoFelixConfigsCRD, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoNetworkPoliciesCRD), m.CalicoNetworkPoliciesCRD, fileMode))
+	setError(ioutil.WriteFile(path.Join(basename, AssetPathCalicoIPPoolsCRD), m.CalicoIPPoolsCRD, fileMode))
 	return err
 }
 
@@ -221,7 +255,15 @@ func DefaultInternalTemplateContent() *TemplateContent {
 		BootstrapEtcdTemplate:               BootstrapEtcdTemplate,
 		BootstrapEtcdSvcTemplate:            BootstrapEtcdSvcTemplate,
 		EtcdCRDTemplate:                     EtcdCRDTemplate,
-		KubeFlannelCfgTemplate:              KubeFlannelCfgTemplate,
-		KubeFlannelTemplate:                 KubeFlannelTemplate,
+		CalicoTemplate:                      CalicoNodeTemplate,
+		CalicoPolicyOnlyTemplate:            CalicoPolicyOnlyTemplate,
+		CalicoCfgTemplate:                   CalicoCfgTemplate,
+		CalicoSATemplate:                    CalicoServiceAccountTemplate,
+		CalicoRoleTemplate:                  CalicoRoleTemplate,
+		CalicoRoleBindingTemplate:           CalicoRoleBindingTemplate,
+		CalicoBGPConfigsCRDTemplate:         CalicoBGPConfigsCRD,
+		CalicoFelixConfigsCRDTemplate:       CalicoFelixConfigsCRD,
+		CalicoNetworkPoliciesCRDTemplate:    CalicoNetworkPoliciesCRD,
+		CalicoIPPoolsCRDTemplate:            CalicoIPPoolsCRD,
 	}
 }
