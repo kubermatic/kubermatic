@@ -221,6 +221,16 @@ pipeline:
     when:
       branch: master
 
+  deploy-syseleven:
+    group: deploy
+    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
+    commands:
+      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
+      - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
+    secrets: [ kubeconfig_syseleven ]
+    when:
+      event: tag
+
   slack-failure:
     group: notify
     image: kubermaticbot/drone-slack
