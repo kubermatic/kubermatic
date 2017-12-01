@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/ghodss/yaml"
@@ -22,6 +23,21 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubernetes-incubator/bootkube/pkg/tlsutil"
+)
+
+const (
+	apiOffset              = 1
+	dnsOffset              = 10
+	etcdOffset             = 15
+	bootEtcdOffset         = 20
+	defaultApiServers      = "https://127.0.0.1:443"
+	defaultEtcdServers     = "https://127.0.0.1:2379"
+	defaultEtcdServiceName = "etcd-service"
+	defaultAltNames        = ""
+	defaultServiceBaseIP   = "10.3.0.0"
+	defaultPodCIDR         = "10.2.0.0/16"
+	defaultServiceCIDR     = "10.3.0.0/24"
+	bootstrapSecretsDir    = "/etc/kubernetes/bootstrap-secrets" // Overridden for testing.
 )
 
 var (
@@ -194,30 +210,74 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 func translateClusterToBootkube(cluster *v1.Cluster) *Config {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	must(err)
+
+	apiServers, err := parseURLs(defaultServiceCIDR)
+
+	altNames, err := parseAltNames(defaultAltNames)
+	if altNames == nil {
+		// Fall back to parsing from api-server list
+		altNames = altNamesFromURLs(apiServers)
+	}
+
+	_, podNet, err := net.ParseCIDR(defaultPodCIDR)
+	must(err)
+
+	_, serviceNet, err := net.ParseCIDR(defaultServiceCIDR)
+	must(err)
+
+	if podNet.Contains(serviceNet.IP) || serviceNet.Contains(podNet.IP) {
+		must(fmt.Errorf("Pod CIDR %s and service CIDR %s must not overlap", podNet.String(), serviceNet.String()))
+	}
+
+	apiServiceIP, err := offsetServiceIP(serviceNet, apiOffset)
+	must(err)
+
+	dnsServiceIP, err := offsetServiceIP(serviceNet, dnsOffset)
+
+	bootEtcdServiceIP, err := offsetServiceIP(serviceNet, bootEtcdOffset)
+	must(err)
+
+	etcdServiceIP, err := offsetServiceIP(serviceNet, etcdOffset)
+	must(err)
+
+	var etcdServers []*url.URL
+	etcdServerUrl, err := url.Parse(fmt.Sprintf("https://%s:2379", etcdServiceIP))
+	must(err)
+	etcdServers = append(etcdServers, etcdServerUrl)
+
+	key, crt, err := parseCertAndPrivateKeyFromString(string(cluster.Status.ApiserverCert.Cert), string(cluster.Status.ApiserverCert.Key))
+	must(err)
+
+	// TODO: Find better option than asking users to make manual changes
+	if serviceNet.IP.String() != defaultServiceBaseIP {
+		fmt.Printf("You have selected a non-default service CIDR %s - be sure your kubelet service file uses --cluster-dns=%s\n", serviceNet.String(), dnsServiceIP.String())
+	}
+
 	c := &Config{
-		EtcdCACert:             nil,
-		EtcdClientCert:         nil,
-		EtcdClientKey:          nil,
-		EtcdServers:            nil,
+		EtcdServers:            etcdServers,
 		EtcdUseTLS:             false,
-		APIServers:             nil,
-		CACert:                 nil,
-		CAPrivKey:              nil,
-		AltNames:               nil,
-		PodCIDR:                nil,
-		ServiceCIDR:            nil,
-		APIServiceIP:           nil,
-		BootEtcdServiceIP:      nil,
-		DNSServiceIP:           nil,
-		EtcdServiceIP:          nil,
-		EtcdServiceName:        "",
+		APIServers:             apiServers,
+		CACert:                 crt,
+		CAPrivKey:              key,
+		AltNames:               altNames,
+		PodCIDR:                podNet,
+		ServiceCIDR:            serviceNet,
+		APIServiceIP:           apiServiceIP,
+		BootEtcdServiceIP:      bootEtcdServiceIP,
+		DNSServiceIP:           dnsServiceIP,
+		EtcdServiceIP:          etcdServiceIP,
+		EtcdServiceName:        defaultEtcdServiceName,
 		SelfHostKubelet:        false,
 		SelfHostedEtcd:         true,
 		CalicoNetworkPolicy:    false,
 		CloudProvider:          providerName,
-		BootstrapSecretsSubdir: "",
+		BootstrapSecretsSubdir: path.Base(bootstrapSecretsDir),
 		Images:                 DefaultImages,
 	}
+
+	// Add kube-apiserver service IP
+	c.AltNames.IPs = append(c.AltNames.IPs, c.APIServiceIP)
+
 	return c
 }
 
@@ -521,4 +581,100 @@ func mustRenderKubermaticTemplateFiles(cluster *v1.Cluster, content *internal.Te
 			must(ioutil.WriteFile(path.Join(*outputFolder, file), buf, os.ModePerm))
 		}
 	}
+}
+
+func parseURLs(s string) ([]*url.URL, error) {
+	var out []*url.URL
+	for _, u := range strings.Split(s, ",") {
+		parsed, err := url.Parse(u)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, parsed)
+	}
+	return out, nil
+}
+
+func parseAltNames(s string) (*tlsutil.AltNames, error) {
+	if s == "" {
+		return nil, nil
+	}
+	var alt tlsutil.AltNames
+	for _, an := range strings.Split(s, ",") {
+		switch {
+		case strings.HasPrefix(an, "DNS="):
+			alt.DNSNames = append(alt.DNSNames, strings.TrimPrefix(an, "DNS="))
+		case strings.HasPrefix(an, "IP="):
+			ip := net.ParseIP(strings.TrimPrefix(an, "IP="))
+			if ip == nil {
+				return nil, fmt.Errorf("Invalid IP alt name: %s", an)
+			}
+			alt.IPs = append(alt.IPs, ip)
+		default:
+			return nil, fmt.Errorf("Invalid alt name: %s", an)
+		}
+	}
+	return &alt, nil
+}
+
+func altNamesFromURLs(urls []*url.URL) *tlsutil.AltNames {
+	var an tlsutil.AltNames
+	for _, u := range urls {
+		host, _, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			host = u.Host
+		}
+		ip := net.ParseIP(host)
+		if ip == nil {
+			an.DNSNames = append(an.DNSNames, host)
+		} else {
+			an.IPs = append(an.IPs, ip)
+		}
+	}
+	return &an
+}
+
+// offsetServiceIP returns an IP offset by up to 255.
+// TODO: do numeric conversion to generalize this utility.
+func offsetServiceIP(ipnet *net.IPNet, offset int) (net.IP, error) {
+	ip := make(net.IP, len(ipnet.IP))
+	copy(ip, ipnet.IP)
+	for i := 0; i < offset; i++ {
+		incIPv4(ip)
+	}
+	if ipnet.Contains(ip) {
+		return ip, nil
+	}
+	return net.IP([]byte("")), fmt.Errorf("Service IP %v is not in %s", ip, ipnet)
+}
+
+func incIPv4(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+func parseCertAndPrivateKeyFromString(caCertPem, privKey string) (*rsa.PrivateKey, *x509.Certificate, error) {
+	// Parse CA Private key.
+	key, err := tlsutil.ParsePEMEncodedPrivateKey([]byte(privKey))
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to parse CA private key: %v", err)
+	}
+	// Parse CA Cert.
+	cert, err := parseCertFromString(caCertPem)
+	if err != nil {
+		return nil, nil, err
+	}
+	return key, cert, nil
+}
+
+func parseCertFromString(caCertPem string) (*x509.Certificate, error) {
+	cert, err := tlsutil.ParsePEMEncodedCACert([]byte(caCertPem))
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse CA Cert: %v", err)
+	}
+	return cert, nil
 }
