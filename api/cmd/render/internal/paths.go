@@ -62,7 +62,6 @@ const (
 type TemplateContent struct {
 	KubeConfigTemplate                  []byte
 	KubeSystemSARoleBindingTemplate     []byte
-	KubeletTemplate                     []byte
 	APIServerTemplate                   []byte
 	BootstrapAPIServerTemplate          []byte
 	KencTemplate                        []byte
@@ -204,7 +203,6 @@ func DefaultInternalTemplateContent() *TemplateContent {
 	return &TemplateContent{
 		KubeConfigTemplate:                  KubeConfigTemplate,
 		KubeSystemSARoleBindingTemplate:     KubeSystemSARoleBindingTemplate,
-		KubeletTemplate:                     KubeletTemplate,
 		APIServerTemplate:                   APIServerTemplate,
 		BootstrapAPIServerTemplate:          BootstrapAPIServerTemplate,
 		KencTemplate:                        KencTemplate,

@@ -18,7 +18,7 @@ contexts:
     user: kubelet
 `)
 
-var KubeSystemSARoleBindingTemplate = []byte(`apiVersion: rbac.authorization.k8s.io/v1alpha1
+var KubeSystemSARoleBindingTemplate = []byte(`apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: system:default-sa
@@ -32,109 +32,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 `)
 
-var KubeletTemplate = []byte(`apiVersion: extensions/v1beta1
-kind: DaemonSet
-metadata:
-  name: kubelet
-  namespace: kube-system
-  labels:
-    tier: node
-    k8s-app: kubelet
-spec:
-  template:
-    metadata:
-      labels:
-        tier: node
-        k8s-app: kubelet
-    spec:
-      containers:
-      - name: kubelet
-        image: {{ .Images.Hyperkube }}
-        command:
-        - ./hyperkube
-        - kubelet
-        - --allow-privileged
-        - --cluster-dns={{ .DNSServiceIP }}
-        - --cluster-domain=cluster.local
-        - --cni-conf-dir=/etc/kubernetes/cni/net.d
-        - --cni-bin-dir=/opt/cni/bin
-        - --containerized
-        - --hostname-override=$(NODE_NAME)
-        - --kubeconfig=/etc/kubernetes/kubeconfig
-        - --lock-file=/var/run/lock/kubelet.lock
-        - --network-plugin=cni
-        - --pod-manifest-path=/etc/kubernetes/manifests
-        - --require-kubeconfig
-        env:
-          - name: NODE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: dev
-          mountPath: /dev
-        - name: run
-          mountPath: /run
-        - name: sys
-          mountPath: /sys
-          readOnly: true
-        - name: etc-kubernetes
-          mountPath: /etc/kubernetes
-          readOnly: true
-        - name: etc-ssl-certs
-          mountPath: /etc/ssl/certs
-          readOnly: true
-        - name: var-lib-docker
-          mountPath: /var/lib/docker
-        - name: var-lib-kubelet
-          mountPath: /var/lib/kubelet
-        - name: var-lib-rkt
-          mountPath: /var/lib/rkt
-        - name: rootfs
-          mountPath: /rootfs
-      hostNetwork: true
-      hostPID: true
-      tolerations:
-      - key: node-role.kubernetes.io/master
-        operator: Exists
-        effect: NoSchedule
-      volumes:
-      - name: dev
-        hostPath:
-          path: /dev
-      - name: run
-        hostPath:
-          path: /run
-      - name: sys
-        hostPath:
-          path: /sys
-      - name: etc-kubernetes
-        hostPath:
-          path: /etc/kubernetes
-      - name: etc-ssl-certs
-        hostPath:
-          path: /usr/share/ca-certificates
-      - name: var-lib-docker
-        hostPath:
-          path: /var/lib/docker
-      - name: var-lib-kubelet
-        hostPath:
-          path: /var/lib/kubelet
-      - name: var-lib-rkt
-        hostPath:
-          path: /var/lib/rkt
-      - name: rootfs
-        hostPath:
-          path: /
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
-`)
-
-var APIServerTemplate = []byte(`apiVersion: "extensions/v1beta1"
+var APIServerTemplate = []byte(`apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: kube-apiserver
@@ -143,6 +41,10 @@ metadata:
     tier: control-plane
     k8s-app: kube-apiserver
 spec:
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: kube-apiserver
   template:
     metadata:
       labels:
@@ -150,7 +52,6 @@ spec:
         k8s-app: kube-apiserver
       annotations:
         checkpointer.alpha.coreos.com/checkpoint: "true"
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       containers:
       - name: kube-apiserver
@@ -158,7 +59,7 @@ spec:
         command:
         - /hyperkube
         - apiserver
-        - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
+        - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
         - --advertise-address=$(POD_IP)
         - --allow-privileged=true
         - --anonymous-auth=false
@@ -202,8 +103,6 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/master: ""
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
@@ -233,11 +132,9 @@ spec:
   - name: kube-apiserver
     image: {{ .Images.Hyperkube }}
     command:
-    - /usr/bin/flock
-    - /var/lock/api-server.lock
     - /hyperkube
     - apiserver
-    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
+    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
     - --advertise-address=$(POD_IP)
     - --allow-privileged=true
     - --authorization-mode=RBAC
@@ -289,7 +186,7 @@ spec:
       path: /var/lock
 `)
 
-var KencTemplate = []byte(`apiVersion: "extensions/v1beta1"
+var KencTemplate = []byte(`apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: kube-etcd-network-checkpointer
@@ -298,6 +195,10 @@ metadata:
     tier: control-plane
     k8s-app: kube-etcd-network-checkpointer
 spec:
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: kube-etcd-network-checkpointer
   template:
     metadata:
       labels:
@@ -349,7 +250,7 @@ spec:
     type: RollingUpdate
 `)
 
-var CheckpointerTemplate = []byte(`apiVersion: "extensions/v1beta1"
+var CheckpointerTemplate = []byte(`apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: pod-checkpointer
@@ -358,6 +259,10 @@ metadata:
     tier: control-plane
     k8s-app: pod-checkpointer
 spec:
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: pod-checkpointer
   template:
     metadata:
       labels:
@@ -371,8 +276,8 @@ spec:
         image: {{ .Images.PodCheckpointer }}
         command:
         - /checkpoint
-        - --v=4
         - --lock-file=/var/run/lock/pod-checkpointer.lock
+        - --kubeconfig=/etc/checkpointer/kubeconfig
         env:
         - name: NODE_NAME
           valueFrom:
@@ -388,10 +293,13 @@ spec:
               fieldPath: metadata.namespace
         imagePullPolicy: Always
         volumeMounts:
+        - mountPath: /etc/checkpointer
+          name: kubeconfig
         - mountPath: /etc/kubernetes
           name: etc-kubernetes
         - mountPath: /var/run
           name: var-run
+      serviceAccountName: pod-checkpointer
       hostNetwork: true
       nodeSelector:
         node-role.kubernetes.io/master: ""
@@ -401,6 +309,9 @@ spec:
         operator: Exists
         effect: NoSchedule
       volumes:
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig-in-cluster
       - name: etc-kubernetes
         hostPath:
           path: /etc/kubernetes
@@ -413,7 +324,44 @@ spec:
     type: RollingUpdate
 `)
 
-var ControllerManagerTemplate = []byte(`apiVersion: extensions/v1beta1
+var CheckpointerServiceAccount = []byte(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  name: pod-checkpointer
+`)
+
+// TODO: Drop checkpointer RBAC resources to a Role and RoleBinding if
+// the checkpoint switches to only watching kube-system.
+
+var CheckpointerRole = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-checkpointer
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["secrets", "configmaps"]
+  verbs: ["get"]
+`)
+
+var CheckpointerRoleBinding = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-checkpointer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pod-checkpointer
+subjects:
+- kind: ServiceAccount
+  name: pod-checkpointer
+  namespace: kube-system
+`)
+
+var ControllerManagerTemplate = []byte(`apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: kube-controller-manager
@@ -423,13 +371,15 @@ metadata:
     k8s-app: kube-controller-manager
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: kube-controller-manager
   template:
     metadata:
       labels:
         tier: control-plane
         k8s-app: kube-controller-manager
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       affinity:
         podAntiAffinity:
@@ -479,8 +429,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
@@ -544,7 +492,7 @@ spec:
       k8s-app: kube-controller-manager
 `)
 
-var SchedulerTemplate = []byte(`apiVersion: extensions/v1beta1
+var SchedulerTemplate = []byte(`apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: kube-scheduler
@@ -554,13 +502,15 @@ metadata:
     k8s-app: kube-scheduler
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: kube-scheduler
   template:
     metadata:
       labels:
         tier: control-plane
         k8s-app: kube-scheduler
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       affinity:
         podAntiAffinity:
@@ -597,8 +547,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
@@ -642,7 +590,7 @@ spec:
       k8s-app: kube-scheduler
 `)
 
-var ProxyTemplate = []byte(`apiVersion: "extensions/v1beta1"
+var ProxyTemplate = []byte(`apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: kube-proxy
@@ -651,13 +599,15 @@ metadata:
     tier: node
     k8s-app: kube-proxy
 spec:
+  selector:
+    matchLabels:
+      tier: node
+      k8s-app: kube-proxy
   template:
     metadata:
       labels:
         tier: node
         k8s-app: kube-proxy
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       containers:
       - name: kube-proxy
@@ -677,33 +627,91 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
         - mountPath: /etc/ssl/certs
           name: ssl-certs-host
           readOnly: true
-        - name: etc-kubernetes
+        - name: kubeconfig
           mountPath: /etc/kubernetes
           readOnly: true
       hostNetwork: true
+      serviceAccountName: kube-proxy
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
       volumes:
-      - hostPath:
-          path: /usr/share/ca-certificates
-        name: ssl-certs-host
-      - name: etc-kubernetes
+      - name: lib-modules
         hostPath:
-          path: /etc/kubernetes
+          path: /lib/modules
+      - name: ssl-certs-host
+        hostPath:
+          path: /usr/share/ca-certificates
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig-in-cluster
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
     type: RollingUpdate
 `)
 
-var DNSDeploymentTemplate = []byte(`apiVersion: extensions/v1beta1
+var ProxyServiceAccount = []byte(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  name: kube-proxy
+`)
+
+var ProxyClusterRoleBinding = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:node-proxier # Automatically created system role.
+subjects:
+- kind: ServiceAccount
+  name: kube-proxy
+  namespace: kube-system
+`)
+
+// KubeConfigInCluster instructs clients to use their service account token,
+// but unlike an in-cluster client doesn't rely on the `KUBERNETES_SERVICE_PORT`
+// and `KUBERNETES_PORT` to determine the API servers address.
+//
+// This kubeconfig is used by bootstrapping pods that might not have access to
+// these env vars, such as kube-proxy, which sets up the API server endpoint
+// (chicken and egg), and the checkpointer, which needs to run as a static pod
+// even if the API server isn't available.
+var KubeConfigInClusterTemplate = []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeconfig-in-cluster
+  namespace: kube-system
+stringData:
+  kubeconfig: |
+    apiVersion: v1
+    clusters:
+    - name: local
+      cluster:
+        server: {{ .Server }}
+        certificate-authority-data: {{ .CACert }}
+    users:
+    - name: service-account
+      user:
+        # Use service account token
+        tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    contexts:
+    - context:
+        cluster: local
+        user: service-account
+`)
+
+var DNSDeploymentTemplate = []byte(`apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: kube-dns
@@ -728,14 +736,10 @@ spec:
     metadata:
       labels:
         k8s-app: kube-dns
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       nodeSelector:
         node-role.kubernetes.io/master: ""
       tolerations:
-      - key: "CriticalAddonsOnly"
-        operator: "Exists"
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
@@ -815,6 +819,7 @@ spec:
         - --
         - -k
         - --cache-size=1000
+        - --no-negcache
         - --log-facility=-
         - --server=/cluster.local/127.0.0.1#10053
         - --server=/in-addr.arpa/127.0.0.1#10053
@@ -883,7 +888,7 @@ spec:
     protocol: TCP
 `)
 
-var EtcdOperatorTemplate = []byte(`apiVersion: extensions/v1beta1
+var EtcdOperatorTemplate = []byte(`apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: etcd-operator
@@ -891,12 +896,10 @@ metadata:
   labels:
     k8s-app: etcd-operator
 spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
   replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: etcd-operator
   template:
     metadata:
       labels:
@@ -926,6 +929,11 @@ spec:
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
 `)
 
 var EtcdSvcTemplate = []byte(`apiVersion: v1
@@ -1067,10 +1075,22 @@ data:
   cni-conf.json: |
     {
       "name": "cbr0",
-      "type": "flannel",
-      "delegate": {
-        "isDefaultGateway": true
-      }
+      "cniVersion": "0.3.1",
+      "plugins": [
+        {
+          "type": "flannel",
+          "delegate": {
+            "hairpinMode": true,
+            "isDefaultGateway": true
+          }
+        },
+        {
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
+          }
+        }
+      ]
     }
   net-conf.json: |
     {
@@ -1081,7 +1101,7 @@ data:
     }
 `)
 
-var KubeFlannelTemplate = []byte(`apiVersion: extensions/v1beta1
+var KubeFlannelTemplate = []byte(`apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: kube-flannel
@@ -1090,6 +1110,10 @@ metadata:
     tier: node
     k8s-app: flannel
 spec:
+  selector:
+    matchLabels:
+      tier: node
+      k8s-app: flannel
   template:
     metadata:
       labels:
@@ -1126,8 +1150,6 @@ spec:
         image: {{ .Images.FlannelCNI }}
         command: ["/install-cni.sh"]
         env:
-        - name: CNI_CONF_NAME
-          value: "10-flannel.conf"
         - name: CNI_NETWORK_CONFIG
           valueFrom:
             configMapKeyRef:
@@ -1160,6 +1182,411 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
     type: RollingUpdate
+`)
+
+var CalicoCfgTemplate = []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: calico-config
+  namespace: kube-system
+data:
+  # The CNI network configuration to install on each node.
+  cni_network_config: |-
+    {
+        "name": "k8s-pod-network",
+        "cniVersion": "0.3.0",
+        "type": "calico",
+        "log_level": "info",
+        "datastore_type": "kubernetes",
+        "nodename": "__KUBERNETES_NODE_NAME__",
+        "ipam": {
+            "type": "host-local",
+            "subnet": "usePodCidr"
+        },
+        "policy": {
+            "type": "k8s",
+            "k8s_auth_token": "__SERVICEACCOUNT_TOKEN__"
+        },
+        "kubernetes": {
+            "k8s_api_root": "https://__KUBERNETES_SERVICE_HOST__:__KUBERNETES_SERVICE_PORT__",
+            "kubeconfig": "__KUBECONFIG_FILEPATH__"
+        }
+    }
+`)
+
+var CalicoNodeTemplate = []byte(`apiVersion: apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: calico-node
+  namespace: kube-system
+  labels:
+    k8s-app: calico-node
+spec:
+  selector:
+    matchLabels:
+      k8s-app: calico-node
+  template:
+    metadata:
+      labels:
+        k8s-app: calico-node
+    spec:
+      hostNetwork: true
+      serviceAccountName: calico-node
+      tolerations:
+        # Allow the pod to run on master nodes
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: calico-node
+          image: {{ .Images.Calico }}
+          env:
+            - name: DATASTORE_TYPE
+              value: "kubernetes"
+            - name: FELIX_LOGSEVERITYSCREEN
+              value: "info"
+            - name: CLUSTER_TYPE
+              value: "k8s,bgp"
+            - name: CALICO_DISABLE_FILE_LOGGING
+              value: "true"
+            - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+              value: "ACCEPT"
+            - name: FELIX_IPV6SUPPORT
+              value: "false"
+            - name: WAIT_FOR_DATASTORE
+              value: "true"
+            - name: CALICO_IPV4POOL_CIDR
+              value: "{{ .PodCIDR }}"
+            - name: CALICO_IPV4POOL_IPIP
+              value: "Always"
+            - name: FELIX_IPINIPENABLED
+              value: "true"
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: FELIX_HEALTHENABLED
+              value: "true"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 250m
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 9099
+            periodSeconds: 10
+            initialDelaySeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9099
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
+            - mountPath: /var/run/calico
+              name: var-run-calico
+              readOnly: false
+        - name: install-cni
+          image: {{ .Images.CalicoCNI }}
+          command: ["/install-cni.sh"]
+          env:
+            - name: CNI_NETWORK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: cni_network_config
+            - name: CNI_NET_DIR
+              value: "/etc/kubernetes/cni/net.d"
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /host/opt/cni/bin
+              name: cni-bin-dir
+            - mountPath: /host/etc/cni/net.d
+              name: cni-net-dir
+      terminationGracePeriodSeconds: 0
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: var-run-calico
+          hostPath:
+            path: /var/run/calico
+        - name: cni-bin-dir
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-net-dir
+          hostPath:
+            path: /etc/kubernetes/cni/net.d
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+`)
+
+var CalicoPolicyOnlyTemplate = []byte(`apiVersion: apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: calico-node
+  namespace: kube-system
+  labels:
+    k8s-app: calico-node
+spec:
+  selector:
+    matchLabels:
+      k8s-app: calico-node
+  template:
+    metadata:
+      labels:
+        k8s-app: calico-node
+    spec:
+      hostNetwork: true
+      serviceAccountName: calico-node
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: calico-node
+          image: {{ .Images.Calico }}
+          env:
+            - name: DATASTORE_TYPE
+              value: "kubernetes"
+            - name: FELIX_LOGSEVERITYSCREEN
+              value: "info"
+            - name: CALICO_NETWORKING_BACKEND
+              value: "none"
+            - name: CLUSTER_TYPE
+              value: "bootkube,canal"
+            - name: CALICO_DISABLE_FILE_LOGGING
+              value: "true"
+            - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+              value: "ACCEPT"
+            - name: FELIX_IPV6SUPPORT
+              value: "false"
+            - name: WAIT_FOR_DATASTORE
+              value: "true"
+            - name: CALICO_IPV4POOL_CIDR
+              value: "{{ .PodCIDR }}"
+            - name: CALICO_IPV4POOL_IPIP
+              value: "Always"
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: IP
+              value: ""
+            - name: FELIX_HEALTHENABLED
+              value: "true"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 250m
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 9099
+            periodSeconds: 10
+            initialDelaySeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9099
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
+            - mountPath: /var/run/calico
+              name: var-run-calico
+              readOnly: false
+        - name: install-cni
+          image: {{ .Images.CalicoCNI }}
+          command: ["/install-cni.sh"]
+          env:
+            - name: CNI_NETWORK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: cni_network_config
+            - name: CNI_NET_DIR
+              value: "/etc/kubernetes/cni/net.d"
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SKIP_CNI_BINARIES
+              value: bridge,cnitool,dhcp,flannel,host-local,ipvlan,loopback,macvlan,noop,portmap,ptp,tuning
+          volumeMounts:
+            - mountPath: /host/opt/cni/bin
+              name: cni-bin-dir
+            - mountPath: /host/etc/cni/net.d
+              name: cni-net-dir
+      terminationGracePeriodSeconds: 0
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: var-run-calico
+          hostPath:
+            path: /var/run/calico
+        - name: cni-bin-dir
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-net-dir
+          hostPath:
+            path: /etc/kubernetes/cni/net.d
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+`)
+
+var CalicoBGPConfigsCRD = []byte(`apiVersion: apiextensions.k8s.io/v1beta1
+description: Calico Global BGP Configuration
+kind: CustomResourceDefinition
+metadata:
+  name: globalbgpconfigs.crd.projectcalico.org
+spec:
+  scope: Cluster
+  group: crd.projectcalico.org
+  version: v1
+  names:
+    kind: GlobalBGPConfig
+    plural: globalbgpconfigs
+    singular: globalbgpconfig
+`)
+
+var CalicoFelixConfigsCRD = []byte(`apiVersion: apiextensions.k8s.io/v1beta1
+description: Calico Global Felix Configuration
+kind: CustomResourceDefinition
+metadata:
+   name: globalfelixconfigs.crd.projectcalico.org
+spec:
+  scope: Cluster
+  group: crd.projectcalico.org
+  version: v1
+  names:
+    kind: GlobalFelixConfig
+    plural: globalfelixconfigs
+    singular: globalfelixconfig
+`)
+
+var CalicoNetworkPoliciesCRD = []byte(`apiVersion: apiextensions.k8s.io/v1beta1
+description: Calico Global Network Policies
+kind: CustomResourceDefinition
+metadata:
+  name: globalnetworkpolicies.crd.projectcalico.org
+spec:
+  scope: Cluster
+  group: crd.projectcalico.org
+  version: v1
+  names:
+    kind: GlobalNetworkPolicy
+    plural: globalnetworkpolicies
+    singular: globalnetworkpolicy
+`)
+
+var CalicoIPPoolsCRD = []byte(`apiVersion: apiextensions.k8s.io/v1beta1
+description: Calico IP Pools
+kind: CustomResourceDefinition
+metadata:
+  name: ippools.crd.projectcalico.org
+spec:
+  scope: Cluster
+  group: crd.projectcalico.org
+  version: v1
+  names:
+    kind: IPPool
+    plural: ippools
+    singular: ippool
+`)
+
+var CalicoServiceAccountTemplate = []byte(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: calico-node
+  namespace: kube-system
+`)
+
+var CalicoRoleTemplate = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: calico-node
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: [""]
+    resources:
+      - pods/status
+    verbs:
+      - update
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups: ["extensions"]
+    resources:
+      - networkpolicies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - globalfelixconfigs
+      - bgppeers
+      - globalbgpconfigs
+      - ippools
+      - globalnetworkpolicies
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+`)
+
+var CalicoRoleBindingTemplate = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: calico-node
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: calico-node
+subjects:
+- kind: ServiceAccount
+  name: calico-node
+  namespace: kube-system
 `)
 
 // vim: set expandtab:tabstop=2
