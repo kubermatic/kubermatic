@@ -167,7 +167,6 @@ pipeline:
     secrets: [ docker_username, docker_password ]
     when:
       event: [tag]
-      branch: release/*
 
   kubermatic-installer-docker-release:
     group: push-release
@@ -183,7 +182,6 @@ pipeline:
     secrets: [ docker_username, docker_password ]
     when:
       event: [tag]
-      branch: release/*
 
   addons-docker-release:
     group: push-release
@@ -199,7 +197,6 @@ pipeline:
     secrets: [ docker_username, docker_password ]
     when:
       event: [tag]
-      branch: release/*
 
   deploy-dev:
     group: deploy
@@ -229,7 +226,7 @@ pipeline:
       - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
     secrets: [ kubeconfig_syseleven ]
     when:
-      event: tag
+      event: [tag]
 
   slack-failure:
     group: notify
