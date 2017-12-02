@@ -43,7 +43,13 @@ type NodeClassProvider interface {
 	NodeClassName(*api.NodeSpec) string
 }
 
-// ClusterProvider declares the set of methods for interacting with a Kubernetes cluster.
+// DataProvider declares the set of methods for storing kubermatic data
+type DataProvider interface {
+	ClusterProvider
+	SSHKeyProvider
+}
+
+// ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
 	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
 	NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
@@ -61,8 +67,8 @@ type ClusterProvider interface {
 	InitiateClusterUpgrade(user auth.User, cluster, version string) (*kubermaticv1.Cluster, error)
 }
 
-// DataProvider declares the set of methods for interacting with kubermatic resources
-type DataProvider interface {
+// SSHKeyProvider declares the set of methods for interacting with ssh keys
+type SSHKeyProvider interface {
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
 	AssignSSHKeysToCluster(user auth.User, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster

@@ -33,7 +33,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 
@@ -72,6 +71,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	config.Impersonate = rest.ImpersonationConfig{}
 	masterCrdClient := mastercrdclient.NewForConfigOrDie(config)
 	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, *workerName, dcs)
 
@@ -106,9 +106,7 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	dataProvider := kubermatic.New(masterCrdClient)
-
-	r := handler.NewRouting(ctx, dcs, kp, cps, authenticator, dataProvider, versions, updates)
+	r := handler.NewRouting(ctx, dcs, kp, cps, authenticator, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(*prometheusAddr, *prometheusPath)

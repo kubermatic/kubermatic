@@ -10,7 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
+func createSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req, ok := request.(CreateSSHKeyReq)
@@ -22,7 +22,7 @@ func createSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	}
 }
 
-func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
+func deleteSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req, ok := request.(DeleteSSHKeyReq)
@@ -38,7 +38,7 @@ func deleteSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
 	}
 }
 
-func listSSHKeyEndpoint(dp provider.DataProvider) endpoint.Endpoint {
+func listSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		return dp.SSHKeys(user)
