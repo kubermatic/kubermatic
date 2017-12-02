@@ -9,6 +9,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+const (
+	headerContentType = "Content-Type"
+
+	contentTypeJSON = "application/json"
+)
+
 // APIError we need to work with github.com/yvasiyarov/swagger
 // based on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go
 // swagger:response APIError
@@ -32,6 +38,7 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 			ErrorMessage: msg,
 		},
 	}
+	w.Header().Set(headerContentType, contentTypeJSON)
 	w.WriteHeader(errorCode)
 	err = encodeJSON(ctx, w, e)
 	if err != nil {
@@ -62,6 +69,6 @@ func createStatusResource(f func(context.Context, http.ResponseWriter, interface
 }
 
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, contentTypeJSON)
 	return json.NewEncoder(w).Encode(response)
 }
