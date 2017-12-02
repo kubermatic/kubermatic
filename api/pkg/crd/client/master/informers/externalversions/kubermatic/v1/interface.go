@@ -10,6 +10,8 @@ import (
 type Interface interface {
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
+	// Users returns a UserInformer.
+	Users() UserInformer
 	// UserSSHKeies returns a UserSSHKeyInformer.
 	UserSSHKeies() UserSSHKeyInformer
 }
@@ -26,6 +28,11 @@ func New(f internalinterfaces.SharedInformerFactory) Interface {
 // Clusters returns a ClusterInformer.
 func (v *version) Clusters() ClusterInformer {
 	return &clusterInformer{factory: v.SharedInformerFactory}
+}
+
+// Users returns a UserInformer.
+func (v *version) Users() UserInformer {
+	return &userInformer{factory: v.SharedInformerFactory}
 }
 
 // UserSSHKeies returns a UserSSHKeyInformer.
