@@ -16,38 +16,35 @@ import (
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx             context.Context
-	datacenters     map[string]provider.DatacenterMeta
-	cloudProviders  map[string]provider.CloudProvider
-	clusterProvider provider.ClusterProvider
-	logger          log.Logger
-	dataProvider    provider.DataProvider
-	authenticator   auth.Authenticator
-	versions        map[string]*api.MasterVersion
-	updates         []api.MasterUpdate
+	ctx            context.Context
+	datacenters    map[string]provider.DatacenterMeta
+	cloudProviders map[string]provider.CloudProvider
+	provider       provider.DataProvider
+	logger         log.Logger
+	authenticator  auth.Authenticator
+	versions       map[string]*api.MasterVersion
+	updates        []api.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
 func NewRouting(
 	ctx context.Context,
 	dcs map[string]provider.DatacenterMeta,
-	kp provider.ClusterProvider,
+	kp provider.DataProvider,
 	cps map[string]provider.CloudProvider,
 	authenticator auth.Authenticator,
-	dataProvider provider.DataProvider,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 ) Routing {
 	return Routing{
-		ctx:             ctx,
-		datacenters:     dcs,
-		clusterProvider: kp,
-		cloudProviders:  cps,
-		logger:          log.NewLogfmtLogger(os.Stderr),
-		dataProvider:    dataProvider,
-		authenticator:   authenticator,
-		versions:        versions,
-		updates:         updates,
+		ctx:            ctx,
+		datacenters:    dcs,
+		provider:       kp,
+		cloudProviders: cps,
+		logger:         log.NewLogfmtLogger(os.Stderr),
+		authenticator:  authenticator,
+		versions:       versions,
+		updates:        updates,
 	}
 }
 
@@ -168,7 +165,7 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 //       200: UserSSHKey
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(listSSHKeyEndpoint(r.dataProvider)),
+		r.auth(listSSHKeyEndpoint(r.provider)),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -192,7 +189,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //       200: UserSSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(createSSHKeyEndpoint(r.dataProvider)),
+		r.auth(createSSHKeyEndpoint(r.provider)),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
@@ -216,7 +213,7 @@ func (r Routing) createSSHKey() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteSSHKeyEndpoint(r.dataProvider)),
+		r.auth(deleteSSHKeyEndpoint(r.provider)),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -286,7 +283,7 @@ func (r Routing) datacenterHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(newClusterEndpointV2(r.clusterProvider, r.dataProvider)),
+		r.auth(newClusterEndpointV2(r.provider, r.provider)),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -310,7 +307,7 @@ func (r Routing) newClusterHandlerV2() http.Handler {
 //       200: UserSSHKey
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(clusterEndpoint(r.clusterProvider)),
+		r.auth(clusterEndpoint(r.provider)),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -332,7 +329,7 @@ func (r Routing) clusterHandler() http.Handler {
 //       200: KubeConfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(kubeconfigEndpoint(r.clusterProvider)),
+		r.auth(kubeconfigEndpoint(r.provider)),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		httptransport.ServerErrorLogger(r.logger),
@@ -354,7 +351,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //       200: KubeCluster
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(clustersEndpoint(r.clusterProvider)),
+		r.auth(clustersEndpoint(r.provider)),
 		decodeClustersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -376,7 +373,7 @@ func (r Routing) clustersHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteClusterEndpoint(r.clusterProvider, r.cloudProviders)),
+		r.auth(deleteClusterEndpoint(r.provider, r.cloudProviders)),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -398,7 +395,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //       200: NodeList
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(nodesEndpoint(r.clusterProvider)),
+		r.auth(nodesEndpoint(r.provider)),
 		decodeNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -420,7 +417,7 @@ func (r Routing) nodesHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(createNodesEndpoint(r.clusterProvider, r.cloudProviders, r.dataProvider, r.versions)),
+		r.auth(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions)),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -442,7 +439,7 @@ func (r Routing) createNodesHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteNodeEndpoint(r.clusterProvider)),
+		r.auth(deleteNodeEndpoint(r.provider)),
 		decodeNodeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -467,7 +464,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 //       200: Versions
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(getClusterUpgrades(r.clusterProvider, r.versions, r.updates)),
+		r.auth(getClusterUpgrades(r.provider, r.versions, r.updates)),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -489,7 +486,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 //       200: UserSSHKey
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		r.auth(performClusterUpgrade(r.clusterProvider, r.versions, r.updates)),
+		r.auth(performClusterUpgrade(r.provider, r.versions, r.updates)),
 		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
