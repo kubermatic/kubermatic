@@ -1284,6 +1284,31 @@
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
+    },
+    "UserSpec": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Groups"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     }
   },
   "responses": {
@@ -1393,6 +1418,93 @@
     },
     "NodeList": {
       "description": "NodeList is an alias for the swagger definition"
+    },
+    "User": {
+      "description": "User specifies a user\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+      "schema": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "$ref": "#/definitions/UserSpec"
+      },
+      "headers": {
+        "annotations": {
+          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional"
+        },
+        "apiVersion": {
+          "type": "string",
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional"
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was\ncreated. It is not guaranteed to be set in happens-before order across separate operations.\nClients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system.\nRead-only.\nNull for lists.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
+        },
+        "deletionGracePeriodSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This\nfield is set by the server when a graceful deletion is requested by the user, and is not\ndirectly settable by a client. The resource is expected to be deleted (no longer visible\nfrom resource lists, and not reachable by name) after the time in this field. Once set,\nthis value may not be unset or be set further into the future, although it may be shortened\nor the resource may be deleted prior to this time. For example, a user may request that\na pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination\nsignal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard\ntermination signal (SIGKILL) to the container and after cleanup, remove the pod from the\nAPI. In the presence of network partitions, this object may still exist after this\ntimestamp, until an administrator or automated process can determine the resource is\nfully terminated.\nIf not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested.\nRead-only.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
+        },
+        "finalizers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge"
+        },
+        "generateName": {
+          "type": "string",
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional"
+        },
+        "generation": {
+          "type": "integer",
+          "format": "int64",
+          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional"
+        },
+        "initializers": {
+          "description": "An initializer is a controller which enforces some system invariant at object creation time.\nThis field is a list of initializers that have not yet acted on this object. If nil or empty,\nthis object has been completely initialized. Otherwise, the object is considered uninitialized\nand is hidden (in list/watch and get calls) from clients that haven't explicitly asked to\nobserve uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers.\nOnly privileged users may set or modify this list. Once it is empty, it may not be modified further\nby any user."
+        },
+        "kind": {
+          "type": "string",
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional"
+        },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional"
+        },
+        "ownerReferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OwnerReference"
+          },
+          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge"
+        },
+        "resourceVersion": {
+          "type": "string",
+          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional"
+        },
+        "selfLink": {
+          "type": "string",
+          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional"
+        },
+        "spec": {},
+        "uid": {
+          "description": "UID is the unique in time and space value for this object. It is typically generated by\nthe server on successful creation of a resource and is not allowed to change on PUT\noperations.\n\nPopulated by the system.\nRead-only.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#uids\n+optional"
+        }
+      }
     },
     "UserSSHKey": {
       "description": "UserSSHKey specifies a users UserSSHKey\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",

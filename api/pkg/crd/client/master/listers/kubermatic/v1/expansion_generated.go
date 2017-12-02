@@ -6,6 +6,10 @@ package v1
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
+// UserListerExpansion allows custom methods to be added to
+// UserLister.
+type UserListerExpansion interface{}
+
 // UserSSHKeyListerExpansion allows custom methods to be added to
 // UserSSHKeyLister.
 type UserSSHKeyListerExpansion interface{}
