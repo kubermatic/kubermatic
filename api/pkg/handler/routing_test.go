@@ -13,7 +13,6 @@ import (
 	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -31,9 +30,8 @@ func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versi
 	authenticator := auth.NewFakeAuthenticator(user)
 	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
 	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, "", dcs)
-	dataProvider := kubermatic.New(masterCrdClient)
 
-	routing := NewRouting(ctx, dcs, kp, cps, authenticator, dataProvider, versions, updates)
+	routing := NewRouting(ctx, dcs, kp, cps, authenticator, versions, updates)
 	routing.Register(router)
 
 	return router

@@ -100,7 +100,7 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.DataProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
+func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.SSHKeyProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(CreateNodesReq)

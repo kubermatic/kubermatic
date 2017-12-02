@@ -11,7 +11,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.DataProvider) endpoint.Endpoint {
+func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(NewClusterReqV2)
