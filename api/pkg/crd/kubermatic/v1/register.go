@@ -30,6 +30,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&UserSSHKeyList{},
 		&Cluster{},
 		&ClusterList{},
+		&User{},
+		&UserList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

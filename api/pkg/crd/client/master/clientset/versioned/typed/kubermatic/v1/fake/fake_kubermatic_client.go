@@ -14,6 +14,10 @@ func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
 
+func (c *FakeKubermaticV1) Users() v1.UserInterface {
+	return &FakeUsers{c}
+}
+
 func (c *FakeKubermaticV1) UserSSHKeies() v1.UserSSHKeyInterface {
 	return &FakeUserSSHKeies{c}
 }

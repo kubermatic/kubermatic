@@ -38,6 +38,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=Kubermatic, Version=V1
 	case v1.SchemeGroupVersion.WithResource("clusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Clusters().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("users"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Users().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("usersshkeies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().UserSSHKeies().Informer()}, nil
 
