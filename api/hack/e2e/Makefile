@@ -1,5 +1,5 @@
 IMG = kubermatic/e2e-conformance
-TAG = 1.9
+TAG = 1.8
 
 all: build
 
