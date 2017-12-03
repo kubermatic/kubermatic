@@ -161,27 +161,23 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_DEV | base64 -d > /kubeconfig
-      - cp config/installer/install-job.template.yaml install-job-dev.yaml
-      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-dev.yaml
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-dev.yaml
-      - rm install-job-dev.yaml
+    image: kubeciio/kubectl
+    kubectl: create
+    files:
+      - config/installer/install-job.template.yaml
     secrets: [ kubeconfig_dev ]
+    kubeconfig_secret: kubeconfig_dev
     when:
       branch: master
 
   deploy-cloud-master:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_CLOUD | base64 -d > /kubeconfig
-      - cp config/installer/install-job.template.yaml install-job-cloud.yaml
-      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-cloud.yaml
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-cloud.yaml
-      - rm install-job-cloud.yaml
+    image: kubeciio/kubectl
+    kubectl: create
+    files:
+      - config/installer/install-job.template.yaml
     secrets: [ kubeconfig_cloud ]
+    kubeconfig_secret: kubeconfig_cloud
     when:
       branch: master
 
