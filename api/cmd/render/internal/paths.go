@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -29,6 +30,8 @@ const (
 	AssetPathKubeConfig                  = "auth/kubeconfig"
 	AssetPathManifests                   = "manifests"
 	AssetPathProxy                       = "manifests/kube-proxy.yaml"
+	AssetPathProxySA                     = "manifests/kube-proxy-sa.yaml"
+	AssetPathProxyRoleBinding            = "manifests/kube-proxy-role-binding.yaml"
 	AssetPathCalico                      = "manifests/calico.yaml"
 	AssetPathCalicoPolicyOnly            = "manifests/calico-policy-only.yaml"
 	AssetPathCalicoCfg                   = "manifests/calico-config.yaml"
@@ -81,6 +84,8 @@ type TemplateContent struct {
 	BootstrapSchedulerTemplate          []byte
 	SchedulerDisruptionTemplate         []byte
 	ProxyTemplate                       []byte
+	ProxySATemplate                     []byte
+	ProxyRoleBindingTemplate            []byte
 	DNSDeploymentTemplate               []byte
 	DNSSvcTemplate                      []byte
 	EtcdOperatorTemplate                []byte
@@ -120,6 +125,8 @@ type Manifests struct {
 	KubeletCert                 []byte
 	KubeConfig                  []byte
 	Proxy                       []byte
+	ProxySA                     []byte
+	ProxyRoleBinding            []byte
 	KubeFlannel                 []byte
 	KubeFlannelCfg              []byte
 	APIServerSecret             []byte
@@ -164,6 +171,7 @@ func (m *Manifests) WriteToDir(basename string) error {
 	var err error
 	writeFile := func(filePath string, content []byte) error {
 		if len(content) != 0 {
+			fmt.Printf("Writing asset: out-files/%s\n", filePath)
 			return ioutil.WriteFile(path.Join(basename, filePath), content, fileMode)
 		}
 		return nil
@@ -202,6 +210,9 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(writeFile(AssetPathKubeletKey, m.KubeletKey))
 	setError(writeFile(AssetPathKubeletCert, m.KubeletCert))
 	setError(writeFile(AssetPathKubeConfig, m.KubeConfig))
+	setError(writeFile(AssetPathProxy, m.Proxy))
+	setError(writeFile(AssetPathProxySA, m.ProxySA))
+	setError(writeFile(AssetPathProxyRoleBinding, m.ProxyRoleBinding))
 	setError(writeFile(AssetPathProxy, m.Proxy))
 	setError(writeFile(AssetPathAPIServerSecret, m.APIServerSecret))
 	setError(writeFile(AssetPathAPIServer, m.APIServer))
@@ -255,6 +266,8 @@ func DefaultInternalTemplateContent() *TemplateContent {
 		BootstrapSchedulerTemplate:          BootstrapSchedulerTemplate,
 		SchedulerDisruptionTemplate:         SchedulerDisruptionTemplate,
 		ProxyTemplate:                       ProxyTemplate,
+		ProxySATemplate:                     ProxyServiceAccount,
+		ProxyRoleBindingTemplate:            ProxyClusterRoleBinding,
 		DNSDeploymentTemplate:               DNSDeploymentTemplate,
 		DNSSvcTemplate:                      DNSSvcTemplate,
 		EtcdOperatorTemplate:                EtcdOperatorTemplate,
