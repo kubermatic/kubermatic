@@ -31,7 +31,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDep(ns, name, healthMapping[name].minReady)
+		healthy, err := cc.healthyDep(c.Spec.SeedDatacenterName, ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -39,7 +39,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyEtcd(ns, resources.EtcdClusterName)
+	health.Etcd, err = cc.healthyEtcd(c.Spec.SeedDatacenterName, ns, resources.EtcdClusterName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
