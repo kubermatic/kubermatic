@@ -150,6 +150,10 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Chain(r.authenticator.Verifier())(e)
 }
 
+func (r Routing) userStorer(e endpoint.Endpoint) endpoint.Endpoint {
+	return endpoint.Chain(r.userSaverMiddleware())(e)
+}
+
 // swagger:route GET /api/v1/ssh-keys ssh keys list listSSHKeys
 //
 // Lists SSH keys from the user
@@ -165,7 +169,7 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 //       200: UserSSHKey
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(listSSHKeyEndpoint(r.provider)),
+		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -189,7 +193,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //       200: UserSSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(createSSHKeyEndpoint(r.provider)),
+		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		httptransport.ServerErrorLogger(r.logger),
@@ -213,7 +217,7 @@ func (r Routing) createSSHKey() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteSSHKeyEndpoint(r.provider)),
+		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -236,7 +240,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 //       200: UserSSHKey
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(datacentersEndpoint(r.datacenters)),
+		r.auth(r.userStorer(datacentersEndpoint(r.datacenters))),
 		decodeDatacentersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -259,7 +263,7 @@ func (r Routing) datacentersHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(datacenterEndpoint(r.datacenters)),
+		r.auth(r.userStorer(datacenterEndpoint(r.datacenters))),
 		decodeDcReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -283,7 +287,7 @@ func (r Routing) datacenterHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) newClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(newClusterEndpointV2(r.provider, r.provider)),
+		r.auth(r.userStorer(newClusterEndpointV2(r.provider, r.provider))),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -307,7 +311,7 @@ func (r Routing) newClusterHandlerV2() http.Handler {
 //       200: UserSSHKey
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(clusterEndpoint(r.provider)),
+		r.auth(r.userStorer(clusterEndpoint(r.provider))),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -329,7 +333,7 @@ func (r Routing) clusterHandler() http.Handler {
 //       200: KubeConfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(kubeconfigEndpoint(r.provider)),
+		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		httptransport.ServerErrorLogger(r.logger),
@@ -351,7 +355,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //       200: KubeCluster
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(clustersEndpoint(r.provider)),
+		r.auth(r.userStorer(clustersEndpoint(r.provider))),
 		decodeClustersReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -373,7 +377,7 @@ func (r Routing) clustersHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteClusterEndpoint(r.provider, r.cloudProviders)),
+		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -395,7 +399,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //       200: NodeList
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(nodesEndpoint(r.provider)),
+		r.auth(r.userStorer(nodesEndpoint(r.provider))),
 		decodeNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -417,7 +421,7 @@ func (r Routing) nodesHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions)),
+		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
 		decodeCreateNodesReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -439,7 +443,7 @@ func (r Routing) createNodesHandler() http.Handler {
 //       200: UserSSHKey
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(deleteNodeEndpoint(r.provider)),
+		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
 		decodeNodeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -464,7 +468,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 //       200: Versions
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(getClusterUpgrades(r.provider, r.versions, r.updates)),
+		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
 		decodeClusterReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
@@ -486,7 +490,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 //       200: UserSSHKey
 func (r Routing) performClusterUpgrage() http.Handler {
 	return httptransport.NewServer(
-		r.auth(performClusterUpgrade(r.provider, r.versions, r.updates)),
+		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
 		decodeUpgradeReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),

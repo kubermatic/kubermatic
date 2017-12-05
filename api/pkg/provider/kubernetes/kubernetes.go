@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -18,7 +19,9 @@ import (
 )
 
 const (
-	userLabelKey = "user"
+	userLabelKey      = "user"
+	userEmailLabelKey = "email"
+	userIDLabelKey    = "id"
 
 	sshKeyKind = "ssh-key"
 )
@@ -231,7 +234,7 @@ func (p *kubernetesProvider) SSHKey(user auth.User, name string) (*kubermaticv1.
 	k, err := p.client.KubermaticV1().UserSSHKeies().Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return nil, errors.NewNotFound(sshKeyKind, k.Name)
+			return nil, errors.NewNotFound(sshKeyKind, name)
 		}
 		return nil, err
 	}
@@ -267,4 +270,37 @@ func (p *kubernetesProvider) DeleteSSHKey(name string, user auth.User) error {
 		return errors.NewNotFound(sshKeyKind, k.Name)
 	}
 	return err
+}
+
+func (p *kubernetesProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
+	selector, err := labels.Parse(fmt.Sprintf("%s=%s", userEmailLabelKey, kubernetes.ToLabelValue(email)))
+	if err != nil {
+		return nil, err
+	}
+
+	userList, err := p.client.KubermaticV1().Users().List(metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return nil, err
+	}
+	if len(userList.Items) != 1 || userList.Items[0].Spec.Email != email {
+		return nil, provider.ErrNotFound
+	}
+
+	return &userList.Items[0], nil
+}
+
+// CreateUser creates a user
+func (p *kubernetesProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
+	user := kubermaticv1.User{}
+	user.Labels = map[string]string{
+		userEmailLabelKey: kubernetes.ToLabelValue(email),
+		userIDLabelKey:    kubernetes.ToLabelValue(id),
+	}
+	user.GenerateName = "user-"
+	user.Spec.Email = email
+	user.Spec.Name = name
+	user.Spec.ID = id
+	user.Spec.Groups = []string{}
+
+	return p.client.KubermaticV1().Users().Create(&user)
 }
