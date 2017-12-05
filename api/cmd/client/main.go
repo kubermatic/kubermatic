@@ -26,8 +26,7 @@ const (
 	timeSleep     = time.Second * 5
 	hostname      = "dev.kubermatic.io"
 	outputPath    = "/_artifacts/"
-)
-const (
+
 	authBaseURL = "https://auth.dev.kubermatic.io/"
 	password    = "password"
 	username    = "demo1@cluster"
