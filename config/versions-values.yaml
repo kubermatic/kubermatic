@@ -5,6 +5,6 @@ KubermaticBareMetalProviderImageTag: "{BARE_METAL_PROVIDER_IMAGE_TAG}"
 
 # 'master' is default. Only on tag we replace it with the tag.
 # This forces us to tag kubermamtic/dashboard-v2 before kubermatic/kubermatic
-KubermaticDashboardImageTag: "v0.9"
+KubermaticDashboardImageTag: "v0.10"
 
 K8sniffImageTag: "v1.1"
