@@ -125,6 +125,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 					Name: "test",
 				},
 			},
+			SeedDatacenterName: "us-central1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "de-test-01",
@@ -144,7 +145,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, masterResourcePath, "us-central1", s)
+		res, err := LoadDeploymentFile(c, v, masterResourcePath, s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}
@@ -181,6 +182,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 					AvailabilityZone: "my_AvailabilityZone",
 				},
 			},
+			SeedDatacenterName: "us-central1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "de-test-01",
@@ -200,7 +202,7 @@ func TestLoadDeploymentFileAWS(t *testing.T) {
 	}
 
 	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, masterResourcePath, "us-central1", s)
+		res, err := LoadDeploymentFile(c, v, masterResourcePath, s)
 		if err != nil {
 			t.Fatalf("failed to load %q: %v", s, err)
 		}

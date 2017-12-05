@@ -150,7 +150,12 @@ func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Clust
 
 // launchingCreateNamespace will create the cluster namespace
 func (cc *controller) launchingCreateNamespace(c *kubermaticv1.Cluster) error {
-	_, err := cc.seedInformerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	_, err = informerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
 	if !errors.IsNotFound(err) {
 		return err
 	}
@@ -160,7 +165,11 @@ func (cc *controller) launchingCreateNamespace(c *kubermaticv1.Cluster) error {
 			Name: c.Status.NamespaceName,
 		},
 	}
-	_, err = cc.client.CoreV1().Namespaces().Create(ns)
+	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+	_, err = client.CoreV1().Namespaces().Create(ns)
 	return err
 }
 
@@ -188,8 +197,13 @@ func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kuber
 	return nil, nil
 }
 
-func (cc *controller) getFreeNodePort() (int, error) {
-	services, err := cc.seedInformerGroup.ServiceInformer.Lister().List(labels.Everything())
+func (cc *controller) getFreeNodePort(dc string) (int, error) {
+	informerGroup, err := cc.clientProvider.GetInformerGroup(dc)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get informer group for dc %q: %v", dc, err)
+	}
+
+	services, err := informerGroup.ServiceInformer.Lister().List(labels.Everything())
 	if err != nil {
 		return 0, err
 	}
@@ -217,12 +231,12 @@ func (cc *controller) pendingCreateAddresses(c *kubermaticv1.Cluster) (*kubermat
 	var updated bool
 
 	if c.Address.ExternalName == "" {
-		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
+		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, c.Spec.SeedDatacenterName, cc.externalURL)
 		updated = true
 	}
 
 	if c.Address.ExternalPort == 0 {
-		port, err := cc.getFreeNodePort()
+		port, err := cc.getFreeNodePort(c.Spec.SeedDatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get nodeport: %v", err)
 		}
@@ -248,9 +262,14 @@ func (cc *controller) launchingCheckSecrets(c *kubermaticv1.Cluster) error {
 		"controller-manager": resources.LoadSecretFile,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	ns := c.Status.NamespaceName
 	for s, gen := range secrets {
-		_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(s)
+		_, err = informerGroup.SecretInformer.Lister().Secrets(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -263,7 +282,12 @@ func (cc *controller) launchingCheckSecrets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
-		_, err = cc.client.CoreV1().Secrets(ns).Create(secret)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.CoreV1().Secrets(ns).Create(secret)
 		if err != nil {
 			return fmt.Errorf("failed to create secret for %s: %v", s, err)
 		}
@@ -278,9 +302,14 @@ func (cc *controller) launchingCheckServices(c *kubermaticv1.Cluster) error {
 		"apiserver-external": resources.LoadServiceFile,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	ns := c.Status.NamespaceName
 	for s, gen := range services {
-		_, err := cc.seedInformerGroup.ServiceInformer.Lister().Services(ns).Get(s)
+		_, err = informerGroup.ServiceInformer.Lister().Services(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -293,7 +322,12 @@ func (cc *controller) launchingCheckServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate service %s: %v", s, err)
 		}
 
-		_, err = cc.client.CoreV1().Services(ns).Create(service)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.CoreV1().Services(ns).Create(service)
 		if err != nil {
 			return fmt.Errorf("failed to create service %s: %v", s, err)
 		}
@@ -307,9 +341,14 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 		"etcd-operator": resources.LoadServiceAccountFile,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	ns := c.Status.NamespaceName
 	for s, gen := range serviceAccounts {
-		_, err := cc.seedInformerGroup.ServiceAccountInformer.Lister().ServiceAccounts(ns).Get(s)
+		_, err := informerGroup.ServiceAccountInformer.Lister().ServiceAccounts(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -322,7 +361,12 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 			return fmt.Errorf("failed to generate service account %s: %v", s, err)
 		}
 
-		_, err = cc.client.CoreV1().ServiceAccounts(ns).Create(sa)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.CoreV1().ServiceAccounts(ns).Create(sa)
 		if err != nil {
 			return fmt.Errorf("failed to create service account %s: %v", s, err)
 		}
@@ -334,7 +378,13 @@ func (cc *controller) launchingCheckServiceAccounts(c *kubermaticv1.Cluster) err
 func (cc *controller) launchingCheckTokenUsers(c *kubermaticv1.Cluster) error {
 	ns := c.Status.NamespaceName
 	name := "token-users"
-	_, err := cc.seedInformerGroup.SecretInformer.Lister().Secrets(ns).Get(name)
+
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	_, err = informerGroup.SecretInformer.Lister().Secrets(ns).Get(name)
 	if !errors.IsNotFound(err) {
 		return err
 	}
@@ -359,7 +409,12 @@ func (cc *controller) launchingCheckTokenUsers(c *kubermaticv1.Cluster) error {
 		},
 	}
 
-	_, err = cc.client.CoreV1().Secrets(ns).Create(secret)
+	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	_, err = client.CoreV1().Secrets(ns).Create(secret)
 	if err != nil {
 		return fmt.Errorf("failed to create user token secret: %v", err)
 	}
@@ -371,6 +426,11 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 		"etcd-operator": resources.LoadClusterRoleBindingFile,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	ns := c.Status.NamespaceName
 	for s, gen := range roleBindings {
 		binding, err := gen(ns, s, cc.masterResourcesPath)
@@ -378,7 +438,7 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 			return fmt.Errorf("failed to generate cluster role binding %s: %v", s, err)
 		}
 
-		_, err = cc.seedInformerGroup.ClusterRoleBindingInformer.Lister().Get(binding.ObjectMeta.Name)
+		_, err = informerGroup.ClusterRoleBindingInformer.Lister().Get(binding.ObjectMeta.Name)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -386,7 +446,12 @@ func (cc *controller) launchingCheckClusterRoleBindings(c *kubermaticv1.Cluster)
 			continue
 		}
 
-		_, err = cc.client.RbacV1beta1().ClusterRoleBindings().Create(binding)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.RbacV1beta1().ClusterRoleBindings().Create(binding)
 		if err != nil {
 			return fmt.Errorf("failed to create cluster role binding %s: %v", s, err)
 		}
@@ -411,13 +476,18 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 		"addon-manager":      masterVersion.AddonManagerDeploymentYaml,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	for name, yamlFile := range deps {
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, cc.dc, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, cc.masterResourcesPath, yamlFile)
 		if err != nil {
 			return fmt.Errorf("failed to generate deployment %q: %v", name, err)
 		}
 
-		_, err = cc.seedInformerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
+		_, err = informerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -425,7 +495,12 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		_, err = cc.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 		if err != nil {
 			return fmt.Errorf("failed to create deployment %q: %v", name, err)
 		}
@@ -447,8 +522,13 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 		}
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	for s, gen := range cms {
-		_, err := cc.seedInformerGroup.ConfigMapInformer.Lister().ConfigMaps(ns).Get(s)
+		_, err := informerGroup.ConfigMapInformer.Lister().ConfigMaps(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -462,7 +542,12 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}
 
-		_, err = cc.client.CoreV1().ConfigMaps(ns).Create(cm)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.CoreV1().ConfigMaps(ns).Create(cm)
 		if err != nil {
 			return fmt.Errorf("failed to create cm %s; %v", s, err)
 		}
@@ -476,9 +561,14 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 		"apiserver": resources.LoadIngressFile,
 	}
 
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	ns := c.Status.NamespaceName
 	for s, gen := range ingress {
-		_, err := cc.seedInformerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
+		_, err := informerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -491,7 +581,12 @@ func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate %s: %v", s, err)
 		}
 
-		_, err = cc.client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
+		_, err = client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
 		if err != nil {
 			return fmt.Errorf("failed to create ingress %s: %v", s, err)
 		}
@@ -511,12 +606,22 @@ func (cc *controller) launchingCheckEtcdCluster(c *kubermaticv1.Cluster) error {
 		return fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}
 
-	_, err = cc.seedInformerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(etcd.ObjectMeta.Name)
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	_, err = informerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(etcd.ObjectMeta.Name)
 	if !errors.IsNotFound(err) {
 		return err
 	}
 
-	_, err = cc.seedCrdClient.EtcdV1beta2().EtcdClusters(ns).Create(etcd)
+	client, err := cc.clientProvider.GetCRDClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	_, err = client.EtcdV1beta2().EtcdClusters(ns).Create(etcd)
 	if err != nil {
 		return fmt.Errorf("failed to create etcd-cluster definition (crd): %v", err)
 	}
