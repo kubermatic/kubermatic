@@ -13,7 +13,7 @@ import (
 	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
-	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"gopkg.in/square/go-jose.v2/json"
 
@@ -48,10 +48,16 @@ type GroupRunStopper interface {
 	Run(workerCount int, stop chan struct{})
 }
 
+// SeedClientProvider offers functions to get resources of a seed-cluster
+type SeedClientProvider interface {
+	GetClient(dc string) (kubernetes.Interface, error)
+	GetCRDClient(dc string) (seedcrdclient.Interface, error)
+	GetInformerGroup(dc string) (*seed.Group, error)
+}
+
 type controller struct {
-	dc                    string
-	client                kubernetes.Interface
-	seedCrdClient         seedcrdclient.Interface
+	clientProvider SeedClientProvider
+
 	masterCrdClient       mastercrdclient.Interface
 	masterResourcesPath   string
 	externalURL           string
@@ -59,7 +65,6 @@ type controller struct {
 	dcs                   map[string]provider.DatacenterMeta
 
 	queue               workqueue.RateLimitingInterface
-	seedInformerGroup   *seedinformer.Group
 	masterInformerGroup *masterinformer.Group
 
 	cps        map[string]provider.CloudProvider
@@ -82,9 +87,7 @@ type ControllerMetrics struct {
 
 // NewController creates a cluster controller.
 func NewController(
-	dc string,
-	client kubernetes.Interface,
-	seedCrdClient seedcrdclient.Interface,
+	clientProvider SeedClientProvider,
 	masterCrdClient mastercrdclient.Interface,
 	cps map[string]provider.CloudProvider,
 	versions map[string]*api.MasterVersion,
@@ -95,13 +98,10 @@ func NewController(
 	apiserverExternalPort int,
 	dcs map[string]provider.DatacenterMeta,
 	masterInformerGroup *masterinformer.Group,
-	seedInformerGroup *seedinformer.Group,
 	metrics ControllerMetrics,
 ) (GroupRunStopper, error) {
 	cc := &controller{
-		dc:                    dc,
-		client:                client,
-		seedCrdClient:         seedCrdClient,
+		clientProvider:        clientProvider,
 		masterCrdClient:       masterCrdClient,
 		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "namespace"),
 		cps:                   cps,
@@ -113,7 +113,6 @@ func NewController(
 		apiserverExternalPort: apiserverExternalPort,
 		dcs:                 dcs,
 		masterInformerGroup: masterInformerGroup,
-		seedInformerGroup:   seedInformerGroup,
 		metrics:             metrics,
 	}
 
@@ -146,15 +145,15 @@ func NewController(
 	if err != nil {
 		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
-	cc.updateController = update.New(
-		cc.client,
-		cc.seedCrdClient,
-		cc.masterResourcesPath,
-		cc.dc,
-		cc.versions,
-		cc.updates,
-		cc.seedInformerGroup,
-	)
+	//TODO: HSC
+	//cc.updateController = update.NewFromConfig(
+	//	cc.client,
+	//	cc.seedCrdClient,
+	//	cc.masterResourcesPath,
+	//	cc.versions,
+	//	cc.updates,
+	//	cc.seedInformerGroup,
+	//)
 	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {

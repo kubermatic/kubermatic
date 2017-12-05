@@ -24,7 +24,7 @@ func (cc *controller) pendingCreateRootCA(c *kubermaticv1.Cluster) (*kubermaticv
 		return nil, nil
 	}
 
-	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL))
+	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, c.Spec.SeedDatacenterName, cc.externalURL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create root-ca: %v", err)
 	}

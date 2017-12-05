@@ -27,8 +27,7 @@ type Interface interface {
 func New(
 	kubeClient clientkubernetes.Interface,
 	crdClient seedcrdclient.Interface,
-	masterResourcesPath,
-	dc string,
+	masterResourcesPath string,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
 	seedInformerGroup *seedinformer.Group,
@@ -37,7 +36,6 @@ func New(
 		client:              kubeClient,
 		crdClient:           crdClient,
 		masterResourcesPath: masterResourcesPath,
-		dc:                  dc,
 		versions:            versions,
 		updates:             updates,
 		seedInformerGroup:   seedInformerGroup,
@@ -49,7 +47,6 @@ type controller struct {
 	client              clientkubernetes.Interface
 	crdClient           seedcrdclient.Interface
 	masterResourcesPath string
-	dc                  string
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
 	seedInformerGroup   *seedinformer.Group
@@ -105,7 +102,7 @@ func (u *controller) Sync(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error
 
 func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
 	for _, yamlFile := range yamlFiles {
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.masterResourcesPath, u.dc, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.masterResourcesPath, yamlFile)
 		if err != nil {
 			return nil, err
 		}
