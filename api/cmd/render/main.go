@@ -14,6 +14,8 @@ import (
 	"strings"
 	"text/template"
 
+	"encoding/base64"
+
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api"
@@ -23,6 +25,24 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubernetes-incubator/bootkube/pkg/tlsutil"
+	v12 "k8s.io/api/core/v1"
+	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// The name of the k8s service that selects self-hosted etcd pods
+	EtcdServiceName = "etcd-service"
+
+	SecretEtcdPeer   = "etcd-peer-tls"
+	SecretEtcdServer = "etcd-server-tls"
+	SecretEtcdClient = "etcd-client-tls"
+
+	NetworkCalico = "experimental-calico"
+	NetworkCanal  = "experimental-canal"
+
+	secretNamespace     = "kube-system"
+	secretAPIServerName = "kube-apiserver"
+	secretCMName        = "kube-controller-manager"
 )
 
 const (
@@ -160,6 +180,7 @@ func main() {
 	//mustRenderKubermaticTemplateFiles(cluster, templates, versions, updates, "")
 
 	must(manifests.WriteToDir(*outputFolder))
+	glog.Info("Ended Successfully!")
 }
 
 func mustCreateAssetFromTemplate(tpl []byte, data interface{}) []byte {
@@ -188,8 +209,6 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 	m.BootstrapScheduler = mustCreateAssetFromTemplate(content.BootstrapSchedulerTemplate, conf)
 
 	// Canal
-	//m.KubeFlannelCfg = mustCreateAssetFromTemplate(content.KubeFlannelCfgTemplate, conf)
-	//m.KubeFlannel = mustCreateAssetFromTemplate(content.KubeFlannelTemplate, conf)
 	m.CalicoCfg = mustCreateAssetFromTemplate(content.CalicoCfgTemplate, conf)
 	m.CalicoRole = mustCreateAssetFromTemplate(content.CalicoRoleTemplate, conf)
 	m.CalicoRoleBinding = mustCreateAssetFromTemplate(content.CalicoRoleBindingTemplate, conf)
@@ -214,6 +233,9 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 	m.ControllerManagerDisruption = mustCreateAssetFromTemplate(content.ControllerManagerDisruptionTemplate, conf)
 	m.KubeDNSDeployment = mustCreateAssetFromTemplate(content.DNSDeploymentTemplate, conf)
 	m.Checkpointer = mustCreateAssetFromTemplate(content.CheckpointerTemplate, conf)
+	m.CheckpointerSA = mustCreateAssetFromTemplate(content.CheckpointerSATemplate, conf)
+	m.CheckpointerRole = mustCreateAssetFromTemplate(content.CheckpointerRoleTemplate, conf)
+	m.CheckpointerRoleBinding = mustCreateAssetFromTemplate(content.CheckpointerRoleBindingTemplate, conf)
 	m.KubeSystemSARoleBinding = mustCreateAssetFromTemplate(content.KubeSystemSARoleBindingTemplate, conf)
 
 	m.CACert = cluster.Status.RootCA.Cert
@@ -224,8 +246,146 @@ func mustRenderBootkubeTemplatesInto(m *internal.Manifests, cluster *v1.Cluster,
 	m.APIServerKey = cluster.Status.ApiserverCert.Key
 	//m.ServiceAccountPrivKey
 	//m.ServiceAccountPubKey
+
+	// Shitty parts
+	m.KubeConfigInCluster, m.KubeConfig = newKubeConfigs(m, conf, content)
+	m.EtcdPeerSecret = etcdPeerSecrets(m)
+	m.EtcdServerSecret = etcdServerSecrets(m)
+	m.EtcdClientSecret = etcdClientSecrets(m)
+	m.ControllerManagerSecret = controllerManagerSecrets(m)
+	m.APIServerSecret = apiServerSecrets(m)
+
 	// TODO(realfake): bootstrap etcd is missing
 }
+
+func newKubeConfigs(manifests *internal.Manifests, c *Config, t *internal.TemplateContent) (internal, external []byte) {
+	cfg := struct {
+		Server      string
+		CACert      string
+		KubeletCert string
+		KubeletKey  string
+	}{
+		Server:      c.APIServers[0].String(),
+		CACert:      base64.StdEncoding.EncodeToString(manifests.CACert),
+		KubeletCert: base64.StdEncoding.EncodeToString(manifests.KubeletCert),
+		KubeletKey:  base64.StdEncoding.EncodeToString(manifests.KubeletKey),
+	}
+	return mustCreateAssetFromTemplate(t.KubeConfigInClusterTemplate, cfg), mustCreateAssetFromTemplate(t.KubeConfigTemplate, cfg)
+}
+
+func etcdPeerSecrets(c *internal.Manifests) []byte {
+	s := v12.Secret{
+		Type: v12.SecretTypeOpaque,
+		TypeMeta: v13.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v13.ObjectMeta{
+			Name:      SecretEtcdPeer,
+			Namespace: secretNamespace,
+		},
+	}
+	s.Data = map[string][]byte{
+		path.Base(internal.AssetPathEtcdPeerCA):   []byte(base64.StdEncoding.EncodeToString(c.EtcdPeerCA)),
+		path.Base(internal.AssetPathEtcdPeerCert): []byte(base64.StdEncoding.EncodeToString(c.EtcdPeerCert)),
+		path.Base(internal.AssetPathEtcdPeerKey):  []byte(base64.StdEncoding.EncodeToString(c.EtcdPeerKey)),
+	}
+	data, err := yaml.Marshal(s)
+	must(err)
+	return data
+}
+
+func etcdServerSecrets(c *internal.Manifests) []byte {
+	s := v12.Secret{
+		Type: v12.SecretTypeOpaque,
+		TypeMeta: v13.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v13.ObjectMeta{
+			Name:      SecretEtcdServer,
+			Namespace: secretNamespace,
+		},
+	}
+	s.Data = map[string][]byte{
+		path.Base(internal.AssetPathEtcdServerCA):   []byte(base64.StdEncoding.EncodeToString(c.EtcdServerCA)),
+		path.Base(internal.AssetPathEtcdServerCert): []byte(base64.StdEncoding.EncodeToString(c.EtcdServerCert)),
+		path.Base(internal.AssetPathEtcdServerKey):  []byte(base64.StdEncoding.EncodeToString(c.EtcdServerKey)),
+	}
+	data, err := yaml.Marshal(s)
+	must(err)
+	return data
+}
+
+func etcdClientSecrets(c *internal.Manifests) []byte {
+	s := v12.Secret{
+		Type: v12.SecretTypeOpaque,
+		TypeMeta: v13.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v13.ObjectMeta{
+			Name:      SecretEtcdClient,
+			Namespace: secretNamespace,
+		},
+	}
+	s.Data = map[string][]byte{
+		path.Base(internal.AssetPathEtcdClientCA):   []byte(base64.StdEncoding.EncodeToString(c.EtcdClientCA)),
+		path.Base(internal.AssetPathEtcdClientCert): []byte(base64.StdEncoding.EncodeToString(c.EtcdClientCert)),
+		path.Base(internal.AssetPathEtcdClientKey):  []byte(base64.StdEncoding.EncodeToString(c.EtcdClientKey)),
+	}
+	data, err := yaml.Marshal(s)
+	must(err)
+	return data
+}
+
+func controllerManagerSecrets(c *internal.Manifests) []byte {
+	s := v12.Secret{
+		Type: v12.SecretTypeOpaque,
+		TypeMeta: v13.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v13.ObjectMeta{
+			Name:      secretCMName,
+			Namespace: secretNamespace,
+		},
+	}
+	s.Data = map[string][]byte{
+		path.Base(internal.AssetPathServiceAccountPrivKey): []byte(base64.StdEncoding.EncodeToString(c.ServiceAccountPrivKey)),
+		path.Base(internal.AssetPathCACert):                []byte(base64.StdEncoding.EncodeToString(c.CACert)),
+	}
+	data, err := yaml.Marshal(s)
+	must(err)
+	return data
+}
+
+func apiServerSecrets(c *internal.Manifests) []byte {
+	s := v12.Secret{
+		Type: v12.SecretTypeOpaque,
+		TypeMeta: v13.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v13.ObjectMeta{
+			Name:      secretAPIServerName,
+			Namespace: secretNamespace,
+		},
+	}
+	s.Data = map[string][]byte{
+		path.Base(internal.AssetPathAPIServerKey):         []byte(base64.StdEncoding.EncodeToString(c.APIServerKey)),
+		path.Base(internal.AssetPathAPIServerCert):        []byte(base64.StdEncoding.EncodeToString(c.APIServerCert)),
+		path.Base(internal.AssetPathServiceAccountPubKey): []byte(base64.StdEncoding.EncodeToString(c.ServiceAccountPubKey)),
+		path.Base(internal.AssetPathCACert):               []byte(base64.StdEncoding.EncodeToString(c.CACert)),
+
+		// UseTLS
+		path.Base(internal.AssetPathEtcdPeerCA): []byte(base64.StdEncoding.EncodeToString(c.EtcdPeerCA)),
+	}
+	data, err := yaml.Marshal(s)
+	must(err)
+	return data
+}
+
 func translateClusterToBootkube(cluster *v1.Cluster) *Config {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	must(err)

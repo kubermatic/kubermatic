@@ -8,7 +8,13 @@ import (
 )
 
 const (
-	AssetPathSecrets                     = "tls"
+	AssetPathSecrets            = "tls"
+	AssetPathAuth               = "auth"
+	AssetPathManifests          = "manifests"
+	AssetPathEtcdSecrets        = "tls/etcd"
+	AssetPathBootstrapManifests = "bootstrap-manifests"
+	AssetPathEtcd               = "etcd"
+
 	AssetPathCAKey                       = "tls/ca.key"
 	AssetPathCACert                      = "tls/ca.crt"
 	AssetPathAPIServerKey                = "tls/apiserver.key"
@@ -26,9 +32,8 @@ const (
 	AssetPathServiceAccountPubKey        = "tls/service-account.pub"
 	AssetPathKubeletKey                  = "tls/kubelet.key"
 	AssetPathKubeletCert                 = "tls/kubelet.crt"
-	AssetPathAuth                        = "auth"
+	AssetPathKubeConfigInCluster         = "manifests/kubeconfig-in-cluster.yaml"
 	AssetPathKubeConfig                  = "auth/kubeconfig"
-	AssetPathManifests                   = "manifests"
 	AssetPathProxy                       = "manifests/kube-proxy.yaml"
 	AssetPathProxySA                     = "manifests/kube-proxy-sa.yaml"
 	AssetPathProxyRoleBinding            = "manifests/kube-proxy-role-binding.yaml"
@@ -53,6 +58,9 @@ const (
 	AssetPathKubeDNSSvc                  = "manifests/kube-dns-svc.yaml"
 	AssetPathSystemNamespace             = "manifests/kube-system-ns.yaml"
 	AssetPathCheckpointer                = "manifests/pod-checkpointer.yaml"
+	AssetPathCheckpointerSA              = "manifests/pod-checkpointer-sa.yaml"
+	AssetPathCheckpointerRole            = "manifests/pod-checkpointer-role.yaml"
+	AssetPathCheckpointerRoleBinding     = "manifests/pod-checkpointer-role-binding.yaml"
 	AssetPathEtcdOperator                = "manifests/etcd-operator.yaml"
 	AssetPathEtcdSvc                     = "manifests/etcd-service.yaml"
 	AssetPathEtcdClientSecret            = "manifests/etcd-client-tls.yaml"
@@ -60,23 +68,25 @@ const (
 	AssetPathEtcdServerSecret            = "manifests/etcd-server-tls.yaml"
 	AssetPathKenc                        = "manifests/kube-etcd-network-checkpointer.yaml"
 	AssetPathKubeSystemSARoleBinding     = "manifests/kube-system-rbac-role-binding.yaml"
-	AssetPathBootstrapManifests          = "bootstrap-manifests"
 	AssetPathBootstrapAPIServer          = "bootstrap-manifests/bootstrap-apiserver.yaml"
 	AssetPathBootstrapControllerManager  = "bootstrap-manifests/bootstrap-controller-manager.yaml"
 	AssetPathBootstrapScheduler          = "bootstrap-manifests/bootstrap-scheduler.yaml"
 	AssetPathBootstrapEtcd               = "bootstrap-manifests/bootstrap-etcd.yaml"
-	AssetPathEtcd                        = "etcd"
 	AssetPathBootstrapEtcdService        = "etcd/bootstrap-etcd-service.json"
 	AssetPathMigrateEtcdCluster          = "etcd/migrate-etcd-cluster.json"
 )
 
 type TemplateContent struct {
 	KubeConfigTemplate                  []byte
+	KubeConfigInClusterTemplate         []byte
 	KubeSystemSARoleBindingTemplate     []byte
 	APIServerTemplate                   []byte
 	BootstrapAPIServerTemplate          []byte
 	KencTemplate                        []byte
 	CheckpointerTemplate                []byte
+	CheckpointerSATemplate              []byte
+	CheckpointerRoleTemplate            []byte
+	CheckpointerRoleBindingTemplate     []byte
 	ControllerManagerTemplate           []byte
 	BootstrapControllerManagerTemplate  []byte
 	ControllerManagerDisruptionTemplate []byte
@@ -124,6 +134,7 @@ type Manifests struct {
 	KubeletKey                  []byte
 	KubeletCert                 []byte
 	KubeConfig                  []byte
+	KubeConfigInCluster         []byte
 	Proxy                       []byte
 	ProxySA                     []byte
 	ProxyRoleBinding            []byte
@@ -140,6 +151,9 @@ type Manifests struct {
 	KubeDNSSvc                  []byte
 	SystemNamespace             []byte
 	Checkpointer                []byte
+	CheckpointerSA              []byte
+	CheckpointerRole            []byte
+	CheckpointerRoleBinding     []byte
 	EtcdOperator                []byte
 	EtcdSvc                     []byte
 	EtcdClientSecret            []byte
@@ -173,12 +187,14 @@ func (m *Manifests) WriteToDir(basename string) error {
 		if len(content) != 0 {
 			fmt.Printf("Writing asset: out-files/%s\n", filePath)
 			return ioutil.WriteFile(path.Join(basename, filePath), content, fileMode)
+		} else {
+			fmt.Printf("Skipping file: %s\n", filePath)
 		}
 		return nil
 	}
 
 	setError := func(e error) {
-		if e != nil && err != nil {
+		if e != nil && err == nil {
 			err = e
 		}
 	}
@@ -188,9 +204,26 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(os.MkdirAll(path.Join(basename, AssetPathSecrets), dirMode))
 	setError(os.MkdirAll(path.Join(basename, AssetPathAuth), dirMode))
 	setError(os.MkdirAll(path.Join(basename, AssetPathEtcd), dirMode))
+	setError(os.MkdirAll(path.Join(basename, AssetPathEtcdSecrets), dirMode))
 	if err != nil {
 		return err
 	}
+
+	setError(writeFile(AssetPathEtcdClientCA, m.EtcdClientCA))
+	setError(writeFile(AssetPathEtcdClientCert, m.EtcdClientCert))
+	setError(writeFile(AssetPathEtcdClientKey, m.EtcdClientKey))
+	setError(writeFile(AssetPathEtcdPeerCA, m.EtcdPeerCA))
+	setError(writeFile(AssetPathEtcdPeerCert, m.EtcdPeerCert))
+	setError(writeFile(AssetPathEtcdPeerKey, m.EtcdClientKey))
+	setError(writeFile(AssetPathEtcdServerCA, m.EtcdServerCA))
+	setError(writeFile(AssetPathEtcdServerCert, m.EtcdServerCert))
+	setError(writeFile(AssetPathEtcdServerKey, m.EtcdServerKey))
+	setError(writeFile(AssetPathServiceAccountPrivKey, m.ServiceAccountPrivKey))
+	setError(writeFile(AssetPathServiceAccountPubKey, m.ServiceAccountPubKey))
+	setError(writeFile(AssetPathKubeConfigInCluster, m.KubeConfigInCluster))
+	setError(writeFile(AssetPathCheckpointerSA, m.CheckpointerSA))
+	setError(writeFile(AssetPathCheckpointerRole, m.CheckpointerRole))
+	setError(writeFile(AssetPathCheckpointerRoleBinding, m.CheckpointerRoleBinding))
 
 	setError(writeFile(AssetPathCAKey, m.CAKey))
 	setError(writeFile(AssetPathCACert, m.CACert))
@@ -210,10 +243,10 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(writeFile(AssetPathKubeletKey, m.KubeletKey))
 	setError(writeFile(AssetPathKubeletCert, m.KubeletCert))
 	setError(writeFile(AssetPathKubeConfig, m.KubeConfig))
+	setError(writeFile(AssetPathKubeConfigInCluster, m.KubeConfigInCluster))
 	setError(writeFile(AssetPathProxy, m.Proxy))
 	setError(writeFile(AssetPathProxySA, m.ProxySA))
 	setError(writeFile(AssetPathProxyRoleBinding, m.ProxyRoleBinding))
-	setError(writeFile(AssetPathProxy, m.Proxy))
 	setError(writeFile(AssetPathAPIServerSecret, m.APIServerSecret))
 	setError(writeFile(AssetPathAPIServer, m.APIServer))
 	setError(writeFile(AssetPathControllerManager, m.ControllerManager))
@@ -247,18 +280,22 @@ func (m *Manifests) WriteToDir(basename string) error {
 	setError(writeFile(AssetPathCalicoBGPConfigsCRD, m.CalicoBGPConfigsCRD))
 	setError(writeFile(AssetPathCalicoFelixConfigsCRD, m.CalicoFelixConfigsCRD))
 	setError(writeFile(AssetPathCalicoNetworkPoliciesCRD, m.CalicoNetworkPoliciesCRD))
-	setError(writeFile(AssetPathCalicoIPPoolsCRD, m.CalicoIPPoolsCRD))
+
 	return err
 }
 
 func DefaultInternalTemplateContent() *TemplateContent {
 	return &TemplateContent{
+		KubeConfigInClusterTemplate:         KubeConfigInClusterTemplate,
 		KubeConfigTemplate:                  KubeConfigTemplate,
 		KubeSystemSARoleBindingTemplate:     KubeSystemSARoleBindingTemplate,
 		APIServerTemplate:                   APIServerTemplate,
 		BootstrapAPIServerTemplate:          BootstrapAPIServerTemplate,
 		KencTemplate:                        KencTemplate,
 		CheckpointerTemplate:                CheckpointerTemplate,
+		CheckpointerRoleBindingTemplate:     CheckpointerRoleBinding,
+		CheckpointerSATemplate:              CheckpointerServiceAccount,
+		CheckpointerRoleTemplate:            CheckpointerRole,
 		ControllerManagerTemplate:           ControllerManagerTemplate,
 		BootstrapControllerManagerTemplate:  BootstrapControllerManagerTemplate,
 		ControllerManagerDisruptionTemplate: ControllerManagerDisruptionTemplate,
