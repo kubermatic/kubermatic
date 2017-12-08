@@ -23,7 +23,7 @@ const (
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
 // TODO(realfake): This function calls net.LookupHost, move it out of the function!
-func LoadDeploymentFile(c *kubermaticv1.Cluster, v *api.MasterVersion, masterResourcesPath, dc, yamlFile string) (*v1beta1.Deployment, error) {
+func LoadDeploymentFile(c *kubermaticv1.Cluster, v *api.MasterVersion, masterResourcesPath, yamlFile string) (*v1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("could not identify cloud provider: %v", err)
@@ -35,7 +35,6 @@ func LoadDeploymentFile(c *kubermaticv1.Cluster, v *api.MasterVersion, masterRes
 		Version          *api.MasterVersion
 		CloudProvider    string
 	}{
-		DC:            dc,
 		Cluster:       c,
 		Version:       v,
 		CloudProvider: p,

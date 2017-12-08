@@ -24,10 +24,10 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	healthMapping := map[string]*depInfo{
-		"apiserver":          &depInfo{healthy: &health.Apiserver, minReady: 1},
-		"controller-manager": &depInfo{healthy: &health.Controller, minReady: 1},
-		"scheduler":          &depInfo{healthy: &health.Scheduler, minReady: 1},
-		"node-controller":    &depInfo{healthy: &health.NodeController, minReady: 1},
+		"apiserver":          {healthy: &health.Apiserver, minReady: 1},
+		"controller-manager": {healthy: &health.Controller, minReady: 1},
+		"scheduler":          {healthy: &health.Scheduler, minReady: 1},
+		"node-controller":    {healthy: &health.NodeController, minReady: 1},
 	}
 
 	for name := range healthMapping {
