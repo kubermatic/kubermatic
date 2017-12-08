@@ -145,15 +145,13 @@ func NewController(
 	if err != nil {
 		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
-	//TODO: HSC
-	//cc.updateController = update.NewFromConfig(
-	//	cc.client,
-	//	cc.seedCrdClient,
-	//	cc.masterResourcesPath,
-	//	cc.versions,
-	//	cc.updates,
-	//	cc.seedInformerGroup,
-	//)
+
+	cc.updateController = update.New(
+		cc.clientProvider,
+		cc.masterResourcesPath,
+		cc.versions,
+		cc.updates,
+	)
 	automaticUpdates := []api.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {
