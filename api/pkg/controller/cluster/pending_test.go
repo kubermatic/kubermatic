@@ -173,7 +173,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 	}
 }
 
-func TestPendingRegisterFinalizers(t *testing.T) {
+func TestPendingRegisterDefaultFinalizers(t *testing.T) {
 	tests := []struct {
 		name       string
 		cluster    *kubermaticv1.Cluster
@@ -240,7 +240,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
-			gotCluster, err := f.controller.pendingRegisterFinalizers(test.cluster)
+			gotCluster, err := f.controller.pendingRegisterDefaultFinalizers(test.cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -251,7 +251,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 				return
 			}
 
-			for _, wantFinalizer := range []string{cloudProviderCleanupFinalizer, nodeDeletionFinalizer, namespaceDeletionFinalizer} {
+			for _, wantFinalizer := range []string{namespaceDeletionFinalizer} {
 				found := false
 				for _, gotFinalizer := range gotCluster.Finalizers {
 					if gotFinalizer == wantFinalizer {

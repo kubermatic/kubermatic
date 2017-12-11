@@ -42,7 +42,7 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (*kubermaticv1
 	}
 
 	// Add finalizers
-	if changedC, err := cc.pendingRegisterFinalizers(c); err != nil || changedC != nil {
+	if changedC, err := cc.pendingRegisterDefaultFinalizers(c); err != nil || changedC != nil {
 		return changedC, err
 	}
 
@@ -145,6 +145,12 @@ func (cc *controller) pendingInitializeCloudProvider(cluster *kubermaticv1.Clust
 		cluster.Spec.Cloud = cloud
 		return cluster, nil
 	}
+
+	if !kuberneteshelper.HasFinalizer(cluster, cloudProviderCleanupFinalizer) {
+		cluster.Finalizers = append(cluster.Finalizers, cloudProviderCleanupFinalizer)
+		return cluster, nil
+	}
+
 	return nil, nil
 }
 
@@ -173,13 +179,11 @@ func (cc *controller) launchingCreateNamespace(c *kubermaticv1.Cluster) error {
 	return err
 }
 
-// pendingRegisterFinalizers adds all finalizers we need
-func (cc *controller) pendingRegisterFinalizers(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+// pendingRegisterDefaultFinalizers adds all default finalizers we need
+func (cc *controller) pendingRegisterDefaultFinalizers(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var updated bool
 
 	finalizers := []string{
-		nodeDeletionFinalizer,
-		cloudProviderCleanupFinalizer,
 		namespaceDeletionFinalizer,
 	}
 
