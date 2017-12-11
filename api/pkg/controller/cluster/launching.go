@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,6 +79,13 @@ func (cc *controller) launchingClusterReachable(c *kubermaticv1.Cluster) (*kuber
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
+		return c, nil
+	}
+
+	// Only add the node deletion finalizer when the cluster is actually running
+	// Otherwise we fail to delete the nodes and are stuck in a loop
+	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
+		c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
 		return c, nil
 	}
 
