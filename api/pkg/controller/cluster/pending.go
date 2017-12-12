@@ -12,7 +12,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
-	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,11 +112,6 @@ func (cc *controller) syncPendingCluster(c *kubermaticv1.Cluster) (*kubermaticv1
 
 	// check that all deployments are available
 	if err := cc.launchingCheckDeployments(c); err != nil {
-		return nil, err
-	}
-
-	// check that all deployments are available
-	if err := cc.launchingCheckIngress(c); err != nil {
 		return nil, err
 	}
 
@@ -557,44 +551,6 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 		}
 	}
 
-	return nil
-}
-
-func (cc *controller) launchingCheckIngress(c *kubermaticv1.Cluster) error {
-	ingress := map[string]func(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*extensionv1beta1.Ingress, error){
-		"apiserver": resources.LoadIngressFile,
-	}
-
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	ns := c.Status.NamespaceName
-	for s, gen := range ingress {
-		_, err := informerGroup.IngressInformer.Lister().Ingresses(ns).Get(s)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if err == nil {
-			continue
-		}
-
-		ingress, err := gen(c, s, cc.masterResourcesPath)
-		if err != nil {
-			return fmt.Errorf("failed to generate %s: %v", s, err)
-		}
-
-		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-		if err != nil {
-			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-		}
-
-		_, err = client.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
-		if err != nil {
-			return fmt.Errorf("failed to create ingress %s: %v", s, err)
-		}
-	}
 	return nil
 }
 
