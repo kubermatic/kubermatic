@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,16 +14,24 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
+	initscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/scheme"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
+	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/record"
 )
 
 var (
@@ -40,6 +47,10 @@ var (
 	updatesFile           = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	apiserverExternalPort = flag.Int("apiserver-external-port", 8443, "Port on which the apiserver of a client cluster should be reachable")
 	workerCount           = flag.Int("worker-count", 4, "Number of workers which process the clusters in parallel.")
+)
+
+const (
+	controllerName = "kubermatic-cluster-controller"
 )
 
 func main() {
@@ -75,8 +86,26 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	var config *rest.Config
+	config, err = clientcmd.BuildConfigFromFlags("", *masterKubeconfig)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	metrics := NewClusterControllerMetrics()
 	var g run.Group
+
+	// Create a Kubernetes api client
+	masterKubeClient := kubernetes.NewForConfigOrDie(config)
+	// Create event broadcaster
+	// Add kubermatic types to the default Kubernetes Scheme so Events can be
+	// logged properly
+	initscheme.AddToScheme(scheme.Scheme)
+	glog.V(4).Info("Creating event broadcaster")
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(glog.V(4).Infof)
+	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -120,43 +149,36 @@ func main() {
 			Workers:  metrics.Workers,
 		}
 
-		var config *rest.Config
-		config, err = clientcmd.BuildConfigFromFlags("", *masterKubeconfig)
-		if err != nil {
-			glog.Fatal(err)
-		}
-
-		config.Impersonate = rest.ImpersonationConfig{}
-		masterCrdClient := mastercrdclient.NewForConfigOrDie(config)
+		masterCrdClient := mastercrdclient.NewForConfigOrDie(rest.AddUserAgent(config, controllerName))
 		masterInformerGroup := masterinformer.New(masterCrdClient)
-
-		seedProvider, err := seed.NewFromConfig(clientcmdConfig)
-		if err != nil {
-			glog.Fatal(err)
-		}
-
-		cps := cloud.Providers(dcs)
-		ctrl, err := cluster.NewController(
-			seedProvider,
-			masterCrdClient,
-			cps,
-			versions,
-			updates,
-			*masterResources,
-			*externalURL,
-			*workerName,
-			*apiserverExternalPort,
-			dcs,
-			masterInformerGroup,
-			clusterMetrics,
-		)
-		if err != nil {
-			glog.Fatal(err)
-		}
 
 		stop := make(chan struct{})
 
 		g.Add(func() error {
+			seedProvider, err := seed.NewFromConfig(clientcmdConfig)
+			if err != nil {
+				glog.Fatal(err)
+			}
+
+			cps := cloud.Providers(dcs)
+			ctrl, err := cluster.NewController(
+				seedProvider,
+				masterCrdClient,
+				cps,
+				versions,
+				updates,
+				*masterResources,
+				*externalURL,
+				*workerName,
+				*apiserverExternalPort,
+				dcs,
+				masterInformerGroup,
+				clusterMetrics,
+			)
+			if err != nil {
+				glog.Fatal(err)
+			}
+
 			masterInformerGroup.Run(stop)
 			cache.WaitForCacheSync(stop, masterInformerGroup.HasSynced)
 
@@ -168,11 +190,42 @@ func main() {
 			glog.Info("Stopping controllers")
 			close(stop)
 		})
+	}
+
+	leaderElectionStop := make(chan struct{})
+	{
+		g.Add(func() error {
+			<-leaderElectionStop
+			return nil
+		}, func(err error) {
+			close(leaderElectionStop)
+		})
 
 	}
 
-	// Running all groups concurrently in goroutines until the first exists
-	if err := g.Run(); err != nil {
-		log.Println(err)
+	leaderElectionClient := kubernetes.NewForConfigOrDie(rest.AddUserAgent(config, "kubermatic-cluster-controller-leader-election"))
+	callbacks := kubeleaderelection.LeaderCallbacks{
+		OnStartedLeading: func(stop <-chan struct{}) {
+			// Running all groups concurrently in goroutines until the first exists
+			if err := g.Run(); err != nil {
+				glog.Fatal(err)
+			}
+			glog.V(0).Info("terminating application")
+			os.Exit(0)
+		},
+		OnStoppedLeading: func() {
+			close(leaderElectionStop)
+		},
 	}
+
+	leaderName := controllerName
+	if *workerName != "" {
+		leaderName = *workerName + "-" + leaderName
+	}
+	leader, err := leaderelection.New(leaderName, leaderElectionClient, recorder, callbacks)
+	if err != nil {
+		glog.Fatalf("failed to create a leaderelection: %v", err)
+	}
+
+	leader.Run()
 }
