@@ -47,6 +47,7 @@ KubermaticImageTag: "latest"
 ### Replica count for kubermatic components
 KubermaticAPIReplicaCount: "2"
 KubermaticUIReplicaCount: "2"
+KubermaticClusterControllerReplicaCount: "2"
 
 ### OpenID connect options
 ClientID: "kubermatic"
