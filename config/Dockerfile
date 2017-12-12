@@ -17,7 +17,6 @@ RUN mv /tmp/kubectl /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 COPY bare-metal-provider /kubermatic/bare-metal-provider
 COPY coreos-ipxe-server /kubermatic/coreos-ipxe-server
 COPY efk-logging /kubermatic/efk-logging
-COPY k8sniff /kubermatic/k8sniff
 COPY kubermatic /kubermatic/kubermatic
 COPY nginx-ingress-controller /kubermatic/nginx-ingress-controller
 COPY oauth /kubermatic/oauth
