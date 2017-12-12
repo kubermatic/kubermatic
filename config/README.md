@@ -37,11 +37,11 @@ The external ip for the DNS entry can be fetched via
 kubectl -n ingress-nginx describe service nginx-ingress-controller | grep "LoadBalancer Ingress"
 ```
 
-Go to https://www.ovh.ie/ and add a dns entry for k8sniff:
+Go to https://www.ovh.ie/ and add a dns entry for the nodeport-exposer:
 $DATACENTER=us-central1
 - *.$DATACENTER.$DOMAIN  =  *.us-central1.dev.kubermatic.io  
 
 The external ip for the DNS entry can be fetched via
 ```bash
-kubectl -n k8sniff describe service k8sniff-ingress-lb | grep "LoadBalancer Ingress"
+kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalancer Ingress"
 ```
