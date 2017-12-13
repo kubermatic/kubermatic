@@ -2,10 +2,9 @@ package cluster
 
 import (
 	"bytes"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"golang.org/x/crypto/ssh"
 
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
@@ -40,21 +40,15 @@ func (cc *controller) pendingCreateTokens(c *kubermaticv1.Cluster) (*kubermaticv
 	var updated bool
 
 	if c.Address.AdminToken == "" {
-		adminToken, err := generateRandomToken()
-		if err != nil {
-			return nil, err
-		}
-		c.Address.AdminToken = adminToken
+		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
+		c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 		glog.V(4).Infof("Created admin token for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
 
 	if c.Address.KubeletToken == "" {
-		kubeletToken, err := generateRandomToken()
-		if err != nil {
-			return nil, err
-		}
-		c.Address.KubeletToken = kubeletToken
+		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
+		c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 		glog.V(4).Infof("Created kubelet token for %s", kubernetes.NamespaceName(c.Name))
 		updated = true
 	}
@@ -150,7 +144,7 @@ func (cc *controller) pendingCreateApiserverSSHKeys(c *kubermaticv1.Cluster) (*k
 }
 
 func createServiceAccountKey() (kubermaticv1.Bytes, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	priv, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +158,7 @@ func createServiceAccountKey() (kubermaticv1.Bytes, error) {
 }
 
 func createSSHKey() (*kubermaticv1.RSAKeys, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	priv, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +175,4 @@ func createSSHKey() (*kubermaticv1.RSAKeys, error) {
 		return nil, err
 	}
 	return &kubermaticv1.RSAKeys{PrivateKey: privBuf.Bytes(), PublicKey: ssh.MarshalAuthorizedKey(pub)}, nil
-}
-
-func generateRandomToken() (string, error) {
-	rawToken := make([]byte, 64)
-	_, err := rand.Read(rawToken)
-	return base64.StdEncoding.EncodeToString(rawToken), err
 }
