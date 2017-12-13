@@ -177,7 +177,7 @@ func main() {
 			<-leaderElectionStop
 			return nil
 		}, func(err error) {
-			glog.Info("Stopping controller: %v", err)
+			glog.Errorf("Stopping controller: %v", err)
 			close(controllerStop)
 		})
 	}
