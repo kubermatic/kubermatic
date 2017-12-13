@@ -9,7 +9,7 @@ metadata:
   namespace: ingress-nginx
 spec:
 {{ if not .Values.IsBareMetal }}
-  replicas: 1
+  replicas: 2
 {{ end }}
   template:
     metadata:
