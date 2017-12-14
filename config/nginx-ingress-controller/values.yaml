@@ -1,1 +1,11 @@
 ##### Kubermatic ingress
+nginx:
+  hostNetwork: false
+  asDaemonSet: false
+  replicas: 3
+  prometheus:
+    port: 10254
+    scrape: true
+  image:
+    repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+    tag: 0.9.0-beta.17

@@ -1,4 +1,4 @@
-{{ if not .Values.IsBareMetal }}
+{{ if not .Values.nginx.hostNetwork }}
 apiVersion: v1
 kind: Service
 metadata:
