@@ -82,6 +82,9 @@ spec:
             "--cloud-provider=aws",
             {{ end }}
             "--kubelet-preferred-address-types=InternalIP",
+            {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
+            "--enable-bootstrap-token-auth",
+            {{ end }}
             "--v=4" ]
         livenessProbe:
           httpGet:

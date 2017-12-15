@@ -41,6 +41,9 @@ spec:
           {{ if contains "v1.6" (index .Version.Values "k8s-version") }}
           "--insecure-experimental-approve-all-kubelet-csrs-for-group=system:bootstrappers",
           {{ end }}
+          {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
+          "--controllers=*,tokencleaner,bootstrapsigner",
+          {{ end }}
           "--v=4"
         ]
         livenessProbe:
