@@ -83,6 +83,7 @@ spec:
             {{ end }}
             "--kubelet-preferred-address-types=InternalIP",
             {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
+            #TODO: Remove when we drop 1.8 support
             "--enable-bootstrap-token-auth",
             {{ end }}
             "--v=4" ]
