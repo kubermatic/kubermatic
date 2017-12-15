@@ -10,7 +10,11 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
+	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
@@ -92,6 +96,42 @@ func (cc *controller) launchingClusterReachable(c *kubermaticv1.Cluster) (*kuber
 	return nil, nil
 }
 
+// Creates cluster-info ConfigMap in customer cluster
+//see https://kubernetes.io/docs/admin/bootstrap-tokens/
+func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
+	client, err := c.GetClient()
+	if err != nil {
+		return err
+	}
+
+	name := "cluster-info"
+	_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			config := clientcmdapi.Config{}
+			config.Clusters = map[string]*clientcmdapi.Cluster{
+				"": {
+					Server: c.Address.URL,
+					CertificateAuthorityData: c.Status.RootCA.Cert,
+				},
+			}
+			cm := v1.ConfigMap{}
+			cm.Name = name
+			bconfig, err := clientcmd.Write(config)
+			if err != nil {
+				return fmt.Errorf("failed to encode kubeconfig: %v", err)
+			}
+			cm.Data = map[string]string{"kubeconfig": string(bconfig)}
+			_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Create(&cm)
+			if err != nil {
+				return fmt.Errorf("failed to create configmap %s in client cluster: %v", name, err)
+			}
+		}
+		return fmt.Errorf("failed to load configmap %s from client cluster: %v", name, err)
+	}
+	return nil
+}
+
 func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 
 	changedC, err := cc.launchingClusterHealth(c)
@@ -102,6 +142,11 @@ func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermatic
 	changedC, err = cc.launchingClusterReachable(c)
 	if err != nil || changedC != nil {
 		return changedC, err
+	}
+
+	err = cc.launchingCreateClusterInfoConfigMap(c)
+	if err != nil {
+		return nil, err
 	}
 
 	// no error until now? We are running.
