@@ -58,8 +58,8 @@ spec:
             "--etcd-servers=http://etcd-cluster-client:2379",
             "--etcd-quorum-read=true",
             "--storage-backend=etcd3",
-            "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
-            "--authorization-mode=RBAC",
+            "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
+            "--authorization-mode=Node,RBAC",
             "--external-hostname={{ .Cluster.Address.ExternalName }}",
             "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
             {{ if contains "v1.7" (index .Version.Values "k8s-version") }}
