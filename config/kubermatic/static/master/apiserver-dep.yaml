@@ -58,12 +58,16 @@ spec:
             "--etcd-servers=http://etcd-cluster-client:2379",
             "--etcd-quorum-read=true",
             "--storage-backend=etcd3",
-            "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
-            "--authorization-mode=AlwaysAllow,RBAC",
-            "--anonymous-auth=false",
+            "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
+            "--authorization-mode=Node,RBAC",
             "--external-hostname={{ .Cluster.Address.ExternalName }}",
             "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
+            {{ if contains "v1.7" (index .Version.Values "k8s-version") }}
+            #TODO: Remove when we drop 1.7 support
             "--experimental-bootstrap-token-auth=true",
+            {{ else }}
+            "--enable-bootstrap-token-auth=true",
+            {{ end }}
             "--service-account-key-file=/var/run/kubernetes/apiserver/service-account.key",
             "--service-cluster-ip-range=10.10.10.0/24",
             "--service-node-port-range=30000-32767",

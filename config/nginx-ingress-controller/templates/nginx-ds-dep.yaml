@@ -16,8 +16,8 @@ spec:
       labels:
         app: ingress-nginx
       annotations:
-        prometheus.io/port: {{ .Values.nginx.prometheus.port }}
-        prometheus.io/scrape: {{ .Values.nginx.prometheus.scrape }}
+        prometheus.io/port: {{ .Values.nginx.prometheus.port | quote }}
+        prometheus.io/scrape: {{ .Values.nginx.prometheus.scrape | quote }}
     spec:
     {{ if .Values.nginx.hostNetwork }}
       hostNetwork: true
