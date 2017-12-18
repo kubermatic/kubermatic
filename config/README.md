@@ -2,29 +2,73 @@
 
 ## Setting up a master-seed cluster
 
-### Creating the Configuration
-Create a new seed-cluster configuration -> values.yaml.
-For a reference see the example [values.yaml][1]
+### Creating the Seed Cluster Configuration
+Installation of Kubermatic uses the [Kubermatic Installer][4], which is essentially a container with [Helm][5] and the required charts to install Kubermatic and it's associated resources.
 
-The following keys must be set:
-- `KubermaticURL`
-  This is the URL to access the dashboard of the cluster. This will also be the subdomain which the client clusters will be assigned under
-- `Kubeconfig`
+Customization of the cluster configuration is done using a seed-cluster specific _values.yaml_, stored as an encrypted file in the Kubermatic [secrets repository][6]
+
+For reference you can see an example [values.yaml][1] file.
+
+#### `values.yaml` Keys
+
+- ##### `KubermaticURL` _(required)_
+
+  This is the URL to access the dashboard of the cluster. This will also be the subdomain which the client clusters will be assigned under (_i.e. <cluster-address.subdomain.domain.tld>_)
+
+  **The value should be quoted.**
+
+  Example:
+  > `KubermaticURL: "cloud.kubermatic.io"`
+
+- ##### `Kubeconfig` _(required)_
+
   This is a standard [Kubeconfig][2]. The correct context for the cluster does not need to be set, but the context name must match the key for the seed cluster definition in the `KubermaticDatacenters`
 
   When defining multiple seed clusters you must have a valid context for each seed cluster in the `Kubeconfig` with the context names must match to the correct keys in `KubermaticDatacenters`
 
   > The `Kubeconfig` value must be base64 encoded, without any linebreaks
 
-- `KubermaticDatacenters`
+- ##### `KubermaticDatacenters` _(required)_
 
   This is the Datacenter definition for Kubermatic. You can find detailed documentation on the Datacenter definition file [here][3].
 
-  > The value for `KubermaticDatacenters` must be base64 encoded without any linebreaks
+  > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
 
+- ##### `StorageProvider` _(optional)_
 
-Make sure you set/update the following:
-- Storage - Have a look at the helm chart helper under config/storage/templates/_helpers.tpl
+  This defines the default storage provider for the cluster, creating a default [StorageClass][8] with the name `generic`.
+
+  **The value should be quoted.**
+
+  Valid values are:
+  - `aws`: AWS Elastic Block Storage
+  - `gke`: GCE Persistent Disk
+  - `openstack-cinder`: OpenStack Cinder
+  - `bare-metal`: GlusterFS Heketi
+
+  Example:
+  > `StorageProvider: "gke"`
+
+  Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
+
+- ##### `StorageZone` _(optional)_
+
+  This defines the zone in which the default StorageClass should create [PersistentVolume][9] resources. This typically is the cloud-providers geographic region.
+
+  Example:
+  > `StorageZone: "us-central1-c"`
+
+  Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
+
+- ##### `StorageType` _(optional)_
+
+  This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
+
+  Example:
+  > `StorageType: "pd-ssd"`
+
+  Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
+
 - Certificates - These are the domains we are trying to pull certificates via letsencrypt
 
 There are more options than the above listed. The reference values.yaml should be self-explaining.
@@ -62,4 +106,10 @@ kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalanc
 
 [1]: https://github.com/kubermatic/secrets/blob/master/seed-clusters/example/values.yaml
 [2]: https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
-[3]: Datacenter File Documentation
+[3]: ../docs/datacenters.md
+[4]: installer/README.md
+[5]: https://github.com/kubernetes/helm
+[6]: https://github.com/kubermatic/secrets
+[7]: https://github.com/kubermatic/kubermatic/blob/master/config/storage/templates/_helpers.tpl
+[8]: https://kubernetes.io/docs/concepts/storage/storage-classes/
+[9]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
