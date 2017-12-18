@@ -1,18 +1,20 @@
+#- :
+
 ### Bare-Metal
-#StorageProvider: bare-metal
-#StorageURL: http://192.168.0.170:8081
+#- Provider: bare-metal
+#- URL: http://192.168.0.170:8081
 
 ### AWS
-#StorageProvider: aws
-#StorageZone: eu-central-1
-#StorageType: gp2
+#- Provider: aws
+#- Zone: eu-central-1
+#- Type: gp2
 
 ### GKE
-#StorageProvider: gke
-#StorageZone: us-central1-b
-#StorageType: pd-ssd
+#- Provider: gke
+#- Zone: us-central1-b
+#- Type: pd-ssd
 
 ###Openstack Cinder
-#StorageProvider: openstack-cinder
-#StorageZone: cbk1
-#StorageType: quobyte
+#- Provider: openstack-cinder
+#- Zone: cbk1
+#- Type: quobyte

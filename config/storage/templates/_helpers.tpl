@@ -1,26 +1,26 @@
 {{- define "aws" }}
 provisioner: kubernetes.io/aws-ebs
 parameters:
-  type: {{.Values.StorageType}}
+  type: {{.Type}}
 {{- end }}
 
 {{- define "gke" }}
 provisioner: kubernetes.io/gce-pd
 parameters:
-  type: {{.Values.StorageType}}
-  zone: {{.Values.StorageZone}}
+  type: {{.Type}}
+  zone: {{.Zone}}
 {{- end }}
 
 {{- define "openstack-cinder" }}
 provisioner: kubernetes.io/cinder
 parameters:
-  type: {{.Values.StorageType}}
-  availability: {{.Values.StorageZone}}
+  type: {{.Type}}
+  availability: {{.Zone}}
 {{- end }}
 
 {{- define "bare-metal" }}
 provisioner: kubernetes.io/glusterfs
 parameters:
-  resturl: {{ .Values.StorageURL | quote }}
+  resturl: {{ .URL | quote }}
   restauthenabled: "false"
 {{- end }}
