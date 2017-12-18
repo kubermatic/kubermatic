@@ -34,40 +34,66 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
   > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
 
-- ##### `StorageProvider` _(optional)_
+- ##### `Storage` Block _(optional)_
 
-  This defines the default storage provider for the cluster, creating a default [StorageClass][8] with the name `generic`.
-
-  **The value should be quoted.**
-
-  Valid values are:
-  - `aws`: AWS Elastic Block Storage
-  - `gke`: GCE Persistent Disk
-  - `openstack-cinder`: OpenStack Cinder
-  - `bare-metal`: GlusterFS Heketi
-
-  Example:
-  > `StorageProvider: "gke"`
+  This defines the default storage for the cluster, creating a [StorageClass][8] with the name `generic` and setting it as the default StorageClass.
 
   Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
 
-- ##### `StorageZone` _(optional)_
+  - ###### `Provider` _(required)_
 
-  This defines the zone in which the default StorageClass should create [PersistentVolume][9] resources. This typically is the cloud-providers geographic region.
+    This defines the Provider to use for provisioning storage with the storage class.
 
-  Example:
-  > `StorageZone: "us-central1-c"`
+    Currently supported providers are:
+    - `aws`: AWS Elastic Block Storage
+    - `gke`: GCE Persistent Disk
+    - `openstack-cinder`: OpenStack Cinder
+    - `bare-metal`: GlusterFS Heketi
 
-  Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
+    **The value should be quoted.**
 
-- ##### `StorageType` _(optional)_
+    Example:
+    > `- Provider: "gke"`
 
-  This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
+  - ###### `Zone`
 
-  Example:
-  > `StorageType: "pd-ssd"`
+    This defines the zone in which the default StorageClass should create [PersistentVolume][9] resources. This typically is the cloud-providers geographic region.
 
-  Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
+    _Applicable Providers_:
+    - `aws`
+    - `gke`
+    - `openstack-cinder`
+
+    **The value should be quoted.**
+
+    Example:
+    > `Zone: "us-central1-c"`
+
+  - ###### `Type`
+
+    This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
+
+    _Applicable Providers_:
+    - `aws`
+    - `gke`
+    - `openstack-cinder`
+
+    **The value should be quoted.**
+
+    Example:
+    > `- Type: "pd-ssd"`
+
+  - ###### `URL`
+
+    This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
+
+    _Applicable Providers_:
+    - `bare-metal`
+
+    **The value should be quoted.**
+
+    Example:
+    > `- URL: "http://heketi:8080"`
 
 - Certificates - These are the domains we are trying to pull certificates via letsencrypt
 
