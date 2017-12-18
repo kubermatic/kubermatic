@@ -32,8 +32,18 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
   > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
 
-- #### Certificates
-  These are the domains we are trying to pull certificates via letsencrypt
+- #### `Certificates` Block _(required)_
+  Certificates defines the domains to pull certificates for via ACME, typically from [Let's Encrypt][14]. You will need to add the domain from `KubermaticURL`, as well as any additional domains you need certificates for.
+
+  Example:
+  ```
+  Certificates:
+    Domains:
+    - "dev.kubermatic.io"
+    - "alertmanager.dev.kubermatic.io"
+    - "grafana.dev.kubermatic.io"
+    - "prometheus.dev.kubermatic.io"
+  ```
 
 - #### `Storage` Block _(optional)_
 
@@ -235,3 +245,4 @@ kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalanc
 [12]: https://hub.docker.com/r/kubermatic/bare-metal-provider/tags/
 [13]: https://hub.docker.com/r/kubermatic/k8sniff-internal/tags/
 [13]: https://hub.docker.com/r/kubermatic/nodeport-exposer/tags/
+[14]: https://letsencrypt.org/
