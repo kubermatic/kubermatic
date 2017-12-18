@@ -7,7 +7,7 @@ Installation of Kubermatic uses the [Kubermatic Installer][4], which is essentia
 
 Customization of the cluster configuration is done using a seed-cluster specific _values.yaml_, stored as an encrypted file in the Kubermatic [secrets repository][6]
 
-For reference you can see an example [values.yaml][1] file.
+For reference you can see the dev clusters [values.yaml][1] file.
 
 #### `values.yaml` Keys
 
@@ -104,7 +104,7 @@ The external ip for the DNS entry can be fetched via
 kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalancer Ingress"
 ```
 
-[1]: https://github.com/kubermatic/secrets/blob/master/seed-clusters/example/values.yaml
+[1]: https://github.com/kubermatic/secrets/blob/master/seed-clusters/dev.kubermatic.io/values.yaml
 [2]: https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
 [3]: ../docs/datacenters.md
 [4]: installer/README.md
