@@ -1,17 +1,15 @@
-# Kubermatic
+# Setting up a master-seed cluster
 
-## Setting up a master-seed cluster
-
-### Creating the Seed Cluster Configuration
+## Creating the Seed Cluster Configuration
 Installation of Kubermatic uses the [Kubermatic Installer][4], which is essentially a container with [Helm][5] and the required charts to install Kubermatic and it's associated resources.
 
 Customization of the cluster configuration is done using a seed-cluster specific _values.yaml_, stored as an encrypted file in the Kubermatic [secrets repository][6]
 
 For reference you can see the dev clusters [values.yaml][1] file.
 
-#### `values.yaml` Keys
+### `values.yaml` Keys
 
-- ##### `KubermaticURL` _(required)_
+- #### `KubermaticURL` _(required)_
 
   This is the URL to access the dashboard of the cluster. This will also be the subdomain which the client clusters will be assigned under (_i.e. <cluster-address.subdomain.domain.tld>_)
 
@@ -20,7 +18,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
   Example:
   > `KubermaticURL: "cloud.kubermatic.io"`
 
-- ##### `Kubeconfig` _(required)_
+- #### `Kubeconfig` _(required)_
 
   This is a standard [Kubeconfig][2]. The correct context for the cluster does not need to be set, but the context name must match the key for the seed cluster definition in the `KubermaticDatacenters`
 
@@ -28,19 +26,30 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
   > The `Kubeconfig` value must be base64 encoded, without any linebreaks
 
-- ##### `KubermaticDatacenters` _(required)_
+- #### `KubermaticDatacenters` _(required)_
 
   This is the Datacenter definition for Kubermatic. You can find detailed documentation on the Datacenter definition file [here][3].
 
   > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
 
-- ##### `Storage` Block _(optional)_
+- #### Certificates
+  These are the domains we are trying to pull certificates via letsencrypt
+
+- #### `Storage` Block _(optional)_
 
   This defines the default storage for the cluster, creating a [StorageClass][8] with the name `generic` and setting it as the default StorageClass.
 
+  Example:
+  ```
+  Storage:
+  - Provider: "gke"
+  - Zone: "europe-west3-c"
+  - Type: "pd-ssd"
+  ```
+
   Please see the Storage chart's [_helpers.tpl][7] for specific implementation details
 
-  - ###### `Provider` _(required)_
+  - ##### `Provider` _(required)_
 
     This defines the Provider to use for provisioning storage with the storage class.
 
@@ -55,7 +64,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
     Example:
     > `- Provider: "gke"`
 
-  - ###### `Zone`
+  - ##### `Zone`
 
     This defines the zone in which the default StorageClass should create [PersistentVolume][9] resources. This typically is the cloud-providers geographic region.
 
@@ -69,7 +78,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
     Example:
     > `Zone: "us-central1-c"`
 
-  - ###### `Type`
+  - ##### `Type`
 
     This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
 
@@ -83,7 +92,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
     Example:
     > `- Type: "pd-ssd"`
 
-  - ###### `URL`
+  - ##### `URL`
 
     This defines the type of PersistentVolume device the default StorageClass should create. This typically relates to the devices available IOPS and throughput.
 
@@ -95,7 +104,89 @@ For reference you can see the dev clusters [values.yaml][1] file.
     Example:
     > `- URL: "http://heketi:8080"`
 
-- Certificates - These are the domains we are trying to pull certificates via letsencrypt
+- #### `NodePortExposer` _(optional)_
+
+  The NodePort Exposer component replaces K8Sniff in newer deployments. Additionally it uses the block-style syntax for it's keys and values.
+
+  Example:
+  ```
+  NodePortExposer:
+    Image: "kubermatic/nodeport-exposer"
+    ImageTag: "v1.0"
+    Namespace: "nodeport-exposer"
+    LBServiceName: "nodeport-exposer"
+  ```
+
+  - ##### `Image`
+
+    This defines the Docker image to use for the NodePortExposer deployment.
+
+    **The value should be quoted.**
+
+    Example:
+    > `  Image: "kubermatic/nodeport-exposer"`
+
+  - ##### `ImageTag`
+
+    This defines the tag for the Docker image to use for the NodePortExposer deployment. Possible values can be found on the [Docker Hub repo][13]
+
+    **The value should be quoted.**
+
+    Example:
+    > `  ImageTag: "v1.0"`
+
+  - ##### `Namespace`
+
+    This defines the namespace in which to deploy the NodePortExposer resources.
+
+    **The value should be quoted.**
+
+    Example:
+    > `  Namespace: "nodeport-exposer"`
+
+  - ##### `LBServiceName`
+
+    This defines the Service name to create for the NodePortExposer.
+
+    **The value should be quoted.**
+
+    Example:
+    > `  LBServiceName: "nodeport-exposer"`
+
+- #### Replicas
+  These values set the number of replicas of the Kubermatic components running in the cluster.
+
+  **Keys**:
+  - `KubermaticAPIReplicaCount`
+  - `KubermaticUIReplicaCount`
+  - `K8SniffReplicaCount`
+
+  Example:
+  ```
+  KubermaticAPIReplicaCount: "2"
+  KubermaticUIReplicaCount: "1"
+  K8SniffReplicaCount: "2"
+  ```
+
+- #### Image Tags _(optional)_
+
+  These values set the image tag to use for the Kubermatic installation. You can find the possible tag values for each key at the link provided with the key.
+
+  **Keys**:
+  - [KubermaticAPIImageTag][10]
+  - [KubermaticControllerImageTag][10]
+  - [KubermaticDashboardImageTag][11]
+  - [KubermaticBareMetalProviderImageTag][12]
+  - [K8sniffImageTag][13]
+
+  Example:
+  ```
+  KubermaticAPIImageTag: "master"
+  KubermaticControllerImageTag: "master"
+  KubermaticDashboardImageTag: "master"
+  KubermaticBareMetalProviderImageTag: "master"
+  K8sniffImageTag: "v1.1"
+  ```
 
 There are more options than the above listed. The reference values.yaml should be self-explaining.
 
@@ -139,3 +230,8 @@ kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalanc
 [7]: https://github.com/kubermatic/kubermatic/blob/master/config/storage/templates/_helpers.tpl
 [8]: https://kubernetes.io/docs/concepts/storage/storage-classes/
 [9]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+[10]: https://hub.docker.com/r/kubermatic/api/tags/
+[11]: https://hub.docker.com/r/kubermatic/ui-v2/tags/
+[12]: https://hub.docker.com/r/kubermatic/bare-metal-provider/tags/
+[13]: https://hub.docker.com/r/kubermatic/k8sniff-internal/tags/
+[13]: https://hub.docker.com/r/kubermatic/nodeport-exposer/tags/
