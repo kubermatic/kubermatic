@@ -2,6 +2,12 @@
 
 The `datacenters.yaml` file describes the datacenters that Kubermatic can deploy clusters to. This includes the cloud provider details, regions or zones that are supported, if it is a seed cluster, authorization credentials, API addresses, etc...
 
+### What is a Seed Cluster?
+
+Seed clusters are just another datacenter, but are different in one particular way: They are the datacenter in which other clusters _control plane_ components are deployed. They must be an already deployed Kubernetes cluster, and must have a Kubeconfig entry with a matching name. Though the Kubermatic components only get deployed into a single seed cluster, the other seed clusters are controlled via those same Kubermatic components.
+
+Seed datacenters are identified by setting `is_seed` to `true` in the Datacenter block
+
 ### Datacenter Block
 
   The datacenter block is defined by the name of the datacenter.
