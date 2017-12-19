@@ -1,5 +1,14 @@
 # Setting up a master-seed cluster
 
+**Note:** This documentation is a work-in-progress, and still has many points that need to be added.
+
+Some topics that still need to be covered:
+- [ ] Bare Metal Configurations and Provider
+- [ ] Detailed Installation Guide
+- [ ] Auth using Dex
+- [ ] Nginx Customization
+- [ ] Prometheus, Grafana and AlertManager
+
 ## Creating the Seed Cluster Configuration
 Installation of Kubermatic uses the [Kubermatic Installer][4], which is essentially a container with [Helm][5] and the required charts to install Kubermatic and it's associated resources.
 
