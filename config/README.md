@@ -24,11 +24,15 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
   When defining multiple seed clusters you must have a valid context for each seed cluster in the `Kubeconfig` with the context names must match to the correct keys in `KubermaticDatacenters`
 
+  **The value should be quoted.**
+
   > The `Kubeconfig` value must be base64 encoded, without any linebreaks
 
 - #### `KubermaticDatacenters` _(required)_
 
   This is the Datacenter definition for Kubermatic. You can find detailed documentation on the Datacenter definition file [here][3].
+
+  **The value should be quoted.**
 
   > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
 
