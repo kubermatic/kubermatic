@@ -131,6 +131,8 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
   The NodePort Exposer component replaces K8Sniff in newer deployments. Additionally it uses the block-style syntax for it's keys and values.
 
+  The NodePort Exposer only needs to be used in deployments that do not already expose the [NodePort range][15], typically in cloud deployment scenarios. If the NodePort range is already exposed you do not need to deploy the NodePort exposer
+
   Example:
   ```
   NodePortExposer:
@@ -259,3 +261,4 @@ kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalanc
 [13]: https://hub.docker.com/r/kubermatic/k8sniff-internal/tags/
 [13]: https://hub.docker.com/r/kubermatic/nodeport-exposer/tags/
 [14]: https://letsencrypt.org/
+[15]: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
