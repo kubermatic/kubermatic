@@ -2,11 +2,13 @@ package resources
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/ghodss/yaml"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -82,12 +84,18 @@ func TestLoadPVCFile(t *testing.T) {
 }
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
-	exp, err := ioutil.ReadFile(filepath.Join("./fixtures", resFile+".json"))
+	path := filepath.Join("./fixtures", resFile+".yaml")
+
+	jsonRes, err := json.Marshal(testObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := yaml.JSONToYAML(jsonRes)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := json.Marshal(testObj)
+	exp, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,113 +109,142 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
-	v := &api.MasterVersion{
-		Name:                       "1.5.3",
-		ID:                         "1.5.3",
-		Default:                    true,
-		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
-		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-		Values: map[string]string{
-			"k8s-version":           "v1.5.3",
-			"etcd-operator-version": "v0.2.4fix",
-			"etcd-cluster-version":  "3.1.5",
-			"pod-network-bridge":    "v0.1",
-		},
-	}
-
-	c := &kubermaticv1.Cluster{
-		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
-				BareMetal: &kubermaticv1.BareMetalCloudSpec{
-					Name: "test",
-				},
+	versions := []*api.MasterVersion{
+		{
+			Name:                         "1.7.0",
+			ID:                           "1.7.0",
+			Default:                      true,
+			AllowedNodeVersions:          []string{"1.3.0"},
+			EtcdOperatorDeploymentYaml:   "etcd-operator-dep.yaml",
+			ApiserverDeploymentYaml:      "apiserver-dep.yaml",
+			ControllerDeploymentYaml:     "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:      "scheduler-dep.yaml",
+			AddonManagerDeploymentYaml:   "addon-manager-dep.yaml",
+			NodeControllerDeploymentYaml: "node-controller-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":           "v1.7.11",
+				"etcd-operator-version": "v0.6.0",
+				"etcd-cluster-version":  "3.2.7",
+				"kube-machine-version":  "v0.2.3",
+				"addon-manager-version": "v1.7.6",
+				"pod-network-bridge":    "v0.1",
 			},
-			SeedDatacenterName: "us-central1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "de-test-01",
-		},
-		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
-			ExternalPort: 8443,
-		},
-	}
-
-	deps := map[string]string{
-		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-operator-result",
-		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
-		v.ControllerDeploymentYaml:   "loaddeploymentfile-controller-manager-result",
-		v.ApiserverDeploymentYaml:    "loaddeploymentfile-apiserver-result",
-	}
-
-	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, masterResourcePath, s)
-		if err != nil {
-			t.Fatalf("failed to load %q: %v", s, err)
-		}
-
-		checkTestResult(t, r, res)
-	}
-}
-
-func TestLoadDeploymentFileAWS(t *testing.T) {
-	v := &api.MasterVersion{
-		Name:                       "1.5.3",
-		ID:                         "1.5.3",
-		Default:                    true,
-		AllowedNodeVersions:        []string{"1.3.0"},
-		EtcdOperatorDeploymentYaml: "etcd-operator-dep.yaml",
-		ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-		ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-		SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-		Values: map[string]string{
-			"k8s-version":           "v1.5.3",
-			"etcd-operator-version": "v0.2.4fix",
-			"etcd-cluster-version":  "3.1.5",
-			"pod-network-bridge":    "v0.1",
-		},
-	}
-
-	c := &kubermaticv1.Cluster{
-		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
-				AWS: &kubermaticv1.AWSCloudSpec{
-					AccessKeyID:      "my_AccessKeyID",
-					SecretAccessKey:  "my_SecretAccessKey",
-					VPCID:            "my_VPCId",
-					AvailabilityZone: "my_AvailabilityZone",
-				},
+		{
+			Name:                         "1.8.0",
+			ID:                           "1.8.0",
+			Default:                      true,
+			AllowedNodeVersions:          []string{"1.3.0"},
+			EtcdOperatorDeploymentYaml:   "etcd-operator-dep.yaml",
+			ApiserverDeploymentYaml:      "apiserver-dep.yaml",
+			ControllerDeploymentYaml:     "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:      "scheduler-dep.yaml",
+			AddonManagerDeploymentYaml:   "addon-manager-dep.yaml",
+			NodeControllerDeploymentYaml: "node-controller-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":           "v1.8.5",
+				"etcd-operator-version": "v0.6.0",
+				"etcd-cluster-version":  "3.2.7",
+				"kube-machine-version":  "v0.2.3",
+				"addon-manager-version": "v1.8.2",
+				"pod-network-bridge":    "v0.2",
 			},
-			SeedDatacenterName: "us-central1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "de-test-01",
-		},
-		Address: &kubermaticv1.ClusterAddress{
-			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
-			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
-			ExternalPort: 8443,
+		{
+			Name:                         "1.9.0",
+			ID:                           "1.9.0",
+			Default:                      true,
+			AllowedNodeVersions:          []string{"1.3.0"},
+			EtcdOperatorDeploymentYaml:   "etcd-operator-dep.yaml",
+			ApiserverDeploymentYaml:      "apiserver-dep.yaml",
+			ControllerDeploymentYaml:     "controller-manager-dep.yaml",
+			SchedulerDeploymentYaml:      "scheduler-dep.yaml",
+			AddonManagerDeploymentYaml:   "addon-manager-dep.yaml",
+			NodeControllerDeploymentYaml: "node-controller-dep.yaml",
+			Values: map[string]string{
+				"k8s-version":           "v1.9.0",
+				"etcd-operator-version": "v0.6.0",
+				"etcd-cluster-version":  "3.2.7",
+				"kube-machine-version":  "v0.2.3",
+				"addon-manager-version": "v1.9.0",
+				"pod-network-bridge":    "v0.2",
+			},
 		},
 	}
 
-	deps := map[string]string{
-		v.EtcdOperatorDeploymentYaml: "loaddeploymentfile-etcd-operator-result",
-		v.SchedulerDeploymentYaml:    "loaddeploymentfile-scheduler-result",
-		v.ControllerDeploymentYaml:   "loaddeploymentfile-aws-controller-manager-result",
-		v.ApiserverDeploymentYaml:    "loaddeploymentfile-aws-apiserver-result",
+	clouds := map[string]*kubermaticv1.CloudSpec{
+		"digitalocean": {
+			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Token: "do-token",
+			},
+		},
+		"aws": {
+			AWS: &kubermaticv1.AWSCloudSpec{
+				AccessKeyID:         "aws-access-key-id",
+				SecretAccessKey:     "aws-secret-access-key",
+				AvailabilityZone:    "aws-availability-zone",
+				InstanceProfileName: "aws-instance-profile-name",
+				RoleName:            "aws-role-name",
+				RouteTableID:        "aws-route-table-id",
+				SecurityGroup:       "aws-security-group",
+				SubnetID:            "aws-subnet-id",
+				VPCID:               "aws-vpn-id",
+			},
+		},
+		"openstack": {
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				NetworkCreated:       true,
+				SecurityGroupCreated: true,
+				SubnetID:             "openstack-subnet-id",
+				Username:             "openstack-username",
+				Tenant:               "openstack-tenant",
+				Domain:               "openstack-domain",
+				FloatingIPPool:       "openstack-floating-ip-pool",
+				Network:              "openstack-network",
+				Password:             "openstack-password",
+				RouterID:             "openstack-router-id",
+				SecurityGroups:       "openstack-security-group1,openstack-security-group2",
+			},
+		},
+		"bringyourown": {
+			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{PrivateIntf: "bringyourown-private-interface"},
+		},
 	}
 
-	for s, r := range deps {
-		res, err := LoadDeploymentFile(c, v, masterResourcePath, s)
-		if err != nil {
-			t.Fatalf("failed to load %q: %v", s, err)
+	for _, version := range versions {
+		for provider, cloudspec := range clouds {
+			deps := map[string]string{
+				version.EtcdOperatorDeploymentYaml:   fmt.Sprintf("deployment-%s-%s-etcd-operator", provider, version.ID),
+				version.SchedulerDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-scheduler", provider, version.ID),
+				version.ControllerDeploymentYaml:     fmt.Sprintf("deployment-%s-%s-controller-manager", provider, version.ID),
+				version.ApiserverDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-apiserver", provider, version.ID),
+				version.NodeControllerDeploymentYaml: fmt.Sprintf("deployment-%s-%s-node-controller", provider, version.ID),
+				version.AddonManagerDeploymentYaml:   fmt.Sprintf("deployment-%s-%s-addon-manager", provider, version.ID),
+			}
+
+			cluster := &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud:              cloudspec,
+					SeedDatacenterName: "us-central1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "de-test-01",
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000",
+					ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
+					ExternalPort: 30000,
+				},
+			}
+			for s, r := range deps {
+				res, err := LoadDeploymentFile(cluster, version, masterResourcePath, s)
+				if err != nil {
+					t.Fatalf("failed to load %q: %v", s, err)
+				}
+
+				checkTestResult(t, r, res)
+			}
 		}
-
-		checkTestResult(t, r, res)
 	}
 }
 
