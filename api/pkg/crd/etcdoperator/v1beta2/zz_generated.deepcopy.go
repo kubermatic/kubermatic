@@ -5,10 +5,11 @@
 package v1beta2
 
 import (
+	reflect "reflect"
+
 	v1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	reflect "reflect"
 )
 
 func init() {

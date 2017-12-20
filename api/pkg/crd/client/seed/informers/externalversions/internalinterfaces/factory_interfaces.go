@@ -3,10 +3,11 @@
 package internalinterfaces
 
 import (
+	time "time"
+
 	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"
-	time "time"
 )
 
 type NewInformerFunc func(versioned.Interface, time.Duration) cache.SharedIndexInformer
