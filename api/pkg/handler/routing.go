@@ -143,7 +143,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/ssh-keys").
 		Handler(r.listSSHKeys())
 
-	// User and organisation endpoints
+	// User and organization endpoints
 	mux.
 		Methods(http.MethodGet).
 		Path("/api/v1/user").
