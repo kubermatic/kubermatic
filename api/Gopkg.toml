@@ -88,3 +88,7 @@ required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/
 [[constraint]]
   name = "github.com/oklog/run"
   version = "v1.0.0"
+
+[[constraint]]
+  name = "github.com/pmezard/go-difflib"
+  version = "1.0.0"

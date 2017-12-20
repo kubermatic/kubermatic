@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/pmezard/go-difflib/difflib"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -85,7 +86,6 @@ func TestLoadPVCFile(t *testing.T) {
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	path := filepath.Join("./fixtures", resFile+".yaml")
-
 	jsonRes, err := json.Marshal(testObj)
 	if err != nil {
 		t.Fatal(err)
@@ -103,8 +103,20 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	resStr := strings.TrimSpace(string(res))
 	expStr := strings.TrimSpace(string(exp))
 
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(expStr),
+		B:        difflib.SplitLines(resStr),
+		FromFile: "Fixture",
+		ToFile:   "Current",
+		Context:  3,
+	}
+	diffStr, err := difflib.GetUnifiedDiffString(diff)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if resStr != expStr {
-		t.Fatalf("\nExpected to get \n%v (%q)\n Got \n%v \nfrom %T", expStr, resFile, resStr, testObj)
+		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates.", path, diffStr)
 	}
 }
 
