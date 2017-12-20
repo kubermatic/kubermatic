@@ -17,7 +17,7 @@ FROM debian:jessie
 RUN apt-get update
 RUN apt-get install -y jq
 
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.7.9/bin/linux/amd64/kubectl /usr/local/bin/
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.8.5/bin/linux/amd64/kubectl /usr/local/bin/
 RUN chmod 755 /usr/local/bin/kubectl
 
 ADD kube-addons.sh /opt/
