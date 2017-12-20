@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: controller-manager
+      version: v1
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "10252"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        release: v1.8.5
+        role: controller-manager
+        version: v1
+    spec:
+      containers:
+      - command:
+        - /hyperkube
+        - controller-manager
+        - --master=http://apiserver:8080
+        - --service-account-private-key-file=/var/run/kubernetes/auth/service-account.key
+        - --root-ca-file=/var/run/kubernetes/auth/root-ca.crt
+        - --cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt
+        - --cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key
+        - --cluster-cidr=172.25.0.0/16
+        - --allocate-node-cidrs=true
+        - --controllers=*,tokencleaner,bootstrapsigner
+        - --v=4
+        image: kubermatic/hyperkube-amd64:v1.8.5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10252
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+        name: controller-manager
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10252
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/run/kubernetes/auth
+          name: controller-manager
+          readOnly: true
+      volumes:
+      - name: controller-manager
+        secret:
+          secretName: controller-manager
+status: {}
