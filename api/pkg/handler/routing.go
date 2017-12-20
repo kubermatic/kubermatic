@@ -143,6 +143,12 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/ssh-keys").
 		Handler(r.listSSHKeys())
 
+	// User and organisation endpoints
+	mux.
+		Methods(http.MethodGet).
+		Path("/api/v1/user").
+		Handler(r.getUser())
+
 	mux.
 		Methods(http.MethodPost).
 		Path("/api/v1/ssh-keys").
@@ -502,5 +508,27 @@ func (r Routing) performClusterUpgrage() http.Handler {
 		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
+	)
+}
+
+// getUser starts a cluster upgrade to a specific version
+// swagger:route GET /api/v1/user user get getUser
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: User
+func (r Routing) getUser() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getUserHandler())),
+		decodeEmptyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
 	)
 }

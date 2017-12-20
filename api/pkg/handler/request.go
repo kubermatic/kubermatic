@@ -243,3 +243,8 @@ func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	return req, nil
 }
+
+func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req struct{}
+	return req, nil
+}
