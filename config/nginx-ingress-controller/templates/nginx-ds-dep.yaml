@@ -42,12 +42,10 @@ spec:
           ports:
           - name: metrics
             containerPort: 10254
-          {{ if not .Values.nginx.hostNetwork }}
           - name: http
             containerPort: 80
           - name: https
             containerPort: 443
-          {{ end }}
           livenessProbe:
             failureThreshold: 3
             httpGet:
