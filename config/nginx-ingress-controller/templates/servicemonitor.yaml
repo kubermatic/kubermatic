@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx
+  namespace: monitoring
+  labels:
+    team: kubermatic
+spec:
+  selector:
+    matchLabels:
+      app: ingress-nginx
+  namespaceSelector:
+    matchNames:
+    - ingress-nginx
+  endpoints:
+  - port: metrics
+    interval: 15s
