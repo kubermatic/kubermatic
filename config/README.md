@@ -29,13 +29,14 @@ For reference you can see the dev clusters [values.yaml][1] file.
 
 - #### `Kubeconfig` _(required)_
 
-  This is a standard [Kubeconfig][2]. The correct context for the cluster does not need to be set, but the context name must match the key for the seed cluster definition in the `KubermaticDatacenters`
+  This is a standard [Kubeconfig][2]. A context does not need to be set, but a context name must match the key for each seed cluster definition in the [datacenters.yaml][3] in the `KubermaticDatacenters` parameter
 
   When defining multiple seed clusters you must have a valid context for each seed cluster in the `Kubeconfig` with the context names must match to the correct keys in `KubermaticDatacenters`
 
   **The value should be quoted.**
 
-  > The `Kubeconfig` value must be base64 encoded, without any linebreaks
+  > The `Kubeconfig` value must be base64 encoded, without any linebreaks.
+    You can encode it using the command `base64 <path to Kubermatic kubeconfig>`
 
 - #### `KubermaticDatacenters` _(required)_
 
@@ -44,6 +45,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
   **The value should be quoted.**
 
   > The `KubermaticDatacenters` value must be base64 encoded, without any linebreaks
+  You can encode it using the command `base64 <path to datacenters.yaml>`
 
 - #### `Certificates` Block _(required)_
   Certificates defines the domains to pull certificates for via ACME, typically from [Let's Encrypt][14]. You will need to add the domain from `KubermaticURL`, as well as any additional domains you need certificates for.
