@@ -1,0 +1,115 @@
+apiVersion: {{ if .Values.common.stateful.enabled }}apps/v1beta1{{ else }}extensions/v1beta1{{ end }}
+kind: {{ if .Values.common.stateful.enabled }}StatefulSet{{ else }}Deployment{{ end }}
+metadata:
+  name: {{ template "fullname" . }}-master
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}
+    role: master
+spec:
+  {{- if .Values.common.stateful.enabled }}
+  serviceName: {{ template "fullname" . }}-master
+  {{- end }}
+  replicas: {{ .Values.master.replicas }}
+  template:
+    metadata:
+      labels:
+        component: {{ template "fullname" . }}
+        role: master
+    spec:
+      {{- if eq .Values.master.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: master
+      {{- else if eq .Values.master.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: master
+      {{- end }}
+      initContainers:
+      - name: init-sysctl
+        image: "{{ .Values.image.init.repository }}:{{ .Values.image.init.tag }}"
+        imagePullPolicy: {{ .Values.image.init.pullPolicy }}
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: es-master
+        securityContext:
+          privileged: {{ .Values.common.stateful.enabled }}
+          capabilities:
+            add:
+              {{- if .Values.common.stateful.enabled }}
+              - IPC_LOCK
+              {{- else }}
+              - IPC_LOCK
+              - SYS_RESOURCE
+              {{- end }}
+        image: "{{ .Values.image.es.repository }}:{{ .Values.image.es.tag }}"
+        imagePullPolicy: {{ .Values.image.es.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-discovery
+        - name: ES_JAVA_OPTS
+          value: "-Xms{{ .Values.master.heapMemory }} -Xmx{{ .Values.master.heapMemory }}"
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.master.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+{{ toYaml .Values.master.resources | indent 10 }}
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: 9300
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      {{- if not .Values.common.stateful.enabled }}
+      volumes:
+        - emptyDir:
+            medium: ""
+          name: "storage"
+      {{- end }}
+  {{- if .Values.common.stateful.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: {{ .Values.common.stateful.class }}
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.master.stateful.size }}
+  {{- end }}
