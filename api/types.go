@@ -97,6 +97,30 @@ type NodeSpec struct {
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
 }
 
+func (n *NodeSpec) AWSSpec() interface{} {
+	return n.AWS
+}
+
+func (n *NodeSpec) FakeSpec() interface{} {
+	return n.Fake
+}
+
+func (n *NodeSpec) DigitaloceanCloudSpec() interface{} {
+	return n.Digitalocean
+}
+
+func (n *NodeSpec) BringYourOwnSpec() interface{} {
+	return n.BringYourOwn
+}
+
+func (n *NodeSpec) BareMetalSpec() interface{} {
+	return n.BareMetal
+}
+
+func (n *NodeSpec) OpenStackSpec() interface{} {
+	return n.Openstack
+}
+
 // NodeCondition stores information about the node condition
 type NodeCondition struct {
 	Healthy     bool   `json:"healthy"`

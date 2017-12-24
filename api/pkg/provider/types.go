@@ -96,44 +96,10 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 }
 
-// ClusterCloudProviderName returns the provider name for the given CloudSpec.
-func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-
-	clouds := []string{}
-	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
-	}
-	return clouds[0], nil
-}
-
 // ClusterCloudProvider returns the provider for the given cluster where
 // one of Cluster.Spec.Cloud.* is set.
 func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster) (string, CloudProvider, error) {
-	name, err := ClusterCloudProviderName(c.Spec.Cloud)
+	name, err := ProviderName(c.Spec.Cloud)
 	if err != nil {
 		return "", nil, err
 	}
@@ -149,66 +115,60 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 	return name, cp, nil
 }
 
-// NodeCloudProviderName returns the provider name for the given node where
-// one of NodeSpec.Cloud.* is set.
-func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
-	}
-	return clouds[0], nil
+type Specer interface {
+	FakeSpec() interface{}
+	DigitaloceanSpec() interface{}
+	BringYourOwnSpec() interface{}
+	AWSSpec() interface{}
+	BareMetalSpec() interface{}
+	OpenStackSpec() interface{}
 }
 
-// DatacenterCloudProviderName returns the provider name for the given Datacenter.
-func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
+func validateSpec(spec Specer) bool {
 	if spec == nil {
-		return "", nil
+		return false
 	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
+	specs := 0
+	if spec.BringYourOwnSpec() != nil {
+		specs++
 	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
+	if spec.DigitaloceanSpec() != nil {
+		specs++
 	}
-	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
+	if spec.AWSSpec() != nil {
+		specs++
 	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
+	if spec.FakeSpec() != nil {
+		specs++
 	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
+	if spec.BareMetalSpec() != nil {
+		specs++
 	}
-	if len(clouds) == 0 {
-		return "", nil
+	if spec.OpenStackSpec() != nil {
+		specs++
 	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
+
+	return specs == 1
+}
+
+// NodeCloudProviderName returns the provider name for the given node where
+// one of NodeSpec.Cloud.* is set.
+func ProviderName(spec Specer) (string, error) {
+
+	switch {
+	case spec.AWSSpec() != nil:
+		return AWSCloudProvider, nil
+	case spec.BringYourOwnSpec() != nil:
+		return BringYourOwnCloudProvider, nil
+	case spec.FakeSpec() != nil:
+		return FakeCloudProvider, nil
+	case spec.DigitaloceanSpec() != nil:
+		return DigitaloceanCloudProvider, nil
+	case spec.BareMetalSpec() != nil:
+		return BareMetalCloudProvider, nil
+	case spec.OpenStackSpec() != nil:
+		return OpenstackCloudProvider, nil
+	default:
+		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
 	}
-	return clouds[0], nil
 }

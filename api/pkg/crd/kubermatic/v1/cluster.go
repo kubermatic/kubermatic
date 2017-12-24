@@ -224,6 +224,30 @@ type CloudSpec struct {
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
 }
 
+func (c *CloudSpec) AWSSpec() interface{} {
+	return c.AWS
+}
+
+func (c *CloudSpec) FakeSpec() interface{} {
+	return c.Fake
+}
+
+func (c *CloudSpec) DigitaloceanSpec() interface{} {
+	return c.Digitalocean
+}
+
+func (c *CloudSpec) BringYourOwnSpec() interface{} {
+	return c.BringYourOwn
+}
+
+func (c *CloudSpec) BareMetalSpec() interface{} {
+	return c.BareMetal
+}
+
+func (c *CloudSpec) OpenStackSpec() interface{} {
+	return c.Openstack
+}
+
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`
