@@ -48,35 +48,28 @@ type DatacenterSpec struct {
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
 }
 
-func (d *DatacenterSpec) AWSSpec() interface{} {
-	return d.AWS
-}
+// AWSSpec returns the AWS specification
+func (d *DatacenterSpec) AWSSpec() interface{} { return d.AWS }
 
-func (d *DatacenterSpec) FakeSpec() interface{} {
-	return nil
-}
+// FakeSpec returns the fake	 specification
+func (d *DatacenterSpec) FakeSpec() interface{} { return nil }
 
-func (d *DatacenterSpec) DigitaloceanSpec() interface{} {
-	return d.Digitalocean
-}
+// DigitaloceanSpec returns the DigitalOcean specification
+func (d *DatacenterSpec) DigitaloceanSpec() interface{} { return d.Digitalocean }
 
-func (d *DatacenterSpec) BringYourOwnSpec() interface{} {
-	return d.BringYourOwn
-}
+// BringYourOwnSpec returns the specification of your own hardware
+func (d *DatacenterSpec) BringYourOwnSpec() interface{} { return d.BringYourOwn }
 
-func (d *DatacenterSpec) BareMetalSpec() interface{} {
-	return d.BareMetal
-}
+// BareMetalSpec returns the BareMetal specification
+func (d *DatacenterSpec) BareMetalSpec() interface{} { return d.BareMetal }
 
-func (d *DatacenterSpec) OpenStackSpec() interface{} {
-	return d.Openstack
-}
+// OpenStackSpec returns the OpenStack specification
+func (d *DatacenterSpec) OpenStackSpec() interface{} { return d.Openstack }
 
 const datacenterSpec = "DatacenterSpec"
 
-func (d *DatacenterSpec) Type() string {
-	return datacenterSpec
-}
+// Type return the type of the specification
+func (d *DatacenterSpec) Type() string { return datacenterSpec }
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
