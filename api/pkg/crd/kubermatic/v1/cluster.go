@@ -224,6 +224,12 @@ type CloudSpec struct {
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
 }
 
+const cloudSpec = "CloudSpec"
+
+func (c *CloudSpec) Type() string {
+	return cloudSpec
+}
+
 func (c *CloudSpec) AWSSpec() interface{} {
 	return c.AWS
 }

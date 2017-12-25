@@ -72,6 +72,12 @@ func (d *DatacenterSpec) OpenStackSpec() interface{} {
 	return d.Openstack
 }
 
+const datacenterSpec = "DatacenterSpec"
+
+func (d *DatacenterSpec) Type() string {
+	return datacenterSpec
+}
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location string         `yaml:"location"`

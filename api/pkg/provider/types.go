@@ -122,6 +122,7 @@ type Specer interface {
 	AWSSpec() interface{}
 	BareMetalSpec() interface{}
 	OpenStackSpec() interface{}
+	Type() string
 }
 
 func validateSpec(spec Specer) bool {
@@ -169,6 +170,6 @@ func ProviderName(spec Specer) (string, error) {
 	case spec.OpenStackSpec() != nil:
 		return OpenstackCloudProvider, nil
 	default:
-		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
+		return "", fmt.Errorf("only one cloud provider can be set in %s: %+v", spec.Type(), spec)
 	}
 }
