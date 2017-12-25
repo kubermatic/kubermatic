@@ -17,6 +17,9 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 		},
+		Spec: kubermaticv1.ClusterSpec{
+			SeedDatacenterName: TestDC,
+		},
 		Address: &kubermaticv1.ClusterAddress{},
 	}
 
@@ -45,6 +48,9 @@ func TestPendingCreateAddressesPartially(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			SeedDatacenterName: TestDC,
 		},
 		Address: &kubermaticv1.ClusterAddress{
 			ExternalName: "foo.bar",
@@ -75,6 +81,9 @@ func TestPendingCreateAddressesAlreadyExists(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			SeedDatacenterName: TestDC,
 		},
 		Address: &kubermaticv1.ClusterAddress{
 			ExternalName: "foo.bar",
@@ -111,6 +120,9 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "henrik1",
 				},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: TestDC,
+				},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
@@ -124,6 +136,9 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "henrik1",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: TestDC,
 				},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
@@ -158,7 +173,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 	}
 }
 
-func TestPendingRegisterFinalizers(t *testing.T) {
+func TestPendingRegisterDefaultFinalizers(t *testing.T) {
 	tests := []struct {
 		name       string
 		cluster    *kubermaticv1.Cluster
@@ -170,6 +185,9 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "henrik1",
 					Finalizers: []string{},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: TestDC,
 				},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
@@ -186,6 +204,9 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 					Finalizers: []string{
 						cloudProviderCleanupFinalizer,
 					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: TestDC,
 				},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
@@ -205,6 +226,9 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 						namespaceDeletionFinalizer,
 					},
 				},
+				Spec: kubermaticv1.ClusterSpec{
+					SeedDatacenterName: TestDC,
+				},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
@@ -216,7 +240,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
-			gotCluster, err := f.controller.pendingRegisterFinalizers(test.cluster)
+			gotCluster, err := f.controller.pendingRegisterDefaultFinalizers(test.cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -227,7 +251,7 @@ func TestPendingRegisterFinalizers(t *testing.T) {
 				return
 			}
 
-			for _, wantFinalizer := range []string{cloudProviderCleanupFinalizer, nodeDeletionFinalizer, namespaceDeletionFinalizer} {
+			for _, wantFinalizer := range []string{namespaceDeletionFinalizer} {
 				found := false
 				for _, gotFinalizer := range gotCluster.Finalizers {
 					if gotFinalizer == wantFinalizer {

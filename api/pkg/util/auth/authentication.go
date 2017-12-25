@@ -15,8 +15,8 @@ import (
 type contextKey int
 
 const (
-	// UserContextKey is the context key to retrieve the user object
-	UserContextKey contextKey = 0
+	// TokenUserContextKey is the context key to retrieve the user object
+	TokenUserContextKey contextKey = 0
 	// UserRoleKey is the role key for the default role "user"
 	UserRoleKey = "user"
 	// AdminRoleKey is the role key for the admin role
@@ -114,7 +114,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 			}
 
 			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.ID, strings.Join(roles, ","))
-			return next(context.WithValue(ctx, UserContextKey, user), request)
+			return next(context.WithValue(ctx, TokenUserContextKey, user), request)
 		}
 	}
 }
@@ -201,7 +201,7 @@ func (o testAuthenticator) Verifier() endpoint.Middleware {
 			if !ok {
 				return nil, errors.NewNotAuthorized()
 			}
-			return next(context.WithValue(ctx, UserContextKey, token), request)
+			return next(context.WithValue(ctx, TokenUserContextKey, token), request)
 		}
 	}
 }

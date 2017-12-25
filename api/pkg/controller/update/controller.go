@@ -10,7 +10,7 @@ import (
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	kubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -23,36 +23,34 @@ type Interface interface {
 	Sync(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 }
 
+//SeedClientProvider offers functions to get resources of a seed-cluster
+type SeedClientProvider interface {
+	GetClient(dc string) (clientkubernetes.Interface, error)
+	GetCRDClient(dc string) (seedcrdclient.Interface, error)
+	GetInformerGroup(dc string) (*seedinformer.Group, error)
+}
+
 // New returns a update controller
 func New(
-	kubeClient clientkubernetes.Interface,
-	crdClient seedcrdclient.Interface,
-	masterResourcesPath,
-	dc string,
+	clientProvider SeedClientProvider,
+	masterResourcesPath string,
 	versions map[string]*api.MasterVersion,
 	updates []api.MasterUpdate,
-	seedInformerGroup *seedinformer.Group,
 ) Interface {
 	return &controller{
-		client:              kubeClient,
-		crdClient:           crdClient,
+		clientProvider:      clientProvider,
 		masterResourcesPath: masterResourcesPath,
-		dc:                  dc,
 		versions:            versions,
 		updates:             updates,
-		seedInformerGroup:   seedInformerGroup,
 	}
 }
 
 // Controller represents an update controller
 type controller struct {
-	client              clientkubernetes.Interface
-	crdClient           seedcrdclient.Interface
+	clientProvider      SeedClientProvider
 	masterResourcesPath string
-	dc                  string
 	versions            map[string]*api.MasterVersion
 	updates             []api.MasterUpdate
-	seedInformerGroup   *seedinformer.Group
 }
 
 // Sync determines the current update state, and advances to the next phase as required
@@ -104,17 +102,22 @@ func (u *controller) Sync(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error
 }
 
 func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
+	client, err := u.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	for _, yamlFile := range yamlFiles {
-		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.masterResourcesPath, u.dc, yamlFile)
+		dep, err := resources.LoadDeploymentFile(c, masterVersion, u.masterResourcesPath, yamlFile)
 		if err != nil {
 			return nil, err
 		}
 
-		ns := kubernetes.NamespaceName(c.Name)
-		_, err = u.client.ExtensionsV1beta1().Deployments(ns).Update(dep)
+		ns := kubernetesProvider.NamespaceName(c.Name)
+		_, err = client.ExtensionsV1beta1().Deployments(ns).Update(dep)
 		if errors.IsNotFound(err) {
 			glog.Errorf("expected an %s deployment, but didn't find any for cluster %v. Creating a new one.", dep.Name, c.Name)
-			_, err = u.client.ExtensionsV1beta1().Deployments(ns).Create(dep)
+			_, err = client.ExtensionsV1beta1().Deployments(ns).Create(dep)
 			if err != nil {
 				return nil, fmt.Errorf("failed to re-create deployment for %s: %v", dep.Name, err)
 			}
@@ -128,6 +131,11 @@ func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []strin
 }
 
 func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
+	client, err := u.clientProvider.GetCRDClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
 	for _, yamlFile := range yamlFiles {
 		newEtcd, err := resources.LoadEtcdClusterFile(masterVersion, u.masterResourcesPath, yamlFile)
 		if err != nil {
@@ -135,7 +143,7 @@ func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []stri
 		}
 		ns := fmt.Sprintf("cluster-%s", c.Name)
 		var oldEtcd *etcdoperatorv1beta2.EtcdCluster
-		oldEtcd, err = u.crdClient.EtcdV1beta2().EtcdClusters(ns).Get("etcd-cluster", metav1.GetOptions{})
+		oldEtcd, err = client.EtcdV1beta2().EtcdClusters(ns).Get("etcd-cluster", metav1.GetOptions{})
 		if err != nil {
 			err = fmt.Errorf("failed to get current etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
@@ -143,7 +151,7 @@ func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []stri
 		}
 
 		oldEtcd.Spec.Version = newEtcd.Spec.Version
-		_, err = u.crdClient.EtcdV1beta2().EtcdClusters(ns).Update(oldEtcd)
+		_, err = client.EtcdV1beta2().EtcdClusters(ns).Update(oldEtcd)
 		if err != nil {
 			err = fmt.Errorf("failed to update etcd cluster for %s: %v", newEtcd.ObjectMeta.Name, err)
 			glog.Error(err)
@@ -155,10 +163,14 @@ func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []stri
 }
 
 func (u *controller) waitForEtcdCluster(c *kubermaticv1.Cluster, names []string, fallbackPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, bool, error) {
-	ns := kubernetes.NamespaceName(c.Name)
+	informerGroup, err := u.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
 
+	ns := kubernetesProvider.NamespaceName(c.Name)
 	for _, name := range names {
-		etcd, err := u.seedInformerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(name)
+		etcd, err := informerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(name)
 		if err != nil {
 			return nil, false, err
 		}
@@ -171,10 +183,14 @@ func (u *controller) waitForEtcdCluster(c *kubermaticv1.Cluster, names []string,
 }
 
 func (u *controller) waitForDeployments(c *kubermaticv1.Cluster, names []string, fallbackPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, bool, error) {
-	ns := kubernetes.NamespaceName(c.Name)
+	informerGroup, err := u.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
 
+	ns := kubernetesProvider.NamespaceName(c.Name)
 	for _, name := range names {
-		dep, err := u.seedInformerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
+		dep, err := informerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
 		if err != nil {
 			return nil, false, err
 		}

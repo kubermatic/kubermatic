@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,28 +11,36 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
-	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
-	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	initscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/scheme"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
-	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
+	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/record"
 )
 
 var (
 	prometheusAddr        = flag.String("prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
 	prometheusPath        = flag.String("prometheus-path", "/metrics", "The path on the host, on which the handler is available")
 	kubeConfig            = flag.String("kubeconfig", ".kubeconfig", "The kubeconfig file path with one context per Kubernetes provider")
+	masterKubeconfig      = flag.String("master-kubeconfig", "", "When set it will overwrite the usage of the InClusterConfig")
 	masterResources       = flag.String("master-resources", "", "The master resources path (Required).")
 	externalURL           = flag.String("external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	dcFile                = flag.String("datacenters", "datacenters.yaml", "The datacenters.yaml file path")
@@ -42,6 +49,10 @@ var (
 	updatesFile           = flag.String("updates", "updates.yaml", "The updates.yaml file path")
 	apiserverExternalPort = flag.Int("apiserver-external-port", 8443, "Port on which the apiserver of a client cluster should be reachable")
 	workerCount           = flag.Int("worker-count", 4, "Number of workers which process the clusters in parallel.")
+)
+
+const (
+	controllerName = "kubermatic-cluster-controller"
 )
 
 func main() {
@@ -72,15 +83,23 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", *versionsFile, err))
 	}
 
-	// create controller for each context
-	clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
+	seedCmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
-	metrics := NewClusterControllerMetrics()
+	var masterConfig *restclient.Config
+	masterConfig, err = clientcmd.BuildConfigFromFlags("", *masterKubeconfig)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	var g run.Group
+
+	// Create a Kubernetes api client
+	masterKubeClient := kubernetes.NewForConfigOrDie(masterConfig)
+	// Create event recorder
+	recorder := getEventRecorder(masterKubeClient)
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -91,9 +110,11 @@ func main() {
 			<-sig
 			return nil
 		}, func(err error) {
+			glog.Errorf("Stopping os signal notifier: %v", err)
 			close(sig)
 		})
 	}
+
 	// This group is running an internal http server with metrics and other debug information
 	{
 		m := http.NewServeMux()
@@ -106,8 +127,13 @@ func main() {
 
 		g.Add(func() error {
 			glog.Infof("Starting the internal http server: %s\n", *prometheusAddr)
-			return s.ListenAndServe()
+			err := s.ListenAndServe()
+			if err != nil {
+				return fmt.Errorf("internal http server failed: %v", err)
+			}
+			return nil
 		}, func(err error) {
+			glog.Errorf("Stopping internal http server: %v", err)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
@@ -117,87 +143,101 @@ func main() {
 			}
 		})
 	}
+
 	// This group is running the actual controller logic
 	{
-		clusterMetrics := cluster.ControllerMetrics{
-			Clusters: metrics.Clusters,
-			Workers:  metrics.Workers,
-		}
-
-		for dc := range clientcmdConfig.Contexts {
-			// create kubeclient
-			clientcmdConfig, err := clientcmd.LoadFromFile(*kubeConfig)
-			if err != nil {
-				glog.Fatal(err)
-			}
-			clientConfig := clientcmd.NewNonInteractiveClientConfig(
-				*clientcmdConfig,
-				dc,
-				&clientcmd.ConfigOverrides{},
-				nil,
-			)
-
-			cfg, err := clientConfig.ClientConfig()
-			if err != nil {
-				glog.Fatal(err)
-			}
-			kubeclient := kubernetes.NewForConfigOrDie(cfg)
-			seedCrdClient := seedcrdclient.NewForConfigOrDie(cfg)
-			masterCrdClient := mastercrdclient.NewForConfigOrDie(cfg)
-
-			// Create crd's
-			extclient := apiextclient.NewForConfigOrDie(cfg)
-			err = crd.EnsureCustomResourceDefinitions(extclient)
-			if err != nil {
-				glog.Error(err)
+		leaderElectionStop := make(chan struct{})
+		controllerStop := make(chan struct{})
+		g.Add(func() error {
+			leaderElectionClient := kubernetes.NewForConfigOrDie(restclient.AddUserAgent(masterConfig, "kubermatic-cluster-controller-leader-election"))
+			callbacks := kubeleaderelection.LeaderCallbacks{
+				OnStartedLeading: func(stop <-chan struct{}) {
+					err := startController(controllerStop, dcs, masterConfig, seedCmdConfig, versions, updates)
+					if err != nil {
+						glog.Error(err)
+					}
+					close(leaderElectionStop)
+				},
+				OnStoppedLeading: func() {
+					glog.Error("==================== OnStoppedLeading ====================")
+					close(controllerStop)
+				},
 			}
 
-			seedInformerGroup := seedinformer.New(kubeclient, seedCrdClient)
-			masterInformerGroup := masterinformer.New(masterCrdClient)
-
-			// start controller
-			cps := cloud.Providers(dcs)
-			ctrl, err := cluster.NewController(
-				dc,
-				kubeclient,
-				seedCrdClient,
-				masterCrdClient,
-				cps,
-				versions,
-				updates,
-				*masterResources,
-				*externalURL,
-				*workerName,
-				*apiserverExternalPort,
-				dcs,
-				masterInformerGroup,
-				seedInformerGroup,
-				clusterMetrics,
-			)
+			leaderName := controllerName
+			if *workerName != "" {
+				leaderName = *workerName + "-" + leaderName
+			}
+			leader, err := leaderelection.New(leaderName, leaderElectionClient, recorder, callbacks)
 			if err != nil {
-				glog.Fatal(err)
+				return fmt.Errorf("failed to create a leaderelection: %v", err)
 			}
 
-			stop := make(chan struct{})
-
-			g.Add(func() error {
-				seedInformerGroup.Run(stop)
-				masterInformerGroup.Run(stop)
-				cache.WaitForCacheSync(stop, seedInformerGroup.HasSynced)
-
-				glog.Info("Starting controller")
-				ctrl.Run(*workerCount, stop)
-
-				return nil
-			}, func(err error) {
-				glog.Info("Stopping controllers")
-				close(stop)
-			})
-		}
+			go leader.Run()
+			<-leaderElectionStop
+			return nil
+		}, func(err error) {
+			glog.Errorf("Stopping controller: %v", err)
+			close(controllerStop)
+		})
 	}
 
-	// Running all groups concurrently in goroutines until the first exists
 	if err := g.Run(); err != nil {
-		log.Println(err)
+		glog.Fatal(err)
 	}
+}
+func getEventRecorder(masterKubeClient *kubernetes.Clientset) record.EventRecorder {
+	// Create event broadcaster
+	// Add kubermatic types to the default Kubernetes Scheme so Events can be
+	// logged properly
+	initscheme.AddToScheme(scheme.Scheme)
+	glog.V(4).Info("Creating event broadcaster")
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(glog.V(4).Infof)
+	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
+	return recorder
+}
+
+func startController(stop chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*api.MasterVersion, updates []api.MasterUpdate) error {
+	metrics := NewClusterControllerMetrics()
+	clusterMetrics := cluster.ControllerMetrics{
+		Clusters: metrics.Clusters,
+		Workers:  metrics.Workers,
+	}
+
+	masterCrdClient := mastercrdclient.NewForConfigOrDie(restclient.AddUserAgent(masterConfig, controllerName))
+	masterInformerGroup := masterinformer.New(masterCrdClient)
+
+	seedProvider, err := seed.NewFromConfig(seedConfig)
+	if err != nil {
+		return err
+	}
+
+	cps := cloud.Providers(dcs)
+	ctrl, err := cluster.NewController(
+		seedProvider,
+		masterCrdClient,
+		cps,
+		versions,
+		updates,
+		*masterResources,
+		*externalURL,
+		*workerName,
+		*apiserverExternalPort,
+		dcs,
+		masterInformerGroup,
+		clusterMetrics,
+	)
+	if err != nil {
+		return err
+	}
+
+	masterInformerGroup.Run(stop)
+	cache.WaitForCacheSync(stop, masterInformerGroup.HasSynced)
+
+	glog.Info("Starting controller")
+	ctrl.Run(*workerCount, stop)
+
+	return nil
 }

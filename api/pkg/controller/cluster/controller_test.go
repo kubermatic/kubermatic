@@ -5,11 +5,14 @@ import (
 
 	"github.com/kubermatic/kubermatic/api"
 	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
+	seedcrdclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	seedcrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/fake"
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
 	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
+	"k8s.io/client-go/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -45,14 +48,13 @@ func newTestController(
 
 	seedCrdClient := seedcrdfake.NewSimpleClientset(seedCrdObjects...)
 	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
-
 	seedInformerGroup := seedinformer.New(kubeClient, seedCrdClient)
+	seedInformerGroup.Run(wait.NeverStop)
+	seedProvider := NewFakeProvider(kubeClient, seedCrdClient, seedInformerGroup)
 	masterInformerGroup := masterinformer.New(masterCrdClient)
 
 	cc, err := NewController(
-		TestDC,
-		kubeClient,
-		seedCrdClient,
+		seedProvider,
 		masterCrdClient,
 		cps,
 		versions,
@@ -63,7 +65,6 @@ func newTestController(
 		TestExternalPort,
 		dcs,
 		masterInformerGroup,
-		seedInformerGroup,
 		ControllerMetrics{},
 	)
 	if err != nil {
@@ -200,4 +201,11 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			},
 		},
 	}
+}
+
+func NewFakeProvider(client kubernetes.Interface, crdClient seedcrdclientset.Interface, informerGroup *seedinformer.Group) *seed.Provider {
+	dcs := map[string]*seed.DatacenterInteractor{
+		TestDC: seed.NewDatacenterIteractor(client, crdClient, informerGroup),
+	}
+	return seed.NewProvider(dcs)
 }

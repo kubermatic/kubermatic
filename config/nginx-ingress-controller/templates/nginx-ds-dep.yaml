@@ -1,5 +1,5 @@
 apiVersion: extensions/v1beta1
-{{ if .Values.IsBareMetal }}
+{{ if .Values.nginx.asDaemonSet }}
 kind: DaemonSet
 {{ else }}
 kind: Deployment
@@ -8,24 +8,21 @@ metadata:
   name: nginx-ingress-controller
   namespace: ingress-nginx
 spec:
-{{ if not .Values.IsBareMetal }}
-  replicas: 1
+{{ if not .Values.nginx.asDaemonSet }}
+  replicas: {{ .Values.nginx.replicas }}
 {{ end }}
   template:
     metadata:
       labels:
         app: ingress-nginx
-      annotations:
-        prometheus.io/port: '10254'
-        prometheus.io/scrape: 'true'
     spec:
-    {{ if .Values.IsBareMetal }}
+    {{ if .Values.nginx.hostNetwork }}
       hostNetwork: true
     {{ end }}
       serviceAccountName: nginx-ingress-serviceaccount
       containers:
         - name: nginx-ingress-controller
-          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0-beta.17
+          image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
           args:
             - /nginx-ingress-controller
             - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
@@ -42,13 +39,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          {{ if not .Values.IsBareMetal }}
           ports:
+          - name: metrics
+            containerPort: 10254
           - name: http
             containerPort: 80
           - name: https
             containerPort: 443
-          {{ end }}
           livenessProbe:
             failureThreshold: 3
             httpGet:

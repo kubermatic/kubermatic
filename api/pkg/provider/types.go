@@ -1,12 +1,18 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	"github.com/kubermatic/kubermatic/api"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+)
+
+var (
+	// ErrNotFound tells that the requests resource was not found
+	ErrNotFound = errors.New("the given resource was not found")
 )
 
 // Constants defining known cloud providers.
@@ -47,6 +53,7 @@ type NodeClassProvider interface {
 type DataProvider interface {
 	ClusterProvider
 	SSHKeyProvider
+	UserProvider
 }
 
 // ClusterProvider declares the set of methods for storing and loading clusters.
@@ -81,6 +88,12 @@ type SSHKeyProvider interface {
 	CreateSSHKey(name, pubkey string, user auth.User) (*kubermaticv1.UserSSHKey, error)
 	// DeleteSSHKey deletes a ssh key
 	DeleteSSHKey(name string, user auth.User) error
+}
+
+// UserProvider declares the set of methods for interacting with kubermatic users
+type UserProvider interface {
+	UserByEmail(email string) (*kubermaticv1.User, error)
+	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
