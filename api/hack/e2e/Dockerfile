@@ -1,28 +1,25 @@
-# TODO(realfake): Reduce container size and make it slimmer, the size of over 6.3gb which is normally not acceptable.
-FROM gcr.io/google-containers/kubekins-test:latest
-LABEL maintainer "luk@loodse.com"
+ARG GO_VERSION=1.9.2
+FROM golang:${GO_VERSION}
 
-ADD "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz" \
- "https://raw.githubusercontent.com/kubernetes/kubernetes/master/hack/e2e.go" \
- "/workspace/"
+# install e2e dependencies
+RUN apt-get update && apt-get install -y rsync && rm -rf /var/lib/apt/lists/*
 
-ENV KUBERNETES_CONFORMANCE_TEST=y \
-    KUBERNETES_PROVIDER=skeleton \
-    KUBECONFIG=/workspace/kubermatickubeconfig
-ENV PATH=/google-cloud-sdk/bin:${PATH} \
-    CLOUDSDK_CORE_DISABLE_PROMPTS=1
-RUN tar xzf /workspace/google-cloud-sdk.tar.gz -C / && \
-    /google-cloud-sdk/install.sh \
-        --disable-installation-options \
-        --bash-completion=false \
-        --path-update=false \
-        --usage-reporting=false && \
-    gcloud components install beta && \
-    gcloud components install alpha && \
-    gcloud components update kubectl && \
-    gcloud info | tee /workspace/gcloud-info.txt
+# Git Repository Configuration
+ARG E2E_REPO=https://github.com/kubernetes/kubernetes
+ARG E2E_REF=v1.8.4
 
-RUN go run e2e.go -- -v --extract=release/stable-1.6
-WORKDIR /workspace/kubernetes
-CMD go run hack/e2e.go -- -v --test --test_args='--ginkgo.focus=\[Conformance\]'
+# clone Kubernetes repository
+RUN mkdir -p ${GOPATH}/src/k8s.io && \
+      git clone --branch ${E2E_REF} --depth 1 --single-branch ${E2E_REPO} ${GOPATH}/src/k8s.io/kubernetes
+WORKDIR ${GOPATH}/src/k8s.io/kubernetes
 
+# install build dependencies
+RUN go get -u github.com/jteeuwen/go-bindata/go-bindata
+
+# build all test dependencies
+RUN GOLDFLAGS="--s -w" make all WHAT="cmd/kubectl vendor/github.com/onsi/ginkgo/ginkgo test/e2e/e2e.test"
+
+# testing defaults
+ENV KUBECONFIG=/workspace/kubermatickubeconfig
+ENV KUBERNETES_CONFORMANCE_TEST=Y HOME=/go/src/k8s.io/kubernetes SKEW=false FOCUS=Conformance
+CMD go run hack/e2e.go -- -v --test --check-version-skew=${SKEW} --test_args="--ginkgo.focus=\[${FOCUS}\] ${TEST_ARGS}"
