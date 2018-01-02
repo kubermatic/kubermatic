@@ -6,10 +6,10 @@ import (
 
 // User represents an API user that is used for authentication.
 type User struct {
-	ID    string
-	Name  string
-	Email string
-	Roles map[string]struct{}
+	ID    string              `json:"id"`
+	Name  string              `json:"name"`
+	Email string              `json:"email"`
+	Roles map[string]struct{} `json:"roles"`
 }
 
 // IsAdmin tells if the user has the admin role
