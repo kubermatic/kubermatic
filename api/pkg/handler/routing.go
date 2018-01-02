@@ -142,41 +142,41 @@ func (r Routing) Register(mux *mux.Router) {
 	// Member and organization endpoints
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/me").
-		Handler(r.notImplemented())
+		Handler(r.getProjectMe())
 
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects").
-		Handler(r.notImplemented())
+		Handler(r.getProjects())
 
 	mux.Methods(http.MethodPost).
 		Path("/api/v1/projects").
-		Handler(r.notImplemented())
+		Handler(r.createProject())
 
 	mux.Methods(http.MethodPut).
 		Path("/api/v1/projects/{project_id}").
-		Handler(r.notImplemented())
+		Handler(r.updateProject())
 
 	mux.Methods(http.MethodDelete).
 		Path("/api/v1/projects/{project_id}").
-		Handler(r.notImplemented())
+		Handler(r.deleteProject())
 
 	// Members in project
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/members").
-		Handler(r.notImplemented())
+		Handler(r.getProjectMembers())
 
 	mux.Methods(http.MethodPut).
 		Path("/api/v1/projects/{project_id}/members").
-		Handler(r.notImplemented())
+		Handler(r.updateProjectMember())
 
 	mux.Methods(http.MethodPost).
 		Path("/api/v1/projects/{project_id}/member").
-		Handler(r.notImplemented())
+		Handler(r.addProjectMember())
 
 	mux.Methods(http.MethodDelete).
 		Path("/api/v1/projects/{project_id}/member/{member_id}").
-		Handler(r.notImplemented())
+		Handler(r.deleteProjectMember())
 }
 
 func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
@@ -211,11 +211,12 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
-func (r Routing) notImplemented() http.Handler {
+// NotImplemented return a "Not Implemented" error.
+func (r Routing) NotImplemented() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(
 			func(ctx context.Context, request interface{}) (response interface{}, err error) {
-				return nil, errors.NewBadRequest("Not implemented")
+				return nil, errors.NewNotImplemented()
 			})),
 		decodeListSSHKeyReq,
 		encodeJSON,
