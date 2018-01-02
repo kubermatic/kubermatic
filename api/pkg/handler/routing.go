@@ -127,7 +127,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/ssh-keys").
 		Handler(r.listSSHKeys())
 
-	// User and organization endpoints
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/user").
 		Handler(r.getUser())
@@ -140,10 +139,10 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.deleteSSHKey())
 
-	// User management
+	// Member and organization endpoints
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/me").
-		Handler(r.getUser())
+		Path("/api/v1/projects/{project_id}/me").
+		Handler(r.notImplemented())
 
 	// Project management
 	mux.Methods(http.MethodGet).
@@ -162,30 +161,21 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/projects/{project_id}").
 		Handler(r.notImplemented())
 
-	// Users in project
+	// Members in project
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/users").
+		Path("/api/v1/projects/{project_id}/members").
+		Handler(r.notImplemented())
+
+	mux.Methods(http.MethodPut).
+		Path("/api/v1/projects/{project_id}/members").
 		Handler(r.notImplemented())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/projects/{project_id}/user").
+		Path("/api/v1/projects/{project_id}/member").
 		Handler(r.notImplemented())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/projects/{project_id}/user/{user_id}").
-		Handler(r.notImplemented())
-
-	// Project Roles
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/roles").
-		Handler(r.notImplemented())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id/users/{user_id}/roles").
-		Handler(r.notImplemented())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id/users/{user_id}/roles").
+		Path("/api/v1/projects/{project_id}/member/{member_id}").
 		Handler(r.notImplemented())
 }
 
@@ -569,6 +559,106 @@ func (r Routing) getUser() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getUserHandler())),
 		decodeEmptyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) getProjectMe() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getProjectMeEndpoint())),
+		decodeProjectPathReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) getProjects() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getProjectsEndpoint())),
+		// We don't have to write a decoder only for a request without incoming information
+		decodeEmptyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) createProject() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(createProjectEndpoint())),
+		decodeCreateProject,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) updateProject() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(updateProjectEndpoint())),
+		decodeUpdateProject,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) deleteProject() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteProjectEndpoint())),
+		decodeProjectPathReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) getProjectMembers() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getProjectMembersEndpoint())),
+		decodeProjectPathReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) addProjectMember() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(addProjectMemberEndpoint())),
+		decodeAddProjectMember,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) deleteProjectMember() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteProjectMemberEndpoint())),
+		decodeDeleteProjectMember,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) updateProjectMember() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(updateProjectMemberEndpoint())),
+		decodeUpdateProjectMember,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
