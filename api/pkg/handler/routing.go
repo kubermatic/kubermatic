@@ -143,7 +143,7 @@ func (r Routing) Register(mux *mux.Router) {
 	// User management
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/me").
-		Handler(r.notImplemented())
+		Handler(r.getUser())
 
 	// Project management
 	mux.Methods(http.MethodGet).
