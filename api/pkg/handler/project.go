@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+// Project resources live in
 type Project struct {
 	ID        string   `json:"id"`
 	Name      string   `json:"name"`
@@ -17,44 +18,46 @@ type Project struct {
 	RoleNames []string `json:"role_names"`
 }
 
+// ProjectList a list of full projects
 type ProjectList struct {
-	projects []Project `json:"projects"`
+	Projects []Project `json:"projects"`
 }
 
+// Member is a virtual user in a project
 type Member struct {
 	ID          string   `json:"id"`
 	MemberEmail string   `json:"member_email"`
 	RoleNames   []string `json:"role_names"`
 }
 
+// MemberList a list of members
 type MemberList struct {
 	ProjectMembers []Member `json:"project_members"`
 }
 
+// Role specifies the permissions a user has
 type Role struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
+// RoleList a list of Roles
 type RoleList struct {
 	Roles []Role `json:"roles"`
 }
 
+// MemberRoles a list of roles of a member
 type MemberRoles struct {
 	RoleNames []string `json:"role_names"`
 }
 
-type ProjectPathReq struct {
+type projectPathReq struct {
 	ProjectID string
 }
 
-type MemberPathReq struct {
+type memberPathReq struct {
 	MemberID string
-}
-
-type DeleteProjectReq struct {
-	ProjectPathReq
 }
 
 func decodeMemberPathReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -105,13 +108,13 @@ func deleteProjectEndpoint() endpoint.Endpoint {
 // Update Project
 //
 //
-type UpdateProjectReq struct {
-	ProjectPathReq
+type updateProjectReq struct {
+	projectPathReq
 	Project
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateProjectReq
+	var req updateProjectReq
 	var err error
 	var ok bool
 
@@ -119,7 +122,7 @@ func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
-	req.ProjectPathReq, ok = pReq.(ProjectPathReq)
+	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad project request")
 	}
@@ -144,12 +147,12 @@ func updateProjectEndpoint() endpoint.Endpoint {
 // Create Project
 //
 //
-type CreateProjectReq struct {
+type createProjectReq struct {
 	Project
 }
 
 func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateProjectReq
+	var req createProjectReq
 	var ok bool
 	pbReq, err := decodeProjectBodyReq(c, r)
 	if err != nil {
@@ -180,13 +183,13 @@ func getProjectMembersEndpoint() endpoint.Endpoint {
 // Delete Project Members
 //
 //
-type DeleteProjectMemberReq struct {
-	ProjectPathReq
-	MemberPathReq
+type deleteProjectMemberReq struct {
+	projectPathReq
+	memberPathReq
 }
 
 func decodeDeleteProjectMember(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteProjectMemberReq
+	var req deleteProjectMemberReq
 	var err error
 	var ok bool
 
@@ -194,7 +197,7 @@ func decodeDeleteProjectMember(c context.Context, r *http.Request) (interface{},
 	if err != nil {
 		return nil, err
 	}
-	req.ProjectPathReq, ok = pReq.(ProjectPathReq)
+	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad project request")
 	}
@@ -203,7 +206,7 @@ func decodeDeleteProjectMember(c context.Context, r *http.Request) (interface{},
 	if err != nil {
 		return nil, err
 	}
-	req.MemberPathReq, ok = mpReq.(MemberPathReq)
+	req.memberPathReq, ok = mpReq.(memberPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad member request")
 	}
@@ -220,13 +223,13 @@ func deleteProjectMemberEndpoint() endpoint.Endpoint {
 // Add Project Member
 //
 //
-type AddProjectMemberReq struct {
-	ProjectPathReq
+type addProjectMemberReq struct {
+	projectPathReq
 	Member
 }
 
 func decodeAddProjectMember(c context.Context, r *http.Request) (interface{}, error) {
-	var req AddProjectMemberReq
+	var req addProjectMemberReq
 	var err error
 	var ok bool
 
@@ -234,7 +237,7 @@ func decodeAddProjectMember(c context.Context, r *http.Request) (interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	req.ProjectPathReq, ok = pReq.(ProjectPathReq)
+	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad project request")
 	}
@@ -259,14 +262,14 @@ func addProjectMemberEndpoint() endpoint.Endpoint {
 // Update Project Member
 //
 //
-type UpdateProjectMemberReq struct {
-	ProjectPathReq
-	MemberPathReq
+type updateProjectMemberReq struct {
+	projectPathReq
+	memberPathReq
 	Member
 }
 
 func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateProjectMemberReq
+	var req updateProjectMemberReq
 	var err error
 	var ok bool
 
@@ -274,7 +277,7 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	if err != nil {
 		return nil, err
 	}
-	req.ProjectPathReq, ok = pReq.(ProjectPathReq)
+	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad project request")
 	}
@@ -283,7 +286,7 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	if err != nil {
 		return nil, err
 	}
-	req.MemberPathReq, ok = mpReq.(MemberPathReq)
+	req.memberPathReq, ok = mpReq.(memberPathReq)
 	if !ok {
 		return nil, errors.NewBadRequest("Bad member request")
 	}
