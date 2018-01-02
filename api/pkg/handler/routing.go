@@ -144,36 +144,46 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/me").
 		Handler(r.notImplemented())
+
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodPost).
 		Path("/api/v1/projects").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodPut).
 		Path("/api/v1/projects/{project_id}").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodDelete).
 		Path("/api/v1/projects/{project_id}").
 		Handler(r.notImplemented())
+
 	// Users in project
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/users").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodPost).
 		Path("/api/v1/projects/{project_id}/user").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodDelete).
 		Path("/api/v1/projects/{project_id}/user/{user_id}").
 		Handler(r.notImplemented())
+
 	// Project Roles
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/roles").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id/users/{user_id}/roles").
 		Handler(r.notImplemented())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id/users/{user_id}/roles").
 		Handler(r.notImplemented())
