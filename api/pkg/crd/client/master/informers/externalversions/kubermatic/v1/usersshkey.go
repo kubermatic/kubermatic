@@ -3,8 +3,6 @@
 package v1
 
 import (
-	time "time"
-
 	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/informers/externalversions/internalinterfaces"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/listers/kubermatic/v1"
@@ -13,6 +11,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	time "time"
 )
 
 // UserSSHKeyInformer provides access to a shared informer and lister for

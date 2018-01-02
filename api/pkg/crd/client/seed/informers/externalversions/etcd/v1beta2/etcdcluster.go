@@ -3,8 +3,6 @@
 package v1beta2
 
 import (
-	time "time"
-
 	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/internalinterfaces"
 	v1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/listers/etcd/v1beta2"
@@ -13,6 +11,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	time "time"
 )
 
 // EtcdClusterInformer provides access to a shared informer and lister for

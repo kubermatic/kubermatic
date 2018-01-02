@@ -3,16 +3,15 @@
 package externalversions
 
 import (
-	reflect "reflect"
-	sync "sync"
-	time "time"
-
 	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/informers/externalversions/internalinterfaces"
 	kubermatic "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/informers/externalversions/kubermatic"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
+	reflect "reflect"
+	sync "sync"
+	time "time"
 )
 
 type sharedInformerFactory struct {
