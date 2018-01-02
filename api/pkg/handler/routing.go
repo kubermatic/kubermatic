@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -58,106 +59,124 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 
 // Register declare router paths
 func (r Routing) Register(mux *mux.Router) {
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/").
 		HandlerFunc(StatusOK)
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(StatusOK)
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/dc").
 		Handler(r.datacentersHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}").
 		Handler(r.datacenterHandler())
 
-	mux.
-		Methods(http.MethodPost).
+	mux.Methods(http.MethodPost).
 		Path("/api/v1/cluster").
 		Handler(r.newClusterHandlerV2())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster").
 		Handler(r.clustersHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster/{cluster}").
 		Handler(r.clusterHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster/{cluster}/kubeconfig").
 		Handler(r.kubeconfigHandler())
 
-	mux.
-		Methods(http.MethodDelete).
+	mux.Methods(http.MethodDelete).
 		Path("/api/v1/cluster/{cluster}").
 		Handler(r.deleteClusterHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster/{cluster}/node").
 		Handler(r.nodesHandler())
 
-	mux.
-		Methods(http.MethodPost).
+	mux.Methods(http.MethodPost).
 		Path("/api/v1/cluster/{cluster}/node").
 		Handler(r.createNodesHandler())
 
-	mux.
-		Methods(http.MethodDelete).
+	mux.Methods(http.MethodDelete).
 		Path("/api/v1/cluster/{cluster}/node/{node}").
 		Handler(r.deleteNodeHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgrades())
 
-	mux.
-		Methods(http.MethodPut).
+	mux.Methods(http.MethodPut).
 		Path("/api/v1/cluster/{cluster}/upgrade").
 		Handler(r.performClusterUpgrage())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
 		Handler(r.nodesHandler())
 
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/ssh-keys").
 		Handler(r.listSSHKeys())
 
 	// User and organization endpoints
-	mux.
-		Methods(http.MethodGet).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/user").
 		Handler(r.getUser())
 
-	mux.
-		Methods(http.MethodPost).
+	mux.Methods(http.MethodPost).
 		Path("/api/v1/ssh-keys").
 		Handler(r.createSSHKey())
 
-	mux.
-		Methods(http.MethodDelete).
+	mux.Methods(http.MethodDelete).
 		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.deleteSSHKey())
+
+	// User management
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/me").
+		Handler(r.notImplemented())
+	// Project management
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodPut).
+		Path("/api/v1/projects/{project_id}").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodDelete).
+		Path("/api/v1/projects/{project_id}").
+		Handler(r.notImplemented())
+	// Users in project
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/users").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects/{project_id}/user").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodDelete).
+		Path("/api/v1/projects/{project_id}/user/{user_id}").
+		Handler(r.notImplemented())
+	// Project Roles
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/roles").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id/users/{user_id}/roles").
+		Handler(r.notImplemented())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id/users/{user_id}/roles").
+		Handler(r.notImplemented())
 }
 
 func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
@@ -184,6 +203,20 @@ func (r Routing) userStorer(e endpoint.Endpoint) endpoint.Endpoint {
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
+		decodeListSSHKeyReq,
+		encodeJSON,
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	)
+}
+
+func (r Routing) notImplemented() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(
+			func(ctx context.Context, request interface{}) (response interface{}, err error) {
+				return nil, errors.NewBadRequest("Not implemented")
+			})),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		httptransport.ServerErrorLogger(r.logger),
