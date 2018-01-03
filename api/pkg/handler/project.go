@@ -61,8 +61,8 @@ type memberPathReq struct {
 }
 
 func decodeMemberPathReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ClusterReq
-	req.Cluster = mux.Vars(r)["member_id"]
+	var req memberPathReq
+	req.MemberID = mux.Vars(r)["member_id"]
 	return req, nil
 }
 
@@ -85,8 +85,8 @@ func getProjectMeEndpoint() endpoint.Endpoint {
 }
 
 func decodeProjectPathReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ClusterReq
-	req.Cluster = mux.Vars(r)["project_id"]
+	var req projectPathReq
+	req.ProjectID = mux.Vars(r)["project_id"]
 	return req, nil
 }
 
