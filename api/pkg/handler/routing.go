@@ -205,9 +205,7 @@ func (r Routing) listSSHKeys() http.Handler {
 		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
 		decodeListSSHKeyReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -220,9 +218,7 @@ func (r Routing) NotImplemented() http.Handler {
 			})),
 		decodeListSSHKeyReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -244,9 +240,7 @@ func (r Routing) createSSHKey() http.Handler {
 		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -268,9 +262,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -291,9 +283,7 @@ func (r Routing) datacentersHandler() http.Handler {
 		r.auth(r.userStorer(datacentersEndpoint(r.datacenters))),
 		decodeDatacentersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -314,9 +304,7 @@ func (r Routing) datacenterHandler() http.Handler {
 		r.auth(r.userStorer(datacenterEndpoint(r.datacenters))),
 		decodeDcReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -338,9 +326,7 @@ func (r Routing) newClusterHandlerV2() http.Handler {
 		r.auth(r.userStorer(newClusterEndpointV2(r.provider, r.provider))),
 		decodeNewClusterReqV2,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -362,9 +348,7 @@ func (r Routing) clusterHandler() http.Handler {
 		r.auth(r.userStorer(clusterEndpoint(r.provider))),
 		decodeClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -384,9 +368,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -406,9 +388,7 @@ func (r Routing) clustersHandler() http.Handler {
 		r.auth(r.userStorer(clustersEndpoint(r.provider))),
 		decodeClustersReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -428,9 +408,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
 		decodeClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -450,9 +428,7 @@ func (r Routing) nodesHandler() http.Handler {
 		r.auth(r.userStorer(nodesEndpoint(r.provider))),
 		decodeNodesReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -472,9 +448,7 @@ func (r Routing) createNodesHandler() http.Handler {
 		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
 		decodeCreateNodesReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -494,9 +468,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
 		decodeNodeReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -519,9 +491,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
 		decodeClusterReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -561,9 +531,7 @@ func (r Routing) getUser() http.Handler {
 		r.auth(r.userStorer(getUserHandler())),
 		decodeEmptyReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -572,9 +540,7 @@ func (r Routing) getProjectMe() http.Handler {
 		r.auth(r.userStorer(getProjectMeEndpoint())),
 		decodeProjectPathReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -584,9 +550,7 @@ func (r Routing) getProjects() http.Handler {
 		// We don't have to write a decoder only for a request without incoming information
 		decodeEmptyReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -595,9 +559,7 @@ func (r Routing) createProject() http.Handler {
 		r.auth(r.userStorer(createProjectEndpoint())),
 		decodeCreateProject,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -606,9 +568,7 @@ func (r Routing) updateProject() http.Handler {
 		r.auth(r.userStorer(updateProjectEndpoint())),
 		decodeUpdateProject,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -617,9 +577,7 @@ func (r Routing) deleteProject() http.Handler {
 		r.auth(r.userStorer(deleteProjectEndpoint())),
 		decodeProjectPathReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -628,9 +586,7 @@ func (r Routing) getProjectMembers() http.Handler {
 		r.auth(r.userStorer(getProjectMembersEndpoint())),
 		decodeProjectPathReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -639,9 +595,7 @@ func (r Routing) addProjectMember() http.Handler {
 		r.auth(r.userStorer(addProjectMemberEndpoint())),
 		decodeAddProjectMember,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -650,9 +604,7 @@ func (r Routing) deleteProjectMember() http.Handler {
 		r.auth(r.userStorer(deleteProjectMemberEndpoint())),
 		decodeDeleteProjectMember,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
 
@@ -661,8 +613,6 @@ func (r Routing) updateProjectMember() http.Handler {
 		r.auth(r.userStorer(updateProjectMemberEndpoint())),
 		decodeUpdateProjectMember,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
