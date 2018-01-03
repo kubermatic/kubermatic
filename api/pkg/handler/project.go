@@ -78,7 +78,6 @@ func decodeProjectBodyReq(c context.Context, r *http.Request) (interface{}, erro
 	return p, err
 }
 
-// Project member self information (me) endpoint
 func getProjectMeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return Member{}, nil
@@ -91,7 +90,6 @@ func decodeProjectPathReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-// Project endpoints
 func getProjectsEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return ProjectList{}, nil
@@ -105,9 +103,6 @@ func deleteProjectEndpoint() endpoint.Endpoint {
 	}
 }
 
-// Update Project
-//
-//
 type updateProjectReq struct {
 	projectPathReq
 	Project
@@ -124,7 +119,7 @@ func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error
 	}
 	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project request")
+		return nil, errors.NewBadRequest("bad project request")
 	}
 
 	pbReq, err := decodeProjectBodyReq(c, r)
@@ -133,20 +128,18 @@ func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error
 	}
 	req.Project, ok = pbReq.(Project)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project body type request")
+		return nil, errors.NewBadRequest("bad project body type request")
 	}
 
 	return req, nil
 }
+
 func updateProjectEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return Project{}, nil
 	}
 }
 
-// Create Project
-//
-//
 type createProjectReq struct {
 	Project
 }
@@ -160,29 +153,24 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	}
 	req.Project, ok = pbReq.(Project)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project body type request")
+		return nil, errors.NewBadRequest("bad project body type request")
 	}
 
 	return req, nil
 }
+
 func createProjectEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return Project{}, nil
 	}
 }
 
-// Get Project Members
-//
-//
 func getProjectMembersEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return MemberList{}, nil
 	}
 }
 
-// Delete Project Members
-//
-//
 type deleteProjectMemberReq struct {
 	projectPathReq
 	memberPathReq
@@ -199,7 +187,7 @@ func decodeDeleteProjectMember(c context.Context, r *http.Request) (interface{},
 	}
 	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project request")
+		return nil, errors.NewBadRequest("bad project request")
 	}
 
 	mpReq, err := decodeMemberPathReq(c, r)
@@ -208,11 +196,12 @@ func decodeDeleteProjectMember(c context.Context, r *http.Request) (interface{},
 	}
 	req.memberPathReq, ok = mpReq.(memberPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad member request")
+		return nil, errors.NewBadRequest("bad member request")
 	}
 
 	return req, nil
 }
+
 func deleteProjectMemberEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// Don't return member just success.
@@ -220,9 +209,6 @@ func deleteProjectMemberEndpoint() endpoint.Endpoint {
 	}
 }
 
-// Add Project Member
-//
-//
 type addProjectMemberReq struct {
 	projectPathReq
 	Member
@@ -239,7 +225,7 @@ func decodeAddProjectMember(c context.Context, r *http.Request) (interface{}, er
 	}
 	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project request")
+		return nil, errors.NewBadRequest("bad project request")
 	}
 
 	mpReq, err := decodeMemberBodyReq(c, r)
@@ -248,20 +234,18 @@ func decodeAddProjectMember(c context.Context, r *http.Request) (interface{}, er
 	}
 	req.Member, ok = mpReq.(Member)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad member request")
+		return nil, errors.NewBadRequest("bad member request")
 	}
 
 	return req, nil
 }
+
 func addProjectMemberEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return Member{}, nil
 	}
 }
 
-// Update Project Member
-//
-//
 type updateProjectMemberReq struct {
 	projectPathReq
 	memberPathReq
@@ -279,7 +263,7 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	}
 	req.projectPathReq, ok = pReq.(projectPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad project request")
+		return nil, errors.NewBadRequest("bad project request")
 	}
 
 	mpReq, err := decodeMemberPathReq(c, r)
@@ -288,7 +272,7 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	}
 	req.memberPathReq, ok = mpReq.(memberPathReq)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad member request")
+		return nil, errors.NewBadRequest("bad member request")
 	}
 
 	mReq, err := decodeMemberBodyReq(c, r)
@@ -297,11 +281,12 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	}
 	req.Member, ok = mReq.(Member)
 	if !ok {
-		return nil, errors.NewBadRequest("Bad member request")
+		return nil, errors.NewBadRequest("bad member request")
 	}
 
 	return req, nil
 }
+
 func updateProjectMemberEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return Member{}, nil
