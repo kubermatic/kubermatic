@@ -22,6 +22,7 @@ type User struct {
 	Spec UserSpec `json:"spec"`
 }
 
+// UserSpec specifies a user
 type UserSpec struct {
 	ID     string   `json:"id"`
 	Name   string   `json:"name"`
@@ -38,6 +39,7 @@ type UserList struct {
 	Items []User `json:"items"`
 }
 
+// GroupSpec specifies a group
 type GroupSpec struct {
 	// Name references a group name in kubernetes
 	Name string `json:"name"`
@@ -45,7 +47,7 @@ type GroupSpec struct {
 
 // Group specifies a group several users can link to.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// swagger:response User
+// swagger:response Group
 type Group struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
