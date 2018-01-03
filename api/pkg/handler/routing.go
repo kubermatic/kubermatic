@@ -48,6 +48,14 @@ func NewRouting(
 	}
 }
 
+func (r Routing) defaultServerOptions() []httptransport.ServerOption {
+	return []httptransport.ServerOption{
+		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerErrorEncoder(errorEncoder),
+		httptransport.ServerBefore(r.authenticator.Extractor()),
+	}
+}
+
 // Register declare router paths
 func (r Routing) Register(mux *mux.Router) {
 	mux.
@@ -493,8 +501,6 @@ func (r Routing) performClusterUpgrage() http.Handler {
 		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
 		decodeUpgradeReq,
 		encodeJSON,
-		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		r.defaultServerOptions()...,
 	)
 }
