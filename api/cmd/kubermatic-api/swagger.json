@@ -395,6 +395,343 @@
         }
       }
     },
+    "/api/v1/projects": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "get",
+          "project"
+        ],
+        "operationId": "getProjects",
+        "responses": {
+          "200": {
+            "description": "ProjectList",
+            "schema": {
+              "$ref": "#/definitions/ProjectList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "project",
+          "create"
+        ],
+        "operationId": "createProject",
+        "parameters": [
+          {
+            "name": "Project",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "project",
+          "update"
+        ],
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "name": "Project",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "project",
+          "delete"
+        ],
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {},
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/me": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "user",
+          "get",
+          "project"
+        ],
+        "operationId": "getProjectMe",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/member/{member_id}": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "get",
+          "project",
+          "member"
+        ],
+        "operationId": "updateProjectMember",
+        "parameters": [
+          {
+            "name": "Member",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MemberID",
+            "name": "member_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "get",
+          "project",
+          "member"
+        ],
+        "operationId": "deleteProjectMember",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MemberID",
+            "name": "member_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {},
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/members": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "get",
+          "project",
+          "member"
+        ],
+        "operationId": "getProjectMembers",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MemberList",
+            "schema": {
+              "$ref": "#/definitions/MemberList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "get",
+          "project",
+          "member"
+        ],
+        "operationId": "addProjectMember",
+        "parameters": [
+          {
+            "name": "Member",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -995,6 +1332,43 @@
       "title": "MasterUpdatePhase represents the current master update phase.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "Member": {
+      "description": "Member is a virtual user in a project",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_email": {
+          "type": "string",
+          "x-go-name": "MemberEmail"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "MemberList": {
+      "description": "MemberList a list of members",
+      "type": "object",
+      "properties": {
+        "project_members": {
+          "description": "in: body",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Member"
+          },
+          "x-go-name": "ProjectMembers"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
     "NodeSpec": {
       "type": "object",
       "title": "NodeSpec mutually stores data of a cloud specific node.",
@@ -1138,6 +1512,49 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
     },
+    "Project": {
+      "description": "Project resources live in",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "MemberIDs"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "ProjectList": {
+      "description": "ProjectList a list of full projects",
+      "type": "object",
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          },
+          "x-go-name": "Projects"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
     "RSAKeys": {
       "type": "object",
       "title": "RSAKeys is a pair of private and public key where the key is not published to the API client.",
@@ -1150,6 +1567,25 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "Role": {
+      "description": "Role specifies the permissions a user has",
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "SSHKeySpec": {
       "type": "object",
@@ -1333,6 +1769,182 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "addProjectMemberReq": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_email": {
+          "type": "string",
+          "x-go-name": "MemberEmail"
+        },
+        "project_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "createProjectReq": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "MemberIDs"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "deleteProjectMemberReq": {
+      "type": "object",
+      "properties": {
+        "member_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "MemberID"
+        },
+        "project_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "memberPathReq": {
+      "description": "memberPathReq represent a request for a member",
+      "type": "object",
+      "properties": {
+        "member_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "MemberID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "memberReq": {
+      "type": "object",
+      "properties": {
+        "Member": {
+          "$ref": "#/definitions/Member"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "projectPathReq": {
+      "description": "projectPathReq represent a request for a project",
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "projectReq": {
+      "type": "object",
+      "properties": {
+        "Project": {
+          "$ref": "#/definitions/Project"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "updateProjectMemberReq": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_email": {
+          "type": "string",
+          "x-go-name": "MemberEmail"
+        },
+        "member_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "MemberID"
+        },
+        "project_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "updateProjectReq": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "member_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "MemberIDs"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "project_id": {
+          "description": "in: path",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "role_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RoleNames"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     }
   },
   "responses": {

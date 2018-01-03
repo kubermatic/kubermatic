@@ -11,6 +11,7 @@ import (
 )
 
 // Project resources live in
+// swagger:model Project
 type Project struct {
 	ID        string   `json:"id"`
 	Name      string   `json:"name"`
@@ -18,46 +19,59 @@ type Project struct {
 	RoleNames []string `json:"role_names"`
 }
 
+// swagger:parameters createProject updateProject
+type projectReq struct {
+	// in: body
+	Project Project
+}
+
 // ProjectList a list of full projects
+// swagger:model ProjectList
 type ProjectList struct {
 	Projects []Project `json:"projects"`
 }
 
 // Member is a virtual user in a project
+// swagger:model Member
 type Member struct {
 	ID          string   `json:"id"`
 	MemberEmail string   `json:"member_email"`
 	RoleNames   []string `json:"role_names"`
 }
 
+// swagger:parameters updateProjectMember addProjectMember
+type memberReq struct {
+	// in: body
+	Member Member
+}
+
 // MemberList a list of members
+// swagger:model MemberList
 type MemberList struct {
+	// in: body
 	ProjectMembers []Member `json:"project_members"`
 }
 
 // Role specifies the permissions a user has
+// swagger:model Role
 type Role struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-// RoleList a list of Roles
-type RoleList struct {
-	Roles []Role `json:"roles"`
-}
-
-// MemberRoles a list of roles of a member
-type MemberRoles struct {
-	RoleNames []string `json:"role_names"`
-}
-
+// projectPathReq represent a request for a project
+// swagger:parameters updateProjectMember deleteProjectMember addProjectMember getProjectMembers deleteProject updateProject getProjectMe
 type projectPathReq struct {
-	ProjectID string
+	// in: path
+	ProjectID string `json:"project_id"`
 }
 
+// memberPathReq represent a request for a member
+// swagger:parameters updateProjectMember deleteProjectMember
 type memberPathReq struct {
-	MemberID string
+	// in: path
+	MemberID string `json:"member_id"`
 }
 
 func decodeMemberPathReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -68,12 +82,14 @@ func decodeMemberPathReq(c context.Context, r *http.Request) (interface{}, error
 
 func decodeMemberBodyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var p Member
+	var _ memberReq
 	err := json.NewDecoder(r.Body).Decode(&p)
 	return p, err
 }
 
 func decodeProjectBodyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var p Project
+	var _ projectReq
 	err := json.NewDecoder(r.Body).Decode(&p)
 	return p, err
 }

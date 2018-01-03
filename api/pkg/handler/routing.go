@@ -535,6 +535,17 @@ func (r Routing) getUser() http.Handler {
 	)
 }
 
+// getProjectMe returns the member in the context of a project.
+// swagger:route GET /api/v1/projects/{project_id}/me user get project getProjectMe
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Member
 func (r Routing) getProjectMe() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectMeEndpoint())),
@@ -544,6 +555,17 @@ func (r Routing) getProjectMe() http.Handler {
 	)
 }
 
+// getProjects lists all projects visible for a user.
+// swagger:route GET /api/v1/projects get project getProjects
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: ProjectList
 func (r Routing) getProjects() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectsEndpoint())),
@@ -554,6 +576,18 @@ func (r Routing) getProjects() http.Handler {
 	)
 }
 
+// createProject create a new project this might take a while,
+// a owner member will be created for the acting user.
+// swagger:route POST /api/v1/projects project create createProject
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Project
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createProjectEndpoint())),
@@ -563,6 +597,17 @@ func (r Routing) createProject() http.Handler {
 	)
 }
 
+// updateProject update project preferences
+// swagger:route PUT /api/v1/projects/{project_id} project update updateProject
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Project
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(updateProjectEndpoint())),
@@ -572,6 +617,17 @@ func (r Routing) updateProject() http.Handler {
 	)
 }
 
+// deleteProject close a project
+// swagger:route DELETE /api/v1/projects/{project_id} project delete deleteProject
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200:
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteProjectEndpoint())),
@@ -581,6 +637,17 @@ func (r Routing) deleteProject() http.Handler {
 	)
 }
 
+// getProjectMembers list all members of a project
+// swagger:route GET /api/v1/projects/{project_id}/members get project member getProjectMembers
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: MemberList
 func (r Routing) getProjectMembers() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectMembersEndpoint())),
@@ -590,6 +657,17 @@ func (r Routing) getProjectMembers() http.Handler {
 	)
 }
 
+// addProjectMember invite a user with matching mail to the project
+// swagger:route POST /api/v1/projects/{project_id}/members get project member addProjectMember
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Member
 func (r Routing) addProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(addProjectMemberEndpoint())),
@@ -599,6 +677,17 @@ func (r Routing) addProjectMember() http.Handler {
 	)
 }
 
+// deleteProjectMember remove a member from a project
+// swagger:route DELETE /api/v1/projects/{project_id}/member/{member_id} get project member deleteProjectMember
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200:
 func (r Routing) deleteProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteProjectMemberEndpoint())),
@@ -608,6 +697,17 @@ func (r Routing) deleteProjectMember() http.Handler {
 	)
 }
 
+// updateProjectMember update a member in a project, this should be used to change groups
+// swagger:route PUT /api/v1/projects/{project_id}/member/{member_id} get project member updateProjectMember
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Member
 func (r Routing) updateProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(updateProjectMemberEndpoint())),
