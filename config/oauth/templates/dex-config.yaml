@@ -5,7 +5,7 @@ metadata:
   namespace: oauth
 data:
   config.yaml: |
-    issuer: https://{{ .Values.dex.ingress.host }}/{{ .Values.dex.ingress.path }}
+    issuer: https://{{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}
     oauth2:
       skipApprovalScreen: true
       responseTypes:
