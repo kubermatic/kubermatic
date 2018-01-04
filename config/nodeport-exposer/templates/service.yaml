@@ -2,7 +2,6 @@ kind: Service
 apiVersion: v1
 metadata:
   name: my-nodeport-service
-  namespace: {{ .Values.NodePortExposer.Namespace }}
   annotations:
     nodeport-exposer.k8s.io/expose: "true"
 spec:
