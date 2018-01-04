@@ -139,6 +139,63 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/ssh-keys/{meta_name}").
 		Handler(r.deleteSSHKey())
 
+	// New project endpoints
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects/{project_id}/cluster").
+		Handler(r.newProjectClusterHandlerV2())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/cluster").
+		Handler(r.getProjectClustersHandler())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
+		Handler(r.getProjectClusterHandler())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig").
+		Handler(r.getProjectClusterKubeconfigHandler())
+
+	mux.Methods(http.MethodDelete).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
+		Handler(r.deleteProjectClusterHandler())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
+		Handler(r.getProjectClusterNodesHandler())
+
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
+		Handler(r.createProjectClusterNodesHandler())
+
+	mux.Methods(http.MethodDelete).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node/{node}").
+		Handler(r.deleteProjectClusterNodeHandler())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrades").
+		Handler(r.getProjectClusterPossibleClusterUpgrades())
+
+	mux.Methods(http.MethodPut).
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrade").
+		Handler(r.performProjectClusterUpgrade())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/k8s/nodes").
+		Handler(r.getProjectClusterK8sNodesHandler())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v1/projects/{project_id}/ssh-keys").
+		Handler(r.listProjectSSHKeys())
+
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects/{project_id}/ssh-keys").
+		Handler(r.createProjectSSHKey())
+
+	mux.Methods(http.MethodDelete).
+		Path("/api/v1/projects/{project_id}/ssh-keys/{meta_name}").
+		Handler(r.deleteProjectSSHKey())
+
 	// Member and organization endpoints
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/me").
@@ -209,13 +266,16 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
+func newNotImplementedEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		return nil, errors.NewNotImplemented()
+	}
+}
+
 // NotImplemented return a "Not Implemented" error.
 func (r Routing) NotImplemented() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(
-			func(ctx context.Context, request interface{}) (response interface{}, err error) {
-				return nil, errors.NewNotImplemented()
-			})),
+		r.auth(r.userStorer(newNotImplementedEndpoint())),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -712,6 +772,303 @@ func (r Routing) updateProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(updateProjectMemberEndpoint())),
 		decodeUpdateProjectMember,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// newProjectClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
+// swagger:route POST /api/v1/projects/{project_id}/cluster cluster list newProjectClusterHandlerV2
+//
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) newProjectClusterHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(newClusterEndpointV2(r.provider, r.provider))),
+		decodeNewClusterReqV2,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClustersHandler lists all clusters from a user.
+// swagger:route GET /api/v1/projects/{project_id}/cluster cluster get getProjectClustersHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: KubeCluster
+func (r Routing) getProjectClustersHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(clustersEndpoint(r.provider))),
+		decodeClustersReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClusterHandler returns a cluster object.
+// swagger:route POST /api/v1/projects/{project_id}/cluster/{cluster} cluster list getProjectClusterHandler
+//
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) getProjectClusterHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(clusterEndpoint(r.provider))),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClusterKubeconfigHandler returns the cubeconfig for the cluster.
+// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig kubeconfig get getProjectClusterKubeconfigHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: KubeConfig
+func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
+		decodeKubeconfigReq,
+		encodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// deleteProjectClusterHandler deletes a cluster.
+// swagger:route DELETE /api/v1/projects/{project_id}/cluster/{cluster} cluster delete deleteProjectClusterHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) deleteProjectClusterHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClusterNodesHandler returns all nodes from a user.
+// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/node nodes get getProjectClusterNodesHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: NodeList
+func (r Routing) getProjectClusterNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(nodesEndpoint(r.provider))),
+		decodeNodesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// createProjectClusterNodesHandler let's you create nodes.
+// swagger:route POST /api/v1/projects/{project_id}/cluster/{cluster}/node ssh keys list createProjectClusterNodesHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) createProjectClusterNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
+		decodeCreateNodesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// deleteProjectClusterNodeHandler let's you delete nodes.
+// swagger:route DELETE /api/v1/projects/{project_id}/cluster/{cluster}/node/{node} nodes delete deleteProjectClusterNodeHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
+		decodeNodeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClusterPossibleClusterUpgrades returns a list of possible cluster upgrades
+// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/upgrades cluster upgrade versions getProjectClusterPossibleClusterUpgrades
+//
+//     Produces:
+//     - application/json
+//
+//     Consumes:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: Versions
+func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// performProjectClusterUpgrade starts a cluster upgrade to a specific version
+// swagger:route PUT /api/v1/projects/{project_id}/cluster/{cluster}/upgrade cluster upgrade performProjectClusterUpgrade
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) performProjectClusterUpgrade() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
+		decodeUpgradeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getProjectClusterK8sNodesHandler returns all nodes from a user.
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/k8s/nodes nodes get getProjectClusterK8sNodesHandler
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: NodeList
+func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(nodesEndpoint(r.provider))),
+		decodeNodesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/ssh-keys ssh keys list listProjectSSHKeys
+//
+// Lists SSH keys from the user
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) listProjectSSHKeys() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
+		decodeListSSHKeyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/ssh-keys ssh keys create createProjectSSHKey
+//
+// Creates a SSH keys for the user
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) createProjectSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
+		decodeCreateSSHKeyReq,
+		createStatusResource(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+//mux.Methods(http.MethodDelete).
+//Path("/api/v1/projects/{project_id}/ssh-keys/{meta_name}").
+//Handler(r.deleteProjectSSHKey())
+
+// swagger:route DELETE /api/v1/projects/{project_id}/ssh-keys/{meta_name} ssh keys delete deleteProjectSSHKey
+//
+// Deletes a SSH keys for the user
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Schemes: http, https
+//
+//     Responses:
+//       default: APIError
+//       200: UserSSHKey
+func (r Routing) deleteProjectSSHKey() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
+		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
