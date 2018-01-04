@@ -3,12 +3,6 @@ workspace:
   path: src/github.com/kubermatic/kubermatic
 
 pipeline:
-  dep-status:
-    image: metalmatze/dep:1.9
-    commands:
-      - cd api
-      - dep status
-
   dep:
     image: metalmatze/dep:1.9
     commands:
