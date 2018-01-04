@@ -42,18 +42,18 @@ type openIDAuthenticator struct {
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) Authenticator {
+func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) (Authenticator, error) {
 	// Sanity check for config!
 	_, err := oidc.NewProvider(context.Background(), issuer)
 	if err != nil {
-		glog.Fatal(err)
+		return nil, err
 	}
 
 	return openIDAuthenticator{
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
-	}
+	}, nil
 }
 
 func (o openIDAuthenticator) Verifier() endpoint.Middleware {
