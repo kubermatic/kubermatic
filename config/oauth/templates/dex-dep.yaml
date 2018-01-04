@@ -4,7 +4,6 @@ metadata:
   labels:
     app: dex
   name: dex
-  namespace: oauth
 spec:
   replicas: {{ .Values.dex.replicas }}
   template:
