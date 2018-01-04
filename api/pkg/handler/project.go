@@ -15,8 +15,8 @@ import (
 type Project struct {
 	ID        string   `json:"id"`
 	Name      string   `json:"name"`
-	MemberIDs []string `json:"member_ids"`
-	RoleNames []string `json:"role_names"`
+	MemberIDs []string `json:"memberIds"`
+	RoleNames []string `json:"roleNames"`
 }
 
 // swagger:parameters createProject updateProject
@@ -35,8 +35,8 @@ type ProjectList struct {
 // swagger:model Member
 type Member struct {
 	ID          string   `json:"id"`
-	MemberEmail string   `json:"member_email"`
-	RoleNames   []string `json:"role_names"`
+	MemberEmail string   `json:"memberEmail"`
+	RoleNames   []string `json:"roleNames"`
 }
 
 // swagger:parameters updateProjectMember addProjectMember
@@ -49,7 +49,7 @@ type memberReq struct {
 // swagger:model MemberList
 type MemberList struct {
 	// in: body
-	ProjectMembers []Member `json:"project_members"`
+	ProjectMembers []Member `json:"projectMembers"`
 }
 
 // Role specifies the permissions a user has
