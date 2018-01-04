@@ -6,7 +6,6 @@ kind: Deployment
 {{ end }}
 metadata:
   name: nginx-ingress-controller
-  namespace: ingress-nginx
 spec:
 {{ if not .Values.nginx.asDaemonSet }}
   replicas: {{ .Values.nginx.replicas }}
