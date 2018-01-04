@@ -22,6 +22,7 @@ const (
 )
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
+// TODO(realfake): This function calls net.LookupHost, move it out of the function!
 func LoadDeploymentFile(c *kubermaticv1.Cluster, v *api.MasterVersion, masterResourcesPath, yamlFile string) (*v1beta1.Deployment, error) {
 	p, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {

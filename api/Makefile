@@ -1,6 +1,6 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-cluster-controller client
+CMD=kubermatic-api kubermatic-cluster-controller client render
 GOBUILDFLAGS += -i -v
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
@@ -10,6 +10,7 @@ DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
+OUTD:=_build/
 
 default: all
 
@@ -26,7 +27,7 @@ test: vendor
 
 clean:
 	@cd _build
-	@rm -f $(CMD)
+	@rm -f _build/*
 	@echo "Cleaned _build"
 
 install: vendor
