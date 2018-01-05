@@ -3,9 +3,8 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-datadir
-  annotations:
-    volume.beta.kubernetes.io/storage-class: generic
 spec:
+  storageClassName: aws-test
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
