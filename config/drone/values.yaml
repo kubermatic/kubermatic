@@ -15,7 +15,7 @@ drone:
   secret: "s3cr3t"
   open: "true"
   orgs: "kubermatic"
-  admin: "mrIncompetent"
+  admin: "mrIncompetent,guusvw,realfake"
   dockerApiVersion: "1.23"
   github:
     client: "77dc043e957308088b0d"

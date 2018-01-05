@@ -56,12 +56,12 @@ done
 
 ############# Kubermatic #############
 helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} ${CHARTS_PATH}/storage/
-helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
-helm ${HELM_OPTS} upgrade -i oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
-helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
-helm ${HELM_OPTS} upgrade -i cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
-helm ${HELM_OPTS} upgrade -i certs -f ${VALUESFILE} ${CHARTS_PATH}/certs/
-helm ${HELM_OPTS} upgrade -i nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
+helm ${HELM_OPTS} upgrade -i nginx --namespace ingress-nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
+helm ${HELM_OPTS} upgrade -i oauth --namespace oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
+helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
+helm ${HELM_OPTS} upgrade -i cert-manager --namespace cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
+helm ${HELM_OPTS} upgrade -i certs --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/certs/
+helm ${HELM_OPTS} upgrade -i nodeport-exposer --namespace nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
 
 ############# MONITORING #############
 # All monitoring charts require the monitoring ns.

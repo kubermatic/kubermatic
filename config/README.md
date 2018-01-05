@@ -25,7 +25,10 @@ kubectl -n kubermatic-installer create secret generic values --from-file=values.
 #Create the docker secret - needs to have read access to kubermatic/installer 
 kubectl -n kubermatic-installer create secret dockercfg regsecret --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
 # Create and run the installer job
-kubectl create -f installer/install-job.yaml
+# Replace the version in the installer job template
+cp installer/install-job.template.yaml install-job.yaml
+sed -i "s/{INSTALLER_TAG}/master/g" install-job.yaml
+kubectl create -f install-job.yaml
 ```
 
 ### Create DNS entry for your domain

@@ -11,7 +11,7 @@ spec:
       serviceAccountName: kubermatic-installer
       containers:
       - name: kubermatic-installer
-        image: kubermatic/installer:master
+        image: kubermatic/installer:{INSTALLER_TAG}
         command:
         - /kubermatic/deploy_helm_charts.sh
         args:
