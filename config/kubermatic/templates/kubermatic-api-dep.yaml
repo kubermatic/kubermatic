@@ -1,7 +1,6 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  namespace: kubermatic
   name: kubermatic-api-v1
 spec:
   replicas: {{.Values.KubermaticAPIReplicaCount}}

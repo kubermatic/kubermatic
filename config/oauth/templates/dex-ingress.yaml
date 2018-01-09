@@ -2,21 +2,20 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: dex
-  namespace: oauth
   annotations:
     kubernetes.io/ingress.class: "nginx"
 spec:
   tls:
   - hosts:
-    - {{ .Values.KubermaticURL | trim }}
+    - {{ .Values.dex.ingress.host }}
   backend:
     serviceName: dex
     servicePort: 5556
   rules:
-  - host: {{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.dex.ingress.host }}
     http:
       paths:
-      - path: /dex
+      - path: {{ .Values.dex.ingress.path }}
         backend:
           serviceName: dex
           servicePort: 5556

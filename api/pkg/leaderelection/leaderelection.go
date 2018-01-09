@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	leaderElectionNamespace     = "kube-system"
-	leaderElectionLeaseDuration = 15 * time.Second
-	leaderElectionRenewDeadline = 10 * time.Second
-	leaderElectionRetryPeriod   = 2 * time.Second
+	namespace     = "kube-system"
+	leaseDuration = 15 * time.Second
+	renewDeadline = 10 * time.Second
+	retryPeriod   = 2 * time.Second
 )
 
 // New returns a new leader elector which uses the "hostname + name" as lock identity
@@ -30,7 +30,7 @@ func New(name string, leaderElectionClient kubernetes.Interface, recorder record
 	// Lock required for leader election
 	rl := resourcelock.EndpointsLock{
 		EndpointsMeta: metav1.ObjectMeta{
-			Namespace: leaderElectionNamespace,
+			Namespace: namespace,
 			Name:      name,
 		},
 		Client: leaderElectionClient.CoreV1(),
@@ -42,9 +42,9 @@ func New(name string, leaderElectionClient kubernetes.Interface, recorder record
 
 	return leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 		Lock:          &rl,
-		LeaseDuration: leaderElectionLeaseDuration,
-		RenewDeadline: leaderElectionRenewDeadline,
-		RetryPeriod:   leaderElectionRetryPeriod,
+		LeaseDuration: leaseDuration,
+		RenewDeadline: renewDeadline,
+		RetryPeriod:   retryPeriod,
 		Callbacks:     callbacks,
 	})
 }

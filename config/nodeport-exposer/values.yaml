@@ -1,6 +1,5 @@
-NodePortExposer:
-  Image: "kubermatic/nodeport-exposer"
-  ImageTag: "v1.0"
-  Namespace: "nodeport-exposer"
-  LBServiceName: "nodeport-exposer"
+nodePortExposer:
+  image:
+    repository: "kubermatic/nodeport-exposer"
+    tag: "v1.0"
 

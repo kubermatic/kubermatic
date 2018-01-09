@@ -41,6 +41,8 @@ spec:
         version: v0.4.1
         kubernetes.io/cluster-service: "true"
     spec:
+      updateStrategy:
+        type: RollingUpdate
       containers:
       - name: node-problem-detector
         image: gcr.io/google_containers/node-problem-detector:v0.4.1

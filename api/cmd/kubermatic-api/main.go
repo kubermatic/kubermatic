@@ -82,7 +82,7 @@ func main() {
 		glog.Error(err)
 	}
 
-	authenticator := auth.NewOpenIDAuthenticator(
+	authenticator, err := auth.NewOpenIDAuthenticator(
 		*tokenIssuer,
 		*clientID,
 		auth.NewCombinedExtractor(
@@ -90,6 +90,9 @@ func main() {
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 	)
+	if err != nil {
+		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", *tokenIssuer, *clientID, err)
+	}
 
 	// start server
 	ctx := context.Background()
