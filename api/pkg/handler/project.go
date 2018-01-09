@@ -74,7 +74,7 @@ type memberPathReq struct {
 	MemberID string `json:"member_id"`
 }
 
-func decodeMemberPathReqInto(req *memberPathReq, c context.Context, r *http.Request) error {
+func decodeMemberPathReqInto(c context.Context, req *memberPathReq, r *http.Request) error {
 	var ok bool
 	pReq, err := decodeMemberPathReq(c, r)
 	if err != nil {
@@ -87,7 +87,7 @@ func decodeMemberPathReqInto(req *memberPathReq, c context.Context, r *http.Requ
 	return nil
 }
 
-func decodeProjectPathReqInto(req *projectPathReq, c context.Context, r *http.Request) error {
+func decodeProjectPathReqInto(c context.Context, req *projectPathReq, r *http.Request) error {
 	var ok bool
 	pReq, err := decodeProjectPathReq(c, r)
 	if err != nil {
@@ -299,11 +299,11 @@ func decodeUpdateProjectMember(c context.Context, r *http.Request) (interface{},
 	var err error
 	var ok bool
 
-	err = decodeProjectPathReqInto(&(req.projectPathReq), c, r)
+	err = decodeProjectPathReqInto(c, &req.projectPathReq, r)
 	if err != nil {
 		return nil, err
 	}
-	err = decodeMemberPathReqInto(&(req.memberPathReq), c, r)
+	err = decodeMemberPathReqInto(c, &req.memberPathReq, r)
 	if err != nil {
 		return nil, err
 	}
