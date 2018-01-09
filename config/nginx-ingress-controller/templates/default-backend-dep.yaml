@@ -4,7 +4,6 @@ metadata:
   name: default-http-backend
   labels:
     app: default-http-backend
-  namespace: ingress-nginx
 spec:
   replicas: 1
   template:

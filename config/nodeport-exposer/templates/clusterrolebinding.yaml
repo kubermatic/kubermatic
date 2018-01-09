@@ -8,5 +8,5 @@ roleRef:
   name: nodeport-exposer
 subjects:
   - kind: ServiceAccount
-    namespace: {{ .Values.NodePortExposer.Namespace }}
+    namespace: {{ .Release.Namespace }}
     name: nodeport-exposer
