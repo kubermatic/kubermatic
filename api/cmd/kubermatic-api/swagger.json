@@ -528,6 +528,269 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/cluster": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "get"
+        ],
+        "operationId": "getProjectClustersHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/KubeCluster"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "list"
+        ],
+        "operationId": "newProjectClusterHandlerV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "list"
+        ],
+        "operationId": "getProjectClusterHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "delete"
+        ],
+        "operationId": "deleteProjectClusterHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "kubeconfig",
+          "get"
+        ],
+        "operationId": "getProjectClusterKubeconfigHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/KubeConfig"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}/node": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "nodes",
+          "get"
+        ],
+        "operationId": "getProjectClusterNodesHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/NodeList"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "list"
+        ],
+        "operationId": "createProjectClusterNodesHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}/node/{node}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "nodes",
+          "delete"
+        ],
+        "operationId": "deleteProjectClusterNodeHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}/upgrade": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "upgrade"
+        ],
+        "operationId": "performProjectClusterUpgrade",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/cluster/{cluster}/upgrades": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "upgrade",
+          "versions"
+        ],
+        "operationId": "getProjectClusterPossibleClusterUpgrades",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Versions"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/k8s/nodes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "nodes",
+          "get"
+        ],
+        "operationId": "getProjectClusterK8sNodesHandler",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/NodeList"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/me": {
       "get": {
         "produces": [
@@ -725,6 +988,82 @@
             "schema": {
               "$ref": "#/definitions/Member"
             }
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/ssh-keys": {
+      "get": {
+        "description": "Lists SSH keys from the user",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "list"
+        ],
+        "operationId": "listProjectSSHKeys",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a SSH keys for the user",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "create"
+        ],
+        "operationId": "createProjectSSHKey",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/ssh-keys/{meta_name}": {
+      "delete": {
+        "description": "Deletes a SSH keys for the user",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "ssh",
+          "keys",
+          "delete"
+        ],
+        "operationId": "deleteProjectSSHKey",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UserSSHKey"
           },
           "default": {
             "$ref": "#/responses/APIError"
@@ -1340,11 +1679,11 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_email": {
+        "memberEmail": {
           "type": "string",
           "x-go-name": "MemberEmail"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1358,7 +1697,7 @@
       "description": "MemberList a list of members",
       "type": "object",
       "properties": {
-        "project_members": {
+        "projectMembers": {
           "description": "in: body",
           "type": "array",
           "items": {
@@ -1520,7 +1859,7 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_ids": {
+        "memberIds": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1531,7 +1870,7 @@
           "type": "string",
           "x-go-name": "Name"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1778,7 +2117,7 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_email": {
+        "memberEmail": {
           "type": "string",
           "x-go-name": "MemberEmail"
         },
@@ -1787,7 +2126,7 @@
           "type": "string",
           "x-go-name": "ProjectID"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1804,7 +2143,7 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_ids": {
+        "memberIds": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1815,7 +2154,7 @@
           "type": "string",
           "x-go-name": "Name"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1890,7 +2229,7 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_email": {
+        "memberEmail": {
           "type": "string",
           "x-go-name": "MemberEmail"
         },
@@ -1904,7 +2243,7 @@
           "type": "string",
           "x-go-name": "ProjectID"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1921,7 +2260,7 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "member_ids": {
+        "memberIds": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1937,7 +2276,7 @@
           "type": "string",
           "x-go-name": "ProjectID"
         },
-        "role_names": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"
