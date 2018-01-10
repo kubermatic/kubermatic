@@ -24,8 +24,6 @@ spec:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
-      updateStrategy:
-        type: RollingUpdate
       hostNetwork: true
       tolerations:
       - operator: "Exists"
