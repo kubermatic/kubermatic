@@ -39,3 +39,10 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 		}
 	}
 }
+
+func getUserHandler() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := auth.GetUser(ctx)
+		return user, nil
+	}
+}
