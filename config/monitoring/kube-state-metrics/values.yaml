@@ -1,7 +1,7 @@
 kubeStateMetrics:
   image:
     repository: quay.io/coreos/kube-state-metrics
-    tag: v1.1.0
+    tag: v1.2.0-rc.0
   resizer:
     image:
       repository: gcr.io/google_containers/addon-resizer
