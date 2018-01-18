@@ -17,7 +17,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// RevokeClusterTokenReq is consumed by
+// RevokeClusterToken is consumed by
 // swagger:model RevokeClusterToken
 type RevokeClusterToken struct {
 	Token string `json:"token"`
@@ -30,7 +30,7 @@ type revokeClusterTokenReq struct {
 	RevokeClusterToken
 }
 
-// RevokeClusterTokenReq
+// RevokeClusterTokenResp is returned by the revokeClusterToken endpoint
 // swagger:response RevokeClusterTokenResp
 type RevokeClusterTokenResp struct {
 }

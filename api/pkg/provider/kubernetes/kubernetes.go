@@ -214,7 +214,10 @@ func (p *kubernetesProvider) RevokeClusterToken(user auth.User, name string) (*k
 	}
 	clusterObj.Address.AdminToken = ""
 	clusterObj.Status.Phase = kubermaticv1.PendingClusterStatusPhase
-	p.client.KubermaticV1().Clusters().Update(clusterObj)
+	_, err = p.client.KubermaticV1().Clusters().Update(clusterObj)
+	if err != nil {
+		return nil, err
+	}
 	// TODO: Is there a fancy Kubernetes function that abstracts this?
 	err = wait.Poll(time.Second*2, time.Minute*5, func() (done bool, err error) {
 		updatingCluster, err := p.client.KubermaticV1().Clusters().Get(c.Name, metav1.GetOptions{})
