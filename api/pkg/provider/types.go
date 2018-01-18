@@ -58,7 +58,7 @@ type DataProvider interface {
 
 // ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
-	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
+	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec.
 	NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
@@ -70,8 +70,11 @@ type ClusterProvider interface {
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user auth.User, cluster string) error
 
-	// InitiateClusterUpgrade upgrades a Cluster to a specific version
+	// InitiateClusterUpgrade upgrades a Cluster to a specific version.
 	InitiateClusterUpgrade(user auth.User, cluster, version string) (*kubermaticv1.Cluster, error)
+
+	// RevokeClusterToken revokes a token for a cluster and generates a new one.
+	RevokeClusterToken(user auth.User, cluster string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
