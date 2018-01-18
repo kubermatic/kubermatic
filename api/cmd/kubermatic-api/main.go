@@ -6,6 +6,7 @@
 //     Schemes: https
 //     Host: localhost
 //     Version: 0.0.2
+//     Title: KubermaticAPI
 //
 //     Consumes:
 //     - application/json

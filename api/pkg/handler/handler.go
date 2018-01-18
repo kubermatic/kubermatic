@@ -53,6 +53,8 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 //
 //     Schemes: http, https
 //
+//     Responses:
+//       200:
 func StatusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
