@@ -14,9 +14,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
+
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versions map[string]*api.MasterVersion, updates []api.MasterUpdate,
@@ -29,7 +30,7 @@ func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versi
 	router := mux.NewRouter()
 	authenticator := auth.NewFakeAuthenticator(user)
 	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
-	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, "", dcs)
+	kp := kubernetes.NewKubernetesProvider(masterCrdClient, fake.NewSimpleClientset(), cps, "", dcs)
 
 	routing := NewRouting(ctx, dcs, kp, cps, authenticator, versions, updates)
 	routing.Register(router)
