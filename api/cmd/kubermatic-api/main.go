@@ -37,6 +37,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -73,7 +74,8 @@ func main() {
 
 	config.Impersonate = rest.ImpersonationConfig{}
 	masterCrdClient := mastercrdclient.NewForConfigOrDie(config)
-	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, *workerName, dcs)
+	kubernetesClient := kubernetesclient.NewForConfigOrDie(config)
+	kp := kubernetes.NewKubernetesProvider(masterCrdClient, kubernetesClient, cps, *workerName, dcs)
 
 	// Create crd's
 	extclient := apiextclient.NewForConfigOrDie(config)
