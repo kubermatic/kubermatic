@@ -235,7 +235,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Path("/api/v1/projects/{project_id}/member/{member_id}").
 		Handler(r.deleteProjectMember())
 
-	mux.Methods(http.MethodPut).
+	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster/{cluster}/revoke-admin-token").
 		Handler(r.revokeClusterToken())
 }

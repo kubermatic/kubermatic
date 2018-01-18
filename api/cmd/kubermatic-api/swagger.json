@@ -265,7 +265,7 @@
       }
     },
     "/api/v1/cluster/{cluster}/revoke-admin-token": {
-      "put": {
+      "get": {
         "produces": [
           "application/json"
         ],

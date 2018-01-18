@@ -50,7 +50,7 @@ func decodeRevokeClusterTokenReq(c context.Context, r *http.Request) (interface{
 }
 
 // revokeClusterToken starts a cluster upgrade to a specific version
-// swagger:route PUT /api/v1/cluster/{cluster}/revoke-admin-token cluster upgrade revokeClusterToken
+// swagger:route GET /api/v1/cluster/{cluster}/revoke-admin-token cluster upgrade revokeClusterToken
 //
 //     Produces:
 //     - application/json
