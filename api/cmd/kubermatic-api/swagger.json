@@ -264,6 +264,30 @@
         }
       }
     },
+    "/api/v1/cluster/{cluster}/revoke-admin-token": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "cluster",
+          "upgrade"
+        ],
+        "operationId": "revokeClusterToken",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RevokeClusterTokenReq"
+          },
+          "default": {
+            "$ref": "#/responses/APIError"
+          }
+        }
+      }
+    },
     "/api/v1/cluster/{cluster}/upgrade": {
       "put": {
         "produces": [
@@ -1907,6 +1931,22 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "RevokeClusterToken": {
+      "description": "RevokeClusterToken is consumed by",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "RevokeClusterTokenResp": {
+      "description": "RevokeClusterTokenResp is returned by the revokeClusterToken endpoint",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
     "Role": {
       "description": "Role specifies the permissions a user has",
       "type": "object",
@@ -2222,6 +2262,20 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
+    "revokeClusterTokenReq": {
+      "type": "object",
+      "properties": {
+        "Cluster": {
+          "description": "in: path",
+          "type": "string"
+        },
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
     "updateProjectMemberReq": {
       "type": "object",
       "properties": {
@@ -2480,6 +2534,9 @@
     },
     "NodeList": {
       "description": "NodeList is an alias for the swagger definition"
+    },
+    "RevokeClusterTokenResp": {
+      "description": "RevokeClusterTokenResp is returned by the revokeClusterToken endpoint"
     },
     "User": {
       "description": "User specifies a user\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
