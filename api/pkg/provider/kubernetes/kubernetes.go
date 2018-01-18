@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
@@ -12,10 +13,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
+	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kubernetesclient "k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -29,6 +33,7 @@ const (
 type kubernetesProvider struct {
 	client client.Interface
 
+	kubernetes kubernetesclient.Interface
 	cps        map[string]provider.CloudProvider
 	dcs        map[string]provider.DatacenterMeta
 	workerName string
@@ -37,12 +42,14 @@ type kubernetesProvider struct {
 // NewKubernetesProvider creates a new kubernetes provider object
 func NewKubernetesProvider(
 	crdClient client.Interface,
+	kubernetesClient kubernetesclient.Interface,
 	cps map[string]provider.CloudProvider,
 	workerName string,
 	dcs map[string]provider.DatacenterMeta,
 ) provider.DataProvider {
 	return &kubernetesProvider{
 		cps:        cps,
+		kubernetes: kubernetesClient,
 		client:     crdClient,
 		workerName: workerName,
 		dcs:        dcs,
@@ -167,6 +174,67 @@ func (p *kubernetesProvider) InitiateClusterUpgrade(user auth.User, name, versio
 	c.Status.MasterUpdatePhase = kubermaticv1.StartMasterUpdatePhase
 
 	return p.client.KubermaticV1().Clusters().Update(c)
+}
+
+func (p *kubernetesProvider) RevokeClusterToken(user auth.User, name string) (*kubermaticv1.Cluster, error) {
+	c, err := p.Cluster(user, name)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterNS := "cluster-" + c.Name
+	apiserverDepName := "apiserver"
+	tokenSecretName := "token-users"
+
+	// This is weird, check k8s doc
+	deletePolicy := metav1.DeletePropagationForeground
+	err = p.kubernetes.CoreV1().Secrets(clusterNS).Delete(tokenSecretName, &metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
+	if err != nil {
+		return nil, err
+	}
+
+	err = wait.Poll(time.Second*2, time.Minute*5, func() (done bool, err error) {
+		_, err = p.kubernetes.CoreV1().Secrets(clusterNS).Get(tokenSecretName, metav1.GetOptions{})
+		if err == nil {
+			return false, nil
+		}
+		if kerrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Update cluster
+	clusterObj, err := p.client.KubermaticV1().Clusters().Get(c.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	clusterObj.Address.AdminToken = ""
+	clusterObj.Status.Phase = kubermaticv1.PendingClusterStatusPhase
+	p.client.KubermaticV1().Clusters().Update(clusterObj)
+	// TODO: Is there a fancy Kubernetes function that abstracts this?
+	err = wait.Poll(time.Second*2, time.Minute*5, func() (done bool, err error) {
+		updatingCluster, err := p.client.KubermaticV1().Clusters().Get(c.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if updatingCluster.Status.Phase == kubermaticv1.PendingClusterStatusPhase {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Re-roll Apiserver, just deleting the apiserver does not work (It does not delete it's RS).
+	apiserverObj, err := p.kubernetes.AppsV1beta2().Deployments(clusterNS).Get(apiserverDepName, metav1.GetOptions{})
+	apiserverObj.Spec.Template.Labels["revoke-token"] = fmt.Sprintf("just-here-to-re-roll-%s", uuid.ShortUID(3))
+	_, err = p.kubernetes.AppsV1beta2().Deployments(clusterNS).Update(apiserverObj)
+	return nil, err
 }
 
 func (p *kubernetesProvider) assignSSHKeyToCluster(user auth.User, name, cluster string) error {
