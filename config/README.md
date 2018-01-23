@@ -23,7 +23,7 @@ kubectl create -f installer/clusterrolebinding.yaml
 # values.yaml is the file you created during the step above
 kubectl -n kubermatic-installer create secret generic values --from-file=values.yaml
 #Create the docker secret - needs to have read access to kubermatic/installer 
-kubectl -n kubermatic-installer create secret dockercfg regsecret --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+kubectl  -n kubermatic-installer create secret docker-registry dockercfg --docker-username='' --docker-password='' --docker-email=''
 # Create and run the installer job
 # Replace the version in the installer job template
 cp installer/install-job.template.yaml install-job.yaml

@@ -10,6 +10,9 @@ spec:
     metadata:
       labels:
         app: dex
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/dex-config.yaml") . | sha256sum }}
+        checksum/themes: {{ include (print $.Template.BasePath "/themes-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: dex
       containers:
