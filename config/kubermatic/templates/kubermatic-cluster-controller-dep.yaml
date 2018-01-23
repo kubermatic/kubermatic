@@ -9,6 +9,12 @@ spec:
       labels:
         role: cluster-controller
         version: v1
+      annotations:
+        checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
+        checksum/datacenter-secretes: {{ include (print $.Template.BasePath "/datacenter-secrets.yaml") . | sha256sum }}
+        checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
+        checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
+        checksum/node-files: {{ include (print $.Template.BasePath "/node-files-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: kubermatic
       containers:
