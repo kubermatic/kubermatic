@@ -174,17 +174,17 @@ pipeline:
     when:
       branch: master
 
-  deploy-syseleven:
-    group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
-      - cp config/installer/install-job.template.yaml install-job.yaml
-      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job.yaml
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job.yaml
-    secrets: [ kubeconfig_syseleven ]
-    when:
-      event: [tag]
+#  deploy-syseleven:
+#    group: deploy
+#    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
+#    commands:
+#      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
+#      - cp config/installer/install-job.template.yaml install-job.yaml
+#      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job.yaml
+#      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job.yaml
+#    secrets: [ kubeconfig_syseleven ]
+#    when:
+#      event: [tag]
 
   slack-failure:
     group: notify
