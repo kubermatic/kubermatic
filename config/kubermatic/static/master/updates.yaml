@@ -27,3 +27,10 @@ updates:
   enabled: true
   visible: true
   promote: true
+- from: 1.8.x
+  to: 1.9.2
+  automatic: false
+  rollbackAllowed: false
+  enabled: true
+  visible: true
+  promote: true

@@ -159,3 +159,21 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
     pod-network-bridge: v0.2
+- name: 1.9.2
+  id: 1.9.2
+  default: false
+  allowedNodeVersions: [1.4.0]
+  etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
+  etcdClusterYaml: etcd-cluster.yaml
+  apiserverDeploymentYaml: apiserver-dep.yaml
+  controllerDeploymentYaml: controller-manager-dep.yaml
+  schedulerDeploymentYaml: scheduler-dep.yaml
+  nodeControllerDeploymentYaml: node-controller-dep.yaml
+  addonManagerDeploymentYaml: addon-manager-dep.yaml
+  values:
+    k8s-version: v1.9.2
+    etcd-operator-version: v0.6.0
+    etcd-cluster-version: 3.2.7
+    kube-machine-version: v0.2.3
+    addon-manager-version: v1.8.2
+    pod-network-bridge: v0.2
