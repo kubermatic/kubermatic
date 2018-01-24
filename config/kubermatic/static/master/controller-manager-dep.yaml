@@ -29,6 +29,9 @@ spec:
           "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
           "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
           "--cluster-cidr=172.25.0.0/16",
+          {{ if not (contains "v1.7" (index .Version.Values "k8s-version")) }}
+          "--configure-cloud-routes=false",
+          {{ end }}
           {{ if eq .CloudProvider "aws" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
           "--cloud-provider=aws",
