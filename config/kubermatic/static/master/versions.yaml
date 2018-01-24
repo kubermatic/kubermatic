@@ -157,7 +157,7 @@ versions:
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.8.2
+    addon-manager-version: v1.9.0
     pod-network-bridge: v0.2
 - name: 1.9.2
   id: 1.9.2
