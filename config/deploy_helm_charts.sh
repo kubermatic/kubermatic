@@ -54,8 +54,6 @@ do
    sleep 5
 done
 
-# We need to install the monitoring charts first, as the other charts include ServiceMonitors - which is
-# a CRD created by prometheus
 ############# MONITORING #############
 # All monitoring charts require the monitoring ns.
 kubectl create namespace monitoring || true
