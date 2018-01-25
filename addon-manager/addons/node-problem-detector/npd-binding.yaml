@@ -1,15 +1,15 @@
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: heapster
+  name: npd-binding
   labels:
     kubernetes.io/cluster-service: "true"
     addonmanager.kubernetes.io/mode: Reconcile
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:heapster
+  name: system:node-problem-detector
 subjects:
-- kind: ServiceAccount
-  name: heapster
-  namespace: kube-system
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: system:node-problem-detector
