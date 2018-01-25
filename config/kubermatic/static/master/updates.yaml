@@ -13,6 +13,13 @@ updates:
   enabled: true
   visible: true
   promote: true
+- from: 1.8.*
+  to: 1.8.6
+  automatic: false
+  rollbackAllowed: false
+  enabled: true
+  visible: true
+  promote: true
 - from: 1.8.x
   to: 1.8.7
   automatic: false
