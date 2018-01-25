@@ -84,7 +84,7 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 }
 
 func apiSpec(dc *provider.DatacenterMeta) (*api.DatacenterSpec, error) {
-	p, err := provider.DatacenterCloudProviderName(&dc.Spec)
+	p, err := provider.ProviderName(&dc.Spec)
 	if err != nil {
 		return nil, err
 	}

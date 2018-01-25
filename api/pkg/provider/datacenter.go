@@ -48,6 +48,29 @@ type DatacenterSpec struct {
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
 }
 
+// AWSSpec returns the AWS specification
+func (d *DatacenterSpec) AWSSpec() interface{} { return d.AWS }
+
+// FakeSpec returns the fake	 specification
+func (d *DatacenterSpec) FakeSpec() interface{} { return nil }
+
+// DigitaloceanSpec returns the DigitalOcean specification
+func (d *DatacenterSpec) DigitaloceanSpec() interface{} { return d.Digitalocean }
+
+// BringYourOwnSpec returns the specification of your own hardware
+func (d *DatacenterSpec) BringYourOwnSpec() interface{} { return d.BringYourOwn }
+
+// BareMetalSpec returns the BareMetal specification
+func (d *DatacenterSpec) BareMetalSpec() interface{} { return d.BareMetal }
+
+// OpenStackSpec returns the OpenStack specification
+func (d *DatacenterSpec) OpenStackSpec() interface{} { return d.Openstack }
+
+const datacenterSpec = "DatacenterSpec"
+
+// Type return the type of the specification
+func (d *DatacenterSpec) Type() string { return datacenterSpec }
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location string         `yaml:"location"`
