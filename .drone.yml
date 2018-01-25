@@ -7,6 +7,7 @@ pipeline:
     image: metalmatze/dep:0.4.1
     commands:
       - cd api
+      - env
       - dep ensure -v -vendor-only
 
   gofmt:
