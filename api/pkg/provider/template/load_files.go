@@ -5,14 +5,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
 )
 
 // LoadNodeClassFile parses and returns the given nodeclass template
-func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *api.NodeSpec, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
 	t, err := k8stemplate.ParseFile(filename)
 	if err != nil {
 		return nil, err
@@ -32,12 +32,12 @@ func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *ap
 
 	data := struct {
 		Cluster    *kubermaticv1.Cluster
-		NodeSpec   *api.NodeSpec
+		NodeSpec   *apiv1.NodeSpec
 		Datacenter provider.DatacenterMeta
 		Name       string
 		Kubeconfig string
 		Keys       []*kubermaticv1.UserSSHKey
-		Version    *api.MasterVersion
+		Version    *apiv1.MasterVersion
 	}{
 		Cluster:    c,
 		NodeSpec:   nSpec,

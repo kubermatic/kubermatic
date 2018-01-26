@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
@@ -71,9 +71,9 @@ type controller struct {
 	workerName string
 
 	updateController      update.Interface
-	versions              map[string]*api.MasterVersion
-	updates               []api.MasterUpdate
-	defaultMasterVersion  *api.MasterVersion
+	versions              map[string]*apiv1.MasterVersion
+	updates               []apiv1.MasterUpdate
+	defaultMasterVersion  *apiv1.MasterVersion
 	automaticUpdateSearch *version.UpdatePathSearch
 
 	metrics ControllerMetrics
@@ -90,8 +90,8 @@ func NewController(
 	clientProvider SeedClientProvider,
 	masterCrdClient mastercrdclient.Interface,
 	cps map[string]provider.CloudProvider,
-	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
+	versions map[string]*apiv1.MasterVersion,
+	updates []apiv1.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
 	workerName string,
@@ -152,7 +152,7 @@ func NewController(
 		cc.versions,
 		cc.updates,
 	)
-	automaticUpdates := []api.MasterUpdate{}
+	automaticUpdates := []apiv1.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {
 			automaticUpdates = append(automaticUpdates, u)

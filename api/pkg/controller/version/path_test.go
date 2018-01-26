@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 )
 
 func TestPathSearch_Search(t *testing.T) {
 	search := NewUpdatePathSearch(
-		map[string]*api.MasterVersion{
+		map[string]*apiv1.MasterVersion{
 			"1.5.1": {
 				ID: "1.5.1",
 			},
@@ -22,7 +22,7 @@ func TestPathSearch_Search(t *testing.T) {
 			"1.5.4": {
 				ID: "1.5.4",
 			},
-		}, []api.MasterUpdate{
+		}, []apiv1.MasterUpdate{
 			{
 				From: "1.5.1",
 				To:   "1.5.2",
@@ -60,7 +60,7 @@ func TestPathSearch_Search(t *testing.T) {
 
 func TestPathSearch_SemverSearch(t *testing.T) {
 	search := NewUpdatePathSearch(
-		map[string]*api.MasterVersion{
+		map[string]*apiv1.MasterVersion{
 			"1.5.1": {
 				ID: "1.5.1",
 			},
@@ -73,7 +73,7 @@ func TestPathSearch_SemverSearch(t *testing.T) {
 			"1.5.4": {
 				ID: "1.5.4",
 			},
-		}, []api.MasterUpdate{
+		}, []apiv1.MasterUpdate{
 			{
 				From: "1.5.1",
 				To:   "1.5.2",

@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
@@ -43,7 +43,7 @@ type client struct {
 	kubeconfigFile string
 	cluster        *kubermaticv1.Cluster
 	client         *http.Client
-	seeds          []api.Datacenter
+	seeds          []apiv1.Datacenter
 }
 
 func newClient(domain string, token string, outPath string) *client {
@@ -82,19 +82,19 @@ func (c *clusterRequest) applyDO() {
 }
 
 type nodeRequest struct {
-	Instances int          `json:"instances"`
-	Spec      api.NodeSpec `json:"spec"`
+	Instances int            `json:"instances"`
+	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
 func newNodeRequest(cl kubermaticv1.Cluster) *nodeRequest {
 	return &nodeRequest{
 		Instances: instanceCount,
-		Spec:      api.NodeSpec{},
+		Spec:      apiv1.NodeSpec{},
 	}
 }
 
 func (n *nodeRequest) applyDO(cl kubermaticv1.Cluster) {
-	n.Spec.Digitalocean = &api.DigitaloceanNodeSpec{
+	n.Spec.Digitalocean = &apiv1.DigitaloceanNodeSpec{
 		Size: "2gb",
 	}
 }
@@ -291,13 +291,13 @@ func (c *client) purge() error {
 }
 
 func (c *client) updateSeeds() error {
-	var dcs []api.Datacenter
+	var dcs []apiv1.Datacenter
 	err := c.smartDo("/dc", nil, &dcs)
 	if err != nil {
 		return err
 	}
 
-	seeds := make([]api.Datacenter, 0)
+	seeds := make([]apiv1.Datacenter, 0)
 	for _, dc := range dcs {
 		if dc.Seed {
 			seeds = append(seeds, dc)

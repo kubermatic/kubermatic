@@ -3,7 +3,7 @@ package cluster
 import (
 	"log"
 
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
 	seedcrdclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	seedcrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/fake"
@@ -84,8 +84,8 @@ func newTestController(
 	}
 }
 
-func buildMasterVerionsMap() map[string]*api.MasterVersion {
-	return map[string]*api.MasterVersion{
+func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
+	return map[string]*apiv1.MasterVersion{
 		"1.5.2": {
 			Name:                       "1.5.2",
 			ID:                         "1.5.2",
@@ -134,8 +134,8 @@ func buildMasterVerionsMap() map[string]*api.MasterVersion {
 	}
 }
 
-func buildMasterUpdates() []api.MasterUpdate {
-	return []api.MasterUpdate{
+func buildMasterUpdates() []apiv1.MasterUpdate {
+	return []apiv1.MasterUpdate{
 		{
 			From:            "1.5.*",
 			To:              "1.5.2",

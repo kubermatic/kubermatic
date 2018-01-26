@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
@@ -20,8 +20,8 @@ type Versions = []semver.Version
 
 func getClusterUpgrades(
 	kp provider.ClusterProvider,
-	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
+	versions map[string]*apiv1.MasterVersion,
+	updates []apiv1.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
@@ -67,8 +67,8 @@ func getClusterUpgrades(
 
 func performClusterUpgrade(
 	kp provider.ClusterProvider,
-	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
+	versions map[string]*apiv1.MasterVersion,
+	updates []apiv1.MasterUpdate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)

@@ -2,7 +2,7 @@ package bringyourown
 
 import (
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
@@ -26,14 +26,14 @@ func (b *bringyourown) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *bringyourown) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (b *bringyourown) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
 	return nil, nil
 }
 
-func (b *bringyourown) NodeClassName(nSpec *api.NodeSpec) string {
+func (b *bringyourown) NodeClassName(nSpec *apiv1.NodeSpec) string {
 	return ""
 }
 
-func (b *bringyourown) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
+func (b *bringyourown) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }

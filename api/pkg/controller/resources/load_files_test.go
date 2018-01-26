@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/pmezard/go-difflib/difflib"
 
@@ -121,7 +121,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
-	versions := []*api.MasterVersion{
+	versions := []*apiv1.MasterVersion{
 		{
 			Name:                         "1.7.0",
 			ID:                           "1.7.0",
