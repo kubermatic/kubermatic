@@ -24,9 +24,7 @@ func TestLoadServiceFile(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
-				BareMetal: &kubermaticv1.BareMetalCloudSpec{
-					Name: "test",
-				},
+				BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,9 +55,7 @@ func TestLoadPVCFile(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
-				BareMetal: &kubermaticv1.BareMetalCloudSpec{
-					Name: "test",
-				},
+				BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -219,7 +215,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 			},
 		},
 		"bringyourown": {
-			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{PrivateIntf: "bringyourown-private-interface"},
+			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
 	}
 

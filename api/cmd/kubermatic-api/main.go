@@ -1,11 +1,16 @@
-//go:generate swagger generate spec
+// Package classification Kubermatic API.
+//
+// Kubermatic API
+//
+// This describes possible operations which can be made against the Kubermatic API.
+//
 // Terms Of Service:
 //
 // there are no TOS at this moment, use at your own risk we take no responsibility
 //
 //     Schemes: https
-//     Host: localhost
-//     Version: 0.0.2
+//     Host: cloud.kubermatic.io
+//     Version: 2.2.3
 //
 //     Consumes:
 //     - application/json

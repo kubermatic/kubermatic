@@ -15,11 +15,23 @@ const (
 	contentTypeJSON = "application/json"
 )
 
-// APIError we need to work with github.com/yvasiyarov/swagger
-// based on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go
-// swagger:response APIError
-type APIError struct {
-	ErrorCode    int    `json:"code"`
+// ErrorResponse is the default representation of an error
+// swagger:response errorResponse
+type ErrorResponse struct {
+	// The error details
+	// in: body
+	Error ErrorDetails `json:"error"`
+}
+
+// ErrorDetails contains details about the error
+type ErrorDetails struct {
+	// The error code
+	//
+	// Required: true
+	ErrorCode int `json:"code"`
+	// The error message
+	//
+	// Required: true
 	ErrorMessage string `json:"message"`
 }
 
@@ -30,14 +42,13 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 		errorCode = h.StatusCode()
 		msg = h.Error()
 	}
-	e := struct {
-		Error APIError `json:"error"`
-	}{
-		Error: APIError{
+	e := ErrorResponse{
+		Error: ErrorDetails{
 			ErrorCode:    errorCode,
 			ErrorMessage: msg,
 		},
 	}
+
 	w.Header().Set(headerContentType, contentTypeJSON)
 	w.WriteHeader(errorCode)
 	err = encodeJSON(ctx, w, e)
@@ -46,13 +57,11 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-// StatusOK returns a handler always returning http status code 200 (StatusOK).
-// swagger:route GET /api/healthz status health StatusOK
-//
-// Return a HTTP 200 if everythings fine
-//
-//     Schemes: http, https
-//
+// EmptyResponse is a empty response
+// swagger:response empty
+type EmptyResponse struct{}
+
+// StatusOK returns the status code 200
 func StatusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }

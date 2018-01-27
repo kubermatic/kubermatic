@@ -27,7 +27,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 		for _, dcName := range keys {
 			dc := dcs[dcName]
 
-			if dc.Private && !user.IsAdmin() {
+			if dc.Private && !auth.IsAdmin(&user) {
 				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.ID)
 				continue
 			}
@@ -39,9 +39,9 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 			}
 
 			adc := apiv1.Datacenter{
-				Metadata: apiv1.Metadata{
-					Name:     dcName,
-					Revision: "1",
+				Metadata: apiv1.ObjectMeta{
+					Name:            dcName,
+					ResourceVersion: "1",
 				},
 				Spec: *spec,
 				Seed: dc.IsSeed,
@@ -63,7 +63,7 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
-		if dc.Private && !user.IsAdmin() {
+		if dc.Private && !auth.IsAdmin(&user) {
 			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
@@ -73,9 +73,9 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 		}
 
 		return &apiv1.Datacenter{
-			Metadata: apiv1.Metadata{
-				Name:     req.DC,
-				Revision: "1",
+			Metadata: apiv1.ObjectMeta{
+				Name:            req.DC,
+				ResourceVersion: "1",
 			},
 			Spec: *spec,
 			Seed: dc.IsSeed,
@@ -105,8 +105,6 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 		}
 	case dc.Spec.BringYourOwn != nil:
 		spec.BringYourOwn = &apiv1.BringYourOwnDatacenterSpec{}
-	case dc.Spec.BareMetal != nil:
-		spec.BareMetal = &apiv1.BareMetalDatacenterSpec{}
 	case dc.Spec.Openstack != nil:
 		spec.Openstack = &apiv1.OpenstackDatacenterSpec{
 			AuthURL:          dc.Spec.Openstack.AuthURL,
