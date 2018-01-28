@@ -5,6 +5,7 @@ workspace:
 pipeline:
   dep:
     image: metalmatze/dep:0.4.1
+    pull: true
     commands:
       - cd api
       - env
@@ -20,6 +21,7 @@ pipeline:
   license-validation:
     group: lint
     image: metalmatze/wwhrd:1.9
+    pull: true
     commands:
       - cd api
       - wwhrd check -f ../allowed_licensed.yaml
@@ -27,6 +29,7 @@ pipeline:
   lint:
     group: lint
     image: metalmatze/gometalinter:1.9
+    pull: true
     commands:
       - cd api
       - make lint
@@ -71,7 +74,8 @@ pipeline:
 
   kubermatic-docker-always:
     group: push-always
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -83,7 +87,8 @@ pipeline:
 
   kubermatic-installer-docker-always:
     group: push-always
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -95,7 +100,8 @@ pipeline:
 
   kubermatic-docker-master:
     group: push-master
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -109,7 +115,8 @@ pipeline:
 
   kubermatic-installer-docker-master:
     group: push-master
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -123,7 +130,8 @@ pipeline:
 
   kubermatic-docker-release:
     group: push-release
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -138,7 +146,8 @@ pipeline:
 
   kubermatic-installer-docker-release:
     group: push-release
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -190,6 +199,7 @@ pipeline:
   slack-failure:
     group: notify
     image: kubermaticbot/drone-slack
+    pull: true
     webhook: https://hooks.slack.com/services/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
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -211,6 +221,7 @@ pipeline:
   slack-deploy:
     group: notify
     image: kubermaticbot/drone-slack
+    pull: true
     webhook: https://hooks.slack.com/services/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
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
