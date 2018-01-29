@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
@@ -34,8 +34,8 @@ type SeedClientProvider interface {
 func New(
 	clientProvider SeedClientProvider,
 	masterResourcesPath string,
-	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
+	versions map[string]*apiv1.MasterVersion,
+	updates []apiv1.MasterUpdate,
 ) Interface {
 	return &controller{
 		clientProvider:      clientProvider,
@@ -49,8 +49,8 @@ func New(
 type controller struct {
 	clientProvider      SeedClientProvider
 	masterResourcesPath string
-	versions            map[string]*api.MasterVersion
-	updates             []api.MasterUpdate
+	versions            map[string]*apiv1.MasterVersion
+	updates             []apiv1.MasterUpdate
 }
 
 // Sync determines the current update state, and advances to the next phase as required
@@ -101,7 +101,7 @@ func (u *controller) Sync(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error
 	return c, nil
 }
 
-func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
+func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *apiv1.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
 	client, err := u.clientProvider.GetClient(c.Spec.SeedDatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
@@ -130,7 +130,7 @@ func (u *controller) updateDeployment(c *kubermaticv1.Cluster, yamlFiles []strin
 	return c, nil
 }
 
-func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *api.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
+func (u *controller) updateEtcdCluster(c *kubermaticv1.Cluster, yamlFiles []string, masterVersion *apiv1.MasterVersion, nextPhase kubermaticv1.MasterUpdatePhase) (*kubermaticv1.Cluster, error) {
 	client, err := u.clientProvider.GetCRDClient(c.Spec.SeedDatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)

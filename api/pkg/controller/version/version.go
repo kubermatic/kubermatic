@@ -9,12 +9,12 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // LoadVersions loads MasterVersions from a given path
-func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
+func LoadVersions(path string) (map[string]*apiv1.MasterVersion, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -26,9 +26,9 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 	}
 
 	s := struct {
-		Versions []api.MasterVersion `yaml:"versions"`
+		Versions []apiv1.MasterVersion `yaml:"versions"`
 	}{
-		[]api.MasterVersion{},
+		[]apiv1.MasterVersion{},
 	}
 
 	err = yaml.Unmarshal(bytes, &s)
@@ -36,7 +36,7 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 		return nil, err
 	}
 
-	verMap := make(map[string]*api.MasterVersion)
+	verMap := make(map[string]*apiv1.MasterVersion)
 
 	for i, ver := range s.Versions {
 		verMap[ver.ID] = &s.Versions[i]
@@ -46,7 +46,7 @@ func LoadVersions(path string) (map[string]*api.MasterVersion, error) {
 }
 
 // DefaultMasterVersion determines the current default MasterVersion from a set of versions
-func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVersion, error) {
+func DefaultMasterVersion(versions map[string]*apiv1.MasterVersion) (*apiv1.MasterVersion, error) {
 	for _, ver := range versions {
 		if ver.Default {
 			return ver, nil
@@ -57,10 +57,10 @@ func DefaultMasterVersion(versions map[string]*api.MasterVersion) (*api.MasterVe
 }
 
 // BestAutomaticUpdate determines the best automatic update available from the current version
-func BestAutomaticUpdate(from string, updates []api.MasterUpdate) (*api.MasterUpdate, error) {
+func BestAutomaticUpdate(from string, updates []apiv1.MasterUpdate) (*apiv1.MasterUpdate, error) {
 	type ToUpdate struct {
 		to     *semver.Version
-		update *api.MasterUpdate
+		update *apiv1.MasterUpdate
 	}
 	tos := []*ToUpdate{}
 	semverFrom, err := semver.NewVersion(from)
