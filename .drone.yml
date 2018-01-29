@@ -8,7 +8,6 @@ pipeline:
     pull: true
     commands:
       - cd api
-      - env
       - dep ensure -v -vendor-only
 
   gofmt:
@@ -165,9 +164,10 @@ pipeline:
     image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
     commands:
       - echo $KUBECONFIG_DEV | base64 -d > /kubeconfig
-      - cp config/installer/install-job.template.yaml install-job.yaml
-      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job.yaml
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job.yaml
+      - cp config/installer/install-job.template.yaml install-job-dev.yaml
+      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-dev.yaml
+      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-dev.yaml
+      - rm install-job-dev.yaml
     secrets: [ kubeconfig_dev ]
     when:
       branch: master
@@ -177,9 +177,10 @@ pipeline:
     image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
     commands:
       - echo $KUBECONFIG_CLOUD | base64 -d > /kubeconfig
-      - cp config/installer/install-job.template.yaml install-job.yaml
-      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job.yaml
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job.yaml
+      - cp config/installer/install-job.template.yaml install-job-cloud.yaml
+      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-cloud.yaml
+      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-cloud.yaml
+      - rm install-job-cloud.yaml
     secrets: [ kubeconfig_cloud ]
     when:
       branch: master
@@ -189,9 +190,10 @@ pipeline:
 #    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
 #    commands:
 #      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
-#      - cp config/installer/install-job.template.yaml install-job.yaml
-#      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job.yaml
-#      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job.yaml
+#      - cp config/installer/install-job.template.yaml install-job-sys11.yaml
+#      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-sys11.yaml
+#      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-sys11.yaml
+#      - rm install-job-sys11.yaml
 #    secrets: [ kubeconfig_syseleven ]
 #    when:
 #      event: [tag]
