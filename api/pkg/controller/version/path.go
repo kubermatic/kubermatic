@@ -5,24 +5,24 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version/dijkstra"
 )
 
 // UpdatePathSearch represents a query for a path between K8s versions
 type UpdatePathSearch struct {
-	updates []api.MasterUpdate
+	updates []apiv1.MasterUpdate
 	nodes   map[string]*node
 	matcher Matcher
 }
 
 type node struct {
-	version *api.MasterVersion
+	version *apiv1.MasterVersion
 	edges   []dijkstra.Edge
 }
 
 type edge struct {
-	update *api.MasterUpdate
+	update *apiv1.MasterUpdate
 	dest   *node
 }
 
@@ -91,7 +91,7 @@ func (m EqualityMatcher) Match(pattern string, version string) bool { return pat
 func (m EqualityMatcher) Lower(a, b string) bool { return a < b }
 
 // NewUpdatePathSearch finds a path between MasterVersions
-func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []api.MasterUpdate, matcher Matcher) *UpdatePathSearch {
+func NewUpdatePathSearch(versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate, matcher Matcher) *UpdatePathSearch {
 	result := &UpdatePathSearch{
 		updates: updates,
 		nodes:   map[string]*node{},
@@ -132,7 +132,7 @@ func NewUpdatePathSearch(versions map[string]*api.MasterVersion, updates []api.M
 }
 
 // Search finds an MasterUpdate path between versions
-func (s *UpdatePathSearch) Search(from, to string) ([]*api.MasterUpdate, error) {
+func (s *UpdatePathSearch) Search(from, to string) ([]*apiv1.MasterUpdate, error) {
 	fromNode, found := s.nodes[from]
 	if !found {
 		return nil, fmt.Errorf("source version %q not found", from)
@@ -148,7 +148,7 @@ func (s *UpdatePathSearch) Search(from, to string) ([]*api.MasterUpdate, error) 
 		return nil, err
 	}
 
-	result := make([]*api.MasterUpdate, 0, len(p))
+	result := make([]*apiv1.MasterUpdate, 0, len(p))
 	prev := from
 	for _, ne := range p {
 		v := ne.Node.(*node)

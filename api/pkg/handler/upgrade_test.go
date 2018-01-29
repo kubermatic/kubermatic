@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,8 +20,8 @@ func TestGetClusterUpgrades(t *testing.T) {
 	tests := []struct {
 		name        string
 		cluster     *kubermaticv1.Cluster
-		versions    map[string]*api.MasterVersion
-		updates     []api.MasterUpdate
+		versions    map[string]*apiv1.MasterVersion
+		updates     []apiv1.MasterUpdate
 		wantUpdates []string
 	}{
 		{
@@ -34,7 +34,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
 			},
 			wantUpdates: []string{"1.6.1", "1.7.0"},
-			versions: map[string]*api.MasterVersion{
+			versions: map[string]*apiv1.MasterVersion{
 				"1.6.0": {
 					Name:                       "v1.6.0",
 					ID:                         "1.6.0",
@@ -84,7 +84,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					},
 				},
 			},
-			updates: []api.MasterUpdate{
+			updates: []apiv1.MasterUpdate{
 				{
 					From:            "1.6.0",
 					To:              "1.6.1",
@@ -115,7 +115,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
 			},
 			wantUpdates: []string{},
-			versions: map[string]*api.MasterVersion{
+			versions: map[string]*apiv1.MasterVersion{
 				"1.6.0": {
 					Name:                       "v1.6.0",
 					ID:                         "1.6.0",
@@ -133,7 +133,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					},
 				},
 			},
-			updates: []api.MasterUpdate{},
+			updates: []apiv1.MasterUpdate{},
 		},
 	}
 	for _, test := range tests {
