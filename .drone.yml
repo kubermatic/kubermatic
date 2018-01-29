@@ -8,7 +8,6 @@ pipeline:
     pull: true
     commands:
       - cd api
-      - env
       - dep ensure -v -vendor-only
 
   gofmt:
