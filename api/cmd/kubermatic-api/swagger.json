@@ -27,7 +27,10 @@
           "status",
           "health"
         ],
-        "operationId": "StatusOK"
+        "operationId": "StatusOK",
+        "responses": {
+          "200": {}
+        }
       }
     },
     "/api/v1/cluster": {
