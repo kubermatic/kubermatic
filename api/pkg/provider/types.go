@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
@@ -21,7 +21,6 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
-	BareMetalCloudProvider    = "baremetal"
 	OpenstackCloudProvider    = "openstack"
 
 	DefaultSSHPort     = 22
@@ -44,9 +43,9 @@ type CloudSpecProvider interface {
 
 // NodeClassProvider declares a set of methods to manage NodeClasses
 type NodeClassProvider interface {
-	ValidateNodeSpec(*kubermaticv1.CloudSpec, *api.NodeSpec) error
-	CreateNodeClass(*kubermaticv1.Cluster, *api.NodeSpec, []*kubermaticv1.UserSSHKey, *api.MasterVersion) (*v1alpha1.NodeClass, error)
-	NodeClassName(*api.NodeSpec) string
+	ValidateNodeSpec(*kubermaticv1.CloudSpec, *apiv1.NodeSpec) error
+	CreateNodeClass(*kubermaticv1.Cluster, *apiv1.NodeSpec, []*kubermaticv1.UserSSHKey, *apiv1.MasterVersion) (*v1alpha1.NodeClass, error)
+	NodeClassName(*apiv1.NodeSpec) string
 }
 
 // DataProvider declares the set of methods for storing kubermatic data
@@ -115,9 +114,6 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
 	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
-	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
 	}
@@ -151,7 +147,7 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 
 // NodeCloudProviderName returns the provider name for the given node where
 // one of NodeSpec.Cloud.* is set.
-func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
+func NodeCloudProviderName(spec *apiv1.NodeSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
@@ -167,9 +163,6 @@ func NodeCloudProviderName(spec *api.NodeSpec) (string, error) {
 	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
@@ -197,9 +190,6 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.BareMetal != nil {
-		clouds = append(clouds, BareMetalCloudProvider)
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)

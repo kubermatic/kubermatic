@@ -9,7 +9,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -23,8 +23,8 @@ type Routing struct {
 	provider       provider.DataProvider
 	logger         log.Logger
 	authenticator  auth.Authenticator
-	versions       map[string]*api.MasterVersion
-	updates        []api.MasterUpdate
+	versions       map[string]*apiv1.MasterVersion
+	updates        []apiv1.MasterUpdate
 }
 
 // NewRouting creates a new Routing.
@@ -34,8 +34,8 @@ func NewRouting(
 	kp provider.DataProvider,
 	cps map[string]provider.CloudProvider,
 	authenticator auth.Authenticator,
-	versions map[string]*api.MasterVersion,
-	updates []api.MasterUpdate,
+	versions map[string]*apiv1.MasterVersion,
+	updates []apiv1.MasterUpdate,
 ) Routing {
 	return Routing{
 		ctx:            ctx,

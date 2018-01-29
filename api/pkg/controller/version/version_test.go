@@ -4,19 +4,19 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 )
 
 func TestBestAutomaticUpdate(t *testing.T) {
 	version := "1.5.0"
 
-	expected := api.MasterUpdate{
+	expected := apiv1.MasterUpdate{
 		From:      "1.5.0",
 		To:        "1.5.3",
 		Automatic: true,
 	}
 	updateVersion, err := BestAutomaticUpdate(version,
-		[]api.MasterUpdate{
+		[]apiv1.MasterUpdate{
 			expected,
 			{
 				From: "1.5.5",
@@ -35,13 +35,13 @@ func TestBestAutomaticUpdate(t *testing.T) {
 func TestBestAutomaticUpdateWildCard(t *testing.T) {
 	version := "1.5.1"
 
-	expected := api.MasterUpdate{
+	expected := apiv1.MasterUpdate{
 		From:      "1.5.*",
 		To:        "1.5.3",
 		Automatic: true,
 	}
 	updateVersion, err := BestAutomaticUpdate(version,
-		[]api.MasterUpdate{
+		[]apiv1.MasterUpdate{
 			expected,
 			{
 				From: "1.5.5",
@@ -60,13 +60,13 @@ func TestBestAutomaticUpdateWildCard(t *testing.T) {
 func TestBestAutomaticUpdateWildCardMultiValid(t *testing.T) {
 	version := "1.5.1"
 
-	expected := api.MasterUpdate{
+	expected := apiv1.MasterUpdate{
 		From:      "1.5.*",
 		To:        "1.6.0",
 		Automatic: true,
 	}
 	updateVersion, err := BestAutomaticUpdate(version,
-		[]api.MasterUpdate{
+		[]apiv1.MasterUpdate{
 			expected,
 			{
 				From:      "1.5.*",

@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
@@ -366,7 +366,7 @@ func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name 
 	return cloud, nil
 }
 
-func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *api.MasterVersion) (*v1alpha1.NodeClass, error) {
+func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
@@ -390,7 +390,7 @@ func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *api.NodeSpec
 	return cnc, nil
 }
 
-func (a *amazonEc2) NodeClassName(nSpec *api.NodeSpec) string {
+func (a *amazonEc2) NodeClassName(nSpec *apiv1.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
 
@@ -491,6 +491,6 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *amazonEc2) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *api.NodeSpec) error {
+func (a *amazonEc2) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }

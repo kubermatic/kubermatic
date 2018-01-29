@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -116,8 +116,8 @@ func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 type CreateNodesReq struct {
 	ClusterReq
 	// in: body
-	Instances int          `json:"instances"`
-	Spec      api.NodeSpec `json:"spec"`
+	Instances int            `json:"instances"`
+	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
 func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {

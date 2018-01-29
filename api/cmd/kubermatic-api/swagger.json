@@ -1246,7 +1246,7 @@
           "x-go-name": "VolumeType"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "BareMetalCloudSpec": {
       "description": "BareMetalCloudSpec specifies access to a bare metal datacenter",
@@ -1289,7 +1289,7 @@
           "x-go-name": "Space"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "BringYourOwnCloudSpec": {
       "type": "object",
@@ -1308,7 +1308,7 @@
     "BringYourOwnNodeSpec": {
       "description": "BringYourOwnNodeSpec specifies a bring your own node",
       "type": "object",
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Bytes": {
       "type": "array",
@@ -1333,7 +1333,7 @@
           "x-go-name": "Frequency"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "CauseType": {
       "description": "CauseType is a machine readable value providing more detail about what\noccurred in a status response. An operation may have multiple causes for a\nstatus (whether Failure or Success).",
@@ -1564,7 +1564,7 @@
           "x-go-name": "DisableAutoUpdate"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -1595,7 +1595,7 @@
           "x-go-name": "SSHKeyFingerprints"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "FakeCloudSpec": {
       "type": "object",
@@ -1621,7 +1621,7 @@
           "x-go-name": "Type"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Initializer": {
       "type": "object",
@@ -1734,7 +1734,7 @@
           "$ref": "#/definitions/OperatingSystemSpec"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OpenstackCloudSpec": {
       "type": "object",
@@ -1800,7 +1800,7 @@
           "x-go-name": "Image"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OperatingSystemSpec": {
       "description": "OperatingSystemSpec specifies operations system options",
@@ -1814,7 +1814,7 @@
           "x-go-name": "SSHUser"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OwnerReference": {
       "description": "OwnerReference contains enough information to let you identify an owning\nobject. Currently, an owning object must be in the same namespace, so there\nis no namespace field.",
