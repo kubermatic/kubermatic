@@ -104,3 +104,6 @@ config:
           tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
           [BlockStorage]
           trust-device-path = false
+          {{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
+          ignore-volume-az = {{ .Datacenter.Spec.Openstack.IgnoreVolumeAZ }}
+          {{- end }}
