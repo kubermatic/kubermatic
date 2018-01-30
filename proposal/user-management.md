@@ -45,17 +45,17 @@ We use [User Impersonation](https://kubernetes.io/docs/admin/authentication/#use
   
 
 ## Task & effort
-* [ ] Write new API endpoints reflecting the new structure (mocks)(4h).
-  * [ ] Write swagger annotations (1h).
-* [ ] Rewrite old endpoints to reflect project ownage (mocks)(3-4h).
-  * [ ] Write swagger annotations (1h).
-* [ ] Write Project, User, Role CRD (1h)
-* [ ] Write first Implementation (use SSHKeys) (4h)
-  * [ ] When a user logs in Create a User Object
-  * [ ] When Creating a SSHKey create/update a corresponding K8s Role + Role bindign to the User
+* [ ] Write new API endpoints reflecting the new structure (mocks).
+  * [ ] Write swagger annotations.
+* [ ] Rewrite old endpoints to reflect project ownage (mocks).
+  * [ ] Write swagger annotations.
+* [ ] Write Project, User, Role CRD.
+* [ ] Write first Implementation (use SSHKeys).
+  * [ ] When a user logs in Create a User Object.
+  * [ ] When Creating a SSHKey create/update a corresponding K8s Role + Role bindign to the User.
   * [ ] When querrying use User Impersonation to get a list of the keys.
   * [ ] Set the ownerRef to the user when the user gets deleted, the key also gets deleted. 
-* [ ] Evaluation of Impl (revisit) (2h)
+* [ ] Evaluation of Impl (revisit). 
 * [ ] Adpot other resources (TBD<After Evalutation>)...
-* [ ] Set owner references (2h)
-* [ ] Migration scipts (4h)
+* [ ] Set owner references. 
+* [ ] Migration scipts.
