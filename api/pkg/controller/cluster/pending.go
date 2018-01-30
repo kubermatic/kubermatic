@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -508,10 +509,13 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
+	version, found := cc.versions[c.Spec.MasterVersion]
+	if !found {
+		return fmt.Errorf("failed to get version %s", c.Spec.MasterVersion)
+	}
 	ns := c.Status.NamespaceName
-	cms := map[string]func(c *kubermaticv1.Cluster, datacenter *provider.DatacenterMeta) (*corev1.ConfigMap, error){}
+	cms := map[string]func(c *kubermaticv1.Cluster, datacenter *provider.DatacenterMeta, version *apiv1.MasterVersion) (*corev1.ConfigMap, error){}
 	if c.Spec.Cloud != nil {
-
 		if c.Spec.Cloud.AWS != nil {
 			cms["cloud-config"] = resources.LoadAwsCloudConfigConfigMap
 		}
@@ -535,7 +539,7 @@ func (cc *controller) launchingCheckConfigMaps(c *kubermaticv1.Cluster) error {
 		}
 
 		dc := cc.dcs[c.Spec.Cloud.DatacenterName]
-		cm, err := gen(c, &dc)
+		cm, err := gen(c, &dc, version)
 		if err != nil {
 			return fmt.Errorf("failed to generate cm %s: %v", s, err)
 		}
