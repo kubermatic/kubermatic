@@ -1,0 +1,17 @@
+apiVersion: v1
+data:
+  config: |
+    [Global]
+    auth-url = "https://my.openstack.foo/v3"
+    username = "openstack-username"
+    password = "openstack-password"
+    domain-name= "openstack-domain"
+    tenant-name = "openstack-tenant"
+
+    [BlockStorage]
+    trust-device-path = false
+    bs-version = "v2"
+    ignore-volume-az = true
+metadata:
+  creationTimestamp: null
+  name: cloud-config
