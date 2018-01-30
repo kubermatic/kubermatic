@@ -49,3 +49,19 @@ groups:
     annotations:
       description: "Pod {{$labels.exported_namespace}}/{{$labels.exported_pod}} is was restarted {{$value}} times within the last hour"
       summary: "Pod is restarting frequently"
+  - alert: KubernetesPodTerminating
+    expr: kube_pod_container_status_terminated == 1
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is terminating for {{$value}}min."
+      summary: "Pod is terminating too long"
+  - alert: KubernetesPodWaiting
+    expr: kube_pod_container_status_waiting == 1
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is waiting for {{$value}}min."
+      summary: "Pod is waiting too long"
