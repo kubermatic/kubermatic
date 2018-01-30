@@ -1,10 +1,13 @@
 package resources
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"path"
+	"text/template"
 
+	"github.com/Masterminds/sprig"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -133,7 +136,7 @@ func LoadPVCFile(c *kubermaticv1.Cluster, app, masterResourcesPath string) (*cor
 }
 
 // LoadAwsCloudConfigConfigMap returns the aws cloud config configMap for the cluster
-func LoadAwsCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (*corev1.ConfigMap, error) {
+func LoadAwsCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta, version *apiv1.MasterVersion) (*corev1.ConfigMap, error) {
 	cm := corev1.ConfigMap{}
 	cm.Name = "cloud-config"
 	cm.APIVersion = "v1"
@@ -158,32 +161,48 @@ disablestrictzonecheck=true`,
 }
 
 // LoadOpenstackCloudConfigConfigMap returns the aws cloud config configMap for the cluster
-func LoadOpenstackCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (*corev1.ConfigMap, error) {
-	//See https://github.com/kubernetes/kubernetes/issues/33128
-	config := fmt.Sprintf(`
-[Global]
-auth-url = "%s"
-username = "%s"
-password = "%s"
-domain-name="%s"
-tenant-name = "%s"
+func LoadOpenstackCloudConfigConfigMap(c *kubermaticv1.Cluster, dc *provider.DatacenterMeta, version *apiv1.MasterVersion) (*corev1.ConfigMap, error) {
+	tmpl := `[Global]
+auth-url = "{{ .DC.Spec.Openstack.AuthURL }}"
+username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
+password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
+domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
+tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
 
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
-`,
-		dc.Spec.Openstack.AuthURL,
-		c.Spec.Cloud.Openstack.Username,
-		c.Spec.Cloud.Openstack.Password,
-		c.Spec.Cloud.Openstack.Domain,
-		c.Spec.Cloud.Openstack.Tenant,
-	)
+{{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
+ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+{{- end }}
+`
+
+	t, err := template.New("cloud-config").Funcs(sprig.TxtFuncMap()).Parse(tmpl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	data := struct {
+		Cluster *kubermaticv1.Cluster
+		DC      *provider.DatacenterMeta
+		Version *apiv1.MasterVersion
+	}{
+		Cluster: c,
+		DC:      dc,
+		Version: version,
+	}
+
+	b := &bytes.Buffer{}
+	err = t.Execute(b, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute template: %v", err)
+	}
 
 	cm := corev1.ConfigMap{}
 	cm.Name = "cloud-config"
 	cm.APIVersion = "v1"
 	cm.Data = map[string]string{
-		"config": config,
+		"config": b.String(),
 	}
 	return &cm, nil
 }
