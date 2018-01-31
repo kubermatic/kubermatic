@@ -36,14 +36,10 @@ const (
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
-// NodeList is an alias for the swagger definition
-// swagger:response NodeList
-type NodeList = corev1.NodeList
-
 func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(NodesReq)
+		req := request.(ClusterReq)
 
 		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
@@ -55,11 +51,7 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 			return nil, err
 		}
 
-		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
-		if err != nil {
-			return nil, err
-		}
-		return nodes.Items, err
+		return client.CoreV1().Nodes().List(metav1.ListOptions{})
 	}
 }
 
@@ -126,7 +118,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
 		}
 
-		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Spec)
+		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Body.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -136,9 +128,9 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.NodeClassName(&req.Spec), metav1.GetOptions{})
+		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.NodeClassName(&req.Body.Spec), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
+			nc, err = cp.CreateNodeClass(c, &req.Body.Spec, keys, version)
 			if err != nil {
 				return nil, err
 			}
@@ -149,7 +141,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		for i := 1; i <= req.Instances; i++ {
+		for i := 1; i <= req.Body.Instances; i++ {
 			n := &corev1.Node{}
 			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Name, rand.String(5))
 			n.Labels = map[string]string{

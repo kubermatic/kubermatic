@@ -11,37 +11,37 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func newClusterEndpointV2(kp provider.ClusterProvider, dp provider.SSHKeyProvider) endpoint.Endpoint {
+func newClusterEndpoint(kp provider.ClusterProvider, dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(NewClusterReqV2)
+		req := request.(NewClusterReq)
 
-		if req.Cluster == nil {
+		if req.Body.Cluster == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
 		}
 
-		if req.Cluster.Cloud == nil {
+		if req.Body.Cluster.Cloud == nil {
 			return nil, errors.NewBadRequest("no cloud spec given")
 		}
 
-		if req.Cluster.Cloud.DatacenterName == "" && req.Cluster.SeedDatacenterName == "" {
+		if req.Body.Cluster.Cloud.DatacenterName == "" && req.Body.Cluster.SeedDatacenterName == "" {
 			return nil, errors.NewBadRequest("no datacenter given")
 		}
 
 		// As we don't provision byo nodes, we need to allow 0 keys.
-		if len(req.SSHKeys) < 1 && req.Cluster.Cloud.BringYourOwn == nil {
+		if len(req.Body.SSHKeys) < 1 && req.Body.Cluster.Cloud.BringYourOwn == nil {
 			return nil, errors.NewBadRequest("please provide at least one key")
 		}
 
-		c, err := kp.NewClusterWithCloud(user, req.Cluster)
+		c, err := kp.NewClusterWithCloud(user, req.Body.Cluster)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
-				return nil, errors.NewConflict("cluster", req.Cluster.Cloud.DatacenterName, req.Cluster.HumanReadableName)
+				return nil, errors.NewConflict("cluster", req.Body.Cluster.Cloud.DatacenterName, req.Body.Cluster.HumanReadableName)
 			}
 			return nil, err
 		}
 
-		err = dp.AssignSSHKeysToCluster(user, req.SSHKeys, c.Name)
+		err = dp.AssignSSHKeysToCluster(user, req.Body.SSHKeys, c.Name)
 		if err != nil {
 			return nil, err
 		}

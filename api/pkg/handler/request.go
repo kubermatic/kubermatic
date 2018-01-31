@@ -22,10 +22,10 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters deleteClusterHandler clusterHandler getPossibleClusterUpgrades
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes
 type ClusterReq struct {
 	// in: path
-	Cluster string
+	Cluster string `json:"cluster"`
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -34,17 +34,22 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// NewClusterReqV2 represent a request for clusters specific data
-// swagger:parameters newClusterHandlerV2
-type NewClusterReqV2 struct {
+// NewClusterReq represent a request for clusters specific data
+// swagger:parameters createCluster
+type NewClusterReq struct {
 	// in: body
+	Body NewClusterReqBody
+}
+
+// NewClusterReqBody represents the body of a new cluster request
+type NewClusterReqBody struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
 }
 
 func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewClusterReqV2
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var req NewClusterReq
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
@@ -62,10 +67,10 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 }
 
 // DCReq represent a request for datacenter specific data
-// swagger:parameters datacenterHandler
+// swagger:parameters getDatacenter
 type DCReq struct {
 	// in: path
-	DC string
+	DC string `json:"dc"`
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -75,47 +80,25 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// KubeconfigReq represent a request for kubeconfig specific data
-// swagger:parameters kubeconfigHandler
-type KubeconfigReq struct {
-	ClusterReq
-}
-
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req KubeconfigReq
-
-	cr, err := decodeClusterReq(c, r)
+	req, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	return req, nil
-}
-
-// NodesReq represent a request for nodes specific data
-// swagger:parameters nodesHandler
-type NodesReq struct {
-	ClusterReq
-}
-
-func decodeNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
 
 	return req, nil
 }
 
 // CreateNodesReq represent a request for specific data to create a node
-// swagger:parameters createNodesHandler
+// swagger:parameters createClusterNodes
 type CreateNodesReq struct {
 	ClusterReq
 	// in: body
+	Body CreateNodesReqBody
+}
+
+// CreateNodesReqBody represents the request body of a create nodes request
+type CreateNodesReqBody struct {
 	Instances int            `json:"instances"`
 	Spec      apiv1.NodeSpec `json:"spec"`
 }
@@ -129,7 +112,7 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 	}
 	req.ClusterReq = cr.(ClusterReq)
 
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
@@ -137,38 +120,36 @@ func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, erro
 }
 
 // NodeReq represent a request for node specific data
-// swagger:parameters deleteNodeHandler
+// swagger:parameters getClusterNode deleteClusterNode
 type NodeReq struct {
-	NodesReq
+	ClusterReq
 	// in: path
-	NodeName string
+	NodeName string `json:"node"`
 }
 
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeReq
 
-	cr, err := decodeNodesReq(c, r)
+	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.NodesReq = cr.(NodesReq)
+	req.ClusterReq = cr.(ClusterReq)
 	req.NodeName = mux.Vars(r)["node"]
 
 	return req, nil
 }
 
 // CreateSSHKeyReq represent a request for specific data to create a new SSH key
-// TODO(GvW): currently not parsable by swagger
 type CreateSSHKeyReq struct {
-	// in: body
-	*kubermaticv1.UserSSHKey
+	apiv1.SSHKey
 }
 
 func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateSSHKeyReq
-	req.UserSSHKey = &kubermaticv1.UserSSHKey{}
-	// Decode
-	if err := json.NewDecoder(r.Body).Decode(req.UserSSHKey); err != nil {
+	req.SSHKey = apiv1.SSHKey{}
+
+	if err := json.NewDecoder(r.Body).Decode(&req.SSHKey); err != nil {
 		return nil, errors.NewBadRequest("Error parsing the input, got %q", err.Error())
 	}
 
@@ -179,7 +160,7 @@ func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 // swagger:parameters deleteSSHKey
 type DeleteSSHKeyReq struct {
 	// in: path
-	MetaName string
+	MetaName string `json:"meta_name"`
 }
 
 func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -193,8 +174,7 @@ func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 }
 
 // ListSSHKeyReq represent a request for listing all user SSH keys
-type ListSSHKeyReq struct {
-}
+type ListSSHKeyReq struct{}
 
 func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error) {
 	var req ListSSHKeyReq
@@ -202,12 +182,8 @@ func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error
 }
 
 // UpgradeReq represent a request for cluster upgrade specific data
-// swagger:parameters performClusterUpgrage
 type UpgradeReq struct {
-	// UpgradeReq contains parameter for an update request
-	//
 	ClusterReq
-	// in: body
 	To string
 }
 

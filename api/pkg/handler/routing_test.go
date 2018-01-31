@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func createTestEndpoint(user auth.User, masterCrdObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
+func createTestEndpoint(user apiv1.User, masterCrdObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
 ) http.Handler {
 	ctx := context.Background()
 
@@ -92,8 +92,8 @@ const (
 	testUsername = "user1"
 )
 
-func getUser(name string, admin bool) auth.User {
-	u := auth.User{
+func getUser(name string, admin bool) apiv1.User {
+	u := apiv1.User{
 		ID: name,
 		Roles: map[string]struct{}{
 			"user": {},
@@ -114,7 +114,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/api/healthz", nil)
 	res := httptest.NewRecorder()
 	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
