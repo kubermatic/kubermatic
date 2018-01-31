@@ -14,10 +14,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// Versions is an alias for the swagger defininiton
-// swagger:response Versions
-type Versions = []semver.Version
-
 func getClusterUpgrades(
 	kp provider.ClusterProvider,
 	versions map[string]*apiv1.MasterVersion,

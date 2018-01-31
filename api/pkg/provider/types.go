@@ -7,7 +7,6 @@ import (
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 )
 
 var (
@@ -58,35 +57,35 @@ type DataProvider interface {
 // ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
 	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
-	NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	NewClusterWithCloud(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error)
+	Cluster(user apiv1.User, cluster string) (*kubermaticv1.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
-	Clusters(user auth.User) ([]*kubermaticv1.Cluster, error)
+	Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
-	DeleteCluster(user auth.User, cluster string) error
+	DeleteCluster(user apiv1.User, cluster string) error
 
 	// InitiateClusterUpgrade upgrades a Cluster to a specific version
-	InitiateClusterUpgrade(user auth.User, cluster, version string) (*kubermaticv1.Cluster, error)
+	InitiateClusterUpgrade(user apiv1.User, cluster, version string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
 type SSHKeyProvider interface {
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
-	AssignSSHKeysToCluster(user auth.User, names []string, cluster string) error
+	AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster
-	ClusterSSHKeys(user auth.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
+	ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKeys returns the user ssh keys
-	SSHKeys(user auth.User) ([]*kubermaticv1.UserSSHKey, error)
+	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
 	// SSHKey returns a ssh key by name
-	SSHKey(user auth.User, name string) (*kubermaticv1.UserSSHKey, error)
+	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
 	// CreateSSHKey creates a ssh key
-	CreateSSHKey(name, pubkey string, user auth.User) (*kubermaticv1.UserSSHKey, error)
+	CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error)
 	// DeleteSSHKey deletes a ssh key
-	DeleteSSHKey(name string, user auth.User) error
+	DeleteSSHKey(name string, user apiv1.User) error
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users

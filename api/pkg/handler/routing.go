@@ -59,14 +59,12 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 
 // Register declare router paths
 func (r Routing) Register(mux *mux.Router) {
-	mux.Methods(http.MethodGet).
-		Path("/").
-		HandlerFunc(StatusOK)
-
-	mux.Methods(http.MethodGet).
-		Path("/healthz").
-		HandlerFunc(StatusOK)
-
+	// swagger:route GET /api/healthz healthz
+	//
+	// Health endpoint
+	//
+	//     Responses:
+	//       default: empty
 	mux.Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
@@ -81,7 +79,7 @@ func (r Routing) Register(mux *mux.Router) {
 
 	mux.Methods(http.MethodPost).
 		Path("/api/v1/cluster").
-		Handler(r.newClusterHandlerV2())
+		Handler(r.newClusterHandler())
 
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/cluster").
@@ -117,7 +115,7 @@ func (r Routing) Register(mux *mux.Router) {
 
 	mux.Methods(http.MethodPut).
 		Path("/api/v1/cluster/{cluster}/upgrade").
-		Handler(r.performClusterUpgrage())
+		Handler(r.performClusterUpgrade())
 
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
@@ -244,28 +242,6 @@ func (r Routing) userStorer(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Chain(r.userSaverMiddleware())(e)
 }
 
-// swagger:route GET /api/v1/ssh-keys ssh keys list listSSHKeys
-//
-// Lists SSH keys from the user
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
-func (r Routing) listSSHKeys() http.Handler {
-	return httptransport.NewServer(
-		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
-		decodeListSSHKeyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 func newNotImplementedEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		return nil, errors.NewNotImplemented()
@@ -282,19 +258,38 @@ func (r Routing) NotImplemented() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/ssh-keys ssh keys create createSSHKey
+// swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
 //
-// Creates a SSH keys for the user
-//
+// Lists SSH keys from the user
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
+//     Responses:
+//       default: errorResponse
+//       200: SSHKey
+func (r Routing) listSSHKeys() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
+		decodeListSSHKeyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/ssh-keys ssh-keys createSSHKey
+//
+// Creates a SSH keys for the user
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
 //
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: SSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
@@ -304,19 +299,16 @@ func (r Routing) createSSHKey() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/ssh-keys/{meta_name} ssh keys delete deleteSSHKey
+// swagger:route DELETE /api/v1/ssh-keys/{meta_name} ssh-keys deleteSSHKey
 //
 // Deletes a SSH keys for the user
-//
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: empty
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
@@ -326,18 +318,14 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/dc datacenter list datacentersHandler
-//
-//
+// swagger:route GET /api/v1/dc datacenter listDatacenters
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: DatacenterList
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(datacentersEndpoint(r.datacenters))),
@@ -347,18 +335,15 @@ func (r Routing) datacentersHandler() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/dc/{dc} datacenter list datacenterHandler
-//
-//
+// Get the datacenter
+// swagger:route GET /api/v1/dc/{dc} datacenter getDatacenter
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: Datacenter
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(datacenterEndpoint(r.datacenters))),
@@ -368,41 +353,36 @@ func (r Routing) datacenterHandler() http.Handler {
 	)
 }
 
-// newClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
-// swagger:route POST /api/v1/cluster cluster list newClusterHandlerV2
+// Creates a cluster
+// swagger:route POST /api/v1/cluster cluster createCluster
 //
-//
+//     Consumes:
+//     - application/json
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
-func (r Routing) newClusterHandlerV2() http.Handler {
+//       default: errorResponse
+//       201: ClusterV1
+func (r Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(newClusterEndpointV2(r.provider, r.provider))),
+		r.auth(r.userStorer(newClusterEndpoint(r.provider, r.provider))),
 		decodeNewClusterReqV2,
-		encodeJSON,
+		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
-// clusterHandler returns a cluster object.
-// swagger:route POST /api/v1/cluster cluster list clusterHandler
-//
-//
+// Get the cluster
+// swagger:route GET /api/v1/cluster/{cluster} cluster getCluster
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: ClusterV1
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(clusterEndpoint(r.provider))),
@@ -412,17 +392,15 @@ func (r Routing) clusterHandler() http.Handler {
 	)
 }
 
-// kubeconfigHandler returns the cubeconfig for the cluster.
-// swagger:route GET /api/v1/cluster/{cluster}/kubeconfig kubeconfig get kubeconfigHandler
+// kubeconfigHandler returns the kubeconfig for the cluster.
+// swagger:route GET /api/v1/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
 //
 //     Produces:
-//     - application/json
-//
-//     Schemes: http, https
+//     - application/yaml
 //
 //     Responses:
-//       default: APIError
-//       200: KubeConfig
+//       default: errorResponse
+//       200: Kubeconfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
@@ -432,17 +410,15 @@ func (r Routing) kubeconfigHandler() http.Handler {
 	)
 }
 
-// clustersHandler lists all clusters from a user.
-// swagger:route GET /api/v1/cluster cluster get clustersHandler
+// List clusters
+// swagger:route GET /api/v1/cluster cluster listClusters
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: KubeCluster
+//       default: errorResponse
+//       200: ClusterListV1
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(clustersEndpoint(r.provider))),
@@ -452,17 +428,15 @@ func (r Routing) clustersHandler() http.Handler {
 	)
 }
 
-// deleteClusterHandler deletes a cluster.
-// swagger:route DELETE /api/v1/cluster/{cluster} cluster delete deleteClusterHandler
+// Delete the cluster
+// swagger:route DELETE /api/v1/cluster/{cluster} cluster deleteCluster
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: empty
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
@@ -472,57 +446,54 @@ func (r Routing) deleteClusterHandler() http.Handler {
 	)
 }
 
-// nodesHandler returns all nodes from a user.
-// swagger:route GET /api/v1/cluster/{cluster}/node nodes get nodesHandler
+// Get nodes
+// swagger:route GET /api/v1/cluster/{cluster}/node cluster getClusterNodes
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: NodeList
+//       default: errorResponse
+//       200: NodeListV1
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(nodesEndpoint(r.provider))),
-		decodeNodesReq,
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// createNodesHandler let's you create nodes.
-// swagger:route POST /api/v1/cluster/{cluster}/node ssh keys list createNodesHandler
+// Create nodes
+// swagger:route POST /api/v1/cluster/{cluster}/node cluster createClusterNodes
+//
+//     Consumes:
+//     - application/json
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       201: empty
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
 		decodeCreateNodesReq,
-		encodeJSON,
+		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
-// deleteNodeHandler let's you delete nodes.
-// swagger:route DELETE /api/v1/cluster/{cluster}/node/{node} nodes delete deleteNodeHandler
+// Delete's the node
+// swagger:route DELETE /api/v1/cluster/{cluster}/node/{node} cluster deleteClusterNode
 //
 //     Produces:
 //     - application/json
 //
-//     Schemes: http, https
-//
 //     Responses:
-//       default: APIError
-//       200: UserSSHKey
+//       default: errorResponse
+//       200: empty
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
@@ -532,20 +503,6 @@ func (r Routing) deleteNodeHandler() http.Handler {
 	)
 }
 
-// getPossibleClusterUpgrades returns a list of possible cluster upgrades
-// swagger:route GET /api/v1/cluster/{cluster}/upgrades cluster upgrade versions getPossibleClusterUpgrades
-//
-//     Produces:
-//     - application/json
-//
-//     Consumes:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Versions
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
@@ -555,18 +512,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	)
 }
 
-// performClusterUpgrage starts a cluster upgrade to a specific version
-// swagger:route PUT /api/v1/cluster/{cluster}/upgrade cluster upgrade performClusterUpgrage
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
-func (r Routing) performClusterUpgrage() http.Handler {
+func (r Routing) performClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
 		decodeUpgradeReq,
@@ -575,17 +521,6 @@ func (r Routing) performClusterUpgrage() http.Handler {
 	)
 }
 
-// getUser starts a cluster upgrade to a specific version
-// swagger:route GET /api/v1/user user get getUser
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: User
 func (r Routing) getUser() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getUserHandler())),
@@ -595,17 +530,6 @@ func (r Routing) getUser() http.Handler {
 	)
 }
 
-// getProjectMe returns the member in the context of a project.
-// swagger:route GET /api/v1/projects/{project_id}/me user get project getProjectMe
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Member
 func (r Routing) getProjectMe() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectMeEndpoint())),
@@ -615,17 +539,6 @@ func (r Routing) getProjectMe() http.Handler {
 	)
 }
 
-// getProjects lists all projects visible for a user.
-// swagger:route GET /api/v1/projects get project getProjects
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: ProjectList
 func (r Routing) getProjects() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectsEndpoint())),
@@ -636,18 +549,6 @@ func (r Routing) getProjects() http.Handler {
 	)
 }
 
-// createProject create a new project this might take a while,
-// a owner member will be created for the acting user.
-// swagger:route POST /api/v1/projects project create createProject
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Project
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createProjectEndpoint())),
@@ -657,17 +558,6 @@ func (r Routing) createProject() http.Handler {
 	)
 }
 
-// updateProject update project preferences
-// swagger:route PUT /api/v1/projects/{project_id} project update updateProject
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Project
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(updateProjectEndpoint())),
@@ -677,17 +567,6 @@ func (r Routing) updateProject() http.Handler {
 	)
 }
 
-// deleteProject close a project
-// swagger:route DELETE /api/v1/projects/{project_id} project delete deleteProject
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200:
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteProjectEndpoint())),
@@ -697,17 +576,6 @@ func (r Routing) deleteProject() http.Handler {
 	)
 }
 
-// getProjectMembers list all members of a project
-// swagger:route GET /api/v1/projects/{project_id}/members get project member getProjectMembers
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: MemberList
 func (r Routing) getProjectMembers() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getProjectMembersEndpoint())),
@@ -717,17 +585,6 @@ func (r Routing) getProjectMembers() http.Handler {
 	)
 }
 
-// addProjectMember invite a user with matching mail to the project
-// swagger:route POST /api/v1/projects/{project_id}/members get project member addProjectMember
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Member
 func (r Routing) addProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(addProjectMemberEndpoint())),
@@ -737,17 +594,6 @@ func (r Routing) addProjectMember() http.Handler {
 	)
 }
 
-// deleteProjectMember remove a member from a project
-// swagger:route DELETE /api/v1/projects/{project_id}/member/{member_id} get project member deleteProjectMember
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200:
 func (r Routing) deleteProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteProjectMemberEndpoint())),
@@ -757,17 +603,6 @@ func (r Routing) deleteProjectMember() http.Handler {
 	)
 }
 
-// updateProjectMember update a member in a project, this should be used to change groups
-// swagger:route PUT /api/v1/projects/{project_id}/member/{member_id} get project member updateProjectMember
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Member
 func (r Routing) updateProjectMember() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(updateProjectMemberEndpoint())),
@@ -777,39 +612,15 @@ func (r Routing) updateProjectMember() http.Handler {
 	)
 }
 
-// newProjectClusterHandlerV2 creates a new cluster with the new single request strategy (#165).
-// swagger:route POST /api/v1/projects/{project_id}/cluster cluster list newProjectClusterHandlerV2
-//
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) newProjectClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(newClusterEndpointV2(r.provider, r.provider))),
+		r.auth(r.userStorer(newClusterEndpoint(r.provider, r.provider))),
 		decodeNewClusterReqV2,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// getProjectClustersHandler lists all clusters from a user.
-// swagger:route GET /api/v1/projects/{project_id}/cluster cluster get getProjectClustersHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: KubeCluster
 func (r Routing) getProjectClustersHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(clustersEndpoint(r.provider))),
@@ -819,19 +630,6 @@ func (r Routing) getProjectClustersHandler() http.Handler {
 	)
 }
 
-// getProjectClusterHandler returns a cluster object.
-// swagger:route POST /api/v1/projects/{project_id}/cluster/{cluster} cluster list getProjectClusterHandler
-//
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) getProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(clusterEndpoint(r.provider))),
@@ -841,17 +639,6 @@ func (r Routing) getProjectClusterHandler() http.Handler {
 	)
 }
 
-// getProjectClusterKubeconfigHandler returns the cubeconfig for the cluster.
-// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig kubeconfig get getProjectClusterKubeconfigHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: KubeConfig
 func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
@@ -861,17 +648,6 @@ func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 	)
 }
 
-// deleteProjectClusterHandler deletes a cluster.
-// swagger:route DELETE /api/v1/projects/{project_id}/cluster/{cluster} cluster delete deleteProjectClusterHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) deleteProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
@@ -881,37 +657,15 @@ func (r Routing) deleteProjectClusterHandler() http.Handler {
 	)
 }
 
-// getProjectClusterNodesHandler returns all nodes from a user.
-// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/node nodes get getProjectClusterNodesHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: NodeList
 func (r Routing) getProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(nodesEndpoint(r.provider))),
-		decodeNodesReq,
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// createProjectClusterNodesHandler let's you create nodes.
-// swagger:route POST /api/v1/projects/{project_id}/cluster/{cluster}/node ssh keys list createProjectClusterNodesHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) createProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
@@ -921,17 +675,6 @@ func (r Routing) createProjectClusterNodesHandler() http.Handler {
 	)
 }
 
-// deleteProjectClusterNodeHandler let's you delete nodes.
-// swagger:route DELETE /api/v1/projects/{project_id}/cluster/{cluster}/node/{node} nodes delete deleteProjectClusterNodeHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
@@ -941,20 +684,6 @@ func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 	)
 }
 
-// getProjectClusterPossibleClusterUpgrades returns a list of possible cluster upgrades
-// swagger:route GET /api/v1/projects/{project_id}/cluster/{cluster}/upgrades cluster upgrade versions getProjectClusterPossibleClusterUpgrades
-//
-//     Produces:
-//     - application/json
-//
-//     Consumes:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: Versions
 func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
@@ -964,17 +693,6 @@ func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 	)
 }
 
-// performProjectClusterUpgrade starts a cluster upgrade to a specific version
-// swagger:route PUT /api/v1/projects/{project_id}/cluster/{cluster}/upgrade cluster upgrade performProjectClusterUpgrade
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) performProjectClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
@@ -984,39 +702,15 @@ func (r Routing) performProjectClusterUpgrade() http.Handler {
 	)
 }
 
-// getProjectClusterK8sNodesHandler returns all nodes from a user.
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/k8s/nodes nodes get getProjectClusterK8sNodesHandler
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: NodeList
 func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(nodesEndpoint(r.provider))),
-		decodeNodesReq,
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/ssh-keys ssh keys list listProjectSSHKeys
-//
-// Lists SSH keys from the user
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) listProjectSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
@@ -1026,19 +720,6 @@ func (r Routing) listProjectSSHKeys() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/ssh-keys ssh keys create createProjectSSHKey
-//
-// Creates a SSH keys for the user
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) createProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
@@ -1048,23 +729,6 @@ func (r Routing) createProjectSSHKey() http.Handler {
 	)
 }
 
-//mux.Methods(http.MethodDelete).
-//Path("/api/v1/projects/{project_id}/ssh-keys/{meta_name}").
-//Handler(r.deleteProjectSSHKey())
-
-// swagger:route DELETE /api/v1/projects/{project_id}/ssh-keys/{meta_name} ssh keys delete deleteProjectSSHKey
-//
-// Deletes a SSH keys for the user
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Schemes: http, https
-//
-//     Responses:
-//       default: APIError
-//       200: UserSSHKey
 func (r Routing) deleteProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),

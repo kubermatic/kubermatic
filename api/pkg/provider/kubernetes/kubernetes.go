@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -49,7 +50,7 @@ func NewKubernetesProvider(
 	}
 }
 
-func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
+func (p *kubernetesProvider) NewClusterWithCloud(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
 	clusters, err := p.Clusters(user)
 	if err != nil {
 		return nil, err
@@ -116,20 +117,20 @@ func (p *kubernetesProvider) NewClusterWithCloud(user auth.User, spec *kubermati
 	return c, nil
 }
 
-func (p *kubernetesProvider) Cluster(user auth.User, cluster string) (*kubermaticv1.Cluster, error) {
+func (p *kubernetesProvider) Cluster(user apiv1.User, cluster string) (*kubermaticv1.Cluster, error) {
 	c, err := p.client.KubermaticV1().Clusters().Get(cluster, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if c.Labels[userLabelKey] != user.ID && !user.IsAdmin() {
+	if c.Labels[userLabelKey] != user.ID && !auth.IsAdmin(&user) {
 		return nil, errors.NewNotAuthorized()
 	}
 	return c, nil
 }
 
-func (p *kubernetesProvider) Clusters(user auth.User) ([]*kubermaticv1.Cluster, error) {
+func (p *kubernetesProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error) {
 	filter := map[string]string{}
-	if !user.IsAdmin() {
+	if !auth.IsAdmin(&user) {
 		filter[userLabelKey] = user.ID
 	}
 	selector := labels.SelectorFromSet(labels.Set(filter)).String()
@@ -145,7 +146,7 @@ func (p *kubernetesProvider) Clusters(user auth.User) ([]*kubermaticv1.Cluster, 
 	return res, nil
 }
 
-func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error {
+func (p *kubernetesProvider) DeleteCluster(user apiv1.User, cluster string) error {
 	// check permission by getting the cluster first
 	c, err := p.Cluster(user, cluster)
 	if err != nil {
@@ -155,7 +156,7 @@ func (p *kubernetesProvider) DeleteCluster(user auth.User, cluster string) error
 	return p.client.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{})
 }
 
-func (p *kubernetesProvider) InitiateClusterUpgrade(user auth.User, name, version string) (*kubermaticv1.Cluster, error) {
+func (p *kubernetesProvider) InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error) {
 	c, err := p.Cluster(user, name)
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func (p *kubernetesProvider) InitiateClusterUpgrade(user auth.User, name, versio
 	return p.client.KubermaticV1().Clusters().Update(c)
 }
 
-func (p *kubernetesProvider) assignSSHKeyToCluster(user auth.User, name, cluster string) error {
+func (p *kubernetesProvider) assignSSHKeyToCluster(user apiv1.User, name, cluster string) error {
 	k, err := p.SSHKey(user, name)
 	if err != nil {
 		return err
@@ -180,7 +181,7 @@ func (p *kubernetesProvider) assignSSHKeyToCluster(user auth.User, name, cluster
 }
 
 // AssignSSHKeysToCluster assigns a ssh key to a cluster
-func (p *kubernetesProvider) AssignSSHKeysToCluster(user auth.User, names []string, cluster string) error {
+func (p *kubernetesProvider) AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error {
 	for _, name := range names {
 		if err := p.assignSSHKeyToCluster(user, name, cluster); err != nil {
 			return fmt.Errorf("failed to assign key %s to cluster: %v", name, err)
@@ -190,7 +191,7 @@ func (p *kubernetesProvider) AssignSSHKeysToCluster(user auth.User, names []stri
 }
 
 // ClusterSSHKeys returns the ssh keys of a cluster
-func (p *kubernetesProvider) ClusterSSHKeys(user auth.User, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
+func (p *kubernetesProvider) ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
 	keys, err := p.SSHKeys(user)
 	if err != nil {
 		return nil, err
@@ -206,10 +207,10 @@ func (p *kubernetesProvider) ClusterSSHKeys(user auth.User, cluster string) ([]*
 }
 
 // SSHKeys returns the user ssh keys
-func (p *kubernetesProvider) SSHKeys(user auth.User) ([]*kubermaticv1.UserSSHKey, error) {
+func (p *kubernetesProvider) SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error) {
 	opts := metav1.ListOptions{}
 	var err error
-	if !user.IsAdmin() {
+	if !auth.IsAdmin(&user) {
 		opts, err = ssh.UserListOptions(user.ID)
 		if err != nil {
 			return nil, err
@@ -230,7 +231,7 @@ func (p *kubernetesProvider) SSHKeys(user auth.User) ([]*kubermaticv1.UserSSHKey
 }
 
 // SSHKey returns a ssh key by name
-func (p *kubernetesProvider) SSHKey(user auth.User, name string) (*kubermaticv1.UserSSHKey, error) {
+func (p *kubernetesProvider) SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error) {
 	k, err := p.client.KubermaticV1().UserSSHKeies().Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -238,14 +239,14 @@ func (p *kubernetesProvider) SSHKey(user auth.User, name string) (*kubermaticv1.
 		}
 		return nil, err
 	}
-	if k.Spec.Owner == user.ID || user.IsAdmin() {
+	if k.Spec.Owner == user.ID || auth.IsAdmin(&user) {
 		return k, nil
 	}
 	return nil, errors.NewNotFound(sshKeyKind, name)
 }
 
 // CreateSSHKey creates a ssh key
-func (p *kubernetesProvider) CreateSSHKey(name, pubkey string, user auth.User) (*kubermaticv1.UserSSHKey, error) {
+func (p *kubernetesProvider) CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error) {
 	key, err := ssh.NewUserSSHKeyBuilder().
 		SetName(name).
 		SetOwner(user.ID).
@@ -259,7 +260,7 @@ func (p *kubernetesProvider) CreateSSHKey(name, pubkey string, user auth.User) (
 }
 
 // DeleteSSHKey deletes a ssh key
-func (p *kubernetesProvider) DeleteSSHKey(name string, user auth.User) error {
+func (p *kubernetesProvider) DeleteSSHKey(name string, user apiv1.User) error {
 	k, err := p.SSHKey(user, name)
 	if err != nil {
 		return err
