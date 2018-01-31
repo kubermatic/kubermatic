@@ -51,7 +51,11 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return client.CoreV1().Nodes().List(metav1.ListOptions{})
+		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return nodes.Items, err
 	}
 }
 
