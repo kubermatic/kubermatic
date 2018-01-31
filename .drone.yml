@@ -161,23 +161,27 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: kubeciio/kubectl
+    image: kubeciio/kubectl:0.1
+    pull: true
     kubectl: create
-    files:
+    templates:
       - config/installer/install-job.template.yaml
-    secrets: [ kubeconfig_dev ]
-    kubeconfig_secret: kubeconfig_dev
+    secrets:
+      - source: kubeconfig_dev
+        target: kubeconfig
     when:
       branch: master
 
   deploy-cloud-master:
     group: deploy
-    image: kubeciio/kubectl
+    image: kubeciio/kubectl:0.1
+    pull: true
     kubectl: create
-    files:
+    templates:
       - config/installer/install-job.template.yaml
-    secrets: [ kubeconfig_cloud ]
-    kubeconfig_secret: kubeconfig_cloud
+    secrets:
+      - source: kubeconfig_cloud
+        target: kubeconfig
     when:
       branch: master
 
