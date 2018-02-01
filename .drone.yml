@@ -161,7 +161,7 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: kubeciio/kubectl:0.1
+    image: kubeciio/kubectl:0.2
     pull: true
     kubectl: create
     templates:
@@ -174,7 +174,7 @@ pipeline:
 
   deploy-cloud-master:
     group: deploy
-    image: kubeciio/kubectl:0.1
+    image: kubeciio/kubectl:0.2
     pull: true
     kubectl: create
     templates:
@@ -233,16 +233,6 @@ pipeline:
     channel: dev
     template: >
         ${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud. :heart:
-    author_recipient_mapping:
-      - alvaroaleman=alvaro
-      - guusvw=guus
-      - j3ank=eugenia
-      - kgroschoff=kristin
-      - metalmatze=matthias
-      - mrIncompetent=henrik
-      - p0lyn0mial=lukasz
-      - realfake=luk
-      - scheeles=sebastian
     when:
       status: [ success ]
       branch: master
