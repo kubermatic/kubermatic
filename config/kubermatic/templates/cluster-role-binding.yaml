@@ -5,7 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: kubermatic
-  namespace: kubermatic
+  namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

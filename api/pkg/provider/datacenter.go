@@ -17,6 +17,7 @@ type DigitaloceanSpec struct {
 type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`
+	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az"`
 	// Used for automatic network creation
 	DNSServers []string `yaml:"dns_servers"`
 }
@@ -32,19 +33,11 @@ type AWSSpec struct {
 type BringYourOwnSpec struct {
 }
 
-// BareMetalSpec describes a datacenter hosted on bare metal
-type BareMetalSpec struct {
-	URL          string `yaml:"url"`
-	AuthUser     string `yaml:"auth-user"`
-	AuthPassword string `yaml:"auth-password"`
-}
-
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
-	BareMetal    *BareMetalSpec    `yaml:"baremetal"`
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
 }
 

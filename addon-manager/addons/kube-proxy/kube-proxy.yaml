@@ -32,7 +32,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: kube-proxy
-        image: "kubermatic/hyperkube-amd64:v1.8.5"
+        image: "kubermatic/hyperkube-amd64:v1.9.2"
         command: [
           "/hyperkube",
           "proxy",

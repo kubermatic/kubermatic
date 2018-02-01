@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: dex                 # Service account assigned to the dex pod.
-  namespace: oauth
+  namespace: {{ .Release.Namespace }}

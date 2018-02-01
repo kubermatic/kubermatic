@@ -24,4 +24,4 @@ spec:
       - {{ $val }}
       {{- end }}
       http01:
-        ingressClass: nginx
+        ingress: cert-manager-acme-challenge-kubermatic-all

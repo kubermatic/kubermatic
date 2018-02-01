@@ -3,14 +3,9 @@ workspace:
   path: src/github.com/kubermatic/kubermatic
 
 pipeline:
-  dep-status:
-    image: metalmatze/dep:1.9
-    commands:
-      - cd api
-      - dep status
-
   dep:
-    image: metalmatze/dep:1.9
+    image: metalmatze/dep:0.4.1
+    pull: true
     commands:
       - cd api
       - dep ensure -v -vendor-only
@@ -25,6 +20,7 @@ pipeline:
   license-validation:
     group: lint
     image: metalmatze/wwhrd:1.9
+    pull: true
     commands:
       - cd api
       - wwhrd check -f ../allowed_licensed.yaml
@@ -32,6 +28,7 @@ pipeline:
   lint:
     group: lint
     image: metalmatze/gometalinter:1.9
+    pull: true
     commands:
       - cd api
       - make lint
@@ -76,7 +73,8 @@ pipeline:
 
   kubermatic-docker-always:
     group: push-always
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -88,7 +86,8 @@ pipeline:
 
   kubermatic-installer-docker-always:
     group: push-always
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -100,7 +99,8 @@ pipeline:
 
   kubermatic-docker-master:
     group: push-master
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -114,7 +114,8 @@ pipeline:
 
   kubermatic-installer-docker-master:
     group: push-master
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -128,7 +129,8 @@ pipeline:
 
   kubermatic-docker-release:
     group: push-release
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/api
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -143,7 +145,8 @@ pipeline:
 
   kubermatic-installer-docker-release:
     group: push-release
-    image: plugins/docker
+    image: plugins/docker:17
+    pull: true
     repo: kubermatic/installer
     password: ${DOCKER_PASSWORD}
     username: ${DOCKER_USERNAME}
@@ -158,37 +161,47 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_DEV | base64 -d > /kubeconfig
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
-    secrets: [ kubeconfig_dev ]
+    image: kubeciio/kubectl:0.2
+    pull: true
+    kubectl: create
+    templates:
+      - config/installer/install-job.template.yaml
+    secrets:
+      - source: kubeconfig_dev
+        target: kubeconfig
     when:
       branch: master
 
   deploy-cloud-master:
     group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_CLOUD | base64 -d > /kubeconfig
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
-    secrets: [ kubeconfig_cloud ]
+    image: kubeciio/kubectl:0.2
+    pull: true
+    kubectl: create
+    templates:
+      - config/installer/install-job.template.yaml
+    secrets:
+      - source: kubeconfig_cloud
+        target: kubeconfig
     when:
       branch: master
 
-  deploy-syseleven:
-    group: deploy
-    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-    commands:
-      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
-      - /hyperkube kubectl --kubeconfig /kubeconfig create -f config/installer/install-job.yaml
-    secrets: [ kubeconfig_syseleven ]
-    when:
-      event: [tag]
+#  deploy-syseleven:
+#    group: deploy
+#    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
+#    commands:
+#      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
+#      - cp config/installer/install-job.template.yaml install-job-sys11.yaml
+#      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-sys11.yaml
+#      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-sys11.yaml
+#      - rm install-job-sys11.yaml
+#    secrets: [ kubeconfig_syseleven ]
+#    when:
+#      event: [tag]
 
   slack-failure:
     group: notify
     image: kubermaticbot/drone-slack
+    pull: true
     webhook: https://hooks.slack.com/services/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
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -198,35 +211,28 @@ pipeline:
         Your build failed! Shame. Shame. Shame.
         ${DRONE_BUILD_LINK}
     author_recipient_mapping:
-      - mrIncompetent=henrik
-      - metalmatze=matthias
+      - alvaroaleman=alvaro
       - guusvw=guus
+      - j3ank=eugenia
+      - kgroschoff=kristin
+      - metalmatze=matthias
+      - mrIncompetent=henrik
+      - p0lyn0mial=lukasz
       - realfake=luk
       - scheeles=sebastian
-      - chaosaffe=jason
     when:
       status: [ failure ]
 
   slack-deploy:
     group: notify
     image: kubermaticbot/drone-slack
+    pull: true
     webhook: https://hooks.slack.com/services/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
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     channel: dev
-    image_url: http://thecatapi.com/api/images/get?api_key=MjQyOTIx&size=small&format=src&type=gif&random-param=${DRONE_COMMIT}
     template: >
-        We just deployed the API&Controller to dev!
-        This commit has been brought to you by ${DRONE_COMMIT_AUTHOR} <3
-        What has been done:
-        ${DRONE_COMMIT_MESSAGE}
-    author_recipient_mapping:
-      - mrIncompetent=henrik
-      - metalmatze=matthias
-      - guusvw=guus
-      - realfake=luk
-      - scheeles=sebastian
-      - chaosaffe=jason
+        ${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud. :heart:
     when:
       status: [ success ]
       branch: master

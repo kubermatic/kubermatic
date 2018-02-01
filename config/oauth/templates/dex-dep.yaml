@@ -4,17 +4,19 @@ metadata:
   labels:
     app: dex
   name: dex
-  namespace: oauth
 spec:
-  replicas: 1
+  replicas: {{ .Values.dex.replicas }}
   template:
     metadata:
       labels:
         app: dex
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/dex-config.yaml") . | sha256sum }}
+        checksum/themes: {{ include (print $.Template.BasePath "/themes-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: dex
       containers:
-      - image: quay.io/coreos/dex:{{ .Values.DexImageTag }}
+      - image: {{ .Values.dex.image.repository }}:{{ .Values.dex.image.tag }}
         name: dex
         command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
         ports:

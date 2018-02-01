@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // LoadUpdates loads the update definition file and returns the defined MasterUpdate
-func LoadUpdates(path string) ([]api.MasterUpdate, error) {
+func LoadUpdates(path string) ([]apiv1.MasterUpdate, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -22,9 +22,9 @@ func LoadUpdates(path string) ([]api.MasterUpdate, error) {
 	}
 
 	s := struct {
-		Updates []api.MasterUpdate
+		Updates []apiv1.MasterUpdate
 	}{
-		Updates: []api.MasterUpdate{},
+		Updates: []apiv1.MasterUpdate{},
 	}
 
 	err = yaml.Unmarshal(bytes, &s)

@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -42,18 +43,18 @@ type openIDAuthenticator struct {
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) Authenticator {
+func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) (Authenticator, error) {
 	// Sanity check for config!
 	_, err := oidc.NewProvider(context.Background(), issuer)
 	if err != nil {
-		glog.Fatal(err)
+		return nil, err
 	}
 
 	return openIDAuthenticator{
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
-	}
+	}, nil
 }
 
 func (o openIDAuthenticator) Verifier() endpoint.Middleware {
@@ -86,7 +87,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 
-			user := User{
+			user := apiv1.User{
 				ID:    claims["sub"].(string),
 				Name:  claims["name"].(string),
 				Email: claims["email"].(string),
@@ -185,11 +186,11 @@ func (c combinedExtractor) Extract(r *http.Request) string {
 }
 
 type testAuthenticator struct {
-	user User
+	user apiv1.User
 }
 
 // NewFakeAuthenticator returns an testing authentication middleware
-func NewFakeAuthenticator(user User) Authenticator {
+func NewFakeAuthenticator(user apiv1.User) Authenticator {
 	return testAuthenticator{user: user}
 }
 
@@ -197,7 +198,7 @@ func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			t := ctx.Value(userRawToken)
-			token, ok := t.(User)
+			token, ok := t.(apiv1.User)
 			if !ok {
 				return nil, errors.NewNotAuthorized()
 			}

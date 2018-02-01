@@ -9,8 +9,9 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/pmezard/go-difflib/difflib"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,9 +25,7 @@ func TestLoadServiceFile(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
-				BareMetal: &kubermaticv1.BareMetalCloudSpec{
-					Name: "test",
-				},
+				BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,9 +56,7 @@ func TestLoadPVCFile(t *testing.T) {
 	c := &kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
-				BareMetal: &kubermaticv1.BareMetalCloudSpec{
-					Name: "test",
-				},
+				BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -121,7 +118,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadDeploymentFile(t *testing.T) {
-	versions := []*api.MasterVersion{
+	versions := []*apiv1.MasterVersion{
 		{
 			Name:                         "1.7.0",
 			ID:                           "1.7.0",
@@ -219,7 +216,7 @@ func TestLoadDeploymentFile(t *testing.T) {
 			},
 		},
 		"bringyourown": {
-			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{PrivateIntf: "bringyourown-private-interface"},
+			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
 	}
 
@@ -284,7 +281,7 @@ func TestLoadAwsCloudConfigConfigMap(t *testing.T) {
 		},
 	}
 
-	res, err := LoadAwsCloudConfigConfigMap(c, nil)
+	res, err := LoadAwsCloudConfigConfigMap(c, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,4 +317,72 @@ func TestLoadClusterRoleBindingFile(t *testing.T) {
 
 		checkTestResult(t, r, res)
 	}
+}
+
+func TestLoadOpenstackCloudConfigConfigMap(t *testing.T) {
+	c := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					SubnetID:       "openstack-subnetid",
+					Username:       "openstack-username",
+					Tenant:         "openstack-tenant",
+					SecurityGroups: "openstack-security-groups",
+					RouterID:       "openstack-router-id",
+					Password:       "openstack-password",
+					Network:        "openstack-network",
+					Domain:         "openstack-domain",
+					FloatingIPPool: "openstack-floating-ip-pool",
+				},
+			},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "de-test-01",
+		},
+		Address: &kubermaticv1.ClusterAddress{
+			URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:8443",
+			ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
+			ExternalPort: 8002,
+		},
+	}
+
+	dc := &provider.DatacenterMeta{
+		Spec: provider.DatacenterSpec{
+			Openstack: &provider.OpenstackSpec{
+				AvailabilityZone: "az1",
+				AuthURL:          "https://my.openstack.foo/v3",
+				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
+				IgnoreVolumeAZ:   true,
+			},
+		},
+	}
+
+	version := &apiv1.MasterVersion{
+		Name:                         "1.9.0",
+		ID:                           "1.9.0",
+		Default:                      true,
+		AllowedNodeVersions:          []string{"1.3.0"},
+		EtcdOperatorDeploymentYaml:   "etcd-operator-dep.yaml",
+		ApiserverDeploymentYaml:      "apiserver-dep.yaml",
+		ControllerDeploymentYaml:     "controller-manager-dep.yaml",
+		SchedulerDeploymentYaml:      "scheduler-dep.yaml",
+		AddonManagerDeploymentYaml:   "addon-manager-dep.yaml",
+		NodeControllerDeploymentYaml: "node-controller-dep.yaml",
+		Values: map[string]string{
+			"k8s-version":           "v1.9.0",
+			"etcd-operator-version": "v0.6.0",
+			"etcd-cluster-version":  "3.2.7",
+			"kube-machine-version":  "v0.2.3",
+			"addon-manager-version": "v1.9.0",
+			"pod-network-bridge":    "v0.2",
+		},
+	}
+
+	res, err := LoadOpenstackCloudConfigConfigMap(c, dc, version)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkTestResult(t, "loadopenstackcloudconfigconfigmap-result", res)
+
 }

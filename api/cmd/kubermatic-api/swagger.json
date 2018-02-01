@@ -10,24 +10,22 @@
   ],
   "swagger": "2.0",
   "info": {
-    "description": "go:generate swagger generate spec",
+    "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
+    "title": "Kubermatic API.",
     "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
-    "version": "0.0.1"
+    "version": "2.2.3"
   },
-  "host": "localhost",
+  "host": "cloud.kubermatic.io",
   "paths": {
     "/api/healthz": {
       "get": {
-        "description": "Return a HTTP 200 if everythings fine",
-        "schemes": [
-          "http",
-          "https"
-        ],
-        "tags": [
-          "status",
-          "health"
-        ],
-        "operationId": "StatusOK"
+        "description": "Health endpoint",
+        "operationId": "healthz",
+        "responses": {
+          "default": {
+            "$ref": "#/responses/empty"
+          }
+        }
       }
     },
     "/api/v1/cluster": {
@@ -35,83 +33,108 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "cluster",
-          "get"
+          "cluster"
         ],
-        "operationId": "clustersHandler",
+        "operationId": "listClusters",
         "responses": {
           "200": {
-            "$ref": "#/responses/KubeCluster"
+            "description": "ClusterListV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterListV1"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       },
       "post": {
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "cluster",
-          "list"
+          "cluster"
         ],
-        "operationId": "clusterHandler",
+        "operationId": "createCluster",
         "parameters": [
           {
-            "type": "string",
-            "name": "Cluster",
-            "in": "path",
-            "required": true
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NewClusterReqBody"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "$ref": "#/responses/UserSSHKey"
+          "201": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
     },
     "/api/v1/cluster/{cluster}": {
-      "delete": {
+      "get": {
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "cluster",
-          "delete"
+          "cluster"
         ],
-        "operationId": "deleteClusterHandler",
+        "operationId": "getCluster",
         "parameters": [
           {
             "type": "string",
-            "name": "Cluster",
+            "x-go-name": "Cluster",
+            "name": "cluster",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -119,31 +142,30 @@
     "/api/v1/cluster/{cluster}/kubeconfig": {
       "get": {
         "produces": [
-          "application/json"
-        ],
-        "schemes": [
-          "http",
-          "https"
+          "application/yaml"
         ],
         "tags": [
-          "kubeconfig",
-          "get"
+          "cluster"
         ],
-        "operationId": "kubeconfigHandler",
+        "operationId": "getClusterKubeconfig",
         "parameters": [
           {
             "type": "string",
-            "name": "Cluster",
+            "x-go-name": "Cluster",
+            "name": "cluster",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/KubeConfig"
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -153,75 +175,64 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "nodes",
-          "get"
+          "cluster"
         ],
-        "operationId": "nodesHandler",
+        "operationId": "getClusterNodes",
         "parameters": [
           {
             "type": "string",
-            "name": "Cluster",
+            "x-go-name": "Cluster",
+            "name": "cluster",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/NodeList"
+            "description": "NodeListV1",
+            "schema": {
+              "$ref": "#/definitions/NodeListV1"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       },
       "post": {
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "ssh",
-          "keys",
-          "list"
+          "cluster"
         ],
-        "operationId": "createNodesHandler",
+        "operationId": "createClusterNodes",
         "parameters": [
           {
             "type": "string",
-            "name": "Cluster",
+            "x-go-name": "Cluster",
+            "name": "cluster",
             "in": "path",
             "required": true
           },
           {
-            "x-go-name": "Instances",
-            "name": "instances",
+            "name": "Body",
             "in": "body",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "$ref": "#/definitions/CreateNodesReqBody"
             }
-          },
-          {
-            "$ref": "#/definitions/NodeSpec",
-            "x-go-name": "Spec",
-            "name": "spec",
-            "in": "query"
           }
         ],
         "responses": {
-          "200": {
-            "$ref": "#/responses/UserSSHKey"
+          "201": {
+            "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -231,110 +242,32 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "nodes",
-          "delete"
+          "cluster"
         ],
-        "operationId": "deleteNodeHandler",
+        "operationId": "deleteClusterNode",
         "parameters": [
           {
             "type": "string",
-            "name": "Cluster",
+            "x-go-name": "Cluster",
+            "name": "cluster",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "name": "NodeName",
+            "x-go-name": "NodeName",
+            "name": "node",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/APIError"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/upgrade": {
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "schemes": [
-          "http",
-          "https"
-        ],
-        "tags": [
-          "cluster",
-          "upgrade"
-        ],
-        "operationId": "performClusterUpgrage",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "Cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "To",
-            "in": "body",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/UserSSHKey"
-          },
-          "default": {
-            "$ref": "#/responses/APIError"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/upgrades": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "schemes": [
-          "http",
-          "https"
-        ],
-        "tags": [
-          "cluster",
-          "upgrade",
-          "versions"
-        ],
-        "operationId": "getPossibleClusterUpgrades",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "Cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/Versions"
-          },
-          "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -344,21 +277,19 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "datacenter",
-          "list"
+          "datacenter"
         ],
-        "operationId": "datacentersHandler",
+        "operationId": "listDatacenters",
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "description": "DatacenterList",
+            "schema": {
+              "$ref": "#/definitions/DatacenterList"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -368,29 +299,28 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "datacenter",
-          "list"
+          "datacenter"
         ],
-        "operationId": "datacenterHandler",
+        "operationId": "getDatacenter",
         "parameters": [
           {
             "type": "string",
-            "name": "DC",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -401,46 +331,43 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "ssh",
-          "keys",
-          "list"
+          "ssh-keys"
         ],
         "operationId": "listSSHKeys",
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       },
       "post": {
         "description": "Creates a SSH keys for the user",
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "ssh",
-          "keys",
-          "create"
+          "ssh-keys"
         ],
         "operationId": "createSSHKey",
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -451,30 +378,166 @@
         "produces": [
           "application/json"
         ],
-        "schemes": [
-          "http",
-          "https"
-        ],
         "tags": [
-          "ssh",
-          "keys",
-          "delete"
+          "ssh-keys"
         ],
         "operationId": "deleteSSHKey",
         "parameters": [
           {
             "type": "string",
-            "name": "MetaName",
+            "x-go-name": "MetaName",
+            "name": "meta_name",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/UserSSHKey"
+            "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/APIError"
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v2/cluster/{cluster}/nodes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodesV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeListV2",
+            "schema": {
+              "$ref": "#/definitions/NodeListV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateNodeReqBodyV2"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v2/cluster/{cluster}/nodes/{node}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
           }
         }
       }
@@ -524,91 +587,191 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "AWSNodeSpec": {
+    "AWSDatacenterSpec": {
       "type": "object",
-      "title": "AWSNodeSpec specifies an aws node.",
+      "title": "AWSDatacenterSpec specifies a data center of Amazon Web Services.",
+      "properties": {
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSNodeSpecV2": {
+      "description": "AWSNodeSpec aws specific node settings",
+      "type": "object",
+      "required": [
+        "instanceType",
+        "diskSize",
+        "volumeType"
+      ],
       "properties": {
         "ami": {
+          "description": "ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.",
           "type": "string",
           "x-go-name": "AMI"
         },
-        "instance_type": {
-          "type": "string",
-          "x-go-name": "InstanceType"
-        },
-        "root_size": {
+        "diskSize": {
+          "description": "size of the volume in gb. Only one volume will be created",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "RootSize"
+          "x-go-name": "VolumeSize"
         },
-        "volume_type": {
+        "instanceType": {
           "type": "string",
-          "x-go-name": "VolumeType"
+          "x-go-name": "InstanceType",
+          "example": "t2.micro"
+        },
+        "tags": {
+          "description": "additional instance tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        },
+        "volumeType": {
+          "type": "string",
+          "x-go-name": "VolumeType",
+          "example": "gp2, io1, st1, sc1, standard"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-name": "AWSNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
-    "BareMetalCloudSpec": {
-      "description": "BareMetalCloudSpec specifies access to a bare metal datacenter",
+    "AttachedVolume": {
+      "description": "AttachedVolume describes a volume attached to a node",
       "type": "object",
       "properties": {
+        "devicePath": {
+          "description": "DevicePath represents the device path where the volume should be available",
+          "type": "string",
+          "x-go-name": "DevicePath"
+        },
+        "name": {
+          "$ref": "#/definitions/UniqueVolumeName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "AuthInfo": {
+      "type": "object",
+      "title": "AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.",
+      "properties": {
+        "as": {
+          "description": "Impersonate is the username to imperonate.  The name matches the flag.\n+optional",
+          "type": "string",
+          "x-go-name": "Impersonate"
+        },
+        "as-groups": {
+          "description": "ImpersonateGroups is the groups to imperonate.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ImpersonateGroups"
+        },
+        "as-user-extra": {
+          "description": "ImpersonateUserExtra contains additional information for impersonated user.\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "x-go-name": "ImpersonateUserExtra"
+        },
+        "auth-provider": {
+          "$ref": "#/definitions/AuthProviderConfig"
+        },
+        "client-certificate": {
+          "description": "ClientCertificate is the path to a client cert file for TLS.\n+optional",
+          "type": "string",
+          "x-go-name": "ClientCertificate"
+        },
+        "client-certificate-data": {
+          "description": "ClientCertificateData contains PEM-encoded data from a client cert file for TLS. Overrides ClientCertificate\n+optional",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "x-go-name": "ClientCertificateData"
+        },
+        "client-key": {
+          "description": "ClientKey is the path to a client key file for TLS.\n+optional",
+          "type": "string",
+          "x-go-name": "ClientKey"
+        },
+        "client-key-data": {
+          "description": "ClientKeyData contains PEM-encoded data from a client key file for TLS. Overrides ClientKey\n+optional",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "x-go-name": "ClientKeyData"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        },
+        "password": {
+          "description": "Password is the password for basic authentication to the kubernetes cluster.\n+optional",
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "token": {
+          "description": "Token is the bearer token for authentication to the kubernetes cluster.\n+optional",
+          "type": "string",
+          "x-go-name": "Token"
+        },
+        "tokenFile": {
+          "description": "TokenFile is a pointer to a file that contains a bearer token (as described above).  If both Token and TokenFile are present, Token takes precedence.\n+optional",
+          "type": "string",
+          "x-go-name": "TokenFile"
+        },
+        "username": {
+          "description": "Username is the username for basic authentication to the kubernetes cluster.\n+optional",
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "AuthProviderConfig": {
+      "type": "object",
+      "title": "AuthProviderConfig holds the configuration for a specified auth provider.",
+      "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Config"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "BareMetalNodeSpec": {
-      "description": "BareMetalNodeSpec specifies a node instanciated by the bare-metal-provider",
-      "type": "object",
-      "properties": {
-        "cpus": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CPU"
-          },
-          "x-go-name": "CPUs"
-        },
-        "id": {
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "memory": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Memory"
-        },
-        "public_ip": {
-          "type": "string",
-          "x-go-name": "PublicIP"
-        },
-        "space": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Space"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
-      "properties": {
-        "clientKeyCert": {
-          "$ref": "#/definitions/KeyCert"
-        },
-        "privateInterface": {
-          "type": "string",
-          "x-go-name": "PrivateIntf"
-        }
-      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "BringYourOwnNodeSpec": {
-      "description": "BringYourOwnNodeSpec specifies a bring your own node",
+    "BringYourOwnDatacenterSpec": {
       "type": "object",
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "title": "BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Bytes": {
       "type": "array",
@@ -617,23 +780,6 @@
         "format": "uint8"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "CPU": {
-      "description": "CPU represents the CPU resources available on a node",
-      "type": "object",
-      "properties": {
-        "cores": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Cores"
-        },
-        "frequency": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "Frequency"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "CauseType": {
       "description": "CauseType is a machine readable value providing more detail about what\noccurred in a status response. An operation may have multiple causes for a\nstatus (whether Failure or Success).",
@@ -646,9 +792,6 @@
       "properties": {
         "aws": {
           "$ref": "#/definitions/AWSCloudSpec"
-        },
-        "baremetal": {
-          "$ref": "#/definitions/BareMetalCloudSpec"
         },
         "bringyourown": {
           "$ref": "#/definitions/BringYourOwnCloudSpec"
@@ -669,6 +812,45 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "Cluster": {
+      "description": "Cluster contains information about how to communicate with a kubernetes cluster",
+      "type": "object",
+      "properties": {
+        "certificate-authority": {
+          "description": "CertificateAuthority is the path to a cert file for the certificate authority.\n+optional",
+          "type": "string",
+          "x-go-name": "CertificateAuthority"
+        },
+        "certificate-authority-data": {
+          "description": "CertificateAuthorityData contains PEM-encoded certificate authority certificates. Overrides CertificateAuthority\n+optional",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "x-go-name": "CertificateAuthorityData"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        },
+        "insecure-skip-tls-verify": {
+          "description": "InsecureSkipTLSVerify skips the validity check for the server's certificate. This will make your HTTPS connections insecure.\n+optional",
+          "type": "boolean",
+          "x-go-name": "InsecureSkipTLSVerify"
+        },
+        "server": {
+          "description": "Server is the address of the kubernetes cluster (https://hostname:port).",
+          "type": "string",
+          "x-go-name": "Server"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "ClusterAddress": {
       "type": "object",
@@ -696,36 +878,6 @@
           "x-go-name": "URL"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterCondition": {
-      "type": "object",
-      "title": "NodeSetCondition describes the state of a NodeSet at a certain point.",
-      "properties": {
-        "lastTransitionTime": {
-          "$ref": "#/definitions/Time"
-        },
-        "message": {
-          "description": "A human readable message indicating details about the transition.\n+optional",
-          "type": "string",
-          "x-go-name": "Message"
-        },
-        "reason": {
-          "description": "The reason for the condition's last transition.\n+optional",
-          "type": "string",
-          "x-go-name": "Reason"
-        },
-        "status": {
-          "$ref": "#/definitions/ConditionStatus"
-        },
-        "type": {
-          "$ref": "#/definitions/ClusterConditionType"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterConditionType": {
-      "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ClusterHealth": {
@@ -757,6 +909,15 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "ClusterListV1": {
+      "description": "ClusterList represents a list of clusters",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ClusterV1"
+      },
+      "x-go-name": "ClusterList",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterPhase": {
       "type": "string",
@@ -798,14 +959,6 @@
         },
         "apiserverSshKey": {
           "$ref": "#/definitions/RSAKeys"
-        },
-        "conditions": {
-          "description": "Conditions Represents the latest available observations of the cluster's current state.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ClusterCondition"
-          },
-          "x-go-name": "Conditions"
         },
         "health": {
           "$ref": "#/definitions/ClusterHealth"
@@ -851,20 +1004,288 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "ClusterV1": {
+      "type": "object",
+      "title": "Cluster is the object representing a cluster.",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/ClusterAddress"
+        },
+        "annotations": {
+          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusterName": {
+          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "creationTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "deletionGracePeriodSeconds": {
+          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DeletionGracePeriodSeconds"
+        },
+        "deletionTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "finalizers": {
+          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Finalizers"
+        },
+        "generateName": {
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional",
+          "type": "string",
+          "x-go-name": "GenerateName"
+        },
+        "generation": {
+          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Generation"
+        },
+        "initializers": {
+          "$ref": "#/definitions/Initializers"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "ownerReferences": {
+          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OwnerReference"
+          },
+          "x-go-name": "OwnerReferences"
+        },
+        "resourceVersion": {
+          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "selfLink": {
+          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional",
+          "type": "string",
+          "x-go-name": "SelfLink"
+        },
+        "spec": {
+          "$ref": "#/definitions/ClusterSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ClusterStatus"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-name": "Cluster",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ConditionStatus": {
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
-    "ContainerLinuxSpec": {
-      "description": "ContainerLinuxSpec specifies Container Linux options",
+    "ContainerImage": {
+      "description": "Describe a container image",
       "type": "object",
       "properties": {
-        "disable_auto_update": {
+        "names": {
+          "description": "Names by which this image is known.\ne.g. [\"gcr.io/google_containers/hyperkube:v1.0.7\", \"dockerhub.io/google_containers/hyperkube:v1.0.7\"]",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Names"
+        },
+        "sizeBytes": {
+          "description": "The size of the image in bytes.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "SizeBytes"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "ContainerLinuxSpecV2": {
+      "description": "ContainerLinuxSpec ubuntu linux specific settings",
+      "type": "object",
+      "properties": {
+        "disableAutoUpdate": {
+          "description": "disable container linux auto-update feature",
           "type": "boolean",
           "x-go-name": "DisableAutoUpdate"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-name": "ContainerLinuxSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "Context": {
+      "description": "Context is a tuple of references to a cluster (how do I communicate with a kubernetes cluster), a user (how do I identify myself), and a namespace (what subset of resources do I want to work with)",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "description": "Cluster is the name of the cluster for this context",
+          "type": "string",
+          "x-go-name": "Cluster"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        },
+        "namespace": {
+          "description": "Namespace is the default namespace to use on unspecified requests\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "user": {
+          "description": "AuthInfo is the name of the authInfo for this context",
+          "type": "string",
+          "x-go-name": "AuthInfo"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "CreateNodeReqBodyV2": {
+      "description": "CreateNodeReqBodyV2 represents the request body of a create nodes request",
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMetaV2"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "CreateNodesReqBody": {
+      "description": "CreateNodesReqBody represents the request body of a create nodes request",
+      "type": "object",
+      "properties": {
+        "instances": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Instances"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "DaemonEndpoint": {
+      "type": "object",
+      "title": "DaemonEndpoint contains information about a single Daemon endpoint.",
+      "properties": {
+        "Port": {
+          "description": "Port number of the given endpoint.",
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "Datacenter": {
+      "type": "object",
+      "title": "Datacenter is the object representing a Kubernetes infra datacenter.",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMeta"
+        },
+        "seed": {
+          "type": "boolean",
+          "x-go-name": "Seed"
+        },
+        "spec": {
+          "$ref": "#/definitions/DatacenterSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DatacenterList": {
+      "description": "DatacenterList represents a list of datacenters",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Datacenter"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DatacenterSpec": {
+      "type": "object",
+      "title": "DatacenterSpec specifies the data for a datacenter.",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/AWSDatacenterSpec"
+        },
+        "bringyourown": {
+          "$ref": "#/definitions/BringYourOwnDatacenterSpec"
+        },
+        "country": {
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/DigitialoceanDatacenterSpec"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "openstack": {
+          "$ref": "#/definitions/OpenstackDatacenterSpec"
+        },
+        "provider": {
+          "type": "string",
+          "x-go-name": "Provider"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -877,25 +1298,77 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "DigitaloceanNodeSpec": {
+    "DigitaloceanNodeSpecV2": {
+      "description": "DigitaloceanNodeSpec digitalocean node settings",
       "type": "object",
-      "title": "DigitaloceanNodeSpec specifies a digital ocean node.",
+      "required": [
+        "size"
+      ],
       "properties": {
+        "backups": {
+          "description": "enable backups for the droplet",
+          "type": "boolean",
+          "x-go-name": "Backups"
+        },
+        "ipv6": {
+          "description": "enable ipv6 for the droplet",
+          "type": "boolean",
+          "x-go-name": "IPv6"
+        },
+        "monitoring": {
+          "description": "enable monitoring for the droplet",
+          "type": "boolean",
+          "x-go-name": "Monitoring"
+        },
         "size": {
-          "description": "Size is the size of the node (DigitalOcean node type).",
+          "description": "droplet size slug",
           "type": "string",
           "x-go-name": "Size"
         },
-        "sshKeys": {
-          "description": "SSHKeyFingerprints  represent the fingerprints of the keys.\nDigitalOcean utilizes the fingerprints to identify public\nSSHKeys stored within the DigitalOcean platform.",
+        "tags": {
+          "description": "additional droplet tags",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "SSHKeyFingerprints"
+          "x-go-name": "Tags"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-name": "DigitaloceanNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "DigitialoceanDatacenterSpec": {
+      "type": "object",
+      "title": "DigitialoceanDatacenterSpec specifies a data center of digital ocean.",
+      "properties": {
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ErrorDetails": {
+      "description": "ErrorDetails contains details about the error",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "description": "The error code",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ErrorCode"
+        },
+        "message": {
+          "description": "The error message",
+          "type": "string",
+          "x-go-name": "ErrorMessage"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "FakeCloudSpec": {
       "type": "object",
@@ -907,21 +1380,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "FakeNodeSpec": {
-      "type": "object",
-      "title": "FakeNodeSpec specifies a fake node.",
-      "properties": {
-        "os": {
-          "type": "string",
-          "x-go-name": "OS"
-        },
-        "type": {
-          "type": "string",
-          "x-go-name": "Type"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
     },
     "Initializer": {
       "type": "object",
@@ -966,38 +1424,927 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "Kubeconfig": {
+      "description": "Kubeconfig is a clusters kubeconfig",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusters": {
+          "description": "Clusters is a map of referencable names to cluster configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedCluster"
+          },
+          "x-go-name": "Clusters"
+        },
+        "contexts": {
+          "description": "Contexts is a map of referencable names to context configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedContext"
+          },
+          "x-go-name": "Contexts"
+        },
+        "current-context": {
+          "description": "CurrentContext is the name of the context that you would like to use by default",
+          "type": "string",
+          "x-go-name": "CurrentContext"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        },
+        "kind": {
+          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "preferences": {
+          "$ref": "#/definitions/Preferences"
+        },
+        "users": {
+          "description": "AuthInfos is a map of referencable names to user configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedAuthInfo"
+          },
+          "x-go-name": "AuthInfos"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "MasterUpdate": {
+      "description": "MasterUpdate represents an update option for K8s master components",
+      "type": "object",
+      "properties": {
+        "Automatic": {
+          "type": "boolean"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "From": {
+          "type": "string"
+        },
+        "Promote": {
+          "type": "boolean"
+        },
+        "RollbackAllowed": {
+          "type": "boolean"
+        },
+        "To": {
+          "type": "string"
+        },
+        "Visible": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "MasterUpdatePhase": {
       "type": "string",
       "title": "MasterUpdatePhase represents the current master update phase.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "NodeSpec": {
+    "MasterVersion": {
       "type": "object",
-      "title": "NodeSpec mutually stores data of a cloud specific node.",
+      "title": "MasterVersion is the object representing a Kubernetes Master version.",
       "properties": {
-        "aws": {
-          "$ref": "#/definitions/AWSNodeSpec"
+        "AddonManagerDeploymentYaml": {
+          "type": "string"
         },
-        "baremetal": {
-          "$ref": "#/definitions/BareMetalNodeSpec"
+        "AllowedNodeVersions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "bringyourown": {
-          "$ref": "#/definitions/BringYourOwnNodeSpec"
+        "ApiserverDeploymentYaml": {
+          "type": "string"
         },
-        "digitalocean": {
-          "$ref": "#/definitions/DigitaloceanNodeSpec"
+        "ControllerDeploymentYaml": {
+          "type": "string"
         },
-        "fake": {
-          "$ref": "#/definitions/FakeNodeSpec"
+        "Default": {
+          "type": "boolean"
         },
-        "openstack": {
-          "$ref": "#/definitions/OpenstackNodeSpec"
+        "EtcdClusterYaml": {
+          "type": "string"
         },
-        "operating_system": {
-          "$ref": "#/definitions/OperatingSystemSpec"
+        "EtcdOperatorDeploymentYaml": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "NodeControllerDeploymentYaml": {
+          "type": "string"
+        },
+        "SchedulerDeploymentYaml": {
+          "type": "string"
+        },
+        "Values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NamedAuthInfo": {
+      "description": "NamedAuthInfo relates nicknames to auth information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name is the nickname for this AuthInfo",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "user": {
+          "$ref": "#/definitions/AuthInfo"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "NamedCluster": {
+      "description": "NamedCluster relates nicknames to cluster information",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/Cluster"
+        },
+        "name": {
+          "description": "Name is the nickname for this Cluster",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "NamedContext": {
+      "description": "NamedContext relates nicknames to context information",
+      "type": "object",
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/Context"
+        },
+        "name": {
+          "description": "Name is the nickname for this Context",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "NamedExtension": {
+      "description": "NamedExtension relates nicknames to extension information",
+      "type": "object",
+      "properties": {
+        "extension": {
+          "$ref": "#/definitions/RawExtension"
+        },
+        "name": {
+          "description": "Name is the nickname for this Extension",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "NewClusterReqBody": {
+      "description": "NewClusterReqBody represents the body of a new cluster request",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/ClusterSpec"
+        },
+        "sshKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SSHKeys"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "NodeAddress": {
+      "type": "object",
+      "title": "NodeAddress contains information for the node's address.",
+      "properties": {
+        "address": {
+          "description": "The node address.",
+          "type": "string",
+          "x-go-name": "Address"
+        },
+        "type": {
+          "$ref": "#/definitions/NodeAddressType"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeAddressType": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeAddressV2": {
+      "type": "object",
+      "title": "NodeAddress contains information for the node's address.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "x-go-name": "Address",
+          "example": "192.168.1.1, node1.my.dns"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type",
+          "example": "ExternalIP, InternalIP, InternalDNS, ExternalDNS"
+        }
+      },
+      "x-go-name": "NodeAddress",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeCloudSpecV2": {
+      "type": "object",
+      "title": "NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/AWSNodeSpecV2"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/DigitaloceanNodeSpecV2"
+        },
+        "openstack": {
+          "$ref": "#/definitions/OpenstackNodeSpecV2"
+        }
+      },
+      "x-go-name": "NodeCloudSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeCondition": {
+      "type": "object",
+      "title": "NodeCondition contains condition information for a node.",
+      "properties": {
+        "lastHeartbeatTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "lastTransitionTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "message": {
+          "description": "Human readable message indicating details about last transition.\n+optional",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "reason": {
+          "description": "(brief) reason for the condition's last transition.\n+optional",
+          "type": "string",
+          "x-go-name": "Reason"
+        },
+        "status": {
+          "$ref": "#/definitions/ConditionStatus"
+        },
+        "type": {
+          "$ref": "#/definitions/NodeConditionType"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeConditionType": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeConfigSource": {
+      "type": "object",
+      "title": "NodeConfigSource specifies a source of node configuration. Exactly one subfield (excluding metadata) must be non-nil.",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "configMapRef": {
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeContainerRuntimeInfoV2": {
+      "description": "NodeContainerRuntimeInfo information about the container runtime. Currently only \"cri-o\" and \"docker\" are supported",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-name": "NodeContainerRuntimeInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeDaemonEndpoints": {
+      "type": "object",
+      "title": "NodeDaemonEndpoints lists ports opened by daemons running on the Node.",
+      "properties": {
+        "kubeletEndpoint": {
+          "$ref": "#/definitions/DaemonEndpoint"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeListV1": {
+      "description": "NodeList represents a list of nodes",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NodeV1"
+      },
+      "x-go-name": "NodeList",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeListV2": {
+      "description": "NodeList represents a list of nodes",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NodeV2"
+      },
+      "x-go-name": "NodeList",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodePhase": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeResourcesV2": {
+      "description": "NodeResources cpu and memory of a node",
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "x-go-name": "CPU"
+        },
+        "memory": {
+          "type": "string",
+          "x-go-name": "Memory"
+        }
+      },
+      "x-go-name": "NodeResources",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeSpec": {
+      "type": "object",
+      "title": "NodeSpec describes the attributes that a node is created with.",
+      "properties": {
+        "configSource": {
+          "$ref": "#/definitions/NodeConfigSource"
+        },
+        "externalID": {
+          "description": "External ID of the node assigned by some machine database (e.g. a cloud provider).\nDeprecated.\n+optional",
+          "type": "string",
+          "x-go-name": "ExternalID"
+        },
+        "podCIDR": {
+          "description": "PodCIDR represents the pod IP range assigned to the node.\n+optional",
+          "type": "string",
+          "x-go-name": "PodCIDR"
+        },
+        "providerID": {
+          "description": "ID of the node assigned by the cloud provider in the format: \u003cProviderName\u003e://\u003cProviderSpecificNodeID\u003e\n+optional",
+          "type": "string",
+          "x-go-name": "ProviderID"
+        },
+        "taints": {
+          "description": "If specified, the node's taints.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Taint"
+          },
+          "x-go-name": "Taints"
+        },
+        "unschedulable": {
+          "description": "Unschedulable controls node schedulability of new pods. By default, node is schedulable.\nMore info: https://kubernetes.io/docs/concepts/nodes/node/#manual-node-administration\n+optional",
+          "type": "boolean",
+          "x-go-name": "Unschedulable"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeSpecV2": {
+      "description": "NodeSpec node specification",
+      "type": "object",
+      "required": [
+        "cloud",
+        "operatingSystem",
+        "versions"
+      ],
+      "properties": {
+        "cloud": {
+          "$ref": "#/definitions/NodeCloudSpecV2"
+        },
+        "operatingSystem": {
+          "$ref": "#/definitions/OperatingSystemSpecV2"
+        },
+        "versions": {
+          "$ref": "#/definitions/NodeVersionInfoV2"
+        }
+      },
+      "x-go-name": "NodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeStatus": {
+      "type": "object",
+      "title": "NodeStatus is information about the current status of a node.",
+      "properties": {
+        "addresses": {
+          "description": "List of addresses reachable to the node.\nQueried from cloud provider, if available.\nMore info: https://kubernetes.io/docs/concepts/nodes/node/#addresses\n+optional\n+patchMergeKey=type\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeAddress"
+          },
+          "x-go-name": "Addresses"
+        },
+        "allocatable": {
+          "$ref": "#/definitions/ResourceList"
+        },
+        "capacity": {
+          "$ref": "#/definitions/ResourceList"
+        },
+        "conditions": {
+          "description": "Conditions is an array of current observed node conditions.\nMore info: https://kubernetes.io/docs/concepts/nodes/node/#condition\n+optional\n+patchMergeKey=type\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeCondition"
+          },
+          "x-go-name": "Conditions"
+        },
+        "daemonEndpoints": {
+          "$ref": "#/definitions/NodeDaemonEndpoints"
+        },
+        "images": {
+          "description": "List of container images on this node\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerImage"
+          },
+          "x-go-name": "Images"
+        },
+        "nodeInfo": {
+          "$ref": "#/definitions/NodeSystemInfo"
+        },
+        "phase": {
+          "$ref": "#/definitions/NodePhase"
+        },
+        "volumesAttached": {
+          "description": "List of volumes that are attached to the node.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttachedVolume"
+          },
+          "x-go-name": "VolumesAttached"
+        },
+        "volumesInUse": {
+          "description": "List of attachable volumes in use (mounted) by the node.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UniqueVolumeName"
+          },
+          "x-go-name": "VolumesInUse"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeStatusV2": {
+      "type": "object",
+      "title": "NodeStatus is information about the current status of a node.",
+      "properties": {
+        "addresses": {
+          "description": "different addresses of a node",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeAddressV2"
+          },
+          "x-go-name": "Addresses"
+        },
+        "allocatable": {
+          "$ref": "#/definitions/NodeResourcesV2"
+        },
+        "capacity": {
+          "$ref": "#/definitions/NodeResourcesV2"
+        },
+        "errorMessage": {
+          "description": "in case of a error this will contain a detailed error explanation",
+          "type": "string",
+          "x-go-name": "ErrorMessage"
+        },
+        "errorReason": {
+          "description": "in case of a error this will contain a short error message",
+          "type": "string",
+          "x-go-name": "ErrorReason"
+        },
+        "machineName": {
+          "description": "name of the actual Machine object",
+          "type": "string",
+          "x-go-name": "MachineName"
+        },
+        "nodeInfo": {
+          "$ref": "#/definitions/NodeSystemInfoV2"
+        }
+      },
+      "x-go-name": "NodeStatus",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeSystemInfo": {
+      "type": "object",
+      "title": "NodeSystemInfo is a set of ids/uuids to uniquely identify the node.",
+      "properties": {
+        "architecture": {
+          "description": "The Architecture reported by the node",
+          "type": "string",
+          "x-go-name": "Architecture"
+        },
+        "bootID": {
+          "description": "Boot ID reported by the node.",
+          "type": "string",
+          "x-go-name": "BootID"
+        },
+        "containerRuntimeVersion": {
+          "description": "ContainerRuntime Version reported by the node through runtime remote API (e.g. docker://1.5.0).",
+          "type": "string",
+          "x-go-name": "ContainerRuntimeVersion"
+        },
+        "kernelVersion": {
+          "description": "Kernel Version reported by the node from 'uname -r' (e.g. 3.16.0-0.bpo.4-amd64).",
+          "type": "string",
+          "x-go-name": "KernelVersion"
+        },
+        "kubeProxyVersion": {
+          "description": "KubeProxy Version reported by the node.",
+          "type": "string",
+          "x-go-name": "KubeProxyVersion"
+        },
+        "kubeletVersion": {
+          "description": "Kubelet Version reported by the node.",
+          "type": "string",
+          "x-go-name": "KubeletVersion"
+        },
+        "machineID": {
+          "description": "MachineID reported by the node. For unique machine identification\nin the cluster this field is preferred. Learn more from man(5)\nmachine-id: http://man7.org/linux/man-pages/man5/machine-id.5.html",
+          "type": "string",
+          "x-go-name": "MachineID"
+        },
+        "operatingSystem": {
+          "description": "The Operating System reported by the node",
+          "type": "string",
+          "x-go-name": "OperatingSystem"
+        },
+        "osImage": {
+          "description": "OS Image reported by the node from /etc/os-release (e.g. Debian GNU/Linux 7 (wheezy)).",
+          "type": "string",
+          "x-go-name": "OSImage"
+        },
+        "systemUUID": {
+          "description": "SystemUUID reported by the node. For unique machine identification\nMachineID is preferred. This field is specific to Red Hat hosts\nhttps://access.redhat.com/documentation/en-US/Red_Hat_Subscription_Management/1/html/RHSM/getting-system-uuid.html",
+          "type": "string",
+          "x-go-name": "SystemUUID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeSystemInfoV2": {
+      "type": "object",
+      "title": "NodeSystemInfo is a set of versions/ids/uuids to uniquely identify the node.",
+      "properties": {
+        "architecture": {
+          "type": "string",
+          "x-go-name": "Architecture"
+        },
+        "containerRuntime": {
+          "type": "string",
+          "x-go-name": "ContainerRuntime"
+        },
+        "containerRuntimeVersion": {
+          "type": "string",
+          "x-go-name": "ContainerRuntimeVersion"
+        },
+        "kernelVersion": {
+          "type": "string",
+          "x-go-name": "KernelVersion"
+        },
+        "kubeletVersion": {
+          "type": "string",
+          "x-go-name": "KubeletVersion"
+        },
+        "operatingSystem": {
+          "type": "string",
+          "x-go-name": "OperatingSystem"
+        }
+      },
+      "x-go-name": "NodeSystemInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeUpdate": {
+      "description": "NodeUpdate represents an update option for K8s node components",
+      "type": "object",
+      "properties": {
+        "Automatic": {
+          "type": "boolean"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "From": {
+          "type": "string"
+        },
+        "Promote": {
+          "type": "boolean"
+        },
+        "Visible": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeV1": {
+      "type": "object",
+      "title": "Node is the object representing a cluster node.",
+      "properties": {
+        "annotations": {
+          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusterName": {
+          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "creationTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "deletionGracePeriodSeconds": {
+          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DeletionGracePeriodSeconds"
+        },
+        "deletionTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "finalizers": {
+          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Finalizers"
+        },
+        "generateName": {
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional",
+          "type": "string",
+          "x-go-name": "GenerateName"
+        },
+        "generation": {
+          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Generation"
+        },
+        "initializers": {
+          "$ref": "#/definitions/Initializers"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "ownerReferences": {
+          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OwnerReference"
+          },
+          "x-go-name": "OwnerReferences"
+        },
+        "resourceVersion": {
+          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "selfLink": {
+          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional",
+          "type": "string",
+          "x-go-name": "SelfLink"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatus"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-name": "Node",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeV2": {
+      "type": "object",
+      "title": "Node is the object representing a cluster node.",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMetaV2"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-name": "Node",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeVersion": {
+      "type": "object",
+      "title": "NodeVersion is the object representing a Kubernetes Kubelet version.",
+      "properties": {
+        "Latest": {
+          "type": "boolean"
+        },
+        "Name": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeVersionInfoV2": {
+      "description": "NodeVersionInfo node version information",
+      "type": "object",
+      "properties": {
+        "containerRuntime": {
+          "$ref": "#/definitions/NodeContainerRuntimeInfoV2"
+        },
+        "kubelet": {
+          "type": "string",
+          "x-go-name": "Kubelet"
+        }
+      },
+      "x-go-name": "NodeVersionInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "ObjectMeta": {
+      "type": "object",
+      "title": "ObjectMeta is an object storing common metadata for persistable objects.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "resourceVersion": {
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "uid": {
+          "type": "string",
+          "x-go-name": "UID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ObjectMetaV2": {
+      "type": "object",
+      "title": "ObjectMeta is an object storing common metadata for persistable objects.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "displayName": {
+          "type": "string",
+          "x-go-name": "DisplayName"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-name": "ObjectMeta",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "ObjectReference": {
+      "description": "+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+      "type": "object",
+      "title": "ObjectReference contains enough information to let you inspect or modify the referred object.",
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent.\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "fieldPath": {
+          "description": "If referring to a piece of an object instead of an entire object, this string\nshould contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].\nFor example, if the object reference is to a container within a pod, this would take on a value like:\n\"spec.containers{name}\" (where \"name\" refers to the name of the container that triggered\nthe event) or if no container name is specified \"spec.containers[2]\" (container with\nindex 2 in this pod). This syntax is chosen only to have some well-defined way of\nreferencing a part of an object.\nTODO: this design is not final and this field is subject to change in the future.\n+optional",
+          "type": "string",
+          "x-go-name": "FieldPath"
+        },
+        "kind": {
+          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "resourceVersion": {
+          "description": "Specific resourceVersion to which this reference is made, if any.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
     "OpenstackCloudSpec": {
       "type": "object",
@@ -1050,34 +2397,56 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "OpenstackNodeSpec": {
+    "OpenstackDatacenterSpec": {
       "type": "object",
-      "title": "OpenstackNodeSpec specifies a open stack node.",
+      "title": "OpenstackDatacenterSpec specifies a generic bare metal datacenter.",
+      "properties": {
+        "auth_url": {
+          "type": "string",
+          "x-go-name": "AuthURL"
+        },
+        "availability_zone": {
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackNodeSpecV2": {
+      "description": "OpenstackNodeSpec openstack node settings",
+      "type": "object",
+      "required": [
+        "flavor",
+        "image"
+      ],
       "properties": {
         "flavor": {
+          "description": "instance flavor",
           "type": "string",
           "x-go-name": "Flavor"
         },
         "image": {
+          "description": "image to use",
           "type": "string",
           "x-go-name": "Image"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-name": "OpenstackNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
-    "OperatingSystemSpec": {
-      "description": "OperatingSystemSpec specifies operations system options",
+    "OperatingSystemSpecV2": {
       "type": "object",
+      "title": "OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.",
       "properties": {
-        "container_linux": {
-          "$ref": "#/definitions/ContainerLinuxSpec"
+        "containerLinux": {
+          "$ref": "#/definitions/ContainerLinuxSpecV2"
         },
-        "ssh_user": {
-          "type": "string",
-          "x-go-name": "SSHUser"
+        "ubuntu": {
+          "$ref": "#/definitions/UbuntuSpecV2"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api"
+      "x-go-name": "OperatingSystemSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "OwnerReference": {
       "description": "OwnerReference contains enough information to let you identify an owning\nobject. Currently, an owning object must be in the same namespace, so there\nis no namespace field.",
@@ -1114,6 +2483,25 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
     },
+    "Preferences": {
+      "type": "object",
+      "properties": {
+        "colors": {
+          "description": "+optional",
+          "type": "boolean",
+          "x-go-name": "Colors"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
     "RSAKeys": {
       "type": "object",
       "title": "RSAKeys is a pair of private and public key where the key is not published to the API client.",
@@ -1127,7 +2515,41 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "RawExtension": {
+      "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
+      "type": "object",
+      "title": "RawExtension is used to hold extensions in external versions.",
+      "properties": {
+        "Raw": {
+          "description": "Raw is the underlying serialization of this object.\n\nTODO: Determine how to detect ContentType and ContentEncoding of 'Raw' data.",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          }
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceList": {
+      "title": "ResourceList is a set of (resource name, quantity) pairs.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "SSHKey": {
+      "description": "SSHKey represents a ssh key",
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/SSHKeySpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "SSHKeySpec": {
+      "description": "SSHKeySpec represents the details of a ssh key",
       "type": "object",
       "properties": {
         "clusters": {
@@ -1154,7 +2576,7 @@
           "x-go-name": "PublicKey"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Status": {
       "type": "object",
@@ -1274,6 +2696,33 @@
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
     },
+    "Taint": {
+      "description": "The node this Taint is attached to has the \"effect\" on\nany pod that does not tolerate the Taint.",
+      "type": "object",
+      "properties": {
+        "effect": {
+          "$ref": "#/definitions/TaintEffect"
+        },
+        "key": {
+          "description": "Required. The taint key to be applied to a node.",
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "timeAdded": {
+          "$ref": "#/definitions/Time"
+        },
+        "value": {
+          "description": "Required. The taint value corresponding to the taint key.\n+optional",
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "TaintEffect": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
     "Time": {
       "description": "+protobuf.options.marshal=false\n+protobuf.as=Timestamp\n+protobuf.options.(gogoproto.goproto_stringer)=false",
       "type": "object",
@@ -1285,316 +2734,55 @@
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
     },
-    "UserSpec": {
+    "UbuntuSpecV2": {
+      "description": "UbuntuSpec ubuntu specific settings",
       "type": "object",
       "properties": {
-        "email": {
-          "type": "string",
-          "x-go-name": "Email"
-        },
-        "groups": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Groups"
-        },
-        "id": {
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+      "x-go-name": "UbuntuSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "UniqueVolumeName": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "User": {
+      "type": "object",
+      "title": "User represents an API user that is used for authentication.",
+      "properties": {
+        "Email": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "Roles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     }
   },
   "responses": {
-    "APIError": {
-      "description": "APIError we need to work with github.com/yvasiyarov/swagger\nbased on https://github.com/yvasiyarov/swagger/blob/master/example/data_structures.go",
-      "headers": {
-        "code": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "message": {
-          "type": "string"
-        }
-      }
+    "empty": {
+      "description": "EmptyResponse is a empty response"
     },
-    "KubeCluster": {
-      "description": "Cluster is the object representing a cluster.",
+    "errorResponse": {
+      "description": "ErrorResponse is the default representation of an error",
       "schema": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "string"
-        },
-        "$ref": "#/definitions/ClusterStatus"
-      },
-      "headers": {
-        "address": {},
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional"
-        },
-        "apiVersion": {
-          "type": "string",
-          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional"
-        },
-        "clusterName": {
-          "type": "string",
-          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was\ncreated. It is not guaranteed to be set in happens-before order across separate operations.\nClients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system.\nRead-only.\nNull for lists.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "deletionGracePeriodSeconds": {
-          "type": "integer",
-          "format": "int64",
-          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This\nfield is set by the server when a graceful deletion is requested by the user, and is not\ndirectly settable by a client. The resource is expected to be deleted (no longer visible\nfrom resource lists, and not reachable by name) after the time in this field. Once set,\nthis value may not be unset or be set further into the future, although it may be shortened\nor the resource may be deleted prior to this time. For example, a user may request that\na pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination\nsignal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard\ntermination signal (SIGKILL) to the container and after cleanup, remove the pod from the\nAPI. In the presence of network partitions, this object may still exist after this\ntimestamp, until an administrator or automated process can determine the resource is\nfully terminated.\nIf not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested.\nRead-only.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "finalizers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge"
-        },
-        "generateName": {
-          "type": "string",
-          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional"
-        },
-        "generation": {
-          "type": "integer",
-          "format": "int64",
-          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional"
-        },
-        "initializers": {
-          "description": "An initializer is a controller which enforces some system invariant at object creation time.\nThis field is a list of initializers that have not yet acted on this object. If nil or empty,\nthis object has been completely initialized. Otherwise, the object is considered uninitialized\nand is hidden (in list/watch and get calls) from clients that haven't explicitly asked to\nobserve uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers.\nOnly privileged users may set or modify this list. Once it is empty, it may not be modified further\nby any user."
-        },
-        "kind": {
-          "type": "string",
-          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional"
-        },
-        "labels": {
-          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional"
-        },
-        "namespace": {
-          "type": "string",
-          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional"
-        },
-        "ownerReferences": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OwnerReference"
-          },
-          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge"
-        },
-        "resourceVersion": {
-          "type": "string",
-          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional"
-        },
-        "selfLink": {
-          "type": "string",
-          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional"
-        },
-        "spec": {},
-        "status": {},
-        "uid": {
-          "description": "UID is the unique in time and space value for this object. It is typically generated by\nthe server on successful creation of a resource and is not allowed to change on PUT\noperations.\n\nPopulated by the system.\nRead-only.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#uids\n+optional"
-        }
+        "$ref": "#/definitions/ErrorDetails"
       }
-    },
-    "KubeConfig": {
-      "description": "KubeConfig is an alias for the swagger definition\nTODO(GvW): the go-swagger tool don't parse this correct"
-    },
-    "NodeList": {
-      "description": "NodeList is an alias for the swagger definition"
-    },
-    "User": {
-      "description": "User specifies a user\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
-      "schema": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "string"
-        },
-        "$ref": "#/definitions/UserSpec"
-      },
-      "headers": {
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional"
-        },
-        "apiVersion": {
-          "type": "string",
-          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional"
-        },
-        "clusterName": {
-          "type": "string",
-          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was\ncreated. It is not guaranteed to be set in happens-before order across separate operations.\nClients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system.\nRead-only.\nNull for lists.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "deletionGracePeriodSeconds": {
-          "type": "integer",
-          "format": "int64",
-          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This\nfield is set by the server when a graceful deletion is requested by the user, and is not\ndirectly settable by a client. The resource is expected to be deleted (no longer visible\nfrom resource lists, and not reachable by name) after the time in this field. Once set,\nthis value may not be unset or be set further into the future, although it may be shortened\nor the resource may be deleted prior to this time. For example, a user may request that\na pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination\nsignal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard\ntermination signal (SIGKILL) to the container and after cleanup, remove the pod from the\nAPI. In the presence of network partitions, this object may still exist after this\ntimestamp, until an administrator or automated process can determine the resource is\nfully terminated.\nIf not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested.\nRead-only.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "finalizers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge"
-        },
-        "generateName": {
-          "type": "string",
-          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional"
-        },
-        "generation": {
-          "type": "integer",
-          "format": "int64",
-          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional"
-        },
-        "initializers": {
-          "description": "An initializer is a controller which enforces some system invariant at object creation time.\nThis field is a list of initializers that have not yet acted on this object. If nil or empty,\nthis object has been completely initialized. Otherwise, the object is considered uninitialized\nand is hidden (in list/watch and get calls) from clients that haven't explicitly asked to\nobserve uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers.\nOnly privileged users may set or modify this list. Once it is empty, it may not be modified further\nby any user."
-        },
-        "kind": {
-          "type": "string",
-          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional"
-        },
-        "labels": {
-          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional"
-        },
-        "namespace": {
-          "type": "string",
-          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional"
-        },
-        "ownerReferences": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OwnerReference"
-          },
-          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge"
-        },
-        "resourceVersion": {
-          "type": "string",
-          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional"
-        },
-        "selfLink": {
-          "type": "string",
-          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional"
-        },
-        "spec": {},
-        "uid": {
-          "description": "UID is the unique in time and space value for this object. It is typically generated by\nthe server on successful creation of a resource and is not allowed to change on PUT\noperations.\n\nPopulated by the system.\nRead-only.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#uids\n+optional"
-        }
-      }
-    },
-    "UserSSHKey": {
-      "description": "UserSSHKey specifies a users UserSSHKey\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
-      "schema": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "string"
-        },
-        "$ref": "#/definitions/SSHKeySpec"
-      },
-      "headers": {
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional"
-        },
-        "apiVersion": {
-          "type": "string",
-          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional"
-        },
-        "clusterName": {
-          "type": "string",
-          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was\ncreated. It is not guaranteed to be set in happens-before order across separate operations.\nClients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system.\nRead-only.\nNull for lists.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "deletionGracePeriodSeconds": {
-          "type": "integer",
-          "format": "int64",
-          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This\nfield is set by the server when a graceful deletion is requested by the user, and is not\ndirectly settable by a client. The resource is expected to be deleted (no longer visible\nfrom resource lists, and not reachable by name) after the time in this field. Once set,\nthis value may not be unset or be set further into the future, although it may be shortened\nor the resource may be deleted prior to this time. For example, a user may request that\na pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination\nsignal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard\ntermination signal (SIGKILL) to the container and after cleanup, remove the pod from the\nAPI. In the presence of network partitions, this object may still exist after this\ntimestamp, until an administrator or automated process can determine the resource is\nfully terminated.\nIf not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested.\nRead-only.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\n+optional"
-        },
-        "finalizers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge"
-        },
-        "generateName": {
-          "type": "string",
-          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional"
-        },
-        "generation": {
-          "type": "integer",
-          "format": "int64",
-          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional"
-        },
-        "initializers": {
-          "description": "An initializer is a controller which enforces some system invariant at object creation time.\nThis field is a list of initializers that have not yet acted on this object. If nil or empty,\nthis object has been completely initialized. Otherwise, the object is considered uninitialized\nand is hidden (in list/watch and get calls) from clients that haven't explicitly asked to\nobserve uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers.\nOnly privileged users may set or modify this list. Once it is empty, it may not be modified further\nby any user."
-        },
-        "kind": {
-          "type": "string",
-          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional"
-        },
-        "labels": {
-          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional"
-        },
-        "namespace": {
-          "type": "string",
-          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional"
-        },
-        "ownerReferences": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OwnerReference"
-          },
-          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge"
-        },
-        "resourceVersion": {
-          "type": "string",
-          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional"
-        },
-        "selfLink": {
-          "type": "string",
-          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional"
-        },
-        "spec": {},
-        "uid": {
-          "description": "UID is the unique in time and space value for this object. It is typically generated by\nthe server on successful creation of a resource and is not allowed to change on PUT\noperations.\n\nPopulated by the system.\nRead-only.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#uids\n+optional"
-        }
-      }
-    },
-    "Versions": {
-      "description": "Versions is an alias for the swagger defininiton"
     }
   }
 }

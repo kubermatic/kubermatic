@@ -1,9 +1,7 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: generic
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
+  name: kubermatic-fast
 {{ if eq .Values.StorageProvider "aws" }}
   {{- template "aws" . }}
 {{ else if eq .Values.StorageProvider "gke" }}

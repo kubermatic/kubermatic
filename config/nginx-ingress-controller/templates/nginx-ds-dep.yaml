@@ -6,7 +6,6 @@ kind: Deployment
 {{ end }}
 metadata:
   name: nginx-ingress-controller
-  namespace: ingress-nginx
 spec:
 {{ if not .Values.nginx.asDaemonSet }}
   replicas: {{ .Values.nginx.replicas }}
@@ -15,9 +14,6 @@ spec:
     metadata:
       labels:
         app: ingress-nginx
-      annotations:
-        prometheus.io/port: {{ .Values.nginx.prometheus.port | quote }}
-        prometheus.io/scrape: {{ .Values.nginx.prometheus.scrape | quote }}
     spec:
     {{ if .Values.nginx.hostNetwork }}
       hostNetwork: true
@@ -42,13 +38,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          {{ if not .Values.nginx.hostNetwork }}
           ports:
+          - name: metrics
+            containerPort: 10254
           - name: http
             containerPort: 80
           - name: https
             containerPort: 443
-          {{ end }}
           livenessProbe:
             failureThreshold: 3
             httpGet:

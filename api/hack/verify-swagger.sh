@@ -11,5 +11,5 @@ TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
 go install 
 cd ${API_DIR}/cmd/kubermatic-api/
-swagger generate spec -o ${TMP_SWAGGER}
+swagger generate spec --scan-models -o ${TMP_SWAGGER}
 diff -Naup ${SWAGGER_FILE} ${TMP_SWAGGER}

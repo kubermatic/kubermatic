@@ -50,7 +50,6 @@ spec:
         - --insecure-bind-address=0.0.0.0
         - --insecure-port=8080
         - --etcd-servers=http://etcd-cluster-client:2379
-        - --etcd-quorum-read=true
         - --storage-backend=etcd3
         - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction
         - --authorization-mode=Node,RBAC

@@ -1,0 +1,21 @@
+{{- if .Values.data.stateful.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-data
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}
+    role: data
+spec:
+  ports:
+  - port: 9300
+    name: transport
+  clusterIP: None
+  selector:
+    component: {{ template "fullname" . }}
+    role: data
+{{- end }}

@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	nodesetv1alpha1 "github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	"github.com/kubermatic/kubermatic/api"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -36,14 +36,10 @@ const (
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
-// NodeList is an alias for the swagger definition
-// swagger:response NodeList
-type NodeList = apiv1.NodeList
-
 func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
-		req := request.(NodesReq)
+		req := request.(ClusterReq)
 
 		c, err := kp.Cluster(user, req.Cluster)
 		if err != nil {
@@ -100,7 +96,7 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.SSHKeyProvider, versions map[string]*api.MasterVersion) endpoint.Endpoint {
+func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := auth.GetUser(ctx)
 		req := request.(CreateNodesReq)
@@ -126,7 +122,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
 		}
 
-		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Spec)
+		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Body.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -136,9 +132,9 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.NodeClassName(&req.Spec), metav1.GetOptions{})
+		nc, err := nclient.NodesetV1alpha1().NodeClasses().Get(cp.NodeClassName(&req.Body.Spec), metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			nc, err = cp.CreateNodeClass(c, &req.Spec, keys, version)
+			nc, err = cp.CreateNodeClass(c, &req.Body.Spec, keys, version)
 			if err != nil {
 				return nil, err
 			}
@@ -149,8 +145,8 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 
-		for i := 1; i <= req.Instances; i++ {
-			n := &apiv1.Node{}
+		for i := 1; i <= req.Body.Instances; i++ {
+			n := &corev1.Node{}
 			n.Name = fmt.Sprintf("kubermatic-%s-%s", c.Name, rand.String(5))
 			n.Labels = map[string]string{
 				LabelArch:     "amd64",

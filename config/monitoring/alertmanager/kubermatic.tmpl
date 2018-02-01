@@ -1,0 +1,15 @@
+{{ define "slack.kubermatic.title.range" }}
+{{range .Alerts }}
+{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}{{ .Annotations.summary }}{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "slack.kubermatic.text.range" }}
+{{range .Alerts }}
+{{ .Annotations.description }}{{ if .Annotations.dashboard }}https://link-to-dashboard.io/{{ .Annotations.dashboard }}{{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "slack.kubermatic.title" }}{{ template "slack.kubermatic.title.range" . }}{{ end }}
+{{ define "slack.kubermatic.text" }}{{ template "slack.kubermatic.text.range" . }}{{ end }}
+{{ define "slack.kubermatic.fallback" }}{{ template "slack.kubermatic.fallback.range" . }}{{ end }}

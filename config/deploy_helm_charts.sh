@@ -45,7 +45,7 @@ kubectl apply -f ${CHARTS_PATH}/installer/namespace.yaml
 kubectl apply -f ${CHARTS_PATH}/installer/tiller-serviceaccount.yaml
 
 # You cannot update clusterrolebindings so we recreate them
-kubectl delete -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml
+kubectl delete -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml || true
 kubectl create -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml
 
 helm ${HELM_OPTS} init --service-account tiller --upgrade
@@ -53,15 +53,6 @@ until helm ${HELM_OPTS} version
 do
    sleep 5
 done
-
-############# Kubermatic #############
-helm ${HELM_OPTS} upgrade -i storage -f ${VALUESFILE} ${CHARTS_PATH}/storage/
-helm ${HELM_OPTS} upgrade -i nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
-helm ${HELM_OPTS} upgrade -i oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
-helm ${HELM_OPTS} upgrade -i kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
-helm ${HELM_OPTS} upgrade -i cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
-helm ${HELM_OPTS} upgrade -i certs -f ${VALUESFILE} ${CHARTS_PATH}/certs/
-helm ${HELM_OPTS} upgrade -i nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
 
 ############# MONITORING #############
 # All monitoring charts require the monitoring ns.
@@ -72,6 +63,15 @@ helm ${HELM_OPTS} upgrade -i kube-state-metrics -f ${VALUESFILE} ${CHARTS_PATH}/
 helm ${HELM_OPTS} upgrade -i grafana -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/grafana/
 helm ${HELM_OPTS} upgrade -i alertmanager -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/alertmanager/
 helm ${HELM_OPTS} upgrade -i prometheus -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
+
+############# Kubermatic #############
+helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/storage/
+helm ${HELM_OPTS} upgrade -i nginx --namespace ingress-nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
+helm ${HELM_OPTS} upgrade -i oauth --namespace oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
+helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
+helm ${HELM_OPTS} upgrade -i cert-manager --namespace cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
+helm ${HELM_OPTS} upgrade -i certs --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/certs/
+helm ${HELM_OPTS} upgrade -i nodeport-exposer --namespace nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
 
 #TODO: Update
 #helm ${HELM_OPTS} upgrade -i efk-logging -f ${VALUESFILE} ${PATH}/efk-logging/

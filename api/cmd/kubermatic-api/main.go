@@ -1,11 +1,16 @@
-//go:generate swagger generate spec
+// Package classification Kubermatic API.
+//
+// Kubermatic API
+//
+// This describes possible operations which can be made against the Kubermatic API.
+//
 // Terms Of Service:
 //
 // there are no TOS at this moment, use at your own risk we take no responsibility
 //
 //     Schemes: https
-//     Host: localhost
-//     Version: 0.0.1
+//     Host: cloud.kubermatic.io
+//     Version: 2.2.3
 //
 //     Consumes:
 //     - application/json
@@ -82,7 +87,7 @@ func main() {
 		glog.Error(err)
 	}
 
-	authenticator := auth.NewOpenIDAuthenticator(
+	authenticator, err := auth.NewOpenIDAuthenticator(
 		*tokenIssuer,
 		*clientID,
 		auth.NewCombinedExtractor(
@@ -90,6 +95,9 @@ func main() {
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 	)
+	if err != nil {
+		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", *tokenIssuer, *clientID, err)
+	}
 
 	// start server
 	ctx := context.Background()
