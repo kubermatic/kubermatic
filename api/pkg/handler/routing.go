@@ -232,6 +232,23 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/api/v1/projects/{project_id}/member/{member_id}").
 		Handler(r.deleteProjectMember())
+
+	mux.Methods(http.MethodPost).
+		Path("/api/v2/cluster/{cluster}/nodes").
+		Handler(r.createNodeHandlerV2())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v2/cluster/{cluster}/nodes").
+		Handler(r.getNodesHandlerV2())
+
+	mux.Methods(http.MethodGet).
+		Path("/api/v2/cluster/{cluster}/nodes/{node}").
+		Handler(r.getNodeHandlerV2())
+
+	mux.Methods(http.MethodDelete).
+		Path("/api/v2/cluster/{cluster}/nodes/{node}").
+		Handler(r.deleteNodeHandlerV2())
+
 }
 
 func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
@@ -733,6 +750,81 @@ func (r Routing) deleteProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
 		decodeDeleteSSHKeyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Create node
+// swagger:route POST /api/v2/cluster/{cluster}/nodes cluster createClusterNodeV2
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: NodeV2
+func (r Routing) createNodeHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(createNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		decodeCreateNodeReqV2,
+		createStatusResource(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// Get nodes
+// swagger:route GET /api/v2/cluster/{cluster}/nodes cluster getClusterNodesV2
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NodeListV2
+func (r Routing) getNodesHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getNodesEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Get node
+// swagger:route GET /api/v2/cluster/{cluster}/nodes/{node} cluster getClusterNodeV2
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NodeV2
+func (r Routing) getNodeHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(getNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Delete node
+// swagger:route DELETE /api/v2/cluster/{cluster}/nodes/{node} cluster deleteClusterNodeV2
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) deleteNodeHandlerV2() http.Handler {
+	return httptransport.NewServer(
+		r.auth(r.userStorer(deleteNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
