@@ -58,6 +58,27 @@ type Datacenter struct {
 	Seed     bool           `json:"seed,omitempty"`
 }
 
+// DigitaloceanSizeList represents a object of digitalocean sizes.
+// swagger:model DigitaloceanSizeList
+type DigitaloceanSizeList struct {
+	Standard  []DigitaloceanSize `json:"standard"`
+	Optimized []DigitaloceanSize `json:"optimized"`
+}
+
+// DigitaloceanSize is the object representing digitalocean sizes.
+// swagger:model DigitaloceanSize
+type DigitaloceanSize struct {
+	Slug         string   `json:"slug"`
+	Available    bool     `json:"available"`
+	Transfer     float64  `json:"transfer"`
+	PriceMonthly float64  `json:"price_monthly"`
+	PriceHourly  float64  `json:"price_hourly"`
+	Memory       int      `json:"memory"`
+	Vcpus        int      `json:"vcpus"`
+	Disk         int      `json:"disk"`
+	Regions      []string `json:"regions"`
+}
+
 // MasterVersion is the object representing a Kubernetes Master version.
 // swagger:model MasterVersion
 type MasterVersion struct {
