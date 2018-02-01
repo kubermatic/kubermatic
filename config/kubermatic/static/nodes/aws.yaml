@@ -14,7 +14,7 @@ config:
     amazonec2-subnet-id: "{{ .Cluster.Spec.Cloud.AWS.SubnetID }}"
     amazonec2-vpc-id: "{{ .Cluster.Spec.Cloud.AWS.VPCID }}"
     amazonec2-open-port: "22,10250"
-    amazonec2-ssh-user: "{{ default .NodeSpec.OperatingSystem.SSHUser "core" }}"
+    amazonec2-ssh-user: "core"
     amazonec2-root-size: "{{ .NodeSpec.AWS.RootSize }}"
     amazonec2-volume-type: "{{ default .NodeSpec.AWS.VolumeType "gp2" }}"
     amazonec2-device-name: "/dev/xvda"
