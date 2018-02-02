@@ -3,7 +3,7 @@ The seed installer is for creating a self-contained Kubernetes cluster that host
 ---
 
 ## How it works.
-This installer locally renders assets, cpoies them to the corresponding machines, installs dependencies on the machienes and runs scripts. For this purpose it uses ssh to connect to the machines, thus it requires passwordless sudo. (e.g ubuntu@XMachine) ubuntu needs sudo permissions.
+This installer locally renders assets, copies them to the corresponding machines, installs dependencies on the machines and runs scripts. For this purpose it uses ssh to connect to the machines, thus it requires passwordless sudo. (e.g ubuntu@XMachine) ubuntu needs sudo permissions.
 
 ## Prerequisites.
 * All machines need to be accessible over an keyfile via ssh.
