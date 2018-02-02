@@ -11,12 +11,14 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.7.0
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.2
     addon-manager-version: v1.7.1
+    machine-controller-version: v0.0.2
 - name: 1.7.7
   id: 1.7.7
   default: false
@@ -28,12 +30,14 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.7.7
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.2
     addon-manager-version: v1.7.2
+    machine-controller-version: v0.0.2
 - name: 1.7.9
   id: 1.7.9
   default: false
@@ -45,12 +49,14 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.7.9
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.2
     addon-manager-version: v1.7.3
+    machine-controller-version: v0.0.2
 - name: 1.7.10
   id: 1.7.10
   default: false
@@ -62,6 +68,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.7.10
     etcd-operator-version: v0.6.0
@@ -69,6 +76,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.7.4
     pod-network-bridge: v0.1
+    machine-controller-version: v0.0.2
 - name: 1.7.11
   id: 1.7.11
   default: false
@@ -80,6 +88,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.7.11
     etcd-operator-version: v0.6.0
@@ -87,6 +96,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.7.6
     pod-network-bridge: v0.1
+    machine-controller-version: v0.0.2
 - name: 1.8.4
   id: 1.8.4
   default: false
@@ -98,6 +108,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.8.4
     etcd-operator-version: v0.6.0
@@ -105,6 +116,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.1
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.8.5
   id: 1.8.5
   default: false
@@ -116,6 +128,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.8.5
     etcd-operator-version: v0.6.0
@@ -123,6 +136,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.8.6
   id: 1.8.6
   default: false
@@ -134,6 +148,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.8.6
     etcd-operator-version: v0.6.0
@@ -141,6 +156,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.8.7
   id: 1.8.7
   default: true
@@ -152,6 +168,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.8.7
     etcd-operator-version: v0.6.0
@@ -159,6 +176,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.9.0
   id: 1.9.0
   default: false
@@ -170,6 +188,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.9.0
     etcd-operator-version: v0.6.0
@@ -177,6 +196,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.0
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.9.1
   id: 1.9.1
   default: false
@@ -188,6 +208,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.9.1
     etcd-operator-version: v0.6.0
@@ -195,6 +216,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.0
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
 - name: 1.9.2
   id: 1.9.2
   default: false
@@ -206,6 +228,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller.yaml
   values:
     k8s-version: v1.9.2
     etcd-operator-version: v0.6.0
@@ -213,3 +236,4 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.0
     pod-network-bridge: v0.2
+    machine-controller-version: v0.0.2
