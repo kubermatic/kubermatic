@@ -1,25 +1,25 @@
 # Seed Cluster Setup
-The seed installer is responsible for creating a cluster that runs on machines not on Kuberntetes, it is used to act as a base for a Kubermatic installation. The cluster has to pass the conformance tests and has to interact with a cloud provider.
+The seed installer is for creating a self-contained Kubernetes cluster that hosts the Kubermatic components. The cluster has to pass the conformance tests and has to interact with a cloud provider.
 ---
 
 ## How it works.
-This installer locally renders assets, cpoies them to the corresponding machines, installs dependencies on the machienes and runs scripts. For this purpose it uses ssh to connect to the machines, the account on all machines needs sudo permissions withput password. (e.g ubuntu@XMachine) ubuntu needs sudo permissions.
+This installer locally renders assets, cpoies them to the corresponding machines, installs dependencies on the machienes and runs scripts. For this purpose it uses ssh to connect to the machines, thus it requires passwordless sudo. (e.g ubuntu@XMachine) ubuntu needs sudo permissions.
 
 ## Prerequisites.
-* All machines need to be accessible over an keyfile saved in the ssh-agent.
-* All public IP's of the etcd servers (1,3,5,...), the IP's are just used to connect to the machines (can also be the private one if install from the network within).
+* All machines need to be accessible over an keyfile via ssh.
+* All public IP's of the etcd servers (count = 1,3,5,...), the IP's are just used to connect to the machines (can also be the private one if install from the network within).
 * All private IP's of the etcd servers.
 * All public IP's of the master servers (public as in public Etcd IP's, can be the same as the etcd servers, to have both on the same machine).
 * All private IP's of the master server.
-* All public IP's of the workers (public as in public Etcd IP's, have to be distingt from the master IP's).
+* All public IP's of the workers (public as in public Etcd IP's, have to be distinct from the master IP's).
 * All private IP's of the workers.
-* The LoadBalancer IP (If not exsistant use a master server IP).
-* The default interface name for the private network facing communication (e.g eth1)
+* The LoadBalancer IP (If not existent use a master server IP).
+* The default interface name for the private network (e.g eth1)
 * The cloud-provider-config path.
 * The cloud provider used (e.g openstack).
 * The default user used during installation.
 
-In the config.sh script edit the variables and run ./install.sh
+In the `config.sh` script edit the variables and run `./install.sh`
 
 ```bash
 KUBERNETES_VERSION="v1.9.2"
@@ -46,6 +46,9 @@ WORKER_PUBLIC_IPS=(worker1-public-ip)
 ## Upgrading the cluster
 
 First drain the node you want to update.
+```bash
+kubectl drain <node name>
+```
 Next edit `/etc/kubernetes/kubeadm-config.yaml` and set the kubernetes version.
 
 Now you can simply initialize this node with the new kubernetes version like:
@@ -56,5 +59,8 @@ Once that's done you should see the apiserver, node-controller and scheduler res
 These components are now running in the new version.
 
 Don't forget to undrain the node again.
+```bash
+kubectl uncordon <node name>
+```
 
 Repeat for all other nodes one by one.
