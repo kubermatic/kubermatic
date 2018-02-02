@@ -61,18 +61,19 @@ type Datacenter struct {
 // MasterVersion is the object representing a Kubernetes Master version.
 // swagger:model MasterVersion
 type MasterVersion struct {
-	Name                         string            `yaml:"name"`
-	ID                           string            `yaml:"id"`
-	Default                      bool              `yaml:"default"`
-	AllowedNodeVersions          []string          `yaml:"allowedNodeVersions"`
-	EtcdOperatorDeploymentYaml   string            `yaml:"etcdOperatorDeploymentYaml"`
-	EtcdClusterYaml              string            `yaml:"etcdClusterYaml"`
-	ApiserverDeploymentYaml      string            `yaml:"apiserverDeploymentYaml"`
-	ControllerDeploymentYaml     string            `yaml:"controllerDeploymentYaml"`
-	SchedulerDeploymentYaml      string            `yaml:"schedulerDeploymentYaml"`
-	NodeControllerDeploymentYaml string            `yaml:"nodeControllerDeploymentYaml"`
-	AddonManagerDeploymentYaml   string            `yaml:"addonManagerDeploymentYaml"`
-	Values                       map[string]string `yaml:"values"`
+	Name                            string            `yaml:"name"`
+	ID                              string            `yaml:"id"`
+	Default                         bool              `yaml:"default"`
+	AllowedNodeVersions             []string          `yaml:"allowedNodeVersions"`
+	EtcdOperatorDeploymentYaml      string            `yaml:"etcdOperatorDeploymentYaml"`
+	EtcdClusterYaml                 string            `yaml:"etcdClusterYaml"`
+	ApiserverDeploymentYaml         string            `yaml:"apiserverDeploymentYaml"`
+	ControllerDeploymentYaml        string            `yaml:"controllerDeploymentYaml"`
+	SchedulerDeploymentYaml         string            `yaml:"schedulerDeploymentYaml"`
+	NodeControllerDeploymentYaml    string            `yaml:"nodeControllerDeploymentYaml"`
+	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
+	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
+	Values                          map[string]string `yaml:"values"`
 }
 
 // NodeVersion is the object representing a Kubernetes Kubelet version.
