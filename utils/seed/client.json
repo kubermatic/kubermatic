@@ -1,0 +1,7 @@
+{
+    "CN": "client",
+    "key": {
+        "algo": "ecdsa",
+        "size": 256
+    }
+}
