@@ -1545,6 +1545,9 @@
         "ID": {
           "type": "string"
         },
+        "MachineControllerDeploymentYaml": {
+          "type": "string"
+        },
         "Name": {
           "type": "string"
         },
