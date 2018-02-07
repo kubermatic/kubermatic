@@ -4,6 +4,7 @@ package externalversions
 
 import (
 	"fmt"
+
 	v1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
@@ -35,7 +36,7 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=Etcd, Version=V1beta2
+	// Group=etcd.database.coreos.com, Version=v1beta2
 	case v1beta2.SchemeGroupVersion.WithResource("etcdclusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Etcd().V1beta2().EtcdClusters().Informer()}, nil
 

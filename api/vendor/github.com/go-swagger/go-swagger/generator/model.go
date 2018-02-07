@@ -74,7 +74,7 @@ func GenerateDefinition(modelNames []string, opts *GenOpts) error {
 		// lookup schema
 		model, ok := specDoc.Spec().Definitions[modelName]
 		if !ok {
-			return fmt.Errorf("model %q not found in definitions in %s", modelName, specPath)
+			return fmt.Errorf("model %q not found in definitions given by %q", modelName, specPath)
 		}
 
 		// generate files
@@ -106,7 +106,7 @@ func (m *definitionGenerator) Generate() error {
 
 	mod, err := makeGenDefinition(m.Name, m.Target, m.Model, m.SpecDoc, m.opts)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not generate definitions for model %s on target %s: %v", m.Name, m.Target, err)
 	}
 
 	if m.opts.DumpData {
@@ -116,8 +116,9 @@ func (m *definitionGenerator) Generate() error {
 	}
 
 	if m.opts.IncludeModel {
+		log.Println("including additional model")
 		if err := m.generateModel(mod); err != nil {
-			return fmt.Errorf("model: %s", err)
+			return fmt.Errorf("could not generate model: %v", err)
 		}
 	}
 	log.Println("generated model", m.Name)
@@ -126,6 +127,9 @@ func (m *definitionGenerator) Generate() error {
 }
 
 func (m *definitionGenerator) generateModel(g *GenDefinition) error {
+	if Debug {
+		log.Printf("rendering definitions for %+v", *g)
+	}
 	return m.opts.renderDefinition(g)
 }
 
@@ -164,7 +168,7 @@ func makeGenDefinitionHierarchy(name, pkg, container string, schema spec.Schema,
 		IncludeModel:     opts.IncludeModel,
 	}
 	if err := pg.makeGenSchema(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not generate schema for %s: %v", name, err)
 	}
 	dsi, ok := di.Discriminators["#/definitions/"+name]
 	if ok {
@@ -205,11 +209,7 @@ func makeGenDefinitionHierarchy(name, pkg, container string, schema spec.Schema,
 			for ref.String() != "" {
 				var rsch *spec.Schema
 				var err error
-				if specDoc.SpecFilePath() != "" {
-					rsch, err = spec.ResolveRefWithBase(swsp, &ref, &spec.ExpandOptions{RelativeBase: specDoc.SpecFilePath()})
-				} else {
-					rsch, err = spec.ResolveRef(swsp, &ref)
-				}
+				rsch, err = spec.ResolveRef(swsp, &ref)
 				if err != nil {
 					return nil, err
 				}
@@ -277,7 +277,8 @@ func makeGenDefinitionHierarchy(name, pkg, container string, schema spec.Schema,
 
 	return &GenDefinition{
 		GenCommon: GenCommon{
-			Copyright: opts.Copyright,
+			Copyright:        opts.Copyright,
+			TargetImportPath: filepath.ToSlash(opts.LanguageOpts.baseImport(opts.Target)),
 		},
 		Package:        opts.LanguageOpts.MangleName(filepath.Base(pkg), "definitions"),
 		GenSchema:      pg.GenSchema,
@@ -630,6 +631,7 @@ func (sg *schemaGenContext) buildProperties() error {
 		if Debug {
 			bbb, _ := json.MarshalIndent(sg.Schema, "", "  ")
 			log.Printf("building property %s[%q] (tup: %t) (BaseType: %t) %s\n", sg.Name, k, sg.IsTuple, sg.GenSchema.IsBaseType, bbb)
+			log.Printf("property %s[%q] (tup: %t) HasValidations: %t)", sg.Name, k, sg.IsTuple, sg.GenSchema.HasValidations)
 		}
 
 		// check if this requires de-anonymizing, if so lift this as a new struct and extra schema
@@ -681,6 +683,9 @@ func (sg *schemaGenContext) buildProperties() error {
 			emprop.GenSchema.NeedsValidation = true
 			sg.GenSchema.NeedsValidation = true
 		}
+		// Generates format validation on property, even when not Required
+		emprop.GenSchema.HasValidations = emprop.GenSchema.HasValidations || tpe.IsCustomFormatter
+
 		if emprop.Schema.Ref.String() != "" {
 			ref := emprop.Schema.Ref
 			var sch *spec.Schema
@@ -688,11 +693,7 @@ func (sg *schemaGenContext) buildProperties() error {
 				var rsch *spec.Schema
 				var err error
 				specDoc := sg.TypeResolver.Doc
-				if specDoc.SpecFilePath() != "" {
-					rsch, err = spec.ResolveRefWithBase(specDoc.Spec(), &ref, &spec.ExpandOptions{RelativeBase: specDoc.SpecFilePath()})
-				} else {
-					rsch, err = spec.ResolveRef(specDoc.Spec(), &ref)
-				}
+				rsch, err = spec.ResolveRef(specDoc.Spec(), &ref)
 				if err != nil {
 					return err
 				}
@@ -1362,7 +1363,7 @@ func (sg *schemaGenContext) makeGenSchema() error {
 		return nil
 	}
 	if Debug {
-		log.Println("after shortcuit named ref")
+		log.Println("after short circuit named ref")
 		b, _ := json.MarshalIndent(sg.Schema, "", "  ")
 		log.Println(string(b))
 	}

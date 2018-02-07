@@ -3,21 +3,25 @@
 package externalversions
 
 import (
-	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
-	etcd "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/etcd"
-	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/internalinterfaces"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	cache "k8s.io/client-go/tools/cache"
 	reflect "reflect"
 	sync "sync"
 	time "time"
+
+	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	etcdoperator "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/etcdoperator"
+	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/internalinterfaces"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 type sharedInformerFactory struct {
-	client        versioned.Interface
-	lock          sync.Mutex
-	defaultResync time.Duration
+	client           versioned.Interface
+	namespace        string
+	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	lock             sync.Mutex
+	defaultResync    time.Duration
 
 	informers map[reflect.Type]cache.SharedIndexInformer
 	// startedInformers is used for tracking which informers have been started.
@@ -27,8 +31,17 @@ type sharedInformerFactory struct {
 
 // NewSharedInformerFactory constructs a new instance of sharedInformerFactory
 func NewSharedInformerFactory(client versioned.Interface, defaultResync time.Duration) SharedInformerFactory {
+	return NewFilteredSharedInformerFactory(client, defaultResync, v1.NamespaceAll, nil)
+}
+
+// NewFilteredSharedInformerFactory constructs a new instance of sharedInformerFactory.
+// Listers obtained via this SharedInformerFactory will be subject to the same filters
+// as specified here.
+func NewFilteredSharedInformerFactory(client versioned.Interface, defaultResync time.Duration, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) SharedInformerFactory {
 	return &sharedInformerFactory{
 		client:           client,
+		namespace:        namespace,
+		tweakListOptions: tweakListOptions,
 		defaultResync:    defaultResync,
 		informers:        make(map[reflect.Type]cache.SharedIndexInformer),
 		startedInformers: make(map[reflect.Type]bool),
@@ -94,9 +107,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Etcd() etcd.Interface
+	Etcd() etcdoperator.Interface
 }
 
-func (f *sharedInformerFactory) Etcd() etcd.Interface {
-	return etcd.New(f)
+func (f *sharedInformerFactory) Etcd() etcdoperator.Interface {
+	return etcdoperator.New(f, f.namespace, f.tweakListOptions)
 }

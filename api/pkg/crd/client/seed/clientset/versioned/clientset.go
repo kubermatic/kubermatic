@@ -2,7 +2,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
-	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcd/v1beta2"
+	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcdoperator/v1beta2"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
