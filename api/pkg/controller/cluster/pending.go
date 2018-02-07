@@ -473,6 +473,7 @@ func (cc *controller) launchingCheckDeployments(c *kubermaticv1.Cluster) error {
 		"scheduler":          masterVersion.SchedulerDeploymentYaml,
 		"node-controller":    masterVersion.NodeControllerDeploymentYaml,
 		"addon-manager":      masterVersion.AddonManagerDeploymentYaml,
+		"machine-controller": masterVersion.MachineControllerDeploymentYaml,
 	}
 
 	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)

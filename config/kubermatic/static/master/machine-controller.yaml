@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: machine-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: machine-controller
+  template:
+    metadata:
+      labels:
+        app: machine-controller
+        release: {{index .Version.Values "machine-controller-version"}}
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
+          name: machine-controller
+          command:
+            - /usr/local/bin/machine-controller
+            - -master=http://apiserver:8080
+            - -logtostderr
+            - -v=4
+            - -cluster-dns=10.10.10.10
+            - -health-listen-address=0.0.0.0:8086
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8086
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8086
+            periodSeconds: 5

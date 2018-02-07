@@ -22,7 +22,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterNodesV2
 type ClusterReq struct {
 	// in: path
 	Cluster string `json:"cluster"`

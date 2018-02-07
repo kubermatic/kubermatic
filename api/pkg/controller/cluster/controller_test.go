@@ -179,6 +179,15 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 				},
 			},
 		},
+		"us-central1-byo": {
+			Location: "us-central",
+			Country:  "US",
+			Private:  false,
+			Seed:     "us-central1",
+			Spec: provider.DatacenterSpec{
+				BringYourOwn: &provider.BringYourOwnSpec{},
+			},
+		},
 		"private-do1": {
 			Location: "US ",
 			Seed:     "us-central1",

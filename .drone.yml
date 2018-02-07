@@ -161,7 +161,7 @@ pipeline:
 
   deploy-dev:
     group: deploy
-    image: kubeciio/kubectl:0.1
+    image: kubeciio/kubectl:0.2
     pull: true
     kubectl: create
     templates:
@@ -174,7 +174,7 @@ pipeline:
 
   deploy-cloud-master:
     group: deploy
-    image: kubeciio/kubectl:0.1
+    image: kubeciio/kubectl:0.2
     pull: true
     kubectl: create
     templates:
@@ -211,12 +211,15 @@ pipeline:
         Your build failed! Shame. Shame. Shame.
         ${DRONE_BUILD_LINK}
     author_recipient_mapping:
-      - mrIncompetent=henrik
-      - metalmatze=matthias
+      - alvaroaleman=alvaro
       - guusvw=guus
+      - j3ank=eugenia
+      - kgroschoff=kristin
+      - metalmatze=matthias
+      - mrIncompetent=henrik
+      - p0lyn0mial=lukasz
       - realfake=luk
       - scheeles=sebastian
-      - chaosaffe=jason
     when:
       status: [ failure ]
 
@@ -228,19 +231,8 @@ pipeline:
     username: drone
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     channel: dev
-    image_url: http://thecatapi.com/api/images/get?api_key=MjQyOTIx&size=small&format=src&type=gif&random-param=${DRONE_COMMIT}
     template: >
-        We just deployed the API&Controller to dev!
-        This commit has been brought to you by ${DRONE_COMMIT_AUTHOR} <3
-        What has been done:
-        ${DRONE_COMMIT_MESSAGE}
-    author_recipient_mapping:
-      - mrIncompetent=henrik
-      - metalmatze=matthias
-      - guusvw=guus
-      - realfake=luk
-      - scheeles=sebastian
-      - chaosaffe=jason
+        ${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud. :heart:
     when:
       status: [ success ]
       branch: master

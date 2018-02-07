@@ -400,6 +400,147 @@
           }
         }
       }
+    },
+    "/api/v2/cluster/{cluster}/nodes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodesV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeListV2",
+            "schema": {
+              "$ref": "#/definitions/NodeListV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateNodeReqBodyV2"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v2/cluster/{cluster}/nodes/{node}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteClusterNodeV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -456,6 +597,48 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSNodeSpecV2": {
+      "description": "AWSNodeSpec aws specific node settings",
+      "type": "object",
+      "required": [
+        "instanceType",
+        "diskSize",
+        "volumeType"
+      ],
+      "properties": {
+        "ami": {
+          "description": "ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.",
+          "type": "string",
+          "x-go-name": "AMI"
+        },
+        "diskSize": {
+          "description": "size of the volume in gb. Only one volume will be created",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VolumeSize"
+        },
+        "instanceType": {
+          "type": "string",
+          "x-go-name": "InstanceType",
+          "example": "t2.micro"
+        },
+        "tags": {
+          "description": "additional instance tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        },
+        "volumeType": {
+          "type": "string",
+          "x-go-name": "VolumeType",
+          "example": "gp2, io1, st1, sc1, standard"
+        }
+      },
+      "x-go-name": "AWSNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "AttachedVolume": {
       "description": "AttachedVolume describes a volume attached to a node",
@@ -959,6 +1142,19 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "ContainerLinuxSpecV2": {
+      "description": "ContainerLinuxSpec ubuntu linux specific settings",
+      "type": "object",
+      "properties": {
+        "disableAutoUpdate": {
+          "description": "disable container linux auto-update feature",
+          "type": "boolean",
+          "x-go-name": "DisableAutoUpdate"
+        }
+      },
+      "x-go-name": "ContainerLinuxSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "Context": {
       "description": "Context is a tuple of references to a cluster (how do I communicate with a kubernetes cluster), a user (how do I identify myself), and a namespace (what subset of resources do I want to work with)",
       "type": "object",
@@ -988,6 +1184,25 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "CreateNodeReqBodyV2": {
+      "description": "CreateNodeReqBodyV2 represents the request body of a create nodes request",
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMetaV2"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "CreateNodesReqBody": {
       "description": "CreateNodesReqBody represents the request body of a create nodes request",
@@ -1082,6 +1297,45 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DigitaloceanNodeSpecV2": {
+      "description": "DigitaloceanNodeSpec digitalocean node settings",
+      "type": "object",
+      "required": [
+        "size"
+      ],
+      "properties": {
+        "backups": {
+          "description": "enable backups for the droplet",
+          "type": "boolean",
+          "x-go-name": "Backups"
+        },
+        "ipv6": {
+          "description": "enable ipv6 for the droplet",
+          "type": "boolean",
+          "x-go-name": "IPv6"
+        },
+        "monitoring": {
+          "description": "enable monitoring for the droplet",
+          "type": "boolean",
+          "x-go-name": "Monitoring"
+        },
+        "size": {
+          "description": "droplet size slug",
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "tags": {
+          "description": "additional droplet tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-name": "DigitaloceanNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "DigitialoceanDatacenterSpec": {
       "type": "object",
@@ -1291,6 +1545,9 @@
         "ID": {
           "type": "string"
         },
+        "MachineControllerDeploymentYaml": {
+          "type": "string"
+        },
         "Name": {
           "type": "string"
         },
@@ -1405,6 +1662,41 @@
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "NodeAddressV2": {
+      "type": "object",
+      "title": "NodeAddress contains information for the node's address.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "x-go-name": "Address",
+          "example": "192.168.1.1, node1.my.dns"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type",
+          "example": "ExternalIP, InternalIP, InternalDNS, ExternalDNS"
+        }
+      },
+      "x-go-name": "NodeAddress",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NodeCloudSpecV2": {
+      "type": "object",
+      "title": "NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/AWSNodeSpecV2"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/DigitaloceanNodeSpecV2"
+        },
+        "openstack": {
+          "$ref": "#/definitions/OpenstackNodeSpecV2"
+        }
+      },
+      "x-go-name": "NodeCloudSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodeCondition": {
       "type": "object",
       "title": "NodeCondition contains condition information for a node.",
@@ -1458,6 +1750,22 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "NodeContainerRuntimeInfoV2": {
+      "description": "NodeContainerRuntimeInfo information about the container runtime. Currently only \"cri-o\" and \"docker\" are supported",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-name": "NodeContainerRuntimeInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodeDaemonEndpoints": {
       "type": "object",
       "title": "NodeDaemonEndpoints lists ports opened by daemons running on the Node.",
@@ -1477,9 +1785,34 @@
       "x-go-name": "NodeList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "NodeListV2": {
+      "description": "NodeList represents a list of nodes",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NodeV2"
+      },
+      "x-go-name": "NodeList",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodePhase": {
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeResourcesV2": {
+      "description": "NodeResources cpu and memory of a node",
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "x-go-name": "CPU"
+        },
+        "memory": {
+          "type": "string",
+          "x-go-name": "Memory"
+        }
+      },
+      "x-go-name": "NodeResources",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "NodeSpec": {
       "type": "object",
@@ -1518,6 +1851,28 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeSpecV2": {
+      "description": "NodeSpec node specification",
+      "type": "object",
+      "required": [
+        "cloud",
+        "operatingSystem",
+        "versions"
+      ],
+      "properties": {
+        "cloud": {
+          "$ref": "#/definitions/NodeCloudSpecV2"
+        },
+        "operatingSystem": {
+          "$ref": "#/definitions/OperatingSystemSpecV2"
+        },
+        "versions": {
+          "$ref": "#/definitions/NodeVersionInfoV2"
+        }
+      },
+      "x-go-name": "NodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "NodeStatus": {
       "type": "object",
@@ -1581,6 +1936,46 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "NodeStatusV2": {
+      "type": "object",
+      "title": "NodeStatus is information about the current status of a node.",
+      "properties": {
+        "addresses": {
+          "description": "different addresses of a node",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeAddressV2"
+          },
+          "x-go-name": "Addresses"
+        },
+        "allocatable": {
+          "$ref": "#/definitions/NodeResourcesV2"
+        },
+        "capacity": {
+          "$ref": "#/definitions/NodeResourcesV2"
+        },
+        "errorMessage": {
+          "description": "in case of a error this will contain a detailed error explanation",
+          "type": "string",
+          "x-go-name": "ErrorMessage"
+        },
+        "errorReason": {
+          "description": "in case of a error this will contain a short error message",
+          "type": "string",
+          "x-go-name": "ErrorReason"
+        },
+        "machineName": {
+          "description": "name of the actual Machine object",
+          "type": "string",
+          "x-go-name": "MachineName"
+        },
+        "nodeInfo": {
+          "$ref": "#/definitions/NodeSystemInfoV2"
+        }
+      },
+      "x-go-name": "NodeStatus",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodeSystemInfo": {
       "type": "object",
       "title": "NodeSystemInfo is a set of ids/uuids to uniquely identify the node.",
@@ -1637,6 +2032,38 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "NodeSystemInfoV2": {
+      "type": "object",
+      "title": "NodeSystemInfo is a set of versions/ids/uuids to uniquely identify the node.",
+      "properties": {
+        "architecture": {
+          "type": "string",
+          "x-go-name": "Architecture"
+        },
+        "containerRuntime": {
+          "type": "string",
+          "x-go-name": "ContainerRuntime"
+        },
+        "containerRuntimeVersion": {
+          "type": "string",
+          "x-go-name": "ContainerRuntimeVersion"
+        },
+        "kernelVersion": {
+          "type": "string",
+          "x-go-name": "KernelVersion"
+        },
+        "kubeletVersion": {
+          "type": "string",
+          "x-go-name": "KubeletVersion"
+        },
+        "operatingSystem": {
+          "type": "string",
+          "x-go-name": "OperatingSystem"
+        }
+      },
+      "x-go-name": "NodeSystemInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "NodeUpdate": {
       "description": "NodeUpdate represents an update option for K8s node components",
@@ -1770,6 +2197,26 @@
       "x-go-name": "Node",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "NodeV2": {
+      "type": "object",
+      "title": "Node is the object representing a cluster node.",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMetaV2"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-name": "Node",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodeVersion": {
       "type": "object",
       "title": "NodeVersion is the object representing a Kubernetes Kubelet version.",
@@ -1782,6 +2229,21 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeVersionInfoV2": {
+      "description": "NodeVersionInfo node version information",
+      "type": "object",
+      "properties": {
+        "containerRuntime": {
+          "$ref": "#/definitions/NodeContainerRuntimeInfoV2"
+        },
+        "kubelet": {
+          "type": "string",
+          "x-go-name": "Kubelet"
+        }
+      },
+      "x-go-name": "NodeVersionInfo",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "ObjectMeta": {
       "type": "object",
@@ -1815,6 +2277,36 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ObjectMetaV2": {
+      "type": "object",
+      "title": "ObjectMeta is an object storing common metadata for persistable objects.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "displayName": {
+          "type": "string",
+          "x-go-name": "DisplayName"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-name": "ObjectMeta",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "ObjectReference": {
       "description": "+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
@@ -1922,6 +2414,42 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackNodeSpecV2": {
+      "description": "OpenstackNodeSpec openstack node settings",
+      "type": "object",
+      "required": [
+        "flavor",
+        "image"
+      ],
+      "properties": {
+        "flavor": {
+          "description": "instance flavor",
+          "type": "string",
+          "x-go-name": "Flavor"
+        },
+        "image": {
+          "description": "image to use",
+          "type": "string",
+          "x-go-name": "Image"
+        }
+      },
+      "x-go-name": "OpenstackNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "OperatingSystemSpecV2": {
+      "type": "object",
+      "title": "OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.",
+      "properties": {
+        "containerLinux": {
+          "$ref": "#/definitions/ContainerLinuxSpecV2"
+        },
+        "ubuntu": {
+          "$ref": "#/definitions/UbuntuSpecV2"
+        }
+      },
+      "x-go-name": "OperatingSystemSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "OwnerReference": {
       "description": "OwnerReference contains enough information to let you identify an owning\nobject. Currently, an owning object must be in the same namespace, so there\nis no namespace field.",
@@ -2208,6 +2736,19 @@
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
+    },
+    "UbuntuSpecV2": {
+      "description": "UbuntuSpec ubuntu specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        }
+      },
+      "x-go-name": "UbuntuSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "UniqueVolumeName": {
       "type": "string",
