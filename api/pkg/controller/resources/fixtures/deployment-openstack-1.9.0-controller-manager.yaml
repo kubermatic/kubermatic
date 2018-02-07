@@ -41,17 +41,17 @@ spec:
           httpGet:
             path: /healthz
             port: 10252
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 60
         name: controller-manager
         readinessProbe:
           httpGet:
             path: /healthz
             port: 10252
           initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 30
         resources: {}
         volumeMounts:
         - mountPath: /var/run/kubernetes/auth
