@@ -29,13 +29,13 @@ spec:
           httpGet:
             path: /healthz
             port: 10251
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 60
         readinessProbe:
           httpGet:
             path: /healthz
             port: 10251
           initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 30

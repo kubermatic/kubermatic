@@ -73,8 +73,8 @@ spec:
             path: /healthz
             port: 8080
           initialDelaySeconds: 60
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 60
+          timeoutSeconds: 60
         name: apiserver
         ports:
         - containerPort: 30000
@@ -84,8 +84,8 @@ spec:
             path: /healthz
             port: 8080
           initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 30
         resources: {}
         volumeMounts:
         - mountPath: /var/run/kubernetes/apiserver

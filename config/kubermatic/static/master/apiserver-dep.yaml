@@ -97,15 +97,15 @@ spec:
             path: /healthz
             port: 8080
           initialDelaySeconds: 60
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 60
+          timeoutSeconds: 60
         readinessProbe:
           httpGet:
             path: /healthz
             port: 8080
           initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 30
         ports:
         - containerPort: {{ .Cluster.Address.ExternalPort }}
         - containerPort: 8080
