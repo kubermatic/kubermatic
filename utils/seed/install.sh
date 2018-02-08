@@ -258,7 +258,7 @@ kubectl delete pod -n kube-system -l k8s-app=kube-proxy --kubeconfig=kubeconfig
 # Setup Workers
 for ((i = 0; i < ${#WORKER_PUBLIC_IPS[@]}; i++)); do
         echo "Create Worker $i"
-        TOKEN=$(ssh ${DEFAULT_LOGIN_USER}@${MASTER_PUBLIC_IPS[$i]} "sudo kubeadm token create --print-join-command")
+        TOKEN=$(ssh ${DEFAULT_LOGIN_USER}@${MASTER_PUBLIC_IPS[0]} "sudo kubeadm token create --print-join-command")
 
         ssh ${DEFAULT_LOGIN_USER}@${WORKER_PUBLIC_IPS[$i]} "mkdir -p ~/etc/kubernetes"
         ssh ${DEFAULT_LOGIN_USER}@${WORKER_PUBLIC_IPS[$i]} "sudo mkdir -p /etc/kubernetes"
