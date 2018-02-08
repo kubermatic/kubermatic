@@ -325,16 +325,16 @@
         }
       }
     },
-    "/api/v1/digitaloceansizes/{token}": {
+    "/api/v1/digitalocean/sizes/{token}": {
       "get": {
         "description": "Lists sizes from digitalocean",
         "produces": [
           "application/json"
         ],
         "tags": [
-          "digitaloceansizes"
+          "digitalocean"
         ],
-        "operationId": "getdosizes",
+        "operationId": "listDigitaloceanSizes",
         "responses": {
           "200": {
             "description": "DigitaloceanSizeList",
@@ -1407,7 +1407,7 @@
         "vcpus": {
           "type": "integer",
           "format": "int64",
-          "x-go-name": "Vcpus"
+          "x-go-name": "VCPUs"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

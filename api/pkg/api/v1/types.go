@@ -74,7 +74,7 @@ type DigitaloceanSize struct {
 	PriceMonthly float64  `json:"price_monthly"`
 	PriceHourly  float64  `json:"price_hourly"`
 	Memory       int      `json:"memory"`
-	Vcpus        int      `json:"vcpus"`
+	VCPUs        int      `json:"vcpus"`
 	Disk         int      `json:"disk"`
 	Regions      []string `json:"regions"`
 }

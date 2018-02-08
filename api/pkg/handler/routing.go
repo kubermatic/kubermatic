@@ -138,8 +138,8 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.deleteSSHKey())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/digitaloceansizes/{token}").
-		Handler(r.getdosizes())
+		Path("/api/v1/digitalocean/sizes/{token}").
+		Handler(r.listDigitaloceanSizes())
 
 	// New project endpoints
 	mux.Methods(http.MethodPost).
@@ -339,7 +339,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/digitaloceansizes/{token} digitaloceansizes getdosizes
+// swagger:route GET /api/v1/digitalocean/sizes/{token} digitalocean listDigitaloceanSizes
 //
 // Lists sizes from digitalocean
 //
@@ -349,7 +349,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: DigitaloceanSizeList
-func (r Routing) getdosizes() http.Handler {
+func (r Routing) listDigitaloceanSizes() http.Handler {
 	return httptransport.NewServer(
 		r.auth(r.userStorer(digitaloceanSizeEndpoint())),
 		decodeDoSizesReq,
