@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	nodesetclient "github.com/kube-node/nodeset/pkg/client/clientset/versioned"
+	machineclient "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -308,6 +309,26 @@ func (c *Cluster) GetNodesetClient() (nodesetclient.Interface, error) {
 	}
 
 	client, err := nodesetclient.NewForConfig(ccfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// GetMachineClient returns a client interact with machine resources
+func (c *Cluster) GetMachineClient() (machineclient.Interface, error) {
+	cfg, err := c.getClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	ccfg, err := cfg.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := machineclient.NewForConfig(ccfg)
 	if err != nil {
 		return nil, err
 	}
