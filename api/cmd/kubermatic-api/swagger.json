@@ -325,6 +325,29 @@
         }
       }
     },
+    "/api/v1/digitalocean/sizes/{token}": {
+      "get": {
+        "description": "Lists sizes from digitalocean",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "digitalocean"
+        ],
+        "operationId": "listDigitaloceanSizes",
+        "responses": {
+          "200": {
+            "description": "DigitaloceanSizeList",
+            "schema": {
+              "$ref": "#/definitions/DigitaloceanSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -1336,6 +1359,79 @@
       },
       "x-go-name": "DigitaloceanNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "DigitaloceanSize": {
+      "type": "object",
+      "title": "DigitaloceanSize is the object representing digitalocean sizes.",
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "x-go-name": "Available"
+        },
+        "disk": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "price_hourly": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PriceHourly"
+        },
+        "price_monthly": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PriceMonthly"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Regions"
+        },
+        "slug": {
+          "type": "string",
+          "x-go-name": "Slug"
+        },
+        "transfer": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Transfer"
+        },
+        "vcpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DigitaloceanSizeList": {
+      "type": "object",
+      "title": "DigitaloceanSizeList represents a object of digitalocean sizes.",
+      "properties": {
+        "optimized": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DigitaloceanSize"
+          },
+          "x-go-name": "Optimized"
+        },
+        "standard": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DigitaloceanSize"
+          },
+          "x-go-name": "Standard"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "DigitialoceanDatacenterSpec": {
       "type": "object",
