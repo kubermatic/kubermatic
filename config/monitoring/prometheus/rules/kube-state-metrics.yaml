@@ -47,7 +47,7 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: "Pod {{$labels.exported_namespace}}/{{$labels.exported_pod}} is was restarted {{$value}} times within the last hour"
+      description: "Pod {{$labels.exported_namespace}}/{{$labels.exported_pod}} is was restarted {{$value}} times within the last hour."
       summary: "Pod is restarting frequently"
   - alert: KubernetesPodTerminating
     expr: kube_pod_container_status_terminated{exported_namespace!="kubermatic-installer"} == 1
@@ -55,7 +55,7 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is terminating for {{$value}}min."
+      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is terminating too long."
       summary: "Pod is terminating too long"
   - alert: KubernetesPodWaiting
     expr: kube_pod_container_status_waiting{exported_namespace!="kubermatic-installer"} == 1
@@ -63,5 +63,5 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is waiting for {{$value}}min."
+      description: "Container {{$labels.exported_namespace}}/{{$labels.exported_pod}}/{{$labels.container}} is waiting too long."
       summary: "Pod is waiting too long"
