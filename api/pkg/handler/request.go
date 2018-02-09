@@ -80,6 +80,18 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// DoSizesReq represent a request for digitalocean sizes
+type DoSizesReq struct {
+	DoToken string
+}
+
+func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DoSizesReq
+
+	req.DoToken = mux.Vars(r)["token"]
+	return req, nil
+}
+
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := decodeClusterReq(c, r)
 	if err != nil {
