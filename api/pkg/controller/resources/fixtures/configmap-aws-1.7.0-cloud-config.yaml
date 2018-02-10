@@ -1,15 +1,15 @@
 apiVersion: v1
 data:
-  config: |2-
-
+  config: |
     [global]
-    zone=my_AvailabilityZone
-    VPC=my_VPCId
+    zone=aws-availability-zone
+    VPC=aws-vpn-id
     kubernetesclustertag=de-test-01
     disablesecuritygroupingress=false
-    SubnetID=my-subnetID
-    RouteTableID=my-routetableID
+    SubnetID=aws-subnet-id
+    RouteTableID=aws-route-table-id
     disablestrictzonecheck=true
+kind: ConfigMap
 metadata:
   creationTimestamp: null
   name: cloud-config

@@ -32,11 +32,11 @@ spec:
           {{ if not (contains "v1.7" (index .Version.Values "k8s-version")) }}
           "--configure-cloud-routes=false",
           {{ end }}
-          {{ if eq .CloudProvider "aws" }}
+          {{ if eq .ProviderName "aws" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
           "--cloud-provider=aws",
           {{ end }}
-          {{ if eq .CloudProvider "openstack" }}
+          {{ if eq .ProviderName "openstack" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
           "--cloud-provider=openstack",
           {{ end }}
@@ -62,7 +62,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 30
         env:
-        {{ if eq .CloudProvider "aws" }}
+        {{ if eq .ProviderName "aws" }}
         - name: AWS_ACCESS_KEY_ID
           value: {{.Cluster.Spec.Cloud.AWS.AccessKeyID}}
         - name: AWS_SECRET_ACCESS_KEY
@@ -76,12 +76,12 @@ spec:
         - name: controller-manager
           mountPath: /var/run/kubernetes/auth
           readOnly: true
-        {{ if eq .CloudProvider "aws" }}
+        {{ if eq .ProviderName "aws" }}
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
         {{ end }}
-        {{ if eq .CloudProvider "openstack" }}
+        {{ if eq .ProviderName "openstack" }}
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
@@ -91,12 +91,12 @@ spec:
       - name: controller-manager
         secret:
           secretName: controller-manager
-      {{ if eq .CloudProvider "aws" }}
+      {{ if eq .ProviderName "aws" }}
       - name: cloud-config
         configMap:
           name: cloud-config
       {{ end }}
-      {{ if eq .CloudProvider "openstack" }}
+      {{ if eq .ProviderName "openstack" }}
       - name: cloud-config
         configMap:
           name: cloud-config

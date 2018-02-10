@@ -1,8 +1,9 @@
 apiVersion: v1
 data:
   config: |
+    # Openstack
     [Global]
-    auth-url = "https://my.openstack.foo/v3"
+    auth-url = "https://example.com:8000/v3"
     username = "openstack-username"
     password = "openstack-password"
     domain-name= "openstack-domain"
@@ -13,6 +14,7 @@ data:
     trust-device-path = false
     bs-version = "v2"
     ignore-volume-az = true
+kind: ConfigMap
 metadata:
   creationTimestamp: null
   name: cloud-config

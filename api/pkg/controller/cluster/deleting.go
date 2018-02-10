@@ -11,97 +11,101 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// syncDeletingCluster is the function which handles clusters in the deleting phase.
+// cleanupCluster is the function which handles clusters in the deleting phase.
 // It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
 // If this function does not return a pointer to a cluster or a error, the cluster is deleted.
-func (cc *controller) syncDeletingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	if changedC, err := cc.deletingNodeCleanup(c); err != nil || changedC != nil {
-		return changedC, err
+func (cc *controller) cleanupCluster(c *kubermaticv1.Cluster) error {
+	stillHasNodes, err := cc.deletingNodeCleanup(c)
+	if err != nil {
+		return err
 	}
 
-	if changedC, err := cc.deletingCloudProviderCleanup(c); err != nil || changedC != nil {
-		return changedC, err
+	if stillHasNodes {
+		return nil
 	}
 
-	if changedC, err := cc.deletingNamespaceCleanup(c); err != nil || changedC != nil {
-		return changedC, err
+	if err := cc.deletingCloudProviderCleanup(c); err != nil {
+		return err
 	}
 
-	return nil, cc.deletingClusterResource(c)
+	if err := cc.deletingNamespaceCleanup(c); err != nil {
+		return err
+	}
+
+	return cc.deletingClusterResource(c)
 }
 
-func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error) {
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		return nil, nil
+		return false, nil
 	}
 
 	machineClient, err := c.GetMachineClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster machine client: %v", err)
+		return true, fmt.Errorf("failed to get cluster machine client: %v", err)
 	}
 
 	machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster machines: %v", err)
+		return true, fmt.Errorf("failed to get cluster machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
 		if err := machineClient.MachineV1alpha1().Machines().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
-			return nil, fmt.Errorf("failed to delete cluster machines: %v", err)
+			return true, fmt.Errorf("failed to delete cluster machines: %v", err)
 		}
 
-		return nil, nil
+		return true, nil
 	}
 
 	clusterClient, err := c.GetClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster client: %v", err)
+		return true, fmt.Errorf("failed to get cluster client: %v", err)
 	}
 
 	nodes, err := clusterClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster nodes: %v", err)
+		return true, fmt.Errorf("failed to get cluster nodes: %v", err)
 	}
 
 	if len(nodes.Items) == 0 {
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, nodeDeletionFinalizer)
-		return c, nil
+		return false, nil
 	}
 
 	err = clusterClient.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete nodes: %v", err)
+		return true, fmt.Errorf("failed to delete nodes: %v", err)
 	}
 
-	//Returning the cluster prevents the controller to proceed to the next step...
-	return c, nil
+	return true, nil
 }
 
-func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, cloudProviderCleanupFinalizer) {
-		return nil, nil
+		return nil
 	}
 
 	_, cp, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err = cp.CleanUpCloudProvider(c.Spec.Cloud); err != nil {
-		return nil, err
+		return err
 	}
 
 	c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, cloudProviderCleanupFinalizer)
-	return c, nil
+	return nil
 }
 
-func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
-		return nil, nil
+		return nil
 	}
 
 	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	ns, err := informerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
@@ -109,21 +113,20 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) (*kuberm
 	if err != nil {
 		if errors.IsNotFound(err) {
 			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, namespaceDeletionFinalizer)
-			return c, nil
+			return nil
 		}
-		return nil, err
+		return err
 	}
 
 	if ns.DeletionTimestamp == nil {
 		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 		}
-		return nil, client.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
+		return client.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
 	}
 
-	//Returning the cluster prevents the controller to proceed to the next step...
-	return c, nil
+	return nil
 }
 
 // deletingClusterResource deletes the cluster resource. Needed since Finalizers are broken in 1.7.
@@ -132,9 +135,7 @@ func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	err := cc.masterCrdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{})
-	// Only delete finalizer if namespace is really gone
-	if err != nil {
+	if err := cc.masterCrdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}

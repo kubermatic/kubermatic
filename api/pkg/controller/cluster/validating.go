@@ -5,27 +5,21 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (cc *controller) syncValidatingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	if err := cc.validatingCheckDatacenter(c); err != nil {
-		return nil, err
+func (cc *controller) validateCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if err := cc.validateDatacenter(c); err != nil {
+		return nil, fmt.Errorf("failed to validate datacenter: %v", err)
 	}
 
-	//Should be called last due to increased number of external api usage on some cloud providers
-	if err := cc.validatingCheckCloudSpec(c); err != nil {
-		return nil, err
+	if err := cc.validateCloudSpec(c); err != nil {
+		return nil, fmt.Errorf("failed to validate cloud spec: %v", err)
 	}
-
-	c.Status.Phase = kubermaticv1.PendingClusterStatusPhase
-	c.Status.LastTransitionTime = metav1.Now()
 
 	return c, nil
 }
 
-func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
+func (cc *controller) validateCloudSpec(c *kubermaticv1.Cluster) error {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
 		return err
@@ -38,7 +32,7 @@ func (cc *controller) validatingCheckCloudSpec(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *controller) validatingCheckDatacenter(c *kubermaticv1.Cluster) error {
+func (cc *controller) validateDatacenter(c *kubermaticv1.Cluster) error {
 	//Validate seed datacenter
 	seedDc, found := cc.dcs[c.Spec.SeedDatacenterName]
 	if !found {
