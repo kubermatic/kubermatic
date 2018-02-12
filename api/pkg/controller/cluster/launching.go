@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -124,11 +125,65 @@ func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			cm.Data = map[string]string{"kubeconfig": string(bconfig)}
 			_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Create(&cm)
 			if err != nil {
-				return fmt.Errorf("failed to create configmap %s in client cluster: %v", name, err)
+				return fmt.Errorf("failed to create cluster-info configmap in client cluster: %v", err)
 			}
+		} else {
+			return fmt.Errorf("failed to load cluster-info configmap from client cluster: %v", err)
 		}
-		return fmt.Errorf("failed to load configmap %s from client cluster: %v", name, err)
 	}
+
+	_, err = client.RbacV1beta1().Roles(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			role := &v1beta1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				Rules: []v1beta1.PolicyRule{
+					{
+						APIGroups:     []string{""},
+						ResourceNames: []string{name},
+						Resources:     []string{"configmaps"},
+						Verbs:         []string{"get"},
+					},
+				},
+			}
+			if _, err = client.RbacV1beta1().Roles(metav1.NamespacePublic).Create(role); err != nil {
+				return fmt.Errorf("failed to create cluster-info role")
+			}
+		} else {
+			return fmt.Errorf("failed to load cluster-info role from client cluster: %v", err)
+		}
+	}
+
+	_, err = client.RbacV1beta1().RoleBindings(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			rolebinding := &v1beta1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				RoleRef: v1beta1.RoleRef{
+					Name:     name,
+					Kind:     "Role",
+					APIGroup: "rbac.authorization.k8s.io",
+				},
+				Subjects: []v1beta1.Subject{
+					{
+						APIGroup: "rbac.authorization.k8s.io",
+						Kind:     v1beta1.UserKind,
+						Name:     "system:anonymous",
+					},
+				},
+			}
+			if _, err = client.RbacV1beta1().RoleBindings(metav1.NamespacePublic).Create(rolebinding); err != nil {
+				return fmt.Errorf("failed to create cluster-info rolebinding")
+			}
+		} else {
+			return fmt.Errorf("failed to load cluster-info rolebinding from client cluster: %v", err)
+		}
+	}
+
 	return nil
 }
 
