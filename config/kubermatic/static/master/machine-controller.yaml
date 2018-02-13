@@ -23,15 +23,12 @@ spec:
             - -logtostderr
             - -v=4
             - -cluster-dns=10.10.10.10
-            - -health-listen-address=0.0.0.0:8086
+            - -internal-listen-address=0.0.0.0:8085
           livenessProbe:
             httpGet:
               path: /live
-              port: 8086
-            initialDelaySeconds: 5
-            periodSeconds: 5
+              port: 8085
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8086
-            periodSeconds: 5
+              port: 8085
