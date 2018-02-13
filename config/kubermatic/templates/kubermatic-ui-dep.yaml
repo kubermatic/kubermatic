@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: kubermatic-ui-v2
 spec:
-  replicas: {{.Values.KubermaticUIReplicaCount}}
+  replicas: {{ .Values.kubermatic.ui.replicas }}
   template:
     metadata:
       labels:
@@ -12,8 +12,7 @@ spec:
     spec:
       containers:
         - name: webserver
-          image: 'kubermatic/ui-v2:{{.Values.KubermaticDashboardImageTag}}'
-          imagePullPolicy: Always
+          image: '{{.Values.kubermatic.ui.image.repository}}:{{.Values.kubermatic.controller.ui.tag}}'
           resources:
             requests:
               memory: "64Mi"

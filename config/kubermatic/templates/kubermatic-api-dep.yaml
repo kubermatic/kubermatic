@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: kubermatic-api-v1
 spec:
-  replicas: {{.Values.KubermaticAPIReplicaCount}}
+  replicas: {{ .Values.kubermatic.api.replicas }}
   template:
     metadata:
       labels:
@@ -24,15 +24,14 @@ spec:
           args:
           - -v=4
           - -logtostderr
-          - -datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}
-          - -token-issuer=https://{{ .Values.KubermaticURL }}/dex
-          - -client-id={{ .Values.ClientID }}
-          - -versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}
-          - -updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}
+          - -datacenters="/opt/datacenter/datacenters.yaml"
+          - -token-issuer={{ .Values.kubermatic.auth.tokenIssuer }}
+          - -client-id={{ .Values.kubermatic.auth.clientID }}
+          - -versions="/opt/master-files/versions.yaml"
+          - -updates="/opt/master-files/updates.yaml"
           - -prometheus-address=0.0.0.0:8085
           - -prometheus-path=/metrics
-          image: 'kubermatic/api:{{ .Values.KubermaticAPIImageTag }}'
-          imagePullPolicy: Always
+          image: '{{.Values.kubermatic.api.image.repository}}:{{.Values.kubermatic.controller.api.tag}}'
           ports:
             - name: metrics
               containerPort: 8085
@@ -41,19 +40,16 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: kubeconfig
-              mountPath: {{.Values.KubeConfigMountPath}}
-              readOnly: true
-            - name: datacenter-secrets
-              mountPath: {{.Values.DatacenterSecretsMountPath}}
+              mountPath: "/opt/.kube"
               readOnly: true
             - name: datacenters
-              mountPath: {{.Values.DatacentersMountPath}}
+              mountPath: "/opt/datacenter"
               readOnly: true
             - name: node-files
-              mountPath: /opt/template/nodes
+              mountPath: "/opt/template/nodes"
               readOnly: true
             - name: master-files
-              mountPath: {{.Values.MasterResourcesMountPath}}
+              mountPath: "/opt/master-files"
               readOnly: true
           resources:
             requests:
@@ -68,9 +64,6 @@ spec:
         - name: kubeconfig
           secret:
             secretName: kubeconfig
-        - name: datacenter-secrets
-          secret:
-            secretName: datacenter-secrets
         - name: node-files
           secret:
             secretName: node-files
