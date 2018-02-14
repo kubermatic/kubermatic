@@ -28,7 +28,7 @@ kubermatic:
       tag: "latest"
       pullPolicy: "IfNotPresent"
   ui:
-   replicas: 2
+    replicas: 2
     image:
       repository: "kubermatic/ui-v2"
       tag: "latest"

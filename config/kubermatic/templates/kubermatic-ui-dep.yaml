@@ -12,8 +12,8 @@ spec:
     spec:
       containers:
         - name: webserver
-          image: '{{.Values.kubermatic.ui.image.repository}}:{{.Values.kubermatic.controller.ui.tag}}'
-          imagePullPolicy: {{.Values.kubermatic.ui.image.pullPolicy}}
+          image: '{{ .Values.kubermatic.ui.image.repository }}:{{ .Values.kubermatic.ui.image.tag }}'
+          imagePullPolicy: {{ .Values.kubermatic.ui.image.pullPolicy }}
           resources:
             requests:
               memory: "64Mi"
