@@ -34,6 +34,7 @@ spec:
           - -prometheus-address=0.0.0.0:8085
           - -prometheus-path=/metrics
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
+          imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 8085

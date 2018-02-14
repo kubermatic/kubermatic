@@ -20,13 +20,16 @@ kubermatic:
     image:
       repository: "kubermatic/api"
       tag: "latest"
+      pullPolicy: "IfNotPresent"
   api:
     replicas: 2
     image:
       repository: "kubermatic/api"
       tag: "latest"
+      pullPolicy: "IfNotPresent"
   ui:
    replicas: 2
     image:
       repository: "kubermatic/ui-v2"
       tag: "latest"
+      pullPolicy: "IfNotPresent"
