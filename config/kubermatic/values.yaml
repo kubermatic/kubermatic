@@ -1,53 +1,35 @@
-##### Kubermatic
-### DockerHub token
-DockercfgSecret: ""
-
-#Should be overwritten by the seed-clusters specific values
-KubermaticURL: ""
-KubermaticDatacenters: ""
-Kubeconfig: ""
-ApiserverExternalPort: "8443"
-
-###
-### IMPORTANT: Every of the following path's must not contain a space!
-###
-### Mount path for master-files Secret
-MasterResourcesMountPath: "/opt/master-files"
-
-### Mount path for kubeconfig Secret
-KubeConfigMountPath: "/opt/.kube"
-
-### Filename of the kubeconfig
-KubeConfigFilename: "config"
-
-### Mount path for datacenters Secret
-DatacentersMountPath: "/opt/datacenter"
-
-### Filename of the datacenters file
-DatacentersFilename: "datacenters.yaml"
-
-### Mount path for kubermatic-controller-config ConfigMap
-KubermaticControllerMountPath: "/etc/kubermatic"
-
-### Mount path for the Addons resources
-AddonResourcesMountPath: "/opt/addon-charts"
-
-### Mount path for datacenter-secrets Secret
-DatacenterSecretsMountPath: "/opt/.datacenter-secrets"
-
-### Filename of the secrets file
-DatacenterSecretsFilename: "secrets.yaml"
-
-### Mount path for kubermatic-api-config ConfigMap
-KubermaticConfigMountPath: "/etc/kubermatic"
-
-### Tag to use for the Kubermatic application images
-KubermaticImageTag: "latest"
-
-### Replica count for kubermatic components
-KubermaticAPIReplicaCount: "2"
-KubermaticUIReplicaCount: "2"
-KubermaticClusterControllerReplicaCount: "2"
-
-### OpenID connect options
-ClientID: "kubermatic"
+kubermatic:
+  docker:
+    # the base64 encoded docker authentication token
+    secret: ""
+  auth:
+    # the full path to the openid connect token issuer. For example 'https://dev.kubermatic.io/dex'
+    tokenIssuer: ""
+    # die client id for openid connect
+    clientID: ""
+  # base64 encoded datacenters.yaml
+  datacenters: ""
+  # external domain for the kubermatic installation. For example 'dev.kubermatic.io'
+  domain: ""
+  # base64 encoded kubeconfig which gives admin access to all seed clusters
+  kubeconfig: ""
+  # DEPRECATED! the external port for the customer cluster apiservers
+  externalApiserverPort: "8443"
+  controller:
+    replicas: 2
+    image:
+      repository: "kubermatic/api"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
+  api:
+    replicas: 2
+    image:
+      repository: "kubermatic/api"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
+  ui:
+    replicas: 2
+    image:
+      repository: "kubermatic/ui-v2"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"

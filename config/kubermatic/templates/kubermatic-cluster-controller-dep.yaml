@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: cluster-controller-v1
 spec:
-  replicas: {{.Values.KubermaticClusterControllerReplicaCount}}
+  replicas: {{ .Values.kubermatic.controller.replicas }}
   template:
     metadata:
       labels:
@@ -11,7 +11,6 @@ spec:
         version: v1
       annotations:
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
-        checksum/datacenter-secretes: {{ include (print $.Template.BasePath "/datacenter-secrets.yaml") . | sha256sum }}
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
         checksum/node-files: {{ include (print $.Template.BasePath "/node-files-secret.yaml") . | sha256sum }}
@@ -24,17 +23,17 @@ spec:
           args:
           - -v=4
           - -logtostderr
-          - -external-url={{ .Values.KubermaticURL | trim }}
-          - -kubeconfig={{cat .Values.KubeConfigMountPath "/" .Values.KubeConfigFilename | nospace }}
-          - -master-resources={{.Values.MasterResourcesMountPath }}
-          - -datacenters={{cat .Values.DatacentersMountPath "/" .Values.DatacentersFilename | nospace }}
-          - -versions={{cat .Values.MasterResourcesMountPath "/versions.yaml" | nospace }}
-          - -updates={{cat .Values.MasterResourcesMountPath "/updates.yaml" | nospace }}
-          - -apiserver-external-port={{ .Values.ApiserverExternalPort }}
+          - -external-url={{ .Values.kubermatic.domain }}
+          - -kubeconfig="/opt/.kube/kubeconfig"
+          - -master-resources="/opt/master-files"
+          - -datacenters="/opt/datacenter/datacenters.yaml"
+          - -versions="/opt/master-files/versions.yaml"
+          - -updates="/opt/master-files/updates.yaml"
+          - -apiserver-external-port={{ .Values.kubermatic.externalApiserverPort }}
           - -prometheus-address=0.0.0.0:8085
           - -prometheus-path=/metrics
-          image: 'kubermatic/api:{{.Values.KubermaticControllerImageTag}}'
-          imagePullPolicy: Always
+          image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
+          imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 8085
@@ -42,13 +41,13 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: kubeconfig
-              mountPath: {{.Values.KubeConfigMountPath}}
+              mountPath: "/opt/.kube"
               readOnly: true
             - name: master-files
-              mountPath: {{.Values.MasterResourcesMountPath}}
+              mountPath: "/opt/master-files"
               readOnly: true
             - name: datacenters
-              mountPath: {{.Values.DatacentersMountPath}}
+              mountPath: "/opt/datacenter"
               readOnly: true
           resources:
             requests:
