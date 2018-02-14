@@ -194,7 +194,7 @@ versions:
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.0
+    addon-manager-version: v1.9.1
     pod-network-bridge: v0.2
     machine-controller-version: v0.1.2
 - name: 1.9.1
@@ -214,7 +214,7 @@ versions:
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.0
+    addon-manager-version: v1.9.1
     pod-network-bridge: v0.2
     machine-controller-version: v0.1.2
 - name: 1.9.2
@@ -234,6 +234,6 @@ versions:
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.0
+    addon-manager-version: v1.9.1
     pod-network-bridge: v0.2
     machine-controller-version: v0.1.2
