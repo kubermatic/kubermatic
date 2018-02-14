@@ -1,8 +1,4 @@
-# Default values for cert-manager.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-domains:
-  - "dev.kubermatic.io"
-  - "www.dev.kubermatic.io"
-  - "monitoring.dev.kubermatic.io"
-  - "grafana.dev.kubermatic.io"
+certificates:
+  domains:
+  - "www.example.com"
+  - "www.example2.com"

@@ -7,12 +7,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - {{ .Values.KubermaticURL | trim }}
+    - {{ .Values.kubermatic.domain }}
   backend:
     serviceName: kubermatic-ui
     servicePort: 80
   rules:
-  - host: {{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.kubermatic.domain }}
     http:
       paths:
       - path: /api

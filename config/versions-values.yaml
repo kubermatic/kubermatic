@@ -1,8 +1,11 @@
 ### Image Tags - We replace them during ci to have build a config container with pinned versions
-KubermaticAPIImageTag: "{API_IMAGE_TAG}"
-KubermaticControllerImageTag: "{CONTROLLER_IMAGE_TAG}"
-KubermaticBareMetalProviderImageTag: "{BARE_METAL_PROVIDER_IMAGE_TAG}"
-
-# 'master' is default. Only on tag we replace it with the tag.
-# This forces us to tag kubermamtic/dashboard-v2 before kubermatic/kubermatic
-KubermaticDashboardImageTag: "v0.17"
+kubermatic:
+  controller:
+    image:
+      tag: "{CONTROLLER_IMAGE_TAG}"
+  api:
+    image:
+      tag: "{API_IMAGE_TAG}"
+  ui:
+    image:
+      tag: "v0.17"
