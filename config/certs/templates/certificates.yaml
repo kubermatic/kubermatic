@@ -12,7 +12,7 @@ spec:
     name: letsencrypt-prod
   # A list of domains to include on the TLS certificate
   dnsNames:
-  {{- range $key, $val := .Values.Certificates.Domains }}
+  {{- range $key, $val := .Values.certificates.domains }}
   - {{ $val }}
   {{- end }}
   acme:
@@ -20,7 +20,7 @@ spec:
     # when attempting to validate domain ownership for the listed domains
     config:
     - domains:
-      {{- range $key, $val := .Values.Certificates.Domains }}
+      {{- range $key, $val := .Values.certificates.domains }}
       - {{ $val }}
       {{- end }}
       http01:
