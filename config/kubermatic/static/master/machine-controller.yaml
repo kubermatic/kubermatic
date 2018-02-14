@@ -24,6 +24,7 @@ spec:
             - -v=4
             - -cluster-dns=10.10.10.10
             - -internal-listen-address=0.0.0.0:8085
+            - -ssh-key-name=kubermatic-cluster-{{ .Cluster.Name }}
           livenessProbe:
             httpGet:
               path: /live
