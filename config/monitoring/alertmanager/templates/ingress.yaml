@@ -14,12 +14,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - alertmanager.{{ .Values.KubermaticURL | trim }}
+    - {{ .Values.alertmanager.host | trim }}
   backend:
     serviceName: alertmanager
     servicePort: 9093
   rules:
-  - host: alertmanager.{{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.alertmanager.host | trim }}
     http:
       paths:
       - path: /
