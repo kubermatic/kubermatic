@@ -14,12 +14,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - prometheus.{{ .Values.KubermaticURL | trim }}
+    - {{ .Values.prometheus.host | trim }}
   backend:
     serviceName: prometheus
     servicePort: 9090
   rules:
-  - host: prometheus.{{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.prometheus.host | trim }}
     http:
       paths:
       - path: /

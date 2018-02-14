@@ -8,12 +8,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - grafana.{{ .Values.KubermaticURL | trim }}
+    - {{ .Values.grafana.host | trim }}
   backend:
     serviceName: grafana
     servicePort: 3000
   rules:
-  - host: grafana.{{ .Values.KubermaticURL | trim }}
+  - host: {{ .Values.grafana.host | trim }}
     http:
       paths:
       - path: /
