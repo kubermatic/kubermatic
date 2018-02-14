@@ -24,11 +24,11 @@ spec:
           - -v=4
           - -logtostderr
           - -external-url={{ .Values.kubermatic.domain }}
-          - -kubeconfig="/opt/.kube/kubeconfig"
-          - -master-resources="/opt/master-files"
-          - -datacenters="/opt/datacenter/datacenters.yaml"
-          - -versions="/opt/master-files/versions.yaml"
-          - -updates="/opt/master-files/updates.yaml"
+          - -kubeconfig=/opt/.kube/kubeconfig
+          - -master-resources=/opt/master-files
+          - -datacenters=/opt/datacenter/datacenters.yaml
+          - -versions=/opt/master-files/versions.yaml
+          - -updates=/opt/master-files/updates.yaml
           - -apiserver-external-port={{ .Values.kubermatic.externalApiserverPort }}
           - -prometheus-address=0.0.0.0:8085
           - -prometheus-path=/metrics
@@ -41,13 +41,13 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: kubeconfig
-              mountPath: "/opt/.kube"
+              mountPath: "/opt/.kube/"
               readOnly: true
             - name: master-files
-              mountPath: "/opt/master-files"
+              mountPath: "/opt/master-files/"
               readOnly: true
             - name: datacenters
-              mountPath: "/opt/datacenter"
+              mountPath: "/opt/datacenter/"
               readOnly: true
           resources:
             requests:
