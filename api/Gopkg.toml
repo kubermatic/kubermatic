@@ -1,4 +1,27 @@
-required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/codecgen", "k8s.io/code-generator/cmd/deepcopy-gen", "github.com/go-swagger/go-swagger/cmd/swagger"]
+required = [
+    "k8s.io/code-generator/cmd/client-gen",
+    "k8s.io/code-generator/cmd/deepcopy-gen",
+    "k8s.io/gengo/examples/defaulter-gen/generators",
+    "k8s.io/apimachinery/pkg/apimachinery/registered",
+    "github.com/ugorji/go/codec/codecgen",
+    "github.com/go-swagger/go-swagger/cmd/swagger"
+]
+
+[prune]
+  go-tests = true
+  non-go = true
+  unused-packages = true
+  # we need to protect json-iterator otherwise the license check fails.
+  # reason here is, that json-iterator does some symlinks which break when removing the tests.
+  [[prune.project]]
+    name = "github.com/json-iterator/go"
+    go-tests = false
+    unused-packages = false
+  # contains a bash script we use for code generation
+  [[prune.project]]
+    name = "k8s.io/code-generator"
+    non-go = false
+    unused-packages = false
 
 [[constraint]]
   name = "github.com/go-swagger/go-swagger"
@@ -37,9 +60,6 @@ required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/
   name = "golang.org/x/crypto"
 
 [[constraint]]
-  name = "golang.org/x/net"
-
-[[constraint]]
   name = "golang.org/x/oauth2"
 
 [[constraint]]
@@ -48,12 +68,6 @@ required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "1.10.24"
-
-[[constraint]]
-  name = "github.com/yvasiyarov/swagger"
-
-[[constraint]]
-  name = "github.com/mgutz/logxi"
 
 [[constraint]]
   name = "github.com/kube-node/nodeset"
