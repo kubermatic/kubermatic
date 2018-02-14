@@ -1,9 +1,20 @@
-required = ["k8s.io/code-generator/cmd/client-gen", "github.com/ugorji/go/codec/codecgen", "k8s.io/code-generator/cmd/deepcopy-gen", "github.com/go-swagger/go-swagger/cmd/swagger"]
+required = [
+    "k8s.io/code-generator/cmd/client-gen",
+    "github.com/ugorji/go/codec/codecgen",
+    "k8s.io/code-generator/cmd/deepcopy-gen",
+    "github.com/go-swagger/go-swagger/cmd/swagger"
+]
 
 [prune]
   go-tests = true
   non-go = true
   unused-packages = true
+  # we need to protect json-iterator otherwise the license check fails.
+  # reason here is, that json-iterator does some symlinks which break when removing the tests.
+  [[prune.project]]
+    name = "github.com/json-iterator/go"
+    go-tests = false
+    unused-packages = false
 
 [[constraint]]
   name = "github.com/go-swagger/go-swagger"
