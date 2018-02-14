@@ -7,7 +7,6 @@
 .kubeconfig
 secrets.yaml
 template/coreos
-vendor
 !handler/fixtures/*
 _build/*
 _artifacts/*

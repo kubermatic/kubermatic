@@ -8,7 +8,7 @@ pipeline:
     pull: true
     commands:
       - cd api
-      - dep ensure -v -vendor-only
+      - dep status -v
 
   gofmt:
     group: lint

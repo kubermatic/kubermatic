@@ -797,6 +797,8 @@
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
+    "pkg/apimachinery",
+    "pkg/apimachinery/registered",
     "pkg/apis/meta/internalversion",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
@@ -1000,6 +1002,7 @@
   packages = [
     "args",
     "examples/deepcopy-gen/generators",
+    "examples/defaulter-gen/generators",
     "examples/set-gen/sets",
     "generator",
     "namer",
@@ -1017,6 +1020,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "897987657406b76aba73af63c2411992bc976ad3e33195daf0f0f9c06745b303"
+  inputs-digest = "cfd1c659545e3b0150c7da931c09ddef7b44d54ca50a09fdfb53a50c6e9f0768"
   solver-name = "gps-cdcl"
   solver-version = 1
