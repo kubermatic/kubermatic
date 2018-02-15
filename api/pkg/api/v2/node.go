@@ -110,7 +110,7 @@ type AWSNodeSpec struct {
 	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
 	AMI string `json:"ami"`
 	// additional instance tags
-	Tags []string `json:"tags"`
+	Tags map[string]string `json:"tags"`
 }
 
 // NodeResources cpu and memory of a node

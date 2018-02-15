@@ -1,0 +1,79 @@
+apiVersion: "machine.k8s.io/v1alpha1"
+kind: Machine
+metadata:
+  name: machine-{{ .Node.Metadata.Name }}
+spec:
+  metadata:
+    name: {{ .Node.Metadata.Name }}
+  providerConfig:
+    sshPublicKeys:
+      {{range .Keys}}- {{.Spec.PublicKey}}
+      {{- end}}
+    {{- if .Node.Spec.Cloud.AWS }}
+    cloudProvider: "aws"
+    cloudProviderSpec:
+      accessKeyId: "{{ .Cluster.Spec.Cloud.AWS.AccessKeyID }}"
+      secretAccessKey: "{{ .Cluster.Spec.Cloud.AWS.SecretAccessKey }}"
+      region: "{{ .Datacenter.Spec.AWS.Region }}"
+      availabilityZone: "{{ .Datacenter.Spec.AWS.Region }}{{ .Datacenter.Spec.AWS.ZoneCharacter }}"
+      vpcId: "{{ .Cluster.Spec.Cloud.AWS.VPCID }}"
+      subnetId: "{{ .Cluster.Spec.Cloud.AWS.SubnetID }}"
+      instanceProfile: "{{ .Cluster.Spec.Cloud.AWS.InstanceProfileName }}"
+      securityGroupIDs:
+      - "{{ .Cluster.Spec.Cloud.AWS.SecurityGroup }}"
+      instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
+      diskSize: {{ default .Node.Spec.Cloud.AWS.VolumeSize 25 }}
+      diskType: "{{ default .Node.Spec.Cloud.AWS.VolumeType "gp2" }}"
+      tags:
+        KubernetesCluster: "{{ .Cluster.Name }}"
+        {{- range $key, $value := .Node.Spec.Cloud.AWS.Tags }}
+        {{$key}}: {{$value | quote}}
+        {{- end }}
+    {{- end }}
+    {{- if .Node.Spec.Cloud.Openstack }}
+    cloudProvider: "openstack"
+    cloudProviderSpec:
+      identityEndpoint: "{{ .Datacenter.Spec.Openstack.AuthURL }}"
+      username: "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
+      password: "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
+      domainName: "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
+      tenantName: "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
+      image: "{{ .Node.Spec.Cloud.Openstack.Image }}"
+      flavor: "{{ .Node.Spec.Cloud.Openstack.Flavor }}"
+      securityGroups:
+        - {{ .Cluster.Spec.Cloud.Openstack.SecurityGroups }}
+      floatingIpPool: "{{ .Cluster.Spec.Cloud.Openstack.FloatingIPPool }}"
+      availabilityZone: "{{ .Datacenter.Spec.Openstack.AvailabilityZone }}"
+      network: "{{ .Cluster.Spec.Cloud.Openstack.Network }}"
+    {{- end }}
+    {{- if .Node.Spec.Cloud.Digitalocean }}
+    cloudProvider: "digitalocean"
+    cloudProviderSpec:
+      token: "{{ .Cluster.Spec.Cloud.Digitalocean.Token }}"
+      region: "{{ .Datacenter.Spec.Digitalocean.Region }}"
+      size: "{{ .Node.Spec.Cloud.Digitalocean.Size }}"
+      backups: {{ .Node.Spec.Cloud.Digitalocean.Backups }}
+      ipv6: {{ .Node.Spec.Cloud.Digitalocean.IPv6 }}
+      private_networking: true
+      monitoring: {{ .Node.Spec.Cloud.Digitalocean.Monitoring }}
+      tags:
+      - kubermatic
+      - kubermatic-cluster-{{ .Cluster.Name }}
+    {{- end }}
+    {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
+    operatingSystem: "coreos"
+    operatingSystemSpec:
+      disableAutoUpdate: {{ .Node.Spec.OperatingSystem.DisableAutoUpdate }}
+    {{- end }}
+    {{- if .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
+    operatingSystem: "ubuntu"
+    operatingSystemSpec:
+      distUpgradeOnBoot: {{ .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
+    {{- end }}
+  roles:
+  - "Node"
+  versions:
+    kubelet: "{{ .Node.Spec.Versions.Kubelet }}"
+    containerRuntime:
+      name: "{{ .Node.Spec.Versions.ContainerRuntime.Name }}"
+      version: "{{ .Node.Spec.Versions.ContainerRuntime.Version }}"
