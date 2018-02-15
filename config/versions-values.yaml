@@ -8,4 +8,4 @@ kubermatic:
       tag: "{API_IMAGE_TAG}"
   ui:
     image:
-      tag: "v0.17"
+      tag: "v0.18"
