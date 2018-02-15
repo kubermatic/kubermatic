@@ -18,6 +18,9 @@ spec:
       availabilityZone: "{{ .Datacenter.Spec.AWS.Region }}{{ .Datacenter.Spec.AWS.ZoneCharacter }}"
       vpcId: "{{ .Cluster.Spec.Cloud.AWS.VPCID }}"
       subnetId: "{{ .Cluster.Spec.Cloud.AWS.SubnetID }}"
+      instanceProfile: "{{ .Cluster.Spec.Cloud.AWS.InstanceProfileName }}"
+      securityGroupIDs:
+      - "{{ .Cluster.Spec.Cloud.AWS.SecurityGroup }}"
       instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
       diskSize: {{ default .Node.Spec.Cloud.AWS.VolumeSize 25 }}
       diskType: "{{ default .Node.Spec.Cloud.AWS.VolumeType "gp2" }}"
