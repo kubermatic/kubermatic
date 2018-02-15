@@ -88,7 +88,7 @@ type DoSizesReq struct {
 func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesReq
 
-	req.DoToken = mux.Vars(r)["token"]
+	req.DoToken = r.Header.Get("DoToken")
 	return req, nil
 }
 
