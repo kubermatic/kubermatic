@@ -63,6 +63,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			VolumeSize:   config.DiskSize,
 			VolumeType:   config.DiskType,
 			InstanceType: config.InstanceType,
+			AMI:          config.AMI,
 		}
 	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderDigitalocean {
 		config := &digitalocean.Config{}

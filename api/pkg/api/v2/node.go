@@ -107,6 +107,8 @@ type AWSNodeSpec struct {
 	// type of the volume. for example: gp2, io1, st1, sc1, standard
 	// required: true
 	VolumeType string `json:"volumeType"`
+	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
+	AMI string `json:"ami"`
 	// additional instance tags
 	Tags map[string]string `json:"tags"`
 }
