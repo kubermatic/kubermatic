@@ -138,7 +138,7 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.deleteSSHKey())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/digitalocean/sizes/{token}").
+		Path("/api/v1/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
 
 	// New project endpoints
@@ -339,7 +339,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/digitalocean/sizes/{token} digitalocean listDigitaloceanSizes
+// swagger:route GET /api/v1/digitalocean/sizes digitalocean listDigitaloceanSizes
 //
 // Lists sizes from digitalocean
 //
