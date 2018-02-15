@@ -4,6 +4,7 @@ package externalversions
 
 import (
 	"fmt"
+
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
@@ -35,7 +36,7 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=Kubermatic, Version=V1
+	// Group=kubermatic.k8s.io, Version=v1
 	case v1.SchemeGroupVersion.WithResource("clusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Clusters().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("users"):

@@ -2,8 +2,8 @@ package fake
 
 import (
 	clientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
-	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcd/v1beta2"
-	fakeetcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcd/v1beta2/fake"
+	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcdoperator/v1beta2"
+	fakeetcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/typed/etcdoperator/v1beta2/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

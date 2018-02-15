@@ -11,7 +11,7 @@ import (
 
 	crdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
 	crdinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions"
-	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/etcd/v1beta2"
+	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/informers/externalversions/etcdoperator/v1beta2"
 	appsv1beta1 "k8s.io/client-go/informers/apps/v1beta1"
 )
 

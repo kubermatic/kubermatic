@@ -57,10 +57,8 @@ func newAppGenerator(name string, modelNames, operationIDs []string, opts *GenOp
 	if opts == nil {
 		return nil, errors.New("gen opts are required")
 	}
-	if err := opts.EnsureDefaults(false); err != nil {
-		return nil, err
-	}
 
+	templates.LoadDefaults()
 	if opts.TemplateDir != "" {
 		if err := templates.LoadDir(opts.TemplateDir); err != nil {
 			return nil, err
@@ -70,12 +68,22 @@ func newAppGenerator(name string, modelNames, operationIDs []string, opts *GenOp
 	// Load the spec
 	var err error
 	var specDoc *loads.Document
+
+	opts.Spec, err = findSwaggerSpec(opts.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	if !filepath.IsAbs(opts.Spec) {
+		cwd, _ := os.Getwd()
+		opts.Spec = filepath.Join(cwd, opts.Spec)
+	}
+
 	opts.Spec, specDoc, err = loadSpec(opts.Spec)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate and Expand. specDoc is in/out param.
 	specDoc, err = validateAndFlattenSpec(opts, specDoc)
 	if err != nil {
 		return nil, err
@@ -109,6 +117,7 @@ func newAppGenerator(name string, modelNames, operationIDs []string, opts *GenOp
 	}
 
 	apiPackage := opts.LanguageOpts.MangleName(swag.ToFileName(opts.APIPackage), "api")
+	serverPackage := opts.LanguageOpts.MangleName(swag.ToFileName(opts.ServerPackage), "server")
 	return &appGenerator{
 		Name:       appNameOrDefault(specDoc, name, "swagger"),
 		Receiver:   "o",
@@ -118,47 +127,56 @@ func newAppGenerator(name string, modelNames, operationIDs []string, opts *GenOp
 		Operations: operations,
 		Target:     opts.Target,
 		// Package:       filepath.Base(opts.Target),
-		DumpData:        opts.DumpData,
-		Package:         apiPackage,
-		APIPackage:      apiPackage,
-		ModelsPackage:   opts.LanguageOpts.MangleName(swag.ToFileName(opts.ModelPackage), "definitions"),
-		ServerPackage:   opts.LanguageOpts.MangleName(swag.ToFileName(opts.ServerPackage), "server"),
-		ClientPackage:   opts.LanguageOpts.MangleName(swag.ToFileName(opts.ClientPackage), "client"),
-		Principal:       opts.Principal,
-		DefaultScheme:   defaultScheme,
-		DefaultProduces: defaultProduces,
-		DefaultConsumes: defaultConsumes,
-		GenOpts:         opts,
+		DumpData:          opts.DumpData,
+		Package:           apiPackage,
+		APIPackage:        apiPackage,
+		ModelsPackage:     opts.LanguageOpts.MangleName(swag.ToFileName(opts.ModelPackage), "definitions"),
+		ServerPackage:     serverPackage,
+		ClientPackage:     opts.LanguageOpts.MangleName(swag.ToFileName(opts.ClientPackage), "client"),
+		OperationsPackage: filepath.Join(serverPackage, apiPackage),
+		Principal:         opts.Principal,
+		DefaultScheme:     defaultScheme,
+		DefaultProduces:   defaultProduces,
+		DefaultConsumes:   defaultConsumes,
+		GenOpts:           opts,
 	}, nil
 }
 
 type appGenerator struct {
-	Name            string
-	Receiver        string
-	SpecDoc         *loads.Document
-	Analyzed        *analysis.Spec
-	Package         string
-	APIPackage      string
-	ModelsPackage   string
-	ServerPackage   string
-	ClientPackage   string
-	Principal       string
-	Models          map[string]spec.Schema
-	Operations      map[string]opRef
-	Target          string
-	DumpData        bool
-	DefaultScheme   string
-	DefaultProduces string
-	DefaultConsumes string
-	GenOpts         *GenOpts
+	Name              string
+	Receiver          string
+	SpecDoc           *loads.Document
+	Analyzed          *analysis.Spec
+	Package           string
+	APIPackage        string
+	ModelsPackage     string
+	ServerPackage     string
+	ClientPackage     string
+	OperationsPackage string
+	Principal         string
+	Models            map[string]spec.Schema
+	Operations        map[string]opRef
+	Target            string
+	DumpData          bool
+	DefaultScheme     string
+	DefaultProduces   string
+	DefaultConsumes   string
+	GenOpts           *GenOpts
 }
 
 // 1. Checks if the child path and parent path coincide.
 // 2. If they do return child path  relative to parent path.
 // 3. Everything else return false
 func checkPrefixAndFetchRelativePath(childpath string, parentpath string) (bool, string) {
+	// Windows (local) file systems - NTFS, as well as FAT and variants
+	// are case insensitive.
+	cp, pp := childpath, parentpath
+	if goruntime.GOOS == "windows" {
+		cp = strings.ToLower(cp)
+		pp = strings.ToLower(pp)
+	}
 
-	if strings.HasPrefix(childpath, parentpath) {
+	if strings.HasPrefix(cp, pp) {
 		pth, err := filepath.Rel(parentpath, childpath)
 		if err != nil {
 			log.Fatalln(err)
@@ -168,85 +186,6 @@ func checkPrefixAndFetchRelativePath(childpath string, parentpath string) (bool,
 
 	return false, ""
 
-}
-
-func baseImport(tgt string) string {
-	tgtAbsPath, err := filepath.Abs(tgt)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	var tgtAbsPathExtended string
-	tgtAbsPathExtended, err = filepath.EvalSymlinks(tgtAbsPath)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		gopath = filepath.Join(os.Getenv("HOME"), "go")
-	}
-
-	var pth string
-	for _, gp := range filepath.SplitList(gopath) {
-		// EvalSymLinks also calls the Clean
-		gopathExtended, err := filepath.EvalSymlinks(gp)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		gopathExtended = filepath.Join(gopathExtended, "src")
-		gp = filepath.Join(gp, "src")
-
-		// Windows (local) file systems - NTFS, as well as FAT and variants
-		// are case insensitive.
-		if goruntime.GOOS == "windows" {
-			tgtAbsPath = strings.ToLower(tgtAbsPath)
-			tgtAbsPathExtended = strings.ToLower(tgtAbsPathExtended)
-			gopathExtended = strings.ToLower(gopathExtended)
-			gp = strings.ToLower(gp)
-		}
-
-		// At this stage we have expanded and unexpanded target path. GOPATH is fully expanded.
-		// Expanded means symlink free.
-		// We compare both types of targetpath<s> with gopath.
-		// If any one of them coincides with gopath , it is imperative that
-		// target path lies inside gopath. How?
-		// 		- Case 1: Irrespective of symlinks paths coincide. Both non-expanded paths.
-		// 		- Case 2: Symlink in target path points to location inside GOPATH. (Expanded Target Path)
-		//    - Case 3: Symlink in target path points to directory outside GOPATH (Unexpanded target path)
-
-		// Case 1: - Do nothing case. If non-expanded paths match just genrate base import path as if
-		//				   there are no symlinks.
-
-		// Case 2: - Symlink in target path points to location inside GOPATH. (Expanded Target Path)
-		//					 First if will fail. Second if will succeed.
-
-		// Case 3: - Symlink in target path points to directory outside GOPATH (Unexpanded target path)
-		// 					 First if will succeed and break.
-
-		//compares non expanded path for both
-		if ok, relativepath := checkPrefixAndFetchRelativePath(tgtAbsPath, gp); ok {
-			pth = relativepath
-			break
-		}
-
-		// Compares non-expanded target path
-		if ok, relativepath := checkPrefixAndFetchRelativePath(tgtAbsPath, gopathExtended); ok {
-			pth = relativepath
-			break
-		}
-
-		// Compares expanded target path.
-		if ok, relativepath := checkPrefixAndFetchRelativePath(tgtAbsPathExtended, gopathExtended); ok {
-			pth = relativepath
-			break
-		}
-
-	}
-
-	if pth == "" {
-		log.Fatalln("target must reside inside a location in the $GOPATH/src")
-	}
-	return pth
 }
 
 func (a *appGenerator) Generate() error {
@@ -296,17 +235,17 @@ func (a *appGenerator) Generate() error {
 			opgCopy := opg
 			log.Printf("rendering %d operations for %s", opg.Operations.Len(), opg.Name)
 			for _, op := range opgCopy.Operations {
-				// if len(errChan) > 0 {
-				// 	wg.Wait()
-				// 	return <-errChan
-				// }
 				opCopy := op
-				// wg.Do(func() {
 
 				if err := a.GenOpts.renderOperation(&opCopy); err != nil {
 					return err
 				}
-				// })
+			}
+			// Optional OperationGroups templates generation
+			opGroup := opg
+			opGroup.DefaultImports = app.DefaultImports
+			if err := a.GenOpts.renderOperationGroup(&opGroup); err != nil {
+				return fmt.Errorf("error while rendering operation group: %v", err)
 			}
 		}
 	}
@@ -336,11 +275,11 @@ func (a *appGenerator) GenerateSupport(ap *GenApp) error {
 		}
 		app = &ca
 	}
-
-	importPath := filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ServerPackage, a.APIPackage))
+	baseImport := a.GenOpts.LanguageOpts.baseImport(a.Target)
+	importPath := filepath.ToSlash(filepath.Join(baseImport, a.OperationsPackage))
 	app.DefaultImports = append(
 		app.DefaultImports,
-		filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ServerPackage)),
+		filepath.ToSlash(filepath.Join(baseImport, a.ServerPackage)),
 		importPath,
 	)
 
@@ -572,6 +511,7 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 	var defaultImports []string
 
 	jsonb, _ := json.MarshalIndent(a.SpecDoc.OrigSpec(), "", "  ")
+	flatjsonb, _ := json.MarshalIndent(a.SpecDoc.Spec(), "", "  ")
 
 	consumes, _ := a.makeConsumes()
 	produces, _ := a.makeProduces()
@@ -582,14 +522,21 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		prin = "interface{}"
 	}
 	security := a.makeSecuritySchemes()
+	baseImport := a.GenOpts.LanguageOpts.baseImport(a.Target)
+	var imports map[string]string
 
-	var genMods []GenDefinition
+	var genMods GenDefinitions
 	importPath := a.GenOpts.ExistingModels
 	if a.GenOpts.ExistingModels == "" {
-		importPath = filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ModelsPackage))
+		if imports == nil {
+			imports = make(map[string]string)
+		}
+		imports[a.ModelsPackage] = filepath.ToSlash(filepath.Join(baseImport, manglePackageName(a.GenOpts, a.GenOpts.ModelPackage, "models")))
+		// importPath = filepath.ToSlash(filepath.Join(baseImport, a.ModelsPackage))
 	}
-
-	defaultImports = append(defaultImports, importPath)
+	if importPath != "" {
+		defaultImports = append(defaultImports, importPath)
+	}
 
 	log.Println("planning definitions")
 	for mn, m := range a.Models {
@@ -601,13 +548,14 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 			a.GenOpts,
 		)
 		if err != nil {
-			return GenApp{}, err
+			return GenApp{}, fmt.Errorf("error in model %s while planning definitions: %v", mn, err)
 		}
 		if mod != nil {
 			//mod.ReceiverName = receiver
 			genMods = append(genMods, *mod)
 		}
 	}
+	sort.Sort(genMods)
 
 	log.Println("planning operations")
 	tns := make(map[string]struct{})
@@ -621,6 +569,7 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		bldr.Principal = prin
 		bldr.Target = a.Target
 		bldr.DefaultImports = defaultImports
+		bldr.Imports = imports
 		bldr.DefaultScheme = a.DefaultScheme
 		bldr.Doc = a.SpecDoc
 		bldr.Analyzed = a.Analyzed
@@ -665,7 +614,7 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 
 	}
 	for k := range tns {
-		importPath := filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ServerPackage, a.APIPackage, swag.ToFileName(k)))
+		importPath := filepath.ToSlash(filepath.Join(baseImport, a.OperationsPackage, swag.ToFileName(k)))
 		defaultImports = append(defaultImports, importPath)
 	}
 	sort.Sort(genOps)
@@ -684,20 +633,23 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		sort.Sort(v)
 		opGroup := GenOperationGroup{
 			GenCommon: GenCommon{
-				Copyright: a.GenOpts.Copyright,
+				Copyright:        a.GenOpts.Copyright,
+				TargetImportPath: filepath.ToSlash(baseImport),
 			},
-			Name:           k,
-			Operations:     v,
-			DefaultImports: []string{filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ModelsPackage))},
+			Name:       k,
+			Operations: v,
+			// DefaultImports: []string{filepath.ToSlash(filepath.Join(baseImport, a.ModelsPackage))},
+			DefaultImports: defaultImports,
+			Imports:        imports,
 			RootPackage:    a.APIPackage,
 			WithContext:    a.GenOpts != nil && a.GenOpts.WithContext,
 		}
 		opGroups = append(opGroups, opGroup)
 		var importPath string
 		if k == a.APIPackage {
-			importPath = filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ServerPackage, a.APIPackage))
+			importPath = filepath.ToSlash(filepath.Join(baseImport, a.OperationsPackage))
 		} else {
-			importPath = filepath.ToSlash(filepath.Join(baseImport(a.Target), a.ServerPackage, a.APIPackage, k))
+			importPath = filepath.ToSlash(filepath.Join(baseImport, a.OperationsPackage, k))
 		}
 		defaultImports = append(defaultImports, importPath)
 	}
@@ -726,7 +678,8 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 
 	return GenApp{
 		GenCommon: GenCommon{
-			Copyright: a.GenOpts.Copyright,
+			Copyright:        a.GenOpts.Copyright,
+			TargetImportPath: filepath.ToSlash(baseImport),
 		},
 		APIPackage:          a.ServerPackage,
 		Package:             a.Package,
@@ -743,12 +696,14 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		DefaultConsumes:     a.DefaultConsumes,
 		DefaultProduces:     a.DefaultProduces,
 		DefaultImports:      defaultImports,
+		Imports:             imports,
 		SecurityDefinitions: security,
 		Models:              genMods,
 		Operations:          genOps,
 		OperationGroups:     opGroups,
 		Principal:           prin,
 		SwaggerJSON:         generateReadableSpec(jsonb),
+		FlatSwaggerJSON:     generateReadableSpec(flatjsonb),
 		ExcludeSpec:         a.GenOpts != nil && a.GenOpts.ExcludeSpec,
 		WithContext:         a.GenOpts != nil && a.GenOpts.WithContext,
 		GenOpts:             a.GenOpts,

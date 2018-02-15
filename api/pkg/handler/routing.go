@@ -792,7 +792,7 @@ func (r Routing) deleteProjectSSHKey() http.Handler {
 //       201: NodeV2
 func (r Routing) createNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		r.auth(r.userStorer(createNodeEndpointV2(r.datacenters, r.provider, r.provider, r.versions))),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -810,7 +810,7 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 //       200: NodeListV2
 func (r Routing) getNodesHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getNodesEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
+		r.auth(r.userStorer(getNodesEndpointV2(r.provider))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -828,8 +828,8 @@ func (r Routing) getNodesHandlerV2() http.Handler {
 //       200: NodeV2
 func (r Routing) getNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
-		decodeClusterReq,
+		r.auth(r.userStorer(getNodeEndpointV2(r.provider))),
+		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -846,8 +846,8 @@ func (r Routing) getNodeHandlerV2() http.Handler {
 //       200: empty
 func (r Routing) deleteNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteNodeEndpointV2(r.provider, r.cloudProviders, r.provider, r.versions))),
-		decodeClusterReq,
+		r.auth(r.userStorer(deleteNodeEndpointV2(r.provider))),
+		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
