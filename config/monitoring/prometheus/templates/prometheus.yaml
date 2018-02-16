@@ -8,6 +8,7 @@ metadata:
 spec:
   replicas: 2
   version: {{ .Values.prometheus.version }}
+  retention: 360h
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
@@ -24,3 +25,12 @@ spec:
   resources:
     requests:
       memory: 1G
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+        storageClassName: kubermatic-fast
