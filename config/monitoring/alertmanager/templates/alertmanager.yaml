@@ -9,3 +9,12 @@ spec:
   replicas: 3
   version: {{ .Values.alertmanager.version }}
   externalUrl: {{ .Values.alertmanager.host | trim }}
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+        storageClassName: kubermatic-fast

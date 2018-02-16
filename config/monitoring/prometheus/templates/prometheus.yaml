@@ -24,3 +24,12 @@ spec:
   resources:
     requests:
       memory: 1G
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+        storageClassName: kubermatic-fast
