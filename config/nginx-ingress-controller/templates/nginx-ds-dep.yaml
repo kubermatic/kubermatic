@@ -29,6 +29,7 @@ spec:
             - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
             - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
             - --default-ssl-certificate=default/kubermatic-tls-certificates
+            - --annotations-prefix=ingress.kubernetes.io
           env:
             - name: POD_NAME
               valueFrom:
