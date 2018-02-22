@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
@@ -53,48 +52,25 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	return health.AllHealthy(), &health, nil
 }
 
-func (cc *controller) launchingClusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	// check that all deployments are healthy
-	allHealthy, health, err := cc.clusterHealth(c)
-	if err != nil {
-		return nil, err
-	}
-
-	if health != nil && (c.Status.Health == nil ||
-		!reflect.DeepEqual(health.ClusterHealthStatus, c.Status.Health.ClusterHealthStatus)) {
-		glog.V(6).Infof("Updating health of cluster %q from %+v to %+v", c.Name, c.Status.Health, health)
-		c.Status.Health = health
-		c.Status.Health.LastTransitionTime = metav1.Now()
-	}
-
-	if !allHealthy {
-		glog.V(5).Infof("Cluster %q not yet healthy: %+v", c.Name, c.Status.Health)
-		return c, nil
-	}
-
-	return nil, nil
-}
-
-// launchingClusterReachable checks if the cluster is reachable via its external name
-func (cc *controller) launchingClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+// ensureClusterReachable checks if the cluster is reachable via its external name
+func (cc *controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
-		return c, nil
+		return nil
 	}
 
 	// Only add the node deletion finalizer when the cluster is actually running
 	// Otherwise we fail to delete the nodes and are stuck in a loop
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
 		c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
-		return c, nil
 	}
 
-	return nil, nil
+	return nil
 }
 
 // Creates cluster-info ConfigMap in customer cluster
@@ -185,28 +161,4 @@ func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 	}
 
 	return nil
-}
-
-func (cc *controller) syncLaunchingCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-
-	changedC, err := cc.launchingClusterHealth(c)
-	if err != nil || changedC != nil {
-		return changedC, err
-	}
-
-	changedC, err = cc.launchingClusterReachable(c)
-	if err != nil || changedC != nil {
-		return changedC, err
-	}
-
-	err = cc.launchingCreateClusterInfoConfigMap(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// no error until now? We are running.
-	c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
-	c.Status.LastTransitionTime = metav1.Now()
-
-	return c, nil
 }

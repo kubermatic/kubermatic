@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (cc *controller) healthyDep(dc, ns, name string, minReady int32) (bool, error) {
@@ -15,6 +16,9 @@ func (cc *controller) healthyDep(dc, ns, name string, minReady int32) (bool, err
 
 	dep, err := informerGroup.DeploymentInformer.Lister().Deployments(ns).Get(name)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -29,6 +33,9 @@ func (cc *controller) healthyEtcd(dc, ns, name string) (bool, error) {
 
 	etcd, err := informerGroup.EtcdClusterInformer.Lister().EtcdClusters(ns).Get(resources.EtcdClusterName)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
 		return false, err
 	}
 

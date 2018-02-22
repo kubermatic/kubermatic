@@ -51,7 +51,8 @@ func LoadNodeClassFile(filename, name string, c *kubermaticv1.Cluster, nSpec *ap
 	}
 
 	var nc nodesetv1alpha1.NodeClass
-	return &nc, t.Execute(data, &nc)
+	_, err = t.Execute(data, &nc)
+	return &nc, err
 }
 
 // LoadMachineFile parses and returns the given machine manifest
@@ -77,5 +78,6 @@ func LoadMachineFile(filename string, c *kubermaticv1.Cluster, node *apiv2.Node,
 	}
 
 	var machine machinev1alpha1.Machine
-	return &machine, t.Execute(data, &machine)
+	_, err = t.Execute(data, &machine)
+	return &machine, err
 }

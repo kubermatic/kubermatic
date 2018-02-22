@@ -90,11 +90,10 @@ func (p *kubernetesProvider) NewClusterWithCloud(user apiv1.User, spec *kubermat
 		},
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
-			LastTransitionTime: metav1.Now(),
-			Seed:               spec.SeedDatacenterName,
-			NamespaceName:      NamespaceName(clusterName),
-			UserEmail:          user.Email,
-			UserName:           user.Name,
+			Seed:          spec.SeedDatacenterName,
+			NamespaceName: NamespaceName(clusterName),
+			UserEmail:     user.Email,
+			UserName:      user.Name,
 		},
 		Address: &kubermaticv1.ClusterAddress{},
 	}
@@ -163,10 +162,6 @@ func (p *kubernetesProvider) InitiateClusterUpgrade(user apiv1.User, name, versi
 	}
 
 	c.Spec.MasterVersion = version
-	c.Status.Phase = kubermaticv1.UpdatingMasterClusterStatusPhase
-	c.Status.LastTransitionTime = metav1.Now()
-	c.Status.MasterUpdatePhase = kubermaticv1.StartMasterUpdatePhase
-
 	return p.client.KubermaticV1().Clusters().Update(c)
 }
 
