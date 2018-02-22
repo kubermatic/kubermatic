@@ -109,6 +109,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 		spec.Openstack = &apiv1.OpenstackDatacenterSpec{
 			AuthURL:          dc.Spec.Openstack.AuthURL,
 			AvailabilityZone: dc.Spec.Openstack.AvailabilityZone,
+			Region:           dc.Spec.Openstack.Region,
 		}
 	}
 

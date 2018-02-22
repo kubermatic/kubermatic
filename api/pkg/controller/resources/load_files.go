@@ -168,6 +168,7 @@ username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
 password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
 domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
 tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
+region = "{{ .DC.Spec.Openstack.Region }}"
 
 [BlockStorage]
 trust-device-path = false

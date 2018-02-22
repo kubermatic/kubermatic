@@ -34,6 +34,7 @@ spec:
     cloudProvider: "openstack"
     cloudProviderSpec:
       identityEndpoint: "{{ .Datacenter.Spec.Openstack.AuthURL }}"
+      region: "{{ .Datacenter.Spec.Openstack.Region }}"
       username: "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
       password: "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
       domainName: "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
