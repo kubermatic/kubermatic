@@ -353,6 +353,7 @@ func TestLoadOpenstackCloudConfigConfigMap(t *testing.T) {
 				AuthURL:          "https://my.openstack.foo/v3",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 				IgnoreVolumeAZ:   true,
+				Region:           "os-region",
 			},
 		},
 	}

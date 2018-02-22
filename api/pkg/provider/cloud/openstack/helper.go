@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gophercloud/gophercloud"
-	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
@@ -29,15 +28,11 @@ var (
 	errNotFound = errors.New("not found")
 )
 
-func getAllSecurityGroups(client *gophercloud.ProviderClient) ([]ossecuritygroups.SecGroup, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-	allGroups := []ossecuritygroups.SecGroup{}
+func getAllSecurityGroups(netClient *gophercloud.ServiceClient) ([]ossecuritygroups.SecGroup, error) {
+	var allGroups []ossecuritygroups.SecGroup
 
 	pager := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{})
-	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		securityGroups, err := ossecuritygroups.ExtractGroups(page)
 		if err != nil {
 			return false, err
@@ -56,12 +51,7 @@ type networkWithExternalExt struct {
 	osextnetwork.NetworkExternalExt
 }
 
-func getAllNetworks(client *gophercloud.ProviderClient) ([]networkWithExternalExt, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func getAllNetworks(netClient *gophercloud.ServiceClient) ([]networkWithExternalExt, error) {
 	var allNetworks []networkWithExternalExt
 	allPages, err := osnetworks.List(netClient, nil).AllPages()
 	if err != nil {
@@ -75,8 +65,8 @@ func getAllNetworks(client *gophercloud.ProviderClient) ([]networkWithExternalEx
 	return allNetworks, nil
 }
 
-func getNetworkByName(client *gophercloud.ProviderClient, network string, isExternal bool) (*networkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(client)
+func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*networkWithExternalExt, error) {
+	existingNetworks, err := getAllNetworks(netClient)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +80,8 @@ func getNetworkByName(client *gophercloud.ProviderClient, network string, isExte
 	return nil, errNotFound
 }
 
-func getExternalNetwork(client *gophercloud.ProviderClient) (*networkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(client)
+func getExternalNetwork(netClient *gophercloud.ServiceClient) (*networkWithExternalExt, error) {
+	existingNetworks, err := getAllNetworks(netClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +104,8 @@ func securityGroupExistInList(name string, list []ossecuritygroups.SecGroup) boo
 	return false
 }
 
-func validateSecurityGroupsExist(client *gophercloud.ProviderClient, securityGroups []string) error {
-	existingGroups, err := getAllSecurityGroups(client)
+func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
+	existingGroups, err := getAllSecurityGroups(netClient)
 	if err != nil {
 		return err
 	}
@@ -128,18 +118,14 @@ func validateSecurityGroupsExist(client *gophercloud.ProviderClient, securityGro
 	return nil
 }
 
-func deleteSecurityGroup(client *gophercloud.ProviderClient, sgName string) error {
-	securityGroups, err := getAllSecurityGroups(client)
+func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) error {
+	securityGroups, err := getAllSecurityGroups(netClient)
 	if err != nil {
 		return err
 	}
 
 	for _, sg := range securityGroups {
 		if sg.Name == sgName {
-			netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-			if err != nil {
-				return err
-			}
 			res := ossecuritygroups.Delete(netClient, sg.ID)
 			if res.Err != nil {
 				return res.Err
@@ -152,12 +138,7 @@ func deleteSecurityGroup(client *gophercloud.ProviderClient, sgName string) erro
 	return nil
 }
 
-func createKubermaticSecurityGroup(client *gophercloud.ProviderClient, clusterName string) (*ossecuritygroups.SecGroup, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (*ossecuritygroups.SecGroup, error) {
 	gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
 		Name:        kubermaticNamePrefix + clusterName,
 		Description: "Contains security rules for the kubermatic worker nodes",
@@ -210,12 +191,7 @@ func createKubermaticSecurityGroup(client *gophercloud.ProviderClient, clusterNa
 	return g, nil
 }
 
-func createKubermaticNetwork(client *gophercloud.ProviderClient, clusterName string) (*osnetworks.Network, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
 		Name:         kubermaticNamePrefix + clusterName,
@@ -227,13 +203,8 @@ func createKubermaticNetwork(client *gophercloud.ProviderClient, clusterName str
 	return res.Extract()
 }
 
-func deleteNetworkByName(client *gophercloud.ProviderClient, networkName string) error {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return err
-	}
-
-	network, err := getNetworkByName(client, networkName, false)
+func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName string) error {
+	network, err := getNetworkByName(netClient, networkName, false)
 	if err != nil {
 		return err
 	}
@@ -245,12 +216,7 @@ func deleteNetworkByName(client *gophercloud.ProviderClient, networkName string)
 	return res.ExtractErr()
 }
 
-func deleteRouter(client *gophercloud.ProviderClient, routerID string) error {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return err
-	}
-
+func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 	res := osrouters.Delete(netClient, routerID)
 	if res.Err != nil {
 		return res.Err
@@ -258,12 +224,7 @@ func deleteRouter(client *gophercloud.ProviderClient, routerID string) error {
 	return res.ExtractErr()
 }
 
-func createKubermaticSubnet(client *gophercloud.ProviderClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
 	iTrue := true
 	res := ossubnets.Create(netClient, ossubnets.CreateOpts{
 		Name:       kubermaticNamePrefix + clusterName,
@@ -286,13 +247,8 @@ func createKubermaticSubnet(client *gophercloud.ProviderClient, clusterName, net
 	return res.Extract()
 }
 
-func createKubermaticRouter(client *gophercloud.ProviderClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
-	extNetwork, err := getNetworkByName(client, extNetworkName, true)
+func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
+	extNetwork, err := getNetworkByName(netClient, extNetworkName, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get external network %q: %v", extNetworkName, err)
 	}
@@ -313,12 +269,7 @@ func createKubermaticRouter(client *gophercloud.ProviderClient, clusterName, ext
 	return res.Extract()
 }
 
-func attachSubnetToRouter(client *gophercloud.ProviderClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func attachSubnetToRouter(netClient *gophercloud.ServiceClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
 	res := osrouters.AddInterface(netClient, routerID, osrouters.AddInterfaceOpts{
 		SubnetID: subnetID,
 	})
@@ -328,12 +279,7 @@ func attachSubnetToRouter(client *gophercloud.ProviderClient, subnetID, routerID
 	return res.Extract()
 }
 
-func detachSubnetFromRouter(client *gophercloud.ProviderClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{})
-	if err != nil {
-		return nil, err
-	}
-
+func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
 	res := osrouters.RemoveInterface(netClient, routerID, osrouters.RemoveInterfaceOpts{
 		SubnetID: subnetID,
 	})

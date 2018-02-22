@@ -32,6 +32,7 @@ type AWSDatacenterSpec struct {
 // OpenstackDatacenterSpec specifies a generic bare metal datacenter.
 type OpenstackDatacenterSpec struct {
 	AvailabilityZone string `json:"availability_zone"`
+	Region           string `json:"region"`
 	AuthURL          string `json:"auth_url"`
 }
 

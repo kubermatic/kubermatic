@@ -15,6 +15,7 @@ config:
     openstack-username: "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
     openstack-tenant-name: "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
     openstack-net-name: "{{ .Cluster.Spec.Cloud.Openstack.Network }}"
+    openstack-region: "{{ .Datacenter.Spec.Openstack.Region }}"
     openstack-sec-groups: "{{ .Cluster.Spec.Cloud.Openstack.SecurityGroups }}"
     openstack-ssh-user: "ubuntu"
     {{if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.7" }}
@@ -102,6 +103,7 @@ config:
           password="{{ .Cluster.Spec.Cloud.Openstack.Password }}"
           domain-name="{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
           tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
+          region = "{{ .Datacenter.Spec.Openstack.Region }}"
           [BlockStorage]
           trust-device-path = false
           {{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
