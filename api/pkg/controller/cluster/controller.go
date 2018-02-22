@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/metrics"
@@ -76,8 +77,9 @@ type controller struct {
 
 // ControllerMetrics contains metrics about the clusters & workers
 type ControllerMetrics struct {
-	Clusters metrics.Gauge
-	Workers  metrics.Gauge
+	Clusters      metrics.Gauge
+	ClusterPhases metrics.Gauge
+	Workers       metrics.Gauge
 }
 
 // NewController creates a cluster controller.
@@ -208,6 +210,17 @@ func (cc *controller) syncCluster(key string) error {
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
 		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
+	}
+
+	for _, phase := range kubermaticv1.ClusterPhases {
+		value := 0.0
+		if phase == cluster.Status.Phase {
+			value = 1.0
+		}
+		cc.metrics.ClusterPhases.With(
+			"cluster", cluster.Name,
+			"phase", strings.ToLower(string(phase)),
+		).Set(value)
 	}
 
 	if cluster.DeletionTimestamp != nil {
