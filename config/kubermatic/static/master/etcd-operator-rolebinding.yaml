@@ -1,12 +1,12 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ .Namespace }}-etcd-operator
-  namespace: {{ .Namespace }}
+  name: {{ .Cluster.Status.NamespaceName }}-etcd-operator
+  namespace: {{ .Cluster.Status.NamespaceName }}
 subjects:
 - kind: ServiceAccount
   name: etcd-operator
-  namespace: {{ .Namespace }}
+  namespace: {{ .Cluster.Status.NamespaceName }}
 roleRef:
   kind: ClusterRole
   name: etcd-operator

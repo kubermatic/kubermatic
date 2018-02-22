@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 
 
-cd ${GOPATH}/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-cluster-controller \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \

@@ -19,6 +19,7 @@ spec:
       labels:
         release: v1.9.0
         role: apiserver
+        tokencsvversion: "123456"
         version: v1
     spec:
       containers:
@@ -99,6 +100,9 @@ spec:
         - mountPath: /var/run/kubernetes/token-users
           name: token-users
           readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
       volumes:
       - name: apiserver
         secret:
@@ -108,4 +112,7 @@ spec:
         secret:
           defaultMode: 256
           secretName: token-users
+      - configMap:
+          name: cloud-config
+        name: cloud-config
 status: {}

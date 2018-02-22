@@ -19,6 +19,7 @@ spec:
       labels:
         release: v1.9.0
         role: apiserver
+        tokencsvversion: "123456"
         version: v1
     spec:
       containers:

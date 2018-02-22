@@ -1,0 +1,33 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cloud-config
+data:
+  config: |
+    {{- if eq .ProviderName "aws" }}
+    [global]
+    zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
+    VPC={{ .Cluster.Spec.Cloud.AWS.VPCID }}
+    kubernetesclustertag={{ .Cluster.Name }}
+    disablesecuritygroupingress=false
+    SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID }}
+    RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID }}
+    disablestrictzonecheck=true
+    {{- end }}
+    {{- if eq .ProviderName "openstack" }}
+    # Openstack
+    [Global]
+    auth-url = "{{ .DC.Spec.Openstack.AuthURL }}"
+    username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
+    password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
+    domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
+    tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
+    region = "{{ .DC.Spec.Openstack.Region }}"
+
+    [BlockStorage]
+    trust-device-path = false
+    bs-version = "v2"
+    {{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
+    ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+    {{- end }}
+    {{- end }}

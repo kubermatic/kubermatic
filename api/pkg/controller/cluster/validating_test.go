@@ -124,7 +124,7 @@ func TestValidatingCheckDatacenter(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
-			err := f.controller.validatingCheckDatacenter(test.cluster)
+			err := f.controller.validateDatacenter(test.cluster)
 			if diff := deep.Equal(err, test.ret); diff != nil {
 				t.Errorf("expected to get %v instead got: %v", test.ret, err)
 			}

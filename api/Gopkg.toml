@@ -107,10 +107,6 @@ required = [
   name = "k8s.io/code-generator"
   branch = "release-1.9"
 
-[[override]]
-  name = "k8s.io/gengo"
-  revision = "b6c426f7730e6d66e6e476a85d1c3eb7633880e0"
-
 [[constraint]]
   name = "k8s.io/apiextensions-apiserver"
   branch = "release-1.9"

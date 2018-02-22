@@ -31,26 +31,26 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
-	client, err := os.getClient(cloud)
+	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
 	if cloud.Openstack.SecurityGroups != "" {
-		if err := validateSecurityGroupsExist(client, strings.Split(cloud.Openstack.SecurityGroups, ",")); err != nil {
+		if err := validateSecurityGroupsExist(netClient, strings.Split(cloud.Openstack.SecurityGroups, ",")); err != nil {
 			return err
 		}
 	}
 
 	if cloud.Openstack.Network != "" {
-		_, err := getNetworkByName(client, cloud.Openstack.Network, false)
+		_, err := getNetworkByName(netClient, cloud.Openstack.Network, false)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q: %v", cloud.Openstack.Network, err)
 		}
 	}
 
 	if cloud.Openstack.FloatingIPPool != "" {
-		_, err := getNetworkByName(client, cloud.Openstack.FloatingIPPool, true)
+		_, err := getNetworkByName(netClient, cloud.Openstack.FloatingIPPool, true)
 		if err != nil {
 			return fmt.Errorf("failed to get floating ip pool %q: %v", cloud.Openstack.FloatingIPPool, err)
 		}
@@ -59,7 +59,7 @@ func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
+func (os *openstack) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
@@ -73,11 +73,12 @@ func (os *openstack) getClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Prov
 		TenantName:       cloud.Openstack.Tenant,
 	}
 
-	osProvider, err := goopenstack.AuthenticatedClient(opts)
+	client, err := goopenstack.AuthenticatedClient(opts)
 	if err != nil {
 		return nil, err
 	}
-	return osProvider, nil
+
+	return goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
 }
 
 func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
@@ -96,13 +97,13 @@ func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 
-	client, err := os.getClient(cloud)
+	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
 	if cloud.Openstack.FloatingIPPool == "" {
-		extNetwork, err := getExternalNetwork(client)
+		extNetwork, err := getExternalNetwork(netClient)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +111,7 @@ func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name
 	}
 
 	if cloud.Openstack.SecurityGroups == "" {
-		g, err := createKubermaticSecurityGroup(client, name)
+		g, err := createKubermaticSecurityGroup(netClient, name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}
@@ -119,26 +120,26 @@ func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name
 	}
 
 	if cloud.Openstack.Network == "" {
-		network, err := createKubermaticNetwork(client, name)
+		network, err := createKubermaticNetwork(netClient, name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic network: %v", err)
 		}
 		cloud.Openstack.Network = network.Name
 		cloud.Openstack.NetworkCreated = true
 
-		subnet, err := createKubermaticSubnet(client, name, network.ID, dc.Spec.Openstack.DNSServers)
+		subnet, err := createKubermaticSubnet(netClient, name, network.ID, dc.Spec.Openstack.DNSServers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %v", err)
 		}
 		cloud.Openstack.SubnetID = subnet.ID
 
-		router, err := createKubermaticRouter(client, name, cloud.Openstack.FloatingIPPool)
+		router, err := createKubermaticRouter(netClient, name, cloud.Openstack.FloatingIPPool)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
 		}
 		cloud.Openstack.RouterID = router.ID
 
-		if _, err = attachSubnetToRouter(client, subnet.ID, router.ID); err != nil {
+		if _, err = attachSubnetToRouter(netClient, subnet.ID, router.ID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)
 		}
 	}
@@ -147,14 +148,14 @@ func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name
 }
 
 func (os *openstack) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
-	client, err := os.getClient(cloud)
+	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
 	if cloud.Openstack.SecurityGroupCreated {
 		for _, g := range strings.Split(cloud.Openstack.SecurityGroups, ",") {
-			if err := deleteSecurityGroup(client, strings.TrimSpace(g)); err != nil {
+			if err := deleteSecurityGroup(netClient, strings.TrimSpace(g)); err != nil {
 				return fmt.Errorf("failed to delete security group %q: %v", g, err)
 			}
 		}
@@ -162,15 +163,15 @@ func (os *openstack) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 
 	if cloud.Openstack.NetworkCreated {
 
-		if _, err = detachSubnetFromRouter(client, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
+		if _, err = detachSubnetFromRouter(netClient, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
 			return fmt.Errorf("failed to detach subnet from router: %v", err)
 		}
 
-		if err = deleteNetworkByName(client, cloud.Openstack.Network); err != nil {
+		if err = deleteNetworkByName(netClient, cloud.Openstack.Network); err != nil {
 			return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
 		}
 
-		if err = deleteRouter(client, cloud.Openstack.RouterID); err != nil {
+		if err = deleteRouter(netClient, cloud.Openstack.RouterID); err != nil {
 			return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
 		}
 	}
