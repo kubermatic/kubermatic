@@ -187,6 +187,7 @@ func TestLoadFiles(t *testing.T) {
 				AvailabilityZone: "zone1",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 				IgnoreVolumeAZ:   true,
+				Region:           "cbk",
 			},
 		},
 	}

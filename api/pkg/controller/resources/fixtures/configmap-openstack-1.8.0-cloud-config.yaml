@@ -8,6 +8,7 @@ data:
     password = "openstack-password"
     domain-name= "openstack-domain"
     tenant-name = "openstack-tenant"
+    region = "cbk"
 
     [BlockStorage]
     trust-device-path = false
