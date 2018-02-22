@@ -222,7 +222,7 @@ func (cc *controller) syncCluster(key string) error {
 		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
 	}
 	var updateErr error
-	if cluster, err = cc.validateCluster(cluster); err != nil {
+	if err = cc.validateCluster(cluster); err != nil {
 		updateErr = cc.updateClusterError(cluster, kubermaticv1.InvalidConfigurationClusterError, err.Error(), originalData)
 		if updateErr != nil {
 			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
