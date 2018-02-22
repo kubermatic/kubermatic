@@ -30,23 +30,14 @@ const (
 	// ValidatingClusterStatusPhase means that the cluster will be verified.
 	ValidatingClusterStatusPhase ClusterPhase = "Validating"
 
-	// PendingClusterStatusPhase means that the cluster controller hasn't picked the cluster up.
-	PendingClusterStatusPhase ClusterPhase = "Pending"
-
 	// LaunchingClusterStatusPhase means that the cluster controller starts up the cluster.
 	LaunchingClusterStatusPhase ClusterPhase = "Launching"
-
-	// FailedClusterStatusPhase means that the cluster controller time out launching the cluster.
-	FailedClusterStatusPhase ClusterPhase = "Failed"
 
 	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
 	RunningClusterStatusPhase ClusterPhase = "Running"
 
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
-
-	// UpdatingMasterClusterStatusPhase means that the cluster controller is updating the master components of the cluster.
-	UpdatingMasterClusterStatusPhase ClusterPhase = "Updatingmaster"
 )
 
 // MasterUpdatePhase represents the current master update phase.
@@ -117,11 +108,12 @@ type ClusterAddress struct {
 	ExternalPort int    `json:"externalPort"`
 	KubeletToken string `json:"kubeletToken"`
 	AdminToken   string `json:"adminToken"`
+	IP           string `json:"ip"`
 }
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastTransitionTime        metav1.Time       `json:"lastTransitionTime"`
+	LastUpdated               metav1.Time       `json:"lastUpdated,omitempty"`
 	Phase                     ClusterPhase      `json:"phase,omitempty"`
 	Health                    *ClusterHealth    `json:"health,omitempty"`
 	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
@@ -137,7 +129,18 @@ type ClusterStatus struct {
 
 	UserName  string `json:"userName"`
 	UserEmail string `json:"userEmail"`
+
+	ErrorReason  *ClusterStatusError `json:"errorReason,omitempty"`
+	ErrorMessage *string             `json:"errorMessage,omitempty"`
 }
+
+type ClusterStatusError string
+
+const (
+	InvalidConfigurationClusterError ClusterStatusError = "InvalidConfiguration"
+	UnsupportedChangeClusterError    ClusterStatusError = "UnsupportedChange"
+	ReconcileClusterError            ClusterStatusError = "ReconcileError"
+)
 
 // CloudSpec mutually stores access data to a cloud provider.
 type CloudSpec struct {

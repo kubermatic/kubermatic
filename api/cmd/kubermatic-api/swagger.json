@@ -892,6 +892,10 @@
           "format": "int64",
           "x-go-name": "ExternalPort"
         },
+        "ip": {
+          "type": "string",
+          "x-go-name": "IP"
+        },
         "kubeletToken": {
           "type": "string",
           "x-go-name": "KubeletToken"
@@ -983,6 +987,13 @@
         "apiserverSshKey": {
           "$ref": "#/definitions/RSAKeys"
         },
+        "errorMessage": {
+          "type": "string",
+          "x-go-name": "ErrorMessage"
+        },
+        "errorReason": {
+          "$ref": "#/definitions/ClusterStatusError"
+        },
         "health": {
           "$ref": "#/definitions/ClusterHealth"
         },
@@ -993,7 +1004,7 @@
           "type": "string",
           "x-go-name": "LastDeployedMasterVersion"
         },
-        "lastTransitionTime": {
+        "lastUpdated": {
           "$ref": "#/definitions/Time"
         },
         "masterUpdatePhase": {
@@ -1025,6 +1036,10 @@
           "x-go-name": "UserName"
         }
       },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "ClusterStatusError": {
+      "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ClusterV1": {

@@ -20,8 +20,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const TestDC = "testdc"
-const TestExternalURL = "localhost"
+const TestClusterName = "fqpcvnc6v"
+const TestDC = "europe-west3-c"
+const TestExternalURL = "dev.kubermatic.io"
 const TestExternalPort = 30000
 
 type fake struct {
@@ -49,7 +50,6 @@ func newTestController(
 	seedCrdClient := seedcrdfake.NewSimpleClientset(seedCrdObjects...)
 	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
 	seedInformerGroup := seedinformer.New(kubeClient, seedCrdClient)
-	seedInformerGroup.Run(wait.NeverStop)
 	seedProvider := NewFakeProvider(kubeClient, seedCrdClient, seedInformerGroup)
 	masterInformerGroup := masterinformer.New(masterCrdClient)
 

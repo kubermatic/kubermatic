@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: machine-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: machine-controller
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: machine-controller
+        release: v0.1.2
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/machine-controller
+        - -master=http://apiserver:8080
+        - -logtostderr
+        - -v=4
+        - -cluster-dns=10.10.10.10
+        - -internal-listen-address=0.0.0.0:8085
+        - -ssh-key-name=kubermatic-cluster-de-test-01
+        image: kubermatic/machine-controller:v0.1.2
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8085
+        name: machine-controller
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8085
+        resources: {}
+      terminationGracePeriodSeconds: 60
+status: {}

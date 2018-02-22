@@ -7,7 +7,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/update"
+
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
 	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
@@ -15,12 +15,11 @@ import (
 	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"gopkg.in/square/go-jose.v2/json"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -31,15 +30,12 @@ import (
 )
 
 const (
-	launchTimeout = 5 * time.Minute
+	workerPeriod = time.Second
 
-	workerPeriod        = time.Second
-	pendingSyncPeriod   = 10 * time.Second
-	timeoutSyncPeriod   = 10 * time.Second
-	launchingSyncPeriod = 2 * time.Second
-	runningSyncPeriod   = 1 * time.Minute
-	updatingSyncPeriod  = 5 * time.Second
-	deletingSyncPeriod  = 5 * time.Second
+	validatingSyncPeriod = 15 * time.Second
+	launchingSyncPeriod  = 2 * time.Second
+	deletingSyncPeriod   = 10 * time.Second
+	runningSyncPeriod    = 60 * time.Second
 )
 
 // GroupRunStopper represents a control loop started with Run,
@@ -70,7 +66,6 @@ type controller struct {
 	cps        map[string]provider.CloudProvider
 	workerName string
 
-	updateController      update.Interface
 	versions              map[string]*apiv1.MasterVersion
 	updates               []apiv1.MasterUpdate
 	defaultMasterVersion  *apiv1.MasterVersion
@@ -146,12 +141,6 @@ func NewController(
 		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
 
-	cc.updateController = update.New(
-		cc.clientProvider,
-		cc.masterResourcesPath,
-		cc.versions,
-		cc.updates,
-	)
 	automaticUpdates := []apiv1.MasterUpdate{}
 	for _, u := range cc.updates {
 		if u.Automatic {
@@ -192,38 +181,17 @@ func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 	return err
 }
 
-// timeoutWorker is a worker function which gets called every timeoutSyncPeriod and sets the phase of a cluster to
-// FailedClusterStatusPhase if the cluster did not came up within launchTimeout
-func (cc *controller) timeoutWorker() {
-	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
-	if err != nil {
-		glog.Errorf("failed to get cluster list: %v", err)
+func (cc *controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
+	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
+		cluster.Status.ErrorMessage = &message
+		cluster.Status.ErrorReason = &reason
+		return cc.updateCluster(originalData, cluster)
 	}
-
-	for _, cluster := range clusters {
-		if cluster.Status.Phase != kubermaticv1.LaunchingClusterStatusPhase {
-			continue
-		}
-		now := metav1.Now()
-		sinceSinceLaunching := now.Sub(cluster.Status.LastTransitionTime.Time)
-		if sinceSinceLaunching > launchTimeout {
-			originalData, err := json.Marshal(cluster)
-			if err != nil {
-				glog.Errorf("failed to marshal cluster %s: %v", cluster.Name, err)
-				continue
-			}
-			glog.Infof("Launch timeout for cluster %q after %v", cluster.Name, sinceSinceLaunching)
-			cluster.Status.Phase = kubermaticv1.FailedClusterStatusPhase
-			cluster.Status.LastTransitionTime = now
-			if err := cc.updateCluster(originalData, cluster); err != nil {
-				glog.Errorf("failed to update failed cluster %q: %v", cluster.Name, err)
-			}
-		}
-	}
+	return nil
 }
 
 func (cc *controller) syncCluster(key string) error {
-	cluster, err := cc.masterCrdClient.KubermaticV1().Clusters().Get(key, metav1.GetOptions{})
+	listerCluster, err := cc.masterInformerGroup.ClusterInformer.Lister().Get(key)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -231,62 +199,49 @@ func (cc *controller) syncCluster(key string) error {
 		return fmt.Errorf("unable to retrieve cluster %q: %v", key, err)
 	}
 
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
-		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
-		return nil
-	}
-
+	cluster := listerCluster.DeepCopy()
 	originalData, err := json.Marshal(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
 	}
 
-	// if a cluster got deleted, we must set the phase to deleting and return.
-	if cluster.DeletionTimestamp != nil && cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
-		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
-		err = cc.updateCluster(originalData, cluster)
-		if err != nil {
-			return fmt.Errorf("failed to update cluster to deleting phase %q: %v", cluster.Name, err)
-		}
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
+		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
 	}
 
-	glog.V(4).Infof("Syncing cluster %q in phase %q", cluster.Name, cluster.Status.Phase)
-
-	// state machine
-	var changedC *kubermaticv1.Cluster
-	switch cluster.Status.Phase {
-	case kubermaticv1.NoneClusterStatusPhase:
-		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
-		changedC = cluster
-	case kubermaticv1.ValidatingClusterStatusPhase:
-		changedC, err = cc.syncValidatingCluster(cluster)
-	case kubermaticv1.PendingClusterStatusPhase:
-		changedC, err = cc.syncPendingCluster(cluster)
-	case kubermaticv1.LaunchingClusterStatusPhase:
-		changedC, err = cc.syncLaunchingCluster(cluster)
-	case kubermaticv1.RunningClusterStatusPhase:
-		changedC, err = cc.syncRunningCluster(cluster)
-	case kubermaticv1.UpdatingMasterClusterStatusPhase:
-		changedC, err = cc.syncUpdatingClusterMaster(cluster)
-	case kubermaticv1.DeletingClusterStatusPhase:
-		changedC, err = cc.syncDeletingCluster(cluster)
-	default:
-		return fmt.Errorf("invalid phase %q", cluster.Status.Phase)
-	}
-	if err != nil {
-		return fmt.Errorf("error syncing cluster in phase %q: %v", cluster.Status.Phase, err)
-	}
-
-	// sync back to namespace if cc was changed
-	if changedC != nil {
-		err = cc.updateCluster(originalData, changedC)
-		if err != nil {
-			return fmt.Errorf("failed to update changed cluster %q: %v", cluster.Name, err)
+	if cluster.DeletionTimestamp != nil {
+		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
+		if err := cc.cleanupCluster(cluster); err != nil {
+			return err
 		}
+		return cc.updateCluster(originalData, cluster)
 	}
 
-	return nil
+	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
+		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
+	}
+	var updateErr error
+	if cluster, err = cc.validateCluster(cluster); err != nil {
+		updateErr = cc.updateClusterError(cluster, kubermaticv1.InvalidConfigurationClusterError, err.Error(), originalData)
+		if updateErr != nil {
+			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
+		}
+		return err
+	}
+
+	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
+		cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+	}
+	if err := cc.reconcileCluster(cluster); err != nil {
+		updateErr = cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
+		if updateErr != nil {
+			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
+		}
+		return err
+	}
+
+	return cc.updateCluster(originalData, cluster)
 }
 
 func (cc *controller) runWorker() {
@@ -301,6 +256,8 @@ func (cc *controller) processNextItem() bool {
 	}
 
 	defer cc.queue.Done(key)
+
+	glog.V(4).Infof("syncing cluster %s", key)
 
 	err := cc.syncCluster(key.(string))
 
@@ -337,10 +294,8 @@ func (cc *controller) handleErr(err error, key interface{}) {
 func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
 	if err != nil {
-		cc.metrics.Clusters.Set(0)
 		glog.Errorf("Error listing clusters: %v", err)
 	}
-	cc.metrics.Clusters.Set(float64(len(clusters)))
 
 	for _, c := range clusters {
 		if c.Status.Phase == phase {
@@ -359,12 +314,10 @@ func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
 		go wait.Until(cc.runWorker, workerPeriod, stopCh)
 	}
 
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.PendingClusterStatusPhase) }, pendingSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.ValidatingClusterStatusPhase) }, validatingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.DeletingClusterStatusPhase) }, deletingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.UpdatingMasterClusterStatusPhase) }, updatingSyncPeriod, stopCh)
-	go wait.Until(cc.timeoutWorker, timeoutSyncPeriod, stopCh)
+	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
 
 	<-stopCh
 
