@@ -6,7 +6,7 @@ set -o pipefail
 set -x
 
 
-cd ${GOPATH}/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
   -master-kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \

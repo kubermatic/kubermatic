@@ -17,6 +17,7 @@ type DigitaloceanSpec struct {
 type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`
+	Region           string `yaml:"region"`
 	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az"`
 	// Used for automatic network creation
 	DNSServers []string `yaml:"dns_servers"`
