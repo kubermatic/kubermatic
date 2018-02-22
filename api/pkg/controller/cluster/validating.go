@@ -7,16 +7,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-func (cc *controller) validateCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *controller) validateCluster(c *kubermaticv1.Cluster) error {
 	if err := cc.validateDatacenter(c); err != nil {
-		return nil, fmt.Errorf("failed to validate datacenter: %v", err)
+		return fmt.Errorf("failed to validate datacenter: %v", err)
 	}
 
 	if err := cc.validateCloudSpec(c); err != nil {
-		return nil, fmt.Errorf("failed to validate cloud spec: %v", err)
+		return fmt.Errorf("failed to validate cloud spec: %v", err)
 	}
 
-	return c, nil
+	return nil
 }
 
 func (cc *controller) validateCloudSpec(c *kubermaticv1.Cluster) error {
