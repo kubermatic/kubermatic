@@ -214,13 +214,21 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
-				kubeClient := kubefake.NewSimpleClientset(&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						ResourceVersion: "123456",
-						Name:            "token-users",
-						Namespace:       cluster.Status.NamespaceName,
+				kubeClient := kubefake.NewSimpleClientset(
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            ApiserverTokenUsersSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
 					},
-				})
+					&v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            CloudConfigConfigMapName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					})
 
 				var group wait.Group
 				defer group.Wait()
@@ -232,10 +240,13 @@ func TestLoadFiles(t *testing.T) {
 				informerFactory := informers.NewSharedInformerFactory(kubeClient, 30*time.Second)
 				secretInformer := informerFactory.Core().V1().Secrets().Informer()
 				secretLister := informerFactory.Core().V1().Secrets().Lister()
+				configMapInformer := informerFactory.Core().V1().ConfigMaps().Informer()
+				configMapLister := informerFactory.Core().V1().ConfigMaps().Lister()
 				group.StartWithChannel(stopCh, secretInformer.Run)
-				cache.WaitForCacheSync(stopCh, secretInformer.HasSynced)
+				group.StartWithChannel(stopCh, configMapInformer.Run)
+				cache.WaitForCacheSync(stopCh, secretInformer.HasSynced, configMapInformer.HasSynced)
 
-				data := &TemplateData{Cluster: cluster, Version: version, SecretLister: secretLister, DC: &dc}
+				data := NewTemplateData(cluster, version, &dc, secretLister, configMapLister)
 				deps := map[string]string{
 					version.EtcdOperatorDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-etcd-operator", prov, version.ID),
 					version.SchedulerDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID),
@@ -284,7 +295,7 @@ func TestLoadFiles(t *testing.T) {
 					"etcd-operator": fmt.Sprintf("cluster-role-binding-%s-%s-etcd-operator", prov, version.ID),
 				}
 				for name, fixture := range clusterRoleBindings {
-					res, _, err := LoadClusterRoleBindingFile(&TemplateData{Cluster: cluster}, name, masterResourcePath)
+					res, _, err := LoadClusterRoleBindingFile(data, name, masterResourcePath)
 					if err != nil {
 						t.Fatalf("failed to load cluster role binding %q: %v", name, err)
 					}
