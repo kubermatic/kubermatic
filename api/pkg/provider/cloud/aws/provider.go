@@ -330,6 +330,13 @@ func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name 
 			return nil, fmt.Errorf("failed to get default subnet: %v", err)
 		}
 		cloud.AWS.SubnetID = *subnet.SubnetId
+	}
+
+	if cloud.AWS.AvailabilityZone == "" {
+		subnet, err := getSubnetByID(cloud.AWS.SubnetID, client)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get subnet %s: %v", cloud.AWS.SubnetID, err)
+		}
 		cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 	}
 

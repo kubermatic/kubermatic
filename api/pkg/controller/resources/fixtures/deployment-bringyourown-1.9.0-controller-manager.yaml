@@ -17,8 +17,10 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
+        cloudconfigversion: "123456"
         release: v1.9.0
         role: controller-manager
+        tokencsvversion: "123456"
         version: v1
     spec:
       containers:
@@ -55,8 +57,20 @@ spec:
         - mountPath: /var/run/kubernetes/auth
           name: controller-manager
           readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
       volumes:
       - name: controller-manager
         secret:
           secretName: controller-manager
+      - configMap:
+          name: cloud-config
+        name: cloud-config
+      - configMap:
+          name: cloud-config
+        name: cloud-config
 status: {}
