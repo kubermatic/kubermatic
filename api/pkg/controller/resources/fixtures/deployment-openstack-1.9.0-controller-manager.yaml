@@ -17,8 +17,10 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
+        cloudconfigversion: "123456"
         release: v1.9.0
         role: controller-manager
+        tokencsvversion: "123456"
         version: v1
     spec:
       containers:

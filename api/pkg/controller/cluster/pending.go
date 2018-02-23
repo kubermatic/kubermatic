@@ -154,12 +154,13 @@ func (cc *controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controll
 		return nil, fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
-	return &controllerresources.TemplateData{
-		Cluster:      c,
-		Version:      version,
-		DC:           &dc,
-		SecretLister: informerGroup.SecretInformer.Lister(),
-	}, nil
+	return controllerresources.NewTemplateData(
+		c,
+		version,
+		&dc,
+		informerGroup.SecretInformer.Lister(),
+		informerGroup.ConfigMapInformer.Lister(),
+	), nil
 }
 
 func (cc *controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {
@@ -287,7 +288,7 @@ func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
 
 	originalData, exists := currentObj.GetAnnotations()[lastAppliedConfigAnnotation]
 	if !exists {
-		return nil, fmt.Errorf("no annotation found")
+		glog.V(2).Infof("no last applied found in annotation %s for %s/%s", lastAppliedConfigAnnotation, currentObj.GetNamespace(), currentObj.GetName())
 	}
 
 	return jsonmergepatch.CreateThreeWayJSONMergePatch([]byte(originalData), modifiedData, currentData)
