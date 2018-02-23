@@ -81,17 +81,10 @@ spec:
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
-        - name: cloud-config
-          mountPath: /etc/kubernetes/cloud
-          readOnly: true
-
       volumes:
       - name: controller-manager
         secret:
           secretName: controller-manager
-      - name: cloud-config
-        configMap:
-          name: cloud-config
       - name: cloud-config
         configMap:
           name: cloud-config
