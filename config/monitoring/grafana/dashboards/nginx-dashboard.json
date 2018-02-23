@@ -1,46 +1,30 @@
 {
   "meta": {
     "type": "db",
-    "canSave": true,
-    "canEdit": true,
+    "canSave": false,
+    "canEdit": false,
     "canStar": true,
     "slug": "nginx",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-12-14T10:19:07Z",
-    "updated": "2017-12-14T10:19:07Z",
+    "created": "2018-02-23T18:23:11Z",
+    "updated": "2018-02-23T18:37:58Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 1
+    "version": 2
   },
   "dashboard": {
-    "__requires": [
-      {
-        "id": "grafana",
-        "name": "Grafana",
-        "type": "grafana",
-        "version": "4.5.2"
-      },
-      {
-        "id": "graph",
-        "name": "Graph",
-        "type": "panel",
-        "version": ""
-      },
-      {
-        "id": "prometheus",
-        "name": "Prometheus",
-        "type": "datasource",
-        "version": "1.0.0"
-      },
-      {
-        "id": "singlestat",
-        "name": "Singlestat",
-        "type": "panel",
-        "version": ""
-      }
-    ],
     "annotations": {
-      "list": []
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
     },
     "editable": true,
     "gnetId": null,
@@ -85,7 +69,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum(rate(nginx_total_requests[5m])) by (instance)",
+                "expr": "sum(rate(nginx_requests_total[5m])) by (instance)",
                 "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "{{instance}}",
@@ -198,7 +182,7 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "sum(nginx_active_connections)",
+                "expr": "sum(nginx_connnections)",
                 "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "A",
@@ -250,7 +234,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum(nginx_active_connections) by (instance)",
+                "expr": "sum(nginx_connnections) by (instance)",
                 "format": "time_series",
                 "intervalFactor": 5,
                 "legendFormat": "{{ instance }}",
@@ -311,7 +295,7 @@
       "list": []
     },
     "time": {
-      "from": "now-24h",
+      "from": "now-5m",
       "to": "now"
     },
     "timepicker": {
@@ -341,7 +325,7 @@
     },
     "timezone": "",
     "title": "Nginx",
-    "version": 1
+    "version": 2
   },
   "overwrite": true
 }
