@@ -4,13 +4,13 @@
     "canSave": false,
     "canEdit": false,
     "canStar": true,
-    "slug": "nginx",
+    "slug": "kubernetes-kubelet",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2018-02-23T18:23:11Z",
-    "updated": "2018-02-23T18:37:58Z",
+    "created": "2018-02-23T18:24:18Z",
+    "updated": "2018-02-23T18:53:48Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 2
+    "version": 4
   },
   "dashboard": {
     "annotations": {
@@ -32,110 +32,22 @@
     "hideControls": true,
     "id": null,
     "links": [],
+    "refresh": "10s",
     "rows": [
       {
         "collapse": false,
         "height": "250px",
         "panels": [
           {
-            "aliasColors": {},
-            "bars": false,
-            "dashLength": 10,
-            "dashes": false,
-            "datasource": "prometheus",
-            "fill": 1,
-            "id": 1,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "span": 12,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "sum(rate(nginx_requests_total[5m])) by (instance)",
-                "format": "time_series",
-                "intervalFactor": 2,
-                "legendFormat": "{{instance}}",
-                "refId": "A",
-                "step": 120
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "Rate of total nginx requests per 5min",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "none",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": "0",
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          }
-        ],
-        "repeat": null,
-        "repeatIteration": null,
-        "repeatRowId": null,
-        "showTitle": false,
-        "title": "Dashboard Row",
-        "titleSize": "h6"
-      },
-      {
-        "collapse": false,
-        "height": 250,
-        "panels": [
-          {
             "cacheTimeout": null,
             "colorBackground": false,
             "colorValue": false,
             "colors": [
-              "rgba(245, 54, 54, 0.9)",
+              "#299c46",
               "rgba(237, 129, 40, 0.89)",
-              "rgba(50, 172, 45, 0.97)"
+              "#d44a3a"
             ],
             "datasource": "prometheus",
-            "decimals": null,
             "format": "none",
             "gauge": {
               "maxValue": 100,
@@ -144,7 +56,7 @@
               "thresholdLabels": false,
               "thresholdMarkers": true
             },
-            "id": 3,
+            "id": 4,
             "interval": null,
             "links": [],
             "mappingType": 1,
@@ -172,7 +84,7 @@
                 "to": "null"
               }
             ],
-            "span": 3,
+            "span": 2,
             "sparkline": {
               "fillColor": "rgba(31, 118, 189, 0.18)",
               "full": false,
@@ -182,15 +94,177 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "sum(nginx_connnections)",
+                "expr": "sum(kubelet_running_pod_count)",
                 "format": "time_series",
                 "intervalFactor": 2,
-                "refId": "A",
-                "step": 1800
+                "refId": "A"
               }
             ],
             "thresholds": "",
-            "title": "Current Active Connections",
+            "title": "Pods",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+              {
+                "op": "=",
+                "text": "N/A",
+                "value": "null"
+              }
+            ],
+            "valueName": "current"
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "fill": 1,
+            "id": 1,
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "expr": "kubelet_running_pod_count{instance=~\"$instance\"}",
+                "format": "time_series",
+                "instant": false,
+                "intervalFactor": 2,
+                "legendFormat": "{{ instance }}",
+                "refId": "A"
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Kubelet Pod Count",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": true,
+        "title": "Pods",
+        "titleSize": "h4"
+      },
+      {
+        "collapse": false,
+        "height": 250,
+        "panels": [
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "#299c46",
+              "rgba(237, 129, 40, 0.89)",
+              "#d44a3a"
+            ],
+            "datasource": "prometheus",
+            "format": "none",
+            "gauge": {
+              "maxValue": 100,
+              "minValue": 0,
+              "show": false,
+              "thresholdLabels": false,
+              "thresholdMarkers": true
+            },
+            "id": 5,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+              {
+                "name": "value to text",
+                "value": 1
+              },
+              {
+                "name": "range to text",
+                "value": 2
+              }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+              {
+                "from": "null",
+                "text": "N/A",
+                "to": "null"
+              }
+            ],
+            "span": 2,
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": true
+            },
+            "tableColumn": "",
+            "targets": [
+              {
+                "expr": "sum(kubelet_running_container_count)",
+                "format": "time_series",
+                "intervalFactor": 2,
+                "refId": "A"
+              }
+            ],
+            "thresholds": "",
+            "title": "Containers",
             "type": "singlestat",
             "valueFontSize": "80%",
             "valueMaps": [
@@ -229,23 +303,22 @@
             "renderer": "flot",
             "seriesOverrides": [],
             "spaceLength": 10,
-            "span": 9,
+            "span": 10,
             "stack": false,
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum(nginx_connnections) by (instance)",
+                "expr": "kubelet_running_container_count{instance=~\"$instance\"}",
                 "format": "time_series",
-                "intervalFactor": 5,
+                "intervalFactor": 2,
                 "legendFormat": "{{ instance }}",
-                "refId": "A",
-                "step": 300
+                "refId": "A"
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Active Connections",
+            "title": "Kubelet Container Count",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -261,7 +334,6 @@
             },
             "yaxes": [
               {
-                "decimals": null,
                 "format": "short",
                 "label": null,
                 "logBase": 1,
@@ -283,19 +355,133 @@
         "repeat": null,
         "repeatIteration": null,
         "repeatRowId": null,
-        "showTitle": false,
-        "title": "Dashboard Row",
-        "titleSize": "h6"
+        "showTitle": true,
+        "title": "Containers",
+        "titleSize": "h4"
+      },
+      {
+        "collapse": false,
+        "height": 250,
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "prometheus",
+            "fill": 1,
+            "id": 3,
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 12,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "expr": "sum(rate(kubelet_runtime_operations{instance=~\"$instance\"}[5m])) by (instance)",
+                "format": "time_series",
+                "intervalFactor": 2,
+                "legendFormat": "{{ instance }}",
+                "refId": "A"
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Rate of Kubelet Operations in 5min",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": true,
+        "title": "Kubelet",
+        "titleSize": "h4"
       }
     ],
     "schemaVersion": 14,
     "style": "dark",
     "tags": [],
     "templating": {
-      "list": []
+      "list": [
+        {
+          "allValue": null,
+          "current": {
+            "tags": [],
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "datasource": "prometheus",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Instance",
+          "multi": true,
+          "name": "instance",
+          "options": [],
+          "query": "label_values(kubelet_running_pod_count,instance)",
+          "refresh": 1,
+          "regex": "",
+          "sort": 1,
+          "tagValuesQuery": "",
+          "tags": [],
+          "tagsQuery": "",
+          "type": "query",
+          "useTags": false
+        }
+      ]
     },
     "time": {
-      "from": "now-5m",
+      "from": "now-24h",
       "to": "now"
     },
     "timepicker": {
@@ -324,8 +510,8 @@
       ]
     },
     "timezone": "",
-    "title": "Nginx",
-    "version": 2
+    "title": "Kubernetes - Kubelet",
+    "version": 4
   },
   "overwrite": true
 }

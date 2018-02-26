@@ -17,6 +17,7 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
+        cloudconfigversion: "123456"
         release: v1.7.11
         role: apiserver
         tokencsvversion: "123456"
