@@ -121,8 +121,10 @@ func main() {
 		m.Handle(*prometheusPath, promhttp.Handler())
 
 		s := http.Server{
-			Addr:    *prometheusAddr,
-			Handler: m,
+			Addr:         *prometheusAddr,
+			Handler:      m,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
 		}
 
 		g.Add(func() error {
