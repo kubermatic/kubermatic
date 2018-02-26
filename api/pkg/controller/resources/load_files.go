@@ -56,20 +56,47 @@ const (
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	Cluster      *kubermaticv1.Cluster
-	Version      *apiv1.MasterVersion
-	DC           *provider.DatacenterMeta
-	SecretLister corev1lister.SecretLister
+	Cluster         *kubermaticv1.Cluster
+	Version         *apiv1.MasterVersion
+	DC              *provider.DatacenterMeta
+	SecretLister    corev1lister.SecretLister
+	ConfigMapLister corev1lister.ConfigMapLister
+}
+
+// NewTemplateData returns an instance of TemplateData
+func NewTemplateData(
+	cluster *kubermaticv1.Cluster,
+	version *apiv1.MasterVersion,
+	dc *provider.DatacenterMeta,
+	secretLister corev1lister.SecretLister,
+	configMapLister corev1lister.ConfigMapLister) *TemplateData {
+	return &TemplateData{
+		Cluster:         cluster,
+		DC:              dc,
+		Version:         version,
+		ConfigMapLister: configMapLister,
+		SecretLister:    secretLister,
+	}
 }
 
 // TokenCSVRevision returns the resource version of the token-users secret for the cluster
 func (d *TemplateData) TokenCSVRevision() string {
 	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(ApiserverTokenUsersSecretName)
 	if err != nil {
-		glog.V(0).Infof("could not get token-users secret from informer: %v", err)
+		glog.V(0).Infof("could not get token-users secret from lister: %v", err)
 		return ""
 	}
 	return secret.ResourceVersion
+}
+
+// CloudConfigRevision returns the resource version of the cloud-config configmap for the cluster
+func (d *TemplateData) CloudConfigRevision() string {
+	configmap, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(CloudConfigConfigMapName)
+	if err != nil {
+		glog.V(0).Infof("could not get cloud-config configmap from lister: %v", err)
+		return ""
+	}
+	return configmap.ResourceVersion
 }
 
 // ProviderName returns the name of the clusters providerName

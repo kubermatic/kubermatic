@@ -14,6 +14,8 @@ spec:
         role: controller-manager
         release: {{index .Version.Values "k8s-version"}}
         version: v1
+        tokencsvversion: "{{ .TokenCSVRevision }}"
+        cloudconfigversion: "{{ .CloudConfigRevision }}"
       annotations:
         prometheus.io/port: '10252'
         prometheus.io/scrape: 'true'
@@ -76,28 +78,13 @@ spec:
         - name: controller-manager
           mountPath: /var/run/kubernetes/auth
           readOnly: true
-        {{ if eq .ProviderName "aws" }}
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
-        {{ end }}
-        {{ if eq .ProviderName "openstack" }}
-        - name: cloud-config
-          mountPath: /etc/kubernetes/cloud
-          readOnly: true
-        {{ end }}
-
       volumes:
       - name: controller-manager
         secret:
           secretName: controller-manager
-      {{ if eq .ProviderName "aws" }}
       - name: cloud-config
         configMap:
           name: cloud-config
-      {{ end }}
-      {{ if eq .ProviderName "openstack" }}
-      - name: cloud-config
-        configMap:
-          name: cloud-config
-      {{ end }}

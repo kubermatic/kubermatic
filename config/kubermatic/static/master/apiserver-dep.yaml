@@ -15,6 +15,7 @@ spec:
         release: {{index .Version.Values "k8s-version"}}
         version: v1
         tokencsvversion: "{{ .TokenCSVRevision }}"
+        cloudconfigversion: "{{ .CloudConfigRevision }}"
       annotations:
         prometheus.io/port: '8080'
         prometheus.io/scrape: 'true'
