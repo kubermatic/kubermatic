@@ -41,7 +41,7 @@ const (
 // GroupRunStopper represents a control loop started with Run,
 // which can be terminated by closing the stop channel
 type GroupRunStopper interface {
-	Run(workerCount int, stop chan struct{})
+	Run(workerCount int, stop <-chan struct{})
 }
 
 // SeedClientProvider offers functions to get resources of a seed-cluster
@@ -304,7 +304,7 @@ func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	}
 }
 
-func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
+func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))
