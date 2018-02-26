@@ -149,17 +149,12 @@ func (cc *controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controll
 		return nil, fmt.Errorf("failed to get datacenter %s", c.Spec.Cloud.DatacenterName)
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	return controllerresources.NewTemplateData(
 		c,
 		version,
 		&dc,
-		informerGroup.SecretInformer.Lister(),
-		informerGroup.ConfigMapInformer.Lister(),
+		cc.SecretLister,
+		cc.ConfigMapLister,
 	), nil
 }
 
@@ -186,12 +181,7 @@ func (cc *controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 
 // ensureNamespaceExists will create the cluster namespace
 func (cc *controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	if _, err = informerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
+	if _, err := cc.NamespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
 		return err
 	}
 
@@ -200,11 +190,7 @@ func (cc *controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 			Name: c.Status.NamespaceName,
 		},
 	}
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-	if _, err = client.CoreV1().Namespaces().Create(ns); err != nil {
+	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
 		return fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
 
@@ -212,16 +198,11 @@ func (cc *controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 		c.Finalizers = append(c.Finalizers, namespaceDeletionFinalizer)
 	}
 
-	return err
+	return nil
 }
 
 func (cc *controller) getFreeNodePort(dc string) (int, error) {
-	informerGroup, err := cc.clientProvider.GetInformerGroup(dc)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get informer group for dc %q: %v", dc, err)
-	}
-
-	services, err := informerGroup.ServiceInformer.Lister().List(labels.Everything())
+	services, err := cc.ServiceLister.List(labels.Everything())
 	if err != nil {
 		return 0, err
 	}
@@ -319,19 +300,9 @@ func (cc *controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		controllerresources.ApiserverTokenUsersSecretName: generateTokensSecret,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range resources {
@@ -342,10 +313,10 @@ func (cc *controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		generatedSecret.Annotations[lastAppliedConfigAnnotation] = lastApplied
 		generatedSecret.Name = name
 
-		secret, err := informerGroup.SecretInformer.Lister().Secrets(c.Status.NamespaceName).Get(name)
+		secret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.CoreV1().Secrets(c.Status.NamespaceName).Create(generatedSecret); err != nil {
+				if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(generatedSecret); err != nil {
 					return fmt.Errorf("failed to create secret for %s: %v", name, err)
 				}
 				continue
@@ -358,7 +329,7 @@ func (cc *controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err := client.CoreV1().Secrets(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
+			if _, err := cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch secret for %s: %v", name, err)
 			}
 		}
@@ -371,16 +342,6 @@ func (cc *controller) ensureServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
 		controllerresources.ApiserverInternalServiceName: controllerresources.LoadServiceFile,
 		controllerresources.ApiserverExternalServiceName: controllerresources.LoadServiceFile,
-	}
-
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -396,10 +357,10 @@ func (cc *controller) ensureServices(c *kubermaticv1.Cluster) error {
 		generatedService.Annotations[lastAppliedConfigAnnotation] = lastApplied
 		generatedService.Name = name
 
-		service, err := informerGroup.ServiceInformer.Lister().Services(c.Status.NamespaceName).Get(name)
+		service, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.CoreV1().Services(c.Status.NamespaceName).Create(generatedService); err != nil {
+				if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Create(generatedService); err != nil {
 					return fmt.Errorf("failed to create service for %s: %v", name, err)
 				}
 				continue
@@ -412,7 +373,7 @@ func (cc *controller) ensureServices(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = client.CoreV1().Services(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch service for %s: %v", name, err)
 			}
 		}
@@ -426,19 +387,9 @@ func (cc *controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 		controllerresources.EtcdOperatorServiceAccountName: controllerresources.LoadServiceAccountFile,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range serviceAccounts {
@@ -448,10 +399,10 @@ func (cc *controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 		}
 		generatedServiceAccount.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-		serviceAccount, err := informerGroup.ServiceAccountInformer.Lister().ServiceAccounts(c.Status.NamespaceName).Get(name)
+		serviceAccount, err := cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.CoreV1().ServiceAccounts(c.Status.NamespaceName).Create(generatedServiceAccount); err != nil {
+				if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Create(generatedServiceAccount); err != nil {
 					return fmt.Errorf("failed to create serviceAccount for %s: %v", name, err)
 				}
 				continue
@@ -464,7 +415,7 @@ func (cc *controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 			if err != nil {
 				return err
 			}
-			if _, err = client.CoreV1().ServiceAccounts(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch serviceAccount for %s: %v", name, err)
 			}
 		}
@@ -478,19 +429,9 @@ func (cc *controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		"etcd-operator": controllerresources.LoadClusterRoleBindingFile,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range roleBindings {
@@ -500,10 +441,10 @@ func (cc *controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		}
 		generatedClusterRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-		clusterRoleBinding, err := informerGroup.ClusterRoleBindingInformer.Lister().Get(generatedClusterRoleBinding.Name)
+		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.RbacV1beta1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
+				if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
 					return fmt.Errorf("failed to create clusterRoleBinding for %s: %v", name, err)
 				}
 				continue
@@ -516,7 +457,7 @@ func (cc *controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = client.RbacV1beta1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch clusterRoleBinding for %s: %v", name, err)
 			}
 		}
@@ -541,19 +482,9 @@ func (cc *controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		controllerresources.MachineControllerDeploymentName: masterVersion.MachineControllerDeploymentYaml,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, yamlFile := range deps {
@@ -564,10 +495,10 @@ func (cc *controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		generatedDeployment.Annotations[lastAppliedConfigAnnotation] = lastApplied
 		generatedDeployment.Name = name
 
-		deployment, err := informerGroup.DeploymentInformer.Lister().Deployments(c.Status.NamespaceName).Get(name)
+		deployment, err := cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
+				if _, err = cc.kubeClient.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
 					return fmt.Errorf("failed to create deployment for %s: %v", name, err)
 				}
 				continue
@@ -580,7 +511,7 @@ func (cc *controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = client.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch deployment for %s: %v", name, err)
 			}
 		}
@@ -594,19 +525,9 @@ func (cc *controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		controllerresources.CloudConfigConfigMapName: controllerresources.LoadConfigMapFile,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range cms {
@@ -617,10 +538,10 @@ func (cc *controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		generatedConfigMap.Annotations[lastAppliedConfigAnnotation] = lastApplied
 		generatedConfigMap.Name = name
 
-		configMap, err := informerGroup.ConfigMapInformer.Lister().ConfigMaps(c.Status.NamespaceName).Get(name)
+		configMap, err := cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(generatedConfigMap); err != nil {
+				if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(generatedConfigMap); err != nil {
 					return fmt.Errorf("failed to create configMap for %s: %v", name, err)
 				}
 				continue
@@ -633,7 +554,7 @@ func (cc *controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = client.CoreV1().ConfigMaps(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch configMap for %s: %v", name, err)
 			}
 		}
@@ -648,16 +569,6 @@ func (cc *controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	client, err := cc.clientProvider.GetCRDClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
@@ -669,10 +580,10 @@ func (cc *controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 	}
 	generatedEtcd.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-	etcd, err := informerGroup.EtcdClusterInformer.Lister().EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
+	etcd, err := cc.EtcdClusterLister.EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			_, err = client.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Create(generatedEtcd)
+			_, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Create(generatedEtcd)
 			if err != nil {
 				return fmt.Errorf("failed to create etcd-cluster resource: %v", err)
 			}
@@ -685,7 +596,7 @@ func (cc *controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return err
 		}
-		if _, err = client.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
+		if _, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
 			return fmt.Errorf("failed to create patch etcd-cluster resource: %v", err)
 		}
 	}

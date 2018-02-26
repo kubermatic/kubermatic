@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
+	client "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"

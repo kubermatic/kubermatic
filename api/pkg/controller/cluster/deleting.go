@@ -103,12 +103,7 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	ns, err := informerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
+	ns, err := cc.NamespaceLister.Get(c.Status.NamespaceName)
 	// Only delete finalizer if namespace is really gone
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -119,11 +114,7 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 	}
 
 	if ns.DeletionTimestamp == nil {
-		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-		if err != nil {
-			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-		}
-		return client.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
+		return cc.kubeClient.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
 	}
 
 	return nil
@@ -135,7 +126,7 @@ func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	if err := cc.masterCrdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{}); err != nil {
+	if err := cc.kubermaticClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
