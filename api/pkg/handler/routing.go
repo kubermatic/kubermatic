@@ -99,40 +99,36 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.clustersHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/cluster/{cluster}").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.clusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/cluster/{cluster}/kubeconfig").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.kubeconfigHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/cluster/{cluster}").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}").
 		Handler(r.deleteClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/cluster/{cluster}/node").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.nodesHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/cluster/{cluster}/node").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.createNodesHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/cluster/{cluster}/node/{node}").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.deleteNodeHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/cluster/{cluster}/upgrades").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgrades())
 
 	mux.Methods(http.MethodPut).
-		Path("/api/v1/cluster/{cluster}/upgrade").
+		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
 		Handler(r.performClusterUpgrade())
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(r.nodesHandler())
 
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/ssh-keys").
@@ -156,48 +152,44 @@ func (r Routing) Register(mux *mux.Router) {
 
 	// New project endpoints
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/projects/{project_id}/cluster").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster").
 		Handler(r.newProjectClusterHandlerV2())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/cluster").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster").
 		Handler(r.getProjectClustersHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}").
 		Handler(r.getProjectClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.getProjectClusterKubeconfigHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}").
 		Handler(r.deleteProjectClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.getProjectClusterNodesHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.createProjectClusterNodesHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node/{node}").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.deleteProjectClusterNodeHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrades").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getProjectClusterPossibleClusterUpgrades())
 
 	mux.Methods(http.MethodPut).
-		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrade").
+		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade").
 		Handler(r.performProjectClusterUpgrade())
-
-	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/k8s/nodes").
-		Handler(r.getProjectClusterK8sNodesHandler())
 
 	mux.Methods(http.MethodGet).
 		Path("/api/v1/projects/{project_id}/ssh-keys").
@@ -872,19 +864,6 @@ func (r Routing) performProjectClusterUpgrade() http.Handler {
 			r.datacenterMiddleware(),
 		)(performClusterUpgrade(r.versions, r.updates)),
 		decodeUpgradeReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
-		)(nodesEndpoint()),
-		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

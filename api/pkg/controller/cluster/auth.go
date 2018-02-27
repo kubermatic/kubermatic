@@ -19,12 +19,12 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-func (cc *controller) ensureRootCA(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) ensureRootCA(c *kubermaticv1.Cluster) error {
 	if c.Status.RootCA.Key != nil {
 		return nil
 	}
 
-	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, c.Spec.SeedDatacenterName, cc.externalURL))
+	k, err := triple.NewCA(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL))
 	if err != nil {
 		return fmt.Errorf("failed to create root-ca: %v", err)
 	}
@@ -36,7 +36,7 @@ func (cc *controller) ensureRootCA(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *controller) ensureTokens(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) ensureTokens(c *kubermaticv1.Cluster) error {
 	if c.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
@@ -52,7 +52,7 @@ func (cc *controller) ensureTokens(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *controller) ensureCertificates(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) ensureCertificates(c *kubermaticv1.Cluster) error {
 	if c.Address.ExternalName == "" {
 		return errors.New("external name is undefined")
 	}
@@ -97,7 +97,7 @@ func (cc *controller) ensureCertificates(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *controller) ensureCreateServiceAccountKey(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) ensureCreateServiceAccountKey(c *kubermaticv1.Cluster) error {
 	if c.Status.ServiceAccountKey != nil {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (cc *controller) ensureCreateServiceAccountKey(c *kubermaticv1.Cluster) err
 	return nil
 }
 
-func (cc *controller) ensureApiserverSSHKeypair(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) ensureApiserverSSHKeypair(c *kubermaticv1.Cluster) error {
 	if c.Status.ApiserverSSHKey.PublicKey != nil {
 		return nil
 	}

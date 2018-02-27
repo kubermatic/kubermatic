@@ -59,18 +59,18 @@ func TestSSHKeyCert(t *testing.T) {
 }
 
 func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
 			ApiserverSSHKey: kubermaticv1.RSAKeys{},
 		},
 	}
 
-	if err := f.controller.ensureRootCA(c); err != nil {
+	if err := controller.ensureRootCA(c); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.controller.ensureApiserverSSHKeypair(c); err != nil {
+	if err := controller.ensureApiserverSSHKeypair(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -84,7 +84,7 @@ func TestPendingCreateApiserverSSHKeysSuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
 			ApiserverSSHKey: kubermaticv1.RSAKeys{
@@ -94,11 +94,11 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 		},
 	}
 
-	if err := f.controller.ensureRootCA(c); err != nil {
+	if err := controller.ensureRootCA(c); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.controller.ensureApiserverSSHKeypair(c); err != nil {
+	if err := controller.ensureApiserverSSHKeypair(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -109,7 +109,7 @@ func TestPendingCreateApiserverSSHKeysAlreadyExist(t *testing.T) {
 }
 
 func TestPendingCreateCertificates(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	tests := []struct {
 		name         string
 		cluster      *kubermaticv1.Cluster
@@ -229,11 +229,11 @@ func TestPendingCreateCertificates(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var err error
 			if test.createRootCA {
-				if err = f.controller.ensureRootCA(test.cluster); err != nil {
+				if err = controller.ensureRootCA(test.cluster); err != nil {
 					t.Errorf("could not create root ca")
 				}
 			}
-			err = f.controller.ensureCertificates(test.cluster)
+			err = controller.ensureCertificates(test.cluster)
 			if !reflect.DeepEqual(test.err, err) {
 				t.Errorf("error was %q instead of %q", err, test.err)
 			}
@@ -257,14 +257,14 @@ func TestPendingCreateCertificates(t *testing.T) {
 }
 
 func TestPendingCreateRootCASuccessfully(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
 			RootCA: kubermaticv1.KeyCert{},
 		},
 	}
 
-	if err := f.controller.ensureRootCA(c); err != nil {
+	if err := controller.ensureRootCA(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -278,7 +278,7 @@ func TestPendingCreateRootCASuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Status: kubermaticv1.ClusterStatus{
 			RootCA: kubermaticv1.KeyCert{
@@ -288,7 +288,7 @@ func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
 		},
 	}
 
-	if err := f.controller.ensureRootCA(c); err != nil {
+	if err := controller.ensureRootCA(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -298,12 +298,12 @@ func TestPendingCreateRootCAAlreadyExist(t *testing.T) {
 }
 
 func TestPendingCreateTokensSuccessfully(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Address: &kubermaticv1.ClusterAddress{},
 	}
 
-	if err := f.controller.ensureTokens(c); err != nil {
+	if err := controller.ensureTokens(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -317,7 +317,7 @@ func TestPendingCreateTokensSuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateTokensAlreadyExists(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		Address: &kubermaticv1.ClusterAddress{
 			KubeletToken: "KubeletToken",
@@ -325,7 +325,7 @@ func TestPendingCreateTokensAlreadyExists(t *testing.T) {
 		},
 	}
 
-	if err := f.controller.ensureTokens(c); err != nil {
+	if err := controller.ensureTokens(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -335,7 +335,7 @@ func TestPendingCreateTokensAlreadyExists(t *testing.T) {
 }
 
 func TestPendingCreateServiceAccountKey(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	tests := []struct {
 		name    string
 		cluster *kubermaticv1.Cluster
@@ -371,7 +371,7 @@ func TestPendingCreateServiceAccountKey(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := f.controller.ensureCreateServiceAccountKey(test.cluster)
+			err := controller.ensureCreateServiceAccountKey(test.cluster)
 			if !reflect.DeepEqual(test.err, err) {
 				t.Errorf("error was %q instead of %q", err, test.err)
 			}

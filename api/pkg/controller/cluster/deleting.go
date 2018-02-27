@@ -14,7 +14,7 @@ import (
 // cleanupCluster is the function which handles clusters in the deleting phase.
 // It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
 // If this function does not return a pointer to a cluster or a error, the cluster is deleted.
-func (cc *controller) cleanupCluster(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) cleanupCluster(c *kubermaticv1.Cluster) error {
 	stillHasNodes, err := cc.deletingNodeCleanup(c)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (cc *controller) cleanupCluster(c *kubermaticv1.Cluster) error {
 	return cc.deletingClusterResource(c)
 }
 
-func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error) {
+func (cc *ClusterController) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error) {
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
 		return false, nil
 	}
@@ -80,7 +80,7 @@ func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error)
 	return true, nil
 }
 
-func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, cloudProviderCleanupFinalizer) {
 		return nil
 	}
@@ -98,7 +98,7 @@ func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) erro
 	return nil
 }
 
-func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
 		return nil
 	}
@@ -121,7 +121,7 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 }
 
 // deletingClusterResource deletes the cluster resource. Needed since Finalizers are broken in 1.7.
-func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
+func (cc *ClusterController) deletingClusterResource(c *kubermaticv1.Cluster) error {
 	if len(c.Finalizers) != 0 {
 		return nil
 	}

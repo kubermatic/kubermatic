@@ -47,6 +47,7 @@ var (
 
 	masterResources string
 	externalURL     string
+	dc              string
 	dcFile          string
 	workerName      string
 	versionsFile    string
@@ -65,6 +66,7 @@ func main() {
 	flag.StringVar(&prometheusPath, "prometheus-path", "/metrics", "The path on the host, on which the handler is available")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
+	flag.StringVar(&dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
@@ -78,6 +80,10 @@ func main() {
 
 	if externalURL == "" {
 		glog.Fatal("external-url is undefined\n\n")
+	}
+
+	if dc == "" {
+		glog.Fatal("datacenter-name is undefined")
 	}
 
 	dcs, err := provider.LoadDatacentersMeta(dcFile)
@@ -239,6 +245,7 @@ func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMet
 		masterResources,
 		externalURL,
 		workerName,
+		dc,
 		dcs,
 		cps,
 		clusterMetrics,
