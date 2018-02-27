@@ -11,41 +11,54 @@ import (
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+)
+
+const (
+	rawToken                  = iota
+	apiUserContextKey         = iota
+	userCRContextKey          = iota
+	datacenterContextKey      = iota
+	clusterProviderContextKey = iota
 )
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx            context.Context
-	datacenters    map[string]provider.DatacenterMeta
-	cloudProviders map[string]provider.CloudProvider
-	provider       provider.DataProvider
-	logger         log.Logger
-	authenticator  auth.Authenticator
-	versions       map[string]*apiv1.MasterVersion
-	updates        []apiv1.MasterUpdate
+	ctx              context.Context
+	datacenters      map[string]provider.DatacenterMeta
+	cloudProviders   map[string]provider.CloudProvider
+	sshKeyProvider   provider.SSHKeyProvider
+	userProvider     provider.UserProvider
+	logger           log.Logger
+	authenticator    Authenticator
+	versions         map[string]*apiv1.MasterVersion
+	updates          []apiv1.MasterUpdate
+	clusterProviders map[string]provider.ClusterProvider
 }
 
 // NewRouting creates a new Routing.
 func NewRouting(
 	ctx context.Context,
-	dcs map[string]provider.DatacenterMeta,
-	kp provider.DataProvider,
-	cps map[string]provider.CloudProvider,
-	authenticator auth.Authenticator,
+	datacenters map[string]provider.DatacenterMeta,
+	clusterProviders map[string]provider.ClusterProvider,
+	cloudProviders map[string]provider.CloudProvider,
+	sshKeyProvider provider.SSHKeyProvider,
+	userProvider provider.UserProvider,
+	authenticator Authenticator,
 	versions map[string]*apiv1.MasterVersion,
 	updates []apiv1.MasterUpdate,
 ) Routing {
 	return Routing{
-		ctx:            ctx,
-		datacenters:    dcs,
-		provider:       kp,
-		cloudProviders: cps,
-		logger:         log.NewLogfmtLogger(os.Stderr),
-		authenticator:  authenticator,
-		versions:       versions,
-		updates:        updates,
+		ctx:              ctx,
+		datacenters:      datacenters,
+		clusterProviders: clusterProviders,
+		sshKeyProvider:   sshKeyProvider,
+		userProvider:     userProvider,
+		cloudProviders:   cloudProviders,
+		logger:           log.NewLogfmtLogger(os.Stderr),
+		authenticator:    authenticator,
+		versions:         versions,
+		updates:          updates,
 	}
 }
 
@@ -78,11 +91,11 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.datacenterHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/cluster").
+		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.newClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/cluster").
+		Path("/api/v1/dc/{dc}/cluster").
 		Handler(r.clustersHandler())
 
 	mux.Methods(http.MethodGet).
@@ -252,8 +265,9 @@ func (r Routing) Register(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/api/v2/cluster/{cluster}/nodes/{node}").
 		Handler(r.deleteNodeHandlerV2())
-
 }
+
+type endpointChainer func(e endpoint.Endpoint) endpoint.Endpoint
 
 func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Chain(r.authenticator.Verifier())(e)
@@ -261,6 +275,10 @@ func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
 
 func (r Routing) userStorer(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Chain(r.userSaverMiddleware())(e)
+}
+
+func (r Routing) datacenterLoader(e endpoint.Endpoint) endpoint.Endpoint {
+	return endpoint.Chain(r.datacenterMiddleware())(e)
 }
 
 func newNotImplementedEndpoint() endpoint.Endpoint {
@@ -291,7 +309,7 @@ func (r Routing) NotImplemented() http.Handler {
 //       200: SSHKey
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(listSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -313,7 +331,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //       200: SSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(createSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -332,7 +350,7 @@ func (r Routing) createSSHKey() http.Handler {
 //       200: empty
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -394,7 +412,7 @@ func (r Routing) datacenterHandler() http.Handler {
 }
 
 // Creates a cluster
-// swagger:route POST /api/v1/cluster cluster createCluster
+// swagger:route POST /api/v1/dc/{dc}/cluster cluster createCluster
 //
 //     Consumes:
 //     - application/json
@@ -407,15 +425,15 @@ func (r Routing) datacenterHandler() http.Handler {
 //       201: ClusterV1
 func (r Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(newClusterEndpoint(r.provider, r.provider))),
-		decodeNewClusterReqV2,
+		r.auth(r.userStorer(r.datacenterLoader(newClusterEndpoint(r.sshKeyProvider)))),
+		decodeNewClusterReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
 // Get the cluster
-// swagger:route GET /api/v1/cluster/{cluster} cluster getCluster
+// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster} cluster getCluster
 //
 //     Produces:
 //     - application/json
@@ -425,7 +443,7 @@ func (r Routing) newClusterHandler() http.Handler {
 //       200: ClusterV1
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(clusterEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(clusterEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -433,7 +451,7 @@ func (r Routing) clusterHandler() http.Handler {
 }
 
 // kubeconfigHandler returns the kubeconfig for the cluster.
-// swagger:route GET /api/v1/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
+// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
 //
 //     Produces:
 //     - application/yaml
@@ -443,7 +461,7 @@ func (r Routing) clusterHandler() http.Handler {
 //       200: Kubeconfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(kubeconfigEndpoint()))),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -451,7 +469,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 }
 
 // List clusters
-// swagger:route GET /api/v1/cluster cluster listClusters
+// swagger:route GET /api/v1/dc/{dc}/cluster cluster listClusters
 //
 //     Produces:
 //     - application/json
@@ -461,7 +479,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //       200: ClusterListV1
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(clustersEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(clustersEndpoint()))),
 		decodeClustersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -469,7 +487,7 @@ func (r Routing) clustersHandler() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/cluster/{cluster} cluster deleteCluster
+// swagger:route DELETE /api/v1/dc/{dc}/cluster/{cluster} cluster deleteCluster
 //
 //     Produces:
 //     - application/json
@@ -479,7 +497,7 @@ func (r Routing) clustersHandler() http.Handler {
 //       200: empty
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
+		r.auth(r.userStorer(r.datacenterLoader(deleteClusterEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -487,7 +505,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 }
 
 // Get nodes
-// swagger:route GET /api/v1/cluster/{cluster}/node cluster getClusterNodes
+// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/node cluster getClusterNodes
 //
 //     Produces:
 //     - application/json
@@ -497,7 +515,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //       200: NodeListV1
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(nodesEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -505,7 +523,7 @@ func (r Routing) nodesHandler() http.Handler {
 }
 
 // Create nodes
-// swagger:route POST /api/v1/cluster/{cluster}/node cluster createClusterNodes
+// swagger:route POST /api/v1/dc/{dc}/cluster/{cluster}/node cluster createClusterNodes
 //
 //     Consumes:
 //     - application/json
@@ -518,7 +536,7 @@ func (r Routing) nodesHandler() http.Handler {
 //       201: empty
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
+		r.auth(r.userStorer(r.datacenterLoader(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)))),
 		decodeCreateNodesReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -526,7 +544,7 @@ func (r Routing) createNodesHandler() http.Handler {
 }
 
 // Delete's the node
-// swagger:route DELETE /api/v1/cluster/{cluster}/node/{node} cluster deleteClusterNode
+// swagger:route DELETE /api/v1/dc/{dc}/cluster/{cluster}/node/{node} cluster deleteClusterNode
 //
 //     Produces:
 //     - application/json
@@ -536,7 +554,7 @@ func (r Routing) createNodesHandler() http.Handler {
 //       200: empty
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpoint()))),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -545,7 +563,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
+		r.auth(r.userStorer(r.datacenterLoader(getClusterUpgrades(r.versions, r.updates)))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -554,7 +572,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 
 func (r Routing) performClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
+		r.auth(r.userStorer(r.datacenterLoader(performClusterUpgrade(r.versions, r.updates)))),
 		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -654,8 +672,8 @@ func (r Routing) updateProjectMember() http.Handler {
 
 func (r Routing) newProjectClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(newClusterEndpoint(r.provider, r.provider))),
-		decodeNewClusterReqV2,
+		r.auth(r.userStorer(r.datacenterLoader(newClusterEndpoint(r.sshKeyProvider)))),
+		decodeNewClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -663,7 +681,7 @@ func (r Routing) newProjectClusterHandlerV2() http.Handler {
 
 func (r Routing) getProjectClustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(clustersEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(clustersEndpoint()))),
 		decodeClustersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -672,7 +690,7 @@ func (r Routing) getProjectClustersHandler() http.Handler {
 
 func (r Routing) getProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(clusterEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(clusterEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -681,7 +699,7 @@ func (r Routing) getProjectClusterHandler() http.Handler {
 
 func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(kubeconfigEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(kubeconfigEndpoint()))),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -690,7 +708,7 @@ func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 
 func (r Routing) deleteProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteClusterEndpoint(r.provider, r.cloudProviders))),
+		r.auth(r.userStorer(r.datacenterLoader(deleteClusterEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -699,7 +717,7 @@ func (r Routing) deleteProjectClusterHandler() http.Handler {
 
 func (r Routing) getProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(nodesEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -708,7 +726,7 @@ func (r Routing) getProjectClusterNodesHandler() http.Handler {
 
 func (r Routing) createProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createNodesEndpoint(r.provider, r.cloudProviders, r.provider, r.versions))),
+		r.auth(r.userStorer(r.datacenterLoader(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)))),
 		decodeCreateNodesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -717,7 +735,7 @@ func (r Routing) createProjectClusterNodesHandler() http.Handler {
 
 func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteNodeEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpoint()))),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -726,7 +744,7 @@ func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 
 func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getClusterUpgrades(r.provider, r.versions, r.updates))),
+		r.auth(r.userStorer(r.datacenterLoader(getClusterUpgrades(r.versions, r.updates)))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -735,7 +753,7 @@ func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 
 func (r Routing) performProjectClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(performClusterUpgrade(r.provider, r.versions, r.updates))),
+		r.auth(r.userStorer(r.datacenterLoader(performClusterUpgrade(r.versions, r.updates)))),
 		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -744,7 +762,7 @@ func (r Routing) performProjectClusterUpgrade() http.Handler {
 
 func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(nodesEndpoint(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -753,7 +771,7 @@ func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
 
 func (r Routing) listProjectSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(listSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(listSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -762,7 +780,7 @@ func (r Routing) listProjectSSHKeys() http.Handler {
 
 func (r Routing) createProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(createSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -771,7 +789,7 @@ func (r Routing) createProjectSSHKey() http.Handler {
 
 func (r Routing) deleteProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.provider))),
+		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.sshKeyProvider))),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -792,7 +810,7 @@ func (r Routing) deleteProjectSSHKey() http.Handler {
 //       201: NodeV2
 func (r Routing) createNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createNodeEndpointV2(r.datacenters, r.provider, r.provider, r.versions))),
+		r.auth(r.userStorer(r.datacenterLoader(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)))),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -810,7 +828,7 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 //       200: NodeListV2
 func (r Routing) getNodesHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getNodesEndpointV2(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(getNodesEndpointV2()))),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -828,7 +846,7 @@ func (r Routing) getNodesHandlerV2() http.Handler {
 //       200: NodeV2
 func (r Routing) getNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getNodeEndpointV2(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(getNodeEndpointV2()))),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -846,7 +864,7 @@ func (r Routing) getNodeHandlerV2() http.Handler {
 //       200: empty
 func (r Routing) deleteNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteNodeEndpointV2(r.provider))),
+		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpointV2()))),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

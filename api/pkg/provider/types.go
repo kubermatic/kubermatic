@@ -47,41 +47,34 @@ type NodeClassProvider interface {
 	NodeClassName(*apiv1.NodeSpec) string
 }
 
-// DataProvider declares the set of methods for storing kubermatic data
-type DataProvider interface {
-	ClusterProvider
-	SSHKeyProvider
-	UserProvider
-}
-
 // ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
-	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
-	NewClusterWithCloud(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	// NewCluster creates a cluster for the provided user using the given ClusterSpec
+	NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user apiv1.User, cluster string) (*kubermaticv1.Cluster, error)
+	Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
 	Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
-	DeleteCluster(user apiv1.User, cluster string) error
+	DeleteCluster(user apiv1.User, name string) error
 
 	// InitiateClusterUpgrade upgrades a Cluster to a specific version
-	InitiateClusterUpgrade(user apiv1.User, cluster, version string) (*kubermaticv1.Cluster, error)
+	InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
 type SSHKeyProvider interface {
+	// SSHKey returns a ssh key by name
+	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
+	// SSHKeys returns the user ssh keys
+	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
 	AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster
 	ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
-	// SSHKeys returns the user ssh keys
-	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
-	// SSHKey returns a ssh key by name
-	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
 	// CreateSSHKey creates a ssh key
 	CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error)
 	// DeleteSSHKey deletes a ssh key

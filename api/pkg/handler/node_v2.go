@@ -15,7 +15,6 @@ import (
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
@@ -202,11 +201,13 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, kp provider.ClusterProvider, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
+func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
 		req := request.(CreateNodeReqV2)
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -233,7 +234,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, kp provider.Cl
 
 		node := req.Body
 		if node.Spec.Cloud.Openstack == nil && node.Spec.Cloud.Digitalocean == nil && node.Spec.Cloud.AWS == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud provider")
+			return nil, errors.NewBadRequest("cannot create node without cloud sshKeyProvider")
 		}
 		//Only allow container linux + docker
 		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
@@ -306,11 +307,13 @@ func getMachineForNode(node *corev1.Node, machines []v1alpha1.Machine) *v1alpha1
 	return nil
 }
 
-func getNodesEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func getNodesEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
 		req := request.(ClusterReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -410,11 +413,13 @@ func tryToFindMachineAndNode(name string, machineClient machineclientset.Interfa
 	return machine, node, nil
 }
 
-func getNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func getNodeEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NodeReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -444,11 +449,13 @@ func getNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func deleteNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func deleteNodeEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NodeReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}

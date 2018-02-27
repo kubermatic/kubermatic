@@ -28,250 +28,6 @@
         }
       }
     },
-    "/api/v1/cluster": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "listClusters",
-        "responses": {
-          "200": {
-            "description": "ClusterListV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterListV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createCluster",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/NewClusterReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/kubeconfig": {
-      "get": {
-        "produces": [
-          "application/yaml"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterKubeconfig",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/node": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterNodes",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "NodeListV1",
-            "schema": {
-              "$ref": "#/definitions/NodeListV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createClusterNodes",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/CreateNodesReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/node/{node}": {
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteClusterNode",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Cluster",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -318,6 +74,308 @@
             "schema": {
               "$ref": "#/definitions/Datacenter"
             }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}/cluster": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "listClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterListV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterListV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NewClusterReqBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}/cluster/{cluster}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/yaml"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}/cluster/{cluster}/node": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeListV1",
+            "schema": {
+              "$ref": "#/definitions/NodeListV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createClusterNodes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateNodesReqBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}/cluster/{cluster}/node/{node}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteClusterNode",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -436,6 +494,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "Cluster",
             "name": "cluster",
             "in": "path",
@@ -466,6 +531,13 @@
         ],
         "operationId": "createClusterNodeV2",
         "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
           {
             "type": "string",
             "x-go-name": "Cluster",
@@ -506,6 +578,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "Cluster",
             "name": "cluster",
             "in": "path",
@@ -540,6 +619,13 @@
         ],
         "operationId": "deleteClusterNodeV2",
         "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
           {
             "type": "string",
             "x-go-name": "Cluster",
@@ -966,10 +1052,6 @@
           "type": "string",
           "x-go-name": "MasterVersion"
         },
-        "seedDatacenterName": {
-          "type": "string",
-          "x-go-name": "SeedDatacenterName"
-        },
         "workerName": {
           "type": "string",
           "x-go-name": "WorkerName"
@@ -1019,10 +1101,6 @@
         },
         "rootCA": {
           "$ref": "#/definitions/KeyCert"
-        },
-        "seed": {
-          "type": "string",
-          "x-go-name": "Seed"
         },
         "serviceAccountKey": {
           "$ref": "#/definitions/Bytes"

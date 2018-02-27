@@ -9,15 +9,14 @@ import (
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
 
-		adcs := []apiv1.Datacenter{}
+		var adcs []apiv1.Datacenter
 		var keys []string
 		for k := range dcs {
 			keys = append(keys, k)
@@ -27,7 +26,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 		for _, dcName := range keys {
 			dc := dcs[dcName]
 
-			if dc.Private && !auth.IsAdmin(&user) {
+			if dc.Private && !IsAdmin(user) {
 				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.ID)
 				continue
 			}
@@ -55,7 +54,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 
 func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		req := request.(DCReq)
 
 		dc, found := dcs[req.DC]
@@ -63,7 +62,7 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
-		if dc.Private && !auth.IsAdmin(&user) {
+		if dc.Private && !IsAdmin(user) {
 			return nil, errors.NewNotFound("datacenter", req.DC)
 		}
 
@@ -114,4 +113,24 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	}
 
 	return spec, nil
+}
+
+func (r Routing) datacenterMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			getter := request.(DCGetter)
+			dc, exists := r.datacenters[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("datacenter", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, datacenterContextKey, dc)
+
+			clusterProvider, exists := r.clusterProviders[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
+			return next(ctx, request)
+		}
+	}
 }

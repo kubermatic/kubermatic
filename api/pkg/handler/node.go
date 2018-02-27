@@ -9,7 +9,6 @@ import (
 	nodesetv1alpha1 "github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,18 +29,17 @@ const (
 	LabelZoneFailureDomain = "failure-domain.beta.kubernetes.io/zone"
 	LabelZoneRegion        = "failure-domain.beta.kubernetes.io/region"
 
-	LabelInstanceType = "beta.kubernetes.io/instance-type"
-
 	LabelOS   = "beta.kubernetes.io/os"
 	LabelArch = "beta.kubernetes.io/arch"
 )
 
-func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
+func nodesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(ClusterReq)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -59,12 +57,13 @@ func nodesEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
+func deleteNodeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NodeReq)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -96,11 +95,13 @@ func deleteNodeEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.CloudProvider, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
+func createNodesEndpoint(cps map[string]provider.CloudProvider, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(CreateNodesReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +120,7 @@ func createNodesEndpoint(kp provider.ClusterProvider, cps map[string]provider.Cl
 			return nil, err
 		}
 		if cp == nil {
-			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
+			return nil, errors.NewBadRequest("cannot create nodes without cloud sshKeyProvider")
 		}
 
 		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Body.Spec)

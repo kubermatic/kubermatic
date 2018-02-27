@@ -1,4 +1,4 @@
-package auth
+package handler
 
 import (
 	"context"
@@ -13,11 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-type contextKey int
-
 const (
-	// TokenUserContextKey is the context key to retrieve the user object
-	TokenUserContextKey contextKey = 0
 	// UserRoleKey is the role key for the default role "user"
 	UserRoleKey = "user"
 	// AdminRoleKey is the role key for the admin role
@@ -67,7 +63,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 			idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
-			t := ctx.Value(userRawToken)
+			t := ctx.Value(rawToken)
 			token, ok := t.(string)
 			if !ok || token == "" {
 				return nil, errors.NewNotAuthorized()
@@ -115,20 +111,16 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 			}
 
 			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.ID, strings.Join(roles, ","))
-			return next(context.WithValue(ctx, TokenUserContextKey, user), request)
+			return next(context.WithValue(ctx, apiUserContextKey, user), request)
 		}
 	}
 }
-
-type userToken int
-
-const userRawToken userToken = 0
 
 func (o openIDAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token := o.tokenExtractor.Extract(r)
 		glog.V(6).Infof("Extracted oauth token: %s", token)
-		return context.WithValue(ctx, userRawToken, token)
+		return context.WithValue(ctx, rawToken, token)
 	}
 }
 
@@ -197,18 +189,17 @@ func NewFakeAuthenticator(user apiv1.User) Authenticator {
 func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			t := ctx.Value(userRawToken)
-			token, ok := t.(apiv1.User)
+			_, ok := ctx.Value(apiUserContextKey).(apiv1.User)
 			if !ok {
 				return nil, errors.NewNotAuthorized()
 			}
-			return next(context.WithValue(ctx, TokenUserContextKey, token), request)
+			return next(ctx, request)
 		}
 	}
 }
 
 func (o testAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, _ *http.Request) context.Context {
-		return context.WithValue(ctx, userRawToken, o.user)
+		return context.WithValue(ctx, apiUserContextKey, o.user)
 	}
 }

@@ -70,7 +70,6 @@ func main() {
 	flag.StringVar(&versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
-
 	flag.Parse()
 
 	if masterResources == "" {
@@ -221,8 +220,8 @@ func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMet
 		Workers:       metrics.Workers,
 	}
 
-	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Second*30)
-	kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+	kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 
 	cps := map[string]provider.CloudProvider{
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
