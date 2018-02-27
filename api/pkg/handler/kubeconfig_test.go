@@ -16,7 +16,7 @@ import (
 
 func TestKubeConfigEndpoint(t *testing.T) {
 	t.Parallel()
-	req := httptest.NewRequest("GET", "/api/v1/cluster/foo/kubeconfig", nil)
+	req := httptest.NewRequest("GET", "/api/v1/dc/us-central1/cluster/foo/kubeconfig", nil)
 
 	res := httptest.NewRecorder()
 	cluster := &kubermaticv1.Cluster{
@@ -49,6 +49,10 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		t.Error(res.Body.String())
 		t.Error(err)
 		return
+	}
+
+	if len(c.Clusters) != 1 {
+		t.Fatal("invalid kubeconfig returned")
 	}
 
 	if c.Clusters[0].Name != cluster.Name {

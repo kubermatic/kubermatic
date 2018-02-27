@@ -7,7 +7,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -41,7 +41,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, errors.NewNotFound("user", email)
+		return nil, provider.ErrNotFound
 	}
 	return users[0], err
 }

@@ -130,11 +130,12 @@ func main() {
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 		kubermaticSeedInformerFactory := externalversions.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
 		clusterProviders[ctx] = kubernetes.NewClusterProvider(kubermaticSeedClient, kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName)
-		go kubermaticSeedInformerFactory.Start(wait.NeverStop)
+
+		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
 
-	go kubermaticMasterInformerFactory.Start(wait.NeverStop)
+	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	authenticator, err := handler.NewOpenIDAuthenticator(

@@ -7,31 +7,62 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
+	fake2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func createTestEndpoint(user apiv1.User, masterCrdObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
+func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
 ) http.Handler {
 	ctx := context.Background()
 
-	dcs := buildDatacenterMeta()
-	// create CloudProviders
-	cps := cloud.Providers(dcs)
-	router := mux.NewRouter()
-	authenticator := auth.NewFakeAuthenticator(user)
-	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
-	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, "", dcs)
+	datacenters := buildDatacenterMeta()
+	cloudProviders := map[string]provider.CloudProvider{
+		provider.FakeCloudProvider:         fake.NewCloudProvider(),
+		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(datacenters),
+		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
+		provider.AWSCloudProvider:          aws.NewCloudProvider(datacenters),
+		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(datacenters),
+	}
 
-	routing := NewRouting(ctx, dcs, kp, cps, authenticator, versions, updates)
+	router := mux.NewRouter()
+	authenticator := NewFakeAuthenticator(user)
+
+	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
+	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
+
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "")
+	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+
+	kubermaticInformerFactory.Start(wait.NeverStop)
+	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+
+	routing := NewRouting(
+		ctx,
+		datacenters,
+		clusterProviders,
+		cloudProviders,
+		sshKeyProvider,
+		userProvider,
+		authenticator,
+		versions,
+		updates,
+	)
 	routing.Register(router)
 
 	return router
@@ -100,7 +131,7 @@ func getUser(name string, admin bool) apiv1.User {
 		},
 	}
 	if admin {
-		u.Roles[auth.AdminRoleKey] = struct{}{}
+		u.Roles[AdminRoleKey] = struct{}{}
 	}
 	return u
 }
