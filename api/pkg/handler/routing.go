@@ -267,20 +267,6 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.deleteNodeHandlerV2())
 }
 
-type endpointChainer func(e endpoint.Endpoint) endpoint.Endpoint
-
-func (r Routing) auth(e endpoint.Endpoint) endpoint.Endpoint {
-	return endpoint.Chain(r.authenticator.Verifier())(e)
-}
-
-func (r Routing) userStorer(e endpoint.Endpoint) endpoint.Endpoint {
-	return endpoint.Chain(r.userSaverMiddleware())(e)
-}
-
-func (r Routing) datacenterLoader(e endpoint.Endpoint) endpoint.Endpoint {
-	return endpoint.Chain(r.datacenterMiddleware())(e)
-}
-
 func newNotImplementedEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		return nil, errors.NewNotImplemented()
@@ -290,7 +276,10 @@ func newNotImplementedEndpoint() endpoint.Endpoint {
 // NotImplemented return a "Not Implemented" error.
 func (r Routing) NotImplemented() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(newNotImplementedEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(newNotImplementedEndpoint()),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -309,7 +298,10 @@ func (r Routing) NotImplemented() http.Handler {
 //       200: SSHKey
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(listSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(listSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -331,7 +323,10 @@ func (r Routing) listSSHKeys() http.Handler {
 //       200: SSHKey
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(createSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -350,7 +345,10 @@ func (r Routing) createSSHKey() http.Handler {
 //       200: empty
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(deleteSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -369,7 +367,10 @@ func (r Routing) deleteSSHKey() http.Handler {
 //       200: DigitaloceanSizeList
 func (r Routing) listDigitaloceanSizes() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(digitaloceanSizeEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(digitaloceanSizeEndpoint()),
 		decodeDoSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -386,7 +387,10 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 //       200: DatacenterList
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(datacentersEndpoint(r.datacenters))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(datacentersEndpoint(r.datacenters)),
 		decodeDatacentersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -404,7 +408,10 @@ func (r Routing) datacentersHandler() http.Handler {
 //       200: Datacenter
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(datacenterEndpoint(r.datacenters))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(datacenterEndpoint(r.datacenters)),
 		decodeDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -425,7 +432,11 @@ func (r Routing) datacenterHandler() http.Handler {
 //       201: ClusterV1
 func (r Routing) newClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(newClusterEndpoint(r.sshKeyProvider)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(newClusterEndpoint(r.sshKeyProvider)),
 		decodeNewClusterReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -443,7 +454,11 @@ func (r Routing) newClusterHandler() http.Handler {
 //       200: ClusterV1
 func (r Routing) clusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(clusterEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(clusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -461,7 +476,11 @@ func (r Routing) clusterHandler() http.Handler {
 //       200: Kubeconfig
 func (r Routing) kubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(kubeconfigEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(kubeconfigEndpoint()),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -479,7 +498,11 @@ func (r Routing) kubeconfigHandler() http.Handler {
 //       200: ClusterListV1
 func (r Routing) clustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(clustersEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(clustersEndpoint()),
 		decodeClustersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -497,7 +520,11 @@ func (r Routing) clustersHandler() http.Handler {
 //       200: empty
 func (r Routing) deleteClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(deleteClusterEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(deleteClusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -515,7 +542,11 @@ func (r Routing) deleteClusterHandler() http.Handler {
 //       200: NodeListV1
 func (r Routing) nodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(nodesEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -536,7 +567,11 @@ func (r Routing) nodesHandler() http.Handler {
 //       201: empty
 func (r Routing) createNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)),
 		decodeCreateNodesReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -554,7 +589,11 @@ func (r Routing) createNodesHandler() http.Handler {
 //       200: empty
 func (r Routing) deleteNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(deleteNodeEndpoint()),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -563,7 +602,11 @@ func (r Routing) deleteNodeHandler() http.Handler {
 
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(getClusterUpgrades(r.versions, r.updates)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getClusterUpgrades(r.versions, r.updates)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -572,7 +615,11 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 
 func (r Routing) performClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(performClusterUpgrade(r.versions, r.updates)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(performClusterUpgrade(r.versions, r.updates)),
 		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -581,7 +628,10 @@ func (r Routing) performClusterUpgrade() http.Handler {
 
 func (r Routing) getUser() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getUserHandler())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getUserHandler()),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -590,7 +640,10 @@ func (r Routing) getUser() http.Handler {
 
 func (r Routing) getProjectMe() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getProjectMeEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getProjectMeEndpoint()),
 		decodeProjectPathReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -599,7 +652,10 @@ func (r Routing) getProjectMe() http.Handler {
 
 func (r Routing) getProjects() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getProjectsEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getProjectsEndpoint()),
 		// We don't have to write a decoder only for a request without incoming information
 		decodeEmptyReq,
 		encodeJSON,
@@ -609,7 +665,10 @@ func (r Routing) getProjects() http.Handler {
 
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createProjectEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(createProjectEndpoint()),
 		decodeCreateProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -618,7 +677,10 @@ func (r Routing) createProject() http.Handler {
 
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(updateProjectEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(updateProjectEndpoint()),
 		decodeUpdateProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -627,7 +689,10 @@ func (r Routing) updateProject() http.Handler {
 
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteProjectEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(deleteProjectEndpoint()),
 		decodeProjectPathReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -636,7 +701,10 @@ func (r Routing) deleteProject() http.Handler {
 
 func (r Routing) getProjectMembers() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(getProjectMembersEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getProjectMembersEndpoint()),
 		decodeProjectPathReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -645,7 +713,10 @@ func (r Routing) getProjectMembers() http.Handler {
 
 func (r Routing) addProjectMember() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(addProjectMemberEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(addProjectMemberEndpoint()),
 		decodeAddProjectMember,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -654,7 +725,10 @@ func (r Routing) addProjectMember() http.Handler {
 
 func (r Routing) deleteProjectMember() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteProjectMemberEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(deleteProjectMemberEndpoint()),
 		decodeDeleteProjectMember,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -663,7 +737,10 @@ func (r Routing) deleteProjectMember() http.Handler {
 
 func (r Routing) updateProjectMember() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(updateProjectMemberEndpoint())),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(updateProjectMemberEndpoint()),
 		decodeUpdateProjectMember,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -672,7 +749,11 @@ func (r Routing) updateProjectMember() http.Handler {
 
 func (r Routing) newProjectClusterHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(newClusterEndpoint(r.sshKeyProvider)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(newClusterEndpoint(r.sshKeyProvider)),
 		decodeNewClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -681,7 +762,11 @@ func (r Routing) newProjectClusterHandlerV2() http.Handler {
 
 func (r Routing) getProjectClustersHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(clustersEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(clustersEndpoint()),
 		decodeClustersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -690,7 +775,11 @@ func (r Routing) getProjectClustersHandler() http.Handler {
 
 func (r Routing) getProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(clusterEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(clusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -699,7 +788,11 @@ func (r Routing) getProjectClusterHandler() http.Handler {
 
 func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(kubeconfigEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(kubeconfigEndpoint()),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -708,7 +801,11 @@ func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 
 func (r Routing) deleteProjectClusterHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(deleteClusterEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(deleteClusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -717,7 +814,11 @@ func (r Routing) deleteProjectClusterHandler() http.Handler {
 
 func (r Routing) getProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(nodesEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -726,7 +827,11 @@ func (r Routing) getProjectClusterNodesHandler() http.Handler {
 
 func (r Routing) createProjectClusterNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)),
 		decodeCreateNodesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -735,7 +840,11 @@ func (r Routing) createProjectClusterNodesHandler() http.Handler {
 
 func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(deleteNodeEndpoint()),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -744,7 +853,11 @@ func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 
 func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(getClusterUpgrades(r.versions, r.updates)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getClusterUpgrades(r.versions, r.updates)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -753,7 +866,11 @@ func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 
 func (r Routing) performProjectClusterUpgrade() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(performClusterUpgrade(r.versions, r.updates)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(performClusterUpgrade(r.versions, r.updates)),
 		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -762,7 +879,11 @@ func (r Routing) performProjectClusterUpgrade() http.Handler {
 
 func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(nodesEndpoint()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(nodesEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -771,7 +892,10 @@ func (r Routing) getProjectClusterK8sNodesHandler() http.Handler {
 
 func (r Routing) listProjectSSHKeys() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(listSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(listSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeListSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -780,7 +904,10 @@ func (r Routing) listProjectSSHKeys() http.Handler {
 
 func (r Routing) createProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(createSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(createSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeCreateSSHKeyReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -789,7 +916,10 @@ func (r Routing) createProjectSSHKey() http.Handler {
 
 func (r Routing) deleteProjectSSHKey() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(deleteSSHKeyEndpoint(r.sshKeyProvider))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(deleteSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -810,7 +940,11 @@ func (r Routing) deleteProjectSSHKey() http.Handler {
 //       201: NodeV2
 func (r Routing) createNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -828,7 +962,11 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 //       200: NodeListV2
 func (r Routing) getNodesHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(getNodesEndpointV2()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getNodesEndpointV2()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -846,7 +984,11 @@ func (r Routing) getNodesHandlerV2() http.Handler {
 //       200: NodeV2
 func (r Routing) getNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(getNodeEndpointV2()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -864,7 +1006,11 @@ func (r Routing) getNodeHandlerV2() http.Handler {
 //       200: empty
 func (r Routing) deleteNodeHandlerV2() http.Handler {
 	return httptransport.NewServer(
-		r.auth(r.userStorer(r.datacenterLoader(deleteNodeEndpointV2()))),
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(deleteNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
