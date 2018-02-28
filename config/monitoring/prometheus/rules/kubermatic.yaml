@@ -8,5 +8,5 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: "Cluster {{ $labels.cluster }} is {{ $labels.phase }} for more then 10min."
+      description: "Cluster {{ $labels.cluster }} is in phase '{{ $labels.phase }}' for more then 10min."
       summary: "Cluster too long in unexpected phase"
