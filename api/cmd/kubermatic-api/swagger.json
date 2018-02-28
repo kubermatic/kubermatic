@@ -22,7 +22,7 @@
         "description": "Health endpoint",
         "operationId": "healthz",
         "responses": {
-          "default": {
+          "200": {
             "$ref": "#/responses/empty"
           }
         }
