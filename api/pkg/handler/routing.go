@@ -64,7 +64,7 @@ func (r Routing) Register(mux *mux.Router) {
 	// Health endpoint
 	//
 	//     Responses:
-	//       default: empty
+	//       200: empty
 	mux.Methods(http.MethodGet).
 		Path("/api/healthz").
 		HandlerFunc(StatusOK)
