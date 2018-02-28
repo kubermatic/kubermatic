@@ -207,8 +207,9 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) record.EventRecord
 func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
 	metrics := NewClusterControllerMetrics()
 	clusterMetrics := cluster.ControllerMetrics{
-		Clusters: metrics.Clusters,
-		Workers:  metrics.Workers,
+		Clusters:      metrics.Clusters,
+		ClusterPhases: metrics.ClusterPhases,
+		Workers:       metrics.Workers,
 	}
 
 	masterCrdClient := mastercrdclient.NewForConfigOrDie(restclient.AddUserAgent(masterConfig, controllerName))
