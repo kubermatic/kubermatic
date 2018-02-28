@@ -6,13 +6,6 @@
 ## Development environment
 To setup your enviroment click [here](docs/setup.md).
 
-### Dependencies
-#### Bootstrap project
-
-```
-make bootstrap
-```
-
 #### Update dependencies
 Sure that you want to update? And not just install dependencies?
 ```bash

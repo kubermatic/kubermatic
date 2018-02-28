@@ -40,6 +40,14 @@ const (
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
 
+var ClusterPhases = []ClusterPhase{
+	NoneClusterStatusPhase,
+	ValidatingClusterStatusPhase,
+	LaunchingClusterStatusPhase,
+	RunningClusterStatusPhase,
+	DeletingClusterStatusPhase,
+}
+
 // MasterUpdatePhase represents the current master update phase.
 type MasterUpdatePhase string
 

@@ -9,8 +9,9 @@ import (
 // ClusterControllerMetrics is a struct of all metrics used in
 // the cluster controller.
 type ClusterControllerMetrics struct {
-	Clusters metrics.Gauge
-	Workers  metrics.Gauge
+	Clusters      metrics.Gauge
+	ClusterPhases metrics.Gauge
+	Workers       metrics.Gauge
 }
 
 // NewClusterControllerMetrics creates new ClusterControllerMetrics
@@ -25,7 +26,13 @@ func NewClusterControllerMetrics() *ClusterControllerMetrics {
 			Subsystem: subsystem,
 			Name:      "clusters",
 			Help:      "The number of currently managed clusters",
-		}, []string{}),
+		}, nil),
+		ClusterPhases: prometheus.NewGaugeFrom(prom.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "cluster_status_phase",
+			Help:      "All phases a cluster can be in. 1 if the cluster is in that phase",
+		}, []string{"cluster", "phase"}),
 		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,

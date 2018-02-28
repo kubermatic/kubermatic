@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/golang/glog"
@@ -21,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
+	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -101,17 +100,20 @@ func main() {
 	// Create event recorder
 	recorder := getEventRecorder(masterKubeClient)
 
+	stopCh := signals.SetupSignalHandler()
+	ctx, ctxDone := context.WithCancel(context.Background())
+
 	// This group is forever waiting in a goroutine for signals to stop
 	{
-		sig := make(chan os.Signal, 2)
 		g.Add(func() error {
-			signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-			glog.Info("Waiting for signal to stop")
-			<-sig
-			return nil
+			select {
+			case <-stopCh:
+				return errors.New("user requested to stop the application")
+			case <-ctx.Done():
+				return errors.New("parent context has been closed - propagating the request")
+			}
 		}, func(err error) {
-			glog.Errorf("Stopping os signal notifier: %v", err)
-			close(sig)
+			ctxDone()
 		})
 	}
 
@@ -121,8 +123,10 @@ func main() {
 		m.Handle(*prometheusPath, promhttp.Handler())
 
 		s := http.Server{
-			Addr:    *prometheusAddr,
-			Handler: m,
+			Addr:         *prometheusAddr,
+			Handler:      m,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
 		}
 
 		g.Add(func() error {
@@ -134,7 +138,7 @@ func main() {
 			return nil
 		}, func(err error) {
 			glog.Errorf("Stopping internal http server: %v", err)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
 			defer cancel()
 
 			glog.Info("Shutting down the internal http server")
@@ -146,21 +150,22 @@ func main() {
 
 	// This group is running the actual controller logic
 	{
-		leaderElectionStop := make(chan struct{})
-		controllerStop := make(chan struct{})
 		g.Add(func() error {
-			leaderElectionClient := kubernetes.NewForConfigOrDie(restclient.AddUserAgent(masterConfig, "kubermatic-cluster-controller-leader-election"))
+			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(masterConfig, "kubermatic-cluster-controller-leader-election"))
+			if err != nil {
+				return err
+			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					err := startController(controllerStop, dcs, masterConfig, seedCmdConfig, versions, updates)
+					err := startController(ctx.Done(), dcs, masterConfig, seedCmdConfig, versions, updates)
 					if err != nil {
 						glog.Error(err)
+						ctxDone()
 					}
-					close(leaderElectionStop)
 				},
 				OnStoppedLeading: func() {
 					glog.Error("==================== OnStoppedLeading ====================")
-					close(controllerStop)
+					ctxDone()
 				},
 			}
 
@@ -174,11 +179,11 @@ func main() {
 			}
 
 			go leader.Run()
-			<-leaderElectionStop
+			<-ctx.Done()
 			return nil
 		}, func(err error) {
 			glog.Errorf("Stopping controller: %v", err)
-			close(controllerStop)
+			ctxDone()
 		})
 	}
 
@@ -199,11 +204,12 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) record.EventRecord
 	return recorder
 }
 
-func startController(stop chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
+func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
 	metrics := NewClusterControllerMetrics()
 	clusterMetrics := cluster.ControllerMetrics{
-		Clusters: metrics.Clusters,
-		Workers:  metrics.Workers,
+		Clusters:      metrics.Clusters,
+		ClusterPhases: metrics.ClusterPhases,
+		Workers:       metrics.Workers,
 	}
 
 	masterCrdClient := mastercrdclient.NewForConfigOrDie(restclient.AddUserAgent(masterConfig, controllerName))

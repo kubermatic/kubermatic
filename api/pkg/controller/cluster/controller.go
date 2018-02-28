@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/metrics"
@@ -41,7 +42,7 @@ const (
 // GroupRunStopper represents a control loop started with Run,
 // which can be terminated by closing the stop channel
 type GroupRunStopper interface {
-	Run(workerCount int, stop chan struct{})
+	Run(workerCount int, stop <-chan struct{})
 }
 
 // SeedClientProvider offers functions to get resources of a seed-cluster
@@ -76,8 +77,9 @@ type controller struct {
 
 // ControllerMetrics contains metrics about the clusters & workers
 type ControllerMetrics struct {
-	Clusters metrics.Gauge
-	Workers  metrics.Gauge
+	Clusters      metrics.Gauge
+	ClusterPhases metrics.Gauge
+	Workers       metrics.Gauge
 }
 
 // NewController creates a cluster controller.
@@ -210,6 +212,17 @@ func (cc *controller) syncCluster(key string) error {
 		return nil
 	}
 
+	for _, phase := range kubermaticv1.ClusterPhases {
+		value := 0.0
+		if phase == cluster.Status.Phase {
+			value = 1.0
+		}
+		cc.metrics.ClusterPhases.With(
+			"cluster", cluster.Name,
+			"phase", strings.ToLower(string(phase)),
+		).Set(value)
+	}
+
 	if cluster.DeletionTimestamp != nil {
 		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
 		if err := cc.cleanupCluster(cluster); err != nil {
@@ -304,7 +317,7 @@ func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	}
 }
 
-func (cc *controller) Run(workerCount int, stopCh chan struct{}) {
+func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))
