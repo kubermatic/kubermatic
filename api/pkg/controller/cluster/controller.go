@@ -411,7 +411,7 @@ func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (cc *ClusterController) Run(workerCount int, stopCh <-chan struct{}) {
+func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))

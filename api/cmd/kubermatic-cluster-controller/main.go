@@ -17,14 +17,12 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
-	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -166,13 +164,13 @@ func main() {
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(masterConfig, "kubermatic-cluster-controller-leader-election"))
+			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(config, "kubermatic-cluster-controller-leader-election"))
 			if err != nil {
 				return err
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					err := startController(ctx.Done(), dcs, masterConfig, seedCmdConfig, versions, updates)
+					err := startController(ctx.Done(), kubeClient, kubermaticClient, dcs, versions, updates)
 					if err != nil {
 						glog.Error(err)
 						ctxDone()
@@ -221,7 +219,7 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	return recorder, nil
 }
 
-func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
+func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface, dcs map[string]provider.DatacenterMeta, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
 	metrics := NewClusterControllerMetrics()
 	clusterMetrics := cluster.ControllerMetrics{
 		Clusters:      metrics.Clusters,
