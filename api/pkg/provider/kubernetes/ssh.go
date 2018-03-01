@@ -18,10 +18,11 @@ const (
 )
 
 // NewSSHKeyProvider returns a ssh key provider
-func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kubermaticv1lister.UserSSHKeyLister) *SSHKeyProvider {
+func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kubermaticv1lister.UserSSHKeyLister, isAdmin func(apiv1.User) bool) *SSHKeyProvider {
 	return &SSHKeyProvider{
 		client:       client,
 		sshKeyLister: sshKeyLister,
+		isAdmin:      isAdmin,
 	}
 }
 
@@ -29,6 +30,7 @@ func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kuberm
 type SSHKeyProvider struct {
 	client       kubermaticclientset.Interface
 	sshKeyLister kubermaticv1lister.UserSSHKeyLister
+	isAdmin      func(apiv1.User) bool
 }
 
 // SSHKey returns a ssh key by name
@@ -37,7 +39,7 @@ func (p *SSHKeyProvider) SSHKey(user apiv1.User, name string) (*kubermaticv1.Use
 	if err != nil {
 		return nil, err
 	}
-	if k.Spec.Owner == user.ID {
+	if k.Spec.Owner == user.ID || p.isAdmin(user) {
 		return k, nil
 	}
 	return nil, errors.NewNotFound(sshKeyKind, name)
@@ -50,9 +52,13 @@ func (p *SSHKeyProvider) SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, e
 		err      error
 	)
 
-	selector, err = ssh.UserListLabelSelector(user.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build query to fetch keys: %v", err)
+	if p.isAdmin(user) {
+		selector = labels.Everything()
+	} else {
+		selector, err = ssh.UserListLabelSelector(user.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build query to fetch keys: %v", err)
+		}
 	}
 
 	return p.sshKeyLister.List(selector)

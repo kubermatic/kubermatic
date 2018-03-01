@@ -18,11 +18,16 @@ import (
 )
 
 // NewClusterProvider returns a datacenter specific cluster provider
-func NewClusterProvider(client kubermaticclientset.Interface, clusterLister kubermaticv1lister.ClusterLister, workerName string) *ClusterProvider {
+func NewClusterProvider(
+	client kubermaticclientset.Interface,
+	clusterLister kubermaticv1lister.ClusterLister,
+	workerName string,
+	isAdmin func(apiv1.User) bool) *ClusterProvider {
 	return &ClusterProvider{
 		client:        client,
 		clusterLister: clusterLister,
 		workerName:    workerName,
+		isAdmin:       isAdmin,
 	}
 }
 
@@ -30,6 +35,7 @@ func NewClusterProvider(client kubermaticclientset.Interface, clusterLister kube
 type ClusterProvider struct {
 	client        kubermaticclientset.Interface
 	clusterLister kubermaticv1lister.ClusterLister
+	isAdmin       func(apiv1.User) bool
 
 	workerName string
 }
@@ -102,18 +108,24 @@ func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.C
 		}
 		return nil, err
 	}
-	if cluster.Labels[userLabelKey] != user.ID {
-		return nil, errors.NewNotAuthorized()
+	if cluster.Labels[userLabelKey] == user.ID || p.isAdmin(user) {
+		return cluster, nil
 	}
 
-	return cluster, nil
+	return nil, errors.NewNotAuthorized()
 }
 
 // Clusters returns all clusters for the given user
 func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error) {
-	filter := map[string]string{}
-	filter[userLabelKey] = user.ID
-	selector := labels.SelectorFromSet(labels.Set(filter))
+	var selector labels.Selector
+
+	if p.isAdmin(user) {
+		selector = labels.Everything()
+	} else {
+		filter := map[string]string{}
+		filter[userLabelKey] = user.ID
+		selector = labels.SelectorFromSet(labels.Set(filter))
+	}
 
 	return p.clusterLister.List(selector)
 }

@@ -43,9 +43,9 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
-	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "")
+	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
 	kubermaticInformerFactory.Start(wait.NeverStop)

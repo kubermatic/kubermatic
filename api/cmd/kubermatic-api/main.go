@@ -101,7 +101,7 @@ func main() {
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
 	kubermaticMasterInformerFactory := externalversions.NewSharedInformerFactory(kubermaticMasterClient, informerResyncPeriod)
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), handler.IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
 
 	// create a cluster provider for each context
@@ -127,7 +127,7 @@ func main() {
 
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 		kubermaticSeedInformerFactory := externalversions.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
-		clusterProviders[ctx] = kubernetes.NewClusterProvider(kubermaticSeedClient, kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName)
+		clusterProviders[ctx] = kubernetes.NewClusterProvider(kubermaticSeedClient, kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName, handler.IsAdmin)
 
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
