@@ -7,7 +7,6 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -53,7 +52,7 @@ func clusterEndpoint() endpoint.Endpoint {
 		req := request.(ClusterReq)
 		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
+			if err == provider.ErrNotFound {
 				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err
@@ -84,7 +83,7 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 
 		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
+			if err == provider.ErrNotFound {
 				return nil, errors.NewNotFound("cluster", req.Cluster)
 			}
 			return nil, err

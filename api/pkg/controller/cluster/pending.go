@@ -32,7 +32,7 @@ const (
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
 )
 
-func (cc *ClusterController) reconcileCluster(cluster *kubermaticv1.Cluster) error {
+func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.MasterVersion == "" {
 		cluster.Spec.MasterVersion = cc.defaultMasterVersion.ID
 	}
@@ -138,7 +138,7 @@ func (cc *ClusterController) reconcileCluster(cluster *kubermaticv1.Cluster) err
 	return nil
 }
 
-func (cc *ClusterController) getClusterTemplateData(c *kubermaticv1.Cluster) (*controllerresources.TemplateData, error) {
+func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controllerresources.TemplateData, error) {
 	version, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return nil, fmt.Errorf("failed to get version %s", c.Spec.MasterVersion)
@@ -158,7 +158,7 @@ func (cc *ClusterController) getClusterTemplateData(c *kubermaticv1.Cluster) (*c
 	), nil
 }
 
-func (cc *ClusterController) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, cluster)
 	if err != nil {
 		return err
@@ -180,7 +180,7 @@ func (cc *ClusterController) ensureCloudProviderIsInitialize(cluster *kubermatic
 }
 
 // ensureNamespaceExists will create the cluster namespace
-func (cc *ClusterController) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 	if _, err := cc.NamespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
 		return err
 	}
@@ -201,7 +201,7 @@ func (cc *ClusterController) ensureNamespaceExists(c *kubermaticv1.Cluster) erro
 	return nil
 }
 
-func (cc *ClusterController) getFreeNodePort() (int, error) {
+func (cc *Controller) getFreeNodePort() (int, error) {
 	services, err := cc.ServiceLister.List(labels.Everything())
 	if err != nil {
 		return 0, err
@@ -226,7 +226,7 @@ func (cc *ClusterController) getFreeNodePort() (int, error) {
 }
 
 // ensureAddress will set the cluster hostname and the url under which the apiserver will be reachable
-func (cc *ClusterController) ensureAddress(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	if c.Address.ExternalName == "" {
 		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 	}
@@ -275,7 +275,7 @@ func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
 	return jsonmergepatch.CreateThreeWayJSONMergePatch([]byte(originalData), modifiedData, currentData)
 }
 
-func (cc *ClusterController) ensureSecrets(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	generateTokensSecret := func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Secret, string, error) {
 		tokens := []controllerresources.Token{
 			{
@@ -338,7 +338,7 @@ func (cc *ClusterController) ensureSecrets(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureServices(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
 		controllerresources.ApiserverInternalServiceName: controllerresources.LoadServiceFile,
 		controllerresources.ApiserverExternalServiceName: controllerresources.LoadServiceFile,
@@ -382,7 +382,7 @@ func (cc *ClusterController) ensureServices(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
 	serviceAccounts := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
 		controllerresources.EtcdOperatorServiceAccountName: controllerresources.LoadServiceAccountFile,
 	}
@@ -424,7 +424,7 @@ func (cc *ClusterController) ensureCheckServiceAccounts(c *kubermaticv1.Cluster)
 	return nil
 }
 
-func (cc *ClusterController) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
 		"etcd-operator": controllerresources.LoadClusterRoleBindingFile,
 	}
@@ -466,7 +466,7 @@ func (cc *ClusterController) ensureClusterRoleBindings(c *kubermaticv1.Cluster) 
 	return nil
 }
 
-func (cc *ClusterController) ensureDeployments(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
@@ -520,7 +520,7 @@ func (cc *ClusterController) ensureDeployments(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureConfigMaps(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	cms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error){
 		controllerresources.CloudConfigConfigMapName: controllerresources.LoadConfigMapFile,
 	}
@@ -563,7 +563,7 @@ func (cc *ClusterController) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 	masterVersion, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)

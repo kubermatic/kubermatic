@@ -188,8 +188,10 @@ func main() {
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
+	v3Router := mainRouter.PathPrefix("/api/v3").Subrouter()
 	r.RegisterV1(v1Router)
 	r.RegisterV2(v2Router)
+	r.RegisterV3(v3Router)
 
 	go metrics.ServeForever(prometheusAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))

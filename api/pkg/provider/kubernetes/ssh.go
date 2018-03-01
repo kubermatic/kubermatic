@@ -17,6 +17,7 @@ const (
 	sshKeyKind = "ssh-key"
 )
 
+// NewSSHKeyProvider returns a ssh key provider
 func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kubermaticv1lister.UserSSHKeyLister) *SSHKeyProvider {
 	return &SSHKeyProvider{
 		client:       client,
@@ -24,6 +25,7 @@ func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kuberm
 	}
 }
 
+// SSHKeyProvider manages ssh key resources
 type SSHKeyProvider struct {
 	client       kubermaticclientset.Interface
 	sshKeyLister kubermaticv1lister.UserSSHKeyLister

@@ -91,6 +91,7 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+//DCGetter defines functionality to retrieve a datacenter name
 type DCGetter interface {
 	GetDC() string
 }
@@ -102,6 +103,7 @@ type DCReq struct {
 	DC string `json:"dc"`
 }
 
+// GetDC returns the name of the datacenter in the request
 func (req DCReq) GetDC() string {
 	return req.DC
 }

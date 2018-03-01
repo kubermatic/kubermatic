@@ -38,7 +38,6 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(datacenters),
 	}
 
-	router := mux.NewRouter()
 	authenticator := NewFakeAuthenticator(user)
 
 	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
@@ -52,10 +51,13 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	routing := NewRouting(
+	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "us-central1", "")
+
+	r := NewRouting(
 		ctx,
 		datacenters,
 		clusterProviders,
+		optimisticClusterProvider,
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
@@ -63,9 +65,15 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 		versions,
 		updates,
 	)
-	routing.Register(router)
+	mainRouter := mux.NewRouter()
+	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
+	v3Router := mainRouter.PathPrefix("/api/v3").Subrouter()
+	r.RegisterV1(v1Router)
+	r.RegisterV2(v2Router)
+	r.RegisterV3(v3Router)
 
-	return router
+	return mainRouter
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
@@ -145,7 +153,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/healthz", nil)
+	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)

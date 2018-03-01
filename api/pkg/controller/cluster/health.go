@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
-func (cc *ClusterController) healthyDep(ns, name string, minReady int32) (bool, error) {
+func (cc *Controller) healthyDep(ns, name string, minReady int32) (bool, error) {
 	dep, err := cc.DeploymentLister.Deployments(ns).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -18,7 +18,7 @@ func (cc *ClusterController) healthyDep(ns, name string, minReady int32) (bool, 
 	return dep.Status.AvailableReplicas == *dep.Spec.Replicas || dep.Status.AvailableReplicas >= minReady, nil
 }
 
-func (cc *ClusterController) healthyEtcd(ns, name string) (bool, error) {
+func (cc *Controller) healthyEtcd(ns, name string) (bool, error) {
 	etcd, err := cc.EtcdClusterLister.EtcdClusters(ns).Get(resources.EtcdClusterName)
 	if err != nil {
 		if errors.IsNotFound(err) {

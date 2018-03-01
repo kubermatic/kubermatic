@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Register declare router paths
+// RegisterV1 declares all router paths for v1
 func (r Routing) RegisterV1(mux *mux.Router) {
 	// swagger:route GET /api/v1/healthz healthz
 	//

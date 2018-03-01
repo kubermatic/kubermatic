@@ -21,7 +21,7 @@ const TestDC = "europe-west3-c"
 const TestExternalURL = "dev.kubermatic.io"
 const TestExternalPort = 30000
 
-func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *ClusterController {
+func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Controller {
 	dcs := buildDatacenterMeta()
 	cps := cloud.Providers(dcs)
 

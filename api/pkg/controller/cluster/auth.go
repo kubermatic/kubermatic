@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-func (cc *ClusterController) ensureRootCA(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureRootCA(c *kubermaticv1.Cluster) error {
 	if c.Status.RootCA.Key != nil {
 		return nil
 	}
@@ -36,7 +36,7 @@ func (cc *ClusterController) ensureRootCA(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureTokens(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureTokens(c *kubermaticv1.Cluster) error {
 	if c.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
@@ -52,7 +52,7 @@ func (cc *ClusterController) ensureTokens(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureCertificates(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCertificates(c *kubermaticv1.Cluster) error {
 	if c.Address.ExternalName == "" {
 		return errors.New("external name is undefined")
 	}
@@ -97,7 +97,7 @@ func (cc *ClusterController) ensureCertificates(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) ensureCreateServiceAccountKey(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCreateServiceAccountKey(c *kubermaticv1.Cluster) error {
 	if c.Status.ServiceAccountKey != nil {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (cc *ClusterController) ensureCreateServiceAccountKey(c *kubermaticv1.Clust
 	return nil
 }
 
-func (cc *ClusterController) ensureApiserverSSHKeypair(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureApiserverSSHKeypair(c *kubermaticv1.Cluster) error {
 	if c.Status.ApiserverSSHKey.PublicKey != nil {
 		return nil
 	}

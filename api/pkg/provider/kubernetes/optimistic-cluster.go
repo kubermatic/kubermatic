@@ -6,6 +6,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
+// NewOptimisticClusterProvider returns a optimistic cluster provider
 func NewOptimisticClusterProvider(providers map[string]provider.ClusterProvider, defaultProviderName, workerName string) *OptimisticClusterProvider {
 	return &OptimisticClusterProvider{
 		providers:           providers,
@@ -14,6 +15,7 @@ func NewOptimisticClusterProvider(providers map[string]provider.ClusterProvider,
 	}
 }
 
+// OptimisticClusterProvider is a cluster provider which tries to get the requested cluster from every provider
 type OptimisticClusterProvider struct {
 	providers map[string]provider.ClusterProvider
 
@@ -21,10 +23,12 @@ type OptimisticClusterProvider struct {
 	workerName          string
 }
 
+// NewCluster creates a new cluster in the default provider
 func (p *OptimisticClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
 	return p.providers[p.defaultProviderName].NewCluster(user, spec)
 }
 
+// Cluster returns the given cluster
 func (p *OptimisticClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error) {
 	for _, prov := range p.providers {
 		c, err := prov.Cluster(user, name)
@@ -38,6 +42,7 @@ func (p *OptimisticClusterProvider) Cluster(user apiv1.User, name string) (*kube
 	return nil, provider.ErrNotFound
 }
 
+// Clusters returns all clusters for the given user
 func (p *OptimisticClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error) {
 	var clusters []*kubermaticv1.Cluster
 
@@ -52,6 +57,7 @@ func (p *OptimisticClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.C
 	return clusters, nil
 }
 
+// DeleteCluster deletes the given cluster
 func (p *OptimisticClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 	for _, prov := range p.providers {
 		c, err := prov.Cluster(user, name)
@@ -69,6 +75,7 @@ func (p *OptimisticClusterProvider) DeleteCluster(user apiv1.User, name string) 
 	return provider.ErrNotFound
 }
 
+// InitiateClusterUpgrade sets the version of the given cluster
 func (p *OptimisticClusterProvider) InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error) {
 	for _, prov := range p.providers {
 		_, err := prov.Cluster(user, name)

@@ -110,7 +110,10 @@ func main() {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-	recorder := getEventRecorder(kubeClient)
+	recorder, err := getEventRecorder(kubeClient)
+	if err != nil {
+		glog.Fatalf("failed to get event recorder: %v", err)
+	}
 
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
@@ -203,17 +206,19 @@ func main() {
 		glog.Fatal(err)
 	}
 }
-func getEventRecorder(masterKubeClient *kubernetes.Clientset) record.EventRecorder {
+func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecorder, error) {
 	// Create event broadcaster
 	// Add kubermatic types to the default Kubernetes Scheme so Events can be
 	// logged properly
-	kubermaticv1.AddToScheme(scheme.Scheme)
+	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
+		return nil, err
+	}
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.V(4).Infof)
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
-	return recorder
+	return recorder, nil
 }
 
 func startController(stop <-chan struct{}, dcs map[string]provider.DatacenterMeta, masterConfig *restclient.Config, seedConfig *clientcmdapi.Config, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {

@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Register declare router paths
+// RegisterV2 declares all router paths for v2
 func (r Routing) RegisterV2(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
 		Path("/cluster/{cluster}/nodes").

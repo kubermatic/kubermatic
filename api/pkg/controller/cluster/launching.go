@@ -17,7 +17,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (cc *ClusterController) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
+func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Name)
 	health := kubermaticv1.ClusterHealth{
 		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
@@ -53,7 +53,7 @@ func (cc *ClusterController) clusterHealth(c *kubermaticv1.Cluster) (bool, *kube
 }
 
 // ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *ClusterController) ensureClusterReachable(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (cc *ClusterController) ensureClusterReachable(c *kubermaticv1.Cluster) err
 
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
-func (cc *ClusterController) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
+func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err

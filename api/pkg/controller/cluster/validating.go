@@ -7,7 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-func (cc *ClusterController) validateCluster(c *kubermaticv1.Cluster) error {
+func (cc *Controller) validateCluster(c *kubermaticv1.Cluster) error {
 	if err := cc.validateDatacenter(c); err != nil {
 		return fmt.Errorf("failed to validate datacenter: %v", err)
 	}
@@ -19,7 +19,7 @@ func (cc *ClusterController) validateCluster(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) validateCloudSpec(c *kubermaticv1.Cluster) error {
+func (cc *Controller) validateCloudSpec(c *kubermaticv1.Cluster) error {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (cc *ClusterController) validateCloudSpec(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *ClusterController) validateDatacenter(c *kubermaticv1.Cluster) error {
+func (cc *Controller) validateDatacenter(c *kubermaticv1.Cluster) error {
 	//Validate node datacenter
 	dc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
 	if !found {

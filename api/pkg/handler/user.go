@@ -12,11 +12,11 @@ import (
 func (r Routing) userSaverMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			cApiUser := ctx.Value(apiUserContextKey)
-			if cApiUser == nil {
+			cAPIUser := ctx.Value(apiUserContextKey)
+			if cAPIUser == nil {
 				return nil, errors.New("no user in context found")
 			}
-			apiUser := cApiUser.(apiv1.User)
+			apiUser := cAPIUser.(apiv1.User)
 
 			user, err := r.userProvider.UserByEmail(apiUser.Email)
 			if err != nil {

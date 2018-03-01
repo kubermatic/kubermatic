@@ -19,6 +19,7 @@ const (
 	DefaultUserLabel = "kubermatic-user-hash"
 )
 
+// UserListLabelSelector returns a label selector for the given user id
 func UserListLabelSelector(userID string) (labels.Selector, error) {
 	req, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(userID)})
 	if err != nil {

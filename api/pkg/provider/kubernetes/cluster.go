@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+// NewClusterProvider returns a datacenter specific cluster provider
 func NewClusterProvider(client kubermaticclientset.Interface, clusterLister kubermaticv1lister.ClusterLister, workerName string) *ClusterProvider {
 	return &ClusterProvider{
 		client:        client,
@@ -25,6 +26,7 @@ func NewClusterProvider(client kubermaticclientset.Interface, clusterLister kube
 	}
 }
 
+// ClusterProvider handles actions to create/modify/delete clusters in a specific kubernetes cluster
 type ClusterProvider struct {
 	client        kubermaticclientset.Interface
 	clusterLister kubermaticv1lister.ClusterLister
@@ -32,6 +34,7 @@ type ClusterProvider struct {
 	workerName string
 }
 
+// NewCluster creates a new Cluster with the given ClusterSpec for the given user
 func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
 	spec.WorkerName = p.workerName
@@ -72,6 +75,9 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 
 	cluster, err = p.client.KubermaticV1().Clusters().Create(cluster)
 	if err != nil {
+		if kuberrrors.IsAlreadyExists(err) {
+			return nil, provider.ErrAlreadyExists
+		}
 		return nil, err
 	}
 
@@ -87,6 +93,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
 }
 
+// Cluster returns the given cluster
 func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error) {
 	cluster, err := p.clusterLister.Get(name)
 	if err != nil {
@@ -102,6 +109,7 @@ func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.C
 	return cluster, nil
 }
 
+// Clusters returns all clusters for the given user
 func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error) {
 	filter := map[string]string{}
 	filter[userLabelKey] = user.ID
@@ -110,6 +118,7 @@ func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, er
 	return p.clusterLister.List(selector)
 }
 
+// DeleteCluster deletes the given cluster
 func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 	cluster, err := p.Cluster(user, name)
 	if err != nil {
@@ -119,6 +128,7 @@ func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 	return p.client.KubermaticV1().Clusters().Delete(cluster.Name, &metav1.DeleteOptions{})
 }
 
+// InitiateClusterUpgrade sets the version of the given cluster
 func (p *ClusterProvider) InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error) {
 	cluster, err := p.Cluster(user, name)
 	if err != nil {

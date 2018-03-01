@@ -18,6 +18,7 @@ const (
 	userIDLabelKey    = "id"
 )
 
+// NewUserProvider returns a user provider
 func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister) *UserProvider {
 	return &UserProvider{
 		client:     client,
@@ -25,11 +26,13 @@ func NewUserProvider(client kubermaticclientset.Interface, userLister kubermatic
 	}
 }
 
+// UserProvider manages user resources
 type UserProvider struct {
 	client     kubermaticclientset.Interface
 	userLister kubermaticv1lister.UserLister
 }
 
+// UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", userEmailLabelKey, kubernetes.ToLabelValue(email)))
 	if err != nil {

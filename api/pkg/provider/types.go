@@ -12,6 +12,8 @@ import (
 var (
 	// ErrNotFound tells that the requests resource was not found
 	ErrNotFound = errors.New("the given resource was not found")
+	// ErrAlreadyExists tells that the given resource already exists
+	ErrAlreadyExists = errors.New("the given resource already exists")
 )
 
 // Constants defining known cloud providers.

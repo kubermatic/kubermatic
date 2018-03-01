@@ -13,12 +13,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+// ContextKey defines a dedicated type for keys to use on contexts
+type ContextKey string
+
 const (
-	rawToken = iota
-	apiUserContextKey
-	userCRContextKey
-	datacenterContextKey
-	clusterProviderContextKey
+	rawToken                  ContextKey = "raw-auth-token"
+	apiUserContextKey         ContextKey = "api-user"
+	userCRContextKey          ContextKey = "user-cr"
+	datacenterContextKey      ContextKey = "datacenter"
+	clusterProviderContextKey ContextKey = "cluster-provider"
 )
 
 // Routing represents an object which binds endpoints to http handlers.

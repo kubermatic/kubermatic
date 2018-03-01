@@ -45,7 +45,8 @@ const (
 	runningSyncPeriod    = 60 * time.Second
 )
 
-type ClusterController struct {
+// Controller is a controller which is responsible for managing clusters
+type Controller struct {
 	kubermaticClient kubermaticclientset.Interface
 	kubeClient       kubernetes.Interface
 
@@ -110,8 +111,8 @@ func NewController(
 	DeploymentInformer extensionsv1beta1informers.DeploymentInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
 	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
-) (*ClusterController, error) {
-	cc := &ClusterController{
+) (*Controller, error) {
+	cc := &Controller{
 		kubermaticClient: kubermaticClient,
 		kubeClient:       kubeClient,
 
@@ -235,7 +236,7 @@ func NewController(
 	return cc, nil
 }
 
-func (cc *ClusterController) enqueue(cluster *kubermaticv1.Cluster) {
+func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
@@ -245,7 +246,7 @@ func (cc *ClusterController) enqueue(cluster *kubermaticv1.Cluster) {
 	cc.queue.Add(key)
 }
 
-func (cc *ClusterController) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
+func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
 	currentCluster, err := cc.ClusterLister.Get(modifiedCluster.Name)
 	if err != nil {
 		return err
@@ -274,7 +275,7 @@ func (cc *ClusterController) updateCluster(originalData []byte, modifiedCluster 
 	return err
 }
 
-func (cc *ClusterController) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
+func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
 	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
 		cluster.Status.ErrorMessage = &message
 		cluster.Status.ErrorReason = &reason
@@ -283,7 +284,7 @@ func (cc *ClusterController) updateClusterError(cluster *kubermaticv1.Cluster, r
 	return nil
 }
 
-func (cc *ClusterController) syncCluster(key string) error {
+func (cc *Controller) syncCluster(key string) error {
 	listerCluster, err := cc.ClusterLister.Get(key)
 	if err != nil {
 		if kubeapierrors.IsNotFound(err) {
@@ -350,12 +351,12 @@ func (cc *ClusterController) syncCluster(key string) error {
 	return cc.updateCluster(originalData, cluster)
 }
 
-func (cc *ClusterController) runWorker() {
+func (cc *Controller) runWorker() {
 	for cc.processNextItem() {
 	}
 }
 
-func (cc *ClusterController) processNextItem() bool {
+func (cc *Controller) processNextItem() bool {
 	key, quit := cc.queue.Get()
 	if quit {
 		return false
@@ -370,7 +371,7 @@ func (cc *ClusterController) processNextItem() bool {
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
-func (cc *ClusterController) handleErr(err error, key interface{}) {
+func (cc *Controller) handleErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -395,7 +396,7 @@ func (cc *ClusterController) handleErr(err error, key interface{}) {
 	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
-func (cc *ClusterController) syncInPhase(phase kubermaticv1.ClusterPhase) {
+func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	clusters, err := cc.ClusterLister.List(labels.Everything())
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
@@ -409,7 +410,8 @@ func (cc *ClusterController) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	}
 }
 
-func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
+// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
+func (cc *ClusterController) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))
@@ -429,7 +431,7 @@ func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Info("Shutting down cluster controller")
 }
 
-func (cc *ClusterController) handleChildObject(i interface{}) {
+func (cc *Controller) handleChildObject(i interface{}) {
 	obj, ok := i.(metav1.Object)
 	//Object might be a tombstone
 	if !ok {

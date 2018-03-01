@@ -81,7 +81,7 @@ func TestClusterEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/dc/us-central1/cluster/"+test.clusterName, nil)
+			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
 			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{test.cluster}, nil, nil)
 			e.ServeHTTP(res, req)
@@ -184,7 +184,7 @@ func TestClustersEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/dc/us-central1/cluster", nil)
+			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
 			e := createTestEndpoint(getUser(test.username, test.admin), clusterList, nil, nil)
 			e.ServeHTTP(res, req)
