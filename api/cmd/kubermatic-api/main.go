@@ -55,7 +55,6 @@ var (
 	listenAddress   string
 	kubeconfig      string
 	prometheusAddr  string
-	prometheusPath  string
 	masterResources string
 	dcFile          string
 	workerName      string
@@ -73,7 +72,6 @@ func main() {
 	flag.StringVar(&listenAddress, "address", ":8080", "The listenAddress to listen on")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
-	flag.StringVar(&prometheusPath, "prometheus-path", "/metrics", "The path on the host, on which the handler is available")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
@@ -176,7 +174,7 @@ func main() {
 	r := handler.NewRouting(ctx, datacenters, clusterProviders, cloudProviders, sshKeyProvider, userProvider, authenticator, versions, updates)
 	router := mux.NewRouter()
 	r.Register(router)
-	go metrics.ServeForever(prometheusAddr, prometheusPath)
+	go metrics.ServeForever(prometheusAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))
 	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, router)))
 }
