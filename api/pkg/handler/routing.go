@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	rawToken                  = iota
-	apiUserContextKey         = iota
-	userCRContextKey          = iota
-	datacenterContextKey      = iota
-	clusterProviderContextKey = iota
+	rawToken = iota
+	apiUserContextKey
+	userCRContextKey
+	datacenterContextKey
+	clusterProviderContextKey
 )
 
 // Routing represents an object which binds endpoints to http handlers.
