@@ -24,16 +24,17 @@ const (
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx              context.Context
-	datacenters      map[string]provider.DatacenterMeta
-	cloudProviders   map[string]provider.CloudProvider
-	sshKeyProvider   provider.SSHKeyProvider
-	userProvider     provider.UserProvider
-	logger           log.Logger
-	authenticator    Authenticator
-	versions         map[string]*apiv1.MasterVersion
-	updates          []apiv1.MasterUpdate
-	clusterProviders map[string]provider.ClusterProvider
+	ctx                       context.Context
+	datacenters               map[string]provider.DatacenterMeta
+	optimisticClusterProvider provider.ClusterProvider
+	cloudProviders            map[string]provider.CloudProvider
+	sshKeyProvider            provider.SSHKeyProvider
+	userProvider              provider.UserProvider
+	logger                    log.Logger
+	authenticator             Authenticator
+	versions                  map[string]*apiv1.MasterVersion
+	updates                   []apiv1.MasterUpdate
+	clusterProviders          map[string]provider.ClusterProvider
 }
 
 // NewRouting creates a new Routing.
@@ -41,6 +42,7 @@ func NewRouting(
 	ctx context.Context,
 	datacenters map[string]provider.DatacenterMeta,
 	clusterProviders map[string]provider.ClusterProvider,
+	optimisticClusterProvider provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	sshKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
@@ -49,16 +51,17 @@ func NewRouting(
 	updates []apiv1.MasterUpdate,
 ) Routing {
 	return Routing{
-		ctx:              ctx,
-		datacenters:      datacenters,
-		clusterProviders: clusterProviders,
-		sshKeyProvider:   sshKeyProvider,
-		userProvider:     userProvider,
-		cloudProviders:   cloudProviders,
-		logger:           log.NewLogfmtLogger(os.Stderr),
-		authenticator:    authenticator,
-		versions:         versions,
-		updates:          updates,
+		ctx:                       ctx,
+		datacenters:               datacenters,
+		clusterProviders:          clusterProviders,
+		optimisticClusterProvider: optimisticClusterProvider,
+		sshKeyProvider:            sshKeyProvider,
+		userProvider:              userProvider,
+		cloudProviders:            cloudProviders,
+		logger:                    log.NewLogfmtLogger(os.Stderr),
+		authenticator:             authenticator,
+		versions:                  versions,
+		updates:                   updates,
 	}
 }
 
@@ -91,43 +94,43 @@ func (r Routing) Register(mux *mux.Router) {
 		Handler(r.datacenterHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/dc/{dc}/cluster").
+		Path("/api/v1/cluster").
 		Handler(r.newClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster").
+		Path("/api/v1/cluster").
 		Handler(r.clustersHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Path("/api/v1/cluster/{cluster}").
 		Handler(r.clusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Path("/api/v1/cluster/{cluster}/kubeconfig").
 		Handler(r.kubeconfigHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}").
+		Path("/api/v1/cluster/{cluster}").
 		Handler(r.deleteClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
+		Path("/api/v1/cluster/{cluster}/node").
 		Handler(r.nodesHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node").
+		Path("/api/v1/cluster/{cluster}/node").
 		Handler(r.createNodesHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/node/{node}").
+		Path("/api/v1/cluster/{cluster}/node/{node}").
 		Handler(r.deleteNodeHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrades").
+		Path("/api/v1/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgrades())
 
 	mux.Methods(http.MethodPut).
-		Path("/api/v1/dc/{dc}/cluster/{cluster}/upgrade").
+		Path("/api/v1/cluster/{cluster}/upgrade").
 		Handler(r.performClusterUpgrade())
 
 	mux.Methods(http.MethodGet).
@@ -152,43 +155,43 @@ func (r Routing) Register(mux *mux.Router) {
 
 	// New project endpoints
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster").
+		Path("/api/v1/projects/{project_id}/cluster").
 		Handler(r.newProjectClusterHandlerV2())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster").
+		Path("/api/v1/projects/{project_id}/cluster").
 		Handler(r.getProjectClustersHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
 		Handler(r.getProjectClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/kubeconfig").
 		Handler(r.getProjectClusterKubeconfigHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}").
 		Handler(r.deleteProjectClusterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
 		Handler(r.getProjectClusterNodesHandler())
 
 	mux.Methods(http.MethodPost).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node").
 		Handler(r.createProjectClusterNodesHandler())
 
 	mux.Methods(http.MethodDelete).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/node/{node}").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/node/{node}").
 		Handler(r.deleteProjectClusterNodeHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrades").
 		Handler(r.getProjectClusterPossibleClusterUpgrades())
 
 	mux.Methods(http.MethodPut).
-		Path("/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade").
+		Path("/api/v1/projects/{project_id}/cluster/{cluster}/upgrade").
 		Handler(r.performProjectClusterUpgrade())
 
 	mux.Methods(http.MethodGet).
@@ -411,7 +414,7 @@ func (r Routing) datacenterHandler() http.Handler {
 }
 
 // Creates a cluster
-// swagger:route POST /api/v1/dc/{dc}/cluster cluster createCluster
+// swagger:route POST /api/v1/cluster cluster createCluster
 //
 //     Consumes:
 //     - application/json
@@ -427,7 +430,7 @@ func (r Routing) newClusterHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(newClusterEndpoint(r.sshKeyProvider)),
 		decodeNewClusterReq,
 		createStatusResource(encodeJSON),
@@ -436,7 +439,7 @@ func (r Routing) newClusterHandler() http.Handler {
 }
 
 // Get the cluster
-// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster} cluster getCluster
+// swagger:route GET /api/v1/cluster/{cluster} cluster getCluster
 //
 //     Produces:
 //     - application/json
@@ -449,7 +452,7 @@ func (r Routing) clusterHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(clusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -458,7 +461,7 @@ func (r Routing) clusterHandler() http.Handler {
 }
 
 // kubeconfigHandler returns the kubeconfig for the cluster.
-// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
+// swagger:route GET /api/v1/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
 //
 //     Produces:
 //     - application/yaml
@@ -471,7 +474,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(kubeconfigEndpoint()),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
@@ -480,7 +483,7 @@ func (r Routing) kubeconfigHandler() http.Handler {
 }
 
 // List clusters
-// swagger:route GET /api/v1/dc/{dc}/cluster cluster listClusters
+// swagger:route GET /api/v1/cluster cluster listClusters
 //
 //     Produces:
 //     - application/json
@@ -493,7 +496,7 @@ func (r Routing) clustersHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(clustersEndpoint()),
 		decodeClustersReq,
 		encodeJSON,
@@ -502,7 +505,7 @@ func (r Routing) clustersHandler() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/dc/{dc}/cluster/{cluster} cluster deleteCluster
+// swagger:route DELETE /api/v1/cluster/{cluster} cluster deleteCluster
 //
 //     Produces:
 //     - application/json
@@ -515,7 +518,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(deleteClusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -524,7 +527,7 @@ func (r Routing) deleteClusterHandler() http.Handler {
 }
 
 // Get nodes
-// swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/node cluster getClusterNodes
+// swagger:route GET /api/v1/cluster/{cluster}/node cluster getClusterNodes
 //
 //     Produces:
 //     - application/json
@@ -537,7 +540,7 @@ func (r Routing) nodesHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(nodesEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -546,7 +549,7 @@ func (r Routing) nodesHandler() http.Handler {
 }
 
 // Create nodes
-// swagger:route POST /api/v1/dc/{dc}/cluster/{cluster}/node cluster createClusterNodes
+// swagger:route POST /api/v1/cluster/{cluster}/node cluster createClusterNodes
 //
 //     Consumes:
 //     - application/json
@@ -562,7 +565,7 @@ func (r Routing) createNodesHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)),
 		decodeCreateNodesReq,
 		createStatusResource(encodeJSON),
@@ -571,7 +574,7 @@ func (r Routing) createNodesHandler() http.Handler {
 }
 
 // Delete's the node
-// swagger:route DELETE /api/v1/dc/{dc}/cluster/{cluster}/node/{node} cluster deleteClusterNode
+// swagger:route DELETE /api/v1/cluster/{cluster}/node/{node} cluster deleteClusterNode
 //
 //     Produces:
 //     - application/json
@@ -584,7 +587,7 @@ func (r Routing) deleteNodeHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(deleteNodeEndpoint()),
 		decodeNodeReq,
 		encodeJSON,
@@ -597,7 +600,7 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(getClusterUpgrades(r.versions, r.updates)),
 		decodeClusterReq,
 		encodeJSON,
@@ -610,7 +613,7 @@ func (r Routing) performClusterUpgrade() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(performClusterUpgrade(r.versions, r.updates)),
 		decodeUpgradeReq,
 		encodeJSON,
@@ -744,7 +747,7 @@ func (r Routing) newProjectClusterHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(newClusterEndpoint(r.sshKeyProvider)),
 		decodeNewClusterReq,
 		encodeJSON,
@@ -757,7 +760,7 @@ func (r Routing) getProjectClustersHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(clustersEndpoint()),
 		decodeClustersReq,
 		encodeJSON,
@@ -770,7 +773,7 @@ func (r Routing) getProjectClusterHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(clusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -783,7 +786,7 @@ func (r Routing) getProjectClusterKubeconfigHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(kubeconfigEndpoint()),
 		decodeKubeconfigReq,
 		encodeKubeconfig,
@@ -796,7 +799,7 @@ func (r Routing) deleteProjectClusterHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(deleteClusterEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -809,7 +812,7 @@ func (r Routing) getProjectClusterNodesHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(nodesEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
@@ -822,7 +825,7 @@ func (r Routing) createProjectClusterNodesHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)),
 		decodeCreateNodesReq,
 		encodeJSON,
@@ -835,7 +838,7 @@ func (r Routing) deleteProjectClusterNodeHandler() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(deleteNodeEndpoint()),
 		decodeNodeReq,
 		encodeJSON,
@@ -848,7 +851,7 @@ func (r Routing) getProjectClusterPossibleClusterUpgrades() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(getClusterUpgrades(r.versions, r.updates)),
 		decodeClusterReq,
 		encodeJSON,
@@ -861,7 +864,7 @@ func (r Routing) performProjectClusterUpgrade() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(performClusterUpgrade(r.versions, r.updates)),
 		decodeUpgradeReq,
 		encodeJSON,
@@ -922,7 +925,7 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
@@ -944,7 +947,7 @@ func (r Routing) getNodesHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(getNodesEndpointV2()),
 		decodeClusterReq,
 		encodeJSON,
@@ -966,7 +969,7 @@ func (r Routing) getNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(getNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,
@@ -988,7 +991,7 @@ func (r Routing) deleteNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			r.optimisticDatacenterMiddleware(),
 		)(deleteNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,

@@ -28,60 +28,7 @@
         }
       }
     },
-    "/api/v1/dc": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "datacenter"
-        ],
-        "operationId": "listDatacenters",
-        "responses": {
-          "200": {
-            "description": "DatacenterList",
-            "schema": {
-              "$ref": "#/definitions/DatacenterList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/dc/{dc}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "datacenter"
-        ],
-        "operationId": "getDatacenter",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Datacenter",
-            "schema": {
-              "$ref": "#/definitions/Datacenter"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/dc/{dc}/cluster": {
+    "/api/v1/cluster": {
       "get": {
         "produces": [
           "application/json"
@@ -151,7 +98,7 @@
         }
       }
     },
-    "/api/v1/dc/{dc}/cluster/{cluster}": {
+    "/api/v1/cluster/{cluster}": {
       "get": {
         "produces": [
           "application/json"
@@ -222,7 +169,7 @@
         }
       }
     },
-    "/api/v1/dc/{dc}/cluster/{cluster}/kubeconfig": {
+    "/api/v1/cluster/{cluster}/kubeconfig": {
       "get": {
         "produces": [
           "application/yaml"
@@ -260,7 +207,7 @@
         }
       }
     },
-    "/api/v1/dc/{dc}/cluster/{cluster}/node": {
+    "/api/v1/cluster/{cluster}/node": {
       "get": {
         "produces": [
           "application/json"
@@ -341,7 +288,7 @@
         }
       }
     },
-    "/api/v1/dc/{dc}/cluster/{cluster}/node/{node}": {
+    "/api/v1/cluster/{cluster}/node/{node}": {
       "delete": {
         "produces": [
           "application/json"
@@ -376,6 +323,59 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "operationId": "listDatacenters",
+        "responses": {
+          "200": {
+            "description": "DatacenterList",
+            "schema": {
+              "$ref": "#/definitions/DatacenterList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dc/{dc}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "operationId": "getDatacenter",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"

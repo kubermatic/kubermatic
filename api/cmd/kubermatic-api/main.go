@@ -132,6 +132,7 @@ func main() {
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
+	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "europe-west3-c", workerName)
 
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -171,7 +172,19 @@ func main() {
 		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(datacenters),
 	}
 
-	r := handler.NewRouting(ctx, datacenters, clusterProviders, cloudProviders, sshKeyProvider, userProvider, authenticator, versions, updates)
+	r := handler.NewRouting(
+		ctx,
+		datacenters,
+		clusterProviders,
+		optimisticClusterProvider,
+		cloudProviders,
+		sshKeyProvider,
+		userProvider,
+		authenticator,
+		versions,
+		updates,
+	)
+
 	router := mux.NewRouter()
 	r.Register(router)
 	go metrics.ServeForever(prometheusAddr, "/metrics")
