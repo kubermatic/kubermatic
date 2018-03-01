@@ -185,9 +185,13 @@ func main() {
 		updates,
 	)
 
-	router := mux.NewRouter()
-	r.Register(router)
+	mainRouter := mux.NewRouter()
+	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
+	r.RegisterV1(v1Router)
+	r.RegisterV2(v2Router)
+
 	go metrics.ServeForever(prometheusAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))
-	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, router)))
+	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, mainRouter)))
 }
