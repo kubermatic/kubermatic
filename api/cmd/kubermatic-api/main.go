@@ -83,7 +83,7 @@ func main() {
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
-		glog.Fatal(fmt.Printf("failed to load datacenter yaml %q: %v", dcFile, err))
+		glog.Fatalf("failed to load datacenter yaml %q: %v", dcFile, err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)

@@ -86,19 +86,19 @@ func main() {
 
 	dcs, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to load datacenter yaml %q: %v", dcFile, err))
+		glog.Fatalf("failed to load datacenter yaml %q: %v", dcFile, err)
 	}
 
 	// load versions
 	versions, err := version.LoadVersions(versionsFile)
 	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", versionsFile, err))
+		glog.Fatalf("failed to load version yaml %q: %v", versionsFile, err)
 	}
 
 	// load updates
 	updates, err := version.LoadUpdates(updatesFile)
 	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", versionsFile, err))
+		glog.Fatalf("failed to load version yaml %q: %v", versionsFile, err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
