@@ -17,17 +17,6 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
-    "/api/healthz": {
-      "get": {
-        "description": "Health endpoint",
-        "operationId": "healthz",
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          }
-        }
-      }
-    },
     "/api/v1/cluster": {
       "get": {
         "produces": [
@@ -402,6 +391,17 @@
           },
           "default": {
             "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/healthz": {
+      "get": {
+        "description": "Health endpoint",
+        "operationId": "healthz",
+        "responses": {
+          "default": {
+            "$ref": "#/responses/empty"
           }
         }
       }

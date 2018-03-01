@@ -10,6 +10,16 @@ import (
 
 // Register declare router paths
 func (r Routing) RegisterV1(mux *mux.Router) {
+	// swagger:route GET /api/v1/healthz healthz
+	//
+	// Health endpoint
+	//
+	//     Responses:
+	//       default: empty
+	mux.Methods(http.MethodGet).
+		Path("/healthz").
+		HandlerFunc(StatusOK)
+
 	mux.Methods(http.MethodGet).
 		Path("/dc").
 		Handler(r.datacentersHandler())
