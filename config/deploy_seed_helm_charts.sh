@@ -54,31 +54,18 @@ do
    sleep 5
 done
 
+#TODO: Add federation
 ############# MONITORING #############
 # All monitoring charts require the monitoring ns.
-kubectl create namespace monitoring || true
-helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus-operator/
-helm ${HELM_OPTS} upgrade -i node-exporter -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/node-exporter/
-helm ${HELM_OPTS} upgrade -i kube-state-metrics -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/kube-state-metrics/
-helm ${HELM_OPTS} upgrade -i grafana -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/grafana/
-helm ${HELM_OPTS} upgrade -i alertmanager -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/alertmanager/
-helm ${HELM_OPTS} upgrade -i prometheus -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
+#kubectl create namespace monitoring || true
+#helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus-operator/
+#helm ${HELM_OPTS} upgrade -i node-exporter -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/node-exporter/
+#helm ${HELM_OPTS} upgrade -i kube-state-metrics -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/kube-state-metrics/
+#helm ${HELM_OPTS} upgrade -i grafana -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/grafana/
+#helm ${HELM_OPTS} upgrade -i alertmanager -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/alertmanager/
+#helm ${HELM_OPTS} upgrade -i prometheus -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
 
 ############# Kubermatic #############
 helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/storage/
-helm ${HELM_OPTS} upgrade -i nginx --namespace ingress-nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
-helm ${HELM_OPTS} upgrade -i oauth --namespace oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
 helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
-helm ${HELM_OPTS} upgrade -i cert-manager --namespace cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
-helm ${HELM_OPTS} upgrade -i certs --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/certs/
 helm ${HELM_OPTS} upgrade -i nodeport-exposer --namespace nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
-
-#TODO: Update
-#helm ${HELM_OPTS} upgrade -i efk-logging -f ${VALUESFILE} ${PATH}/efk-logging/
-
-#TODO Update when needed. Needs new implementation anyway
-## Bare metal
-#if grep -q '\bIsBareMetal\b' ${VALUESFILE}; then
-#  helm ${HELM_OPTS} upgrade -i coreos-ipxe-server -f ${VALUESFILE} ${PATH}/coreos-ipxe-server/
-#  helm ${HELM_OPTS} upgrade -i bare-metal-provider -f ${VALUESFILE} ${PATH}/bare-metal-provider/
-#fi

@@ -28,7 +28,9 @@ COPY nodeport-exposer /kubermatic/nodeport-exposer
 
 COPY installer /kubermatic/installer
 
-COPY deploy_helm_charts.sh /kubermatic/
+COPY deploy_master_helm_charts.sh /kubermatic/
+COPY deploy_seed_helm_charts.sh /kubermatic/
+
 COPY versions-values.yaml /kubermatic/versions-values.yaml
 
-CMD ["/kubermatic/deploy_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]
+CMD ["/kubermatic/deploy_master_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]

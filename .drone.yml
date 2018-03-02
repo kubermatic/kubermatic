@@ -165,38 +165,51 @@ pipeline:
     pull: true
     kubectl: create
     templates:
-      - config/installer/install-job.template.yaml
+      - config/installer/master-install-job.template.yaml
     secrets:
       - source: kubeconfig_dev
         target: kubeconfig
     when:
       branch: master
 
-  deploy-cloud-master:
+  deploy-cloud-master-europe-west3-c-1:
     group: deploy
     image: kubeciio/kubectl:0.2
     pull: true
     kubectl: create
     templates:
-      - config/installer/install-job.template.yaml
+      - config/installer/master-install-job.template.yaml
     secrets:
-      - source: kubeconfig_cloud
+      - source: kubeconfig_cloud_europe-west3-c-1
         target: kubeconfig
     when:
       branch: master
 
-#  deploy-syseleven:
-#    group: deploy
-#    image: gcr.io/google_containers/hyperkube-amd64:v1.8.3
-#    commands:
-#      - echo $KUBECONFIG_SYSELEVEN | base64 -d > /kubeconfig
-#      - cp config/installer/install-job.template.yaml install-job-sys11.yaml
-#      - sed -i s/{INSTALLER_TAG}/${DRONE_COMMIT}/g install-job-sys11.yaml
-#      - /hyperkube kubectl --kubeconfig /kubeconfig create -f install-job-sys11.yaml
-#      - rm install-job-sys11.yaml
-#    secrets: [ kubeconfig_syseleven ]
-#    when:
-#      event: [tag]
+  deploy-cloud-seed-us-central1-c-1:
+    group: deploy
+    image: kubeciio/kubectl:0.2
+    pull: true
+    kubectl: create
+    templates:
+      - config/installer/seed-install-job.template.yaml
+    secrets:
+      - source: kubeconfig_cloud_us-central1-c-1
+        target: kubeconfig
+    when:
+      branch: master
+
+  deploy-cloud-seed-asia-east1-a-1:
+    group: deploy
+    image: kubeciio/kubectl:0.2
+    pull: true
+    kubectl: create
+    templates:
+      - config/installer/seed-install-job.template.yaml
+    secrets:
+      - source: kubeconfig_cloud_asia-east1-a-1
+        target: kubeconfig
+    when:
+      branch: master
 
   slack-failure:
     group: notify
