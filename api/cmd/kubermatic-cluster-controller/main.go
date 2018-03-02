@@ -17,11 +17,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -230,13 +226,7 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 	kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 
-	cps := map[string]provider.CloudProvider{
-		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(dcs),
-		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dcs),
-	}
+	cps := cloud.Providers(dcs)
 
 	ctrl, err := cluster.NewController(
 		kubeClient,

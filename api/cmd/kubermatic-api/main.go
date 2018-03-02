@@ -39,11 +39,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -164,13 +160,7 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", versionsFile, err))
 	}
 
-	cloudProviders := map[string]provider.CloudProvider{
-		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(datacenters),
-		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(datacenters),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(datacenters),
-	}
+	cloudProviders := cloud.Providers(datacenters)
 
 	r := handler.NewRouting(
 		ctx,

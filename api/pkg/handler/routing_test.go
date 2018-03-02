@@ -14,11 +14,7 @@ import (
 	fake2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -30,13 +26,7 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 	ctx := context.Background()
 
 	datacenters := buildDatacenterMeta()
-	cloudProviders := map[string]provider.CloudProvider{
-		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(datacenters),
-		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(datacenters),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(datacenters),
-	}
+	cloudProviders := cloud.Providers(datacenters)
 
 	authenticator := NewFakeAuthenticator(user)
 
