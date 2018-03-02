@@ -239,6 +239,9 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, kp provider.Cl
 		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
 			return nil, fmt.Errorf("only docker is allowd when using container linux")
 		}
+		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil {
+			return nil, fmt.Errorf("no operating system specified")
+		}
 
 		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version
 		if node.Spec.Versions.Kubelet != "" {
