@@ -5,7 +5,7 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	fake2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -29,7 +29,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	updates := buildMasterUpdates()
 
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
-	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
+	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjects...)
 
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
