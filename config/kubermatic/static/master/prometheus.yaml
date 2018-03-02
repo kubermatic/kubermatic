@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: {{ .ClusterName }}
+  labels:
+    prometheus: {{ .ClusterName }}
+spec:
+  replicas: 1
+  version: v2.1.0
+  serviceAccountName: prometheus-{{ .ClusterName }}
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: {{ .ClusterName }}
+  ruleSelector:
+    matchLabels:
+      role: prometheus-rulefiles
+      prometheus: {{ .ClusterName }}
+  resources:
+    requests:
+      memory: 200Mi
+# TODO(matthias) We need this Prometheus to send alerts to Alertmanager
+#  alerting:
+#    alertmanagers:
+#    - namespace: monitoring
+#      name: alertmanager-main
+#      port: web

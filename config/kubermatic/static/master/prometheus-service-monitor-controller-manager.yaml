@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: controller-manager
+  labels:
+    name: controller-manager
+    prometheus: {{ .ClusterName }}
+spec:
+  jobLabel: name
+  endpoints:
+  - port: http-metrics
+    interval: 30s
+  selector:
+    matchLabels:
+      name: controller-manager
+  namespaceSelector:
+    matchNames:
+    - cluster-{{ .ClusterName }}
