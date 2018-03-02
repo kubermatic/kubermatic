@@ -82,6 +82,16 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	// check that all roles are created
+	if err := cc.ensureRoles(cluster); err != nil {
+		return err
+	}
+
+	// check that all role bindings are created
+	if err := cc.ensureRoleBindings(cluster); err != nil {
+		return err
+	}
+
 	// check that all role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
@@ -387,6 +397,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
 	serviceAccounts := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
 		controllerresources.EtcdOperatorServiceAccountName: controllerresources.LoadServiceAccountFile,
+		controllerresources.PrometheusServiceAccountName:   controllerresources.LoadServiceAccountFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -426,8 +437,118 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 	return nil
 }
 
+func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
+	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error){
+		"prometheus": controllerresources.LoadRoleFile,
+	}
+
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	for name, gen := range roles {
+		generatedRole, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate Role %s: %v", name, err)
+		}
+		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
+
+		roles, err := informerGroup.RoleInformer.Lister().List(labels.Everything())
+		if err != nil {
+			return err
+		}
+
+		var role *rbacv1beta1.Role
+		for _, r := range roles {
+			if r.Name == generatedRole.Name {
+				role = r
+			}
+		}
+		if role == nil {
+			if _, err = client.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
+				return fmt.Errorf("failed to create Role for %s: %v", name, err)
+			}
+			continue
+		}
+		if role.Annotations[lastAppliedConfigAnnotation] != lastApplied {
+			patch, err := getPatch(role, generatedRole)
+			if err != nil {
+				return err
+			}
+			if _, err = client.RbacV1beta1().Roles(c.Status.NamespaceName).Patch(generatedRole.Name, types.MergePatchType, patch); err != nil {
+				return fmt.Errorf("failed to patch role for %s: %v", name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
+	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error){
+		"prometheus": controllerresources.LoadRoleBindingFile,
+	}
+
+	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+	}
+
+	for name, gen := range roleBindings {
+		generatedRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate RoleBinding %s: %v", name, err)
+		}
+		generatedRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
+
+		roleBinding, err := informerGroup.ClusterRoleBindingInformer.Lister().Get(generatedRoleBinding.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				if _, err = client.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
+				}
+				continue
+			} else {
+				return err
+			}
+		}
+		if roleBinding.Annotations[lastAppliedConfigAnnotation] != lastApplied {
+			patch, err := getPatch(roleBinding, generatedRoleBinding)
+			if err != nil {
+				return err
+			}
+			if _, err = client.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Patch(generatedRoleBinding.Name, types.MergePatchType, patch); err != nil {
+				return fmt.Errorf("failed to patch roleBinding for %s: %v", name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
+	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
 		"etcd-operator": controllerresources.LoadClusterRoleBindingFile,
 	}
 
@@ -436,7 +557,12 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range roleBindings {
+	for name, gen := range clusterRoleBindings {
+		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
+		if err != nil {
+			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
+		}
+
 		generatedClusterRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
