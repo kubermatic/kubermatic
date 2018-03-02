@@ -32,7 +32,7 @@ spec:
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
-            - name: http
+            - name: metrics
               containerPort: 8085
               protocol: TCP
           volumeMounts:
