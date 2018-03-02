@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	fake2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -30,8 +30,8 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 
 	authenticator := NewFakeAuthenticator(user)
 
-	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
-	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
+	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
+	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())

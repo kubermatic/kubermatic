@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
-func (cc *Controller) healthyDep(ns, name string, minReady int32) (bool, error) {
+func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {
 	dep, err := cc.DeploymentLister.Deployments(ns).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {

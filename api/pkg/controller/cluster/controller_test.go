@@ -6,7 +6,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	fake2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"k8s.io/client-go/informers"
@@ -32,7 +32,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	kubermaticClient := fake2.NewSimpleClientset(kubermaticObjects...)
 
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, time.Minute*5)
-	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 
 	controller, err := NewController(
 		kubeClient,

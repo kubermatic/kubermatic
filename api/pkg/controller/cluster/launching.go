@@ -36,7 +36,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDep(ns, name, healthMapping[name].minReady)
+		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}

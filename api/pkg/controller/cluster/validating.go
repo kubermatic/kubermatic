@@ -39,7 +39,7 @@ func (cc *Controller) validateDatacenter(c *kubermaticv1.Cluster) error {
 		return fmt.Errorf("could not find node datacenter %q", c.Spec.Cloud.DatacenterName)
 	}
 	if dc.IsSeed {
-		return fmt.Errorf("specified node datacenter %q is not configured as a seed-datacenter", c.Spec.Cloud.DatacenterName)
+		return fmt.Errorf("specified node datacenter %q is not configured as a seed datacenter", c.Spec.Cloud.DatacenterName)
 	}
 
 	return nil

@@ -35,7 +35,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
-	kubermaticMasterInformerFactory := externalversions.NewSharedInformerFactory(kubermaticMasterClient, informerResyncPeriod)
+	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informerResyncPeriod)
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), handler.IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
@@ -122,7 +122,7 @@ func main() {
 		glog.V(2).Infof("adding %s as seed", ctx)
 
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
-		kubermaticSeedInformerFactory := externalversions.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
+		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
 		clusterProviders[ctx] = kubernetes.NewClusterProvider(kubermaticSeedClient, kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName, handler.IsAdmin)
 
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
