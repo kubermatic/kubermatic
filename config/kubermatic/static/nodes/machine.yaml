@@ -66,7 +66,7 @@ spec:
     operatingSystemSpec:
       disableAutoUpdate: {{ .Node.Spec.OperatingSystem.DisableAutoUpdate }}
     {{- end }}
-    {{- if .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
+    {{- if .Node.Spec.OperatingSystem.Ubuntu }}
     operatingSystem: "ubuntu"
     operatingSystemSpec:
       distUpgradeOnBoot: {{ .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
