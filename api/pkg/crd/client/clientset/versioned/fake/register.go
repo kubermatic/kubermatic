@@ -3,6 +3,7 @@ package fake
 import (
 	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	monitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -35,5 +36,6 @@ func init() {
 func AddToScheme(scheme *runtime.Scheme) {
 	etcdv1beta2.AddToScheme(scheme)
 	kubermaticv1.AddToScheme(scheme)
+	monitoringv1.AddToScheme(scheme)
 
 }
