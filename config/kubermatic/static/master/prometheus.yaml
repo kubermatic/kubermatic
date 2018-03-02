@@ -1,20 +1,20 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: {{ .ClusterName }}
+  name: {{ .Cluster.Name }}
   labels:
-    prometheus: {{ .ClusterName }}
+    prometheus: {{ .Cluster.Name }}
 spec:
   replicas: 1
   version: v2.1.0
-  serviceAccountName: prometheus-{{ .ClusterName }}
+  serviceAccountName: prometheus-{{ .Cluster.Name }}
   serviceMonitorSelector:
     matchLabels:
-      prometheus: {{ .ClusterName }}
+      prometheus: {{ .Cluster.Name }}
   ruleSelector:
     matchLabels:
       role: prometheus-rulefiles
-      prometheus: {{ .ClusterName }}
+      prometheus: {{ .Cluster.Name }}
   resources:
     requests:
       memory: 200Mi

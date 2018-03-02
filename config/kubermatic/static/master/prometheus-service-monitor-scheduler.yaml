@@ -4,7 +4,7 @@ metadata:
   name: scheduler
   labels:
     name: scheduler
-    prometheus: {{ .ClusterName }}
+    prometheus: {{ .Cluster.Name }}
 spec:
   jobLabel: name
   endpoints:
@@ -15,4 +15,4 @@ spec:
       name: scheduler
   namespaceSelector:
     matchNames:
-    - cluster-{{ .ClusterName }}
+    - cluster-{{ .Cluster.Name }}

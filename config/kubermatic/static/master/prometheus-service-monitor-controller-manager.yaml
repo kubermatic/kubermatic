@@ -4,7 +4,7 @@ metadata:
   name: controller-manager
   labels:
     name: controller-manager
-    prometheus: {{ .ClusterName }}
+    prometheus: {{ .Cluster.Name }}
 spec:
   jobLabel: name
   endpoints:
@@ -15,4 +15,4 @@ spec:
       name: controller-manager
   namespaceSelector:
     matchNames:
-    - cluster-{{ .ClusterName }}
+    - cluster-{{ .Cluster.Name }}

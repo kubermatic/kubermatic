@@ -4,7 +4,7 @@ metadata:
   name: machine-controller
   labels:
     name: machine-controller
-    prometheus: {{ .ClusterName }}
+    prometheus: {{ .Cluster.Name }}
 spec:
   jobLabel: name
   endpoints:
@@ -15,4 +15,4 @@ spec:
       app: machine-controller
   namespaceSelector:
     matchNames:
-    - cluster-{{ .ClusterName }}
+    - cluster-{{ .Cluster.Name }}
