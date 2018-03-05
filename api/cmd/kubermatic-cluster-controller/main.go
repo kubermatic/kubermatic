@@ -55,7 +55,7 @@ const (
 func main() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
+	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
