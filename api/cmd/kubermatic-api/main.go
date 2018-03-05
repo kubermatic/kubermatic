@@ -65,7 +65,7 @@ const (
 )
 
 func main() {
-	flag.StringVar(&listenAddress, "address", ":8080", "The listenAddress to listen on")
+	flag.StringVar(&listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
