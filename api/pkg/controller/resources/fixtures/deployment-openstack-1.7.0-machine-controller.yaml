@@ -24,7 +24,6 @@ spec:
         - -v=4
         - -cluster-dns=10.10.10.10
         - -internal-listen-address=0.0.0.0:8085
-        - -ssh-key-name=kubermatic-cluster-de-test-01
         image: kubermatic/machine-controller:v0.1.2
         livenessProbe:
           httpGet:
