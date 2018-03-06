@@ -17,7 +17,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
+func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Name)
 	health := kubermaticv1.ClusterHealth{
 		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
@@ -36,7 +36,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDep(c.Spec.SeedDatacenterName, ns, name, healthMapping[name].minReady)
+		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -44,7 +44,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyEtcd(c.Spec.SeedDatacenterName, ns, resources.EtcdClusterName)
+	health.Etcd, err = cc.healthyEtcd(ns, resources.EtcdClusterName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
@@ -53,7 +53,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 }
 
 // ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (cc *controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
-func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
+func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"k8s.io/client-go/kubernetes/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,18 +13,16 @@ import (
 )
 
 func TestPendingCreateAddressesSuccessfully(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
-		Spec: kubermaticv1.ClusterSpec{
-			SeedDatacenterName: TestDC,
-		},
+		Spec:    kubermaticv1.ClusterSpec{},
 		Address: &kubermaticv1.ClusterAddress{},
 	}
 
-	if err := f.controller.ensureAddress(c); err != nil {
+	if err := controller.ensureAddress(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -43,20 +42,18 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 }
 
 func TestPendingCreateAddressesPartially(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
-		Spec: kubermaticv1.ClusterSpec{
-			SeedDatacenterName: TestDC,
-		},
+		Spec: kubermaticv1.ClusterSpec{},
 		Address: &kubermaticv1.ClusterAddress{
 			ExternalName: fmt.Sprintf("%s.%s.dev.kubermatic.io", TestClusterName, TestDC),
 		},
 	}
 
-	if err := f.controller.ensureAddress(c); err != nil {
+	if err := controller.ensureAddress(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -75,14 +72,12 @@ func TestPendingCreateAddressesPartially(t *testing.T) {
 }
 
 func TestPendingCreateAddressesAlreadyExists(t *testing.T) {
-	f := newTestController([]runtime.Object{}, []runtime.Object{}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
-		Spec: kubermaticv1.ClusterSpec{
-			SeedDatacenterName: TestDC,
-		},
+		Spec: kubermaticv1.ClusterSpec{},
 		Address: &kubermaticv1.ClusterAddress{
 			ExternalName: "fqpcvnc6v.europe-west3-c.dev.kubermatic.io",
 			URL:          "https://fqpcvnc6v.europe-west3-c.dev.kubermatic.io:30004",
@@ -91,7 +86,7 @@ func TestPendingCreateAddressesAlreadyExists(t *testing.T) {
 		},
 	}
 
-	if err := f.controller.ensureAddress(c); err != nil {
+	if err := controller.ensureAddress(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -114,9 +109,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "henrik1",
 				},
-				Spec: kubermaticv1.ClusterSpec{
-					SeedDatacenterName: TestDC,
-				},
+				Spec:    kubermaticv1.ClusterSpec{},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
@@ -130,9 +123,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "henrik1",
 				},
-				Spec: kubermaticv1.ClusterSpec{
-					SeedDatacenterName: TestDC,
-				},
+				Spec:    kubermaticv1.ClusterSpec{},
 				Address: &kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
@@ -147,19 +138,19 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 			if test.ns != nil {
 				objects = append(objects, test.ns)
 			}
-			f := newTestController(objects, []runtime.Object{}, []runtime.Object{})
-			beforeActionCount := len(f.kubeclient.Actions())
-			err := f.controller.ensureNamespaceExists(test.cluster)
+			controller := newTestController(objects, []runtime.Object{})
+			beforeActionCount := len(controller.kubeClient.(*fake.Clientset).Actions())
+			err := controller.ensureNamespaceExists(test.cluster)
 			if err != nil {
 				t.Errorf("failed to create namespace: %v", err)
 			}
 			if test.ns != nil {
-				if len(f.kubeclient.Actions()) != beforeActionCount {
-					t.Error("client made call to create namespace although a namespace already existed", f.kubeclient.Actions()[beforeActionCount:])
+				if len(controller.kubeClient.(*fake.Clientset).Actions()) != beforeActionCount {
+					t.Error("client made call to create namespace although a namespace already existed", controller.kubeClient.(*fake.Clientset).Actions()[beforeActionCount:])
 				}
 			} else {
-				if len(f.kubeclient.Actions()) != beforeActionCount+1 {
-					t.Error("client made more more or less than 1 call to create namespace", f.kubeclient.Actions()[beforeActionCount:])
+				if len(controller.kubeClient.(*fake.Clientset).Actions()) != beforeActionCount+1 {
+					t.Error("client made more more or less than 1 call to create namespace", controller.kubeClient.(*fake.Clientset).Actions()[beforeActionCount:])
 				}
 			}
 		})

@@ -8,25 +8,21 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kversion "github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func getClusterUpgrades(
-	kp provider.ClusterProvider,
-	versions map[string]*apiv1.MasterVersion,
-	updates []apiv1.MasterUpdate,
-) endpoint.Endpoint {
+func getClusterUpgrades(versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		req, ok := request.(ClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, ClusterReq{})
 		}
 
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewNotFound("cluster", req.Cluster)
@@ -61,19 +57,17 @@ func getClusterUpgrades(
 	}
 }
 
-func performClusterUpgrade(
-	kp provider.ClusterProvider,
-	versions map[string]*apiv1.MasterVersion,
-	updates []apiv1.MasterUpdate,
-) endpoint.Endpoint {
+func performClusterUpgrade(versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
 		req, ok := request.(UpgradeReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, UpgradeReq{})
 		}
 
-		k, err := kp.Cluster(user, req.Cluster)
+		k, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewNotFound("cluster", req.Cluster)
@@ -93,6 +87,6 @@ func performClusterUpgrade(
 			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.To)
 		}
 
-		return kp.InitiateClusterUpgrade(user, req.Cluster, req.To)
+		return clusterProvider.InitiateClusterUpgrade(user, req.Cluster, req.To)
 	}
 }

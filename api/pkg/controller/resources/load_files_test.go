@@ -197,8 +197,7 @@ func TestLoadFiles(t *testing.T) {
 			t.Run(fmt.Sprintf("resources-%s-%s", prov, version.ID), func(t *testing.T) {
 				cluster := &kubermaticv1.Cluster{
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud:              cloudspec,
-						SeedDatacenterName: "us-central1",
+						Cloud: cloudspec,
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
