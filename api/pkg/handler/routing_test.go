@@ -7,34 +7,63 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func createTestEndpoint(user apiv1.User, masterCrdObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
+func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
 ) http.Handler {
 	ctx := context.Background()
 
-	dcs := buildDatacenterMeta()
-	// create CloudProviders
-	cps := cloud.Providers(dcs)
-	router := mux.NewRouter()
-	authenticator := auth.NewFakeAuthenticator(user)
-	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
-	kp := kubernetes.NewKubernetesProvider(masterCrdClient, cps, "", dcs)
+	datacenters := buildDatacenterMeta()
+	cloudProviders := cloud.Providers(datacenters)
 
-	routing := NewRouting(ctx, dcs, kp, cps, authenticator, versions, updates)
-	routing.Register(router)
+	authenticator := NewFakeAuthenticator(user)
 
-	return router
+	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
+	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
+
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
+	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
+	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+
+	kubermaticInformerFactory.Start(wait.NeverStop)
+	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+
+	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "us-central1", "")
+
+	r := NewRouting(
+		ctx,
+		datacenters,
+		clusterProviders,
+		optimisticClusterProvider,
+		cloudProviders,
+		sshKeyProvider,
+		userProvider,
+		authenticator,
+		versions,
+		updates,
+	)
+	mainRouter := mux.NewRouter()
+	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
+	v3Router := mainRouter.PathPrefix("/api/v3").Subrouter()
+	r.RegisterV1(v1Router)
+	r.RegisterV2(v2Router)
+	r.RegisterV3(v3Router)
+
+	return mainRouter
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
@@ -100,7 +129,7 @@ func getUser(name string, admin bool) apiv1.User {
 		},
 	}
 	if admin {
-		u.Roles[auth.AdminRoleKey] = struct{}{}
+		u.Roles[AdminRoleKey] = struct{}{}
 	}
 	return u
 }
@@ -114,7 +143,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/healthz", nil)
+	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)

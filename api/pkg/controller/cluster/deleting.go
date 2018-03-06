@@ -14,7 +14,7 @@ import (
 // cleanupCluster is the function which handles clusters in the deleting phase.
 // It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
 // If this function does not return a pointer to a cluster or a error, the cluster is deleted.
-func (cc *controller) cleanupCluster(c *kubermaticv1.Cluster) error {
+func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) error {
 	stillHasNodes, err := cc.deletingNodeCleanup(c)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (cc *controller) cleanupCluster(c *kubermaticv1.Cluster) error {
 	return cc.deletingClusterResource(c)
 }
 
-func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error) {
+func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error) {
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
 		return false, nil
 	}
@@ -80,7 +80,7 @@ func (cc *controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error)
 	return true, nil
 }
 
-func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
+func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, cloudProviderCleanupFinalizer) {
 		return nil
 	}
@@ -98,17 +98,12 @@ func (cc *controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) erro
 	return nil
 }
 
-func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
+func (cc *Controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
 		return nil
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
-	ns, err := informerGroup.NamespaceInformer.Lister().Get(c.Status.NamespaceName)
+	ns, err := cc.NamespaceLister.Get(c.Status.NamespaceName)
 	// Only delete finalizer if namespace is really gone
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -119,23 +114,19 @@ func (cc *controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 	}
 
 	if ns.DeletionTimestamp == nil {
-		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-		if err != nil {
-			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-		}
-		return client.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
+		return cc.kubeClient.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
 	}
 
 	return nil
 }
 
 // deletingClusterResource deletes the cluster resource. Needed since Finalizers are broken in 1.7.
-func (cc *controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
+func (cc *Controller) deletingClusterResource(c *kubermaticv1.Cluster) error {
 	if len(c.Finalizers) != 0 {
 		return nil
 	}
 
-	if err := cc.masterCrdClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{}); err != nil {
+	if err := cc.kubermaticClient.KubermaticV1().Clusters().Delete(c.Name, &metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}

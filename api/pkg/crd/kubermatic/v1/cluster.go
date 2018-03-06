@@ -103,10 +103,9 @@ type ClusterList struct {
 type ClusterSpec struct {
 	Cloud *CloudSpec `json:"cloud"`
 
-	HumanReadableName  string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
-	MasterVersion      string `json:"masterVersion"`
-	WorkerName         string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
-	SeedDatacenterName string `json:"seedDatacenterName"`
+	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
+	MasterVersion     string `json:"masterVersion"`
+	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
 }
 
 // ClusterAddress stores access and address information of a cluster.
@@ -132,7 +131,6 @@ type ClusterStatus struct {
 	KubeletCert       KeyCert `json:"kubeletCert"`
 	ApiserverSSHKey   RSAKeys `json:"apiserverSshKey"`
 	ServiceAccountKey Bytes   `json:"serviceAccountKey"`
-	Seed              string  `json:"seed,omitempty"`
 	NamespaceName     string  `json:"namespaceName"`
 
 	UserName  string `json:"userName"`

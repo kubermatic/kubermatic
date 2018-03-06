@@ -7,23 +7,34 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
-	"github.com/gorilla/mux"
 )
 
 // ClustersReq represent a request for clusters specific data
-type ClustersReq struct{}
+// swagger:parameters listClusters
+type ClustersReq struct {
+	DCReq
+}
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	return ClustersReq{}, nil
+	var req ClustersReq
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
 }
 
 // ClusterReq represent a request for cluster specific data
 // swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterNodesV2
 type ClusterReq struct {
+	DCReq
 	// in: path
 	Cluster string `json:"cluster"`
 }
@@ -31,12 +42,20 @@ type ClusterReq struct {
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterReq
 	req.Cluster = mux.Vars(r)["cluster"]
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
 	return req, nil
 }
 
 // NewClusterReq represent a request for clusters specific data
 // swagger:parameters createCluster
 type NewClusterReq struct {
+	DCReq
 	// in: body
 	Body NewClusterReqBody
 }
@@ -47,8 +66,15 @@ type NewClusterReqBody struct {
 	SSHKeys []string                  `json:"sshKeys"`
 }
 
-func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
+func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewClusterReq
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
@@ -57,8 +83,7 @@ func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, err
 }
 
 // DCsReq represent a request for datacenters specific data
-type DCsReq struct {
-}
+type DCsReq struct{}
 
 func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DCsReq
@@ -66,11 +91,21 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+//DCGetter defines functionality to retrieve a datacenter name
+type DCGetter interface {
+	GetDC() string
+}
+
 // DCReq represent a request for datacenter specific data
 // swagger:parameters getDatacenter
 type DCReq struct {
 	// in: path
 	DC string `json:"dc"`
+}
+
+// GetDC returns the name of the datacenter in the request
+func (req DCReq) GetDC() string {
+	return req.DC
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {

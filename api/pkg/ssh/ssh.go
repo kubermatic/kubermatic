@@ -19,15 +19,13 @@ const (
 	DefaultUserLabel = "kubermatic-user-hash"
 )
 
-// UserListOptions returns a ListOptions object for retrieving objects with the label kubermatic-user-hash=username
-func UserListOptions(username string) (metav1.ListOptions, error) {
-	label, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(username)})
+// UserListLabelSelector returns a label selector for the given user id
+func UserListLabelSelector(userID string) (labels.Selector, error) {
+	req, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(userID)})
 	if err != nil {
-		return metav1.ListOptions{}, err
+		return nil, err
 	}
-	return metav1.ListOptions{
-		LabelSelector: labels.NewSelector().Add(*label).String(),
-	}, nil
+	return labels.NewSelector().Add(*req), nil
 }
 
 // UserToLabel encodes an arbitrary user string into a Kubernetes label value

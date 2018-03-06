@@ -7,19 +7,20 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
-func kubeconfigEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
+func kubeconfigEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(ClusterReq)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.Cluster)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				return nil, errors.NewNotFound("cluster", req.Cluster)
