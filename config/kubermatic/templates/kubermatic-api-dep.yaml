@@ -29,6 +29,7 @@ spec:
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -prometheus-address=0.0.0.0:8085
+          - -kubeconfig=/opt/.kube/kubeconfig
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:
