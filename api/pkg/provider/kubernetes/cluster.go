@@ -14,6 +14,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -70,6 +71,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
 				userLabelKey:                    user.ID,
 			},
+			Name: rand.String(10),
 		},
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{

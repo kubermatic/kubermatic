@@ -271,8 +271,26 @@ func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 		return nil
 	}
 
-	_, err = cc.kubermaticClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
-	return err
+	updatedCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
+	if err != nil {
+		return fmt.Errorf("failed to patch cluster: %v", err)
+	}
+
+	return wait.Poll(10*time.Millisecond, 30*time.Second, func() (bool, error) {
+		listerCluster, err := cc.ClusterLister.Get(updatedCluster.Name)
+		if err != nil {
+			// In case we remove the last finalizer, the object will be gone after the patch
+			if kubeapierrors.IsNotFound(err) {
+				return true, nil
+			}
+			utilruntime.HandleError(fmt.Errorf("failed to get cluster %s from luster during cache-update check: %v", updatedCluster.Name, err))
+			return false, nil
+		}
+		if listerCluster.ResourceVersion == updatedCluster.ResourceVersion {
+			return true, nil
+		}
+		return false, nil
+	})
 }
 
 func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
