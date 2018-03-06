@@ -48,6 +48,9 @@ spec:
             - name: node-files
               mountPath: "/opt/template/nodes/"
               readOnly: true
+            - name: master-files
+              mountPath: "/opt/master-files/"
+              readOnly: true
           resources:
             requests:
               memory: "64Mi"
@@ -67,3 +70,6 @@ spec:
         - name: datacenters
           secret:
             secretName: datacenters
+        - name: master-files
+          secret:
+            secretName: master-files
