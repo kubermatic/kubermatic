@@ -14,15 +14,3 @@ rules:
   resources:
   - configmaps
   verbs: ["get"]
-#---
-#apiVersion: rbac.authorization.k8s.io/v1beta1
-#kind: ClusterRole
-#metadata:
-#  name: prometheus-{{ .Cluster.Name }}
-#rules:
-#- apiGroups: [""]
-#  resources:
-#  - nodes/metrics
-#  verbs: ["get"]
-#- nonResourceURLs: ["/metrics"]
-#  verbs: ["get"]

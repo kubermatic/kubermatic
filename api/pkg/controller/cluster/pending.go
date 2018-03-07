@@ -354,6 +354,10 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
 		controllerresources.ApiserverInternalServiceName: controllerresources.LoadServiceFile,
 		controllerresources.ApiserverExternalServiceName: controllerresources.LoadServiceFile,
+		controllerresources.ControllerManagerServiceName: controllerresources.LoadServiceFile,
+		controllerresources.KubeStateMetricsServiceName:  controllerresources.LoadServiceFile,
+		controllerresources.MachineControllerServiceName: controllerresources.LoadServiceFile,
+		controllerresources.SchedulerServiceName:         controllerresources.LoadServiceFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -439,7 +443,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 
 func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error){
-		"prometheus": controllerresources.LoadRoleFile,
+		controllerresources.PrometheusRoleName: controllerresources.LoadRoleFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -450,7 +454,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 	for name, gen := range roles {
 		generatedRole, lastApplied, err := gen(data, name, cc.masterResourcesPath)
 		if err != nil {
-			return fmt.Errorf("failed to generate Role %s: %v", name, err)
+			return fmt.Errorf("failed to generate role %s: %v", name, err)
 		}
 		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
@@ -481,7 +485,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error){
-		"prometheus": controllerresources.LoadRoleBindingFile,
+		controllerresources.PrometheusRoleBindingName: controllerresources.LoadRoleBindingFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -523,7 +527,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
-		"etcd-operator": controllerresources.LoadClusterRoleBindingFile,
+		controllerresources.EtcdOperatorClusterRoleBindingName: controllerresources.LoadClusterRoleBindingFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

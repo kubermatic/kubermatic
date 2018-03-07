@@ -39,6 +39,14 @@ const (
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
+	//ControllerManagerServiceName is the name for the controller manager service
+	ControllerManagerServiceName = "controller-manager"
+	//KubeStateMetricsServiceName is the name for the kube-state-metrics service
+	KubeStateMetricsServiceName = "kube-state-metrics"
+	//MachineControllerServiceName is the name for the machine controller service
+	MachineControllerServiceName = "machine-controller"
+	//SchedulerServiceName is the name for the scheduler service
+	SchedulerServiceName = "scheduler"
 
 	//ApiserverSecretName is the name for the secrets required for the apiserver
 	ApiserverSecretName = "apiserver"
@@ -54,6 +62,15 @@ const (
 	EtcdOperatorServiceAccountName = "etcd-operator"
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
+
+	//PrometheusRoleName is the name for the Prometheus role
+	PrometheusRoleName = "prometheus"
+
+	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
+	PrometheusRoleBindingName = "prometheus"
+
+	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
+	EtcdOperatorClusterRoleBindingName = "etcd-operator"
 )
 
 // TemplateData is a group of data required for template generation
