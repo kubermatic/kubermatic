@@ -29,7 +29,7 @@ type Routing struct {
 	ctx                       context.Context
 	datacenters               map[string]provider.DatacenterMeta
 	optimisticClusterProvider provider.ClusterProvider
-	cloudProviders            map[string]provider.CloudProvider
+	cloudProviders            provider.CloudRegistry
 	sshKeyProvider            provider.SSHKeyProvider
 	userProvider              provider.UserProvider
 	logger                    log.Logger

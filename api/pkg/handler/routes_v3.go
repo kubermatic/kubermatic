@@ -22,6 +22,10 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 		Path("/dc/{dc}/cluster/{cluster}").
 		Handler(r.clusterHandlerV3())
 
+	mux.Methods(http.MethodPut).
+		Path("/dc/{dc}/cluster/{cluster}").
+		Handler(r.updateClusterHandlerV3())
+
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.kubeconfigHandlerV3())
@@ -69,7 +73,7 @@ func (r Routing) newClusterHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(newClusterEndpoint(r.sshKeyProvider)),
+		)(newClusterEndpoint(r.sshKeyProvider, r.cloudProviders)),
 		decodeNewClusterReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -93,6 +97,28 @@ func (r Routing) clusterHandlerV3() http.Handler {
 			r.datacenterMiddleware(),
 		)(clusterEndpoint()),
 		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Update the cluster
+// swagger:route PUT /api/v3/cluster/{cluster} cluster updateCluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterV1
+func (r Routing) updateClusterHandlerV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(updateClusterEndpoint(r.cloudProviders)),
+		decodeUpdateClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
