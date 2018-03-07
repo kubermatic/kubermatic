@@ -415,6 +415,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 			return fmt.Errorf("failed to generate ServiceAccount %s: %v", name, err)
 		}
 		generatedServiceAccount.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedServiceAccount.Name = name
 
 		serviceAccount, err := cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(name)
 		if err != nil {
@@ -457,6 +458,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate role %s: %v", name, err)
 		}
 		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedRole.Name = name
 
 		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
 		if err != nil {
@@ -499,6 +501,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate RoleBinding %s: %v", name, err)
 		}
 		generatedRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedRoleBinding.Name = name
 
 		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
 		if err != nil {
@@ -541,6 +544,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
 		}
 		generatedClusterRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedClusterRoleBinding.Name = name
 
 		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {
