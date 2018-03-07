@@ -153,3 +153,13 @@ func (p *ClusterProvider) InitiateClusterUpgrade(user apiv1.User, name, version 
 
 	return p.client.KubermaticV1().Clusters().Update(cluster)
 }
+
+// UpdateCluster updates a cluster
+func (p *ClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	_, err := p.Cluster(user, newCluster.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.client.KubermaticV1().Clusters().Update(newCluster)
+}

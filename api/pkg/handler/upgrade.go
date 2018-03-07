@@ -22,10 +22,10 @@ func getClusterUpgrades(versions map[string]*apiv1.MasterVersion, updates []apiv
 			return nil, errors.NewWrongRequest(request, ClusterReq{})
 		}
 
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}
@@ -67,10 +67,10 @@ func performClusterUpgrade(versions map[string]*apiv1.MasterVersion, updates []a
 			return nil, errors.NewWrongRequest(request, UpgradeReq{})
 		}
 
-		k, err := clusterProvider.Cluster(user, req.Cluster)
+		k, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}
@@ -87,6 +87,6 @@ func performClusterUpgrade(versions map[string]*apiv1.MasterVersion, updates []a
 			return nil, errors.NewUnknownUpgradePath(k.Spec.MasterVersion, req.To)
 		}
 
-		return clusterProvider.InitiateClusterUpgrade(user, req.Cluster, req.To)
+		return clusterProvider.InitiateClusterUpgrade(user, req.ClusterName, req.To)
 	}
 }

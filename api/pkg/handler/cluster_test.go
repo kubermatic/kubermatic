@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -216,6 +217,167 @@ func TestClustersEndpoint(t *testing.T) {
 				if !found {
 					t.Errorf("could not find cluster %s", w)
 				}
+			}
+		})
+	}
+}
+
+func TestUpdateClusterEndpoint(t *testing.T) {
+	tests := []struct {
+		name          string
+		responseCode  int
+		cluster       *kubermaticv1.Cluster
+		modifyCluster func(*kubermaticv1.Cluster) *kubermaticv1.Cluster
+	}{
+		{
+			name: "successful update admin token",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					AdminToken:   "cccccc.cccccccccccccccc",
+					KubeletToken: "cccccc.cccccccccccccccc",
+					URL:          "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: &kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "foo",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+			responseCode: http.StatusOK,
+			modifyCluster: func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+				c.Address.AdminToken = "bbbbbb.bbbbbbbbbbbbbbbb"
+				return c
+			},
+		},
+		{
+			name: "successful update cloud token",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					AdminToken:   "cccccc.cccccccccccccccc",
+					KubeletToken: "cccccc.cccccccccccccccc",
+					URL:          "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: &kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "foo",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+			responseCode: http.StatusOK,
+			modifyCluster: func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+				c.Spec.Cloud.Fake.Token = "bar"
+				return c
+			},
+		},
+		{
+			name: "invalid admin token",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					AdminToken:   "cccccc.cccccccccccccccc",
+					KubeletToken: "cccccc.cccccccccccccccc",
+					URL:          "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: &kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "foo",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+			responseCode: http.StatusBadRequest,
+			modifyCluster: func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+				c.Address.AdminToken = "foo-bar"
+				return c
+			},
+		},
+		{
+			name: "invalid address update",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUsername},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: &kubermaticv1.ClusterAddress{
+					AdminToken:   "cccccc.cccccccccccccccc",
+					KubeletToken: "cccccc.cccccccccccccccc",
+					URL:          "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: &kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "foo",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+			responseCode: http.StatusBadRequest,
+			modifyCluster: func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+				c.Address.URL = "https://example:8443"
+				return c
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := httptest.NewRecorder()
+			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{test.cluster}, nil, nil)
+
+			updatedCluster := test.cluster.DeepCopy()
+			updatedCluster = test.modifyCluster(updatedCluster)
+			body := &bytes.Buffer{}
+			if err := json.NewEncoder(body).Encode(updatedCluster); err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest("PUT", "/api/v3/dc/us-central1/cluster/"+test.cluster.Name, body)
+			e.ServeHTTP(res, req)
+			checkStatusCode(test.responseCode, res, t)
+
+			if test.responseCode != http.StatusOK {
+				return
+			}
+
+			gotCluster := &kubermaticv1.Cluster{}
+			err := json.Unmarshal(res.Body.Bytes(), gotCluster)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := deep.Equal(gotCluster, updatedCluster); diff != nil {
+				t.Errorf("got different cluster than expected. Diff: %v", diff)
 			}
 		})
 	}
