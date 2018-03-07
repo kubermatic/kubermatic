@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     prometheus: {{ .Cluster.Name }}
-  name: prometheus-{{ .Cluster.Name }}
+  name: prometheus
 spec:
   type: ClusterIP
   ports:
