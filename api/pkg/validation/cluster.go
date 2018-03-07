@@ -71,6 +71,9 @@ func ValidateCloudChange(newSpec, oldSpec *kubermaticv1.CloudSpec) error {
 
 // ValidateUpdateCluster validates if the cluster update is allowed
 func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
+	if newCluster.Spec.Cloud == nil {
+		return errors.New("deleting the cloud spec is not allowed")
+	}
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
