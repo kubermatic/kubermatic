@@ -3,6 +3,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/go-test/deep"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -12,6 +13,8 @@ import (
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
 	ErrCloudChangeNotAllowed = errors.New("not allowed to change the cloud provider")
+
+	tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 )
 
 // ValidateCreateClusterSpec validates the given cluster spec
@@ -86,6 +89,14 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 
 	if newCluster.Address.URL != oldCluster.Address.URL {
 		return errors.New("changing the url is not allowed")
+	}
+
+	if !tokenValidator.Match([]byte(newCluster.Address.AdminToken)) {
+		return fmt.Errorf("invalid admin token. Format needs to match: %s", tokenValidator.String())
+	}
+
+	if !tokenValidator.Match([]byte(newCluster.Address.KubeletToken)) {
+		return fmt.Errorf("invalid kubelet token. Format needs to match: %s", tokenValidator.String())
 	}
 
 	if diff := deep.Equal(newCluster.Status, oldCluster.Status); diff != nil {
