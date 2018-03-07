@@ -76,7 +76,7 @@ func TestLoadFiles(t *testing.T) {
 			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
 			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
 			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller.yaml",
+			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":                "v1.7.11",
 				"etcd-operator-version":      "v0.6.0",
@@ -98,7 +98,7 @@ func TestLoadFiles(t *testing.T) {
 			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
 			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
 			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller.yaml",
+			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":                "v1.8.5",
 				"etcd-operator-version":      "v0.6.0",
@@ -120,7 +120,7 @@ func TestLoadFiles(t *testing.T) {
 			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
 			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
 			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller.yaml",
+			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":                "v1.9.0",
 				"etcd-operator-version":      "v0.6.0",
