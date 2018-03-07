@@ -442,19 +442,9 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		"prometheus": controllerresources.LoadRoleFile,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range roles {
@@ -464,29 +454,23 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		}
 		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-		roles, err := informerGroup.RoleInformer.Lister().List(labels.Everything())
+		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
 		if err != nil {
-			return err
-		}
-
-		var role *rbacv1beta1.Role
-		for _, r := range roles {
-			if r.Name == generatedRole.Name {
-				role = r
+			if errors.IsNotFound(err) {
+				if _, err := cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
+					return fmt.Errorf("failed to create role for %s: %v", name, err)
+				}
+				continue
+			} else {
+				return err
 			}
-		}
-		if role == nil {
-			if _, err = client.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
-				return fmt.Errorf("failed to create Role for %s: %v", name, err)
-			}
-			continue
 		}
 		if role.Annotations[lastAppliedConfigAnnotation] != lastApplied {
 			patch, err := getPatch(role, generatedRole)
 			if err != nil {
 				return err
 			}
-			if _, err = client.RbacV1beta1().Roles(c.Status.NamespaceName).Patch(generatedRole.Name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Patch(generatedRole.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch role for %s: %v", name, err)
 			}
 		}
@@ -500,19 +484,9 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		"prometheus": controllerresources.LoadRoleBindingFile,
 	}
 
-	informerGroup, err := cc.clientProvider.GetInformerGroup(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get informer group for dc %q: %v", c.Spec.SeedDatacenterName, err)
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
-	}
-
-	client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-	if err != nil {
-		return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
 	}
 
 	for name, gen := range roleBindings {
@@ -522,10 +496,10 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		}
 		generatedRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-		roleBinding, err := informerGroup.ClusterRoleBindingInformer.Lister().Get(generatedRoleBinding.Name)
+		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = client.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+				if _, err := cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
 					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
 				}
 				continue
@@ -538,7 +512,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = client.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Patch(generatedRoleBinding.Name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Patch(generatedRoleBinding.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch roleBinding for %s: %v", name, err)
 			}
 		}
@@ -558,11 +532,6 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	}
 
 	for name, gen := range clusterRoleBindings {
-		client, err := cc.clientProvider.GetClient(c.Spec.SeedDatacenterName)
-		if err != nil {
-			return fmt.Errorf("failed to get client for dc %q: %v", c.Spec.SeedDatacenterName, err)
-		}
-
 		generatedClusterRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
