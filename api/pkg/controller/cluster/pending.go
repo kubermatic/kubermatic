@@ -288,28 +288,10 @@ func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
-	generateTokensSecret := func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Secret, string, error) {
-		tokens := []controllerresources.Token{
-			{
-				Token:  c.Address.AdminToken,
-				Name:   "admin",
-				UserID: "10000",
-				Group:  "system:masters",
-			},
-			{
-				Token:  c.Address.KubeletToken,
-				Name:   "kubelet-bootstrap",
-				UserID: "10001",
-				Group:  "system:bootstrappers",
-			},
-		}
-		return controllerresources.GenerateTokenCSV(controllerresources.ApiserverTokenUsersSecretName, tokens)
-	}
-
 	resources := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Secret, string, error){
 		controllerresources.ApiserverSecretName:           controllerresources.LoadSecretFile,
 		controllerresources.ControllerManagerSecretName:   controllerresources.LoadSecretFile,
-		controllerresources.ApiserverTokenUsersSecretName: generateTokensSecret,
+		controllerresources.ApiserverTokenUsersSecretName: controllerresources.LoadSecretFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
