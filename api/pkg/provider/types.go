@@ -65,6 +65,9 @@ type ClusterProvider interface {
 
 	// InitiateClusterUpgrade upgrades a Cluster to a specific version
 	InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error)
+
+	// UpdateCluster updates a cluster
+	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys

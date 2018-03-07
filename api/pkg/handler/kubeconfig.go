@@ -20,10 +20,10 @@ func kubeconfigEndpoint() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}

@@ -207,7 +207,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
 		req := request.(CreateNodeReqV2)
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +313,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
 		req := request.(ClusterReq)
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -419,7 +419,7 @@ func getNodeEndpointV2() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -455,7 +455,7 @@ func deleteNodeEndpointV2() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}

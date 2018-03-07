@@ -7,10 +7,11 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider) endpoint.Endpoint {
+func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
@@ -20,12 +21,8 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider) endpoint.Endpoi
 			return nil, errors.NewBadRequest("no cluster spec given")
 		}
 
-		if req.Body.Cluster.Cloud == nil {
-			return nil, errors.NewBadRequest("no cloud spec given")
-		}
-
-		if req.Body.Cluster.Cloud.DatacenterName == "" {
-			return nil, errors.NewBadRequest("no datacenter given")
+		if err := validation.ValidateCreateClusterSpec(req.Body.Cluster, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
 		c, err := clusterProvider.NewCluster(user, req.Body.Cluster)
@@ -50,15 +47,42 @@ func clusterEndpoint() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		req := request.(ClusterReq)
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}
 
 		return c, nil
+	}
+}
+
+func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		req := request.(UpdateClusterReq)
+		oldCluster, err := clusterProvider.Cluster(user, req.ClusterName)
+		if err != nil {
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
+			}
+			return nil, err
+		}
+		newCluster := req.Cluster
+
+		//We don't allow updating the following fields
+		newCluster.TypeMeta = oldCluster.TypeMeta
+		newCluster.ObjectMeta = oldCluster.ObjectMeta
+		newCluster.Status = oldCluster.Status
+
+		if err := validation.ValidateUpdateCluster(newCluster, oldCluster, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
+
+		return clusterProvider.UpdateCluster(user, newCluster)
 	}
 }
 
@@ -80,11 +104,10 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 		req := request.(ClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-
-		c, err := clusterProvider.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}

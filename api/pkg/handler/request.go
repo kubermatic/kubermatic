@@ -36,18 +36,41 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 type ClusterReq struct {
 	DCReq
 	// in: path
-	Cluster string `json:"cluster"`
+	ClusterName string `json:"cluster"`
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterReq
-	req.Cluster = mux.Vars(r)["cluster"]
+	req.ClusterName = mux.Vars(r)["cluster"]
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+// UpdateClusterReq represent a update request for a specific cluster
+// swagger:parameters updateCluster
+type UpdateClusterReq struct {
+	ClusterReq
+	// in: body
+	Cluster *kubermaticv1.Cluster `json:"cluster"`
+}
+
+func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpdateClusterReq
+	cr, err := decodeClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterReq = cr.(ClusterReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Cluster); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
