@@ -309,6 +309,7 @@ func TestLoadFiles(t *testing.T) {
 func TestLoadServiceAccountFile(t *testing.T) {
 	apps := map[string]string{
 		"etcd-operator": "loadserviceaccountfile-etcd-operator-result",
+		"prometheus":    "loadserviceaccountfile-prometheus-result",
 	}
 
 	for app, r := range apps {
