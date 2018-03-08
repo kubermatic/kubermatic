@@ -526,7 +526,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
 		}
 		generatedClusterRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedClusterRoleBinding.Name = name
+		generatedClusterRoleBinding.Name = fmt.Sprintf("cluster-%s-etcd-operator", c.Name)
 
 		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {
