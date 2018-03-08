@@ -12,8 +12,10 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
+	prometheusv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/prometheus/v1"
 	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -78,6 +80,7 @@ type Controller struct {
 	RoleLister               rbacv1beta1lister.RoleLister
 	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
 	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
+	PrometheusLister         prometheusv1lister.PrometheusLister
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -114,6 +117,7 @@ func NewController(
 	RoleInformer rbacv1beta1informers.RoleInformer,
 	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
+	PrometheusInformer prometheusv1informers.PrometheusInformer,
 ) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient: kubermaticClient,
@@ -219,6 +223,11 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
+	PrometheusInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
 
 	cc.ClusterLister = ClusterInformer.Lister()
 	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
@@ -233,6 +242,7 @@ func NewController(
 	cc.RoleLister = RoleInformer.Lister()
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
+	cc.PrometheusLister = PrometheusInformer.Lister()
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)

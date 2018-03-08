@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	controllerresources "github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/types"
@@ -119,6 +120,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 
 	// check that the etcd-cluster cr is available
 	if err := cc.ensureEtcdCluster(cluster); err != nil {
+		return err
+	}
+
+	if err := cc.ensurePrometheus(cluster); err != nil {
+		fmt.Printf("Prometheus err: %v\n", err)
 		return err
 	}
 
@@ -688,5 +694,51 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		}
 	}
 
+	return nil
+}
+
+func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
+	proms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error){
+		"prometheus": controllerresources.LoadPrometheusFile,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("got the cluster template data")
+
+	for name, gen := range proms {
+		fmt.Println("generating prometheus")
+		generatedPrometheus, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate Prometheus %s: %v", name, err)
+		}
+		fmt.Printf("generated prometheus: %+v, %v\n", generatedPrometheus, err)
+		generatedPrometheus.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedPrometheus.Name = name
+
+		prometheus, err := cc.PrometheusLister.Prometheuses(c.Status.NamespaceName).Get(generatedPrometheus.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				_, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Create(generatedPrometheus)
+				if err != nil {
+					return fmt.Errorf("failed to create prometheus resource: %v", err)
+				}
+				return nil
+			}
+			return err
+		}
+		if prometheus.Annotations[lastAppliedConfigAnnotation] != lastApplied {
+			path, err := getPatch(prometheus, generatedPrometheus)
+			if err != nil {
+				return err
+			}
+			if _, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Patch(generatedPrometheus.Name, types.MergePatchType, path); err != nil {
+				return fmt.Errorf("failed to create patch for prometheus resource: %v", err)
+			}
+		}
+	}
 	return nil
 }

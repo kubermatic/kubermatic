@@ -254,6 +254,7 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 		kubeInformerFactory.Rbac().V1beta1().Roles(),
 		kubeInformerFactory.Rbac().V1beta1().RoleBindings(),
 		kubeInformerFactory.Rbac().V1beta1().ClusterRoleBindings(),
+		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
 	)
 	if err != nil {
 		return err
