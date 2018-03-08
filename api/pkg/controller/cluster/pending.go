@@ -708,4 +708,3 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 
 	return nil
 }
-
