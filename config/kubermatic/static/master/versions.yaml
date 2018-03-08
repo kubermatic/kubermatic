@@ -11,7 +11,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.7.0
@@ -32,7 +32,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.7.7
@@ -53,7 +53,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.7.9
@@ -74,7 +74,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.7.10
@@ -96,7 +96,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.7.11
@@ -118,7 +118,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.8.4
@@ -140,7 +140,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.8.5
@@ -162,7 +162,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.8.6
@@ -184,7 +184,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.8.7
@@ -206,7 +206,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.9.0
@@ -228,7 +228,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.9.1
@@ -250,7 +250,7 @@ versions:
   schedulerDeploymentYaml: scheduler-dep.yaml
   nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
-  machineControllerDeploymentYaml: machine-controller.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.9.2
