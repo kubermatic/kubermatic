@@ -13,6 +13,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/pmezard/go-difflib/difflib"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/api/core/v1"
@@ -196,17 +197,20 @@ func TestLoadFiles(t *testing.T) {
 		for prov, cloudspec := range clouds {
 			t.Run(fmt.Sprintf("resources-%s-%s", prov, version.ID), func(t *testing.T) {
 				cluster := &kubermaticv1.Cluster{
-					Spec: kubermaticv1.ClusterSpec{
-						Cloud: cloudspec,
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
+						UID:  types.UID("1234567890"),
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: cloudspec,
 					},
 					Address: &kubermaticv1.ClusterAddress{
 						URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000",
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 						ExternalPort: 30000,
 						IP:           "35.198.93.90",
+						KubeletToken: "zznqpw.dx7hc2llnsmd830m",
+						AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
 					},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "cluster-de-test-01",
@@ -301,23 +305,34 @@ func TestLoadFiles(t *testing.T) {
 
 					checkTestResult(t, fixture, res)
 				}
+
+				serviceAccounts := map[string]string{
+					"etcd-operator": fmt.Sprintf("service-account-%s-%s-etcd-operator", prov, version.ID),
+					"prometheus":    fmt.Sprintf("service-account-%s-%s-prometheus", prov, version.ID),
+				}
+				for name, fixture := range serviceAccounts {
+					res, _, err := LoadServiceAccountFile(data, name, masterResourcePath)
+					if err != nil {
+						t.Fatalf("failed to load service account %q: %v", name, err)
+					}
+
+					checkTestResult(t, fixture, res)
+				}
+
+				secrets := map[string]string{
+					ApiserverSecretName:           fmt.Sprintf("secret-%s-%s-apiserver", prov, version.ID),
+					ControllerManagerSecretName:   fmt.Sprintf("secret-%s-%s-controller-manager", prov, version.ID),
+					ApiserverTokenUsersSecretName: fmt.Sprintf("secret-%s-%s-token-users", prov, version.ID),
+				}
+				for name, fixture := range secrets {
+					res, _, err := LoadSecretFile(data, name, masterResourcePath)
+					if err != nil {
+						t.Fatalf("failed to load secret %q: %v", name, err)
+					}
+
+					checkTestResult(t, fixture, res)
+				}
 			})
 		}
-	}
-}
-
-func TestLoadServiceAccountFile(t *testing.T) {
-	apps := map[string]string{
-		"etcd-operator": "loadserviceaccountfile-etcd-operator-result",
-		"prometheus":    "loadserviceaccountfile-prometheus-result",
-	}
-
-	for app, r := range apps {
-		res, _, err := LoadServiceAccountFile(&TemplateData{}, app, masterResourcePath)
-		if err != nil {
-			t.Fatalf("failed to load %q: %v", app, err)
-		}
-
-		checkTestResult(t, r, res)
 	}
 }
