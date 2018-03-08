@@ -1,20 +1,30 @@
 {
   "meta": {
     "type": "db",
-    "canSave": true,
-    "canEdit": true,
+    "canSave": false,
+    "canEdit": false,
     "canStar": true,
     "slug": "pods",
     "expires": "0001-01-01T00:00:00Z",
-    "created": "2017-11-01T16:28:46Z",
-    "updated": "2017-11-01T19:23:40Z",
+    "created": "2018-02-23T19:38:23Z",
+    "updated": "2018-03-08T12:17:01Z",
     "updatedBy": "admin",
     "createdBy": "admin",
-    "version": 2
+    "version": 3
   },
   "dashboard": {
     "annotations": {
-      "list": []
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
     },
     "editable": true,
     "gnetId": null,
@@ -29,7 +39,34 @@
         "height": "250px",
         "panels": [
           {
-            "aliasColors": {},
+            "aliasColors": {
+              "Current: cluster-controller": "#eab839",
+              "Current: prometheus-operator": {
+                "_a": 1,
+                "_b": 57,
+                "_format": "hex",
+                "_g": 184,
+                "_ok": true,
+                "_originalInput": "#EAB839",
+                "_r": 234,
+                "_roundA": 1,
+                "_tc_id": 114
+              },
+              "Limit: cluster-controller": "#890f02",
+              "Limit: prometheus-operator": "#890f02",
+              "Requested: cluster-controller": "#7eb26d",
+              "Requested: prometheus-operator": {
+                "_a": 1,
+                "_b": 109,
+                "_format": "hex",
+                "_g": 178,
+                "_ok": true,
+                "_originalInput": "#7EB26D",
+                "_r": 126,
+                "_roundA": 1,
+                "_tc_id": 115
+              }
+            },
             "bars": false,
             "dashLength": 10,
             "dashes": false,
@@ -66,6 +103,7 @@
             "targets": [
               {
                 "expr": "sum by(container_name) (container_memory_usage_bytes{pod_name=\"$pod\", container_name=~\"$container\", container_name!=\"POD\"})",
+                "format": "time_series",
                 "interval": "10s",
                 "intervalFactor": 1,
                 "legendFormat": "Current: {{ container_name }}",
@@ -74,13 +112,23 @@
                 "step": 10
               },
               {
-                "expr": "kube_pod_container_resource_requests_memory_bytes{pod=\"$pod\", container=~\"$container\"}",
+                "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{exported_pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
+                "format": "time_series",
                 "interval": "10s",
                 "intervalFactor": 2,
                 "legendFormat": "Requested: {{ container }}",
                 "metric": "kube_pod_container_resource_requests_memory_bytes",
                 "refId": "B",
                 "step": 20
+              },
+              {
+                "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{exported_pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
+                "format": "time_series",
+                "hide": false,
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "Limit: {{ container }}",
+                "refId": "C"
               }
             ],
             "thresholds": [],
@@ -424,7 +472,7 @@
     },
     "timezone": "browser",
     "title": "Pods",
-    "version": 2
+    "version": 3
   },
   "overwrite": true
 }
