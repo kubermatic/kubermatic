@@ -159,6 +159,26 @@ func getSubnetByID(subnetID string, client *ec2.EC2) (*ec2.Subnet, error) {
 	return sOut.Subnets[0], nil
 }
 
+func getSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGroup, error) {
+	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("group-name"),
+				Values: []*string{aws.String(name)},
+			},
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []*string{vpc.VpcId},
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get security group: %v", err)
+	}
+
+	return dsgOut.SecurityGroups[0], nil
+}
+
 func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error) {
 	newSecurityGroupName := fmt.Sprintf("kubermatic-%s", name)
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
@@ -262,7 +282,6 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to attach role %q to policy %q: %v", kubermaticRoleName, arn, err)
 		}
-
 	}
 
 	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
@@ -292,7 +311,8 @@ func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
 		cloud.AWS.InstanceProfileName != "" &&
 		cloud.AWS.RoleName != "" &&
 		cloud.AWS.SecurityGroup != "" &&
-		cloud.AWS.RouteTableID != ""
+		cloud.AWS.RouteTableID != "" &&
+		cloud.AWS.SecurityGroupID != ""
 }
 
 func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
@@ -346,6 +366,14 @@ func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name 
 			return nil, fmt.Errorf("failed to add security group: %v", err)
 		}
 		cloud.AWS.SecurityGroup = securityGroup
+	}
+
+	if cloud.AWS.SecurityGroupID == "" {
+		securityGroup, err := getSecurityGroup(client, vpc, cloud.AWS.SecurityGroup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get security group %s: %v", cloud.AWS.SecurityGroup, err)
+		}
+		cloud.AWS.SecurityGroupID = *securityGroup.GroupId
 	}
 
 	if cloud.AWS.RoleName == "" && cloud.AWS.InstanceProfileName == "" {
