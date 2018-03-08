@@ -1026,6 +1026,10 @@
           "type": "string",
           "x-go-name": "SecurityGroup"
         },
+        "securityGroupID": {
+          "type": "string",
+          "x-go-name": "SecurityGroupID"
+        },
         "subnetId": {
           "type": "string",
           "x-go-name": "SubnetID"
