@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: apiserver
+  labels:
+    name: apiserver
 spec:
   type: ClusterIP
   ports:

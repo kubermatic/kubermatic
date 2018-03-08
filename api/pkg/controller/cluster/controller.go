@@ -76,6 +76,8 @@ type Controller struct {
 	ServiceAccountLister     corev1lister.ServiceAccountLister
 	DeploymentLister         extensionsv1beta1lister.DeploymentLister
 	IngressLister            extensionsv1beta1lister.IngressLister
+	RoleLister               rbacv1beta1lister.RoleLister
+	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
 	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
 }
 
@@ -110,6 +112,8 @@ func NewController(
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
 	DeploymentInformer extensionsv1beta1informers.DeploymentInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
+	RoleInformer rbacv1beta1informers.RoleInformer,
+	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
 ) (*Controller, error) {
 	cc := &Controller{
@@ -196,6 +200,16 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
+	RoleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	RoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
 	ClusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
@@ -217,6 +231,8 @@ func NewController(
 	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
 	cc.DeploymentLister = DeploymentInformer.Lister()
 	cc.IngressLister = IngressInformer.Lister()
+	cc.RoleLister = RoleInformer.Lister()
+	cc.RoleBindingLister = RoleBindingInformer.Lister()
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
 
 	var err error

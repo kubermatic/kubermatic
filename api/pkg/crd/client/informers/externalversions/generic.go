@@ -7,6 +7,7 @@ import (
 
 	v1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	prometheus_v1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -48,6 +49,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Users().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("usersshkeies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().UserSSHKeies().Informer()}, nil
+
+		// Group=monitoring.coreos.com, Version=v1
+	case prometheus_v1.SchemeGroupVersion.WithResource("prometheuses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Monitoring().V1().Prometheuses().Informer()}, nil
+	case prometheus_v1.SchemeGroupVersion.WithResource("servicemonitors"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Monitoring().V1().ServiceMonitors().Informer()}, nil
 
 	}
 

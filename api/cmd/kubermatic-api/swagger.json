@@ -2148,6 +2148,9 @@
         "ID": {
           "type": "string"
         },
+        "KubeStateMetricsDeploymentYaml": {
+          "type": "string"
+        },
         "MachineControllerDeploymentYaml": {
           "type": "string"
         },

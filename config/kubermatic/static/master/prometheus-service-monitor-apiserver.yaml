@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: apiserver
+  labels:
+    name: apiserver
+    prometheus: {{ .Cluster.Name }}
+spec:
+  jobLabel: name
+  endpoints:
+  - port: insecure
+    interval: 30s
+  selector:
+    matchLabels:
+      name: apiserver
+  namespaceSelector:
+    matchNames:
+    - cluster-{{ .Cluster.Name }}

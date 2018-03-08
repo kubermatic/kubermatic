@@ -82,6 +82,16 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	// check that all roles are created
+	if err := cc.ensureRoles(cluster); err != nil {
+		return err
+	}
+
+	// check that all role bindings are created
+	if err := cc.ensureRoleBindings(cluster); err != nil {
+		return err
+	}
+
 	// check that all role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
@@ -344,6 +354,10 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
 		controllerresources.ApiserverInternalServiceName: controllerresources.LoadServiceFile,
 		controllerresources.ApiserverExternalServiceName: controllerresources.LoadServiceFile,
+		controllerresources.ControllerManagerServiceName: controllerresources.LoadServiceFile,
+		controllerresources.KubeStateMetricsServiceName:  controllerresources.LoadServiceFile,
+		controllerresources.MachineControllerServiceName: controllerresources.LoadServiceFile,
+		controllerresources.SchedulerServiceName:         controllerresources.LoadServiceFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -387,6 +401,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
 	serviceAccounts := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
 		controllerresources.EtcdOperatorServiceAccountName: controllerresources.LoadServiceAccountFile,
+		controllerresources.PrometheusServiceAccountName:   controllerresources.LoadServiceAccountFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -400,6 +415,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 			return fmt.Errorf("failed to generate ServiceAccount %s: %v", name, err)
 		}
 		generatedServiceAccount.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedServiceAccount.Name = name
 
 		serviceAccount, err := cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(name)
 		if err != nil {
@@ -426,9 +442,52 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 	return nil
 }
 
-func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
-		"etcd-operator": controllerresources.LoadClusterRoleBindingFile,
+func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
+	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error){
+		controllerresources.PrometheusRoleName: controllerresources.LoadRoleFile,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for name, gen := range roles {
+		generatedRole, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate role %s: %v", name, err)
+		}
+		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedRole.Name = name
+
+		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				if _, err := cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
+					return fmt.Errorf("failed to create role for %s: %v", name, err)
+				}
+				continue
+			} else {
+				return err
+			}
+		}
+		if role.Annotations[lastAppliedConfigAnnotation] != lastApplied {
+			patch, err := getPatch(role, generatedRole)
+			if err != nil {
+				return err
+			}
+			if _, err = cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Patch(generatedRole.Name, types.MergePatchType, patch); err != nil {
+				return fmt.Errorf("failed to patch role for %s: %v", name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
+	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error){
+		controllerresources.PrometheusRoleBindingName: controllerresources.LoadRoleBindingFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -437,11 +496,55 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	}
 
 	for name, gen := range roleBindings {
+		generatedRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate RoleBinding %s: %v", name, err)
+		}
+		generatedRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedRoleBinding.Name = name
+
+		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				if _, err := cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
+				}
+				continue
+			} else {
+				return err
+			}
+		}
+		if roleBinding.Annotations[lastAppliedConfigAnnotation] != lastApplied {
+			patch, err := getPatch(roleBinding, generatedRoleBinding)
+			if err != nil {
+				return err
+			}
+			if _, err = cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Patch(generatedRoleBinding.Name, types.MergePatchType, patch); err != nil {
+				return fmt.Errorf("failed to patch roleBinding for %s: %v", name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
+	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
+		controllerresources.EtcdOperatorClusterRoleBindingName: controllerresources.LoadClusterRoleBindingFile,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for name, gen := range clusterRoleBindings {
 		generatedClusterRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
 		}
 		generatedClusterRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedClusterRoleBinding.Name = name
 
 		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {

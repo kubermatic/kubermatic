@@ -95,6 +95,7 @@ type MasterVersion struct {
 	NodeControllerDeploymentYaml    string            `yaml:"nodeControllerDeploymentYaml"`
 	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
 	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
+	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`
 	Values                          map[string]string `yaml:"values"`
 }
 
