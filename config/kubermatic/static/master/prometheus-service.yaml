@@ -4,6 +4,13 @@ metadata:
   labels:
     prometheus: {{ .Cluster.Name }}
   name: prometheus
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
   type: ClusterIP
   ports:

@@ -2,6 +2,13 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: scheduler
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
   selector:
     matchLabels:
