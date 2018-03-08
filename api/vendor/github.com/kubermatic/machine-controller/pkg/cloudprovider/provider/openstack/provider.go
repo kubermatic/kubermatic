@@ -16,43 +16,60 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	osservers "github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
-	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudproviererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	machinessh "github.com/kubermatic/machine-controller/pkg/ssh"
 )
 
 type provider struct {
-	privateKey *machinessh.PrivateKey
+	configVarResolver *providerconfig.ConfigVarResolver
 }
 
 // New returns a openstack provider
-func New(privateKey *machinessh.PrivateKey) cloud.Provider {
-	return &provider{privateKey: privateKey}
+func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
+	return &provider{configVarResolver: configVarResolver}
+}
+
+type RawConfig struct {
+	// Auth details
+	IdentityEndpoint providerconfig.ConfigVarString `json:"identityEndpoint"`
+	Username         providerconfig.ConfigVarString `json:"username"`
+	Password         providerconfig.ConfigVarString `json:"password"`
+	DomainName       providerconfig.ConfigVarString `json:"domainName"`
+	TenantName       providerconfig.ConfigVarString `json:"tenantName"`
+	TokenID          providerconfig.ConfigVarString `json:"tokenId"`
+
+	// Machine details
+	Image            providerconfig.ConfigVarString   `json:"image"`
+	Flavor           providerconfig.ConfigVarString   `json:"flavor"`
+	SecurityGroups   []providerconfig.ConfigVarString `json:"securityGroups"`
+	Network          providerconfig.ConfigVarString   `json:"network"`
+	Subnet           providerconfig.ConfigVarString   `json:"subnet"`
+	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
+	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
+	Region           providerconfig.ConfigVarString   `json:"region"`
 }
 
 type Config struct {
-	// Auth details
-	IdentityEndpoint string `json:"identityEndpoint"`
-	Username         string `json:"username"`
-	Password         string `json:"password"`
-	DomainName       string `json:"domainName"`
-	TenantName       string `json:"tenantName"`
-	TokenID          string `json:"tokenId"`
+	IdentityEndpoint string
+	Username         string
+	Password         string
+	DomainName       string
+	TenantName       string
+	TokenID          string
 
 	// Machine details
-	Image            string   `json:"image"`
-	Flavor           string   `json:"flavor"`
-	SecurityGroups   []string `json:"securityGroups"`
-	Network          string   `json:"network"`
-	Subnet           string   `json:"subnet"`
-	FloatingIPPool   string   `json:"floatingIpPool"`
-	AvailabilityZone string   `json:"availabilityZone"`
-	Region           string   `json:"region"`
+	Image            string
+	Flavor           string
+	SecurityGroups   []string
+	Network          string
+	Subnet           string
+	FloatingIPPool   string
+	AvailabilityZone string
+	Region           string
 }
 
 const (
@@ -66,24 +83,87 @@ const (
 // Protects floating ip assignment
 var floatingIPAssignLock = &sync.Mutex{}
 
-func getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, *RawConfig, error) {
 	pconfig := providerconfig.Config{}
 	err := json.Unmarshal(s.Raw, &pconfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
+	}
+	var rawConfig RawConfig
+	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 	c := Config{}
-	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &c)
-	return &c, &pconfig, err
+	c.IdentityEndpoint, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Username, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Username)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Password, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Password)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.DomainName, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.DomainName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.TenantName, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.TokenID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Image, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Image)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Flavor, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	for _, securityGroup := range rawConfig.SecurityGroups {
+		securityGroupValue, err := p.configVarResolver.GetConfigVarStringValue(securityGroup)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		c.SecurityGroups = append(c.SecurityGroups, securityGroupValue)
+	}
+	c.Network, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Network)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Subnet, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Subnet)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.FloatingIPPool, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.FloatingIPPool)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.AvailabilityZone, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.AvailabilityZone)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.Region, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Region)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return &c, &pconfig, &rawConfig, err
 }
 
-func setProviderConfig(c *Config, s runtime.RawExtension) (runtime.RawExtension, error) {
+func setProviderConfig(rawConfig RawConfig, s runtime.RawExtension) (runtime.RawExtension, error) {
 	pconfig := providerconfig.Config{}
 	err := json.Unmarshal(s.Raw, &pconfig)
 	if err != nil {
 		return s, err
 	}
-	rawCloudProviderSpec, err := json.Marshal(c)
+	rawCloudProviderSpec, err := json.Marshal(rawConfig)
 	if err != nil {
 		return s, err
 	}
@@ -112,7 +192,7 @@ func getClient(c *Config) (*gophercloud.ProviderClient, error) {
 func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, bool, error) {
 	var changed bool
 
-	c, _, err := getConfig(spec.ProviderConfig)
+	c, _, rawConfig, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return spec, changed, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -131,7 +211,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		if len(regions) == 1 {
 			glog.V(4).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
 			changed = true
-			c.Region = regions[0].ID
+			rawConfig.Region.Value = regions[0].ID
 		} else {
 			return spec, changed, fmt.Errorf("could not default region because got '%v' results!", len(regions))
 		}
@@ -146,33 +226,33 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		if len(availabilityZones) == 1 {
 			glog.V(4).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
 			changed = true
-			c.AvailabilityZone = availabilityZones[0].ZoneName
+			rawConfig.AvailabilityZone.Value = availabilityZones[0].ZoneName
 		}
 	}
 
-	// Define the network var here to be able to re-use
-	// it when the network got defaulted
-	var net *osnetworks.Network
 	if c.Network == "" {
 		glog.V(4).Infof("Trying to default network for machine '%s'...", spec.Name)
-		net, err = getDefaultNetwork(client, c.Region)
+		net, err := getDefaultNetwork(client, c.Region)
 		if err != nil {
 			return spec, changed, fmt.Errorf("failed to default network: '%v'", err)
 		}
 		if net != nil {
 			glog.V(4).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
 			// Use the id as the name may not be unique
-			c.Network = net.ID
+			rawConfig.Network.Value = net.ID
 			changed = true
 		}
 	}
 
 	if c.Subnet == "" {
-		if c.Network != "" && net == nil {
-			net, err = getNetwork(client, c.Region, c.Network)
-			if err != nil {
-				return spec, changed, fmt.Errorf("failed to get network '%s': '%v'", c.Network, err)
-			}
+		networkID := c.Network
+		if rawConfig.Network.Value != "" {
+			networkID = rawConfig.Network.Value
+		}
+
+		net, err := getNetwork(client, c.Region, networkID)
+		if err != nil {
+			return spec, changed, fmt.Errorf("failed to get network for subnet defaulting '%s': '%v'", networkID, err)
 		}
 		subnet, err := getDefaultSubnet(client, net, c.Region)
 		if err != nil {
@@ -180,12 +260,12 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		}
 		if subnet != nil {
 			glog.V(4).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
-			c.Subnet = *subnet
+			rawConfig.Subnet.Value = *subnet
 			changed = true
 		}
 	}
 
-	spec.ProviderConfig, err = setProviderConfig(c, spec.ProviderConfig)
+	spec.ProviderConfig, err = setProviderConfig(*rawConfig, spec.ProviderConfig)
 	if err != nil {
 		return spec, changed, fmt.Errorf("error marshaling providerconfig: '%v'", err)
 	}
@@ -193,7 +273,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
-	c, _, err := getConfig(spec.ProviderConfig)
+	c, _, _, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -247,7 +327,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
-	c, _, err := getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -255,11 +335,6 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	client, err := getClient(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get a openstack client: %v", err)
-	}
-
-	name, err := ensureSSHKeysExist(client, c.Region, p.privateKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed ensure that the ssh key '%s' exists: %v", p.privateKey.Name(), err)
 	}
 
 	flavor, err := getFlavor(client, c.Region, c.Flavor)
@@ -331,7 +406,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	var server serverWithExt
 	err = osservers.Create(computeClient, keypairs.CreateOptsExt{
 		serverOpts,
-		name,
+		"",
 	}).ExtractInto(&server)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create server: %v", err)
@@ -366,7 +441,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 }
 
 func (p *provider) Delete(machine *v1alpha1.Machine) error {
-	c, _, err := getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -393,7 +468,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine) error {
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
-	c, _, err := getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -433,7 +508,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	c, _, err := getConfig(spec.ProviderConfig)
+	c, _, _, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -445,7 +520,8 @@ username = "%s"
 password = "%s"
 domain-name="%s"
 tenant-name = "%s"
-`, c.IdentityEndpoint, c.Username, c.Password, c.DomainName, c.TenantName)
+region = "%s"
+`, c.IdentityEndpoint, c.Username, c.Password, c.DomainName, c.TenantName, c.Region)
 	return config, "openstack", nil
 }
 

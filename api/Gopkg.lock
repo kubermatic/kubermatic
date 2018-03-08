@@ -513,7 +513,6 @@
   revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
 
 [[projects]]
-  branch = "master"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -528,13 +527,13 @@
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
-    "pkg/ssh",
     "pkg/template",
     "pkg/userdata/cloud",
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "805485026b7c2618c0fab91c75c8b0303a1c1245"
+  revision = "619e58e05713558acfbfa1fb6024b78ee5c49430"
+  version = "v0.2.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -569,6 +568,12 @@
   packages = ["."]
   revision = "4dadeb3030eda0273a12382bb2348ffc7c9d1a39"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
