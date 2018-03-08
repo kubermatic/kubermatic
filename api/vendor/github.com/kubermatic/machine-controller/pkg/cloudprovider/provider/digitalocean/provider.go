@@ -2,12 +2,13 @@ package digitalocean
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/digitalocean/godo"
@@ -15,36 +16,48 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	machinessh "github.com/kubermatic/machine-controller/pkg/ssh"
+	"github.com/pborman/uuid"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const privateRSAKeyBitSize = 4096
+
 type provider struct {
-	privateKey *machinessh.PrivateKey
+	configVarResolver *providerconfig.ConfigVarResolver
 }
 
 // New returns a digitalocean provider
-func New(privateKey *machinessh.PrivateKey) cloud.Provider {
-	return &provider{privateKey: privateKey}
+func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
+	return &provider{configVarResolver: configVarResolver}
+}
+
+type RawConfig struct {
+	Token             providerconfig.ConfigVarString   `json:"token"`
+	Region            providerconfig.ConfigVarString   `json:"region"`
+	Size              providerconfig.ConfigVarString   `json:"size"`
+	Backups           providerconfig.ConfigVarBool     `json:"backups"`
+	IPv6              providerconfig.ConfigVarBool     `json:"ipv6"`
+	PrivateNetworking providerconfig.ConfigVarBool     `json:"private_networking"`
+	Monitoring        providerconfig.ConfigVarBool     `json:"monitoring"`
+	Tags              []providerconfig.ConfigVarString `json:"tags"`
 }
 
 type Config struct {
-	Token             string   `json:"token"`
-	Region            string   `json:"region"`
-	Size              string   `json:"size"`
-	Backups           bool     `json:"backups"`
-	IPv6              bool     `json:"ipv6"`
-	PrivateNetworking bool     `json:"private_networking"`
-	Monitoring        bool     `json:"monitoring"`
-	Tags              []string `json:"tags"`
+	Token             string
+	Region            string
+	Size              string
+	Backups           bool
+	IPv6              bool
+	PrivateNetworking bool
+	Monitoring        bool
+	Tags              []string
 }
 
 const (
@@ -52,9 +65,6 @@ const (
 	createCheckTimeout          = 5 * time.Minute
 	createCheckFailedWaitPeriod = 10 * time.Second
 )
-
-// Protects creation of public key
-var publicKeyCreationLock = &sync.Mutex{}
 
 type TokenSource struct {
 	AccessToken string
@@ -86,14 +96,55 @@ func getClient(token string) *godo.Client {
 	return godo.NewClient(oauthClient)
 }
 
-func getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
 	pconfig := providerconfig.Config{}
 	err := json.Unmarshal(s.Raw, &pconfig)
 	if err != nil {
 		return nil, nil, err
 	}
+	rawConfig := RawConfig{}
+	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	c := Config{}
-	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &c)
+	c.Token, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Token)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Region, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Region)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Size, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Size)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Backups, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.Backups)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.IPv6, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.IPv6)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.PrivateNetworking, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.PrivateNetworking)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Monitoring, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.Monitoring)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, tag := range rawConfig.Tags {
+		tagVal, err := p.configVarResolver.GetConfigVarStringValue(tag)
+		if err != nil {
+			return nil, nil, err
+		}
+		c.Tags = append(c.Tags, tagVal)
+	}
+
 	return &c, &pconfig, err
 }
 
@@ -102,7 +153,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
-	c, pc, err := getConfig(spec.ProviderConfig)
+	c, pc, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -176,37 +227,33 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	return nil
 }
 
-func ensureSSHKeysExist(ctx context.Context, service godo.KeysService, key *machinessh.PrivateKey) (string, error) {
-	publicKeyCreationLock.Lock()
-	defer publicKeyCreationLock.Unlock()
-
-	publicKey := key.PublicKey()
-	pk, err := ssh.NewPublicKey(&publicKey)
+// uploadSSHPublicKey uploads public part of the key to digital ocean
+// this method returns an error if the key already exists
+func uploadSSHPublicKey(ctx context.Context, service godo.KeysService, key *rsa.PublicKey) (string, error) {
+	pk, err := ssh.NewPublicKey(key)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse publickey: %v", err)
 	}
 
 	fingerprint := ssh.FingerprintLegacyMD5(pk)
-	dokey, res, err := service.GetByFingerprint(ctx, fingerprint)
-	if err != nil {
-		if res != nil && res.StatusCode == http.StatusNotFound {
-			dokey, _, err = service.Create(ctx, &godo.KeyCreateRequest{
-				PublicKey: string(ssh.MarshalAuthorizedKey(pk)),
-				Name:      key.Name(),
-			})
-			if err != nil {
-				return "", fmt.Errorf("failed to create ssh public key on digitalocean: %v", err)
-			}
-			return dokey.Fingerprint, nil
-		}
-		return "", fmt.Errorf("failed to get key from digitalocean: %v", err)
+	existingkey, res, err := service.GetByFingerprint(ctx, fingerprint)
+	if err == nil && existingkey != nil && res.StatusCode >= http.StatusOK && res.StatusCode <= http.StatusAccepted {
+		return "", fmt.Errorf("failed to create ssh public key, the key already exists")
 	}
 
-	return dokey.Fingerprint, nil
+	newDoKey, _, err := service.Create(ctx, &godo.KeyCreateRequest{
+		PublicKey: string(ssh.MarshalAuthorizedKey(pk)),
+		Name:      string(uuid.NewUUID()),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create ssh public key on digitalocean: %v", err)
+	}
+
+	return newDoKey.Fingerprint, nil
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
-	c, pc, err := getConfig(machine.Spec.ProviderConfig)
+	c, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -214,10 +261,24 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	ctx := context.TODO()
 	client := getClient(c.Token)
 
-	fingerprint, err := ensureSSHKeysExist(ctx, client.Keys, p.privateKey)
+	tmpRSAKeyPair, err := rsa.GenerateKey(rand.Reader, privateRSAKeyBitSize)
 	if err != nil {
-		return nil, fmt.Errorf("failed ensure that the ssh key '%s' exists: %v", p.privateKey.Name(), err)
+		return nil, fmt.Errorf("failed to create private RSA key: %v", err)
 	}
+
+	if err := tmpRSAKeyPair.Validate(); err != nil {
+		return nil, fmt.Errorf("failed to validate private RSA key: %v", err)
+	}
+	fingerprint, err := uploadSSHPublicKey(ctx, client.Keys, &tmpRSAKeyPair.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed upload the ssh key, error = %v", err)
+	}
+	defer func() {
+		_, err := client.Keys.DeleteByFingerprint(ctx, fingerprint)
+		if err != nil {
+			glog.Errorf("failed to remove a temporary ssh key with fingerprint = %v, due to = %v", fingerprint, err)
+		}
+	}()
 
 	slug, err := getSlugForOS(pc.OperatingSystem)
 	if err != nil {
@@ -262,7 +323,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 }
 
 func (p *provider) Delete(machine *v1alpha1.Machine) error {
-	c, _, err := getConfig(machine.Spec.ProviderConfig)
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -286,7 +347,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine) error {
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
-	c, _, err := getConfig(machine.Spec.ProviderConfig)
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
