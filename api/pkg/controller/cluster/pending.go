@@ -124,7 +124,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 	}
 
 	if err := cc.ensurePrometheus(cluster); err != nil {
-		fmt.Printf("Prometheus err: %v\n", err)
+		return err
+	}
+
+	if err := cc.ensureServiceMonitors(cluster); err != nil {
 		return err
 	}
 
@@ -707,15 +710,11 @@ func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	fmt.Println("got the cluster template data")
-
 	for name, gen := range proms {
-		fmt.Println("generating prometheus")
 		generatedPrometheus, lastApplied, err := gen(data, name, cc.masterResourcesPath)
 		if err != nil {
 			return fmt.Errorf("failed to generate Prometheus %s: %v", name, err)
 		}
-		fmt.Printf("generated prometheus: %+v, %v\n", generatedPrometheus, err)
 		generatedPrometheus.Annotations[lastAppliedConfigAnnotation] = lastApplied
 		generatedPrometheus.Name = name
 
@@ -740,5 +739,53 @@ func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 			}
 		}
 	}
+	return nil
+}
+
+func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
+	sms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error){
+		"apiserver":          controllerresources.LoadServiceMonitorFile,
+		"controller-manager": controllerresources.LoadServiceMonitorFile,
+		"etcd":               controllerresources.LoadServiceMonitorFile,
+		"kube-state-metrics": controllerresources.LoadServiceMonitorFile,
+		"machine-controller": controllerresources.LoadServiceMonitorFile,
+		"scheduler":          controllerresources.LoadServiceMonitorFile,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for name, gen := range sms {
+		generatedServiceMonitor, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate service monitor %s: %v", name, err)
+		}
+		generatedServiceMonitor.Annotations[lastAppliedConfigAnnotation] = lastApplied
+		generatedServiceMonitor.Name = name
+
+		serviceMonitor, err := cc.ServiceMonitorLister.ServiceMonitors(c.Status.NamespaceName).Get(generatedServiceMonitor.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				_, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Create(generatedServiceMonitor)
+				if err != nil {
+					return fmt.Errorf("failed to create service monitor resource: %v", err)
+				}
+				return nil
+			}
+			return err
+		}
+		if serviceMonitor.Annotations[lastApplied] != lastApplied {
+			path, err := getPatch(serviceMonitor, generatedServiceMonitor)
+			if err != nil {
+				return err
+			}
+			if _, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Patch(serviceMonitor.Name, types.MergePatchType, path); err != nil {
+				return fmt.Errorf("failed to create patch for service monitor resource: %v", err)
+			}
+		}
+	}
+
 	return nil
 }

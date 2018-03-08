@@ -81,6 +81,7 @@ type Controller struct {
 	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
 	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
 	PrometheusLister         prometheusv1lister.PrometheusLister
+	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -118,6 +119,7 @@ func NewController(
 	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
 	PrometheusInformer prometheusv1informers.PrometheusInformer,
+	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
 ) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient: kubermaticClient,
@@ -228,6 +230,11 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
+	ServiceMonitorInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
 
 	cc.ClusterLister = ClusterInformer.Lister()
 	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
@@ -243,6 +250,7 @@ func NewController(
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
 	cc.PrometheusLister = PrometheusInformer.Lister()
+	cc.ServiceMonitorLister = ServiceMonitorInformer.Lister()
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)

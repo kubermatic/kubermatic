@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/golang/glog"
@@ -259,7 +260,7 @@ func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath str
 	return &r, json, err
 }
 
-// LoadPrometheusFile loads a etcd-operator crd from disk and returns a Cluster crd struct
+// LoadPrometheusFile loads a prometheus crd from disk and returns a Cluster crd struct
 func LoadPrometheusFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, "prometheus.yaml"))
 	if err != nil {
@@ -269,4 +270,17 @@ func LoadPrometheusFile(data *TemplateData, app, masterResourcesPath string) (*p
 	var p prometheusv1.Prometheus
 	json, err := t.Execute(data, &p)
 	return &p, json, err
+}
+
+// LoadServiceMonitorFile loads a service monitor crd from disk and returns a Cluster crd struct
+func LoadServiceMonitorFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error) {
+	filename := fmt.Sprintf("prometheus-service-monitor-%s.yaml", app)
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, filename))
+	if err != nil {
+		return nil, "", err
+	}
+
+	var sm prometheusv1.ServiceMonitor
+	json, err := t.Execute(data, &sm)
+	return &sm, json, err
 }
