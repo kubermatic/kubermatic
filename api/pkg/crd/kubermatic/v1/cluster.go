@@ -203,6 +203,7 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroup       string `json:"securityGroup"`
+	SecurityGroupID     string `json:"securityGroupID"`
 
 	AvailabilityZone string `json:"availabilityZone"`
 }
