@@ -1,13 +1,9 @@
 package aws
 
 import (
-	"crypto/md5"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
@@ -15,7 +11,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	machinessh "github.com/kubermatic/machine-controller/pkg/ssh"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -27,16 +22,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
-	"golang.org/x/crypto/ssh"
 )
 
 type provider struct {
-	privateKey *machinessh.PrivateKey
+	configVarResolver *providerconfig.ConfigVarResolver
 }
 
 // New returns a aws provider
-func New(privateKey *machinessh.PrivateKey) cloud.Provider {
-	return &provider{privateKey: privateKey}
+func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
+	return &provider{configVarResolver: configVarResolver}
 }
 
 const (
@@ -117,23 +111,42 @@ var (
 	publicKeyCreationLock = &sync.Mutex{}
 )
 
+type RawConfig struct {
+	AccessKeyID     providerconfig.ConfigVarString `json:"accessKeyId"`
+	SecretAccessKey providerconfig.ConfigVarString `json:"secretAccessKey"`
+
+	Region           providerconfig.ConfigVarString `json:"region"`
+	AvailabilityZone providerconfig.ConfigVarString `json:"availabilityZone"`
+
+	VpcID            providerconfig.ConfigVarString   `json:"vpcId"`
+	SubnetID         providerconfig.ConfigVarString   `json:"subnetId"`
+	SecurityGroupIDs []providerconfig.ConfigVarString `json:"securityGroupIDs"`
+	InstanceProfile  providerconfig.ConfigVarString   `json:"instanceProfile"`
+
+	InstanceType providerconfig.ConfigVarString `json:"instanceType"`
+	AMI          providerconfig.ConfigVarString `json:"ami"`
+	DiskSize     int64                          `json:"diskSize"`
+	DiskType     providerconfig.ConfigVarString `json:"diskType"`
+	Tags         map[string]string              `json:"tags"`
+}
+
 type Config struct {
-	AccessKeyID     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyID     string
+	SecretAccessKey string
 
-	Region           string `json:"region"`
-	AvailabilityZone string `json:"availabilityZone"`
+	Region           string
+	AvailabilityZone string
 
-	VpcID            string   `json:"vpcId"`
-	SubnetID         string   `json:"subnetId"`
-	SecurityGroupIDs []string `json:"securityGroupIDs"`
-	InstanceProfile  string   `json:"instanceProfile"`
+	VpcID            string
+	SubnetID         string
+	SecurityGroupIDs []string
+	InstanceProfile  string
 
-	InstanceType string            `json:"instanceType"`
-	AMI          string            `json:"ami"`
-	DiskSize     int64             `json:"diskSize"`
-	DiskType     string            `json:"diskType"`
-	Tags         map[string]string `json:"tags"`
+	InstanceType string
+	AMI          string
+	DiskSize     int64
+	DiskType     string
+	Tags         map[string]string
 }
 
 func getDefaultAMIID(os providerconfig.OperatingSystem, region string) (string, error) {
@@ -150,14 +163,65 @@ func getDefaultAMIID(os providerconfig.OperatingSystem, region string) (string, 
 	return id, nil
 }
 
-func getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
 	pconfig := providerconfig.Config{}
 	err := json.Unmarshal(s.Raw, &pconfig)
 	if err != nil {
 		return nil, nil, err
 	}
+	rawConfig := RawConfig{}
+	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig)
 	c := Config{}
-	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &c)
+	c.AccessKeyID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.AccessKeyID)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.SecretAccessKey, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.SecretAccessKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Region, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Region)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.VpcID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.VpcID)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.SubnetID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.SubnetID)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.AvailabilityZone, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.AvailabilityZone)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, securityGroupIDRaw := range rawConfig.SecurityGroupIDs {
+		securityGroupID, err := p.configVarResolver.GetConfigVarStringValue(securityGroupIDRaw)
+		if err != nil {
+			return nil, nil, err
+		}
+		c.SecurityGroupIDs = append(c.SecurityGroupIDs, securityGroupID)
+	}
+	c.InstanceProfile, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.InstanceProfile)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.InstanceType, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.AMI, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.AMI)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.DiskSize = rawConfig.DiskSize
+	c.DiskType, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.DiskType)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.Tags = rawConfig.Tags
+
 	return &c, &pconfig, err
 }
 
@@ -190,7 +254,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
-	config, pc, err := getConfig(spec.ProviderConfig)
+	config, pc, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -335,58 +399,6 @@ func ensureDefaultSecurityGroupExists(client *ec2.EC2, vpc *ec2.Vpc) (string, er
 	return aws.StringValue(sgOut.SecurityGroups[0].GroupId), nil
 }
 
-func ensureSSHKeysExist(client *ec2.EC2, key *machinessh.PrivateKey) (string, error) {
-	publicKeyCreationLock.Lock()
-	defer publicKeyCreationLock.Unlock()
-
-	publicKey := key.PublicKey()
-	out, err := x509.MarshalPKIXPublicKey(&publicKey)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal public key to PKIX format: %v", err)
-	}
-
-	//Basically copied from golang.org/x/crypto/ssh/keys.go:1013
-	md5sum := md5.Sum(out)
-	hexarray := make([]string, len(md5sum))
-	for i, c := range md5sum {
-		hexarray[i] = hex.EncodeToString([]byte{c})
-	}
-	fingerprint := strings.Join(hexarray, ":")
-
-	keyout, err := client.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("fingerprint"),
-				Values: aws.StringSlice([]string{fingerprint}),
-			},
-		},
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to list public keys from aws: %v", err)
-	}
-	if len(keyout.KeyPairs) != 0 {
-		glog.V(6).Infof("ssh public key already exists")
-		return *keyout.KeyPairs[0].KeyName, nil
-	}
-
-	glog.V(4).Infof("importing ssh public key into aws...")
-
-	spk, err := ssh.NewPublicKey(&publicKey)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse public key: %v", err)
-	}
-
-	importOut, err := client.ImportKeyPair(&ec2.ImportKeyPairInput{
-		KeyName:           aws.String(key.Name()),
-		PublicKeyMaterial: ssh.MarshalAuthorizedKey(spk),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to import public key at aws: %v", err)
-	}
-	glog.V(4).Infof("successfully imported ssh public key into aws")
-	return *importOut.KeyName, nil
-}
-
 func ensureDefaultRoleExists(client *iam.IAM) error {
 	_, err := client.GetRole(&iam.GetRoleInput{RoleName: aws.String(defaultRoleName)})
 	if err != nil {
@@ -463,7 +475,7 @@ func ensureDefaultInstanceProfileExists(client *iam.IAM) error {
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
-	config, pc, err := getConfig(machine.Spec.ProviderConfig)
+	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -501,11 +513,6 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		securityGroupIDs = append(securityGroupIDs, sgID)
 	} else {
 
-	}
-
-	keyName, err := ensureSSHKeysExist(ec2Client, p.privateKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed ensure that the ssh key '%s' exists: %v", p.privateKey.Name(), err)
 	}
 
 	amiID := config.AMI
@@ -551,7 +558,6 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		MinCount:     aws.Int64(1),
 		InstanceType: aws.String(config.InstanceType),
 		UserData:     aws.String(base64.StdEncoding.EncodeToString([]byte(userdata))),
-		KeyName:      aws.String(keyName),
 		Placement: &ec2.Placement{
 			AvailabilityZone: aws.String(config.AvailabilityZone),
 		},
@@ -602,7 +608,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine) error {
 		return fmt.Errorf("failed to get instance from aws: %v", err)
 	}
 
-	config, _, err := getConfig(machine.Spec.ProviderConfig)
+	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -627,7 +633,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine) error {
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
-	config, _, err := getConfig(machine.Spec.ProviderConfig)
+	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}

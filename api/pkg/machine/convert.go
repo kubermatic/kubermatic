@@ -54,37 +54,39 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 	cloudSpec := &apiv2.NodeCloudSpec{}
 
 	if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderAWS {
-		config := &aws.Config{}
+		config := &aws.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
 		}
 		cloudSpec.AWS = &apiv2.AWSNodeSpec{
 			Tags:         config.Tags,
 			VolumeSize:   config.DiskSize,
-			VolumeType:   config.DiskType,
-			InstanceType: config.InstanceType,
-			AMI:          config.AMI,
+			VolumeType:   config.DiskType.Value,
+			InstanceType: config.InstanceType.Value,
+			AMI:          config.AMI.Value,
 		}
 	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderDigitalocean {
-		config := &digitalocean.Config{}
+		config := &digitalocean.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse digitalocean config: %v", err)
 		}
 		cloudSpec.Digitalocean = &apiv2.DigitaloceanNodeSpec{
-			Tags:       config.Tags,
-			IPv6:       config.IPv6,
-			Size:       config.Size,
-			Backups:    config.Backups,
-			Monitoring: config.Monitoring,
+			IPv6:       config.IPv6.Value,
+			Size:       config.Size.Value,
+			Backups:    config.Backups.Value,
+			Monitoring: config.Monitoring.Value,
+		}
+		for _, v := range config.Tags {
+			cloudSpec.Digitalocean.Tags = append(cloudSpec.Digitalocean.Tags, v.Value)
 		}
 	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderOpenstack {
-		config := &openstack.Config{}
+		config := &openstack.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse openstack config: %v", err)
 		}
 		cloudSpec.Openstack = &apiv2.OpenstackNodeSpec{
-			Flavor: config.Flavor,
-			Image:  config.Image,
+			Flavor: config.Flavor.Value,
+			Image:  config.Image.Value,
 		}
 	}
 

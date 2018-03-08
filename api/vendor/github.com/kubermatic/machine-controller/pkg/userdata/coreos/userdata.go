@@ -225,4 +225,10 @@ storage:
         inline: |
           yes
 {{ end }}
+
+    - path: /etc/hostname
+      filesystem: root
+      mode: 0600
+      contents:
+        inline: '{{ .MachineSpec.Name }}'
 `
