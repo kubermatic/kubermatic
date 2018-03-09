@@ -65,7 +65,7 @@ const (
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
 
-	//PrometheusRoleName is the name for the Prometheus role
+	//PrometheusName is the name for the Prometheus role
 	PrometheusName = "prometheus"
 
 	//PrometheusRoleName is the name for the Prometheus role
@@ -77,12 +77,18 @@ const (
 	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
 	EtcdOperatorClusterRoleBindingName = "etcd-operator"
 
-	ApiserverServiceMonitorName         = "apiserver"
+	//ApiserverServiceMonitorName is the name for the apiserver servicemonitor
+	ApiserverServiceMonitorName = "apiserver"
+	//ControllerManagerServiceMonitorName is the name for the controller manager servicemonitor
 	ControllerManagerServiceMonitorName = "controller-manager"
-	EtcdServiceMonitorName              = "etcd"
-	KubeStateMetricsServiceMonitorName  = "kube-state-metrics"
+	//EtcdServiceMonitorName is the name for the etcd servicemonitor
+	EtcdServiceMonitorName = "etcd"
+	//KubeStateMetricsServiceMonitorName is the name for the kube state metrics servicemonitor
+	KubeStateMetricsServiceMonitorName = "kube-state-metrics"
+	//MachineControllerServiceMonitorName is the name for the machine controller servicemonitor
 	MachineControllerServiceMonitorName = "machine-controller"
-	SchedulerServiceMonitorName         = "scheduler"
+	//SchedulerServiceMonitorName is the name for the scheduler servicemonitor
+	SchedulerServiceMonitorName = "scheduler"
 )
 
 // TemplateData is a group of data required for template generation
