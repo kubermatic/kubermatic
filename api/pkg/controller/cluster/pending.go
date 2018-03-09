@@ -702,7 +702,7 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 	proms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error){
-		"prometheus": controllerresources.LoadPrometheusFile,
+		controllerresources.PrometheusName: controllerresources.LoadPrometheusFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -730,11 +730,11 @@ func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 			return err
 		}
 		if prometheus.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			path, err := getPatch(prometheus, generatedPrometheus)
+			patch, err := getPatch(prometheus, generatedPrometheus)
 			if err != nil {
 				return err
 			}
-			if _, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Patch(generatedPrometheus.Name, types.MergePatchType, path); err != nil {
+			if _, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Patch(generatedPrometheus.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to create patch for prometheus resource: %v", err)
 			}
 		}
@@ -744,12 +744,12 @@ func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
 	sms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error){
-		"apiserver":          controllerresources.LoadServiceMonitorFile,
-		"controller-manager": controllerresources.LoadServiceMonitorFile,
-		"etcd":               controllerresources.LoadServiceMonitorFile,
-		"kube-state-metrics": controllerresources.LoadServiceMonitorFile,
-		"machine-controller": controllerresources.LoadServiceMonitorFile,
-		"scheduler":          controllerresources.LoadServiceMonitorFile,
+		controllerresources.ApiserverServiceMonitorName:         controllerresources.LoadServiceMonitorFile,
+		controllerresources.ControllerManagerServiceMonitorName: controllerresources.LoadServiceMonitorFile,
+		controllerresources.EtcdServiceMonitorName:              controllerresources.LoadServiceMonitorFile,
+		controllerresources.KubeStateMetricsServiceMonitorName:  controllerresources.LoadServiceMonitorFile,
+		controllerresources.MachineControllerServiceMonitorName: controllerresources.LoadServiceMonitorFile,
+		controllerresources.SchedulerServiceMonitorName:         controllerresources.LoadServiceMonitorFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -777,11 +777,11 @@ func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
 			return err
 		}
 		if serviceMonitor.Annotations[lastApplied] != lastApplied {
-			path, err := getPatch(serviceMonitor, generatedServiceMonitor)
+			patch, err := getPatch(serviceMonitor, generatedServiceMonitor)
 			if err != nil {
 				return err
 			}
-			if _, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Patch(serviceMonitor.Name, types.MergePatchType, path); err != nil {
+			if _, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Patch(serviceMonitor.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to create patch for service monitor resource: %v", err)
 			}
 		}
