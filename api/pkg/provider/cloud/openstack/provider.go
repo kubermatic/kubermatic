@@ -59,7 +59,7 @@ func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (os *openstack) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
+func (os *openstack) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
@@ -77,8 +77,21 @@ func (os *openstack) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.S
 	if err != nil {
 		return nil, err
 	}
+	return client, nil
+}
 
-	return goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+func (os *openstack) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
+	authClient, err := os.getAuthClient(cloud)
+	if err != nil {
+		return nil, err
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
 }
 
 func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
@@ -210,3 +223,4 @@ func (os *openstack) NodeClassName(nSpec *apiv1.NodeSpec) string {
 func (os *openstack) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }
+
