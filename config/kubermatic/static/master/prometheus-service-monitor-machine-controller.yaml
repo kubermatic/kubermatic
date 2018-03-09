@@ -19,7 +19,7 @@ spec:
     interval: 30s
   selector:
     matchLabels:
-      app: machine-controller
+      name: machine-controller
   namespaceSelector:
     matchNames:
     - cluster-{{ .Cluster.Name }}
