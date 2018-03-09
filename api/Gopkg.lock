@@ -513,6 +513,7 @@
   revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
 
 [[projects]]
+  branch = "master"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -532,8 +533,7 @@
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "619e58e05713558acfbfa1fb6024b78ee5c49430"
-  version = "v0.2.1"
+  revision = "ce97438ad809c5d3b1f9a8ea72e4ceab930e2fa9"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1135,6 +1135,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "323f7b2629f10dd18502bf8795a8d94c627db2307925569943c9d4131ed7ea38"
+  inputs-digest = "710f963264109d58acbd1155c4b8f364c723df1f65acb20d222a412c4a9138a8"
   solver-name = "gps-cdcl"
   solver-version = 1
