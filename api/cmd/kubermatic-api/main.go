@@ -128,7 +128,7 @@ func main() {
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
-	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "europe-west3-c", workerName)
+	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "europe-west3-c-1", workerName)
 
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
