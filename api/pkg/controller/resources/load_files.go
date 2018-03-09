@@ -65,7 +65,7 @@ const (
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
 
-	//PrometheusName is the name for the Prometheus role
+	//PrometheusName is the name for the Prometheus
 	PrometheusName = "prometheus"
 
 	//PrometheusRoleName is the name for the Prometheus role
