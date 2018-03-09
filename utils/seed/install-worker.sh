@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./config.sh
+
 # Setup Workers
 for ((i = 0; i < ${#WORKER_PUBLIC_IPS[@]}; i++)); do
         # Check if worker is already installed
