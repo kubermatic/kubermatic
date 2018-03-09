@@ -6,13 +6,13 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	osecruritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
-	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -311,6 +311,5 @@ func getFlavor(authClient *gophercloud.ProviderClient, region, name string) ([]o
 	if err != nil {
 		return nil, err
 	}
-    return allFlavors, nil
+	return allFlavors, nil
 }
-

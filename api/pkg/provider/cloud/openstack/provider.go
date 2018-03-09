@@ -223,4 +223,3 @@ func (os *openstack) NodeClassName(nSpec *apiv1.NodeSpec) string {
 func (os *openstack) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }
-
