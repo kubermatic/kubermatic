@@ -64,3 +64,7 @@ kubectl uncordon <node name>
 ```
 
 Repeat for all other nodes one by one.
+
+# Add workers
+
+To add worker nodes simply update to config.sh nodes and execute `install-worker.sh`
