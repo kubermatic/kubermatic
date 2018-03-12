@@ -406,6 +406,32 @@
         }
       }
     },
+    "/api/v1/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",

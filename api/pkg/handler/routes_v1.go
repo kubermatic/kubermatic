@@ -88,6 +88,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
 
+	mux.Methods(http.MethodGet).
+		Path("/openstack/sizes").
+		Handler(r.listOpenstackSizes())
+
 	// New project endpoints
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/cluster").
@@ -267,6 +271,28 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(digitaloceanSizeEndpoint()),
 		decodeDoSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/sizes openstack listOpenstackSizes
+//
+// Lists sizes from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSize
+func (r Routing) listOpenstackSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackSizeEndpoint()),
+		decodeOpenstackSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

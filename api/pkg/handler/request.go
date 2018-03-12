@@ -150,6 +150,29 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// OpenstackSizesReq represent a request for openstack sizes
+type OpenstackSizesReq struct {
+	AuthURL    string
+	Username   string
+	Password   string
+	Tenant     string
+	Domain     string
+	Region     string
+}
+
+func decodeOpenstackSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSizesReq
+
+	req.AuthURL = r.Header.Get("AuthURL")
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Tenant = r.Header.Get("Tenant")
+	req.Domain = r.Header.Get("Domain")
+	req.Region = r.Header.Get("Region")
+
+	return req, nil
+}
+
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := decodeClusterReq(c, r)
 	if err != nil {
