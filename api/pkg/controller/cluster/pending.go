@@ -776,7 +776,7 @@ func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
 			}
 			return err
 		}
-		if serviceMonitor.Annotations[lastApplied] != lastApplied {
+		if serviceMonitor.Annotations[lastAppliedConfigAnnotation] != lastApplied {
 			patch, err := getPatch(serviceMonitor, generatedServiceMonitor)
 			if err != nil {
 				return err
