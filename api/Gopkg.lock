@@ -443,6 +443,15 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
+  name = "github.com/hetznercloud/hcloud-go"
+  packages = [
+    "hcloud",
+    "hcloud/schema"
+  ]
+  revision = "b37849e439d7a02b07d495f65e7b797bec30eeae"
+  version = "v1.4.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
@@ -513,6 +522,7 @@
   revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
 
 [[projects]]
+  branch = "master"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -523,6 +533,7 @@
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/digitalocean",
+    "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",
@@ -532,8 +543,7 @@
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "619e58e05713558acfbfa1fb6024b78ee5c49430"
-  version = "v0.2.1"
+  revision = "4cd846c14dc5c7effeef03e8a6f683c6a0d48ab9"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1135,6 +1145,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "323f7b2629f10dd18502bf8795a8d94c627db2307925569943c9d4131ed7ea38"
+  inputs-digest = "12726a0a81d7ead99b3e10fac53649128880d6dbfbda4b2a1f97ecf1da6072d4"
   solver-name = "gps-cdcl"
   solver-version = 1

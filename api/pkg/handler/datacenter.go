@@ -110,6 +110,11 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			AvailabilityZone: dc.Spec.Openstack.AvailabilityZone,
 			Region:           dc.Spec.Openstack.Region,
 		}
+	case dc.Spec.Hetzner != nil:
+		spec.Hetzner = &apiv1.HetznerDatacenterSpec{
+			Datacenter: dc.Spec.Hetzner.Datacenter,
+			Location:   dc.Spec.Hetzner.Location,
+		}
 	}
 
 	return spec, nil
