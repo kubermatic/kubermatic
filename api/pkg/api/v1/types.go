@@ -174,3 +174,22 @@ type NodeList []Node
 type Node struct {
 	corev1.Node
 }
+
+// OpenstackSize is the object representing openstack's sizes.
+// swagger:model OpenstackSize
+type OpenstackSize struct {
+	// Slug holds  the name of the size
+	Slug string `json:"slug"`
+	// Memory is the amount of memory, measured in MB
+	Memory int `json:"memory"`
+	// VCPUs indicates how many (virtual) CPUs are available for this flavor
+	VCPUs int `json:"vcpus"`
+	// Disk is the amount of root disk, measured in GB
+	Disk int `json:"disk"`
+	// Swap is the amount of swap space, measured in MB
+	Swap int `json:"swap"`
+	// Region specifies the geographic region in which the size resides
+	Region string `json:"region"`
+	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
+	IsPublic string `json:"isPublic"`
+}
