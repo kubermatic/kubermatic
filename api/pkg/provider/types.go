@@ -23,6 +23,7 @@ const (
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
 	OpenstackCloudProvider    = "openstack"
+	HetznerCloudProvider      = "hetzner"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -98,7 +99,7 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 		return "", nil
 	}
 
-	clouds := []string{}
+	var clouds []string
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
 	}
@@ -113,6 +114,9 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, HetznerCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -142,43 +146,12 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 	return name, cp, nil
 }
 
-// NodeCloudProviderName returns the provider name for the given node where
-// one of NodeSpec.Cloud.* is set.
-func NodeCloudProviderName(spec *apiv1.NodeSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
-	}
-	return clouds[0], nil
-}
-
 // DatacenterCloudProviderName returns the provider name for the given Datacenter.
 func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
-	clouds := []string{}
+	var clouds []string
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
 	}
@@ -190,6 +163,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, HetznerCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

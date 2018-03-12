@@ -61,6 +61,14 @@ spec:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
     {{- end }}
+    {{- if .Node.Spec.Cloud.Hetzner }}
+    cloudProvider: "hetzner"
+    cloudProviderSpec:
+      token: "{{ .Cluster.Spec.Cloud.Hetzner.Token }}"
+      serverType: "{{ .Node.Spec.Cloud.Hetzner.Type }}"
+      datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
+      location: "{{ .Datacenter.Spec.Hetzner.Location }}"
+    {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
     operatingSystem: "coreos"
     operatingSystemSpec:

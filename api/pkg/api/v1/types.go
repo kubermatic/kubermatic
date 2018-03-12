@@ -16,9 +16,15 @@ type ObjectMeta struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 }
 
-// DigitialoceanDatacenterSpec specifies a data center of digital ocean.
+// DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.
 type DigitialoceanDatacenterSpec struct {
 	Region string `json:"region"`
+}
+
+// HetznerDatacenterSpec specifies a datacenter of Hetzner.
+type HetznerDatacenterSpec struct {
+	Datacenter string `json:"datacenter"`
+	Location   string `json:"location"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
@@ -45,6 +51,7 @@ type DatacenterSpec struct {
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
+	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters

@@ -158,6 +158,7 @@ type CloudSpec struct {
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
+	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 }
 
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
@@ -185,9 +186,14 @@ type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
-// DigitaloceanCloudSpec specifies access data to digital ocean.
+// DigitaloceanCloudSpec specifies access data to DigitalOcean.
 type DigitaloceanCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
+}
+
+// HetznerCloudSpec specifies access data to hetzner cloud.
+type HetznerCloudSpec struct {
+	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
