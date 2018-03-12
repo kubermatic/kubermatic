@@ -24,6 +24,8 @@ type Openstack struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
+var _ provider.CloudProvider = &Openstack{}
+
 // NewCloudProvider creates a new digitalocean provider.
 func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Openstack {
 	return &Openstack{
