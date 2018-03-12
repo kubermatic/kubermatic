@@ -332,6 +332,9 @@ packages:
 - "socat"
 - "util-linux"
 {{- if .CRAptPackage }}
+{{- if ne .CRAptPackageVersion "" }}
 - ["{{ .CRAptPackage }}", "{{ .CRAptPackageVersion }}"]
-{{- end }}
+{{- else }}
+- "{{ .CRAptPackage }}"
+{{- end }}{{ end }}
 `
