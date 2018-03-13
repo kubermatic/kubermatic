@@ -1453,6 +1453,24 @@
       "x-go-name": "ClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterNetworkingConfig": {
+      "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
+      "type": "object",
+      "properties": {
+        "dnsDomain": {
+          "description": "Domain name for services.",
+          "type": "string",
+          "x-go-name": "DNSDomain"
+        },
+        "pods": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
+        "services": {
+          "$ref": "#/definitions/NetworkRanges"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "ClusterPhase": {
       "type": "string",
       "title": "ClusterPhase is the life cycle phase of a cluster.",
@@ -1464,6 +1482,9 @@
       "properties": {
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
+        },
+        "clusterNetwork": {
+          "$ref": "#/definitions/ClusterNetworkingConfig"
         },
         "humanReadableName": {
           "type": "string",
@@ -2283,6 +2304,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "NetworkRanges": {
+      "type": "object",
+      "title": "NetworkRanges represents ranges of network addresses.",
+      "properties": {
+        "cidrBlocks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "CIDRBlocks"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "NewClusterReqBody": {
       "description": "NewClusterReqBody represents the body of a new cluster request",
