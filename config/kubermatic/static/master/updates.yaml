@@ -35,14 +35,7 @@ updates:
   visible: true
   promote: true
 - from: 1.9.x
-  to: 1.9.1
-  automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
-- from: 1.9.x
-  to: 1.9.2
+  to: 1.9.4
   automatic: false
   rollbackAllowed: false
   enabled: true
