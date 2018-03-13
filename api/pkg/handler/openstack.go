@@ -23,9 +23,9 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
 		}
 
-		osProvider, ok := osProviderInterface.(*openstack.Openstack)
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
 		if !ok {
-			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Openstack")
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
 		flavors, err := osProvider.GetFlavors(&kubermaticv1.CloudSpec{
