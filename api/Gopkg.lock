@@ -543,7 +543,7 @@
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "4cd846c14dc5c7effeef03e8a6f683c6a0d48ab9"
+  revision = "ce97438ad809c5d3b1f9a8ea72e4ceab930e2fa9"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1145,6 +1145,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "12726a0a81d7ead99b3e10fac53649128880d6dbfbda4b2a1f97ecf1da6072d4"
+  inputs-digest = "323c97e176b31439dc7c1f6822392efa0db1000e238a7d0dfb28f938719edb2d"
   solver-name = "gps-cdcl"
   solver-version = 1
