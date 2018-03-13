@@ -232,3 +232,34 @@ func (os *Openstack) NodeClassName(nSpec *apiv1.NodeSpec) string {
 func (os *Openstack) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }
+
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+func (os *Openstack) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackSize, error) {
+	authClient, err := os.getAuthClient(cloud)
+	if err != nil {
+		return nil, err
+	}
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+	flavors, err := getFlavors(authClient, dc.Spec.Openstack.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	apiSizes := []apiv1.OpenstackSize{}
+	for _, flavor := range flavors {
+		apiSize := apiv1.OpenstackSize{
+			Slug:     flavor.Name,
+			Memory:   flavor.RAM,
+			VCPUs:    flavor.VCPUs,
+			Disk:     flavor.Disk,
+			Swap:     flavor.Swap,
+			Region:   dc.Spec.Openstack.Region,
+			IsPublic: flavor.IsPublic,
+		}
+		apiSizes = append(apiSizes, apiSize)
+	}
+	return apiSizes, nil
+}

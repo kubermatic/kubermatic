@@ -191,5 +191,5 @@ type OpenstackSize struct {
 	// Region specifies the geographic region in which the size resides
 	Region string `json:"region"`
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
-	IsPublic string `json:"isPublic"`
+	IsPublic bool `json:"isPublic"`
 }

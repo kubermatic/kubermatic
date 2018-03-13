@@ -291,8 +291,8 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackSizeEndpoint()),
-		decodeOpenstackSizesReq,
+		)(openstackSizeEndpoint(r.cloudProviders)),
+		decodeOpenstackSizeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
