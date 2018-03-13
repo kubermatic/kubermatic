@@ -157,6 +157,7 @@ type OpenstackSizeReq struct {
 	Tenant         string
 	Domain         string
 	DatacenterName string
+	Region         string
 }
 
 func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -167,6 +168,7 @@ func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, er
 	req.Tenant = r.Header.Get("Tenant")
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.Region = r.Header.Get("Region")
 
 	return req, nil
 }

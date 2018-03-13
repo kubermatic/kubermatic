@@ -36,7 +36,7 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
-		})
+		}, req.Region)
 		if err != nil {
 			return nil, err
 		}
