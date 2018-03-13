@@ -291,7 +291,7 @@ func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, rout
 	return res.Extract()
 }
 
-func getFlavor(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
+func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
 	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
 	if err != nil {
 		return nil, err

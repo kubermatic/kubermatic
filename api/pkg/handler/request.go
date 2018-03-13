@@ -150,18 +150,18 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// OpenstackSizesReq represent a request for openstack sizes
-type OpenstackSizesReq struct {
-	AuthURL    string
-	Username   string
-	Password   string
-	Tenant     string
-	Domain     string
-	Region     string
+// OpenstackSizeReq represent a request for openstack sizes
+type OpenstackSizeReq struct {
+	AuthURL  string
+	Username string
+	Password string
+	Tenant   string
+	Domain   string
+	Region   string
 }
 
-func decodeOpenstackSizesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackSizesReq
+func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSizeReq
 
 	req.AuthURL = r.Header.Get("AuthURL")
 	req.Username = r.Header.Get("Username")

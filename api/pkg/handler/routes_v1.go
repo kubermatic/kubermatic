@@ -292,7 +292,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint()),
-		decodeOpenstackSizesReq,
+		decodeOpenstackSizeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
