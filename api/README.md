@@ -1,5 +1,5 @@
 # Kubermatic API
-[Jenkins](https://jenkins.loodse.com/blue/pipelines)
+[Drone](https://drone.loodse.com/kubermatic/kubermatic)
 
 ---
 
@@ -51,7 +51,6 @@ Locally run:
 make e2e         #run the e2e container (needs _artifacts/kubeconfig)
 make client-down #deletes all clusters from the given user
 ```
-When you want to test it on the Jenkins build server prefix your commit with an `!e2e`
 
 # Documentation
 - [AWS Account Creation](docs/aws-account-creation.md)
