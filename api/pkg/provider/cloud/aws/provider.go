@@ -124,6 +124,9 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 				Name: aws.String("availability-zone"), Values: []*string{aws.String(zone)},
 			},
 			{
+				Name: aws.String("defaultForAz"), Values: []*string{aws.String("true")},
+			},
+			{
 				Name: aws.String("vpc-id"), Values: []*string{vpc.VpcId},
 			},
 		},
@@ -133,7 +136,7 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 	}
 
 	if len(sOut.Subnets) != 1 {
-		return nil, errors.New("unable not find default subnet")
+		return nil, errors.New("no default subnet exists")
 	}
 
 	return sOut.Subnets[0], nil

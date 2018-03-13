@@ -443,6 +443,15 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
+  name = "github.com/hetznercloud/hcloud-go"
+  packages = [
+    "hcloud",
+    "hcloud/schema"
+  ]
+  revision = "b37849e439d7a02b07d495f65e7b797bec30eeae"
+  version = "v1.4.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
@@ -524,6 +533,7 @@
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/digitalocean",
+    "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",

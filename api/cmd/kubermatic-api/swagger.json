@@ -1287,6 +1287,9 @@
         "fake": {
           "$ref": "#/definitions/FakeCloudSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         }
@@ -1833,6 +1836,9 @@
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerDatacenterSpec"
+        },
         "location": {
           "type": "string",
           "x-go-name": "Location"
@@ -1849,7 +1855,7 @@
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
-      "title": "DigitaloceanCloudSpec specifies access data to digital ocean.",
+      "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
         "token": {
           "type": "string",
@@ -1972,7 +1978,7 @@
     },
     "DigitialoceanDatacenterSpec": {
       "type": "object",
-      "title": "DigitialoceanDatacenterSpec specifies a data center of digital ocean.",
+      "title": "DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.",
       "properties": {
         "region": {
           "type": "string",
@@ -2013,6 +2019,48 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerCloudSpec": {
+      "type": "object",
+      "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerDatacenterSpec": {
+      "type": "object",
+      "title": "HetznerDatacenterSpec specifies a datacenter of Hetzner.",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerNodeSpecV2": {
+      "description": "HetznerNodeSpec Hetzner node settings",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "description": "server type",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-name": "HetznerNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "Initializer": {
       "type": "object",
@@ -2325,6 +2373,9 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpecV2"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerNodeSpecV2"
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpecV2"
