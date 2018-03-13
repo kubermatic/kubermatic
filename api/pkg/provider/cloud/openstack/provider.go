@@ -233,9 +233,8 @@ func (os *Openstack) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpe
 	return nil
 }
 
-// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and region
-// note that if the region is not specified it will be taken from OpenstackSpec.Region
-func (os *Openstack) GetFlavors(cloud *kubermaticv1.CloudSpec, region string) ([]apiv1.OpenstackSize, error) {
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+func (os *Openstack) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackSize, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
 		return nil, err
@@ -244,10 +243,7 @@ func (os *Openstack) GetFlavors(cloud *kubermaticv1.CloudSpec, region string) ([
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
-	if len(region) == 0 {
-		region = dc.Spec.Openstack.Region
-	}
-	flavors, err := getFlavors(authClient, region)
+	flavors, err := getFlavors(authClient, dc.Spec.Openstack.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +256,7 @@ func (os *Openstack) GetFlavors(cloud *kubermaticv1.CloudSpec, region string) ([
 			VCPUs:    flavor.VCPUs,
 			Disk:     flavor.Disk,
 			Swap:     flavor.Swap,
-			Region:   region,
+			Region:   dc.Spec.Openstack.Region,
 			IsPublic: flavor.IsPublic,
 		}
 		apiSizes = append(apiSizes, apiSize)
