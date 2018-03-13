@@ -10,7 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 )
 
-func openstackSizeEndpoint() endpoint.Endpoint {
+func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req, ok := request.(OpenstackSizeReq)
@@ -18,21 +18,18 @@ func openstackSizeEndpoint() endpoint.Endpoint {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSizeReq, got = %T", request)
 		}
 
-		fakeDataCenterName := "nonExistingDataCenter"
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
 
-		osProvider := openstack.NewCloudProvider(map[string]provider.DatacenterMeta{
-			fakeDataCenterName: provider.DatacenterMeta{
-				Spec: provider.DatacenterSpec{
-					Openstack: &provider.OpenstackSpec{
-						AuthURL: req.AuthURL,
-						Region:  req.Region,
-					},
-				},
-			},
-		})
+		osProvider, ok := osProviderInterface.(*openstack.Openstack)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Openstack")
+		}
 
 		flavors, err := osProvider.GetFlavors(&kubermaticv1.CloudSpec{
-			DatacenterName: fakeDataCenterName,
+			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
