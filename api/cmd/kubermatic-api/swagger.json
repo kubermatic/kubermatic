@@ -406,6 +406,32 @@
         }
       }
     },
+    "/api/v1/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -3058,6 +3084,52 @@
       },
       "x-go-name": "OpenstackNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "OpenstackSize": {
+      "type": "object",
+      "title": "OpenstackSize is the object representing openstack's sizes.",
+      "properties": {
+        "disk": {
+          "description": "Disk is the amount of root disk, measured in GB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "isPublic": {
+          "description": "IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects",
+          "type": "boolean",
+          "x-go-name": "IsPublic"
+        },
+        "memory": {
+          "description": "Memory is the amount of memory, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "region": {
+          "description": "Region specifies the geographic region in which the size resides",
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "slug": {
+          "description": "Slug holds  the name of the size",
+          "type": "string",
+          "x-go-name": "Slug"
+        },
+        "swap": {
+          "description": "Swap is the amount of swap space, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Swap"
+        },
+        "vcpus": {
+          "description": "VCPUs indicates how many (virtual) CPUs are available for this flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OperatingSystemSpecV2": {
       "type": "object",
