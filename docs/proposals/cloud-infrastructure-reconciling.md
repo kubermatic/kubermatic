@@ -23,7 +23,7 @@ With the new approach the controller will automatically detect when it need to u
 
 Kubermatic-cluster-controller:
 *   During each cluster synchronisation we check the cloud provider resources
-*   Update/Recreate when necessar
+*   Update/Recreate when necessary
 
 ## Task & effort:
 *   Openstack - 0.5d
