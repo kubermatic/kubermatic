@@ -2,7 +2,7 @@
 
 **Author**: Henrik Schmidt (@mrincompetent)
 
-**Status**: Implementation in progress.
+**Status**: Done
 
 The machine-controller uses the machine-api discussed in https://github.com/kubernetes/kube-deploy. 
 It offers a simple and stable solution to machine-management.
