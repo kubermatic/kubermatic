@@ -9,9 +9,10 @@ import (
 // ClusterControllerMetrics is a struct of all metrics used in
 // the cluster controller.
 type ClusterControllerMetrics struct {
-	Clusters      metrics.Gauge
-	ClusterPhases metrics.Gauge
-	Workers       metrics.Gauge
+	Clusters        metrics.Gauge
+	ClusterPhases   metrics.Gauge
+	Workers         metrics.Gauge
+	UnhandledErrors metrics.Counter
 }
 
 // NewClusterControllerMetrics creates new ClusterControllerMetrics
@@ -38,6 +39,12 @@ func NewClusterControllerMetrics() *ClusterControllerMetrics {
 			Subsystem: subsystem,
 			Name:      "workers",
 			Help:      "The number of running cluster controller workers",
+		}, []string{}),
+		UnhandledErrors: prometheus.NewCounterFrom(prom.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "unhandled_errors",
+			Help:      "The number of unhandled errors that occurred in the controller's reconciliation loop",
 		}, []string{}),
 	}
 
