@@ -43,9 +43,9 @@ func NewClusterControllerMetrics() *ClusterControllerMetrics {
 		UnhandledErrors: prometheus.NewCounterFrom(prom.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "unhandled_errors",
+			Name:      "unhandled_errors_total",
 			Help:      "The number of unhandled errors that occurred in the controller's reconciliation loop",
-		}, []string{}),
+		}, nil),
 	}
 
 	// Set default values, so that these metrics always show up
