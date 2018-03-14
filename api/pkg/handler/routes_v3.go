@@ -56,7 +56,7 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 }
 
 // Creates a cluster
-// swagger:route POST /api/v3/cluster cluster createCluster
+// swagger:route POST /api/v3/dc/{dc}/cluster cluster createCluster
 //
 //     Consumes:
 //     - application/json
@@ -81,7 +81,7 @@ func (r Routing) newClusterHandlerV3() http.Handler {
 }
 
 // Get the cluster
-// swagger:route GET /api/v3/cluster/{cluster} cluster getCluster
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster} cluster getCluster
 //
 //     Produces:
 //     - application/json
@@ -103,7 +103,7 @@ func (r Routing) clusterHandlerV3() http.Handler {
 }
 
 // Update the cluster
-// swagger:route PUT /api/v3/cluster/{cluster} cluster updateCluster
+// swagger:route PUT /api/v3/dc/{dc}/cluster/{cluster} cluster updateCluster
 //
 //     Produces:
 //     - application/json
@@ -125,7 +125,7 @@ func (r Routing) updateClusterHandlerV3() http.Handler {
 }
 
 // kubeconfigHandler returns the kubeconfig for the cluster.
-// swagger:route GET /api/v3/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
 //
 //     Produces:
 //     - application/yaml
@@ -147,7 +147,7 @@ func (r Routing) kubeconfigHandlerV3() http.Handler {
 }
 
 // List clusters
-// swagger:route GET /api/v3/cluster cluster listClusters
+// swagger:route GET /api/v3/dc/{dc}/cluster cluster listClusters
 //
 //     Produces:
 //     - application/json
@@ -169,7 +169,7 @@ func (r Routing) clustersHandlerV3() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v3/cluster/{cluster} cluster deleteCluster
+// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster} cluster deleteCluster
 //
 //     Produces:
 //     - application/json
@@ -191,7 +191,7 @@ func (r Routing) deleteClusterHandlerV3() http.Handler {
 }
 
 // Get nodes
-// swagger:route GET /api/v3/cluster/{cluster}/node cluster getClusterNodes
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/node cluster getClusterNodes
 //
 //     Produces:
 //     - application/json
@@ -213,7 +213,7 @@ func (r Routing) nodesHandlerV3() http.Handler {
 }
 
 // Create nodes
-// swagger:route POST /api/v3/cluster/{cluster}/node cluster createClusterNodes
+// swagger:route POST /api/v3/dc/{dc}/cluster/{cluster}/node cluster createClusterNodes
 //
 //     Consumes:
 //     - application/json
@@ -238,7 +238,7 @@ func (r Routing) createNodesHandlerV3() http.Handler {
 }
 
 // Delete's the node
-// swagger:route DELETE /api/v3/cluster/{cluster}/node/{node} cluster deleteClusterNode
+// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster}/node/{node} cluster deleteClusterNode
 //
 //     Produces:
 //     - application/json

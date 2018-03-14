@@ -677,7 +677,7 @@
         }
       }
     },
-    "/api/v3/cluster": {
+    "/api/v3/dc/{dc}/cluster": {
       "get": {
         "produces": [
           "application/json"
@@ -747,7 +747,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}": {
+    "/api/v3/dc/{dc}/cluster/{cluster}": {
       "get": {
         "produces": [
           "application/json"
@@ -857,7 +857,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/kubeconfig": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/kubeconfig": {
       "get": {
         "produces": [
           "application/yaml"
@@ -895,7 +895,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/node": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/node": {
       "get": {
         "produces": [
           "application/json"
@@ -976,7 +976,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/node/{node}": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/node/{node}": {
       "delete": {
         "produces": [
           "application/json"
