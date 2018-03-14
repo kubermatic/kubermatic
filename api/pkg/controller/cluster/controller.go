@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
@@ -86,9 +85,10 @@ type Controller struct {
 
 // ControllerMetrics contains metrics about the clusters & workers
 type ControllerMetrics struct {
-	Clusters      metrics.Gauge
-	ClusterPhases metrics.Gauge
-	Workers       metrics.Gauge
+	Clusters        metrics.Gauge
+	ClusterPhases   metrics.Gauge
+	Workers         metrics.Gauge
+	UnhandledErrors metrics.Counter
 }
 
 // NewController creates a cluster controller.
@@ -151,12 +151,12 @@ func NewController(
 			if !ok {
 				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 				if !ok {
-					utilruntime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
 					return
 				}
 				cluster, ok = tombstone.Obj.(*kubermaticv1.Cluster)
 				if !ok {
-					utilruntime.HandleError(fmt.Errorf("tombstone contained object that is not a Cluster %#v", obj))
+					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Cluster %#v", obj))
 					return
 				}
 			}
@@ -266,13 +266,19 @@ func NewController(
 	}
 	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.SemverMatcher{})
 
+	// register error handler that will increment a counter that will be scraped by prometheus,
+	// that accounts for all errors reported via a call to runtime.HandleError
+	runtime.ErrorHandlers = append(runtime.ErrorHandlers, func(err error) {
+		metrics.UnhandledErrors.Add(1.0)
+	})
+
 	return cc, nil
 }
 
 func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
+		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
 		return
 	}
 
@@ -316,7 +322,7 @@ func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 			if kubeapierrors.IsNotFound(err) {
 				return true, nil
 			}
-			utilruntime.HandleError(fmt.Errorf("failed to get cluster %s from luster during cache-update check: %v", updatedCluster.Name, err))
+			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister during cache-update check: %v", updatedCluster.Name, err))
 			return false, nil
 		}
 		if listerCluster.ResourceVersion == updatedCluster.ResourceVersion {
@@ -450,9 +456,11 @@ func (cc *Controller) handleErr(err error, key interface{}) {
 func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	clusters, err := cc.ClusterLister.List(labels.Everything())
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
+		cc.metrics.Clusters.Set(0)
+		runtime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
 		return
 	}
+	cc.metrics.Clusters.Set(float64(len(clusters)))
 
 	for _, c := range clusters {
 		if c.Status.Phase == phase {
@@ -463,7 +471,7 @@ func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
-	defer utilruntime.HandleCrash()
+	defer runtime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
@@ -488,7 +496,7 @@ func (cc *Controller) handleChildObject(i interface{}) {
 	if !ok {
 		tombstone, ok := i.(cache.DeletedFinalStateUnknown)
 		if !ok {
-			utilruntime.HandleError(fmt.Errorf("couldn't get obj from tombstone %#v", obj))
+			runtime.HandleError(fmt.Errorf("couldn't get obj from tombstone %#v", obj))
 			return
 		}
 		obj = tombstone.Obj.(metav1.Object)
@@ -503,10 +511,10 @@ func (cc *Controller) handleChildObject(i interface{}) {
 		c, err := cc.ClusterLister.Get(controllerRef.Name)
 		if err != nil {
 			if kubeapierrors.IsNotFound(err) {
-				utilruntime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
+				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
 				return
 			}
-			utilruntime.HandleError(fmt.Errorf("failed to get cluster %s from lister: %v", controllerRef.Name, err))
+			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister: %v", controllerRef.Name, err))
 			return
 		}
 
