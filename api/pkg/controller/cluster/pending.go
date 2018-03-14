@@ -348,6 +348,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		controllerresources.ControllerManagerServiceName: controllerresources.LoadServiceFile,
 		controllerresources.KubeStateMetricsServiceName:  controllerresources.LoadServiceFile,
 		controllerresources.MachineControllerServiceName: controllerresources.LoadServiceFile,
+		controllerresources.PrometheusServiceName:        controllerresources.LoadServiceFile,
 		controllerresources.SchedulerServiceName:         controllerresources.LoadServiceFile,
 	}
 

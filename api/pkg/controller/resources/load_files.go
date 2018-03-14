@@ -47,6 +47,8 @@ const (
 	KubeStateMetricsServiceName = "kube-state-metrics"
 	//MachineControllerServiceName is the name for the machine controller service
 	MachineControllerServiceName = "machine-controller"
+	//PrometheusServiceName is the name for the prometheus service
+	PrometheusServiceName = "prometheus"
 	//SchedulerServiceName is the name for the scheduler service
 	SchedulerServiceName = "scheduler"
 
