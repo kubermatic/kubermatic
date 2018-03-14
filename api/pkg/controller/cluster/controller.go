@@ -269,7 +269,7 @@ func NewController(
 	// register error handler that will increment a counter that will be scraped by prometheus,
 	// that accounts for all errors reported via a call to runtime.HandleError
 	runtime.ErrorHandlers = append(runtime.ErrorHandlers, func(err error) {
-		metrics.UnhandledErrors.Add(float64(1))
+		metrics.UnhandledErrors.Add(1.0)
 	})
 
 	return cc, nil

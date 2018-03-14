@@ -39,7 +39,7 @@ func NewClusterControllerMetrics() *ClusterControllerMetrics {
 			Subsystem: subsystem,
 			Name:      "workers",
 			Help:      "The number of running cluster controller workers",
-		}, []string{}),
+		}, nil),
 		UnhandledErrors: prometheus.NewCounterFrom(prom.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
