@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gophercloud/gophercloud"
+	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
@@ -287,4 +289,27 @@ func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, rout
 		return nil, res.Err
 	}
 	return res.Extract()
+}
+
+func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
+	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	if err != nil {
+		return nil, err
+	}
+
+	var allFlavors []osflavors.Flavor
+	pager := osflavors.ListDetail(computeClient, osflavors.ListOpts{})
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		flavors, err := osflavors.ExtractFlavors(page)
+		if err != nil {
+			return false, err
+		}
+		allFlavors = append(allFlavors, flavors...)
+		return true, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return allFlavors, nil
 }
