@@ -28,6 +28,7 @@ spec:
           requests:
             cpu: 100m
             memory: 50Mi
+      # The UID 65534 is commonly reserved for nobody, a user with no system privileges
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
