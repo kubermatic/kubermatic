@@ -10,7 +10,7 @@ spec:
   version: {{ .Values.prometheus.version }}
   retention: 360h
   serviceAccountName: prometheus
-  externalUrl: {{ .Values.prometheus.host | trim }}
+  externalUrl: https://{{ .Values.prometheus.host | trim }}
   serviceMonitorSelector:
     matchLabels:
       team: kubermatic
