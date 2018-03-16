@@ -91,6 +91,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 		Location: dc.Location,
 		Country:  dc.Country,
 		Provider: p,
+		Seed:     dc.Seed,
 	}
 
 	switch {
