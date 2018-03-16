@@ -1870,6 +1870,10 @@
         "provider": {
           "type": "string",
           "x-go-name": "Provider"
+        },
+        "seed": {
+          "type": "string",
+          "x-go-name": "Seed"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
