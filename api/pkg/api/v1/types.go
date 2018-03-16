@@ -44,6 +44,7 @@ type OpenstackDatacenterSpec struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
+	Seed         string                       `json:"seed"`
 	Country      string                       `json:"country,omitempty"`
 	Location     string                       `json:"location,omitempty"`
 	Provider     string                       `json:"provider,omitempty"`
