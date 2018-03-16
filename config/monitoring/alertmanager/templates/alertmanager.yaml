@@ -8,7 +8,7 @@ metadata:
 spec:
   replicas: 3
   version: {{ .Values.alertmanager.version }}
-  externalUrl: {{ .Values.alertmanager.host | trim }}
+  externalUrl: https://{{ .Values.alertmanager.host | trim }}
   storage:
     volumeClaimTemplate:
       spec:

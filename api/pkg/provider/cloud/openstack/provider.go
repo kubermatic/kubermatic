@@ -19,18 +19,22 @@ const (
 	tplPath = "/opt/template/nodes/openstack.yaml"
 )
 
-type openstack struct {
+// Provider is a struct that implements CloudProvider interface
+type Provider struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-// NewCloudProvider creates a new digitalocean provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &openstack{
+var _ provider.CloudProvider = &Provider{}
+
+// NewCloudProvider creates a new openstack provider.
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
+	return &Provider{
 		dcs: dcs,
 	}
 }
 
-func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+// ValidateCloudSpec validates the given CloudSpec
+func (os *Provider) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -59,35 +63,9 @@ func (os *openstack) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (os *openstack) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
-	dc, found := os.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
-	}
-
-	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: dc.Spec.Openstack.AuthURL,
-		Username:         cloud.Openstack.Username,
-		Password:         cloud.Openstack.Password,
-		DomainName:       cloud.Openstack.Domain,
-		TenantName:       cloud.Openstack.Tenant,
-	}
-
-	client, err := goopenstack.AuthenticatedClient(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
-}
-
-func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
-	return cloud.Openstack.SecurityGroups != "" &&
-		cloud.Openstack.Network != "" &&
-		cloud.Openstack.FloatingIPPool != ""
-}
-
-func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+// InitializeCloudProvider initializes a cluster, in particular
+// creates security group and network configuration
+func (os *Provider) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	if isInitialized(cloud) {
 		return nil, nil
 	}
@@ -147,7 +125,9 @@ func (os *openstack) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name
 	return cloud, nil
 }
 
-func (os *openstack) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
+// CleanUpCloudProvider does the clean-up in particular:
+// removes security group and network configuration
+func (os *Provider) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -179,7 +159,8 @@ func (os *openstack) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (os *openstack) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
+// CreateNodeClass creates a node class
+func (os *Provider) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
 	dc, found := os.dcs[c.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
@@ -203,10 +184,84 @@ func (os *openstack) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeS
 	return cnc, nil
 }
 
-func (os *openstack) NodeClassName(nSpec *apiv1.NodeSpec) string {
+// NodeClassName generates a node class name
+func (os *Provider) NodeClassName(nSpec *apiv1.NodeSpec) string {
 	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
 
-func (os *openstack) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
+// ValidateNodeSpec not implemented yet!
+func (os *Provider) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
+}
+
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackSize, error) {
+	authClient, err := os.getAuthClient(cloud)
+	if err != nil {
+		return nil, err
+	}
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+	flavors, err := getFlavors(authClient, dc.Spec.Openstack.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	apiSizes := []apiv1.OpenstackSize{}
+	for _, flavor := range flavors {
+		apiSize := apiv1.OpenstackSize{
+			Slug:     flavor.Name,
+			Memory:   flavor.RAM,
+			VCPUs:    flavor.VCPUs,
+			Disk:     flavor.Disk,
+			Swap:     flavor.Swap,
+			Region:   dc.Spec.Openstack.Region,
+			IsPublic: flavor.IsPublic,
+		}
+		apiSizes = append(apiSizes, apiSize)
+	}
+	return apiSizes, nil
+}
+
+func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	opts := gophercloud.AuthOptions{
+		IdentityEndpoint: dc.Spec.Openstack.AuthURL,
+		Username:         cloud.Openstack.Username,
+		Password:         cloud.Openstack.Password,
+		DomainName:       cloud.Openstack.Domain,
+		TenantName:       cloud.Openstack.Tenant,
+	}
+
+	client, err := goopenstack.AuthenticatedClient(opts)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
+	authClient, err := os.getAuthClient(cloud)
+	if err != nil {
+		return nil, err
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+}
+
+func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
+	return cloud.Openstack.SecurityGroups != "" &&
+		cloud.Openstack.Network != "" &&
+		cloud.Openstack.FloatingIPPool != ""
 }

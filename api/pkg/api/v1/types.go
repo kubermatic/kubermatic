@@ -16,9 +16,15 @@ type ObjectMeta struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 }
 
-// DigitialoceanDatacenterSpec specifies a data center of digital ocean.
+// DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.
 type DigitialoceanDatacenterSpec struct {
 	Region string `json:"region"`
+}
+
+// HetznerDatacenterSpec specifies a datacenter of Hetzner.
+type HetznerDatacenterSpec struct {
+	Datacenter string `json:"datacenter"`
+	Location   string `json:"location"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
@@ -38,6 +44,7 @@ type OpenstackDatacenterSpec struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
+	Seed         string                       `json:"seed"`
 	Country      string                       `json:"country,omitempty"`
 	Location     string                       `json:"location,omitempty"`
 	Provider     string                       `json:"provider,omitempty"`
@@ -45,6 +52,7 @@ type DatacenterSpec struct {
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
+	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
@@ -173,4 +181,23 @@ type NodeList []Node
 // swagger:model NodeV1
 type Node struct {
 	corev1.Node
+}
+
+// OpenstackSize is the object representing openstack's sizes.
+// swagger:model OpenstackSize
+type OpenstackSize struct {
+	// Slug holds  the name of the size
+	Slug string `json:"slug"`
+	// Memory is the amount of memory, measured in MB
+	Memory int `json:"memory"`
+	// VCPUs indicates how many (virtual) CPUs are available for this flavor
+	VCPUs int `json:"vcpus"`
+	// Disk is the amount of root disk, measured in GB
+	Disk int `json:"disk"`
+	// Swap is the amount of swap space, measured in MB
+	Swap int `json:"swap"`
+	// Region specifies the geographic region in which the size resides
+	Region string `json:"region"`
+	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
+	IsPublic bool `json:"isPublic"`
 }

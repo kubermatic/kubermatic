@@ -3,6 +3,7 @@ kind: Service
 metadata:
   labels:
     prometheus: {{ .Cluster.Name }}
+    cluster: user
   name: prometheus
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -12,11 +13,11 @@ metadata:
     name: {{ .Cluster.Name }}
     uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
-  type: ClusterIP
+  clusterIP: None
   ports:
   - name: web
     port: 9090
     protocol: TCP
     targetPort: web
   selector:
-    prometheus: {{ .Cluster.Name }}
+    app: prometheus

@@ -406,6 +406,32 @@
         }
       }
     },
+    "/api/v1/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -651,7 +677,7 @@
         }
       }
     },
-    "/api/v3/cluster": {
+    "/api/v3/dc/{dc}/cluster": {
       "get": {
         "produces": [
           "application/json"
@@ -721,7 +747,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}": {
+    "/api/v3/dc/{dc}/cluster/{cluster}": {
       "get": {
         "produces": [
           "application/json"
@@ -831,7 +857,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/kubeconfig": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/kubeconfig": {
       "get": {
         "produces": [
           "application/yaml"
@@ -869,7 +895,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/node": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/node": {
       "get": {
         "produces": [
           "application/json"
@@ -950,7 +976,7 @@
         }
       }
     },
-    "/api/v3/cluster/{cluster}/node/{node}": {
+    "/api/v3/dc/{dc}/cluster/{cluster}/node/{node}": {
       "delete": {
         "produces": [
           "application/json"
@@ -1261,6 +1287,9 @@
         "fake": {
           "$ref": "#/definitions/FakeCloudSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         }
@@ -1450,6 +1479,24 @@
       "x-go-name": "ClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterNetworkingConfig": {
+      "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
+      "type": "object",
+      "properties": {
+        "dnsDomain": {
+          "description": "Domain name for services.",
+          "type": "string",
+          "x-go-name": "DNSDomain"
+        },
+        "pods": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
+        "services": {
+          "$ref": "#/definitions/NetworkRanges"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "ClusterPhase": {
       "type": "string",
       "title": "ClusterPhase is the life cycle phase of a cluster.",
@@ -1461,6 +1508,9 @@
       "properties": {
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
+        },
+        "clusterNetwork": {
+          "$ref": "#/definitions/ClusterNetworkingConfig"
         },
         "humanReadableName": {
           "type": "string",
@@ -1807,6 +1857,9 @@
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerDatacenterSpec"
+        },
         "location": {
           "type": "string",
           "x-go-name": "Location"
@@ -1817,13 +1870,17 @@
         "provider": {
           "type": "string",
           "x-go-name": "Provider"
+        },
+        "seed": {
+          "type": "string",
+          "x-go-name": "Seed"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
-      "title": "DigitaloceanCloudSpec specifies access data to digital ocean.",
+      "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
         "token": {
           "type": "string",
@@ -1946,7 +2003,7 @@
     },
     "DigitialoceanDatacenterSpec": {
       "type": "object",
-      "title": "DigitialoceanDatacenterSpec specifies a data center of digital ocean.",
+      "title": "DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.",
       "properties": {
         "region": {
           "type": "string",
@@ -1987,6 +2044,48 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerCloudSpec": {
+      "type": "object",
+      "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerDatacenterSpec": {
+      "type": "object",
+      "title": "HetznerDatacenterSpec specifies a datacenter of Hetzner.",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerNodeSpecV2": {
+      "description": "HetznerNodeSpec Hetzner node settings",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "description": "server type",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-name": "HetznerNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "Initializer": {
       "type": "object",
@@ -2236,6 +2335,20 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
+    "NetworkRanges": {
+      "type": "object",
+      "title": "NetworkRanges represents ranges of network addresses.",
+      "properties": {
+        "cidrBlocks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "CIDRBlocks"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "NewClusterReqBody": {
       "description": "NewClusterReqBody represents the body of a new cluster request",
       "type": "object",
@@ -2299,6 +2412,9 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpecV2"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerNodeSpecV2"
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpecV2"
@@ -3058,6 +3174,52 @@
       },
       "x-go-name": "OpenstackNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "OpenstackSize": {
+      "type": "object",
+      "title": "OpenstackSize is the object representing openstack's sizes.",
+      "properties": {
+        "disk": {
+          "description": "Disk is the amount of root disk, measured in GB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "isPublic": {
+          "description": "IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects",
+          "type": "boolean",
+          "x-go-name": "IsPublic"
+        },
+        "memory": {
+          "description": "Memory is the amount of memory, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "region": {
+          "description": "Region specifies the geographic region in which the size resides",
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "slug": {
+          "description": "Slug holds  the name of the size",
+          "type": "string",
+          "x-go-name": "Slug"
+        },
+        "swap": {
+          "description": "Swap is the amount of swap space, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Swap"
+        },
+        "vcpus": {
+          "description": "VCPUs indicates how many (virtual) CPUs are available for this flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OperatingSystemSpecV2": {
       "type": "object",

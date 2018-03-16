@@ -6,6 +6,7 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -87,6 +88,14 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		cloudSpec.Openstack = &apiv2.OpenstackNodeSpec{
 			Flavor: config.Flavor.Value,
 			Image:  config.Image.Value,
+		}
+	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderHetzner {
+		config := &hetzner.RawConfig{}
+		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
+		}
+		cloudSpec.Hetzner = &apiv2.HetznerNodeSpec{
+			Type: config.ServerType.Value,
 		}
 	}
 

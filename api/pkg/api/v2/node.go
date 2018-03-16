@@ -20,6 +20,7 @@ type NodeCloudSpec struct {
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
+	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -82,6 +83,14 @@ type DigitaloceanNodeSpec struct {
 	Monitoring bool `json:"monitoring"`
 	// additional droplet tags
 	Tags []string `json:"tags"`
+}
+
+// HetznerNodeSpec Hetzner node settings
+// swagger:model HetznerNodeSpecV2
+type HetznerNodeSpec struct {
+	// server type
+	// required: true
+	Type string `json:"type"`
 }
 
 // OpenstackNodeSpec openstack node settings
