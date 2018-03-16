@@ -27,14 +27,14 @@ CLOUD_PROVIDER_FLAG=openstack
 CLOUD_CONFIG_FILE=./path-to-cloud-conf
 DEFAULT_PRIVATE_IP4_INTERFACE=eth1
 DEFAULT_LOGIN_USER=ubuntu
-ETCD_HOSTNAMES=(etcd-hostname1 etcd-hostname2 etcd-hostname3)
+ETCD_HOSTNAMES=(etcd-hostname1 etcd-hostname2 etcd-hostname3) # Do not use names with dots '.'
 ETCD_PRIVATE_IPS=(etcd1-private-ip etcd2-private-ip etcd3-private-ip)
 ETCD_PUBLIC_IPS=(etcd1-public-ip etcd2-public-ip etcd3-public-ip)
 
 POD_SUBNET="10.244.0.0/16" # Canal
 
 MASTER_LOAD_BALANCER_ADDRS=(LoadBalancerIP)
-MASTER_HOSTNAMES=(seed-master-1 seed-master-2 seed-master-3)
+MASTER_HOSTNAMES=(seed-master-1 seed-master-2 seed-master-3) # Do not use names with dots '.'
 MASTER_PRIVATE_IPS=(master1-private-ip master2-private-ip master3-private-ip)
 MASTER_PUBLIC_IPS=(master1-public-ip master2-public-ip master3-public-ip)
 
@@ -64,3 +64,7 @@ kubectl uncordon <node name>
 ```
 
 Repeat for all other nodes one by one.
+
+# Add workers
+
+To add worker nodes simply update to config.sh nodes and execute `install-worker.sh`
