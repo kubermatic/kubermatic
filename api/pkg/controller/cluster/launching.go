@@ -162,3 +162,34 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 
 	return nil
 }
+
+// Creates secret containing a public key. Used by the apiserver bridge server
+func (cc *Controller) launchingCreateApiserverBridgePublicKeySecret(c *kubermaticv1.Cluster) error {
+	client, err := c.GetClient()
+	if err != nil {
+		return err
+	}
+
+	name := "apiserver-bridge-server-authorized-keys"
+	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			secret := v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				StringData: map[string]string{
+					"authorized_keys": string(c.Status.ApiserverSSHKey.PublicKey),
+				},
+			}
+			_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(&secret)
+			if err != nil {
+				return fmt.Errorf("failed to create public key secret in client cluster: %v", err)
+			}
+		} else {
+			return fmt.Errorf("failed to load public key secret from client cluster: %v", err)
+		}
+	}
+
+	return nil
+}
