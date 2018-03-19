@@ -35,7 +35,7 @@ const (
 )
 
 // CreateNodeReqV2 represent a request for specific data to create a node
-// swagger:parameters createClusterNodeV2
+// swagger:parameters createClusterNodeV2 createClusterNodeV3
 type CreateNodeReqV2 struct {
 	ClusterReq
 	// in: body
@@ -48,7 +48,7 @@ type CreateNodeReqBodyV2 struct {
 }
 
 // NodeReqV2 represent a request for node specific data
-// swagger:parameters getClusterNodeV2 deleteClusterNodeV2
+// swagger:parameters getClusterNodeV2 deleteClusterNodeV2 deleteClusterNodeV3 getClusterNodeV3
 type NodeReqV2 struct {
 	ClusterReq
 	// in: path
