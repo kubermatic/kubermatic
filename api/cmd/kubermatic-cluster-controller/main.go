@@ -218,9 +218,10 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface, dcs map[string]provider.DatacenterMeta, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
 	metrics := NewClusterControllerMetrics()
 	clusterMetrics := cluster.ControllerMetrics{
-		Clusters:      metrics.Clusters,
-		ClusterPhases: metrics.ClusterPhases,
-		Workers:       metrics.Workers,
+		Clusters:        metrics.Clusters,
+		ClusterPhases:   metrics.ClusterPhases,
+		Workers:         metrics.Workers,
+		UnhandledErrors: metrics.UnhandledErrors,
 	}
 
 	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
@@ -254,6 +255,8 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 		kubeInformerFactory.Rbac().V1beta1().Roles(),
 		kubeInformerFactory.Rbac().V1beta1().RoleBindings(),
 		kubeInformerFactory.Rbac().V1beta1().ClusterRoleBindings(),
+		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
+		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)
 	if err != nil {
 		return err

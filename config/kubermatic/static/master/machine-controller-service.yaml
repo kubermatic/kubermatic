@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    name: scheduler
+    name: machine-controller
     prometheus: {{ .Cluster.Name }}
-  name: scheduler
+  name: machine-controller
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
     blockOwnerDeletion: true
@@ -18,4 +18,4 @@ spec:
   - name: http-metrics
     port: 8085
   selector:
-    role: scheduler
+    app: machine-controller

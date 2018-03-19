@@ -8,9 +8,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// DigitaloceanSpec describes a digital ocean datacenter
+// DigitaloceanSpec describes a DigitalOcean datacenter
 type DigitaloceanSpec struct {
 	Region string `yaml:"region"`
+}
+
+// HetznerSpec describes a Hetzner cloud datacenter
+type HetznerSpec struct {
+	Datacenter string `yaml:"datacenter"`
+	Location   string `yaml:"location"`
 }
 
 // OpenstackSpec describes a open stack datacenter
@@ -40,6 +46,7 @@ type DatacenterSpec struct {
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
+	Hetzner      *HetznerSpec      `yaml:"hetzner"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

@@ -101,11 +101,30 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud *CloudSpec `json:"cloud"`
+	Cloud          *CloudSpec              `json:"cloud"`
+	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
 	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
 	MasterVersion     string `json:"masterVersion"`
 	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
+}
+
+// ClusterNetworkingConfig specifies the different networking
+// parameters for a cluster.
+type ClusterNetworkingConfig struct {
+	// The network ranges from which service VIPs are allocated.
+	Services NetworkRanges `json:"services"`
+
+	// The network ranges from which POD networks are allocated.
+	Pods NetworkRanges `json:"pods"`
+
+	// Domain name for services.
+	DNSDomain string `json:"dnsDomain"`
+}
+
+// NetworkRanges represents ranges of network addresses.
+type NetworkRanges struct {
+	CIDRBlocks []string `json:"cidrBlocks"`
 }
 
 // ClusterAddress stores access and address information of a cluster.
@@ -158,6 +177,7 @@ type CloudSpec struct {
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
+	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 }
 
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
@@ -185,9 +205,14 @@ type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
-// DigitaloceanCloudSpec specifies access data to digital ocean.
+// DigitaloceanCloudSpec specifies access data to DigitalOcean.
 type DigitaloceanCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
+}
+
+// HetznerCloudSpec specifies access data to hetzner cloud.
+type HetznerCloudSpec struct {
+	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
