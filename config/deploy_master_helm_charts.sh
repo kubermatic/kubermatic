@@ -48,7 +48,7 @@ kubectl apply -f ${CHARTS_PATH}/installer/tiller-serviceaccount.yaml
 kubectl delete -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml || true
 kubectl create -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml
 
-helm ${HELM_OPTS} reset
+helm ${HELM_OPTS} reset --force
 sleep 10
 helm ${HELM_OPTS} init --history-max 5 --service-account tiller
 until helm ${HELM_OPTS} version
