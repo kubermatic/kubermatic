@@ -47,6 +47,10 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 		Handler(r.deleteNodeHandlerV3())
 
 	mux.Methods(http.MethodGet).
+		Path("/dc/{dc}/cluster/{cluster}/node/{node}").
+		Handler(r.getNodeHandlerV3())
+
+	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgradesV3())
 
@@ -56,7 +60,7 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 }
 
 // Creates a cluster
-// swagger:route POST /api/v3/dc/{dc}/cluster cluster createCluster
+// swagger:route POST /api/v3/dc/{dc}/cluster cluster createClusterV3
 //
 //     Consumes:
 //     - application/json
@@ -81,7 +85,7 @@ func (r Routing) newClusterHandlerV3() http.Handler {
 }
 
 // Get the cluster
-// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster} cluster getCluster
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster} cluster getClusterV3
 //
 //     Produces:
 //     - application/json
@@ -103,7 +107,7 @@ func (r Routing) clusterHandlerV3() http.Handler {
 }
 
 // Update the cluster
-// swagger:route PUT /api/v3/dc/{dc}/cluster/{cluster} cluster updateCluster
+// swagger:route PUT /api/v3/dc/{dc}/cluster/{cluster} cluster updateClusterV3
 //
 //     Produces:
 //     - application/json
@@ -125,7 +129,7 @@ func (r Routing) updateClusterHandlerV3() http.Handler {
 }
 
 // kubeconfigHandler returns the kubeconfig for the cluster.
-// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/kubeconfig cluster getClusterKubeconfig
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/kubeconfig cluster getClusterKubeconfigV3
 //
 //     Produces:
 //     - application/yaml
@@ -147,7 +151,7 @@ func (r Routing) kubeconfigHandlerV3() http.Handler {
 }
 
 // List clusters
-// swagger:route GET /api/v3/dc/{dc}/cluster cluster listClusters
+// swagger:route GET /api/v3/dc/{dc}/cluster cluster listClustersV3
 //
 //     Produces:
 //     - application/json
@@ -169,7 +173,7 @@ func (r Routing) clustersHandlerV3() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster} cluster deleteCluster
+// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster} cluster deleteClusterV3
 //
 //     Produces:
 //     - application/json
@@ -191,21 +195,21 @@ func (r Routing) deleteClusterHandlerV3() http.Handler {
 }
 
 // Get nodes
-// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/node cluster getClusterNodes
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/node cluster getClusterNodesV3
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: NodeListV1
+//       200: NodeListV2
 func (r Routing) nodesHandlerV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(nodesEndpoint()),
+		)(getNodesEndpointV2()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -213,7 +217,7 @@ func (r Routing) nodesHandlerV3() http.Handler {
 }
 
 // Create nodes
-// swagger:route POST /api/v3/dc/{dc}/cluster/{cluster}/node cluster createClusterNodes
+// swagger:route POST /api/v3/dc/{dc}/cluster/{cluster}/node cluster createClusterNodeV3
 //
 //     Consumes:
 //     - application/json
@@ -223,14 +227,14 @@ func (r Routing) nodesHandlerV3() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: empty
+//       201: NodeV2
 func (r Routing) createNodesHandlerV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(createNodesEndpoint(r.cloudProviders, r.sshKeyProvider, r.versions)),
+		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)),
 		decodeCreateNodesReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -238,7 +242,7 @@ func (r Routing) createNodesHandlerV3() http.Handler {
 }
 
 // Delete's the node
-// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster}/node/{node} cluster deleteClusterNode
+// swagger:route DELETE /api/v3/dc/{dc}/cluster/{cluster}/node/{node} cluster deleteClusterNodeV3
 //
 //     Produces:
 //     - application/json
@@ -252,7 +256,29 @@ func (r Routing) deleteNodeHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(deleteNodeEndpoint()),
+		)(deleteNodeEndpointV2()),
+		decodeNodeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Get node
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/node/{node} cluster getClusterNodeV3
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NodeV2
+func (r Routing) getNodeHandlerV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

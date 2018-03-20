@@ -685,7 +685,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "listClusters",
+        "operationId": "listClustersV3",
         "parameters": [
           {
             "type": "string",
@@ -717,7 +717,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "createCluster",
+        "operationId": "createClusterV3",
         "parameters": [
           {
             "type": "string",
@@ -755,7 +755,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getCluster",
+        "operationId": "getClusterV3",
         "parameters": [
           {
             "type": "string",
@@ -791,7 +791,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "updateCluster",
+        "operationId": "updateClusterV3",
         "parameters": [
           {
             "type": "string",
@@ -830,7 +830,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "deleteCluster",
+        "operationId": "deleteClusterV3",
         "parameters": [
           {
             "type": "string",
@@ -865,7 +865,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getClusterKubeconfig",
+        "operationId": "getClusterKubeconfigV3",
         "parameters": [
           {
             "type": "string",
@@ -903,7 +903,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getClusterNodes",
+        "operationId": "getClusterNodesV3",
         "parameters": [
           {
             "type": "string",
@@ -922,9 +922,9 @@
         ],
         "responses": {
           "200": {
-            "description": "NodeListV1",
+            "description": "NodeListV2",
             "schema": {
-              "$ref": "#/definitions/NodeListV1"
+              "$ref": "#/definitions/NodeListV2"
             }
           },
           "default": {
@@ -942,7 +942,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "createClusterNodes",
+        "operationId": "createClusterNodeV3",
         "parameters": [
           {
             "type": "string",
@@ -962,13 +962,16 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/CreateNodesReqBody"
+              "$ref": "#/definitions/CreateNodeReqBodyV2"
             }
           }
         ],
         "responses": {
           "201": {
-            "$ref": "#/responses/empty"
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -977,6 +980,49 @@
       }
     },
     "/api/v3/dc/{dc}/cluster/{cluster}/node/{node}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodeV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "delete": {
         "produces": [
           "application/json"
@@ -984,7 +1030,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "deleteClusterNode",
+        "operationId": "deleteClusterNodeV3",
         "parameters": [
           {
             "type": "string",
@@ -1870,6 +1916,10 @@
         "provider": {
           "type": "string",
           "x-go-name": "Provider"
+        },
+        "seed": {
+          "type": "string",
+          "x-go-name": "Seed"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
