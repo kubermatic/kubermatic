@@ -70,12 +70,7 @@ spec:
             "--authorization-mode=Node,RBAC",
             "--external-hostname={{ .Cluster.Address.ExternalName }}",
             "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
-            {{ if contains "v1.7" (index .Version.Values "k8s-version") }}
-            #TODO: Remove when we drop 1.7 support
-            "--experimental-bootstrap-token-auth=true",
-            {{ else }}
             "--enable-bootstrap-token-auth=true",
-            {{ end }}
             {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
             "--feature-gates=DynamicKubeletConfig=true",
             {{ end }}

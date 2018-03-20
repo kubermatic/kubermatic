@@ -67,28 +67,6 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 func TestLoadFiles(t *testing.T) {
 	versions := []*apiv1.MasterVersion{
 		{
-			Name:                            "1.7.0",
-			ID:                              "1.7.0",
-			Default:                         true,
-			AllowedNodeVersions:             []string{"1.3.0"},
-			EtcdOperatorDeploymentYaml:      "etcd-operator-dep.yaml",
-			ApiserverDeploymentYaml:         "apiserver-dep.yaml",
-			ControllerDeploymentYaml:        "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
-			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
-			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":                "v1.7.11",
-				"etcd-operator-version":      "v0.6.0",
-				"etcd-cluster-version":       "3.2.7",
-				"kube-machine-version":       "v0.2.3",
-				"addon-manager-version":      "v1.7.6",
-				"pod-network-bridge":         "v0.1",
-				"machine-controller-version": "v0.1.2",
-			},
-		},
-		{
 			Name:                            "1.8.0",
 			ID:                              "1.8.0",
 			Default:                         true,
