@@ -79,9 +79,6 @@ spec:
   userRef:
   - user-id1
   - user-id2
-  # Have this in all clusters usefull for single cluster testing (debuggable).
-  # default: true
-  propergate: true
 ```
 
 Example `Role`:
