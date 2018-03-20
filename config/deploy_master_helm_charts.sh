@@ -48,23 +48,18 @@ kubectl apply -f ${CHARTS_PATH}/installer/tiller-serviceaccount.yaml
 kubectl delete -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml || true
 kubectl create -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml
 
-helm ${HELM_OPTS} reset --force
-sleep 10
-helm ${HELM_OPTS} init --history-max 5 --service-account tiller
-until helm ${HELM_OPTS} version
-do
-   sleep 5
-done
+helm ${HELM_OPTS} init --history-max 5 --service-account tiller --upgrade
+sleep 30
 
 ############# MONITORING #############
 # All monitoring charts require the monitoring ns.
 kubectl create namespace monitoring || true
-helm ${HELM_OPTS} upgrade -i prometheus-operator -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus-operator/
-helm ${HELM_OPTS} upgrade -i node-exporter -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/node-exporter/
-helm ${HELM_OPTS} upgrade -i kube-state-metrics -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/kube-state-metrics/
-helm ${HELM_OPTS} upgrade -i grafana -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/grafana/
-helm ${HELM_OPTS} upgrade -i alertmanager -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/alertmanager/
-helm ${HELM_OPTS} upgrade -i prometheus -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
+helm ${HELM_OPTS} upgrade -i prometheus-operator --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus-operator/
+helm ${HELM_OPTS} upgrade -i node-exporter --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/node-exporter/
+helm ${HELM_OPTS} upgrade -i kube-state-metrics --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/kube-state-metrics/
+helm ${HELM_OPTS} upgrade -i grafana --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/grafana/
+helm ${HELM_OPTS} upgrade -i alertmanager --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/alertmanager/
+helm ${HELM_OPTS} upgrade -i prometheus --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
 
 ############# Kubermatic #############
 helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/storage/
