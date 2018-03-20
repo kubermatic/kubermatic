@@ -42,7 +42,8 @@ The general idea is to map `project`/`role` to Kubernetes `group` which are boun
 ![untitled drawing](https://user-images.githubusercontent.com/7387703/34309206-2c49e604-e751-11e7-8264-16ed5bca7ee1.jpg)
 When a project gets created we generate all of it's rules in Kubernetes. When a `user` joins an `role` the rules get bound to the user. Outlook: "This also happens in all client clusters. The client cluster will also have the `role`s as rules but differently generated."
 We use [User Impersonation](https://kubernetes.io/docs/admin/authentication/#user-impersonation) to perform user actions such as listing/editing `resources`. For that we can't use the K8s indexer which normally would heavily improve request times. We have to call the API server with every user request.
-  
+List users: When setting `roles` for a specific path in kubernets it won't be filtered when you list them. As a solution we label each resource with the project id (this also helps dev's to find resources manually). When listing resources we query with the project label and filter with the [SelfSubjectAccessReview](https://github.com/kubernetes/client-go/blob/42a124578af9e61f5c6902fa7b6b2cb6538f17d2/kubernetes/typed/authorization/v1/selfsubjectaccessreview_expansion.go#L24) call on each object.
+  
 
 ## Task & effort
 * [ ] Write new API endpoints reflecting the new structure (mocks).
