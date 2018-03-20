@@ -235,7 +235,7 @@ func (r Routing) createNodesHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)),
-		decodeCreateNodesReq,
+		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
 	)
