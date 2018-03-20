@@ -4,7 +4,6 @@ metadata:
   labels:
     app: prometheus-operator
   name: prometheus-operator
-  namespace: monitoring
 spec:
   replicas: 1
   template:

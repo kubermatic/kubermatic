@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kubermatic-cluster-controller
-  namespace: monitoring
   labels:
     team: kubermatic
 spec:
