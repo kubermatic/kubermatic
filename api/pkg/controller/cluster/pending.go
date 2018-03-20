@@ -150,6 +150,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	if err := cc.launchingCreateApiserverBridgePublicKeySecret(cluster); err != nil {
+		return err
+	}
+
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
 	}
