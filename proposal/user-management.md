@@ -38,6 +38,7 @@ User managemet allows us to group and protect resources between users. We introd
 
 ---
 # Technical design
+We define `Role`, `Project`, `Group`, `User` as CRD
 The general idea is to map `project`/`role` to Kubernetes `group` which are bound to `rule`s
 ![untitled drawing](https://user-images.githubusercontent.com/7387703/34309206-2c49e604-e751-11e7-8264-16ed5bca7ee1.jpg)
 When a project gets created we generate all of it's rules in Kubernetes. For this we will have a predefinded set of Roles which are used to template kubernetes `rules`. The roles will act as a template to allow subpath restrictions i.e `/path/.../created-resource/subpath` to allow this we need simple templating (only of simple strings not objects).
