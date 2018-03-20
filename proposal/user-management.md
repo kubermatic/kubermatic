@@ -93,13 +93,14 @@ metadata:
   name: role-name1
 spec:
   # We use the PolicyRules here: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#policyrule-v1beta1-rbac
-  groups:
+  policyies:
   - apiGroups: ["kubermatic.k8s.io"]
-    resources: ["userextras/{{-.ResourceName-}}"]
-    verbs: ["impersonate"]
-    resourceNames: ["view", "development"]
+    resources: ["clusters"]
+    verbs: ["get", "delete"]
+    resourceNames: [] # WILL be TEMPLATED/AUTOMATICALLY FILLED
 ```
-`User`:
+
+Example `User`:
 ```yaml
 apiVersion: kubermatic.k8s.io/v1
 kind: User
@@ -107,6 +108,39 @@ metadata:
   name: name123
 spec:
   ...
+```
+
+Out of this we generate the appropriate K8s resources that reflect the state described (Case cluster is added):
+```yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    project: some-id
+  namespace: default
+  name: xxxxxxx
+rules:
+- apiGroups: ["kubermatic.k8s.io"]
+  resources: ["clusters"]
+  verbs: ["get", "delete"]
+  resourceNames: ["cluster-just-created"]
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    project: some-id
+  namespace: default
+  name: xxxxxxx
+subjects:
+- kind: Group
+  name: editor
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: generated-role-id1
+  apiGroup: rbac.authorization.k8s.io
 ```
 
 
