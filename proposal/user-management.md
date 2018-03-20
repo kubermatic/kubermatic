@@ -72,10 +72,10 @@ metadata:
     project: some-id
   name: editor
 spec:
-  roleBindings:
+  roleRef:
   - role-id1
   - role-id2
-  userBindings:
+  userRef:
   - user-id1
   - user-id2
   # Have this in all clusters usefull for single cluster testing (debuggable).
