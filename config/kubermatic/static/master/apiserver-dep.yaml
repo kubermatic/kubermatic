@@ -35,6 +35,7 @@ spec:
         - -v=4
         - -logtostderr
         - -ssh-user=apiserver
+        - -ssh-port=2222
         - -ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa
         - -master=127.0.0.1:8080
         {{ if or (eq .ProviderName "digitalocean") (eq .ProviderName "bringyourown") }}
@@ -42,12 +43,10 @@ spec:
         {{ else }}
         - -ssh-preferred-address-types=ExternalIP
         {{ end }}
-        {{ if eq (index .Version.Values "pod-network-bridge") "v0.2" }}
         - -interface-address=10.250.0.2/24
         - -pod-network-cidr=172.25.0.0/16
         - -service-network-cidr=10.10.10.0/24
         - -block-ports=8080
-        {{ end }}
         imagePullPolicy: Always
         name: bridge-client
         securityContext:

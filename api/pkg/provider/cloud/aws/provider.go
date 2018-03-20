@@ -217,6 +217,18 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error
 		return "", fmt.Errorf("failed to authorize security group ingress for ssh: %v", err)
 	}
 
+	// Allow SSH for the network bridge from everywhere
+	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		CidrIp:     aws.String("0.0.0.0/0"),
+		FromPort:   aws.Int64(provider.PodNetworkBridgeSSHPort),
+		ToPort:     aws.Int64(provider.PodNetworkBridgeSSHPort),
+		GroupId:    csgOut.GroupId,
+		IpProtocol: aws.String("tcp"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to authorize security group ingress for pod network bridge ssh: %v", err)
+	}
+
 	// Allow kubelet 10250 from everywhere
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		CidrIp:     aws.String("0.0.0.0/0"),
