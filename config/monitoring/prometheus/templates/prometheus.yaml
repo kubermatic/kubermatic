@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   name: prometheus
-  namespace: monitoring
   labels:
     app: prometheus
 spec:
@@ -16,7 +15,7 @@ spec:
       team: kubermatic
   alerting:
     alertmanagers:
-    - namespace: monitoring
+    - namespace: {{ .Release.Namespace }}
       name: alertmanager
       port: web
   ruleSelector:
