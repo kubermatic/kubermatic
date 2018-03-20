@@ -41,6 +41,7 @@ User managemet allows us to group and protect resources between users. We introd
 The general idea is to map `project`/`role` to Kubernetes `group` which are bound to `rule`s
 ![untitled drawing](https://user-images.githubusercontent.com/7387703/34309206-2c49e604-e751-11e7-8264-16ed5bca7ee1.jpg)
 When a project gets created we generate all of it's rules in Kubernetes. For this we will have a predefinded set of Roles which are used to template kubernetes `rules`. The roles will act as a template to allow subpath restrictions i.e `/path/.../created-resource/subpath` to allow this we need simple templating (only of simple strings not objects).
+We generate a `rule` + RoleBinding(to group) for each rendered `role`
 We do apply the templates to every cluster, in the Future we can route the rules to the corret seed-clusters.
 We use [User Impersonation](https://kubernetes.io/docs/admin/authentication/#user-impersonation) to perform user actions such as creating/deleting/editing `resources`.
 List users: When setting `roles` for a specific path in kubernets it won't be filtered when you list them. As a solution we label each resource with the project id (this also helps dev's to find resources manually). When listing resources we query with the project label and filter with the [SelfSubjectAccessReview](https://github.com/kubernetes/client-go/blob/42a124578af9e61f5c6902fa7b6b2cb6538f17d2/kubernetes/typed/authorization/v1/selfsubjectaccessreview_expansion.go#L24) call on each object.
