@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: scheduler
-        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "scheduler",
             "--master=http://apiserver:8080",
             "--v=4"

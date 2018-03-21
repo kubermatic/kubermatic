@@ -54,7 +54,7 @@ spec:
           value: aws-vpn-id
         - name: AWS_AVAILABILITY_ZONE
           value: aws-availability-zone
-        image: kubermatic/hyperkube-amd64:v1.9.0
+        image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
           httpGet:
             path: /healthz
