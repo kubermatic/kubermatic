@@ -1,19 +1,5 @@
 updates:
 - from: 1.8.*
-  to: 1.8.6
-  automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
-- from: 1.8.x
-  to: 1.8.7
-  automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
-- from: 1.8.x
   to: 1.9.0
   automatic: false
   rollbackAllowed: false
@@ -21,7 +7,7 @@ updates:
   visible: true
   promote: true
 - from: 1.9.x
-  to: 1.9.4
+  to: 1.9.5
   automatic: false
   rollbackAllowed: false
   enabled: true
