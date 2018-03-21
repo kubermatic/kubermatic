@@ -1505,6 +1505,10 @@
         "lastTransitionTime": {
           "$ref": "#/definitions/Time"
         },
+        "machineController": {
+          "type": "boolean",
+          "x-go-name": "MachineController"
+        },
         "nodeController": {
           "type": "boolean",
           "x-go-name": "NodeController"

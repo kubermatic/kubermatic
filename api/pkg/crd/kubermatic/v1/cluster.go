@@ -251,11 +251,12 @@ type OpenstackCloudSpec struct {
 
 // ClusterHealthStatus stores health information of the components of a cluster.
 type ClusterHealthStatus struct {
-	Apiserver      bool `json:"apiserver"`
-	Scheduler      bool `json:"scheduler"`
-	Controller     bool `json:"controller"`
-	NodeController bool `json:"nodeController"`
-	Etcd           bool `json:"etcd"`
+	Apiserver         bool `json:"apiserver"`
+	Scheduler         bool `json:"scheduler"`
+	Controller        bool `json:"controller"`
+	NodeController    bool `json:"nodeController"`
+	MachineController bool `json:"machineController"`
+	Etcd              bool `json:"etcd"`
 }
 
 // AllHealthy returns if all components are healthy
