@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
+	controllerresources "github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -29,10 +30,11 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	healthMapping := map[string]*depInfo{
-		"apiserver":          {healthy: &health.Apiserver, minReady: 1},
-		"controller-manager": {healthy: &health.Controller, minReady: 1},
-		"scheduler":          {healthy: &health.Scheduler, minReady: 1},
-		"node-controller":    {healthy: &health.NodeController, minReady: 1},
+		controllerresources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
+		controllerresources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
+		controllerresources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
+		controllerresources.NodeControllerDeploymentName:    {healthy: &health.NodeController, minReady: 1},
+		controllerresources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
 	}
 
 	for name := range healthMapping {
