@@ -108,7 +108,7 @@ func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	}
 	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(sb.publicKey))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
 	}
 	sshKeyHash := ssh.FingerprintLegacyMD5(pubKey)
 	// Construct a key with the name containing the hash fragment for people to recognize it faster.
