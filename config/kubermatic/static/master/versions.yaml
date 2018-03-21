@@ -19,7 +19,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.1
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.8.5
@@ -41,7 +41,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.8.6
@@ -63,7 +63,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.8.7
@@ -85,7 +85,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.8.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.9.0
@@ -107,7 +107,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.9.1
@@ -129,7 +129,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.9.2
@@ -151,7 +151,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.9.3
@@ -173,7 +173,7 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
 - name: 1.9.4
@@ -195,6 +195,6 @@ versions:
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.2
-    pod-network-bridge: v0.3
+    pod-network-bridge: v0.4
     machine-controller-version: v0.2.1
     kube-state-metrics-version: latest
