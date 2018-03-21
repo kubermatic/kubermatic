@@ -83,7 +83,7 @@ spec:
         - --kubelet-client-key=/var/run/kubernetes/apiserver/kubelet-client.key
         - --kubelet-preferred-address-types=InternalIP
         - --v=4
-        image: kubermatic/hyperkube-amd64:v1.8.5
+        image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
         livenessProbe:
           httpGet:
             path: /healthz

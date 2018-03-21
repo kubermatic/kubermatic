@@ -45,7 +45,7 @@ spec:
         - --cloud-provider=openstack
         - --allocate-node-cidrs=true
         - --v=4
-        image: kubermatic/hyperkube-amd64:v1.9.0
+        image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
           httpGet:
             path: /healthz

@@ -57,7 +57,7 @@ spec:
           name: apiserver
           readOnly: true
       - name: apiserver
-        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "apiserver",
             "--advertise-address={{ .Cluster.Address.IP }}",
             "--secure-port={{ .Cluster.Address.ExternalPort }}",
