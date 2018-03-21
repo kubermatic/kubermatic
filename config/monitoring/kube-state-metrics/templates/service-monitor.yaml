@@ -5,6 +5,7 @@ metadata:
   labels:
     team: kubermatic
 spec:
+  jobLabel: app
   selector:
     matchLabels:
       app: kube-state-metrics
@@ -12,5 +13,16 @@ spec:
     matchNames:
     - monitoring
   endpoints:
-  - port: http
+  - port: https-main
+    scheme: https
     interval: 30s
+    honorLabels: true
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      insecureSkipVerify: true
+  - port: https-self
+    scheme: https
+    interval: 30s
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      insecureSkipVerify: true
