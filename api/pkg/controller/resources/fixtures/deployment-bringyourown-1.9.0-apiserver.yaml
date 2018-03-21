@@ -39,6 +39,7 @@ spec:
         - -ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa
         - -master=127.0.0.1:8080
         - -ssh-preferred-address-types=InternalIP
+        - -preferred-address-types=InternalIP
         - -interface-address=10.250.0.2/24
         - -pod-network-cidr=172.25.0.0/16
         - -service-network-cidr=10.10.10.0/24

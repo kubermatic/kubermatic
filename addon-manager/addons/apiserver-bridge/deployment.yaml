@@ -19,7 +19,7 @@ spec:
       hostNetwork: true
       containers:
       - name: server
-        image: kubermatic/pod-network-bridge:v0.3
+        image: kubermatic/pod-network-bridge:v0.4
         command:
         - /server
         args:
