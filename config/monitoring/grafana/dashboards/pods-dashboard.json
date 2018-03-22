@@ -112,7 +112,7 @@
                 "step": 10
               },
               {
-                "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{exported_pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
+                "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
                 "format": "time_series",
                 "interval": "10s",
                 "intervalFactor": 2,
@@ -122,7 +122,7 @@
                 "step": 20
               },
               {
-                "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{exported_pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
+                "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{pod=\"$pod\", container=~\"$container\", container!=\"POD\"})",
                 "format": "time_series",
                 "hide": false,
                 "interval": "",
@@ -382,7 +382,7 @@
           "multi": false,
           "name": "namespace",
           "options": [],
-          "query": "label_values(kube_pod_info, exported_namespace)",
+          "query": "label_values(kube_pod_info, namespace)",
           "refresh": 1,
           "regex": "",
           "sort": 1,
@@ -406,7 +406,7 @@
           "multi": false,
           "name": "pod",
           "options": [],
-          "query": "label_values(kube_pod_info{exported_namespace=~\"$namespace\"}, exported_pod)",
+          "query": "label_values(kube_pod_info{namespace=~\"$namespace\"}, pod)",
           "refresh": 1,
           "regex": "",
           "sort": 1,
@@ -429,7 +429,7 @@
           "multi": false,
           "name": "container",
           "options": [],
-          "query": "label_values(kube_pod_container_info{exported_namespace=\"$namespace\", exported_pod=\"$pod\"}, container)",
+          "query": "label_values(kube_pod_container_info{namespace=\"$namespace\", pod=\"$pod\"}, container)",
           "refresh": 1,
           "regex": "",
           "sort": 1,
