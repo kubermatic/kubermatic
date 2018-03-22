@@ -200,7 +200,7 @@ versions:
     kube-state-metrics-version: latest
 - name: 1.9.5
   id: 1.9.5
-  default: true
+  default: false
   allowedNodeVersions: [1.4.0]
   etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
   etcdClusterYaml: etcd-cluster.yaml
@@ -213,6 +213,28 @@ versions:
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
   values:
     k8s-version: v1.9.5
+    etcd-operator-version: v0.6.0
+    etcd-cluster-version: 3.2.7
+    kube-machine-version: v0.2.3
+    addon-manager-version: v1.9.2
+    pod-network-bridge: v0.4
+    machine-controller-version: v0.2.1
+    kube-state-metrics-version: latest
+- name: 1.9.6
+  id: 1.9.6
+  default: true
+  allowedNodeVersions: [1.4.0]
+  etcdOperatorDeploymentYaml: etcd-operator-dep.yaml
+  etcdClusterYaml: etcd-cluster.yaml
+  apiserverDeploymentYaml: apiserver-dep.yaml
+  controllerDeploymentYaml: controller-manager-dep.yaml
+  schedulerDeploymentYaml: scheduler-dep.yaml
+  nodeControllerDeploymentYaml: node-controller-dep.yaml
+  addonManagerDeploymentYaml: addon-manager-dep.yaml
+  machineControllerDeploymentYaml: machine-controller-dep.yaml
+  kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  values:
+    k8s-version: v1.9.6
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
