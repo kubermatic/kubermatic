@@ -56,6 +56,9 @@ spec:
         - mountPath: /grafana/conf/provisioning/dashboards
           name: grafana-dashboards
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/kubermatic
+          name: grafana-dashboards-kubermatic
+          readOnly: false
         - mountPath: /grafana-dashboard-definitions/kubernetes
           name: grafana-dashboards-kubernetes
           readOnly: false
@@ -72,6 +75,9 @@ spec:
       - configMap:
           name: grafana-dashboards
         name: grafana-dashboards
+      - configMap:
+          name: grafana-dashboards-kubermatic
+        name: grafana-dashboards-kubermatic
       - configMap:
           name: grafana-dashboards-kubernetes
         name: grafana-dashboards-kubernetes
