@@ -5,10 +5,19 @@ items:
     dashboards.yaml: |-
       [
           {
-              "folder": "Kubernetes",
-              "name": "0",
+              "folder": "Kubermatic",
+              "name": "kubermatic",
               "options": {
-                  "path": "/grafana-dashboard-definitions/0"
+                  "path": "/grafana-dashboard-definitions/kubermatic"
+              },
+              "org_id": 1,
+              "type": "file"
+          },
+          {
+              "folder": "Kubernetes",
+              "name": "kubernetes",
+              "options": {
+                  "path": "/grafana-dashboard-definitions/kubernetes"
               },
               "org_id": 1,
               "type": "file"
@@ -5437,5 +5446,5 @@ items:
       }
   kind: ConfigMap
   metadata:
-    name: grafana-dashboard-definitions
+    name: grafana-dashboards-kubernetes
 kind: List

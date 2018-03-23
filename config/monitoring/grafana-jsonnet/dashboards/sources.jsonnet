@@ -1,11 +1,11 @@
 [
     {
-        name: "0",
+        name: "kubernetes",
         org_id: 1,
         folder: "Kubernetes",
         type: "file",
         options: {
-            path: "/grafana-dashboard-definitions/0",
+            path: "/grafana-dashboard-definitions/kubernetes",
         },
     },
 ]
