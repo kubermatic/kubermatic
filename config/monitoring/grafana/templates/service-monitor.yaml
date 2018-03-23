@@ -12,5 +12,5 @@ spec:
     matchNames:
     - monitoring
   endpoints:
-  - port: grafana
+  - port: http
     interval: 30s
