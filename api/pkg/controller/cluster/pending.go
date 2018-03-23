@@ -204,25 +204,27 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 
 // ensureNamespaceExists will create the cluster namespace
 func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
-	name := fmt.Sprintf("cluster-%s", c.Name)
-	if _, err := cc.NamespaceLister.Get(name); !errors.IsNotFound(err) {
+	if c.Status.NamespaceName == "" {
+		c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
+	}
+
+	if _, err := cc.NamespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
 		return err
 	}
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: c.Status.NamespaceName,
 		},
 	}
 	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
-		return fmt.Errorf("failed to create namespace %s: %v", name, err)
+		return fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
 
 	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
 		c.Finalizers = append(c.Finalizers, namespaceDeletionFinalizer)
 	}
 
-	c.Status.NamespaceName = name
 	return nil
 }
 
