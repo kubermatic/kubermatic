@@ -78,48 +78,48 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 
 func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
 	return map[string]*apiv1.MasterVersion{
-		"1.5.2": {
-			Name:                       "1.5.2",
-			ID:                         "1.5.2",
+		"1.9.6": {
+			Name:                       "1.9.6",
+			ID:                         "1.9.6",
 			Default:                    false,
-			AllowedNodeVersions:        []string{"1.3.0"},
+			AllowedNodeVersions:        []string{"1.9.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.5.2",
+				"k8s-version":  "v1.9.6",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"1.5.3": {
-			Name:                       "1.5.3",
-			ID:                         "1.5.3",
+		"1.8.10": {
+			Name:                       "1.8.10",
+			ID:                         "1.8.10",
 			Default:                    true,
-			AllowedNodeVersions:        []string{"1.3.0"},
+			AllowedNodeVersions:        []string{"1.8.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.5.3",
+				"k8s-version":  "v1.8.10",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"v1.6.0-rc.1": {
-			Name:                       "v1.6.0-rc.1",
-			ID:                         "v1.6.0-rc.1",
-			Default:                    false,
-			AllowedNodeVersions:        []string{"1.4.0"},
+		"1.8.0": {
+			Name:                       "1.8.0",
+			ID:                         "1.8.0",
+			Default:                    true,
+			AllowedNodeVersions:        []string{"1.8.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.6.0-rc.1",
+				"k8s-version":  "v1.8.0",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
@@ -129,31 +129,31 @@ func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
 func buildMasterUpdates() []apiv1.MasterUpdate {
 	return []apiv1.MasterUpdate{
 		{
-			From:            "1.5.*",
-			To:              "1.5.2",
+			From:            "1.9.*",
+			To:              "1.9.6",
 			Automatic:       true,
-			RollbackAllowed: true,
+			RollbackAllowed: false,
+			Enabled:         true,
+			Visible:         false,
+			Promote:         false,
+		},
+		{
+			From:            "1.8.*",
+			To:              "1.9.0",
+			Automatic:       false,
+			RollbackAllowed: false,
 			Enabled:         true,
 			Visible:         true,
 			Promote:         true,
 		},
 		{
-			From:            "1.4.6",
-			To:              "1.5.1",
+			From:            "1.8.*",
+			To:              "1.8.10",
 			Automatic:       true,
-			RollbackAllowed: true,
+			RollbackAllowed: false,
 			Enabled:         true,
-			Visible:         true,
-			Promote:         true,
-		},
-		{
-			From:            "1.4.*",
-			To:              "1.4.6",
-			Automatic:       true,
-			RollbackAllowed: true,
-			Enabled:         true,
-			Visible:         true,
-			Promote:         true,
+			Visible:         false,
+			Promote:         false,
 		},
 	}
 }
