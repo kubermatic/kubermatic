@@ -5,15 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	nodesetclient "github.com/kube-node/nodeset/pkg/client/clientset/versioned"
-	machineclient "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	cmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/clientcmd/api/latest"
-	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 const (
@@ -273,110 +265,6 @@ func (h *ClusterHealthStatus) AllHealthy() bool {
 		h.Controller &&
 		h.Apiserver &&
 		h.Scheduler
-}
-
-// GetKubeconfig returns a kubeconfig to connect to the cluster
-func (c *Cluster) GetKubeconfig() *cmdv1.Config {
-	return &cmdv1.Config{
-		Kind:           "Config",
-		APIVersion:     "v1",
-		CurrentContext: c.ObjectMeta.Name,
-		Clusters: []cmdv1.NamedCluster{{
-			Name: c.ObjectMeta.Name,
-			Cluster: cmdv1.Cluster{
-				Server: c.Address.URL,
-				CertificateAuthorityData: c.Status.RootCA.Cert,
-			},
-		}},
-		Contexts: []cmdv1.NamedContext{{
-			Name: c.ObjectMeta.Name,
-			Context: cmdv1.Context{
-				Cluster:  c.ObjectMeta.Name,
-				AuthInfo: c.ObjectMeta.Name,
-			},
-		}},
-		AuthInfos: []cmdv1.NamedAuthInfo{{
-			Name: c.ObjectMeta.Name,
-			AuthInfo: cmdv1.AuthInfo{
-				Token: c.Address.AdminToken,
-			},
-		}},
-	}
-}
-
-func (c *Cluster) getClientConfig() (clientcmd.ClientConfig, error) {
-	v1cfg := c.GetKubeconfig()
-	oldCfg := &cmdapi.Config{}
-	err := latest.Scheme.Convert(v1cfg, oldCfg, nil)
-	if err != nil {
-		return nil, err
-	}
-	return clientcmd.NewNonInteractiveClientConfig(
-		*oldCfg,
-		v1cfg.Contexts[0].Name,
-		&clientcmd.ConfigOverrides{},
-		nil,
-	), nil
-}
-
-// GetClient returns a kubernetes client which speaks to the cluster
-func (c *Cluster) GetClient() (*kubernetes.Clientset, error) {
-	cfg, err := c.getClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	ccfg, err := cfg.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	client := kubernetes.NewForConfigOrDie(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-// GetNodesetClient returns a client interact with nodeset resources
-func (c *Cluster) GetNodesetClient() (nodesetclient.Interface, error) {
-	cfg, err := c.getClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	ccfg, err := cfg.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := nodesetclient.NewForConfig(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-// GetMachineClient returns a client interact with machine resources
-func (c *Cluster) GetMachineClient() (machineclient.Interface, error) {
-	cfg, err := c.getClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	ccfg, err := cfg.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := machineclient.NewForConfig(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.

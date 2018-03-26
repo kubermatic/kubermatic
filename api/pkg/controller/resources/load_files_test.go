@@ -199,7 +199,7 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            ApiserverTokenUsersSecretName,
+							Name:            TokenUsersSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
@@ -298,9 +298,9 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				secrets := map[string]string{
-					ApiserverSecretName:           fmt.Sprintf("secret-%s-%s-apiserver", prov, version.ID),
-					ControllerManagerSecretName:   fmt.Sprintf("secret-%s-%s-controller-manager", prov, version.ID),
-					ApiserverTokenUsersSecretName: fmt.Sprintf("secret-%s-%s-token-users", prov, version.ID),
+					ApiserverSecretName:         fmt.Sprintf("secret-%s-%s-apiserver", prov, version.ID),
+					ControllerManagerSecretName: fmt.Sprintf("secret-%s-%s-controller-manager", prov, version.ID),
+					TokenUsersSecretName:        fmt.Sprintf("secret-%s-%s-token-users", prov, version.ID),
 				}
 				for name, fixture := range secrets {
 					res, _, err := LoadSecretFile(data, name, masterResourcePath)

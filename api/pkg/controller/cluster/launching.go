@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"crypto/x509"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -16,6 +17,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/util/cert"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
@@ -56,7 +59,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 
 // ensureClusterReachable checks if the cluster is reachable via its external name
 func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
-	client, err := c.GetClient()
+	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return err
 	}
@@ -78,7 +81,12 @@ func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
 func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
-	client, err := c.GetClient()
+	caKp, err := cc.getFullCAFromLister(c)
+	if err != nil {
+		return err
+	}
+
+	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return err
 	}
@@ -91,7 +99,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			config.Clusters = map[string]*clientcmdapi.Cluster{
 				"": {
 					Server: c.Address.URL,
-					CertificateAuthorityData: c.Status.RootCA.Cert,
+					CertificateAuthorityData: cert.EncodeCertPEM(caKp.Cert),
 				},
 			}
 			cm := v1.ConfigMap{}
@@ -165,31 +173,106 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 	return nil
 }
 
-// Creates secret containing a public key. Used by the apiserver bridge server
-func (cc *Controller) launchingCreateApiserverBridgePublicKeySecret(c *kubermaticv1.Cluster) error {
-	client, err := c.GetClient()
+func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return err
 	}
 
-	name := "apiserver-bridge-server-authorized-keys"
+	name := "openvpn-client-certificates"
 	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
+			caKp, err := cc.getFullCAFromLister(c)
+			if err != nil {
+				return err
+			}
+
+			clientKey, err := certutil.NewPrivateKey()
+			if err != nil {
+				return fmt.Errorf("unable to create a server private key: %v", err)
+			}
+
+			clientConfig := certutil.Config{
+				CommonName: "user-cluster-client",
+				AltNames:   certutil.AltNames{},
+				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			}
+			clientCert, err := certutil.NewSignedCert(clientConfig, clientKey, caKp.Cert, caKp.Key)
+			if err != nil {
+				return fmt.Errorf("unable to sign the server certificate: %v", err)
+			}
+
 			secret := v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
 				StringData: map[string]string{
-					"authorized_keys": string(c.Status.ApiserverSSHKey.PublicKey),
+					"ca.crt":     string(certutil.EncodeCertPEM(caKp.Cert)),
+					"client.crt": string(certutil.EncodeCertPEM(clientCert)),
+					"client.key": string(certutil.EncodePrivateKeyPEM(clientKey)),
 				},
 			}
 			_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(&secret)
 			if err != nil {
-				return fmt.Errorf("failed to create public key secret in client cluster: %v", err)
+				return fmt.Errorf("failed to create openvpn secret: %v", err)
 			}
 		} else {
-			return fmt.Errorf("failed to load public key secret from client cluster: %v", err)
+			return fmt.Errorf("failed to load openvpn secret from client cluster: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (cc *Controller) launchingCreateOpenVPNConfigMap(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	name := "openvpn-client-config"
+	_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			openvpnSvc, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(controllerresources.OpenVPNServerServiceName)
+			if err != nil {
+				return err
+			}
+
+			config := fmt.Sprintf(`client
+proto tcp
+dev kube
+dev-type tun
+auth-nocache
+remote %s %d
+nobind
+ca '/etc/openvpn/certs/ca.crt'
+cert '/etc/openvpn/certs/client.crt'
+key '/etc/openvpn/certs/client.key'
+remote-cert-tls server
+script-security 2
+link-mtu 1432
+cipher AES-256-GCM
+auth SHA1
+keysize 256
+up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE && /bin/touch /tmp/running"'
+log /dev/stdout
+`, c.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
+			cm := v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				Data: map[string]string{
+					"config": config,
+				},
+			}
+			_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(&cm)
+			if err != nil {
+				return fmt.Errorf("failed to create openvpn secret: %v", err)
+			}
+		} else {
+			return fmt.Errorf("failed to load openvpn secret from client cluster: %v", err)
 		}
 	}
 

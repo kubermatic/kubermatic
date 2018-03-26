@@ -10,33 +10,48 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	corev1listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+type UserClusterConnectionProvider interface {
+	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+}
 
 // NewClusterProvider returns a datacenter specific cluster provider
 func NewClusterProvider(
 	client kubermaticclientset.Interface,
+	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
 	isAdmin func(apiv1.User) bool) *ClusterProvider {
 	return &ClusterProvider{
-		client:        client,
-		clusterLister: clusterLister,
-		workerName:    workerName,
-		isAdmin:       isAdmin,
+		client:                  client,
+		userClusterConnProvider: userClusterConnProvider,
+		clusterLister:           clusterLister,
+		workerName:              workerName,
+		isAdmin:                 isAdmin,
 	}
 }
 
 // ClusterProvider handles actions to create/modify/delete clusters in a specific kubernetes cluster
 type ClusterProvider struct {
-	client        kubermaticclientset.Interface
-	clusterLister kubermaticv1lister.ClusterLister
-	isAdmin       func(apiv1.User) bool
+	client                  kubermaticclientset.Interface
+	userClusterConnProvider UserClusterConnectionProvider
+	clusterLister           kubermaticv1lister.ClusterLister
+	secretLister            corev1listers.SecretLister
+	isAdmin                 func(apiv1.User) bool
 
 	workerName string
 }
@@ -162,4 +177,22 @@ func (p *ClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv
 	}
 
 	return p.client.KubermaticV1().Clusters().Update(newCluster)
+}
+
+// GetClusterAdminKubeconfig updates a cluster
+func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientcmd.Load(b)
+}
+
+func (p *ClusterProvider) GetMachineClient(c *kubermaticv1.Cluster) (machineclientset.Interface, error) {
+	return p.userClusterConnProvider.GetMachineClient(c)
+}
+
+func (p *ClusterProvider) GetClient(c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
+	return p.userClusterConnProvider.GetClient(c)
 }

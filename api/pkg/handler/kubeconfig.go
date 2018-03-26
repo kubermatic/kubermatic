@@ -2,17 +2,17 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/ghodss/yaml"
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"k8s.io/client-go/tools/clientcmd"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func kubeconfigEndpoint() endpoint.Endpoint {
@@ -28,32 +28,26 @@ func kubeconfigEndpoint() endpoint.Endpoint {
 			}
 			return nil, err
 		}
-		cfg := c.GetKubeconfig()
-		return cfg, nil
+		return clusterProvider.GetAdminKubeconfig(c)
 	}
 }
 
 func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
-	cfg := response.(*v1.Config)
+	cfg := response.(*clientcmdapi.Config)
 
 	filename := "kubeconfig"
 
 	if len(cfg.Clusters) > 0 {
-		filename = fmt.Sprintf("%s-%s", filename, cfg.Clusters[0].Name)
+		filename = fmt.Sprintf("%s-%s", filename, cfg.CurrentContext)
 	}
 
 	w.Header().Set("Content-Type", "application/yaml")
 	w.Header().Set("Content-disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
-	jcfg, err := json.Marshal(cfg)
+	b, err := clientcmd.Write(*cfg)
 	if err != nil {
 		return err
 	}
-
-	ycfg, err := yaml.JSONToYAML(jcfg)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(ycfg)
+	_, err = w.Write(b)
 	return err
 }

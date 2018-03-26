@@ -2,18 +2,13 @@ package kubernetes
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	texttemplate "text/template"
 
 	"github.com/Masterminds/sprig"
 	"github.com/golang/glog"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"golang.org/x/crypto/ssh"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -69,46 +64,7 @@ func (t *Template) Execute(data interface{}, object v1.Object) (string, error) {
 }
 
 // FuncMap defines the available functions to kubermatic templates.
-var funcs = texttemplate.FuncMap{
-	"apiBytesToB64":      apiBytesToB64,
-	"apiBytesToString":   apiBytesToString,
-	"pemEncodePublicKey": pemEncodePublicKey,
-}
-
-func apiBytesToB64(b kubermaticv1.Bytes) string {
-	return b.Base64()
-}
-
-func pemEncodePublicKey(b kubermaticv1.Bytes) string {
-	k, _, _, _, err := ssh.ParseAuthorizedKey(b)
-	if err != nil {
-		glog.Errorf("Failed to parse authorized key: %v", err)
-		return ""
-	}
-	ck := k.(ssh.CryptoPublicKey)
-	pk := ck.CryptoPublicKey()
-	rsakey, ok := pk.(*rsa.PublicKey)
-	if !ok {
-		glog.Errorf("key is not of type rsa.PublicKey")
-		return ""
-	}
-
-	publicBytes, err := x509.MarshalPKIXPublicKey(rsakey)
-	if err != nil {
-		glog.Errorf("failed to marshal public key: %v", err)
-		return ""
-	}
-	pemBytes := pem.EncodeToMemory(&pem.Block{
-		Bytes: publicBytes,
-		Type:  "PUBLIC KEY",
-	})
-
-	return string(pemBytes)
-}
-
-func apiBytesToString(b kubermaticv1.Bytes) string {
-	return string(b)
-}
+var funcs = texttemplate.FuncMap{}
 
 // TxtFuncMap returns an aggregated template function map. Currently (custom functions + sprig)
 func TxtFuncMap() texttemplate.FuncMap {

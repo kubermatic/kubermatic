@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -241,6 +242,7 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 		dcs,
 		cps,
 		clusterMetrics,
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),

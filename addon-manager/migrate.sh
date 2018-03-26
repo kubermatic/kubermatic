@@ -8,3 +8,5 @@
 /etc/kubermatic/migrations/delete-kubernetes-service.sh
 # We changed the name of the pod network bridge server deployment. Therefore we need to delete the old one
 /etc/kubermatic/migrations/rename-pod-network-bridge.sh
+# We replaces the custom apiserver-bridge with openvpn
+/etc/kubermatic/migrations/remove-pod-network-bridge.sh

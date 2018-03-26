@@ -227,7 +227,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, fmt.Errorf("unknown cluster datacenter %s", c.Spec.Cloud.DatacenterName)
 		}
 
-		client, err := c.GetMachineClient()
+		client, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
@@ -322,12 +322,12 @@ func getNodesEndpointV2() endpoint.Endpoint {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
@@ -428,12 +428,12 @@ func getNodeEndpointV2() endpoint.Endpoint {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
@@ -464,12 +464,12 @@ func deleteNodeEndpointV2() endpoint.Endpoint {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}

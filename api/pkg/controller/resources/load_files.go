@@ -11,6 +11,7 @@ import (
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
+	"k8s.io/apimachinery/pkg/util/runtime"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -36,6 +37,8 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
+	//MachineControllerDeploymentName is the name for the machine-controller deployment
+	OpenVPNServerDeploymentName = "openvpn-server"
 
 	//ApiserverExternalServiceName is the name for the external apiserver service
 	ApiserverExternalServiceName = "apiserver-external"
@@ -51,16 +54,36 @@ const (
 	PrometheusServiceName = "prometheus"
 	//SchedulerServiceName is the name for the scheduler service
 	SchedulerServiceName = "scheduler"
+	//SchedulerServiceName is the name for the scheduler service
+	OpenVPNServerServiceName = "openvpn-server"
 
+	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
+	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//CAKeySecretName is the name for the secret containing the private ca key
+	CAKeySecretName = "ca-key"
+	//CACertSecretName is the name for the secret containing the ca.crt
+	CACertSecretName = "ca-cert"
+	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
+	ApiserverTLSSecretName = "apiserver-tls"
 	//ApiserverSecretName is the name for the secrets required for the apiserver
+	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
+	//ServiceAccountKeySecretName is the name for the secrets required for the apiserver
+	ServiceAccountKeySecretName = "service-account-key"
+	//ServiceAccountKeySecretName is the name for the secrets required for the apiserver
 	ApiserverSecretName = "apiserver"
 	//ControllerManagerSecretName is the name for the secrets required for the controller manager
 	ControllerManagerSecretName = "controller-manager"
-	//ApiserverTokenUsersSecretName is the name for the token-users secret
-	ApiserverTokenUsersSecretName = "token-users"
+	//TokenUsersSecretName is the name for the token-users secret
+	TokenUsersSecretName = "token-users"
+	//TokenUsersSecretName is the name for the token-users secret
+	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
+	//TokenUsersSecretName is the name for the token-users secret
+	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
+	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
+	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
 	EtcdOperatorServiceAccountName = "etcd-operator"
@@ -118,24 +141,24 @@ func NewTemplateData(
 	}
 }
 
-// TokenCSVRevision returns the resource version of the token-users secret for the cluster
-func (d *TemplateData) TokenCSVRevision() string {
-	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(ApiserverTokenUsersSecretName)
+// SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
+func (d *TemplateData) SecretRevision(name string) string {
+	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		glog.V(0).Infof("could not get token-users secret from lister: %v", err)
+		runtime.HandleError(fmt.Errorf("could not get secret %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
 		return ""
 	}
 	return secret.ResourceVersion
 }
 
-// CloudConfigRevision returns the resource version of the cloud-config configmap for the cluster
-func (d *TemplateData) CloudConfigRevision() string {
-	configmap, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(CloudConfigConfigMapName)
+// ConfigMapRevision returns the resource version of the configmap specified by name. A empty string will be returned in case of an error
+func (d *TemplateData) ConfigMapRevision(name string) string {
+	cm, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		glog.V(0).Infof("could not get cloud-config configmap from lister: %v", err)
+		runtime.HandleError(fmt.Errorf("could not get configmap %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
 		return ""
 	}
-	return configmap.ResourceVersion
+	return cm.ResourceVersion
 }
 
 // ProviderName returns the name of the clusters providerName
