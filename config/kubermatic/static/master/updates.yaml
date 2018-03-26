@@ -8,7 +8,7 @@ updates:
   promote: true
 - from: 1.9.x
   to: 1.9.6
-  automatic: false
+  automatic: true
   rollbackAllowed: false
   enabled: true
   visible: true
