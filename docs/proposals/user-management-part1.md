@@ -25,33 +25,56 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   namespace: kubermatic
-  name: cluster-reader-role-projectID
+  name: cluster-editor-role-projectIdentity
 rules:
 - apiGroups: ["kubermatic.k8s.io"] 
   resources: [“clusters”]
-  resourceNames: ["my-powerfull-cluster-projectID“]
-  verbs: ["get", “update” ]
+  resourceNames: ["my-powerfull-cluster“]
+  verbs: ["get", “update”, "create", "delete", "patch"]
 ```
 
-Note that If we were to generate a `Role` for a different `Group` let’s say `Reader` the only difference would be in the `verbs` field, which in our case would be defined as `verbs:[“get”]`. The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `cluster-reader-role-projectID` `Role` to `cluster-reader-group-projectID` `Group`
+If we were to generate a `Role` for a different `Group` let’s say `Reader` the only difference would be in the `verbs` field and the `name` 
+
+```
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: kubermatic
+  name: cluster-reader-role-projectIdentity
+rules:
+- apiGroups: ["kubermatic.k8s.io"] 
+  resources: [“clusters”]
+  resourceNames: ["my-powerfull-cluster“]
+  verbs: ["get"]
+```
+
+The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `cluster-editor-role-projectIdentity` `Role` to `cluster-editor-group-projectIdentity` `Group`
 
 ```
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: cluster-reader-role-binding-projectID
+  name: cluster-editor-role-binding-projectIdentity
   namespace: kubermatic
 subjects:
 - kind: Group
-  name: cluster-reader-group-projectID
+  name: cluster-editor-group-projectIdentity
   apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: Role
-  name: cluster-reader-role-projectID
+  name: cluster-editor-role-projectIdentity
   apiGroup: rbac.authorization.k8s.io
 
 ```
 
+**Possible Optimization**:
+
+It may turn out that the `verb` list for `Admin`, `Owner`, `Editor` is exactly the same in such case we could generate only one `Role` to rule them all. 
+Does it mean we don't need more than two Groups ? Not necessarly. 
+We could say that the `Admin`group is special in a way that allows them to add other users to the `Project`. 
+In practice this means that they have write access to an instance of `ProjectGroups`. Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`. 
+
+This complexity could be enlosed in `ProjectProvider` and since ##LuksMagicalBox is parameter driven expressing the above statement will be possible.
 
 One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleBindings` are unique, for more details please refer to ##LuksMagicalBox that contains more details about creating the `Roles` and assigning them to the `Groups`
 
@@ -67,13 +90,14 @@ To recap when a user logs-in to our system this is what happens:
 - we retrieve a list of projects the user belongs to from `apiv1.User`
 - we query the system (using a build-in admin account) to find a matching instance of `ProjectGroups`
 - we map the user to a group.
-- all the future queries will use `Impersonation` to authorise.
+- all the future queries will use `Impersonation` to authorise. To make this part more concrete imagine that we want to list clusters a user has access to. Since all `Resources` that belong to the `Project` will have the project's identity attached to them (be it `projectName` or `projectID`). To find corresponding clusters we will use a build-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
 
 
 To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept `OptimisticClusterProvider` which in turn will accept a modified version of `ClusterProvider`, the new component will also have `LuksMagicalBox`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will use `LuksMagicalBox` to create necessary `RBAC` roles passing required parameters like `apiGroupKind`, `groupName`, `resourceName`, `namespace` and an instance of kubernetes client.
 
+## LuksMagicalBox
+TBD
+
 ## Types
 TBD
 
-## LuksMagicalBox
-TBD
