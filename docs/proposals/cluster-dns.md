@@ -40,7 +40,7 @@ Instead of relying on the seed clusters DNS, we use the cluster-ips to circumven
 
 From the places mentioned above, only the kubernetes master components (apiserver, controller-manager, scheduler) need to be changed. Others could be changed as well to have streamlined manifests.
 
-The master components need to be configured to use the DNS of the user cluster.
+The master components of the user-cluster need to be configured to use the deployed DNS service within the user cluster.
 This cluster-IP of the dns service is predefined as `10.10.10.10`.
 Pods can be configured using "spec.dnsConfig" mentioned in https://raw.githubusercontent.com/kubernetes/website/master/docs/concepts/services-networking/custom-dns.yaml
 
