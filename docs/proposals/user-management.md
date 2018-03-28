@@ -1,7 +1,7 @@
 # User management 
 **Author**: Lukasz Szaszkiewicz(@p0lyn0mial)
 
-**Status**: Draft proposal
+**Status**: Draft proposal, contains only the first part, without `RBACGenerator`.
 
 ## Introduction
 
@@ -18,7 +18,7 @@ User management describes how to manage user access to various resources like de
 
 ## Core concept
 
-Since we are going to use kubernete’s `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the ##Introduction section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `Editor Group` and describes access to `cluster` `Resource`
+Since we are going to use kubernete’s `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the `Introduction` section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `Editor Group` and describes access to `cluster` `Resource`
 
 ```
 kind: Role
@@ -74,16 +74,16 @@ Does it mean we don't need more than two Groups ? Not necessarly.
 We could say that the `Admin`group is special in a way that allows them to add other users to the `Project`. 
 In practice this means that they have write access to an instance of `ProjectGroups`. Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`. 
 
-This complexity could be enlosed in `ProjectProvider` and since ##LuksMagicalBox is parameter driven expressing the above statement will be possible.
+This complexity could be enlosed in `ProjectProvider` and since `RBACGenerator` is parameter driven expressing the above statement will be possible.
 
-One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleBindings` are unique, for more details please refer to ##LuksMagicalBox that contains more details about creating the `Roles` and assigning them to the `Groups`
+One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleBindings` are unique, for more details please refer to `RBACGenerator` that contains more details about creating the `Roles` and assigning them to the `Groups`
 
 
 ## Implementation
 
 Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionallity on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Admin` group and let Kubernetes take care of enforcing authorisation decisions. 
 
-One way of doing this we would like to propose is to create new types namely `Project` and `ProjectGroups`. For exact type definitions please refer to ##Types section. An instance of `Project` represents a unique project and gives us an identity we will attach to project’s `resources`. An instance of `ProjectGroups` belongs to a `Project` and helps us to map a particular `User` to a particular `Group` within a particular `Project`. At the same time we would like to extend existing  `apiv1.User` type in a way that would allow us to store a list of `Projects` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to. 
+One way of doing this we would like to propose is to create new types namely `Project` and `ProjectGroups`. For exact type definitions please refer to `Types` section. An instance of `Project` represents a unique project and gives us an identity we will attach to project’s `resources`. An instance of `ProjectGroups` belongs to a `Project` and helps us to map a particular `User` to a particular `Group` within a particular `Project`. At the same time we would like to extend existing  `apiv1.User` type in a way that would allow us to store a list of `Projects` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to. 
 
 To recap when a user logs-in to our system this is what happens:
 - a user is authenticated
@@ -93,9 +93,9 @@ To recap when a user logs-in to our system this is what happens:
 - all the future queries will use `Impersonation` to authorise. To make this part more concrete imagine that we want to list clusters a user has access to. Since all `Resources` that belong to the `Project` will have the project's identity attached to them (be it `projectName` or `projectID`). To find corresponding clusters we will use a build-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
 
 
-To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept `OptimisticClusterProvider` which in turn will accept a modified version of `ClusterProvider`, the new component will also have `LuksMagicalBox`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will use `LuksMagicalBox` to create necessary `RBAC` roles passing required parameters like `apiGroupKind`, `groupName`, `resourceName`, `namespace` and an instance of kubernetes client.
+To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept a modified version of `ClusterProvider`, the new component will also have `RBACGenerator`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will use `RBACGenerator` to create necessary `RBAC` roles passing required parameters like `apiGroupKind`, `groupName`, `resourceName`, `namespace` and an instance of kubernetes client.
 
-## LuksMagicalBox
+## RBACGenerator
 TBD
 
 ## Types
