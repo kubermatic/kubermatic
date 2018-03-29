@@ -287,7 +287,7 @@ func getNodeForMachine(machine *v1alpha1.Machine, nodes []corev1.Node) *corev1.N
 		return nil
 	}
 	for _, node := range nodes {
-		if node.UID == machine.Status.NodeRef.UID {
+		if node.UID == machine.Status.NodeRef.UID || node.Name == machine.Name {
 			return &node
 		}
 	}
