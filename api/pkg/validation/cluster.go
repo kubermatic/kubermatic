@@ -185,5 +185,12 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 		return nil
 	}
 
+	if spec.Hetzner != nil {
+		if spec.Hetzner.Token == "" {
+			return errors.New("no token specified")
+		}
+		return nil
+	}
+
 	return errors.New("no cloud provider specified")
 }
