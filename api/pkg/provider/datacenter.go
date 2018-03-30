@@ -29,7 +29,12 @@ type OpenstackSpec struct {
 	DNSServers []string `yaml:"dns_servers"`
 }
 
+// VSphereSpec describes a open stack datacenter
 type VSphereSpec struct {
+	Datastore    string `yaml:"datastore"`
+	Endpoint     string `yaml:"endpoint"`
+	ResourcePool string `yaml:"resource_pool"`
+	Datacenter   string `yaml:"datacenter"`
 }
 
 // AWSSpec describes a digital ocean datacenter

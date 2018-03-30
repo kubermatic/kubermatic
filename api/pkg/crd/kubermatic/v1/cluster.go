@@ -218,7 +218,8 @@ type HetznerCloudSpec struct {
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Token string `json:"token"` // Token is used to authenticate with the VSphere API.
+	Username string `json:"user"`
+	Password string `json:"password"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

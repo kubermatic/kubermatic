@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/hetzner"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vmsphere"
 )
 
 // Providers returns a map from cloud provider id to the actual provider.
@@ -19,5 +20,6 @@ func Providers(dcs map[string]provider.DatacenterMeta) provider.CloudRegistry {
 		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
 		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dcs),
 		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(dcs),
+		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dcs),
 	}
 }
