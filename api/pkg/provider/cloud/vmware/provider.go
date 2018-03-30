@@ -1,38 +1,43 @@
-package vmware
+package vsphere
 
 import (
 	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-
+	"github.com/vmware/govmomi"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
-type vmware struct {
-	
+const (
+	tplPath = "/opt/template/nodes/vsphere.yaml"
+)
+
+type vsphere struct {
 }
 
-func (v *vmware) InitializeCloudProvider(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error) {
-	panic("implement me")
+func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, error) {}
+
+func (v *vsphere) InitializeCloudProvider(spec *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+	return nil, nil
 }
 
-func (v *vmware) ValidateCloudSpec(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	return nil
 }
 
-func (v *vmware) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
-	panic("implement me")
+func (v *vsphere) CleanUpCloudProvider(spec *kubermaticv1.CloudSpec) error {
+	return nil
 }
 
-func (v *vmware) ValidateNodeSpec(*kubermaticv1.CloudSpec, *apiv1.NodeSpec) error {
-	panic("implement me")
+func (v *vsphere) ValidateNodeSpec(spec *kubermaticv1.CloudSpec, nSpec *apiv1.NodeSpec) error {
+	return nil
 }
 
-func (v *vmware) CreateNodeClass(*v1.Cluster, *apiv1.NodeSpec, []*kubermaticv1.UserSSHKey, *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
-	panic("implement me")
+func (v *vsphere) CreateNodeClass(cluster *v1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, ver *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
+	return nil, nil
 }
 
-func (v *vmware) NodeClassName(*apiv1.NodeSpec) string {
-	panic("implement me")
+func (v *vsphere) NodeClassName(nSpec *apiv1.NodeSpec) string {
+	return ""
 }

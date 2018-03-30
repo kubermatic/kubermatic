@@ -1,1 +1,1 @@
-package vmware
+package vsphere
