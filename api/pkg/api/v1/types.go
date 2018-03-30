@@ -27,6 +27,10 @@ type HetznerDatacenterSpec struct {
 	Location   string `json:"location"`
 }
 
+// VMWareDatacenterSpec specifies a datacenter of VMWare.
+type VMWareDatacenterSpec struct {
+}
+
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
@@ -53,6 +57,7 @@ type DatacenterSpec struct {
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
+	VMWare       *VMWareDatacenterSpec        `json:"vmware,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
