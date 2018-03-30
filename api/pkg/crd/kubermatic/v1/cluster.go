@@ -216,9 +216,9 @@ type HetznerCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
-// VSphereCloudSpec specifies access data to VSpher cloud.
+// VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Token string `json:"token"` // Token is used to authenticate with the VSpher API.
+	Token string `json:"token"` // Token is used to authenticate with the VSphere API.
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
