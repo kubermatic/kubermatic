@@ -29,6 +29,8 @@ type HetznerDatacenterSpec struct {
 
 // VSphereDatacenterSpec specifies a datacenter of VSphere.
 type VSphereDatacenterSpec struct {
+	Endpoint   string `json:"endpoint"`
+	Datacenter string `json:"datacenter"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.

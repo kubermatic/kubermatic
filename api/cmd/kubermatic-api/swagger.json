@@ -3634,6 +3634,16 @@
     "VSphereDatacenterSpec": {
       "type": "object",
       "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "endpoint": {
+          "type": "string",
+          "x-go-name": "Endpoint"
+        }
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     }
   },
