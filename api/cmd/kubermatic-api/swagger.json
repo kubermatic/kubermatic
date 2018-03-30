@@ -3639,6 +3639,10 @@
           "type": "string",
           "x-go-name": "Datacenter"
         },
+        "datastore": {
+          "type": "string",
+          "x-go-name": "Datastore"
+        },
         "endpoint": {
           "type": "string",
           "x-go-name": "Endpoint"

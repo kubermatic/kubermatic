@@ -31,6 +31,7 @@ type HetznerDatacenterSpec struct {
 type VSphereDatacenterSpec struct {
 	Endpoint   string `json:"endpoint"`
 	Datacenter string `json:"datacenter"`
+	Datastore  string `json:"datastore"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
