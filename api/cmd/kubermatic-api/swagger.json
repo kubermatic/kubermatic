@@ -1338,6 +1338,9 @@
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -1924,6 +1927,9 @@
         "seed": {
           "type": "string",
           "x-go-name": "Seed"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereDatacenterSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -3608,6 +3614,26 @@
           }
         }
       },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "VSphereCloudSpec": {
+      "type": "object",
+      "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "user": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "VSphereDatacenterSpec": {
+      "type": "object",
+      "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     }
   },
