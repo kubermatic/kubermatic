@@ -85,7 +85,7 @@ func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 	//The listers might return a uninitialized slice in case it has no results.
 	//This results to "null" when marshaling to json.
 	t := reflect.TypeOf(response)
-	if t.Kind() == reflect.Slice {
+	if t != nil && t.Kind() == reflect.Slice {
 		v := reflect.ValueOf(response)
 		if v.Len() == 0 {
 			_, err := w.Write([]byte("[]"))
