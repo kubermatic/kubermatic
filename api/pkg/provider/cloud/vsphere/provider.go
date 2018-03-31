@@ -13,10 +13,6 @@ import (
 	"net/url"
 )
 
-const (
-	_ = "/opt/template/nodes/vsphere.yaml"
-)
-
 type vsphere struct {
 	dcs map[string]provider.DatacenterMeta
 }

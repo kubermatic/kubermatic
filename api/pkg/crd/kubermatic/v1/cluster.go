@@ -218,7 +218,7 @@ type HetznerCloudSpec struct {
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Username string `json:"user"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
