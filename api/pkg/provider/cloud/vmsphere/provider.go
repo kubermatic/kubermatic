@@ -8,6 +8,7 @@ import (
 	"fmt"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 	"github.com/vmware/govmomi"
 	"net/url"
 )
@@ -80,5 +81,5 @@ func (v *vsphere) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec
 
 // NodeClassName
 func (v *vsphere) NodeClassName(nSpec *apiv1.NodeSpec) string {
-	return ""
+	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
 }
