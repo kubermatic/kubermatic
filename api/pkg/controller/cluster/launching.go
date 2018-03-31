@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
+	controllerresources "github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -17,7 +18,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
+func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Name)
 	health := kubermaticv1.ClusterHealth{
 		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
@@ -29,14 +30,15 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	healthMapping := map[string]*depInfo{
-		"apiserver":          {healthy: &health.Apiserver, minReady: 1},
-		"controller-manager": {healthy: &health.Controller, minReady: 1},
-		"scheduler":          {healthy: &health.Scheduler, minReady: 1},
-		"node-controller":    {healthy: &health.NodeController, minReady: 1},
+		controllerresources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
+		controllerresources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
+		controllerresources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
+		controllerresources.NodeControllerDeploymentName:    {healthy: &health.NodeController, minReady: 1},
+		controllerresources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDep(c.Spec.SeedDatacenterName, ns, name, healthMapping[name].minReady)
+		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -44,7 +46,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyEtcd(c.Spec.SeedDatacenterName, ns, resources.EtcdClusterName)
+	health.Etcd, err = cc.healthyEtcd(ns, resources.EtcdClusterName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
@@ -53,7 +55,7 @@ func (cc *controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 }
 
 // ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err
@@ -75,7 +77,7 @@ func (cc *controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
 
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
-func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
+func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
 	client, err := c.GetClient()
 	if err != nil {
 		return err
@@ -157,6 +159,37 @@ func (cc *controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			}
 		} else {
 			return fmt.Errorf("failed to load cluster-info rolebinding from client cluster: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// Creates secret containing a public key. Used by the apiserver bridge server
+func (cc *Controller) launchingCreateApiserverBridgePublicKeySecret(c *kubermaticv1.Cluster) error {
+	client, err := c.GetClient()
+	if err != nil {
+		return err
+	}
+
+	name := "apiserver-bridge-server-authorized-keys"
+	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			secret := v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				StringData: map[string]string{
+					"authorized_keys": string(c.Status.ApiserverSSHKey.PublicKey),
+				},
+			}
+			_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(&secret)
+			if err != nil {
+				return fmt.Errorf("failed to create public key secret in client cluster: %v", err)
+			}
+		} else {
+			return fmt.Errorf("failed to load public key secret from client cluster: %v", err)
 		}
 	}
 

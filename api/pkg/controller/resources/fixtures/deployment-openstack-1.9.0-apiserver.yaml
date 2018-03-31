@@ -3,6 +3,13 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   name: apiserver
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
 spec:
   replicas: 1
   selector:
@@ -28,9 +35,11 @@ spec:
         - -v=4
         - -logtostderr
         - -ssh-user=apiserver
+        - -ssh-port=2222
         - -ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa
         - -master=127.0.0.1:8080
         - -ssh-preferred-address-types=ExternalIP
+        - -preferred-address-types=InternalIP
         - -interface-address=10.250.0.2/24
         - -pod-network-cidr=172.25.0.0/16
         - -service-network-cidr=10.10.10.0/24
@@ -67,6 +76,10 @@ spec:
         - --service-cluster-ip-range=10.10.10.0/24
         - --service-node-port-range=30000-32767
         - --allow-privileged
+        - --audit-log-maxage=30
+        - --audit-log-maxbackup=3
+        - --audit-log-maxsize=100
+        - --audit-log-path=/var/log/audit.log
         - --tls-cert-file=/var/run/kubernetes/apiserver/apiserver.crt
         - --tls-private-key-file=/var/run/kubernetes/apiserver/apiserver.key
         - --client-ca-file=/var/run/kubernetes/apiserver/root-ca.crt
@@ -76,7 +89,7 @@ spec:
         - --cloud-provider=openstack
         - --kubelet-preferred-address-types=InternalIP
         - --v=4
-        image: kubermatic/hyperkube-amd64:v1.9.0
+        image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
           httpGet:
             path: /healthz

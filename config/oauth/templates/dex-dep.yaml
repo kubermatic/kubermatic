@@ -28,8 +28,6 @@ spec:
         - name: themes
           mountPath: /web/themes/coreos
           readOnly: true
-      imagePullSecrets:
-      - name: dockercfg
       volumes:
       - name: config
         configMap:

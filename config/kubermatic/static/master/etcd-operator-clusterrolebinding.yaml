@@ -1,0 +1,20 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{ .Cluster.Status.NamespaceName }}-etcd-operator
+  namespace: {{ .Cluster.Status.NamespaceName }}
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+subjects:
+- kind: ServiceAccount
+  name: etcd-operator
+  namespace: {{ .Cluster.Status.NamespaceName }}
+roleRef:
+  kind: ClusterRole
+  name: etcd-operator
+  apiGroup: rbac.authorization.k8s.io

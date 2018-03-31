@@ -12,6 +12,8 @@ import (
 var (
 	// ErrNotFound tells that the requests resource was not found
 	ErrNotFound = errors.New("the given resource was not found")
+	// ErrAlreadyExists tells that the given resource already exists
+	ErrAlreadyExists = errors.New("the given resource already exists")
 )
 
 // Constants defining known cloud providers.
@@ -21,9 +23,11 @@ const (
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
 	OpenstackCloudProvider    = "openstack"
+	HetznerCloudProvider      = "hetzner"
 
-	DefaultSSHPort     = 22
-	DefaultKubeletPort = 10250
+	DefaultSSHPort          = 22
+	PodNetworkBridgeSSHPort = 2222
+	DefaultKubeletPort      = 10250
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
@@ -47,41 +51,37 @@ type NodeClassProvider interface {
 	NodeClassName(*apiv1.NodeSpec) string
 }
 
-// DataProvider declares the set of methods for storing kubermatic data
-type DataProvider interface {
-	ClusterProvider
-	SSHKeyProvider
-	UserProvider
-}
-
 // ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
-	// NewClusterWithCloud creates a cluster for the provided user using the given ClusterSpec
-	NewClusterWithCloud(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	// NewCluster creates a cluster for the provided user using the given ClusterSpec
+	NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user apiv1.User, cluster string) (*kubermaticv1.Cluster, error)
+	Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error)
 
 	// Clusters returns all clusters for a given user.
 	Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error)
 
 	// DeleteCluster deletes a Cluster from a user by it's name.
-	DeleteCluster(user apiv1.User, cluster string) error
+	DeleteCluster(user apiv1.User, name string) error
 
 	// InitiateClusterUpgrade upgrades a Cluster to a specific version
-	InitiateClusterUpgrade(user apiv1.User, cluster, version string) (*kubermaticv1.Cluster, error)
+	InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error)
+
+	// UpdateCluster updates a cluster
+	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
 type SSHKeyProvider interface {
+	// SSHKey returns a ssh key by name
+	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
+	// SSHKeys returns the user ssh keys
+	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
 	// AssignSSHKeysToCluster assigns a ssh key to a cluster
 	AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error
 	// ClusterSSHKeys returns the ssh keys of a cluster
 	ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
-	// SSHKeys returns the user ssh keys
-	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
-	// SSHKey returns a ssh key by name
-	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
 	// CreateSSHKey creates a ssh key
 	CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error)
 	// DeleteSSHKey deletes a ssh key
@@ -100,7 +100,7 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 		return "", nil
 	}
 
-	clouds := []string{}
+	var clouds []string
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
 	}
@@ -115,6 +115,9 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, HetznerCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -144,43 +147,12 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 	return name, cp, nil
 }
 
-// NodeCloudProviderName returns the provider name for the given node where
-// one of NodeSpec.Cloud.* is set.
-func NodeCloudProviderName(spec *apiv1.NodeSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	clouds := []string{}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in NodeSpec: %+v", spec)
-	}
-	return clouds[0], nil
-}
-
 // DatacenterCloudProviderName returns the provider name for the given Datacenter.
 func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
-	clouds := []string{}
+	var clouds []string
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
 	}
@@ -192,6 +164,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, HetznerCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

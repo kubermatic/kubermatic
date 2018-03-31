@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: grafana
-  namespace: monitoring
   labels:
     team: kubermatic
 spec:
@@ -13,5 +12,5 @@ spec:
     matchNames:
     - monitoring
   endpoints:
-  - port: grafana
+  - port: http
     interval: 30s

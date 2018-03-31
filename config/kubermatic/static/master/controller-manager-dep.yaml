@@ -2,6 +2,13 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: controller-manager
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
   selector:
     matchLabels:
@@ -22,7 +29,7 @@ spec:
     spec:
       containers:
       - name: controller-manager
-        image: kubermatic/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [
           "/hyperkube", "controller-manager",
           "--master=http://apiserver:8080",
@@ -31,9 +38,7 @@ spec:
           "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
           "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
           "--cluster-cidr=172.25.0.0/16",
-          {{ if not (contains "v1.7" (index .Version.Values "k8s-version")) }}
           "--configure-cloud-routes=false",
-          {{ end }}
           {{ if eq .ProviderName "aws" }}
           "--cloud-config=/etc/kubernetes/cloud/config",
           "--cloud-provider=aws",

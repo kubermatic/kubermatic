@@ -2,8 +2,8 @@ FROM alpine:3.6
 
 ARG HELM_VER
 ARG KUBECTL_VER
-ENV HELM_VER ${HELM_VER:-v2.8.1}
-ENV KUBECTL_VER ${KUBECTL_VER:-v1.9.3}
+ENV HELM_VER ${HELM_VER:-v2.8.2}
+ENV KUBECTL_VER ${KUBECTL_VER:-v1.9.4}
 
 RUN apk add -U bash ca-certificates --no-cache
 
@@ -28,7 +28,9 @@ COPY nodeport-exposer /kubermatic/nodeport-exposer
 
 COPY installer /kubermatic/installer
 
-COPY deploy_helm_charts.sh /kubermatic/
+COPY deploy_master_helm_charts.sh /kubermatic/
+COPY deploy_seed_helm_charts.sh /kubermatic/
+
 COPY versions-values.yaml /kubermatic/versions-values.yaml
 
-CMD ["/kubermatic/deploy_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]
+CMD ["/kubermatic/deploy_master_helm_charts.sh", "/kubermatic/values/values.yaml", "/kubermatic"]

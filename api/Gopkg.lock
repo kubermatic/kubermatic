@@ -443,6 +443,15 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
+  name = "github.com/hetznercloud/hcloud-go"
+  packages = [
+    "hcloud",
+    "hcloud/schema"
+  ]
+  revision = "b37849e439d7a02b07d495f65e7b797bec30eeae"
+  version = "v1.4.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
@@ -524,17 +533,17 @@
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/digitalocean",
+    "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
-    "pkg/ssh",
     "pkg/template",
     "pkg/userdata/cloud",
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "805485026b7c2618c0fab91c75c8b0303a1c1245"
+  revision = "ce97438ad809c5d3b1f9a8ea72e4ceab930e2fa9"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -569,6 +578,12 @@
   packages = ["."]
   revision = "4dadeb3030eda0273a12382bb2348ffc7c9d1a39"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -1130,6 +1145,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9d91894fba8534c61caca4a49d9216023fed0fa9db557e9ac113f505726a15b4"
+  inputs-digest = "323c97e176b31439dc7c1f6822392efa0db1000e238a7d0dfb28f938719edb2d"
   solver-name = "gps-cdcl"
   solver-version = 1

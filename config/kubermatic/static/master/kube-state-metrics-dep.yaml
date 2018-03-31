@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+spec:
+  selector:
+    matchLabels:
+      name: kube-state-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: kube-state-metrics
+    spec:
+      containers:
+      - name: kube-state-metrics
+        image: metalmatze/kube-state-metrics:{{index .Version.Values "kube-state-metrics-version"}}
+        args:
+          - "--apiserver=http://apiserver:8080"
+        ports:
+        - name: http-metrics
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+      - name: addon-resizer
+        image: k8s.gcr.io/addon-resizer:1.7
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 30Mi
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        command:
+          - /pod_nanny
+          - --container=kube-state-metrics
+          - --cpu=100m
+          - --extra-cpu=1m
+          - --memory=100Mi
+          - --extra-memory=2Mi
+          - --threshold=5
+          - --deployment=kube-state-metrics

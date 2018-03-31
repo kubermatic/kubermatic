@@ -96,13 +96,13 @@ func TestSSHKeysEndpoint(t *testing.T) {
 			e.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
-			gotKeys := []kubermaticv1.UserSSHKey{}
+			var gotKeys []kubermaticv1.UserSSHKey
 			err := json.Unmarshal(res.Body.Bytes(), &gotKeys)
 			if err != nil {
 				t.Fatal(err, res.Body.String())
 			}
 
-			gotKeyNames := []string{}
+			var gotKeyNames []string
 			for _, k := range gotKeys {
 				gotKeyNames = append(gotKeyNames, k.Name)
 			}

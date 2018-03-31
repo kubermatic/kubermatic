@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: etcd
+  labels:
+    name: etcd
+    prometheus: {{ .Cluster.Name }}
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+spec:
+  jobLabel: name
+  endpoints:
+  - port: client
+    interval: 30s
+  selector:
+    matchLabels:
+      app: etcd
+  namespaceSelector:
+    matchNames:
+    - cluster-{{ .Cluster.Name }}

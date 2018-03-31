@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: apiserver-server
+  name: pod-network-bridge
   namespace: kube-system
   labels:
     kubernetes.io/cluster-service: "true"
@@ -18,7 +18,8 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - image: kubermatic/pod-network-bridge
+      - name: server
+        image: kubermatic/pod-network-bridge:v0.4
         command:
         - /server
         args:
@@ -29,5 +30,16 @@ spec:
         securityContext:
           privileged: true
         imagePullPolicy: Always
-        name: server
+      - name: sshd
+        image: kubermatic/sshd:latest
+        volumeMounts:
+        - mountPath: /home/apiserver/.ssh/
+          name: authorized-keys
       restartPolicy: Always
+      volumes:
+        - name: authorized-keys
+          secret:
+            secretName: apiserver-bridge-server-authorized-keys
+            items:
+            - key: authorized_keys
+              path:  authorized_keys

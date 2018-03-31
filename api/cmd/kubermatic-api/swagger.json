@@ -17,17 +17,6 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
-    "/api/healthz": {
-      "get": {
-        "description": "Health endpoint",
-        "operationId": "healthz",
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          }
-        }
-      }
-    },
     "/api/v1/cluster": {
       "get": {
         "produces": [
@@ -37,6 +26,15 @@
           "cluster"
         ],
         "operationId": "listClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "ClusterListV1",
@@ -61,6 +59,13 @@
         ],
         "operationId": "createCluster",
         "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
           {
             "name": "Body",
             "in": "body",
@@ -94,7 +99,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -123,7 +135,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -151,7 +170,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -182,7 +208,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -214,7 +247,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -249,7 +289,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -348,6 +395,43 @@
         }
       }
     },
+    "/api/v1/healthz": {
+      "get": {
+        "description": "Health endpoint",
+        "operationId": "healthz",
+        "responses": {
+          "default": {
+            "$ref": "#/responses/empty"
+          }
+        }
+      }
+    },
+    "/api/v1/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -436,7 +520,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -468,7 +559,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -506,7 +604,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -542,7 +647,401 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v3/dc/{dc}/cluster": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "listClustersV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterListV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterListV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createClusterV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NewClusterReqBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v3/dc/{dc}/cluster/{cluster}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "updateClusterV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "Cluster",
+            "name": "cluster",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Cluster"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteClusterV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v3/dc/{dc}/cluster/{cluster}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/yaml"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterKubeconfigV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v3/dc/{dc}/cluster/{cluster}/node": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodesV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeListV2",
+            "schema": {
+              "$ref": "#/definitions/NodeListV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "createClusterNodeV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateNodeReqBodyV2"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v3/dc/{dc}/cluster/{cluster}/node/{node}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterNodeV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeV2",
+            "schema": {
+              "$ref": "#/definitions/NodeV2"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "deleteClusterNodeV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
             "name": "cluster",
             "in": "path",
             "required": true
@@ -598,6 +1097,10 @@
         "securityGroup": {
           "type": "string",
           "x-go-name": "SecurityGroup"
+        },
+        "securityGroupID": {
+          "type": "string",
+          "x-go-name": "SecurityGroupID"
         },
         "subnetId": {
           "type": "string",
@@ -830,6 +1333,9 @@
         "fake": {
           "$ref": "#/definitions/FakeCloudSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         }
@@ -837,43 +1343,116 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Cluster": {
-      "description": "Cluster contains information about how to communicate with a kubernetes cluster",
       "type": "object",
+      "title": "Cluster is the object representing a cluster.",
       "properties": {
-        "certificate-authority": {
-          "description": "CertificateAuthority is the path to a cert file for the certificate authority.\n+optional",
-          "type": "string",
-          "x-go-name": "CertificateAuthority"
+        "address": {
+          "$ref": "#/definitions/ClusterAddress"
         },
-        "certificate-authority-data": {
-          "description": "CertificateAuthorityData contains PEM-encoded certificate authority certificates. Overrides CertificateAuthority\n+optional",
+        "annotations": {
+          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusterName": {
+          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "creationTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "deletionGracePeriodSeconds": {
+          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DeletionGracePeriodSeconds"
+        },
+        "deletionTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "finalizers": {
+          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge",
           "type": "array",
           "items": {
-            "type": "integer",
-            "format": "uint8"
+            "type": "string"
           },
-          "x-go-name": "CertificateAuthorityData"
+          "x-go-name": "Finalizers"
         },
-        "extensions": {
-          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+        "generateName": {
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional",
+          "type": "string",
+          "x-go-name": "GenerateName"
+        },
+        "generation": {
+          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Generation"
+        },
+        "initializers": {
+          "$ref": "#/definitions/Initializers"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "ownerReferences": {
+          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/NamedExtension"
+            "$ref": "#/definitions/OwnerReference"
           },
-          "x-go-name": "Extensions"
+          "x-go-name": "OwnerReferences"
         },
-        "insecure-skip-tls-verify": {
-          "description": "InsecureSkipTLSVerify skips the validity check for the server's certificate. This will make your HTTPS connections insecure.\n+optional",
-          "type": "boolean",
-          "x-go-name": "InsecureSkipTLSVerify"
-        },
-        "server": {
-          "description": "Server is the address of the kubernetes cluster (https://hostname:port).",
+        "resourceVersion": {
+          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
           "type": "string",
-          "x-go-name": "Server"
+          "x-go-name": "ResourceVersion"
+        },
+        "selfLink": {
+          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional",
+          "type": "string",
+          "x-go-name": "SelfLink"
+        },
+        "spec": {
+          "$ref": "#/definitions/ClusterSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ClusterStatus"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ClusterAddress": {
       "type": "object",
@@ -926,6 +1505,10 @@
         "lastTransitionTime": {
           "$ref": "#/definitions/Time"
         },
+        "machineController": {
+          "type": "boolean",
+          "x-go-name": "MachineController"
+        },
         "nodeController": {
           "type": "boolean",
           "x-go-name": "NodeController"
@@ -946,6 +1529,24 @@
       "x-go-name": "ClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterNetworkingConfig": {
+      "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
+      "type": "object",
+      "properties": {
+        "dnsDomain": {
+          "description": "Domain name for services.",
+          "type": "string",
+          "x-go-name": "DNSDomain"
+        },
+        "pods": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
+        "services": {
+          "$ref": "#/definitions/NetworkRanges"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "ClusterPhase": {
       "type": "string",
       "title": "ClusterPhase is the life cycle phase of a cluster.",
@@ -958,6 +1559,9 @@
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
         },
+        "clusterNetwork": {
+          "$ref": "#/definitions/ClusterNetworkingConfig"
+        },
         "humanReadableName": {
           "type": "string",
           "x-go-name": "HumanReadableName"
@@ -965,10 +1569,6 @@
         "masterVersion": {
           "type": "string",
           "x-go-name": "MasterVersion"
-        },
-        "seedDatacenterName": {
-          "type": "string",
-          "x-go-name": "SeedDatacenterName"
         },
         "workerName": {
           "type": "string",
@@ -1019,10 +1619,6 @@
         },
         "rootCA": {
           "$ref": "#/definitions/KeyCert"
-        },
-        "seed": {
-          "type": "string",
-          "x-go-name": "Seed"
         },
         "serviceAccountKey": {
           "$ref": "#/definitions/Bytes"
@@ -1311,6 +1907,9 @@
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
         },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerDatacenterSpec"
+        },
         "location": {
           "type": "string",
           "x-go-name": "Location"
@@ -1321,13 +1920,17 @@
         "provider": {
           "type": "string",
           "x-go-name": "Provider"
+        },
+        "seed": {
+          "type": "string",
+          "x-go-name": "Seed"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
-      "title": "DigitaloceanCloudSpec specifies access data to digital ocean.",
+      "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
         "token": {
           "type": "string",
@@ -1450,7 +2053,7 @@
     },
     "DigitialoceanDatacenterSpec": {
       "type": "object",
-      "title": "DigitialoceanDatacenterSpec specifies a data center of digital ocean.",
+      "title": "DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.",
       "properties": {
         "region": {
           "type": "string",
@@ -1491,6 +2094,48 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerCloudSpec": {
+      "type": "object",
+      "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "HetznerDatacenterSpec": {
+      "type": "object",
+      "title": "HetznerDatacenterSpec specifies a datacenter of Hetzner.",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerNodeSpecV2": {
+      "description": "HetznerNodeSpec Hetzner node settings",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "description": "server type",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-name": "HetznerNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "Initializer": {
       "type": "object",
@@ -1656,6 +2301,9 @@
         "ID": {
           "type": "string"
         },
+        "KubeStateMetricsDeploymentYaml": {
+          "type": "string"
+        },
         "MachineControllerDeploymentYaml": {
           "type": "string"
         },
@@ -1737,6 +2385,20 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
+    "NetworkRanges": {
+      "type": "object",
+      "title": "NetworkRanges represents ranges of network addresses.",
+      "properties": {
+        "cidrBlocks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "CIDRBlocks"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "NewClusterReqBody": {
       "description": "NewClusterReqBody represents the body of a new cluster request",
       "type": "object",
@@ -1800,6 +2462,9 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpecV2"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/HetznerNodeSpecV2"
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpecV2"
@@ -2559,6 +3224,52 @@
       },
       "x-go-name": "OpenstackNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "OpenstackSize": {
+      "type": "object",
+      "title": "OpenstackSize is the object representing openstack's sizes.",
+      "properties": {
+        "disk": {
+          "description": "Disk is the amount of root disk, measured in GB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "isPublic": {
+          "description": "IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects",
+          "type": "boolean",
+          "x-go-name": "IsPublic"
+        },
+        "memory": {
+          "description": "Memory is the amount of memory, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "region": {
+          "description": "Region specifies the geographic region in which the size resides",
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "slug": {
+          "description": "Slug holds  the name of the size",
+          "type": "string",
+          "x-go-name": "Slug"
+        },
+        "swap": {
+          "description": "Swap is the amount of swap space, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Swap"
+        },
+        "vcpus": {
+          "description": "VCPUs indicates how many (virtual) CPUs are available for this flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OperatingSystemSpecV2": {
       "type": "object",

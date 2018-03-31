@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: {{ .Cluster.Name }}
+  labels:
+    prometheus: {{ .Cluster.Name }}
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+spec:
+  replicas: 1
+  version: v2.2.1
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: {{ .Cluster.Name }}
+  ruleSelector:
+    matchLabels:
+      role: prometheus-rulefiles
+      prometheus: {{ .Cluster.Name }}
+  resources:
+    requests:
+      memory: 200Mi
+# TODO(matthias) We need this Prometheus to send alerts to Alertmanager
+#  alerting:
+#    alertmanagers:
+#    - namespace: monitoring
+#      name: alertmanager-main
+#      port: web

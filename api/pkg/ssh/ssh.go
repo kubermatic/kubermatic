@@ -19,15 +19,13 @@ const (
 	DefaultUserLabel = "kubermatic-user-hash"
 )
 
-// UserListOptions returns a ListOptions object for retrieving objects with the label kubermatic-user-hash=username
-func UserListOptions(username string) (metav1.ListOptions, error) {
-	label, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(username)})
+// UserListLabelSelector returns a label selector for the given user id
+func UserListLabelSelector(userID string) (labels.Selector, error) {
+	req, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(userID)})
 	if err != nil {
-		return metav1.ListOptions{}, err
+		return nil, err
 	}
-	return metav1.ListOptions{
-		LabelSelector: labels.NewSelector().Add(*label).String(),
-	}, nil
+	return labels.NewSelector().Add(*req), nil
 }
 
 // UserToLabel encodes an arbitrary user string into a Kubernetes label value
@@ -110,7 +108,7 @@ func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	}
 	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(sb.publicKey))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
 	}
 	sshKeyHash := ssh.FingerprintLegacyMD5(pubKey)
 	// Construct a key with the name containing the hash fragment for people to recognize it faster.

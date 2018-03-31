@@ -1,21 +1,23 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: grafana
-  namespace: monitoring
   labels:
     app: grafana
 spec:
   replicas: 1
   revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: grafana
   template:
     metadata:
       labels:
         app: grafana
     spec:
       containers:
-      - name: grafana
-        image: {{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}
+      - image: {{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}
+        name: grafana
         env:
         - name: GF_AUTH_BASIC_ENABLED
           value: "true"
@@ -35,44 +37,47 @@ spec:
         - name: grafana-storage
           mountPath: /var/grafana-storage
         ports:
-        - name: web
-          containerPort: 3000
+        - containerPort: 3000
+          name: http
         resources:
-          requests:
-            memory: 100Mi
-            cpu: 100m
           limits:
-            memory: 200Mi
             cpu: 200m
-      - name: grafana-watcher
-        image: {{ .Values.grafana.watcher.image.repository }}:{{ .Values.grafana.watcher.image.tag }}
-        args:
-          - '--watch-dir=/var/grafana-dashboards-0'
-          - '--grafana-url=http://localhost:3000'
-        env:
-        - name: GRAFANA_USER
-          valueFrom:
-            secretKeyRef:
-              name: grafana-credentials
-              key: user
-        - name: GRAFANA_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: grafana-credentials
-              key: password
-        resources:
+            memory: 200Mi
           requests:
-            memory: "16Mi"
-            cpu: "50m"
-          limits:
-            memory: "32Mi"
-            cpu: "100m"
+            cpu: 100m
+            memory: 100Mi
         volumeMounts:
-        - name: grafana-dashboards-0
-          mountPath: /var/grafana-dashboards-0
+        - mountPath: /data
+          name: grafana-storage
+          readOnly: false
+        - mountPath: /grafana/conf/provisioning/datasources
+          name: grafana-datasources
+          readOnly: false
+        - mountPath: /grafana/conf/provisioning/dashboards
+          name: grafana-dashboards
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/kubermatic
+          name: grafana-dashboards-kubermatic
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/kubernetes
+          name: grafana-dashboards-kubernetes
+          readOnly: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: grafana
       volumes:
-      - name: grafana-storage
-        emptyDir: {}
-      - name: grafana-dashboards-0
-        configMap:
-          name: grafana-dashboards-0
+      - emptyDir: {}
+        name: grafana-storage
+      - configMap:
+          name: grafana-datasources
+        name: grafana-datasources
+      - configMap:
+          name: grafana-dashboards
+        name: grafana-dashboards
+      - configMap:
+          name: grafana-dashboards-kubermatic
+        name: grafana-dashboards-kubermatic
+      - configMap:
+          name: grafana-dashboards-kubernetes
+        name: grafana-dashboards-kubernetes

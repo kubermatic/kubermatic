@@ -10,7 +10,6 @@ spec:
         role: kubermatic-api
         version: v1
       annotations:
-        checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
         checksum/node-files: {{ include (print $.Template.BasePath "/node-files-secret.yaml") . | sha256sum }}
@@ -21,6 +20,7 @@ spec:
           command:
           - /kubermatic-api
           args:
+          - -address=0.0.0.0:8080
           - -v=4
           - -logtostderr
           - -datacenters=/opt/datacenter/datacenters.yaml
@@ -29,7 +29,7 @@ spec:
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -prometheus-address=0.0.0.0:8085
-          - -prometheus-path=/metrics
+          - -kubeconfig=/opt/.kube/kubeconfig
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:
@@ -67,9 +67,9 @@ spec:
         - name: node-files
           secret:
             secretName: node-files
-        - name: master-files
-          secret:
-            secretName: master-files
         - name: datacenters
           secret:
             secretName: datacenters
+        - name: master-files
+          secret:
+            secretName: master-files

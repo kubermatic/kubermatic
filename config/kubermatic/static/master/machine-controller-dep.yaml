@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: machine-controller
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: machine-controller
+  template:
+    metadata:
+      labels:
+        app: machine-controller
+        release: {{index .Version.Values "machine-controller-version"}}
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
+          name: machine-controller
+          command:
+            - /usr/local/bin/machine-controller
+            - -master=http://apiserver:8080
+            - -logtostderr
+            - -v=4
+            - -cluster-dns=10.10.10.10
+            - -internal-listen-address=0.0.0.0:8085
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8085
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8085

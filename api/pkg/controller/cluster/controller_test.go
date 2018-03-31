@@ -2,22 +2,18 @@ package cluster
 
 import (
 	"log"
+	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	mastercrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned/fake"
-	seedcrdclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
-	seedcrdfake "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned/fake"
-	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
-	seedinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
+	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/seed"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/informers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/tools/cache"
 )
 
 const TestClusterName = "fqpcvnc6v"
@@ -25,109 +21,105 @@ const TestDC = "europe-west3-c"
 const TestExternalURL = "dev.kubermatic.io"
 const TestExternalPort = 30000
 
-type fake struct {
-	controller   *controller
-	kubeclient   *kubefake.Clientset
-	seedclient   *seedcrdfake.Clientset
-	masterclient *mastercrdfake.Clientset
-}
-
-func newTestController(
-	kubeObjects []runtime.Object,
-	seedCrdObjects []runtime.Object,
-	masterCrdObjects []runtime.Object,
-) *fake {
-	// create datacenters
+func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Controller {
 	dcs := buildDatacenterMeta()
-	// create CloudProviders
 	cps := cloud.Providers(dcs)
 
 	versions := buildMasterVerionsMap()
 	updates := buildMasterUpdates()
 
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
+	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjects...)
 
-	seedCrdClient := seedcrdfake.NewSimpleClientset(seedCrdObjects...)
-	masterCrdClient := mastercrdfake.NewSimpleClientset(masterCrdObjects...)
-	seedInformerGroup := seedinformer.New(kubeClient, seedCrdClient)
-	seedProvider := NewFakeProvider(kubeClient, seedCrdClient, seedInformerGroup)
-	masterInformerGroup := masterinformer.New(masterCrdClient)
+	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, time.Minute*5)
+	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 
-	cc, err := NewController(
-		seedProvider,
-		masterCrdClient,
-		cps,
+	controller, err := NewController(
+		kubeClient,
+		kubermaticClient,
 		versions,
 		updates,
 		"./../../master-resources/",
 		TestExternalURL,
-		"user1",
-		TestExternalPort,
+		"",
+		TestDC,
 		dcs,
-		masterInformerGroup,
+		cps,
 		ControllerMetrics{},
+
+		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
+		kubeInformerFactory.Core().V1().Namespaces(),
+		kubeInformerFactory.Core().V1().Secrets(),
+		kubeInformerFactory.Core().V1().Services(),
+		kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
+		kubeInformerFactory.Core().V1().ConfigMaps(),
+		kubeInformerFactory.Core().V1().ServiceAccounts(),
+		kubeInformerFactory.Extensions().V1beta1().Deployments(),
+		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
+		kubeInformerFactory.Rbac().V1beta1().Roles(),
+		kubeInformerFactory.Rbac().V1beta1().RoleBindings(),
+		kubeInformerFactory.Rbac().V1beta1().ClusterRoleBindings(),
+		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
+		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	masterInformerGroup.Run(wait.NeverStop)
-	seedInformerGroup.Run(wait.NeverStop)
+	kubeInformerFactory.Start(wait.NeverStop)
+	kubermaticInformerFactory.Start(wait.NeverStop)
 
-	cache.WaitForCacheSync(wait.NeverStop, masterInformerGroup.HasSynced, seedInformerGroup.HasSynced)
+	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
+	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	return &fake{
-		controller:   cc.(*controller),
-		kubeclient:   kubeClient,
-		masterclient: masterCrdClient,
-		seedclient:   seedCrdClient,
-	}
+	return controller
 }
 
 func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
 	return map[string]*apiv1.MasterVersion{
-		"1.5.2": {
-			Name:                       "1.5.2",
-			ID:                         "1.5.2",
+		"1.9.6": {
+			Name:                       "1.9.6",
+			ID:                         "1.9.6",
 			Default:                    false,
-			AllowedNodeVersions:        []string{"1.3.0"},
+			AllowedNodeVersions:        []string{"1.9.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.5.2",
+				"k8s-version":  "v1.9.6",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"1.5.3": {
-			Name:                       "1.5.3",
-			ID:                         "1.5.3",
+		"1.8.10": {
+			Name:                       "1.8.10",
+			ID:                         "1.8.10",
 			Default:                    true,
-			AllowedNodeVersions:        []string{"1.3.0"},
+			AllowedNodeVersions:        []string{"1.8.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.5.3",
+				"k8s-version":  "v1.8.10",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
-		"v1.6.0-rc.1": {
-			Name:                       "v1.6.0-rc.1",
-			ID:                         "v1.6.0-rc.1",
-			Default:                    false,
-			AllowedNodeVersions:        []string{"1.4.0"},
+		"1.8.0": {
+			Name:                       "1.8.0",
+			ID:                         "1.8.0",
+			Default:                    true,
+			AllowedNodeVersions:        []string{"1.8.0"},
 			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
 			EtcdClusterYaml:            "etcd-cluster.yaml",
 			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
 			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
 			Values: map[string]string{
-				"k8s-version":  "v1.6.0-rc.1",
+				"k8s-version":  "v1.8.0",
 				"etcd-version": "3.0.14-kubeadm",
 			},
 		},
@@ -137,31 +129,31 @@ func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
 func buildMasterUpdates() []apiv1.MasterUpdate {
 	return []apiv1.MasterUpdate{
 		{
-			From:            "1.5.*",
-			To:              "1.5.2",
+			From:            "1.9.*",
+			To:              "1.9.6",
 			Automatic:       true,
-			RollbackAllowed: true,
+			RollbackAllowed: false,
+			Enabled:         true,
+			Visible:         false,
+			Promote:         false,
+		},
+		{
+			From:            "1.8.*",
+			To:              "1.9.0",
+			Automatic:       false,
+			RollbackAllowed: false,
 			Enabled:         true,
 			Visible:         true,
 			Promote:         true,
 		},
 		{
-			From:            "1.4.6",
-			To:              "1.5.1",
+			From:            "1.8.*",
+			To:              "1.8.10",
 			Automatic:       true,
-			RollbackAllowed: true,
+			RollbackAllowed: false,
 			Enabled:         true,
-			Visible:         true,
-			Promote:         true,
-		},
-		{
-			From:            "1.4.*",
-			To:              "1.4.6",
-			Automatic:       true,
-			RollbackAllowed: true,
-			Enabled:         true,
-			Visible:         true,
-			Promote:         true,
+			Visible:         false,
+			Promote:         false,
 		},
 	}
 }
@@ -210,11 +202,4 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			},
 		},
 	}
-}
-
-func NewFakeProvider(client kubernetes.Interface, crdClient seedcrdclientset.Interface, informerGroup *seedinformer.Group) *seed.Provider {
-	dcs := map[string]*seed.DatacenterInteractor{
-		TestDC: seed.NewDatacenterIteractor(client, crdClient, informerGroup),
-	}
-	return seed.NewProvider(dcs)
 }

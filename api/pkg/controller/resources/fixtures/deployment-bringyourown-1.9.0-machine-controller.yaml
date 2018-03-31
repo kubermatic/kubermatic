@@ -3,6 +3,13 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   name: machine-controller
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
 spec:
   replicas: 1
   selector:
@@ -24,7 +31,6 @@ spec:
         - -v=4
         - -cluster-dns=10.10.10.10
         - -internal-listen-address=0.0.0.0:8085
-        - -ssh-key-name=kubermatic-cluster-de-test-01
         image: kubermatic/machine-controller:v0.1.2
         livenessProbe:
           httpGet:

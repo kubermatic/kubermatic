@@ -7,36 +7,78 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
-	"github.com/gorilla/mux"
 )
 
 // ClustersReq represent a request for clusters specific data
-type ClustersReq struct{}
+// swagger:parameters listClusters listClustersV3
+type ClustersReq struct {
+	DCReq
+}
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	return ClustersReq{}, nil
+	var req ClustersReq
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterNodesV2
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterNodesV2 getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterNodesV3
 type ClusterReq struct {
+	DCReq
 	// in: path
-	Cluster string `json:"cluster"`
+	ClusterName string `json:"cluster"`
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterReq
-	req.Cluster = mux.Vars(r)["cluster"]
+	req.ClusterName = mux.Vars(r)["cluster"]
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+// UpdateClusterReq represent a update request for a specific cluster
+// swagger:parameters updateClusterV3
+type UpdateClusterReq struct {
+	ClusterReq
+	// in: body
+	Cluster *kubermaticv1.Cluster `json:"cluster"`
+}
+
+func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpdateClusterReq
+	cr, err := decodeClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterReq = cr.(ClusterReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Cluster); err != nil {
+		return nil, err
+	}
+
 	return req, nil
 }
 
 // NewClusterReq represent a request for clusters specific data
-// swagger:parameters createCluster
+// swagger:parameters createCluster createClusterV3
 type NewClusterReq struct {
+	DCReq
 	// in: body
 	Body NewClusterReqBody
 }
@@ -47,8 +89,15 @@ type NewClusterReqBody struct {
 	SSHKeys []string                  `json:"sshKeys"`
 }
 
-func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, error) {
+func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewClusterReq
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
@@ -57,8 +106,7 @@ func decodeNewClusterReqV2(c context.Context, r *http.Request) (interface{}, err
 }
 
 // DCsReq represent a request for datacenters specific data
-type DCsReq struct {
-}
+type DCsReq struct{}
 
 func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DCsReq
@@ -66,11 +114,21 @@ func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+//DCGetter defines functionality to retrieve a datacenter name
+type DCGetter interface {
+	GetDC() string
+}
+
 // DCReq represent a request for datacenter specific data
 // swagger:parameters getDatacenter
 type DCReq struct {
 	// in: path
 	DC string `json:"dc"`
+}
+
+// GetDC returns the name of the datacenter in the request
+func (req DCReq) GetDC() string {
+	return req.DC
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -89,6 +147,27 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesReq
 
 	req.DoToken = r.Header.Get("DoToken")
+	return req, nil
+}
+
+// OpenstackSizeReq represent a request for openstack sizes
+type OpenstackSizeReq struct {
+	Username       string
+	Password       string
+	Tenant         string
+	Domain         string
+	DatacenterName string
+}
+
+func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSizeReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Tenant = r.Header.Get("Tenant")
+	req.Domain = r.Header.Get("Domain")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
 	return req, nil
 }
 

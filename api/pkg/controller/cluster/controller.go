@@ -8,63 +8,55 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
-	mastercrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/master/clientset/versioned"
-	seedcrdclient "github.com/kubermatic/kubermatic/api/pkg/crd/client/seed/clientset/versioned"
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
+	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
+	prometheusv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/prometheus/v1"
+	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
+	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	masterinformer "github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/master"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes/informer/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	corev1informers "k8s.io/client-go/informers/core/v1"
+	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
+	rbacv1beta1informers "k8s.io/client-go/informers/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes"
+	corev1lister "k8s.io/client-go/listers/core/v1"
+	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
+	rbacv1beta1lister "k8s.io/client-go/listers/rbac/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
 
 const (
-	workerPeriod = time.Second
-
 	validatingSyncPeriod = 15 * time.Second
 	launchingSyncPeriod  = 2 * time.Second
 	deletingSyncPeriod   = 10 * time.Second
 	runningSyncPeriod    = 60 * time.Second
 )
 
-// GroupRunStopper represents a control loop started with Run,
-// which can be terminated by closing the stop channel
-type GroupRunStopper interface {
-	Run(workerCount int, stop <-chan struct{})
-}
+// Controller is a controller which is responsible for managing clusters
+type Controller struct {
+	kubermaticClient kubermaticclientset.Interface
+	kubeClient       kubernetes.Interface
 
-// SeedClientProvider offers functions to get resources of a seed-cluster
-type SeedClientProvider interface {
-	GetClient(dc string) (kubernetes.Interface, error)
-	GetCRDClient(dc string) (seedcrdclient.Interface, error)
-	GetInformerGroup(dc string) (*seed.Group, error)
-}
+	masterResourcesPath string
+	externalURL         string
+	dcs                 map[string]provider.DatacenterMeta
+	dc                  string
+	cps                 map[string]provider.CloudProvider
 
-type controller struct {
-	clientProvider SeedClientProvider
-
-	masterCrdClient       mastercrdclient.Interface
-	masterResourcesPath   string
-	externalURL           string
-	apiserverExternalPort int
-	dcs                   map[string]provider.DatacenterMeta
-
-	queue               workqueue.RateLimitingInterface
-	masterInformerGroup *masterinformer.Group
-
-	cps        map[string]provider.CloudProvider
+	queue      workqueue.RateLimitingInterface
 	workerName string
 
 	versions              map[string]*apiv1.MasterVersion
@@ -73,77 +65,200 @@ type controller struct {
 	automaticUpdateSearch *version.UpdatePathSearch
 
 	metrics ControllerMetrics
+
+	ClusterLister            kubermaticv1lister.ClusterLister
+	EtcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
+	NamespaceLister          corev1lister.NamespaceLister
+	SecretLister             corev1lister.SecretLister
+	ServiceLister            corev1lister.ServiceLister
+	PvcLister                corev1lister.PersistentVolumeClaimLister
+	ConfigMapLister          corev1lister.ConfigMapLister
+	ServiceAccountLister     corev1lister.ServiceAccountLister
+	DeploymentLister         extensionsv1beta1lister.DeploymentLister
+	IngressLister            extensionsv1beta1lister.IngressLister
+	RoleLister               rbacv1beta1lister.RoleLister
+	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
+	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
+	PrometheusLister         prometheusv1lister.PrometheusLister
+	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
 type ControllerMetrics struct {
-	Clusters      metrics.Gauge
-	ClusterPhases metrics.Gauge
-	Workers       metrics.Gauge
+	Clusters        metrics.Gauge
+	ClusterPhases   metrics.Gauge
+	Workers         metrics.Gauge
+	UnhandledErrors metrics.Counter
 }
 
 // NewController creates a cluster controller.
 func NewController(
-	clientProvider SeedClientProvider,
-	masterCrdClient mastercrdclient.Interface,
-	cps map[string]provider.CloudProvider,
+	kubeClient kubernetes.Interface,
+	kubermaticClient kubermaticclientset.Interface,
 	versions map[string]*apiv1.MasterVersion,
 	updates []apiv1.MasterUpdate,
 	masterResourcesPath string,
 	externalURL string,
 	workerName string,
-	apiserverExternalPort int,
+	dc string,
 	dcs map[string]provider.DatacenterMeta,
-	masterInformerGroup *masterinformer.Group,
+	cps map[string]provider.CloudProvider,
 	metrics ControllerMetrics,
-) (GroupRunStopper, error) {
-	cc := &controller{
-		clientProvider:        clientProvider,
-		masterCrdClient:       masterCrdClient,
-		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "namespace"),
-		cps:                   cps,
-		updates:               updates,
-		versions:              versions,
-		masterResourcesPath:   masterResourcesPath,
-		externalURL:           externalURL,
-		workerName:            workerName,
-		apiserverExternalPort: apiserverExternalPort,
+
+	ClusterInformer kubermaticv1informers.ClusterInformer,
+	EtcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
+	NamespaceInformer corev1informers.NamespaceInformer,
+	SecretInformer corev1informers.SecretInformer,
+	ServiceInformer corev1informers.ServiceInformer,
+	PvcInformer corev1informers.PersistentVolumeClaimInformer,
+	ConfigMapInformer corev1informers.ConfigMapInformer,
+	ServiceAccountInformer corev1informers.ServiceAccountInformer,
+	DeploymentInformer extensionsv1beta1informers.DeploymentInformer,
+	IngressInformer extensionsv1beta1informers.IngressInformer,
+	RoleInformer rbacv1beta1informers.RoleInformer,
+	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
+	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
+	PrometheusInformer prometheusv1informers.PrometheusInformer,
+	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
+) (*Controller, error) {
+	cc := &Controller{
+		kubermaticClient: kubermaticClient,
+		kubeClient:       kubeClient,
+
+		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
+
+		updates:  updates,
+		versions: versions,
+
+		masterResourcesPath: masterResourcesPath,
+		externalURL:         externalURL,
+		workerName:          workerName,
+		dc:                  dc,
 		dcs:                 dcs,
-		masterInformerGroup: masterInformerGroup,
+		cps:                 cps,
 		metrics:             metrics,
 	}
 
-	cc.masterInformerGroup.ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
-				cc.queue.Add(key)
-			}
+			cc.enqueue(obj.(*kubermaticv1.Cluster))
 		},
-		UpdateFunc: func(old interface{}, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				cc.queue.Add(key)
-			}
+		UpdateFunc: func(old, cur interface{}) {
+			cc.enqueue(cur.(*kubermaticv1.Cluster))
 		},
 		DeleteFunc: func(obj interface{}) {
-			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
-			// key function.
-			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-			if err == nil {
-				cc.queue.Add(key)
+			cluster, ok := obj.(*kubermaticv1.Cluster)
+			if !ok {
+				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+					return
+				}
+				cluster, ok = tombstone.Obj.(*kubermaticv1.Cluster)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Cluster %#v", obj))
+					return
+				}
 			}
+			cc.enqueue(cluster)
 		},
 	})
 
-	// setup update controller
+	//In case one of our child objects change, we should update our state
+	NamespaceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	DeploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	SecretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	ServiceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	IngressInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	PvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	ConfigMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	ServiceAccountInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	RoleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	RoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	ClusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	EtcdClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	PrometheusInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+	ServiceMonitorInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
+
+	cc.ClusterLister = ClusterInformer.Lister()
+	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
+	cc.NamespaceLister = NamespaceInformer.Lister()
+	cc.SecretLister = SecretInformer.Lister()
+	cc.ServiceLister = ServiceInformer.Lister()
+	cc.PvcLister = PvcInformer.Lister()
+	cc.ConfigMapLister = ConfigMapInformer.Lister()
+	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
+	cc.DeploymentLister = DeploymentInformer.Lister()
+	cc.IngressLister = IngressInformer.Lister()
+	cc.RoleLister = RoleInformer.Lister()
+	cc.RoleBindingLister = RoleBindingInformer.Lister()
+	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
+	cc.PrometheusLister = PrometheusInformer.Lister()
+	cc.ServiceMonitorLister = ServiceMonitorInformer.Lister()
+
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
 	if err != nil {
 		return nil, fmt.Errorf("could not get default master version: %v", err)
 	}
 
-	automaticUpdates := []apiv1.MasterUpdate{}
+	var automaticUpdates []apiv1.MasterUpdate
 	for _, u := range cc.updates {
 		if u.Automatic {
 			automaticUpdates = append(automaticUpdates, u)
@@ -151,11 +266,27 @@ func NewController(
 	}
 	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.SemverMatcher{})
 
+	// register error handler that will increment a counter that will be scraped by prometheus,
+	// that accounts for all errors reported via a call to runtime.HandleError
+	runtime.ErrorHandlers = append(runtime.ErrorHandlers, func(err error) {
+		metrics.UnhandledErrors.Add(1.0)
+	})
+
 	return cc, nil
 }
 
-func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
-	currentCluster, err := cc.masterInformerGroup.ClusterInformer.Lister().Get(modifiedCluster.Name)
+func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
+		return
+	}
+
+	cc.queue.Add(key)
+}
+
+func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
+	currentCluster, err := cc.ClusterLister.Get(modifiedCluster.Name)
 	if err != nil {
 		return err
 	}
@@ -179,11 +310,29 @@ func (cc *controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 		return nil
 	}
 
-	_, err = cc.masterCrdClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
-	return err
+	updatedCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
+	if err != nil {
+		return fmt.Errorf("failed to patch cluster: %v", err)
+	}
+
+	return wait.Poll(10*time.Millisecond, 30*time.Second, func() (bool, error) {
+		listerCluster, err := cc.ClusterLister.Get(updatedCluster.Name)
+		if err != nil {
+			// In case we remove the last finalizer, the object will be gone after the patch
+			if kubeapierrors.IsNotFound(err) {
+				return true, nil
+			}
+			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister during cache-update check: %v", updatedCluster.Name, err))
+			return false, nil
+		}
+		if listerCluster.ResourceVersion == updatedCluster.ResourceVersion {
+			return true, nil
+		}
+		return false, nil
+	})
 }
 
-func (cc *controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
+func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
 	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
 		cluster.Status.ErrorMessage = &message
 		cluster.Status.ErrorReason = &reason
@@ -192,10 +341,10 @@ func (cc *controller) updateClusterError(cluster *kubermaticv1.Cluster, reason k
 	return nil
 }
 
-func (cc *controller) syncCluster(key string) error {
-	listerCluster, err := cc.masterInformerGroup.ClusterInformer.Lister().Get(key)
+func (cc *Controller) syncCluster(key string) error {
+	listerCluster, err := cc.ClusterLister.Get(key)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kubeapierrors.IsNotFound(err) {
 			return nil
 		}
 		return fmt.Errorf("unable to retrieve cluster %q: %v", key, err)
@@ -211,6 +360,8 @@ func (cc *controller) syncCluster(key string) error {
 		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
 	}
+
+	glog.V(4).Infof("syncing cluster %s", key)
 
 	for _, phase := range kubermaticv1.ClusterPhases {
 		value := 0.0
@@ -257,20 +408,18 @@ func (cc *controller) syncCluster(key string) error {
 	return cc.updateCluster(originalData, cluster)
 }
 
-func (cc *controller) runWorker() {
+func (cc *Controller) runWorker() {
 	for cc.processNextItem() {
 	}
 }
 
-func (cc *controller) processNextItem() bool {
+func (cc *Controller) processNextItem() bool {
 	key, quit := cc.queue.Get()
 	if quit {
 		return false
 	}
 
 	defer cc.queue.Done(key)
-
-	glog.V(4).Infof("syncing cluster %s", key)
 
 	err := cc.syncCluster(key.(string))
 
@@ -279,7 +428,7 @@ func (cc *controller) processNextItem() bool {
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
-func (cc *controller) handleErr(err error, key interface{}) {
+func (cc *Controller) handleErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -304,11 +453,14 @@ func (cc *controller) handleErr(err error, key interface{}) {
 	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
-func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
-	clusters, err := cc.masterInformerGroup.ClusterInformer.Lister().List(labels.Everything())
+func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
+	clusters, err := cc.ClusterLister.List(labels.Everything())
 	if err != nil {
-		glog.Errorf("Error listing clusters: %v", err)
+		cc.metrics.Clusters.Set(0)
+		runtime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
+		return
 	}
+	cc.metrics.Clusters.Set(float64(len(clusters)))
 
 	for _, c := range clusters {
 		if c.Status.Phase == phase {
@@ -317,14 +469,15 @@ func (cc *controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 	}
 }
 
-func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
-	defer utilruntime.HandleCrash()
+// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
+func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
+	defer runtime.HandleCrash()
 
 	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
 
 	for i := 0; i < workerCount; i++ {
-		go wait.Until(cc.runWorker, workerPeriod, stopCh)
+		go wait.Until(cc.runWorker, time.Second, stopCh)
 	}
 
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.ValidatingClusterStatusPhase) }, validatingSyncPeriod, stopCh)
@@ -335,4 +488,37 @@ func (cc *controller) Run(workerCount int, stopCh <-chan struct{}) {
 	<-stopCh
 
 	glog.Info("Shutting down cluster controller")
+}
+
+func (cc *Controller) handleChildObject(i interface{}) {
+	obj, ok := i.(metav1.Object)
+	//Object might be a tombstone
+	if !ok {
+		tombstone, ok := i.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			runtime.HandleError(fmt.Errorf("couldn't get obj from tombstone %#v", obj))
+			return
+		}
+		obj = tombstone.Obj.(metav1.Object)
+	}
+
+	// If it has a ControllerRef, that's all that matters.
+	if controllerRef := metav1.GetControllerOf(obj); controllerRef != nil {
+		if controllerRef.APIVersion != kubermaticv1.SchemeGroupVersion.String() || controllerRef.Kind != "Cluster" {
+			//Not for us
+			return
+		}
+		c, err := cc.ClusterLister.Get(controllerRef.Name)
+		if err != nil {
+			if kubeapierrors.IsNotFound(err) {
+				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
+				return
+			}
+			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister: %v", controllerRef.Name, err))
+			return
+		}
+
+		cc.enqueue(c)
+		return
+	}
 }

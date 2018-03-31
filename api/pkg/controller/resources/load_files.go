@@ -1,12 +1,14 @@
 package resources
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
 
@@ -39,6 +41,16 @@ const (
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
+	//ControllerManagerServiceName is the name for the controller manager service
+	ControllerManagerServiceName = "controller-manager"
+	//KubeStateMetricsServiceName is the name for the kube-state-metrics service
+	KubeStateMetricsServiceName = "kube-state-metrics"
+	//MachineControllerServiceName is the name for the machine controller service
+	MachineControllerServiceName = "machine-controller"
+	//PrometheusServiceName is the name for the prometheus service
+	PrometheusServiceName = "prometheus"
+	//SchedulerServiceName is the name for the scheduler service
+	SchedulerServiceName = "scheduler"
 
 	//ApiserverSecretName is the name for the secrets required for the apiserver
 	ApiserverSecretName = "apiserver"
@@ -52,6 +64,33 @@ const (
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
 	EtcdOperatorServiceAccountName = "etcd-operator"
+	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
+	PrometheusServiceAccountName = "prometheus"
+
+	//PrometheusName is the name for the Prometheus
+	PrometheusName = "prometheus"
+
+	//PrometheusRoleName is the name for the Prometheus role
+	PrometheusRoleName = "prometheus"
+
+	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
+	PrometheusRoleBindingName = "prometheus"
+
+	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
+	EtcdOperatorClusterRoleBindingName = "etcd-operator"
+
+	//ApiserverServiceMonitorName is the name for the apiserver servicemonitor
+	ApiserverServiceMonitorName = "apiserver"
+	//ControllerManagerServiceMonitorName is the name for the controller manager servicemonitor
+	ControllerManagerServiceMonitorName = "controller-manager"
+	//EtcdServiceMonitorName is the name for the etcd servicemonitor
+	EtcdServiceMonitorName = "etcd"
+	//KubeStateMetricsServiceMonitorName is the name for the kube state metrics servicemonitor
+	KubeStateMetricsServiceMonitorName = "kube-state-metrics"
+	//MachineControllerServiceMonitorName is the name for the machine controller servicemonitor
+	MachineControllerServiceMonitorName = "machine-controller"
+	//SchedulerServiceMonitorName is the name for the scheduler servicemonitor
+	SchedulerServiceMonitorName = "scheduler"
 )
 
 // TemplateData is a group of data required for template generation
@@ -203,9 +242,33 @@ func LoadServiceAccountFile(data *TemplateData, app, masterResourcesPath string)
 	return &sa, json, err
 }
 
+// LoadRoleFile loads a role from disk, sets the namespace and returns it
+func LoadRoleFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error) {
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-role.yaml"))
+	if err != nil {
+		return nil, "", err
+	}
+
+	var r rbacv1beta1.Role
+	json, err := t.Execute(data, &r)
+	return &r, json, err
+}
+
+// LoadRoleBindingFile loads a role binding from disk, sets the namespace and returns it
+func LoadRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error) {
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
+	if err != nil {
+		return nil, "", err
+	}
+
+	var r rbacv1beta1.RoleBinding
+	json, err := t.Execute(data, &r)
+	return &r, json, err
+}
+
 // LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
 func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-clusterrolebinding.yaml"))
 	if err != nil {
 		return nil, "", err
 	}
@@ -213,4 +276,29 @@ func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath str
 	var r rbacv1beta1.ClusterRoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
+}
+
+// LoadPrometheusFile loads a prometheus crd from disk and returns a Cluster crd struct
+func LoadPrometheusFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error) {
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, "prometheus.yaml"))
+	if err != nil {
+		return nil, "", err
+	}
+
+	var p prometheusv1.Prometheus
+	json, err := t.Execute(data, &p)
+	return &p, json, err
+}
+
+// LoadServiceMonitorFile loads a service monitor crd from disk and returns a Cluster crd struct
+func LoadServiceMonitorFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error) {
+	filename := fmt.Sprintf("prometheus-service-monitor-%s.yaml", app)
+	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, filename))
+	if err != nil {
+		return nil, "", err
+	}
+
+	var sm prometheusv1.ServiceMonitor
+	json, err := t.Execute(data, &sm)
+	return &sm, json, err
 }

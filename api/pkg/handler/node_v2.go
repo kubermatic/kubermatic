@@ -15,7 +15,6 @@ import (
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
@@ -36,7 +35,7 @@ const (
 )
 
 // CreateNodeReqV2 represent a request for specific data to create a node
-// swagger:parameters createClusterNodeV2
+// swagger:parameters createClusterNodeV2 createClusterNodeV3
 type CreateNodeReqV2 struct {
 	ClusterReq
 	// in: body
@@ -49,7 +48,7 @@ type CreateNodeReqBodyV2 struct {
 }
 
 // NodeReqV2 represent a request for node specific data
-// swagger:parameters getClusterNodeV2 deleteClusterNodeV2
+// swagger:parameters getClusterNodeV2 deleteClusterNodeV2 deleteClusterNodeV3 getClusterNodeV3
 type NodeReqV2 struct {
 	ClusterReq
 	// in: path
@@ -202,11 +201,13 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, kp provider.ClusterProvider, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
+func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
 		req := request.(CreateNodeReqV2)
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -233,11 +234,14 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, kp provider.Cl
 
 		node := req.Body
 		if node.Spec.Cloud.Openstack == nil && node.Spec.Cloud.Digitalocean == nil && node.Spec.Cloud.AWS == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud provider")
+			return nil, errors.NewBadRequest("cannot create node without cloud sshKeyProvider")
 		}
 		//Only allow container linux + docker
 		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
 			return nil, fmt.Errorf("only docker is allowd when using container linux")
+		}
+		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil {
+			return nil, fmt.Errorf("no operating system specified")
 		}
 
 		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version
@@ -283,7 +287,7 @@ func getNodeForMachine(machine *v1alpha1.Machine, nodes []corev1.Node) *corev1.N
 		return nil
 	}
 	for _, node := range nodes {
-		if node.UID == machine.Status.NodeRef.UID {
+		if node.UID == machine.Status.NodeRef.UID || node.Name == machine.Name {
 			return &node
 		}
 	}
@@ -303,11 +307,13 @@ func getMachineForNode(node *corev1.Node, machines []v1alpha1.Machine) *v1alpha1
 	return nil
 }
 
-func getNodesEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func getNodesEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
 		req := request.(ClusterReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -407,11 +413,13 @@ func tryToFindMachineAndNode(name string, machineClient machineclientset.Interfa
 	return machine, node, nil
 }
 
-func getNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func getNodeEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NodeReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -441,11 +449,13 @@ func getNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func deleteNodeEndpointV2(kp provider.ClusterProvider) endpoint.Endpoint {
+func deleteNodeEndpointV2() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NodeReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}

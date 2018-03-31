@@ -4,36 +4,28 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func newClusterEndpoint(kp provider.ClusterProvider, dp provider.SSHKeyProvider) endpoint.Endpoint {
+func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(NewClusterReq)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
 		if req.Body.Cluster == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
 		}
 
-		if req.Body.Cluster.Cloud == nil {
-			return nil, errors.NewBadRequest("no cloud spec given")
+		if err := validation.ValidateCreateClusterSpec(req.Body.Cluster, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		if req.Body.Cluster.Cloud.DatacenterName == "" && req.Body.Cluster.SeedDatacenterName == "" {
-			return nil, errors.NewBadRequest("no datacenter given")
-		}
-
-		// As we don't provision byo nodes, we need to allow 0 keys.
-		if len(req.Body.SSHKeys) < 1 && req.Body.Cluster.Cloud.BringYourOwn == nil {
-			return nil, errors.NewBadRequest("please provide at least one key")
-		}
-
-		c, err := kp.NewClusterWithCloud(user, req.Body.Cluster)
+		c, err := clusterProvider.NewCluster(user, req.Body.Cluster)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				return nil, errors.NewConflict("cluster", req.Body.Cluster.Cloud.DatacenterName, req.Body.Cluster.HumanReadableName)
@@ -41,7 +33,7 @@ func newClusterEndpoint(kp provider.ClusterProvider, dp provider.SSHKeyProvider)
 			return nil, err
 		}
 
-		err = dp.AssignSSHKeysToCluster(user, req.Body.SSHKeys, c.Name)
+		err = sshKeysProvider.AssignSSHKeysToCluster(user, req.Body.SSHKeys, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -50,14 +42,15 @@ func newClusterEndpoint(kp provider.ClusterProvider, dp provider.SSHKeyProvider)
 	}
 }
 
-func clusterEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
+func clusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		req := request.(ClusterReq)
-		c, err := kp.Cluster(user, req.Cluster)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}
@@ -66,10 +59,38 @@ func clusterEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func clustersEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
+func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
-		cs, err := kp.Clusters(user)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		req := request.(UpdateClusterReq)
+		oldCluster, err := clusterProvider.Cluster(user, req.ClusterName)
+		if err != nil {
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
+			}
+			return nil, err
+		}
+		newCluster := req.Cluster
+
+		//We don't allow updating the following fields
+		newCluster.TypeMeta = oldCluster.TypeMeta
+		newCluster.ObjectMeta = oldCluster.ObjectMeta
+		newCluster.Status = oldCluster.Status
+
+		if err := validation.ValidateUpdateCluster(newCluster, oldCluster, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
+
+		return clusterProvider.UpdateCluster(user, newCluster)
+	}
+}
+
+func clustersEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		cs, err := clusterProvider.Clusters(user)
 		if err != nil {
 			return nil, err
 		}
@@ -78,23 +99,19 @@ func clustersEndpoint(kp provider.ClusterProvider) endpoint.Endpoint {
 	}
 }
 
-func deleteClusterEndpoint(
-	kp provider.ClusterProvider,
-	cps map[string]provider.CloudProvider,
-) endpoint.Endpoint {
+func deleteClusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := auth.GetUser(ctx)
 		req := request.(ClusterReq)
-
-		//Delete all nodes in the cluster
-		c, err := kp.Cluster(user, req.Cluster)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
-				return nil, errors.NewNotFound("cluster", req.Cluster)
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
 		}
 
-		return nil, kp.DeleteCluster(user, c.Name)
+		return nil, clusterProvider.DeleteCluster(user, c.Name)
 	}
 }

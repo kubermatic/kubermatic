@@ -8,8 +8,8 @@ set -o pipefail
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-cluster-controller \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -datacenter-name=europe-west3-c \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -master-kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -master-resources=../config/kubermatic/static/master \

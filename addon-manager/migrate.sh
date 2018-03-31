@@ -6,3 +6,5 @@
 /etc/kubermatic/migrations/fix-node-label.sh
 # We switched from externalName for NodePort, so we need to delete the service so the apiserver recreates it
 /etc/kubermatic/migrations/delete-kubernetes-service.sh
+# We changed the name of the pod network bridge server deployment. Therefore we need to delete the old one
+/etc/kubermatic/migrations/rename-pod-network-bridge.sh

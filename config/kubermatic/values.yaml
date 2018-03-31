@@ -13,9 +13,8 @@ kubermatic:
   domain: ""
   # base64 encoded kubeconfig which gives admin access to all seed clusters
   kubeconfig: ""
-  # DEPRECATED! the external port for the customer cluster apiservers
-  externalApiserverPort: "8443"
   controller:
+    datacenterName: ""
     replicas: 2
     image:
       repository: "kubermatic/api"

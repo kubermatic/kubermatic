@@ -20,10 +20,10 @@ spec:
       subnetId: "{{ .Cluster.Spec.Cloud.AWS.SubnetID }}"
       instanceProfile: "{{ .Cluster.Spec.Cloud.AWS.InstanceProfileName }}"
       securityGroupIDs:
-      - "{{ .Cluster.Spec.Cloud.AWS.SecurityGroup }}"
+      - "{{ .Cluster.Spec.Cloud.AWS.SecurityGroupID }}"
       instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
-      diskSize: {{ default .Node.Spec.Cloud.AWS.VolumeSize 25 }}
-      diskType: "{{ default .Node.Spec.Cloud.AWS.VolumeType "gp2" }}"
+      diskSize: {{ default 25 .Node.Spec.Cloud.AWS.VolumeSize }}
+      diskType: "{{ default "gp2" .Node.Spec.Cloud.AWS.VolumeType }}"
       tags:
         KubernetesCluster: "{{ .Cluster.Name }}"
         {{- range $key, $value := .Node.Spec.Cloud.AWS.Tags }}
@@ -61,12 +61,20 @@ spec:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
     {{- end }}
+    {{- if .Node.Spec.Cloud.Hetzner }}
+    cloudProvider: "hetzner"
+    cloudProviderSpec:
+      token: "{{ .Cluster.Spec.Cloud.Hetzner.Token }}"
+      serverType: "{{ .Node.Spec.Cloud.Hetzner.Type }}"
+      datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
+      location: "{{ .Datacenter.Spec.Hetzner.Location }}"
+    {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
     operatingSystem: "coreos"
     operatingSystemSpec:
       disableAutoUpdate: {{ .Node.Spec.OperatingSystem.DisableAutoUpdate }}
     {{- end }}
-    {{- if .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
+    {{- if .Node.Spec.OperatingSystem.Ubuntu }}
     operatingSystem: "ubuntu"
     operatingSystemSpec:
       distUpgradeOnBoot: {{ .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}

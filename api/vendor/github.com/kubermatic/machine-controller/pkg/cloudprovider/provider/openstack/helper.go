@@ -8,7 +8,6 @@ import (
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
-	oskeypairs "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osimages "github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 	osregions "github.com/gophercloud/gophercloud/openstack/identity/v3/regions"
@@ -19,8 +18,6 @@ import (
 	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
-	machinessh "github.com/kubermatic/machine-controller/pkg/ssh"
-	"golang.org/x/crypto/ssh"
 )
 
 var (
@@ -32,13 +29,13 @@ var publicKeyCreationLock = &sync.Mutex{}
 
 const openstackFloatingIPErrorStatusName = "ERROR"
 
-func getRegion(client *gophercloud.ProviderClient, id string) (*osregions.Region, error) {
-	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic})
+func getRegion(client *gophercloud.ProviderClient, name string) (*osregions.Region, error) {
+	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return osregions.Get(idClient, id).Extract()
+	return osregions.Get(idClient, name).Extract()
 }
 
 func getRegions(client *gophercloud.ProviderClient) ([]osregions.Region, error) {
@@ -253,40 +250,6 @@ func getSubnet(client *gophercloud.ProviderClient, region, nameOrID string) (*os
 	}
 
 	return nil, errNotFound
-}
-
-func ensureSSHKeysExist(client *gophercloud.ProviderClient, region string, key *machinessh.PrivateKey) (string, error) {
-	publicKeyCreationLock.Lock()
-	defer publicKeyCreationLock.Unlock()
-
-	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
-	if err != nil {
-		return "", err
-	}
-
-	publicKey := key.PublicKey()
-	pk, err := ssh.NewPublicKey(&publicKey)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse publickey: %v", err)
-	}
-
-	kp, err := oskeypairs.Get(computeClient, key.Name()).Extract()
-	if err != nil {
-		if _, ok := err.(gophercloud.ErrDefault404); ok {
-			kp, err = oskeypairs.Create(computeClient, oskeypairs.CreateOpts{
-				Name:      key.Name(),
-				PublicKey: string(ssh.MarshalAuthorizedKey(pk)),
-			}).Extract()
-			if err != nil {
-				return "", fmt.Errorf("failed to create publickey: %v", err)
-			}
-
-			return kp.Name, nil
-		}
-		return "", fmt.Errorf("failed to get publickey: %v", err)
-	}
-
-	return kp.Name, nil
 }
 
 func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, region, name string) error {
