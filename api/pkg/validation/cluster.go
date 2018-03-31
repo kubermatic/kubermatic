@@ -192,5 +192,18 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 		return nil
 	}
 
+	if spec.VSphere != nil {
+		if spec.VSphere.Username == "" {
+			return errors.New("no username specified")
+
+		}
+
+		if spec.VSphere.Password == "" {
+			return errors.New("no password provided")
+		}
+
+		return nil
+	}
+
 	return errors.New("no cloud provider specified")
 }
