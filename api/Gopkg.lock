@@ -724,6 +724,24 @@
   revision = "9a301d65acbb728fcc3ace14f45f511a4cfeea9c"
 
 [[projects]]
+  name = "github.com/vmware/govmomi"
+  packages = [
+    ".",
+    "property",
+    "session",
+    "vim25",
+    "vim25/debug",
+    "vim25/methods",
+    "vim25/mo",
+    "vim25/progress",
+    "vim25/soap",
+    "vim25/types",
+    "vim25/xml"
+  ]
+  revision = "123ed177021588bac57b5c87c1a84270ddf2eca8"
+  version = "v0.17.1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -1145,6 +1163,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "323c97e176b31439dc7c1f6822392efa0db1000e238a7d0dfb28f938719edb2d"
+  inputs-digest = "a3b8174d250bc55ecb1090c5bd3a38415c72f3c4db47b8f02afb952548dfc66b"
   solver-name = "gps-cdcl"
   solver-version = 1
