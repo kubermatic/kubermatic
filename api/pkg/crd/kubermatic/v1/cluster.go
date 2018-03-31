@@ -178,6 +178,7 @@ type CloudSpec struct {
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
+	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 }
 
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
@@ -213,6 +214,12 @@ type DigitaloceanCloudSpec struct {
 // HetznerCloudSpec specifies access data to hetzner cloud.
 type HetznerCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
+}
+
+// VSphereCloudSpec specifies access data to VSphere cloud.
+type VSphereCloudSpec struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

@@ -24,6 +24,7 @@ const (
 	AWSCloudProvider          = "aws"
 	OpenstackCloudProvider    = "openstack"
 	HetznerCloudProvider      = "hetzner"
+	VSphereCloudProvider      = "vsphere"
 
 	DefaultSSHPort          = 22
 	PodNetworkBridgeSSHPort = 2222
@@ -119,6 +120,9 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	if spec.Hetzner != nil {
 		clouds = append(clouds, HetznerCloudProvider)
 	}
+	if spec.VSphere != nil {
+		clouds = append(clouds, VSphereCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -167,6 +171,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Hetzner != nil {
 		clouds = append(clouds, HetznerCloudProvider)
+	}
+	if spec.VSphere != nil {
+		clouds = append(clouds, VSphereCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
