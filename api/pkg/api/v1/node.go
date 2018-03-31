@@ -9,7 +9,6 @@ type NodeSpec struct {
 	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
-	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 }
 
 // DigitaloceanNodeSpec specifies a digital ocean node.
@@ -39,9 +38,6 @@ type AWSNodeSpec struct {
 	VolumeType   string `json:"volume_type"`
 	AMI          string `json:"ami"`
 }
-
-// VSphereNodeSpec specifies an vSphere node.
-type VSphereNodeSpec struct{}
 
 // ResourceList represents node resources
 type ResourceList struct {

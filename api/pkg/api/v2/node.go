@@ -21,6 +21,7 @@ type NodeCloudSpec struct {
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
+	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -91,6 +92,11 @@ type HetznerNodeSpec struct {
 	// server type
 	// required: true
 	Type string `json:"type"`
+}
+
+// VSphereNodeSpec VSphere node settings
+// swagger:model VSphereNodeSpecV2
+type VSphereNodeSpec struct {
 }
 
 // OpenstackNodeSpec openstack node settings
