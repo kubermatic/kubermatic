@@ -69,6 +69,15 @@ spec:
       datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
       location: "{{ .Datacenter.Spec.Hetzner.Location }}"
     {{- end }}
+    {{- if .Node.Spec.Cloud.VSphere }}
+    cloudProvider: "vsphere"
+    cloudProviderSpec:
+      identityEndpoint: "{{ .Datacenter.Spec.VSphere.Endpoint }}"
+      username: "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
+      password: "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
+      datacenter: "{{ .Datacenter.Spec.VSphere.Datacenter }}"
+      datastore: "{{ .Datacenter.Spec.VSphere.Datastore }}"
+    {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
     operatingSystem: "coreos"
     operatingSystemSpec:
