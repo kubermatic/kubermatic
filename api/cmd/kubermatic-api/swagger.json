@@ -2474,6 +2474,9 @@
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpecV2"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereNodeSpecV2"
         }
       },
       "x-go-name": "NodeCloudSpec",
@@ -3649,6 +3652,12 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "VSphereNodeSpecV2": {
+      "description": "VSphereNodeSpec VSphere node settings",
+      "type": "object",
+      "x-go-name": "VSphereNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     }
   },
   "responses": {
