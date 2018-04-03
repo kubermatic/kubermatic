@@ -53,6 +53,23 @@ func (a *amazonEc2) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	if cloud.AWS.VPCID == "" && cloud.AWS.SubnetID == "" {
+		vpc, err := getDefaultVpc(client)
+		if err != nil {
+			return fmt.Errorf("failed to get default vpc: %v", err)
+		}
+
+		dc, ok := a.dcs[cloud.DatacenterName]
+		if !ok {
+			return fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+		}
+
+		_, err = getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		if err != nil {
+			return fmt.Errorf("failed to get default subnet: %v", err)
+		}
+	}
+
 	return nil
 }
 
