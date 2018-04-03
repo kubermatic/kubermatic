@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"reflect"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -79,5 +80,18 @@ func createStatusResource(f func(context.Context, http.ResponseWriter, interface
 
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
+
+	//As long as we pipe the response from the listers we need this.
+	//The listers might return a uninitialized slice in case it has no results.
+	//This results to "null" when marshaling to json.
+	t := reflect.TypeOf(response)
+	if t != nil && t.Kind() == reflect.Slice {
+		v := reflect.ValueOf(response)
+		if v.Len() == 0 {
+			_, err := w.Write([]byte("[]"))
+			return err
+		}
+	}
+
 	return json.NewEncoder(w).Encode(response)
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ghodss/yaml"
@@ -33,10 +34,16 @@ func kubeconfigEndpoint() endpoint.Endpoint {
 }
 
 func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
-	w.Header().Set("Content-Type", "application/yaml")
-	w.Header().Set("Content-disposition", "attachment; filename=kubeconfig")
-
 	cfg := response.(*v1.Config)
+
+	filename := "kubeconfig"
+
+	if len(cfg.Clusters) > 0 {
+		filename = fmt.Sprintf("%s-%s", filename, cfg.Clusters[0].Name)
+	}
+
+	w.Header().Set("Content-Type", "application/yaml")
+	w.Header().Set("Content-disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
 	jcfg, err := json.Marshal(cfg)
 	if err != nil {

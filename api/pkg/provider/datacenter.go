@@ -29,6 +29,14 @@ type OpenstackSpec struct {
 	DNSServers []string `yaml:"dns_servers"`
 }
 
+// VSphereSpec describes a open stack datacenter
+type VSphereSpec struct {
+	Datastore    string `yaml:"datastore"`
+	Endpoint     string `yaml:"endpoint"`
+	ResourcePool string `yaml:"resource_pool"`
+	Datacenter   string `yaml:"datacenter"`
+}
+
 // AWSSpec describes a digital ocean datacenter
 type AWSSpec struct {
 	Region        string `yaml:"region"`
@@ -47,6 +55,7 @@ type DatacenterSpec struct {
 	AWS          *AWSSpec          `yaml:"aws"`
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
 	Hetzner      *HetznerSpec      `yaml:"hetzner"`
+	VSphere      *VSphereSpec      `yaml:"vsphere"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

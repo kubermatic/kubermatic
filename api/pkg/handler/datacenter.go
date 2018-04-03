@@ -116,6 +116,12 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			Datacenter: dc.Spec.Hetzner.Datacenter,
 			Location:   dc.Spec.Hetzner.Location,
 		}
+	case dc.Spec.VSphere != nil:
+		spec.VSphere = &apiv1.VSphereDatacenterSpec{
+			Endpoint:   dc.Spec.VSphere.Endpoint,
+			Datacenter: dc.Spec.VSphere.Datacenter,
+			Datastore:  dc.Spec.VSphere.Datastore,
+		}
 	}
 
 	return spec, nil

@@ -1338,6 +1338,9 @@
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -1924,6 +1927,9 @@
         "seed": {
           "type": "string",
           "x-go-name": "Seed"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereDatacenterSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -2468,6 +2474,9 @@
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpecV2"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphereNodeSpecV2"
         }
       },
       "x-go-name": "NodeCloudSpec",
@@ -3609,6 +3618,46 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "VSphereCloudSpec": {
+      "type": "object",
+      "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "VSphereDatacenterSpec": {
+      "type": "object",
+      "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "datastore": {
+          "type": "string",
+          "x-go-name": "Datastore"
+        },
+        "endpoint": {
+          "type": "string",
+          "x-go-name": "Endpoint"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "VSphereNodeSpecV2": {
+      "description": "VSphereNodeSpec VSphere node settings",
+      "type": "object",
+      "x-go-name": "VSphereNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     }
   },
   "responses": {
