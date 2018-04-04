@@ -4,6 +4,7 @@ local configMap = k.core.v1.configMap;
 local dashboardSources = import "dashboards/sources.jsonnet";
 
 local kubermaticDashboards = {
+    "machine-controller.json": import "dashboards/kubermatic/machine-controller.jsonnet",
     "nginx.json": import "dashboards/kubermatic/nginx.jsonnet",
 };
 
