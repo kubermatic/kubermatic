@@ -120,7 +120,7 @@ func createNodesEndpoint(cps map[string]provider.CloudProvider, dp provider.SSHK
 			return nil, err
 		}
 		if cp == nil {
-			return nil, errors.NewBadRequest("cannot create nodes without cloud sshKeyProvider")
+			return nil, errors.NewBadRequest("cannot create nodes without cloud provider")
 		}
 
 		err = cp.ValidateNodeSpec(c.Spec.Cloud, &req.Body.Spec)
