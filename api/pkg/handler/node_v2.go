@@ -233,8 +233,12 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 		}
 
 		node := req.Body
-		if node.Spec.Cloud.Openstack == nil && node.Spec.Cloud.Digitalocean == nil && node.Spec.Cloud.AWS == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud sshKeyProvider")
+		if node.Spec.Cloud.Openstack == nil &&
+			node.Spec.Cloud.Digitalocean == nil &&
+			node.Spec.Cloud.AWS == nil &&
+			node.Spec.Cloud.Hetzner == nil &&
+			node.Spec.Cloud.VSphere == nil {
+			return nil, errors.NewBadRequest("cannot create node without cloud provider")
 		}
 		//Only allow container linux + docker
 		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
