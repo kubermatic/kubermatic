@@ -65,6 +65,12 @@ func ValidateCloudChange(newSpec, oldSpec *kubermaticv1.CloudSpec) error {
 	if newSpec.Fake == nil && oldSpec.Fake != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Hetzner == nil && oldSpec.Hetzner != nil {
+		return ErrCloudChangeNotAllowed
+	}
+	if newSpec.VSphere == nil && oldSpec.VSphere != nil {
+		return ErrCloudChangeNotAllowed
+	}
 
 	return nil
 }
@@ -195,7 +201,6 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	if spec.VSphere != nil {
 		if spec.VSphere.Username == "" {
 			return errors.New("no username specified")
-
 		}
 
 		if spec.VSphere.Password == "" {
