@@ -1,0 +1,31 @@
+# Cloud Cost Exporter
+
+**Author**: Matthias Loibl (@metalmatze)
+
+**Status**: Draft proposal; prototype in progress.
+
+## Motivation and Background
+
+Billing in Cloud Environments is hard and sometimes almost obscure.  
+We want to improve this situation for our customers.  
+For this reason, we want to create a Cloud Cost Exporter for Prometheus, which
+exposes information billing information for Kubermatic components.
+
+## Implementation
+
+Create a new Prometheus Exporter in Go.  
+This Exporter uses SDKs of various Cloud Providers:
+
+* https://github.com/aws/aws-sdk-go
+* https://github.com/digitalocean/godo
+* https://github.com/GoogleCloudPlatform/google-cloud-go
+* https://github.com/hetznercloud/hcloud-go
+
+For non-public Cloud Providers, we want the Exporter to be configurable via a config file / configmap.
+
+The Exporter can then scrape the Cloud Providers for the number of Nodes, Disks and simliar infrastructure under controll by Kubermatic.
+With this data in Prometheus we can query various different costs.
+
+## Task & effort:
+* Implement the basic exporter and one first collector - 1d
+* Adding a new Provider - 0.5d
