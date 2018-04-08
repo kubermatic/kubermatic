@@ -3,6 +3,7 @@ package externalversions
 import (
 	"fmt"
 
+	v1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/addons/v1alpha1"
 	v1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	prometheus_v1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
@@ -36,7 +37,11 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=etcd.database.coreos.com, Version=v1beta2
+	// Group=addons.k8s.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("addons"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Addons().V1alpha1().Addons().Informer()}, nil
+
+		// Group=etcd.database.coreos.com, Version=v1beta2
 	case v1beta2.SchemeGroupVersion.WithResource("etcdclusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Etcd().V1beta2().EtcdClusters().Informer()}, nil
 
