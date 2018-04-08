@@ -36,7 +36,6 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 		controllerresources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
 		controllerresources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
 		controllerresources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
-		controllerresources.NodeControllerDeploymentName:    {healthy: &health.NodeController, minReady: 1},
 		controllerresources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
 	}
 
