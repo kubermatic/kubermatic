@@ -2,6 +2,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
+	addonsv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/addons/v1alpha1"
 	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	monitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/prometheus/v1"
@@ -12,6 +13,9 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	AddonsV1alpha1() addonsv1alpha1.AddonsV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Addons() addonsv1alpha1.AddonsV1alpha1Interface
 	EtcdV1beta2() etcdv1beta2.EtcdV1beta2Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Etcd() etcdv1beta2.EtcdV1beta2Interface
@@ -27,9 +31,21 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	etcdV1beta2  *etcdv1beta2.EtcdV1beta2Client
-	kubermaticV1 *kubermaticv1.KubermaticV1Client
-	monitoringV1 *monitoringv1.MonitoringV1Client
+	addonsV1alpha1 *addonsv1alpha1.AddonsV1alpha1Client
+	etcdV1beta2    *etcdv1beta2.EtcdV1beta2Client
+	kubermaticV1   *kubermaticv1.KubermaticV1Client
+	monitoringV1   *monitoringv1.MonitoringV1Client
+}
+
+// AddonsV1alpha1 retrieves the AddonsV1alpha1Client
+func (c *Clientset) AddonsV1alpha1() addonsv1alpha1.AddonsV1alpha1Interface {
+	return c.addonsV1alpha1
+}
+
+// Deprecated: Addons retrieves the default version of AddonsClient.
+// Please explicitly pick a version.
+func (c *Clientset) Addons() addonsv1alpha1.AddonsV1alpha1Interface {
+	return c.addonsV1alpha1
 }
 
 // EtcdV1beta2 retrieves the EtcdV1beta2Client
@@ -81,6 +97,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.addonsV1alpha1, err = addonsv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.etcdV1beta2, err = etcdv1beta2.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -106,6 +126,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.addonsV1alpha1 = addonsv1alpha1.NewForConfigOrDie(c)
 	cs.etcdV1beta2 = etcdv1beta2.NewForConfigOrDie(c)
 	cs.kubermaticV1 = kubermaticv1.NewForConfigOrDie(c)
 	cs.monitoringV1 = monitoringv1.NewForConfigOrDie(c)
@@ -117,6 +138,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.addonsV1alpha1 = addonsv1alpha1.New(c)
 	cs.etcdV1beta2 = etcdv1beta2.New(c)
 	cs.kubermaticV1 = kubermaticv1.New(c)
 	cs.monitoringV1 = monitoringv1.New(c)
