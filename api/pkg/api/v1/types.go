@@ -210,3 +210,7 @@ type OpenstackSize struct {
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
 	IsPublic bool `json:"isPublic"`
 }
+
+type Addon struct {
+	Name string `json:"name"`
+}

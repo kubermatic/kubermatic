@@ -14,7 +14,6 @@ spec:
   selector:
     matchLabels:
       role: addon-manager
-      version: v1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,9 +22,7 @@ spec:
   template:
     metadata:
       labels:
-        release: {{index .Version.Values "addon-manager-version"}}
         role: addon-manager
-        version: v1
     spec:
       initContainers:
       - name: apiserver-running
@@ -34,12 +31,23 @@ spec:
         - /bin/sh
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
+      - name: addons
+        image: docker.io/kubermatic/addons:{{index .Version.Values "addons"}}
+        volumeMounts:
+        - name: addons
+          mountPath: /target-addons
+        command: ["/bin/sh"]
+        args: ["-c", "cp -r /addons/* /target-addons"]
       containers:
       - name: addon-manager
-        image: kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
-        imagePullPolicy: Always
-        env:
-        - name: KUBECTL_OPTS
-          value: --server=http://apiserver:8080
-        - name: ADDON_MANAGER_LEADER_ELECTION
-          value: "false"
+        image: docker.io/kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
+        args:
+        - -v=4
+        - -logtostderr
+        - -master=http://apiserver:8080
+        volumeMounts:
+        - name: addons
+          mountPath: /addons
+      volumes:
+      - name: addons
+        emptyDir: {}
