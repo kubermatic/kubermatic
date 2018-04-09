@@ -2,7 +2,7 @@ apiVersion: v1
 items:
 - apiVersion: v1
   data:
-    dashboards.yaml: |-
+    dashboards.json: |-
       [
           {
               "folder": "Kubermatic",
@@ -29,19 +29,15 @@ items:
 - apiVersion: v1
   data:
     prometheus.yaml: |-
-      {
-          "datasources": [
-              {
-                  "access": "proxy",
-                  "editable": false,
-                  "name": "prometheus",
-                  "org_id": 1,
-                  "type": "prometheus",
-                  "url": "http://prometheus.monitoring.svc.cluster.local:9090",
-                  "version": 1
-              }
-          ]
-      }
+        apiVersion: 1
+        datasources:
+        - access: proxy
+          editable: false
+          name: prometheus
+          org_id: 1
+          type: prometheus
+          url: http://prometheus.monitoring.svc.cluster.local:9090
+          version: 1
   kind: ConfigMap
   metadata:
     name: grafana-datasources
