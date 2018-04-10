@@ -497,12 +497,12 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 
 	if cloud.AWS.SecurityGroup != "" {
 		_, err = ec2client.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
-			GroupName: aws.String(cloud.AWS.SecurityGroup),
+			GroupId: aws.String(cloud.AWS.SecurityGroupID),
 		})
 
 		if err != nil {
 			if err.(awserr.Error).Code() != "InvalidGroup.NotFound" {
-				return fmt.Errorf("failed to delete security group %s: %s", cloud.AWS.SecurityGroup, err.(awserr.Error).Message())
+				return fmt.Errorf("failed to delete security group %s(%s): %s", cloud.AWS.SecurityGroup, cloud.AWS.SecurityGroupID, err.(awserr.Error).Message())
 			}
 		}
 	}
