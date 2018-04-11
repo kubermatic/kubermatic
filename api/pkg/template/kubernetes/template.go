@@ -47,6 +47,7 @@ func (t *Template) Execute(data interface{}, object v1.Object) (string, error) {
 		return "", fmt.Errorf("failed executing template: %v", err)
 	}
 	b := buf.Bytes()
+	glog.V(8).Info("\n", buf.String())
 
 	jsonBytes, err := yaml.ToJSON(b)
 	if err != nil {
