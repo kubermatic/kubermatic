@@ -2,7 +2,7 @@ apiVersion: v1
 items:
 - apiVersion: v1
   data:
-    dashboards.yaml: |-
+    dashboards.json: |-
       [
           {
               "folder": "Kubermatic",
@@ -28,7 +28,7 @@ items:
     name: grafana-dashboards
 - apiVersion: v1
   data:
-    prometheus.yaml: |-
+    prometheus.json: |-
       {
           "datasources": [
               {
