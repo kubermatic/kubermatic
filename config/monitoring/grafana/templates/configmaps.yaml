@@ -28,16 +28,20 @@ items:
     name: grafana-dashboards
 - apiVersion: v1
   data:
-    prometheus.yaml: |-
-        apiVersion: 1
-        datasources:
-        - access: proxy
-          editable: false
-          name: prometheus
-          org_id: 1
-          type: prometheus
-          url: http://prometheus.monitoring.svc.cluster.local:9090
-          version: 1
+    prometheus.json: |-
+      {
+          "datasources": [
+              {
+                  "access": "proxy",
+                  "editable": false,
+                  "name": "prometheus",
+                  "org_id": 1,
+                  "type": "prometheus",
+                  "url": "http://prometheus.monitoring.svc.cluster.local:9090",
+                  "version": 1
+              }
+          ]
+      }
   kind: ConfigMap
   metadata:
     name: grafana-datasources
