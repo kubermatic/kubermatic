@@ -61,8 +61,8 @@ spec:
       tags:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
-      {{- range $index, $tag := .Node.Spec.Cloud.Digitalocean.Tags }}
-        {{ $tag }}
+      {{ range $index, $tag := .Node.Spec.Cloud.Digitalocean.Tags }}
+        - {{ $tag }}
       {{- end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Hetzner }}
