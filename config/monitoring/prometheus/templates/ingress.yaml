@@ -10,6 +10,8 @@ metadata:
     ingress.kubernetes.io/auth-secret: prometheus-auth
     # message to display with an appropiate context why the authentication is required
     ingress.kubernetes.io/auth-realm: "Authentication Required"
+    # always load balance to the same prometheus based on a IP, this is needed for Prometheus Federation.
+    ingress.kubernetes.io/upstream-hash-by: "ip_hash"
 spec:
   tls:
   - hosts:
