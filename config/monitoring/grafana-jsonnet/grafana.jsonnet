@@ -19,8 +19,8 @@ local kubernetesDashboards = {
 };
 
 k.core.v1.list.new([
-    configMap.new("grafana-dashboards", { "dashboards.yaml": std.manifestJsonEx(dashboardSources, "    ") }),
-    configMap.new("grafana-datasources", { "prometheus.yaml": std.manifestJsonEx(import "prometheus.jsonnet", "    ") }),
+    configMap.new("grafana-dashboards", { "dashboards.json": std.manifestJsonEx(dashboardSources, "    ") }),
+    configMap.new("grafana-datasources", { "prometheus.json": std.manifestJsonEx(import "prometheus.jsonnet", "    ") }),
     configMap.new("grafana-dashboards-kubermatic", { [name]: std.manifestJsonEx(kubermaticDashboards[name], "    ") for name in std.objectFields(kubermaticDashboards) }),
     configMap.new("grafana-dashboards-kubernetes", { [name]: std.manifestJsonEx(kubernetesDashboards[name], "    ") for name in std.objectFields(kubernetesDashboards) }),
 ])
