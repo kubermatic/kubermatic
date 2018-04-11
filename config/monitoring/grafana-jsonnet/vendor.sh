@@ -16,3 +16,5 @@ curl -L --output kubernetes-grafana.zip https://github.com/brancz/kubernetes-gra
 unzip -d vendor/ kubernetes-grafana.zip
 mv vendor/kubernetes-grafana-master/ vendor/kubernetes-grafana/
 rm kubernetes-grafana.zip
+
+go get github.com/brancz/gojsontoyaml
