@@ -24,7 +24,6 @@ spec:
       instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
       diskSize: {{ default 25 .Node.Spec.Cloud.AWS.VolumeSize }}
       diskType: "{{ default "gp2" .Node.Spec.Cloud.AWS.VolumeType }}"
-      ami: "{{ Node.Spec.Cloud.AWS.AMI }}"
       tags:
         KubernetesCluster: "{{ .Cluster.Name }}"
         {{- range $key, $value := .Node.Spec.Cloud.AWS.Tags }}
@@ -61,9 +60,6 @@ spec:
       tags:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
-      {{ range $index, $tag := .Node.Spec.Cloud.Digitalocean.Tags }}
-        - {{ $tag }}
-      {{- end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Hetzner }}
     cloudProvider: "hetzner"
