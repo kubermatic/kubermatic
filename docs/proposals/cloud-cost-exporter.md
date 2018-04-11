@@ -9,7 +9,9 @@
 Billing in Cloud Environments is hard and sometimes almost obscure.  
 We want to improve this situation for our customers.  
 For this reason, we want to create a Cloud Cost Exporter for Prometheus, which
-exposes information billing information for Kubermatic components.
+allows Prometheus to scrape the cost of the Kubermatic managed infrastructure.
+
+In the end we want to show the current cost of the cluster in the Kubermatic Dashboard.
 
 ## Implementation
 
