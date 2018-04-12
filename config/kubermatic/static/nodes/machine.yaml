@@ -7,8 +7,8 @@ spec:
     name: {{ .Node.Metadata.Name }}
   providerConfig:
     sshPublicKeys:
-      {{range .Keys}}- {{.Spec.PublicKey}}
-      {{- end}}
+      {{ range .Keys }}- {{ .Spec.PublicKey }}
+      {{ end }}
     {{- if .Node.Spec.Cloud.AWS }}
     cloudProvider: "aws"
     cloudProviderSpec:
@@ -61,6 +61,8 @@ spec:
       tags:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
+      {{ range .Node.Spec.Cloud.Digitalocean.Tags }}- {{.}}
+      {{ end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Hetzner }}
     cloudProvider: "hetzner"
