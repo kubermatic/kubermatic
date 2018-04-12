@@ -71,7 +71,7 @@ func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) end
 			}
 			return nil, err
 		}
-		newCluster := req.Cluster
+		newCluster := req.Body.Cluster
 
 		//We don't allow updating the following fields
 		newCluster.TypeMeta = oldCluster.TypeMeta

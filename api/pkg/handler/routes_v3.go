@@ -210,7 +210,7 @@ func (r Routing) nodesHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(getNodesEndpointV2()),
-		decodeClusterReq,
+		decodeNodesV2Req,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
