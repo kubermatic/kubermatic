@@ -3,6 +3,7 @@ package resources
 import (
 	"fmt"
 	"path"
+	"strconv"
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -11,6 +12,7 @@ import (
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 
 	corev1 "k8s.io/api/core/v1"
@@ -141,6 +143,11 @@ const (
 	OpenVPNInternalClientCertSecretKey = "client.crt"
 )
 
+const (
+	minNodePort = 30000
+	maxNodePort = 32767
+)
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	Cluster         *kubermaticv1.Cluster
@@ -148,6 +155,7 @@ type TemplateData struct {
 	DC              *provider.DatacenterMeta
 	SecretLister    corev1lister.SecretLister
 	ConfigMapLister corev1lister.ConfigMapLister
+	ServiceLister   corev1lister.ServiceLister
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -156,13 +164,15 @@ func NewTemplateData(
 	version *apiv1.MasterVersion,
 	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
-	configMapLister corev1lister.ConfigMapLister) *TemplateData {
+	configMapLister corev1lister.ConfigMapLister,
+	serviceLister corev1lister.ServiceLister) *TemplateData {
 	return &TemplateData{
 		Cluster:         cluster,
 		DC:              dc,
 		Version:         version,
 		ConfigMapLister: configMapLister,
 		SecretLister:    secretLister,
+		ServiceLister:   serviceLister,
 	}
 }
 
@@ -193,6 +203,35 @@ func (d *TemplateData) ProviderName() string {
 		glog.V(0).Infof("could not identify cloud provider: %v", err)
 	}
 	return p
+}
+
+// GetNextFreeNodePort returns the lowest free NodePort
+func (d *TemplateData) GetNextFreeNodePort() string {
+	services, err := d.ServiceLister.List(labels.Everything())
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("failed to get free NodePort for '%s': %v", d.Cluster.Name, err))
+		//We return something which is invalid. To prevent kubernetes to auto-allocate one
+		return "NOT-A-NUMBER"
+	}
+	allocatedPorts := map[int]struct{}{}
+
+	for _, s := range services {
+		for _, p := range s.Spec.Ports {
+			if p.NodePort != 0 {
+				allocatedPorts[int(p.NodePort)] = struct{}{}
+			}
+		}
+	}
+
+	for i := minNodePort; i < maxNodePort; i++ {
+		if _, exists := allocatedPorts[i]; !exists {
+			return strconv.Itoa(i)
+		}
+	}
+
+	runtime.HandleError(fmt.Errorf("no available NodePort for '%s': %v", d.Cluster.Name, err))
+	//We return something which is invalid. To prevent kubernetes to auto-allocate one
+	return "NOT-A-NUMBER"
 }
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct

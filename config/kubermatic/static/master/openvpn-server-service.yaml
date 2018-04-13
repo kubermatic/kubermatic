@@ -16,6 +16,7 @@ spec:
   ports:
   - name: secure
     port: 1194
+    nodePort: {{ .GetNextFreeNodePort }}
     protocol: TCP
   selector:
     role: openvpn-server
