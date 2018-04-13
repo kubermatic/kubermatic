@@ -18,6 +18,7 @@ import (
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
@@ -29,6 +30,9 @@ const (
 	nodeDeletionFinalizer         = "kubermatic.io/delete-nodes"
 	cloudProviderCleanupFinalizer = "kubermatic.io/cleanup-cloud-provider"
 	namespaceDeletionFinalizer    = "kubermatic.io/delete-ns"
+
+	minNodePort = 30000
+	maxNodePort = 32767
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
@@ -169,7 +173,6 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controll
 		&dc,
 		cc.SecretLister,
 		cc.ConfigMapLister,
-		cc.ServiceLister,
 	), nil
 }
 
@@ -234,17 +237,45 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
+func (cc *Controller) getFreeNodePort() (int, error) {
+	services, err := cc.ServiceLister.List(labels.Everything())
+	if err != nil {
+		return 0, err
+	}
+	allocatedPorts := map[int]struct{}{}
+
+	for _, s := range services {
+		for _, p := range s.Spec.Ports {
+			if p.NodePort != 0 {
+				allocatedPorts[int(p.NodePort)] = struct{}{}
+			}
+		}
+	}
+
+	for i := minNodePort; i < maxNodePort; i++ {
+		if _, exists := allocatedPorts[i]; !exists {
+			return i, nil
+		}
+	}
+
+	return 0, fmt.Errorf("no free nodeport left")
+}
+
 // ensureAddress will set the cluster hostname and the url under which the apiserver will be reachable
 func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
-	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
+	if c.Address.ExternalName == "" {
+		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
+	}
 
-	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(controllerresources.ApiserverExternalServiceName)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			return err
+	if c.Address.ExternalPort == 0 {
+		port, err := cc.getFreeNodePort()
+		if err != nil {
+			return fmt.Errorf("failed to get nodeport: %v", err)
 		}
-	} else {
-		c.Address.ExternalPort = int(s.Spec.Ports[0].NodePort)
+		c.Address.ExternalPort = port
+	}
+
+	if c.Address.URL == "" {
 		c.Address.URL = fmt.Sprintf("https://%s:%d", c.Address.ExternalName, c.Address.ExternalPort)
 	}
 
