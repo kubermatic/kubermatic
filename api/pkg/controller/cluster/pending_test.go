@@ -47,10 +47,6 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, c.Address.ExternalName)
 	}
 
-	if c.Address.ExternalPort != TestExternalPort {
-		t.Fatalf("external port is wrong. Expected=%d Got=%d", TestExternalPort, c.Address.ExternalPort)
-	}
-
 	expectedURL := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, TestExternalPort)
 	if c.Address.URL != expectedURL {
 		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, c.Address.URL)

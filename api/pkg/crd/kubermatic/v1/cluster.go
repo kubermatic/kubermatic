@@ -123,7 +123,6 @@ type NetworkRanges struct {
 type ClusterAddress struct {
 	URL          string `json:"url"`
 	ExternalName string `json:"externalName"`
-	ExternalPort int    `json:"externalPort"`
 	KubeletToken string `json:"kubeletToken"`
 	AdminToken   string `json:"adminToken"`
 	IP           string `json:"ip"`

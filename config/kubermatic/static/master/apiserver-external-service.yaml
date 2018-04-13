@@ -15,8 +15,8 @@ spec:
   type: NodePort
   ports:
     - name: secure
-      port: {{ .Cluster.Address.ExternalPort }}
-      nodePort: {{ .Cluster.Address.ExternalPort }}
+      port: {{ .GetApiserverExternalNodePortOrGetFree }}
+      nodePort: {{ .GetApiserverExternalNodePortOrGetFree }}
       protocol: TCP
   selector:
     role: apiserver

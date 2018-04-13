@@ -76,8 +76,8 @@ spec:
         image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "apiserver",
             "--advertise-address={{ .Cluster.Address.IP }}",
-            "--secure-port={{ .Cluster.Address.ExternalPort }}",
-            "--kubernetes-service-node-port={{ .Cluster.Address.ExternalPort }}",
+            "--secure-port={{ .GetApiserverExternalNodePort }}",
+            "--kubernetes-service-node-port={{ .GetApiserverExternalNodePort }}",
             "--insecure-bind-address=0.0.0.0",
             "--insecure-port=8080",
             "--etcd-servers=http://etcd-cluster-client:2379",
@@ -131,7 +131,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 30
         ports:
-        - containerPort: {{ .Cluster.Address.ExternalPort }}
+        - containerPort: {{ .GetApiserverExternalNodePort }}
         - containerPort: 8080
         volumeMounts:
         - name: apiserver-tls

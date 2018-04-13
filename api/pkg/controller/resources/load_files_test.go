@@ -184,7 +184,6 @@ func TestLoadFiles(t *testing.T) {
 					Address: &kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 						IP:           "35.198.93.90",
-						ExternalPort: 30000,
 						AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
 					},
 					Status: kubermaticv1.ClusterStatus{
@@ -240,6 +239,19 @@ func TestLoadFiles(t *testing.T) {
 							ResourceVersion: "123456",
 							Name:            CloudConfigConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      ApiserverExternalServiceName,
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30000,
+								},
+							},
 						},
 					})
 
