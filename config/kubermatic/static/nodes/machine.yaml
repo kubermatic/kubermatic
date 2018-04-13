@@ -12,19 +12,19 @@ spec:
     {{- if .Node.Spec.Cloud.AWS }}
     cloudProvider: "aws"
     cloudProviderSpec:
-      accessKeyId: "{{ .Cluster.Spec.Cloud.AWS.AccessKeyID }}"
-      secretAccessKey: "{{ .Cluster.Spec.Cloud.AWS.SecretAccessKey }}"
+      accessKeyId: {{ .Cluster.Spec.Cloud.AWS.AccessKeyID | quote }}
+      secretAccessKey: {{ .Cluster.Spec.Cloud.AWS.SecretAccessKey | quote  }}
       region: "{{ .Datacenter.Spec.AWS.Region }}"
       availabilityZone: "{{ .Datacenter.Spec.AWS.Region }}{{ .Datacenter.Spec.AWS.ZoneCharacter }}"
-      vpcId: "{{ .Cluster.Spec.Cloud.AWS.VPCID }}"
-      subnetId: "{{ .Cluster.Spec.Cloud.AWS.SubnetID }}"
-      instanceProfile: "{{ .Cluster.Spec.Cloud.AWS.InstanceProfileName }}"
+      vpcId: {{ .Cluster.Spec.Cloud.AWS.VPCID | quote }}
+      subnetId: {{ .Cluster.Spec.Cloud.AWS.SubnetID | quote }}
+      instanceProfile: {{ .Cluster.Spec.Cloud.AWS.InstanceProfileName | quote }}
       securityGroupIDs:
-      - "{{ .Cluster.Spec.Cloud.AWS.SecurityGroupID }}"
+      - {{ .Cluster.Spec.Cloud.AWS.SecurityGroupID | quote }}
       instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
       diskSize: {{ default 25 .Node.Spec.Cloud.AWS.VolumeSize }}
       diskType: "{{ default "gp2" .Node.Spec.Cloud.AWS.VolumeType }}"
-      ami: "{{ .Node.Spec.Cloud.AWS.AMI }}"
+      ami: {{ .Node.Spec.Cloud.AWS.AMI | quote }}
       tags:
         KubernetesCluster: "{{ .Cluster.Name }}"
         {{- range $key, $value := .Node.Spec.Cloud.AWS.Tags }}
@@ -36,22 +36,22 @@ spec:
     cloudProviderSpec:
       identityEndpoint: "{{ .Datacenter.Spec.Openstack.AuthURL }}"
       region: "{{ .Datacenter.Spec.Openstack.Region }}"
-      username: "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
-      password: "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
-      domainName: "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
-      tenantName: "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
-      image: "{{ .Node.Spec.Cloud.Openstack.Image }}"
-      flavor: "{{ .Node.Spec.Cloud.Openstack.Flavor }}"
+      username: {{ .Cluster.Spec.Cloud.Openstack.Username | quote }}
+      password: {{ .Cluster.Spec.Cloud.Openstack.Password | quote }}
+      domainName: {{ .Cluster.Spec.Cloud.Openstack.Domain | quote }}
+      tenantName: {{ .Cluster.Spec.Cloud.Openstack.Tenant | quote }}
+      image: {{ .Node.Spec.Cloud.Openstack.Image | quote }}
+      flavor: {{ .Node.Spec.Cloud.Openstack.Flavor | quote }}
       securityGroups:
         - {{ .Cluster.Spec.Cloud.Openstack.SecurityGroups }}
-      floatingIpPool: "{{ .Cluster.Spec.Cloud.Openstack.FloatingIPPool }}"
+      floatingIpPool: {{ .Cluster.Spec.Cloud.Openstack.FloatingIPPool | quote }}
       availabilityZone: "{{ .Datacenter.Spec.Openstack.AvailabilityZone }}"
-      network: "{{ .Cluster.Spec.Cloud.Openstack.Network }}"
+      network: {{ .Cluster.Spec.Cloud.Openstack.Network | quote }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Digitalocean }}
     cloudProvider: "digitalocean"
     cloudProviderSpec:
-      token: "{{ .Cluster.Spec.Cloud.Digitalocean.Token }}"
+      token: {{ .Cluster.Spec.Cloud.Digitalocean.Token | quote }}
       region: "{{ .Datacenter.Spec.Digitalocean.Region }}"
       size: "{{ .Node.Spec.Cloud.Digitalocean.Size }}"
       backups: {{ .Node.Spec.Cloud.Digitalocean.Backups }}
@@ -61,13 +61,13 @@ spec:
       tags:
       - kubermatic
       - kubermatic-cluster-{{ .Cluster.Name }}
-      {{ range .Node.Spec.Cloud.Digitalocean.Tags }}- {{.}}
+      {{ range .Node.Spec.Cloud.Digitalocean.Tags }}- {{ . | quote }}
       {{ end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Hetzner }}
     cloudProvider: "hetzner"
     cloudProviderSpec:
-      token: "{{ .Cluster.Spec.Cloud.Hetzner.Token }}"
+      token: {{ .Cluster.Spec.Cloud.Hetzner.Token  | quote }}
       serverType: "{{ .Node.Spec.Cloud.Hetzner.Type }}"
       datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
       location: "{{ .Datacenter.Spec.Hetzner.Location }}"
@@ -76,8 +76,8 @@ spec:
     cloudProvider: "vsphere"
     cloudProviderSpec:
       identityEndpoint: "{{ .Datacenter.Spec.VSphere.Endpoint }}"
-      username: "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
-      password: "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
+      username: {{ .Cluster.Spec.Cloud.VSphere.Username | quote }}
+      password: {{ .Cluster.Spec.Cloud.VSphere.Password | quote }}
       datacenter: "{{ .Datacenter.Spec.VSphere.Datacenter }}"
       datastore: "{{ .Datacenter.Spec.VSphere.Datastore }}"
     {{- end }}
