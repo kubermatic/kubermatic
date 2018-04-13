@@ -24,37 +24,74 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
-        cloudconfigversion: "123456"
+        apiserver-tls-secret-revision: "123456"
+        ca-cert-secret-revision: "123456"
+        cloud-config-configmap-revision: "123456"
+        kubelet-client-certificates-secret-revision: "123456"
         release: v1.9.0
         role: apiserver
-        tokencsvversion: "123456"
+        service-account-key-secret-revision: "123456"
+        token-users-secret-revision: "123456"
         version: v1
     spec:
       containers:
       - args:
-        - -v=4
-        - -logtostderr
-        - -ssh-user=apiserver
-        - -ssh-port=2222
-        - -ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa
-        - -master=127.0.0.1:8080
-        - -ssh-preferred-address-types=ExternalIP
-        - -preferred-address-types=InternalIP
-        - -interface-address=10.250.0.2/24
-        - -pod-network-cidr=172.25.0.0/16
-        - -service-network-cidr=10.10.10.0/24
-        - -block-ports=8080
+        - --client
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --auth-nocache
+        - --remote
+        - openvpn-server
+        - "1194"
+        - --nobind
+        - --connect-timeout
+        - "5"
+        - --connect-retry
+        - "1"
+        - --ca
+        - /etc/kubernetes/ca-cert/ca.crt
+        - --cert
+        - /etc/openvpn/certs/client.crt
+        - --key
+        - /etc/openvpn/certs/client.key
+        - --remote-cert-tls
+        - server
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --up
+        - /bin/touch /tmp/running
+        - --log
+        - /dev/stdout
         command:
-        - /client
-        image: kubermatic/pod-network-bridge:v0.2
-        imagePullPolicy: Always
-        name: bridge-client
+        - /usr/sbin/openvpn
+        image: kubermatic/openvpn:v0.2
+        name: openvpn-client
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/running
+          initialDelaySeconds: 5
+          periodSeconds: 5
         resources: {}
         securityContext:
           privileged: true
         volumeMounts:
-        - mountPath: /var/run/kubernetes/apiserver
-          name: apiserver
+        - mountPath: /etc/openvpn/certs
+          name: openvpn-client-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/ca-cert
+          name: ca-cert
           readOnly: true
       - command:
         - /hyperkube
@@ -69,10 +106,10 @@ spec:
         - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction
         - --authorization-mode=Node,RBAC
         - --external-hostname=jh8j81chn.europe-west3-c.dev.kubermatic.io
-        - --token-auth-file=/var/run/kubernetes/token-users/tokens.csv
+        - --token-auth-file=/etc/kubernetes/tokens/tokens.csv
         - --enable-bootstrap-token-auth=true
         - --feature-gates=DynamicKubeletConfig=true
-        - --service-account-key-file=/var/run/kubernetes/apiserver/service-account.key
+        - --service-account-key-file=/etc/kubernetes/service-account-key/sa.key
         - --service-cluster-ip-range=10.10.10.0/24
         - --service-node-port-range=30000-32767
         - --allow-privileged
@@ -80,14 +117,14 @@ spec:
         - --audit-log-maxbackup=3
         - --audit-log-maxsize=100
         - --audit-log-path=/var/log/audit.log
-        - --tls-cert-file=/var/run/kubernetes/apiserver/apiserver.crt
-        - --tls-private-key-file=/var/run/kubernetes/apiserver/apiserver.key
-        - --client-ca-file=/var/run/kubernetes/apiserver/root-ca.crt
-        - --kubelet-client-certificate=/var/run/kubernetes/apiserver/kubelet-client.crt
-        - --kubelet-client-key=/var/run/kubernetes/apiserver/kubelet-client.key
+        - --tls-cert-file=/etc/kubernetes/tls/apiserver-tls.crt
+        - --tls-private-key-file=/etc/kubernetes/tls/apiserver-tls.key
+        - --client-ca-file=/etc/kubernetes/ca-cert/ca.crt
+        - --kubelet-client-certificate=/etc/kubernetes/kubelet/kubelet-client.crt
+        - --kubelet-client-key=/etc/kubernetes/kubelet/kubelet-client.key
         - --cloud-config=/etc/kubernetes/cloud/config
         - --cloud-provider=aws
-        - --kubelet-preferred-address-types=InternalIP
+        - --kubelet-preferred-address-types=ExternalIP,InternalIP
         - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
@@ -110,24 +147,49 @@ spec:
           timeoutSeconds: 30
         resources: {}
         volumeMounts:
-        - mountPath: /var/run/kubernetes/apiserver
-          name: apiserver
+        - mountPath: /etc/kubernetes/tls
+          name: apiserver-tls
           readOnly: true
-        - mountPath: /var/run/kubernetes/token-users
+        - mountPath: /etc/kubernetes/tokens
           name: token-users
+          readOnly: true
+        - mountPath: /etc/kubernetes/kubelet
+          name: kubelet-client-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/ca-cert
+          name: ca-cert
+          readOnly: true
+        - mountPath: /etc/kubernetes/service-account-key
+          name: service-account-key
           readOnly: true
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
       volumes:
-      - name: apiserver
+      - name: apiserver-tls
         secret:
           defaultMode: 256
-          secretName: apiserver
+          secretName: apiserver-tls
       - name: token-users
         secret:
           defaultMode: 256
           secretName: token-users
+      - name: openvpn-client-certificates
+        secret:
+          defaultMode: 256
+          secretName: openvpn-client-certificates
+      - name: kubelet-client-certificates
+        secret:
+          defaultMode: 256
+          secretName: kubelet-client-certificates
+      - name: ca-cert
+        secret:
+          defaultMode: 256
+          secretName: ca-cert
+      - name: service-account-key
+        secret:
+          defaultMode: 256
+          secretName: service-account-key
       - configMap:
           name: cloud-config
         name: cloud-config

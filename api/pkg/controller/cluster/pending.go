@@ -352,18 +352,22 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(generatedSecret); err != nil {
 				return fmt.Errorf("failed to create secret for %s: %v", op.name, err)
 			}
-			wait.Poll(100*time.Millisecond, 30*time.Second, func() (bool, error) {
+
+			secretExistsInLister := func() (bool, error) {
 				_, err = cc.SecretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
 				if err != nil {
 					if os.IsNotExist(err) {
 						return false, nil
-					} else {
-						runtime.HandleError(fmt.Errorf("failed to check if a created secret %s/%s got published to lister: %v", c.Status.NamespaceName, generatedSecret.Name, err))
-						return false, nil
 					}
+					runtime.HandleError(fmt.Errorf("failed to check if a created secret %s/%s got published to lister: %v", c.Status.NamespaceName, generatedSecret.Name, err))
+					return false, nil
 				}
 				return true, nil
-			})
+			}
+
+			if err := wait.Poll(100*time.Millisecond, 30*time.Second, secretExistsInLister); err != nil {
+				return fmt.Errorf("failed waiting for secret '%s' to exist in the lister: %v", generatedSecret.Name, err)
+			}
 			continue
 		} else {
 			if existingSecret.Annotations[lastAppliedConfigAnnotation] != currentJSON {

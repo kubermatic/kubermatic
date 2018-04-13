@@ -12,10 +12,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-const (
-	tplPath = "/opt/template/nodes/openstack.yaml"
-)
-
 // Provider is a struct that implements CloudProvider interface
 type Provider struct {
 	dcs map[string]provider.DatacenterMeta

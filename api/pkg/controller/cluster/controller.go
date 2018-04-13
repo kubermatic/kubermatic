@@ -46,6 +46,7 @@ const (
 	runningSyncPeriod    = 60 * time.Second
 )
 
+// UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)

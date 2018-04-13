@@ -51,7 +51,7 @@ func (cc *Controller) createRootCAKeySecret(c *kubermaticv1.Cluster) (map[string
 	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
 	if len(c.Status.RootCA.Key) > 0 {
 		return map[string][]byte{
-			"ca.key": c.Status.RootCA.Key,
+			resources.CAKeySecretKey: c.Status.RootCA.Key,
 		}, nil
 	}
 	key, err := certutil.NewPrivateKey()
@@ -59,7 +59,7 @@ func (cc *Controller) createRootCAKeySecret(c *kubermaticv1.Cluster) (map[string
 		return nil, fmt.Errorf("unable to create a private key for a new CA: %v", err)
 	}
 	return map[string][]byte{
-		"ca.key": certutil.EncodePrivateKeyPEM(key),
+		resources.CAKeySecretKey: certutil.EncodePrivateKeyPEM(key),
 	}, nil
 }
 
@@ -79,7 +79,7 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
 	if len(c.Status.RootCA.Cert) > 0 {
 		return map[string][]byte{
-			"ca.crt": c.Status.RootCA.Cert,
+			resources.CACertSecretKey: c.Status.RootCA.Cert,
 		}, nil
 	}
 
@@ -91,7 +91,7 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 	}
 
 	return map[string][]byte{
-		"ca.crt": certutil.EncodeCertPEM(caCert),
+		resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
 	}, nil
 }
 
@@ -102,7 +102,7 @@ func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecre
 		return nil, "", fmt.Errorf("unable to check if a private CA key already exists: %v", err)
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(keySecret.Data["ca.key"])
+	key, err := certutil.ParsePrivateKeyPEM(keySecret.Data[resources.CAKeySecretKey])
 	if err != nil {
 		return nil, "", fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", resources.CAKeySecretName, err)
 	}
@@ -123,7 +123,7 @@ func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyP
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
-	certs, err := certutil.ParseCertsPEM(caCertSecret.Data["ca.crt"])
+	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[resources.CACertSecretKey])
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", resources.CACertSecretName, err)
 	}
@@ -134,7 +134,7 @@ func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyP
 		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data["ca.key"])
+	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[resources.CAKeySecretKey])
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", resources.CAKeySecretName, err)
 	}
@@ -152,8 +152,8 @@ func (cc *Controller) createApiserverTLSCertificatesSecret(caKp *triple.KeyPair,
 	}
 
 	return map[string][]byte{
-		"apiserver-tls.key": certutil.EncodePrivateKeyPEM(apiKp.Key),
-		"apiserver-tls.crt": certutil.EncodeCertPEM(apiKp.Cert),
+		resources.ApiserverTLSKeySecretKey:  certutil.EncodePrivateKeyPEM(apiKp.Key),
+		resources.ApiserverTLSCertSecretKey: certutil.EncodeCertPEM(apiKp.Cert),
 	}, nil
 }
 
@@ -179,7 +179,7 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 	}
 
 	// Validate that the certificate is up to date. Its safe to regenerate it. The apiserver will get automatically restarted when the secret gets updated
-	b := existingSecret.Data["apiserver-tls.crt"]
+	b := existingSecret.Data[resources.ApiserverTLSCertSecretKey]
 	certs, err := certutil.ParseCertsPEM(b)
 	if err != nil {
 		return nil, "", err
@@ -229,7 +229,7 @@ func (cc *Controller) getKubeletClientCertificatesSecret(c *kubermaticv1.Cluster
 	}
 
 	// Validate that the certificate is up to date. Its safe to regenerate it. The apiserver will get automatically restarted when the secret gets updated
-	b := existingSecret.Data["kubelet-client.crt"]
+	b := existingSecret.Data[resources.KubeletClientCertSecretKey]
 	cert, err := certutil.ParseCertsPEM(b)
 	if err != nil {
 		return nil, "", err
@@ -253,8 +253,8 @@ func (cc *Controller) createKubeletClientCertificates(caKp *triple.KeyPair, comm
 	}
 
 	return map[string][]byte{
-		"kubelet-client.key": certutil.EncodePrivateKeyPEM(kubeletKp.Key),
-		"kubelet-client.crt": certutil.EncodeCertPEM(kubeletKp.Cert),
+		resources.KubeletClientKeySecretKey:  certutil.EncodePrivateKeyPEM(kubeletKp.Key),
+		resources.KubeletClientCertSecretKey: certutil.EncodeCertPEM(kubeletKp.Cert),
 	}, nil
 }
 
@@ -273,7 +273,7 @@ func (cc *Controller) createServiceAccountKey(c *kubermaticv1.Cluster) (map[stri
 	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
 	if len(c.Status.ServiceAccountKey) > 0 {
 		return map[string][]byte{
-			"sa.key": c.Status.ServiceAccountKey,
+			resources.ServiceAccountKeySecretKey: c.Status.ServiceAccountKey,
 		}, nil
 	}
 
@@ -289,7 +289,7 @@ func (cc *Controller) createServiceAccountKey(c *kubermaticv1.Cluster) (map[stri
 	}
 
 	return map[string][]byte{
-		"sa.key": pem.EncodeToMemory(&block),
+		resources.ServiceAccountKeySecretKey: pem.EncodeToMemory(&block),
 	}, nil
 }
 
@@ -342,7 +342,7 @@ func (cc *Controller) createAdminKubeconfigSecret(c *kubermaticv1.Cluster) (map[
 	}
 
 	return map[string][]byte{
-		"admin-kubeconfig": b,
+		resources.AdminKubeconfigSecretKey: b,
 	}, nil
 }
 
@@ -371,7 +371,7 @@ func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[strin
 	}
 
 	return map[string][]byte{
-		"tokens.csv": buffer.Bytes(),
+		resources.TokensSecretKey: buffer.Bytes(),
 	}, nil
 }
 
@@ -406,8 +406,8 @@ func (cc *Controller) createOpenVPNServerCertificates(c *kubermaticv1.Cluster) (
 	}
 
 	return map[string][]byte{
-		"server.key": certutil.EncodePrivateKeyPEM(key),
-		"server.crt": certutil.EncodeCertPEM(cert),
+		resources.OpenVPNServerKeySecretKey:  certutil.EncodePrivateKeyPEM(key),
+		resources.OpenVPNServerCertSecretKey: certutil.EncodeCertPEM(cert),
 	}, nil
 }
 
@@ -444,8 +444,8 @@ func (cc *Controller) createOpenVPNInternalClientCertificates(c *kubermaticv1.Cl
 	}
 
 	return map[string][]byte{
-		"client.key": certutil.EncodePrivateKeyPEM(key),
-		"client.crt": certutil.EncodeCertPEM(cert),
+		resources.OpenVPNInternalClientKeySecretKey:  certutil.EncodePrivateKeyPEM(key),
+		resources.OpenVPNInternalClientCertSecretKey: certutil.EncodeCertPEM(cert),
 	}, nil
 }
 

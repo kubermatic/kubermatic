@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	tplPath = "/opt/template/nodes/aws.yaml"
-
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 )

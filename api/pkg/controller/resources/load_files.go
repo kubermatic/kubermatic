@@ -37,7 +37,7 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
-	//MachineControllerDeploymentName is the name for the machine-controller deployment
+	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 
 	//ApiserverExternalServiceName is the name for the external apiserver service
@@ -54,7 +54,7 @@ const (
 	PrometheusServiceName = "prometheus"
 	//SchedulerServiceName is the name for the scheduler service
 	SchedulerServiceName = "scheduler"
-	//SchedulerServiceName is the name for the scheduler service
+	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
@@ -65,24 +65,20 @@ const (
 	CACertSecretName = "ca-cert"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
-	//ApiserverSecretName is the name for the secrets required for the apiserver
+	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
 	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
-	//ServiceAccountKeySecretName is the name for the secrets required for the apiserver
+	//ServiceAccountKeySecretName is the name for the secret containing the service account key
 	ServiceAccountKeySecretName = "service-account-key"
-	//ServiceAccountKeySecretName is the name for the secrets required for the apiserver
-	ApiserverSecretName = "apiserver"
-	//ControllerManagerSecretName is the name for the secrets required for the controller manager
-	ControllerManagerSecretName = "controller-manager"
-	//TokenUsersSecretName is the name for the token-users secret
+	//TokenUsersSecretName is the name for the secret containing the user tokens
 	TokenUsersSecretName = "token-users"
-	//TokenUsersSecretName is the name for the token-users secret
+	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
-	//TokenUsersSecretName is the name for the token-users secret
+	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
-	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
+	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
@@ -114,6 +110,35 @@ const (
 	MachineControllerServiceMonitorName = "machine-controller"
 	//SchedulerServiceMonitorName is the name for the scheduler servicemonitor
 	SchedulerServiceMonitorName = "scheduler"
+)
+
+const (
+	// CAKeySecretKey ca.key
+	CAKeySecretKey = "ca.key"
+	// CACertSecretKey ca.crt
+	CACertSecretKey = "ca.crt"
+	// ApiserverTLSKeySecretKey apiserver-tls.key
+	ApiserverTLSKeySecretKey = "apiserver-tls.key"
+	// ApiserverTLSCertSecretKey apiserver-tls.crt
+	ApiserverTLSCertSecretKey = "apiserver-tls.crt"
+	// KubeletClientKeySecretKey kubelet-client.key
+	KubeletClientKeySecretKey = "kubelet-client.key"
+	// KubeletClientCertSecretKey kubelet-client.crt
+	KubeletClientCertSecretKey = "kubelet-client.crt"
+	// ServiceAccountKeySecretKey sa.key
+	ServiceAccountKeySecretKey = "sa.key"
+	// AdminKubeconfigSecretKey admin-kubeconfig
+	AdminKubeconfigSecretKey = "admin-kubeconfig"
+	// TokensSecretKey tokens.csv
+	TokensSecretKey = "tokens.csv"
+	// OpenVPNServerKeySecretKey server.key
+	OpenVPNServerKeySecretKey = "server.key"
+	// OpenVPNServerCertSecretKey server.crt
+	OpenVPNServerCertSecretKey = "server.crt"
+	// OpenVPNInternalClientKeySecretKey client.key
+	OpenVPNInternalClientKeySecretKey = "client.key"
+	// OpenVPNInternalClientCertSecretKey client.crt
+	OpenVPNInternalClientCertSecretKey = "client.crt"
 )
 
 // TemplateData is a group of data required for template generation

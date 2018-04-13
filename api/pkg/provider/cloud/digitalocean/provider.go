@@ -12,10 +12,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	tplPath = "/opt/template/nodes/digitalocean.yaml"
-)
-
 type digitalocean struct {
 	dcs map[string]provider.DatacenterMeta
 }

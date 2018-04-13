@@ -140,7 +140,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/foo/upgrades", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{test.cluster}, test.versions, test.updates)
+			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
 			e.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
 				t.Errorf("Expected status code to be 200, got %d", res.Code)

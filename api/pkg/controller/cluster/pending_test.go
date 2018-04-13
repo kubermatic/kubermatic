@@ -4,23 +4,39 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"k8s.io/client-go/kubernetes/fake"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestPendingCreateAddressesSuccessfully(t *testing.T) {
-	controller := newTestController([]runtime.Object{}, []runtime.Object{})
 	c := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
 		Spec:    kubermaticv1.ClusterSpec{},
 		Address: &kubermaticv1.ClusterAddress{},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: "cluster-" + TestClusterName,
+		},
 	}
+	externalService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ApiserverExternalServiceName,
+			Namespace: "cluster-" + TestClusterName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					NodePort: 30000,
+				},
+			},
+		},
+	}
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{})
 
 	if err := controller.ensureAddress(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -38,60 +54,6 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 	expectedURL := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, TestExternalPort)
 	if c.Address.URL != expectedURL {
 		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, c.Address.URL)
-	}
-}
-
-func TestPendingCreateAddressesPartially(t *testing.T) {
-	controller := newTestController([]runtime.Object{}, []runtime.Object{})
-	c := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: TestClusterName,
-		},
-		Spec: kubermaticv1.ClusterSpec{},
-		Address: &kubermaticv1.ClusterAddress{
-			ExternalName: fmt.Sprintf("%s.%s.dev.kubermatic.io", TestClusterName, TestDC),
-		},
-	}
-
-	if err := controller.ensureAddress(c); err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if c.Address.ExternalName != fmt.Sprintf("%s.%s.dev.kubermatic.io", TestClusterName, TestDC) {
-		t.Fatalf("external got overwritten")
-	}
-
-	if c.Address.ExternalPort != TestExternalPort {
-		t.Fatalf("external port is wrong. Expected=%d Got=%d", TestExternalPort, c.Address.ExternalPort)
-	}
-
-	expectedURL := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, TestExternalPort)
-	if c.Address.URL != expectedURL {
-		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, c.Address.URL)
-	}
-}
-
-func TestPendingCreateAddressesAlreadyExists(t *testing.T) {
-	controller := newTestController([]runtime.Object{}, []runtime.Object{})
-	c := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: TestClusterName,
-		},
-		Spec: kubermaticv1.ClusterSpec{},
-		Address: &kubermaticv1.ClusterAddress{
-			ExternalName: "fqpcvnc6v.europe-west3-c.dev.kubermatic.io",
-			URL:          "https://fqpcvnc6v.europe-west3-c.dev.kubermatic.io:30004",
-			ExternalPort: 30004,
-			IP:           "35.198.93.90",
-		},
-	}
-
-	if err := controller.ensureAddress(c); err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if c.Address.ExternalName != "fqpcvnc6v.europe-west3-c.dev.kubermatic.io" || c.Address.URL != "https://fqpcvnc6v.europe-west3-c.dev.kubermatic.io:30004" || c.Address.ExternalPort != 30004 {
-		t.Fatalf("address fields were overwritten")
 	}
 }
 

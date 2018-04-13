@@ -18,11 +18,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	corev1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
@@ -50,7 +50,6 @@ type ClusterProvider struct {
 	client                  kubermaticclientset.Interface
 	userClusterConnProvider UserClusterConnectionProvider
 	clusterLister           kubermaticv1lister.ClusterLister
-	secretLister            corev1listers.SecretLister
 	isAdmin                 func(apiv1.User) bool
 
 	workerName string
@@ -179,7 +178,7 @@ func (p *ClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv
 	return p.client.KubermaticV1().Clusters().Update(newCluster)
 }
 
-// GetClusterAdminKubeconfig updates a cluster
+// GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
 	if err != nil {
@@ -189,10 +188,12 @@ func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcm
 	return clientcmd.Load(b)
 }
 
+// GetMachineClient returns a client to interact with machine resources in the given cluster
 func (p *ClusterProvider) GetMachineClient(c *kubermaticv1.Cluster) (machineclientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 
+// GetClient returns a client to interact with the given cluster
 func (p *ClusterProvider) GetClient(c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
 }
