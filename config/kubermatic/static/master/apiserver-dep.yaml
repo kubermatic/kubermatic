@@ -93,6 +93,9 @@ spec:
             {{ if contains "v1.9" (index .Version.Values "k8s-version") }}
             "--feature-gates=DynamicKubeletConfig=true",
             {{ end }}
+            {{ if contains "v1.10" (index .Version.Values "k8s-version") }}
+            "--feature-gates=DynamicKubeletConfig=true",
+            {{ end }}
             "--service-account-key-file=/etc/kubernetes/service-account-key/sa.key",
             "--service-cluster-ip-range=10.10.10.0/24",
             "--service-node-port-range=30000-32767",
