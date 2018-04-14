@@ -24,10 +24,12 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
-        cloudconfigversion: "123456"
+        ca-cert-secret-revision: "123456"
+        ca-key-secret-revision: "123456"
+        cloud-config-configmap-revision: "123456"
         release: v1.8.5
         role: controller-manager
-        tokencsvversion: "123456"
+        service-account-key-secret-revision: "123456"
         version: v1
     spec:
       containers:
@@ -35,10 +37,10 @@ spec:
         - /hyperkube
         - controller-manager
         - --master=http://apiserver:8080
-        - --service-account-private-key-file=/var/run/kubernetes/auth/service-account.key
-        - --root-ca-file=/var/run/kubernetes/auth/root-ca.crt
-        - --cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt
-        - --cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key
+        - --service-account-private-key-file=/etc/kubernetes/service-account-key/sa.key
+        - --root-ca-file=/etc/kubernetes/ca-cert/ca.crt
+        - --cluster-signing-cert-file=/etc/kubernetes/ca-cert/ca.crt
+        - --cluster-signing-key-file=/etc/kubernetes/ca-key/ca.key
         - --cluster-cidr=172.25.0.0/16
         - --configure-cloud-routes=false
         - --allocate-node-cidrs=true
@@ -62,16 +64,31 @@ spec:
           timeoutSeconds: 30
         resources: {}
         volumeMounts:
-        - mountPath: /var/run/kubernetes/auth
-          name: controller-manager
+        - mountPath: /etc/kubernetes/ca-cert
+          name: ca-cert
+          readOnly: true
+        - mountPath: /etc/kubernetes/ca-key
+          name: ca-key
           readOnly: true
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
+        - mountPath: /etc/kubernetes/service-account-key
+          name: service-account-key
+          readOnly: true
       volumes:
-      - name: controller-manager
+      - name: ca-cert
         secret:
-          secretName: controller-manager
+          defaultMode: 256
+          secretName: ca-cert
+      - name: ca-key
+        secret:
+          defaultMode: 256
+          secretName: ca-key
+      - name: service-account-key
+        secret:
+          defaultMode: 256
+          secretName: service-account-key
       - configMap:
           name: cloud-config
         name: cloud-config

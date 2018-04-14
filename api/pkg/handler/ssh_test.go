@@ -92,7 +92,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v1/ssh-keys", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(test.username, test.admin), keyList, nil, nil)
+			e := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, keyList, nil, nil)
 			e.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 

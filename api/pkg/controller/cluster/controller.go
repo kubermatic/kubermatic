@@ -18,6 +18,7 @@ import (
 	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,10 +46,17 @@ const (
 	runningSyncPeriod    = 60 * time.Second
 )
 
+// UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+type UserClusterConnectionProvider interface {
+	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+}
+
 // Controller is a controller which is responsible for managing clusters
 type Controller struct {
-	kubermaticClient kubermaticclientset.Interface
-	kubeClient       kubernetes.Interface
+	kubermaticClient        kubermaticclientset.Interface
+	kubeClient              kubernetes.Interface
+	userClusterConnProvider UserClusterConnectionProvider
 
 	masterResourcesPath string
 	externalURL         string
@@ -104,6 +112,7 @@ func NewController(
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
 	metrics ControllerMetrics,
+	userClusterConnProvider UserClusterConnectionProvider,
 
 	ClusterInformer kubermaticv1informers.ClusterInformer,
 	EtcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
@@ -122,8 +131,9 @@ func NewController(
 	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
 ) (*Controller, error) {
 	cc := &Controller{
-		kubermaticClient: kubermaticClient,
-		kubeClient:       kubeClient,
+		kubermaticClient:        kubermaticClient,
+		kubeClient:              kubeClient,
+		userClusterConnProvider: userClusterConnProvider,
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 

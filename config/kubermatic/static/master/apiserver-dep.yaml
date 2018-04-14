@@ -21,47 +21,63 @@ spec:
         role: apiserver
         release: {{index .Version.Values "k8s-version"}}
         version: v1
-        tokencsvversion: "{{ .TokenCSVRevision }}"
-        cloudconfigversion: "{{ .CloudConfigRevision }}"
+        token-users-secret-revision: "{{ .SecretRevision "token-users" }}"
+        apiserver-tls-secret-revision: "{{ .SecretRevision "apiserver-tls" }}"
+        kubelet-client-certificates-secret-revision: "{{ .SecretRevision "kubelet-client-certificates" }}"
+        ca-cert-secret-revision: "{{ .SecretRevision "ca-cert" }}"
+        service-account-key-secret-revision: "{{ .SecretRevision "service-account-key" }}"
+        cloud-config-configmap-revision: "{{ .ConfigMapRevision "cloud-config" }}"
       annotations:
         prometheus.io/port: '8080'
         prometheus.io/scrape: 'true'
     spec:
       containers:
-      - image: kubermatic/pod-network-bridge:{{index .Version.Values "pod-network-bridge"}}
-        command:
-        - /client
-        args:
-        - -v=4
-        - -logtostderr
-        - -ssh-user=apiserver
-        - -ssh-port=2222
-        - -ssh-keyfile=/var/run/kubernetes/apiserver/id-rsa
-        - -master=127.0.0.1:8080
-        {{ if or (eq .ProviderName "digitalocean") (eq .ProviderName "bringyourown") }}
-        - -ssh-preferred-address-types=InternalIP
-        {{ else }}
-        - -ssh-preferred-address-types=ExternalIP
-        {{ end }}
-        - -preferred-address-types=InternalIP
-        - -interface-address=10.250.0.2/24
-        - -pod-network-cidr=172.25.0.0/16
-        - -service-network-cidr=10.10.10.0/24
-        - -block-ports=8080
-        imagePullPolicy: Always
-        name: bridge-client
+      - name: openvpn-client
+        image: kubermatic/openvpn:v0.2
+        command: ["/usr/sbin/openvpn"]
+        args: [
+          "--client",
+          "--proto", "tcp",
+          "--dev", "tun",
+          "--auth-nocache",
+          "--remote", "openvpn-server", "1194",
+          "--nobind",
+          "--connect-timeout", "5",
+          "--connect-retry", "1",
+          "--ca", "/etc/kubernetes/ca-cert/ca.crt",
+          "--cert", "/etc/openvpn/certs/client.crt",
+          "--key", "/etc/openvpn/certs/client.key",
+          "--remote-cert-tls", "server",
+          "--link-mtu", "1432",
+          "--cipher", "AES-256-GCM",
+          "--auth", "SHA1",
+          "--keysize", "256",
+          "--script-security", "2",
+          "--up", "/bin/touch /tmp/running",
+          "--log", "/dev/stdout",
+        ]
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/running
+          initialDelaySeconds: 5
+          periodSeconds: 5
         securityContext:
           privileged: true
         volumeMounts:
-        - mountPath: /var/run/kubernetes/apiserver
-          name: apiserver
+        - mountPath: /etc/openvpn/certs
+          name: openvpn-client-certificates
+          readOnly: true
+        - name: ca-cert
+          mountPath: /etc/kubernetes/ca-cert
           readOnly: true
       - name: apiserver
         image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "apiserver",
             "--advertise-address={{ .Cluster.Address.IP }}",
-            "--secure-port={{ .Cluster.Address.ExternalPort }}",
-            "--kubernetes-service-node-port={{ .Cluster.Address.ExternalPort }}",
+            "--secure-port={{ .GetApiserverExternalNodePort }}",
+            "--kubernetes-service-node-port={{ .GetApiserverExternalNodePort }}",
             "--insecure-bind-address=0.0.0.0",
             "--insecure-port=8080",
             "--etcd-servers=http://etcd-cluster-client:2379",
@@ -69,7 +85,7 @@ spec:
             "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
             "--authorization-mode=Node,RBAC",
             "--external-hostname={{ .Cluster.Address.ExternalName }}",
-            "--token-auth-file=/var/run/kubernetes/token-users/tokens.csv",
+            "--token-auth-file=/etc/kubernetes/tokens/tokens.csv",
             "--enable-bootstrap-token-auth=true",
             {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
             "--feature-gates=DynamicKubeletConfig=true",
@@ -77,7 +93,7 @@ spec:
             {{ if contains "v1.9" (index .Version.Values "k8s-version") }}
             "--feature-gates=DynamicKubeletConfig=true",
             {{ end }}
-            "--service-account-key-file=/var/run/kubernetes/apiserver/service-account.key",
+            "--service-account-key-file=/etc/kubernetes/service-account-key/sa.key",
             "--service-cluster-ip-range=10.10.10.0/24",
             "--service-node-port-range=30000-32767",
             "--allow-privileged",
@@ -85,11 +101,11 @@ spec:
             "--audit-log-maxbackup=3",
             "--audit-log-maxsize=100",
             "--audit-log-path=/var/log/audit.log",
-            "--tls-cert-file=/var/run/kubernetes/apiserver/apiserver.crt",
-            "--tls-private-key-file=/var/run/kubernetes/apiserver/apiserver.key",
-            "--client-ca-file=/var/run/kubernetes/apiserver/root-ca.crt",
-            "--kubelet-client-certificate=/var/run/kubernetes/apiserver/kubelet-client.crt",
-            "--kubelet-client-key=/var/run/kubernetes/apiserver/kubelet-client.key",
+            "--tls-cert-file=/etc/kubernetes/tls/apiserver-tls.crt",
+            "--tls-private-key-file=/etc/kubernetes/tls/apiserver-tls.key",
+            "--client-ca-file=/etc/kubernetes/ca-cert/ca.crt",
+            "--kubelet-client-certificate=/etc/kubernetes/kubelet/kubelet-client.crt",
+            "--kubelet-client-key=/etc/kubernetes/kubelet/kubelet-client.key",
             {{ if eq .ProviderName "openstack" }}
             "--cloud-config=/etc/kubernetes/cloud/config",
             "--cloud-provider=openstack",
@@ -98,7 +114,7 @@ spec:
             "--cloud-config=/etc/kubernetes/cloud/config",
             "--cloud-provider=aws",
             {{ end }}
-            "--kubelet-preferred-address-types=InternalIP",
+            "--kubelet-preferred-address-types=ExternalIP,InternalIP",
             "--v=4" ]
         livenessProbe:
           httpGet:
@@ -115,26 +131,51 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 30
         ports:
-        - containerPort: {{ .Cluster.Address.ExternalPort }}
+        - containerPort: {{ .GetApiserverExternalNodePort }}
         - containerPort: 8080
         volumeMounts:
-        - name: apiserver
-          mountPath: /var/run/kubernetes/apiserver
+        - name: apiserver-tls
+          mountPath: /etc/kubernetes/tls
           readOnly: true
         - name: token-users
-          mountPath: /var/run/kubernetes/token-users
+          mountPath: /etc/kubernetes/tokens
+          readOnly: true
+        - name: kubelet-client-certificates
+          mountPath: /etc/kubernetes/kubelet
+          readOnly: true
+        - name: ca-cert
+          mountPath: /etc/kubernetes/ca-cert
+          readOnly: true
+        - name: service-account-key
+          mountPath: /etc/kubernetes/service-account-key
           readOnly: true
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
       volumes:
-      - name: apiserver
+      - name: apiserver-tls
         secret:
-          secretName: apiserver
+          secretName: apiserver-tls
           defaultMode: 0400
       - name: token-users
         secret:
           secretName: token-users
+          defaultMode: 0400
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
+          defaultMode: 0400
+      - name: kubelet-client-certificates
+        secret:
+          secretName: kubelet-client-certificates
+          defaultMode: 0400
+      - name: ca-cert
+        secret:
+          secretName: ca-cert
+          defaultMode: 0400
+      - name: service-account-key
+        secret:
+          secretName: service-account-key
           defaultMode: 0400
       - name: cloud-config
         configMap:

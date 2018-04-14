@@ -21,8 +21,10 @@ spec:
         role: controller-manager
         release: {{index .Version.Values "k8s-version"}}
         version: v1
-        tokencsvversion: "{{ .TokenCSVRevision }}"
-        cloudconfigversion: "{{ .CloudConfigRevision }}"
+        ca-cert-secret-revision: "{{ .SecretRevision "ca-cert" }}"
+        ca-key-secret-revision: "{{ .SecretRevision "ca-key" }}"
+        service-account-key-secret-revision: "{{ .SecretRevision "service-account-key" }}"
+        cloud-config-configmap-revision: "{{ .ConfigMapRevision "cloud-config" }}"
       annotations:
         prometheus.io/port: '10252'
         prometheus.io/scrape: 'true'
@@ -33,10 +35,10 @@ spec:
         command: [
           "/hyperkube", "controller-manager",
           "--master=http://apiserver:8080",
-          "--service-account-private-key-file=/var/run/kubernetes/auth/service-account.key",
-          "--root-ca-file=/var/run/kubernetes/auth/root-ca.crt",
-          "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
-          "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
+          "--service-account-private-key-file=/etc/kubernetes/service-account-key/sa.key",
+          "--root-ca-file=/etc/kubernetes/ca-cert/ca.crt",
+          "--cluster-signing-cert-file=/etc/kubernetes/ca-cert/ca.crt",
+          "--cluster-signing-key-file=/etc/kubernetes/ca-key/ca.key",
           "--cluster-cidr=172.25.0.0/16",
           "--configure-cloud-routes=false",
           {{ if eq .ProviderName "aws" }}
@@ -80,16 +82,31 @@ spec:
           value: {{.Cluster.Spec.Cloud.AWS.AvailabilityZone}}
         {{ end }}
         volumeMounts:
-        - name: controller-manager
-          mountPath: /var/run/kubernetes/auth
+        - name: ca-cert
+          mountPath: /etc/kubernetes/ca-cert
+          readOnly: true
+        - name: ca-key
+          mountPath: /etc/kubernetes/ca-key
           readOnly: true
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
+        - name: service-account-key
+          mountPath: /etc/kubernetes/service-account-key
+          readOnly: true
       volumes:
-      - name: controller-manager
+      - name: ca-cert
         secret:
-          secretName: controller-manager
+          secretName: ca-cert
+          defaultMode: 0400
+      - name: ca-key
+        secret:
+          secretName: ca-key
+          defaultMode: 0400
+      - name: service-account-key
+        secret:
+          secretName: service-account-key
+          defaultMode: 0400
       - name: cloud-config
         configMap:
           name: cloud-config

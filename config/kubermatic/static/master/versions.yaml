@@ -13,12 +13,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.8.4
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.8.1
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -35,12 +36,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.8.5
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.8.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -57,12 +59,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.8.6
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.8.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -79,12 +82,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.8.7
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.8.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -101,12 +105,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.0
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -123,12 +128,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.1
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -145,12 +151,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.2
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -167,12 +174,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.3
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -189,12 +197,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.4
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -211,12 +220,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.5
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest
@@ -233,12 +243,13 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.9.6
     etcd-operator-version: v0.6.0
     etcd-cluster-version: 3.2.7
     kube-machine-version: v0.2.3
-    addon-manager-version: v1.9.2
+    addon-manager-version: v1.9.3
     pod-network-bridge: v0.4
     machine-controller-version: v0.3.0
     kube-state-metrics-version: latest

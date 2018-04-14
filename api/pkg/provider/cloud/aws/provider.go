@@ -10,17 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
-	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
 
 const (
-	tplPath = "/opt/template/nodes/aws.yaml"
-
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 )
@@ -433,34 +427,6 @@ func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name 
 	return cloud, nil
 }
 
-func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
-	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
-	if !found || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
-	}
-
-	nc, err := resources.LoadNodeClassFile(tplPath, a.NodeClassName(nSpec), c, nSpec, dc, keys, version)
-	if err != nil {
-		return nil, fmt.Errorf("could not load nodeclass: %v", err)
-	}
-
-	client, err := c.GetNodesetClient()
-	if err != nil {
-		return nil, fmt.Errorf("could not get nodeclass client: %v", err)
-	}
-
-	cnc, err := client.NodesetV1alpha1().NodeClasses().Create(nc)
-	if err != nil {
-		return nil, fmt.Errorf("could not create nodeclass: %v", err)
-	}
-
-	return cnc, nil
-}
-
-func (a *amazonEc2) NodeClassName(nSpec *apiv1.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
-}
-
 func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
 	dc, found := a.dcs[cloud.DatacenterName]
@@ -555,9 +521,5 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 		}
 	}
 
-	return nil
-}
-
-func (a *amazonEc2) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }

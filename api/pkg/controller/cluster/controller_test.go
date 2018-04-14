@@ -5,6 +5,7 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -46,6 +47,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		dcs,
 		cps,
 		ControllerMetrics{},
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),

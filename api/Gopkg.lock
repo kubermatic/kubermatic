@@ -513,12 +513,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/kube-node/nodeset"
-  packages = [
-    "pkg/client/clientset/versioned",
-    "pkg/client/clientset/versioned/scheme",
-    "pkg/client/clientset/versioned/typed/nodeset/v1alpha1",
-    "pkg/nodeset/v1alpha1"
-  ]
+  packages = ["pkg/nodeset/v1alpha1"]
   revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
 
 [[projects]]
@@ -1163,6 +1158,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a3b8174d250bc55ecb1090c5bd3a38415c72f3c4db47b8f02afb952548dfc66b"
+  inputs-digest = "b7f6f026b2dfcc2a7b1cb7e9807f013874b30a9a1188e4fa567c0aa6d4ec0bc7"
   solver-name = "gps-cdcl"
   solver-version = 1

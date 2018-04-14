@@ -11,17 +11,20 @@ import (
 
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
+func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
 ) http.Handler {
 	ctx := context.Background()
 
@@ -30,24 +33,27 @@ func createTestEndpoint(user apiv1.User, kubermaticObjects []runtime.Object, ver
 
 	authenticator := NewFakeAuthenticator(user)
 
+	kubeClient := fake.NewSimpleClientset(kubeObjects...)
+	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
+
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
-	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
+	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, client.New(kubeInformerFactory.Core().V1().Secrets().Lister()), kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+
+	kubeInformerFactory.Start(wait.NeverStop)
+	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
-
-	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, "us-central1", "")
 
 	r := NewRouting(
 		ctx,
 		datacenters,
 		clusterProviders,
-		optimisticClusterProvider,
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
@@ -145,7 +151,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 func TestUpRoute(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
 }

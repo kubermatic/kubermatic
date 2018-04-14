@@ -3,6 +3,7 @@ package resources
 import (
 	"fmt"
 	"path"
+	"strconv"
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -11,6 +12,9 @@ import (
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/runtime"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -36,6 +40,8 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
+	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
+	OpenVPNServerDeploymentName = "openvpn-server"
 
 	//ApiserverExternalServiceName is the name for the external apiserver service
 	ApiserverExternalServiceName = "apiserver-external"
@@ -51,16 +57,32 @@ const (
 	PrometheusServiceName = "prometheus"
 	//SchedulerServiceName is the name for the scheduler service
 	SchedulerServiceName = "scheduler"
+	//OpenVPNServerServiceName is the name for the openvpn server service
+	OpenVPNServerServiceName = "openvpn-server"
 
-	//ApiserverSecretName is the name for the secrets required for the apiserver
-	ApiserverSecretName = "apiserver"
-	//ControllerManagerSecretName is the name for the secrets required for the controller manager
-	ControllerManagerSecretName = "controller-manager"
-	//ApiserverTokenUsersSecretName is the name for the token-users secret
-	ApiserverTokenUsersSecretName = "token-users"
+	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
+	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//CAKeySecretName is the name for the secret containing the private ca key
+	CAKeySecretName = "ca-key"
+	//CACertSecretName is the name for the secret containing the ca.crt
+	CACertSecretName = "ca-cert"
+	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
+	ApiserverTLSSecretName = "apiserver-tls"
+	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
+	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
+	//ServiceAccountKeySecretName is the name for the secret containing the service account key
+	ServiceAccountKeySecretName = "service-account-key"
+	//TokenUsersSecretName is the name for the secret containing the user tokens
+	TokenUsersSecretName = "token-users"
+	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
+	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
+	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
+	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
+	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
+	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
 	EtcdOperatorServiceAccountName = "etcd-operator"
@@ -93,6 +115,40 @@ const (
 	SchedulerServiceMonitorName = "scheduler"
 )
 
+const (
+	// CAKeySecretKey ca.key
+	CAKeySecretKey = "ca.key"
+	// CACertSecretKey ca.crt
+	CACertSecretKey = "ca.crt"
+	// ApiserverTLSKeySecretKey apiserver-tls.key
+	ApiserverTLSKeySecretKey = "apiserver-tls.key"
+	// ApiserverTLSCertSecretKey apiserver-tls.crt
+	ApiserverTLSCertSecretKey = "apiserver-tls.crt"
+	// KubeletClientKeySecretKey kubelet-client.key
+	KubeletClientKeySecretKey = "kubelet-client.key"
+	// KubeletClientCertSecretKey kubelet-client.crt
+	KubeletClientCertSecretKey = "kubelet-client.crt"
+	// ServiceAccountKeySecretKey sa.key
+	ServiceAccountKeySecretKey = "sa.key"
+	// AdminKubeconfigSecretKey admin-kubeconfig
+	AdminKubeconfigSecretKey = "admin-kubeconfig"
+	// TokensSecretKey tokens.csv
+	TokensSecretKey = "tokens.csv"
+	// OpenVPNServerKeySecretKey server.key
+	OpenVPNServerKeySecretKey = "server.key"
+	// OpenVPNServerCertSecretKey server.crt
+	OpenVPNServerCertSecretKey = "server.crt"
+	// OpenVPNInternalClientKeySecretKey client.key
+	OpenVPNInternalClientKeySecretKey = "client.key"
+	// OpenVPNInternalClientCertSecretKey client.crt
+	OpenVPNInternalClientCertSecretKey = "client.crt"
+)
+
+const (
+	minNodePort = 30000
+	maxNodePort = 32767
+)
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	Cluster         *kubermaticv1.Cluster
@@ -100,6 +156,7 @@ type TemplateData struct {
 	DC              *provider.DatacenterMeta
 	SecretLister    corev1lister.SecretLister
 	ConfigMapLister corev1lister.ConfigMapLister
+	ServiceLister   corev1lister.ServiceLister
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -108,34 +165,36 @@ func NewTemplateData(
 	version *apiv1.MasterVersion,
 	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
-	configMapLister corev1lister.ConfigMapLister) *TemplateData {
+	configMapLister corev1lister.ConfigMapLister,
+	serviceLister corev1lister.ServiceLister) *TemplateData {
 	return &TemplateData{
 		Cluster:         cluster,
 		DC:              dc,
 		Version:         version,
 		ConfigMapLister: configMapLister,
 		SecretLister:    secretLister,
+		ServiceLister:   serviceLister,
 	}
 }
 
-// TokenCSVRevision returns the resource version of the token-users secret for the cluster
-func (d *TemplateData) TokenCSVRevision() string {
-	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(ApiserverTokenUsersSecretName)
+// SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
+func (d *TemplateData) SecretRevision(name string) string {
+	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		glog.V(0).Infof("could not get token-users secret from lister: %v", err)
+		runtime.HandleError(fmt.Errorf("could not get secret %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
 		return ""
 	}
 	return secret.ResourceVersion
 }
 
-// CloudConfigRevision returns the resource version of the cloud-config configmap for the cluster
-func (d *TemplateData) CloudConfigRevision() string {
-	configmap, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(CloudConfigConfigMapName)
+// ConfigMapRevision returns the resource version of the configmap specified by name. A empty string will be returned in case of an error
+func (d *TemplateData) ConfigMapRevision(name string) string {
+	cm, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		glog.V(0).Infof("could not get cloud-config configmap from lister: %v", err)
+		runtime.HandleError(fmt.Errorf("could not get configmap %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
 		return ""
 	}
-	return configmap.ResourceVersion
+	return cm.ResourceVersion
 }
 
 // ProviderName returns the name of the clusters providerName
@@ -145,6 +204,55 @@ func (d *TemplateData) ProviderName() string {
 		glog.V(0).Infof("could not identify cloud provider: %v", err)
 	}
 	return p
+}
+
+// GetApiserverExternalNodePort returns the nodeport of the external apiserver service
+func (d *TemplateData) GetApiserverExternalNodePort() string {
+	s, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			runtime.HandleError(fmt.Errorf("failed to get NodePort for external apiserver service"))
+			return "UNKNOWN"
+		}
+		return "UNKNOWN"
+	}
+	return fmt.Sprintf("%d", s.Spec.Ports[0].NodePort)
+}
+
+// GetApiserverExternalNodePortOrGetFree returns the nodeport of the external apiserver service or returns the next free one
+func (d *TemplateData) GetApiserverExternalNodePortOrGetFree() string {
+	p := d.GetApiserverExternalNodePort()
+	if p == "UNKNOWN" {
+		return d.GetFreeNodePort()
+	}
+	return p
+}
+
+// GetFreeNodePort returns the next free nodeport
+func (d *TemplateData) GetFreeNodePort() string {
+	services, err := d.ServiceLister.List(labels.Everything())
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("failed to get free NodePort"))
+		return "UNKNOWN"
+	}
+	allocatedPorts := map[int]struct{}{}
+
+	for _, s := range services {
+		for _, p := range s.Spec.Ports {
+			if p.NodePort != 0 {
+				allocatedPorts[int(p.NodePort)] = struct{}{}
+			}
+		}
+	}
+
+	for i := minNodePort; i < maxNodePort; i++ {
+		if _, exists := allocatedPorts[i]; !exists {
+			return strconv.Itoa(i)
+		}
+	}
+
+	runtime.HandleError(fmt.Errorf("no free nodeports available"))
+	return "UNKNOWN"
 }
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
