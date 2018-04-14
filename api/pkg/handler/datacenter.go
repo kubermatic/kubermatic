@@ -146,12 +146,3 @@ func (r Routing) datacenterMiddleware() endpoint.Middleware {
 		}
 	}
 }
-
-func (r Routing) optimisticDatacenterMiddleware() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			ctx = context.WithValue(ctx, clusterProviderContextKey, r.optimisticClusterProvider)
-			return next(ctx, request)
-		}
-	}
-}

@@ -88,10 +88,6 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return errors.New("changing the external name is not allowed")
 	}
 
-	if newCluster.Address.ExternalPort != oldCluster.Address.ExternalPort {
-		return errors.New("changing the external port is not allowed")
-	}
-
 	if newCluster.Address.IP != oldCluster.Address.IP {
 		return errors.New("changing the ip is not allowed")
 	}

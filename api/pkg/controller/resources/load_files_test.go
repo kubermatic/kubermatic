@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -183,11 +182,8 @@ func TestLoadFiles(t *testing.T) {
 						Cloud: cloudspec,
 					},
 					Address: &kubermaticv1.ClusterAddress{
-						URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000",
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
-						ExternalPort: 30000,
 						IP:           "35.198.93.90",
-						KubeletToken: "zznqpw.dx7hc2llnsmd830m",
 						AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
 					},
 					Status: kubermaticv1.ClusterStatus{
@@ -199,7 +195,42 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            ApiserverTokenUsersSecretName,
+							Name:            TokenUsersSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            ServiceAccountKeySecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            CACertSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            ApiserverTLSSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            KubeletClientCertificatesSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            CAKeySecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
@@ -208,6 +239,19 @@ func TestLoadFiles(t *testing.T) {
 							ResourceVersion: "123456",
 							Name:            CloudConfigConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      ApiserverExternalServiceName,
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30000,
+								},
+							},
 						},
 					})
 
@@ -218,16 +262,11 @@ func TestLoadFiles(t *testing.T) {
 					close(stopCh)
 				}()
 
-				informerFactory := informers.NewSharedInformerFactory(kubeClient, 30*time.Second)
-				secretInformer := informerFactory.Core().V1().Secrets().Informer()
-				secretLister := informerFactory.Core().V1().Secrets().Lister()
-				configMapInformer := informerFactory.Core().V1().ConfigMaps().Informer()
-				configMapLister := informerFactory.Core().V1().ConfigMaps().Lister()
-				group.StartWithChannel(stopCh, secretInformer.Run)
-				group.StartWithChannel(stopCh, configMapInformer.Run)
-				cache.WaitForCacheSync(stopCh, secretInformer.HasSynced, configMapInformer.HasSynced)
+				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
+				data := NewTemplateData(cluster, version, &dc, kubeInformerFactory.Core().V1().Secrets().Lister(), kubeInformerFactory.Core().V1().ConfigMaps().Lister(), kubeInformerFactory.Core().V1().Services().Lister())
+				kubeInformerFactory.Start(wait.NeverStop)
+				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				data := NewTemplateData(cluster, version, &dc, secretLister, configMapLister)
 				deps := map[string]string{
 					version.EtcdOperatorDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-etcd-operator", prov, version.ID),
 					version.SchedulerDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID),
@@ -292,20 +331,6 @@ func TestLoadFiles(t *testing.T) {
 					res, _, err := LoadServiceAccountFile(data, name, masterResourcePath)
 					if err != nil {
 						t.Fatalf("failed to load service account %q: %v", name, err)
-					}
-
-					checkTestResult(t, fixture, res)
-				}
-
-				secrets := map[string]string{
-					ApiserverSecretName:           fmt.Sprintf("secret-%s-%s-apiserver", prov, version.ID),
-					ControllerManagerSecretName:   fmt.Sprintf("secret-%s-%s-controller-manager", prov, version.ID),
-					ApiserverTokenUsersSecretName: fmt.Sprintf("secret-%s-%s-token-users", prov, version.ID),
-				}
-				for name, fixture := range secrets {
-					res, _, err := LoadSecretFile(data, name, masterResourcePath)
-					if err != nil {
-						t.Fatalf("failed to load secret %q: %v", name, err)
 					}
 
 					checkTestResult(t, fixture, res)

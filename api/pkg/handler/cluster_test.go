@@ -84,7 +84,7 @@ func TestClusterEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{test.cluster}, nil, nil)
+			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
 			e.ServeHTTP(res, req)
 			checkStatusCode(test.responseCode, res, t)
 
@@ -187,7 +187,7 @@ func TestClustersEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(test.username, test.admin), clusterList, nil, nil)
+			e := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
 			e.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
@@ -353,7 +353,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{test.cluster}, nil, nil)
+			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
 
 			updatedCluster := test.cluster.DeepCopy()
 			updatedCluster = test.modifyCluster(updatedCluster)

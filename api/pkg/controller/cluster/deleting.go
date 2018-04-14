@@ -40,7 +40,7 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error)
 		return false, nil
 	}
 
-	machineClient, err := c.GetMachineClient()
+	machineClient, err := cc.userClusterConnProvider.GetMachineClient(c)
 	if err != nil {
 		return true, fmt.Errorf("failed to get cluster machine client: %v", err)
 	}
@@ -57,7 +57,7 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error)
 		return true, nil
 	}
 
-	clusterClient, err := c.GetClient()
+	clusterClient, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return true, fmt.Errorf("failed to get cluster client: %v", err)
 	}

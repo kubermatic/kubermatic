@@ -194,22 +194,6 @@ type CreateNodesReqBody struct {
 	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
-func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NodeReq represent a request for node specific data
 // swagger:parameters getClusterNode deleteClusterNode
 type NodeReq struct {

@@ -112,6 +112,7 @@ type MasterVersion struct {
 	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
 	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
 	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`
+	OpenVPNServerDeploymentYaml     string            `yaml:"openVPNServerDeploymentYaml"`
 	Values                          map[string]string `yaml:"values"`
 }
 
