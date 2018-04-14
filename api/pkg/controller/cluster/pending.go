@@ -236,9 +236,7 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 
 // ensureAddress will set the cluster hostname and the url under which the apiserver will be reachable
 func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
-	if c.Address.ExternalName == "" {
-		c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
-	}
+	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 
 	//Always update the ip
 	ips, err := net.LookupIP(c.Address.ExternalName)
