@@ -8,6 +8,7 @@ import (
 	time "time"
 
 	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	addons "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/addons"
 	etcdoperator "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator"
 	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/internalinterfaces"
 	kubermatic "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic"
@@ -109,9 +110,14 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
+	Addons() addons.Interface
 	Etcd() etcdoperator.Interface
 	Kubermatic() kubermatic.Interface
 	Monitoring() prometheus.Interface
+}
+
+func (f *sharedInformerFactory) Addons() addons.Interface {
+	return addons.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Etcd() etcdoperator.Interface {

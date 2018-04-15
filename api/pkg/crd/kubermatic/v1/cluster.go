@@ -252,7 +252,6 @@ type ClusterHealthStatus struct {
 	Apiserver         bool `json:"apiserver"`
 	Scheduler         bool `json:"scheduler"`
 	Controller        bool `json:"controller"`
-	NodeController    bool `json:"nodeController"`
 	MachineController bool `json:"machineController"`
 	Etcd              bool `json:"etcd"`
 }
@@ -260,7 +259,7 @@ type ClusterHealthStatus struct {
 // AllHealthy returns if all components are healthy
 func (h *ClusterHealthStatus) AllHealthy() bool {
 	return h.Etcd &&
-		h.NodeController &&
+		h.MachineController &&
 		h.Controller &&
 		h.Apiserver &&
 		h.Scheduler

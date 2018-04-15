@@ -34,8 +34,6 @@ const (
 	ControllerManagerDeploymentName = "controller-manager"
 	//EtcdOperatorDeploymentName is the name for the etcd-operator deployment
 	EtcdOperatorDeploymentName = "etcd-operator"
-	//NodeControllerDeploymentName is the name for the node-controller deployment
-	NodeControllerDeploymentName = "node-controller"
 	//SchedulerDeploymentName is the name for the scheduler deployment
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment

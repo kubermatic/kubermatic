@@ -108,7 +108,6 @@ type MasterVersion struct {
 	ApiserverDeploymentYaml         string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml        string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml         string            `yaml:"schedulerDeploymentYaml"`
-	NodeControllerDeploymentYaml    string            `yaml:"nodeControllerDeploymentYaml"`
 	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
 	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
 	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`
@@ -209,4 +208,8 @@ type OpenstackSize struct {
 	Region string `json:"region"`
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
 	IsPublic bool `json:"isPublic"`
+}
+
+type Addon struct {
+	Name string `json:"name"`
 }

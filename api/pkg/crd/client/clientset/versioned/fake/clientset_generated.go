@@ -2,6 +2,8 @@ package fake
 
 import (
 	clientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	addonsv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/addons/v1alpha1"
+	fakeaddonsv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/addons/v1alpha1/fake"
 	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2"
 	fakeetcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
@@ -47,6 +49,16 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 }
 
 var _ clientset.Interface = &Clientset{}
+
+// AddonsV1alpha1 retrieves the AddonsV1alpha1Client
+func (c *Clientset) AddonsV1alpha1() addonsv1alpha1.AddonsV1alpha1Interface {
+	return &fakeaddonsv1alpha1.FakeAddonsV1alpha1{Fake: &c.Fake}
+}
+
+// Addons retrieves the AddonsV1alpha1Client
+func (c *Clientset) Addons() addonsv1alpha1.AddonsV1alpha1Interface {
+	return &fakeaddonsv1alpha1.FakeAddonsV1alpha1{Fake: &c.Fake}
+}
 
 // EtcdV1beta2 retrieves the EtcdV1beta2Client
 func (c *Clientset) EtcdV1beta2() etcdv1beta2.EtcdV1beta2Interface {

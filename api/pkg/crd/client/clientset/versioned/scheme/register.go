@@ -1,6 +1,7 @@
 package scheme
 
 import (
+	addonsv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/addons/v1alpha1"
 	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	monitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
@@ -34,6 +35,7 @@ func init() {
 // After this, RawExtensions in Kubernetes types will serialize kube-aggregator types
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
+	addonsv1alpha1.AddToScheme(scheme)
 	etcdv1beta2.AddToScheme(scheme)
 	kubermaticv1.AddToScheme(scheme)
 	monitoringv1.AddToScheme(scheme)
