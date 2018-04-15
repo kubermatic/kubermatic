@@ -108,7 +108,6 @@ type MasterVersion struct {
 	ApiserverDeploymentYaml         string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml        string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml         string            `yaml:"schedulerDeploymentYaml"`
-	NodeControllerDeploymentYaml    string            `yaml:"nodeControllerDeploymentYaml"`
 	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
 	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
 	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`

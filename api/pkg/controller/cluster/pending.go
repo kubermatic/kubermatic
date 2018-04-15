@@ -587,7 +587,6 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		controllerresources.ApiserverDeploymenName:          masterVersion.ApiserverDeploymentYaml,
 		controllerresources.ControllerManagerDeploymentName: masterVersion.ControllerDeploymentYaml,
 		controllerresources.SchedulerDeploymentName:         masterVersion.SchedulerDeploymentYaml,
-		controllerresources.NodeControllerDeploymentName:    masterVersion.NodeControllerDeploymentYaml,
 		controllerresources.AddonManagerDeploymentName:      masterVersion.AddonManagerDeploymentYaml,
 		controllerresources.MachineControllerDeploymentName: masterVersion.MachineControllerDeploymentYaml,
 		controllerresources.OpenVPNServerDeploymentName:     masterVersion.OpenVPNServerDeploymentYaml,

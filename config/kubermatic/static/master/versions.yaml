@@ -9,7 +9,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -32,7 +31,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -55,7 +53,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -78,7 +75,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -101,7 +97,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -124,7 +119,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -147,7 +141,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -170,7 +163,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -193,7 +185,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -216,7 +207,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -239,7 +229,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
@@ -262,7 +251,6 @@ versions:
   apiserverDeploymentYaml: apiserver-dep.yaml
   controllerDeploymentYaml: controller-manager-dep.yaml
   schedulerDeploymentYaml: scheduler-dep.yaml
-  nodeControllerDeploymentYaml: node-controller-dep.yaml
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
