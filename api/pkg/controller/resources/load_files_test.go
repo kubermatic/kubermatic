@@ -12,12 +12,12 @@ import (
 	"github.com/ghodss/yaml"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/pmezard/go-difflib/difflib"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/pmezard/go-difflib/difflib"
+
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
@@ -75,7 +75,6 @@ func TestLoadFiles(t *testing.T) {
 			ControllerDeploymentYaml:        "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
 			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
-			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
 			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":                "v1.8.5",
@@ -97,7 +96,6 @@ func TestLoadFiles(t *testing.T) {
 			ControllerDeploymentYaml:        "controller-manager-dep.yaml",
 			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
 			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
-			NodeControllerDeploymentYaml:    "node-controller-dep.yaml",
 			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
 			Values: map[string]string{
 				"k8s-version":                "v1.9.0",
@@ -272,7 +270,6 @@ func TestLoadFiles(t *testing.T) {
 					version.SchedulerDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID),
 					version.ControllerDeploymentYaml:        fmt.Sprintf("deployment-%s-%s-controller-manager", prov, version.ID),
 					version.ApiserverDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-apiserver", prov, version.ID),
-					version.NodeControllerDeploymentYaml:    fmt.Sprintf("deployment-%s-%s-node-controller", prov, version.ID),
 					version.AddonManagerDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-addon-manager", prov, version.ID),
 					version.MachineControllerDeploymentYaml: fmt.Sprintf("deployment-%s-%s-machine-controller", prov, version.ID),
 				}
