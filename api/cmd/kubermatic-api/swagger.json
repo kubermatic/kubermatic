@@ -1205,10 +1205,6 @@
           "type": "boolean",
           "x-go-name": "MachineController"
         },
-        "nodeController": {
-          "type": "boolean",
-          "x-go-name": "NodeController"
-        },
         "scheduler": {
           "type": "boolean",
           "x-go-name": "Scheduler"
@@ -2007,9 +2003,6 @@
           "type": "string"
         },
         "Name": {
-          "type": "string"
-        },
-        "NodeControllerDeploymentYaml": {
           "type": "string"
         },
         "OpenVPNServerDeploymentYaml": {
