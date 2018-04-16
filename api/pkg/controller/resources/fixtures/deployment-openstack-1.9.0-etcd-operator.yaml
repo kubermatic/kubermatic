@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   creationTimestamp: null
@@ -12,7 +12,15 @@ metadata:
     uid: "1234567890"
 spec:
   replicas: 1
-  strategy: {}
+  selector:
+    matchLabels:
+      role: etcd-operator
+      version: v1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
   template:
     metadata:
       creationTimestamp: null

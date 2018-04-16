@@ -19,6 +19,8 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+	appsv1informer "k8s.io/client-go/informers/apps/v1"
+	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,11 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
-	rbacv1beta1informers "k8s.io/client-go/informers/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes"
+	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
-	rbacv1beta1lister "k8s.io/client-go/listers/rbac/v1beta1"
+	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -82,11 +84,11 @@ type Controller struct {
 	PvcLister                corev1lister.PersistentVolumeClaimLister
 	ConfigMapLister          corev1lister.ConfigMapLister
 	ServiceAccountLister     corev1lister.ServiceAccountLister
-	DeploymentLister         extensionsv1beta1lister.DeploymentLister
+	DeploymentLister         appsv1lister.DeploymentLister
 	IngressLister            extensionsv1beta1lister.IngressLister
-	RoleLister               rbacv1beta1lister.RoleLister
-	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
-	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
+	RoleLister               rbacb1lister.RoleLister
+	RoleBindingLister        rbacb1lister.RoleBindingLister
+	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	PrometheusLister         prometheusv1lister.PrometheusLister
 	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
 }
@@ -122,11 +124,11 @@ func NewController(
 	PvcInformer corev1informers.PersistentVolumeClaimInformer,
 	ConfigMapInformer corev1informers.ConfigMapInformer,
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
-	DeploymentInformer extensionsv1beta1informers.DeploymentInformer,
+	DeploymentInformer appsv1informer.DeploymentInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
-	RoleInformer rbacv1beta1informers.RoleInformer,
-	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
-	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
+	RoleInformer rbacv1informer.RoleInformer,
+	RoleBindingInformer rbacv1informer.RoleBindingInformer,
+	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
 	PrometheusInformer prometheusv1informers.PrometheusInformer,
 	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
 ) (*Controller, error) {
