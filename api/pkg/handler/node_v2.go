@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
@@ -28,7 +29,7 @@ import (
 )
 
 const (
-	tplPath = "/opt/template/nodes/machine.yaml"
+	tplName = "machine.yaml"
 
 	kubeletVersionConstraint = ">= 1.8"
 	errGlue                  = " & "
@@ -201,7 +202,7 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
+func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion, masterResourcesPath string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
@@ -272,7 +273,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Metadata.Name = "kubermatic-" + c.Name + "-" + rand.String(5)
 		}
 
-		machine, err := resources.LoadMachineFile(tplPath, c, &node.Node, dc, keys, version)
+		machine, err := resources.LoadMachineFile(path.Join(masterResourcesPath, tplName), c, &node.Node, dc, keys, version)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine from template: %v", err)
 		}
