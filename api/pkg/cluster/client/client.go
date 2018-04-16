@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	"k8s.io/client-go/kubernetes"
