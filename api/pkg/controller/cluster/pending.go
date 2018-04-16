@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	controllerresources "github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -152,7 +152,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controllerresources.TemplateData, error) {
+func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resources.TemplateData, error) {
 	version, found := cc.versions[c.Spec.MasterVersion]
 	if !found {
 		return nil, fmt.Errorf("failed to get version %s", c.Spec.MasterVersion)
@@ -163,7 +163,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*controll
 		return nil, fmt.Errorf("failed to get datacenter %s", c.Spec.Cloud.DatacenterName)
 	}
 
-	return controllerresources.NewTemplateData(
+	return resources.NewTemplateData(
 		c,
 		version,
 		&dc,
@@ -248,7 +248,7 @@ func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	}
 	c.Address.IP = ips[0].String()
 
-	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(controllerresources.ApiserverExternalServiceName)
+	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err
@@ -287,15 +287,15 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		gen  func(*kubermaticv1.Cluster, *corev1.Secret) (*corev1.Secret, string, error)
 	}
 	resources := []secretOp{
-		{controllerresources.CAKeySecretName, cc.getRootCAKeySecret},
-		{controllerresources.CACertSecretName, cc.getRootCACertSecret},
-		{controllerresources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
-		{controllerresources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
-		{controllerresources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
-		{controllerresources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
-		{controllerresources.TokenUsersSecretName, cc.getTokenUsersSecret},
-		{controllerresources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
-		{controllerresources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
+		{resources.CAKeySecretName, cc.getRootCAKeySecret},
+		{resources.CACertSecretName, cc.getRootCACertSecret},
+		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
+		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
+		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
+		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
+		{resources.TokenUsersSecretName, cc.getTokenUsersSecret},
+		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
+		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
 	}
 
 	for _, op := range resources {
@@ -354,15 +354,15 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
-	services := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
-		controllerresources.ApiserverInternalServiceName: controllerresources.LoadServiceFile,
-		controllerresources.ApiserverExternalServiceName: controllerresources.LoadServiceFile,
-		controllerresources.ControllerManagerServiceName: controllerresources.LoadServiceFile,
-		controllerresources.KubeStateMetricsServiceName:  controllerresources.LoadServiceFile,
-		controllerresources.MachineControllerServiceName: controllerresources.LoadServiceFile,
-		controllerresources.PrometheusServiceName:        controllerresources.LoadServiceFile,
-		controllerresources.SchedulerServiceName:         controllerresources.LoadServiceFile,
-		controllerresources.OpenVPNServerServiceName:     controllerresources.LoadServiceFile,
+	services := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
+		resources.ApiserverInternalServiceName: resources.LoadServiceFile,
+		resources.ApiserverExternalServiceName: resources.LoadServiceFile,
+		resources.ControllerManagerServiceName: resources.LoadServiceFile,
+		resources.KubeStateMetricsServiceName:  resources.LoadServiceFile,
+		resources.MachineControllerServiceName: resources.LoadServiceFile,
+		resources.PrometheusServiceName:        resources.LoadServiceFile,
+		resources.SchedulerServiceName:         resources.LoadServiceFile,
+		resources.OpenVPNServerServiceName:     resources.LoadServiceFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -404,9 +404,9 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
-	serviceAccounts := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
-		controllerresources.EtcdOperatorServiceAccountName: controllerresources.LoadServiceAccountFile,
-		controllerresources.PrometheusServiceAccountName:   controllerresources.LoadServiceAccountFile,
+	serviceAccounts := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
+		resources.EtcdOperatorServiceAccountName: resources.LoadServiceAccountFile,
+		resources.PrometheusServiceAccountName:   resources.LoadServiceAccountFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -448,8 +448,8 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 }
 
 func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
-	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error){
-		controllerresources.PrometheusRoleName: controllerresources.LoadRoleFile,
+	roles := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.Role, string, error){
+		resources.PrometheusRoleName: resources.LoadRoleFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -468,7 +468,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
+				if _, err := cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
 					return fmt.Errorf("failed to create role for %s: %v", name, err)
 				}
 				continue
@@ -491,8 +491,8 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
-	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error){
-		controllerresources.PrometheusRoleBindingName: controllerresources.LoadRoleBindingFile,
+	roleBindings := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.RoleBinding, string, error){
+		resources.PrometheusRoleBindingName: resources.LoadRoleBindingFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -511,7 +511,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+				if _, err := cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
 					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
 				}
 				continue
@@ -534,8 +534,8 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
-		controllerresources.EtcdOperatorClusterRoleBindingName: controllerresources.LoadClusterRoleBindingFile,
+	clusterRoleBindings := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.ClusterRoleBinding, string, error){
+		resources.EtcdOperatorClusterRoleBindingName: resources.LoadClusterRoleBindingFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -554,7 +554,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
+				if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
 					return fmt.Errorf("failed to create clusterRoleBinding for %s: %v", name, err)
 				}
 				continue
@@ -567,7 +567,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch clusterRoleBinding for %s: %v", name, err)
 			}
 		}
@@ -583,13 +583,13 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	}
 
 	deps := map[string]string{
-		controllerresources.EtcdOperatorDeploymentName:      masterVersion.EtcdOperatorDeploymentYaml,
-		controllerresources.ApiserverDeploymenName:          masterVersion.ApiserverDeploymentYaml,
-		controllerresources.ControllerManagerDeploymentName: masterVersion.ControllerDeploymentYaml,
-		controllerresources.SchedulerDeploymentName:         masterVersion.SchedulerDeploymentYaml,
-		controllerresources.AddonManagerDeploymentName:      masterVersion.AddonManagerDeploymentYaml,
-		controllerresources.MachineControllerDeploymentName: masterVersion.MachineControllerDeploymentYaml,
-		controllerresources.OpenVPNServerDeploymentName:     masterVersion.OpenVPNServerDeploymentYaml,
+		resources.EtcdOperatorDeploymentName:      masterVersion.EtcdOperatorDeploymentYaml,
+		resources.ApiserverDeploymenName:          masterVersion.ApiserverDeploymentYaml,
+		resources.ControllerManagerDeploymentName: masterVersion.ControllerDeploymentYaml,
+		resources.SchedulerDeploymentName:         masterVersion.SchedulerDeploymentYaml,
+		resources.AddonManagerDeploymentName:      masterVersion.AddonManagerDeploymentYaml,
+		resources.MachineControllerDeploymentName: masterVersion.MachineControllerDeploymentYaml,
+		resources.OpenVPNServerDeploymentName:     masterVersion.OpenVPNServerDeploymentYaml,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -598,7 +598,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	}
 
 	for name, yamlFile := range deps {
-		generatedDeployment, lastApplied, err := controllerresources.LoadDeploymentFile(data, cc.masterResourcesPath, yamlFile)
+		generatedDeployment, lastApplied, err := resources.LoadDeploymentFile(data, cc.masterResourcesPath, yamlFile)
 		if err != nil {
 			return fmt.Errorf("failed to generate Deployment %s: %v", name, err)
 		}
@@ -608,7 +608,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		deployment, err := cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
+				if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
 					return fmt.Errorf("failed to create deployment for %s: %v", name, err)
 				}
 				continue
@@ -631,9 +631,9 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	cms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error){
-		controllerresources.CloudConfigConfigMapName:         controllerresources.LoadConfigMapFile,
-		controllerresources.OpenVPNClientConfigConfigMapName: controllerresources.LoadConfigMapFile,
+	cms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error){
+		resources.CloudConfigConfigMapName:         resources.LoadConfigMapFile,
+		resources.OpenVPNClientConfigConfigMapName: resources.LoadConfigMapFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -685,7 +685,7 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	generatedEtcd, lastApplied, err := controllerresources.LoadEtcdClusterFile(data, cc.masterResourcesPath, masterVersion.EtcdClusterYaml)
+	generatedEtcd, lastApplied, err := resources.LoadEtcdClusterFile(data, cc.masterResourcesPath, masterVersion.EtcdClusterYaml)
 	if err != nil {
 		return fmt.Errorf("failed to load etcd-cluster: %v", err)
 	}
@@ -716,8 +716,8 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
-	proms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error){
-		controllerresources.PrometheusName: controllerresources.LoadPrometheusFile,
+	proms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error){
+		resources.PrometheusName: resources.LoadPrometheusFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -758,13 +758,13 @@ func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
-	sms := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error){
-		controllerresources.ApiserverServiceMonitorName:         controllerresources.LoadServiceMonitorFile,
-		controllerresources.ControllerManagerServiceMonitorName: controllerresources.LoadServiceMonitorFile,
-		controllerresources.EtcdServiceMonitorName:              controllerresources.LoadServiceMonitorFile,
-		controllerresources.KubeStateMetricsServiceMonitorName:  controllerresources.LoadServiceMonitorFile,
-		controllerresources.MachineControllerServiceMonitorName: controllerresources.LoadServiceMonitorFile,
-		controllerresources.SchedulerServiceMonitorName:         controllerresources.LoadServiceMonitorFile,
+	sms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error){
+		resources.ApiserverServiceMonitorName:         resources.LoadServiceMonitorFile,
+		resources.ControllerManagerServiceMonitorName: resources.LoadServiceMonitorFile,
+		resources.EtcdServiceMonitorName:              resources.LoadServiceMonitorFile,
+		resources.KubeStateMetricsServiceMonitorName:  resources.LoadServiceMonitorFile,
+		resources.MachineControllerServiceMonitorName: resources.LoadServiceMonitorFile,
+		resources.SchedulerServiceMonitorName:         resources.LoadServiceMonitorFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

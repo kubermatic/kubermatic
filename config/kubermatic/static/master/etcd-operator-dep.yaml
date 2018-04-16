@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: etcd-operator
@@ -11,12 +11,21 @@ metadata:
     uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      role: etcd-operator
+      version: v1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
       labels:
         role: etcd-operator
-        release: {{index .Version.Values "etcd-operator-version"}}
         version: v1
+        release: {{index .Version.Values "etcd-operator-version"}}
     spec:
       serviceAccountName: etcd-operator
       containers:
