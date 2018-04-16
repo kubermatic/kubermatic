@@ -7,18 +7,20 @@ import (
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
 
@@ -407,4 +409,31 @@ func LoadServiceMonitorFile(data *TemplateData, app, masterResourcesPath string)
 	var sm prometheusv1.ServiceMonitor
 	json, err := t.Execute(data, &sm)
 	return &sm, json, err
+}
+
+// LoadMachineFile parses and returns the given machine manifest
+func LoadMachineFile(filename string, c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*machinev1alpha1.Machine, error) {
+	t, err := k8stemplate.ParseFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	data := struct {
+		Cluster    *kubermaticv1.Cluster
+		Node       *apiv2.Node
+		Datacenter provider.DatacenterMeta
+		Name       string
+		Keys       []*kubermaticv1.UserSSHKey
+		Version    *apiv1.MasterVersion
+	}{
+		Cluster:    c,
+		Node:       node,
+		Datacenter: dc,
+		Keys:       keys,
+		Version:    version,
+	}
+
+	var machine machinev1alpha1.Machine
+	_, err = t.Execute(data, &machine)
+	return &machine, err
 }
