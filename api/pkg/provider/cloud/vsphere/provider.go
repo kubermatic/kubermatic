@@ -31,12 +31,12 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 
-	clientUrl, err := url.Parse(fmt.Sprintf("%s/sdk", dc.Spec.VSphere.Endpoint))
+	u, err := url.Parse(fmt.Sprintf("%s/sdk", dc.Spec.VSphere.Endpoint))
 	if err != nil {
 		return nil, err
 	}
 
-	c, err := govmomi.NewClient(context.Background(), clientUrl, dc.Spec.VSphere.AllowInsecure)
+	c, err := govmomi.NewClient(context.Background(), u, dc.Spec.VSphere.AllowInsecure)
 	if err != nil {
 		return nil, err
 	}
