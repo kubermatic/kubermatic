@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: apiserver
@@ -10,16 +10,21 @@ metadata:
     name: {{ .Cluster.Name }}
     uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
+  replicas: 1
   selector:
     matchLabels:
       role: apiserver
       version: v1
-  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
       labels:
-        role: apiserver
         release: {{index .Version.Values "k8s-version"}}
+        role: apiserver
         version: v1
         token-users-secret-revision: "{{ .SecretRevision "token-users" }}"
         apiserver-tls-secret-revision: "{{ .SecretRevision "apiserver-tls" }}"
