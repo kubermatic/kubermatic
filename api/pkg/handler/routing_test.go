@@ -60,6 +60,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		authenticator,
 		versions,
 		updates,
+		"",
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
-
 	texttemplate "text/template"
 
 	"github.com/go-test/deep"
@@ -35,7 +34,7 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			name:     "get valid machine.yaml for Digitalocean",
-			filename: "../../../../config/kubermatic/static/nodes/machine.yaml",
+			filename: "../../../../config/kubermatic/static/master/machine.yaml",
 			fixture:  "machine-digitalocean",
 			data: Data{
 				Cluster: &kubermaticv1.Cluster{
@@ -93,7 +92,7 @@ func TestExecute(t *testing.T) {
 					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name",
@@ -111,7 +110,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:     "get valid machine.yaml for AWS",
-			filename: "../../../../config/kubermatic/static/nodes/machine.yaml",
+			filename: "../../../../config/kubermatic/static/master/machine.yaml",
 			fixture:  "machine-aws",
 			data: Data{
 				Cluster: &kubermaticv1.Cluster{
@@ -180,7 +179,7 @@ func TestExecute(t *testing.T) {
 					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name",
@@ -191,7 +190,7 @@ func TestExecute(t *testing.T) {
 							},
 						},
 					},
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name-2",
@@ -209,7 +208,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:     "get valid machine.yaml for Openstack",
-			filename: "../../../../config/kubermatic/static/nodes/machine.yaml",
+			filename: "../../../../config/kubermatic/static/master/machine.yaml",
 			fixture:  "machine-openstack",
 			data: Data{
 				Cluster: &kubermaticv1.Cluster{
@@ -275,7 +274,7 @@ func TestExecute(t *testing.T) {
 					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name",
@@ -293,7 +292,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:     "get valid machine.yaml for Hetzner",
-			filename: "../../../../config/kubermatic/static/nodes/machine.yaml",
+			filename: "../../../../config/kubermatic/static/master/machine.yaml",
 			fixture:  "machine-hetzner",
 			data: Data{
 				Cluster: &kubermaticv1.Cluster{
@@ -345,7 +344,7 @@ func TestExecute(t *testing.T) {
 					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name",
@@ -363,7 +362,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:     "get valid machine.yaml for VSphere",
-			filename: "../../../../config/kubermatic/static/nodes/machine.yaml",
+			filename: "../../../../config/kubermatic/static/master/machine.yaml",
 			fixture:  "machine-vsphere",
 			data: Data{
 				Cluster: &kubermaticv1.Cluster{
@@ -416,7 +415,7 @@ func TestExecute(t *testing.T) {
 					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
-					&kubermaticv1.UserSSHKey{
+					{
 						Spec: kubermaticv1.SSHKeySpec{
 							Owner:       "John Doe",
 							Name:        "ssh-key-name",
@@ -448,12 +447,11 @@ func TestExecute(t *testing.T) {
 
 			var buf bytes.Buffer
 			err = tpl.Execute(&buf, test.data)
-			bytes := buf.Bytes()
 
 			if diff := deep.Equal(err, test.ret); diff != nil {
 				t.Errorf("expected to get %v instead got: %v", test.ret, err)
 			} else {
-				fmt.Printf("\nparsed template for '%v':\n %v", test.name, string(bytes))
+				fmt.Printf("\nparsed template for '%v':\n %v", test.name, buf.String())
 			}
 		})
 	}

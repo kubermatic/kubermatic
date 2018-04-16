@@ -1,8 +1,8 @@
 package cluster
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 

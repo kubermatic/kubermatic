@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/resources"
-	controllerresources "github.com/kubermatic/kubermatic/api/pkg/controller/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
@@ -33,10 +32,10 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	healthMapping := map[string]*depInfo{
-		controllerresources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
-		controllerresources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
-		controllerresources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
-		controllerresources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
+		resources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
+		resources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
+		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
+		resources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
 	}
 
 	for name := range healthMapping {
@@ -234,7 +233,7 @@ func (cc *Controller) launchingCreateOpenVPNConfigMap(c *kubermaticv1.Cluster) e
 	_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			openvpnSvc, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(controllerresources.OpenVPNServerServiceName)
+			openvpnSvc, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
 			if err != nil {
 				return err
 			}
