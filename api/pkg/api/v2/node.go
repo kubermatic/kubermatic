@@ -97,6 +97,8 @@ type HetznerNodeSpec struct {
 // VSphereNodeSpec VSphere node settings
 // swagger:model VSphereNodeSpecV2
 type VSphereNodeSpec struct {
+	CPUs   int `json:"cpus"`
+	Memory int `json:"memory"`
 }
 
 // OpenstackNodeSpec openstack node settings

@@ -255,7 +255,7 @@ func getSubnet(client *gophercloud.ProviderClient, region, nameOrID string) (*os
 func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, region, name string) error {
 	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
 	if err != nil {
-		return err
+		return osErrorToTerminalError(err, "failed to get network client")
 	}
 
 	_, err = getSecurityGroup(client, region, name)
@@ -263,7 +263,7 @@ func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, regi
 		if err == errNotFound {
 			sg, err := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{Name: name}).Extract()
 			if err != nil {
-				return fmt.Errorf("failed to create security group %s: %v", name, err)
+				return osErrorToTerminalError(err, fmt.Sprintf("failed to create security group %s", name))
 			}
 
 			rules := []osecruritygrouprules.CreateOpts{
@@ -285,7 +285,7 @@ func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, regi
 
 			for _, opts := range rules {
 				if _, err := osecruritygrouprules.Create(netClient, opts).Extract(); err != nil {
-					return fmt.Errorf("failed to create security group rule: %v", err)
+					return osErrorToTerminalError(err, "failed to create security group rule")
 				}
 			}
 		}
@@ -328,7 +328,7 @@ func assignFloatingIP(client *gophercloud.ProviderClient, region, ipID, instance
 
 	port, err := getInstancePort(client, region, instanceID, networkID)
 	if err != nil {
-		return fmt.Errorf("failed to get instance port: %v", err)
+		return err
 	}
 	_, err = osfloatingips.Update(netClient, ipID, osfloatingips.UpdateOpts{
 		PortID: &port.ID,
@@ -374,7 +374,7 @@ func getInstancePort(client *gophercloud.ProviderClient, region, instanceID, net
 func getDefaultNetwork(client *gophercloud.ProviderClient, region string) (*osnetworks.Network, error) {
 	networks, err := getNetworks(client, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve networks: '%v'", err)
+		return nil, err
 	}
 	if len(networks) == 1 {
 		return &networks[0], nil
@@ -390,7 +390,7 @@ func getDefaultNetwork(client *gophercloud.ProviderClient, region string) (*osne
 				if err == errNotFound {
 					continue
 				} else if err != nil {
-					return nil, fmt.Errorf("failed to retrieve subnet: '%v'", err)
+					return nil, err
 				}
 				candidates = append(candidates, network)
 				continue NetworkLoop

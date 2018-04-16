@@ -6,9 +6,14 @@ import (
 
 var crioInstallCandidates = []installCandidate{
 	{
-		versions:   []string{"1.9", "1.9.2"},
-		pkg:        "cri-o",
-		pkgVersion: "1.9.2-1~ubuntu16.04.2~ppa1",
+		versions:   []string{"1.9"},
+		pkg:        "cri-o-1.9",
+		pkgVersion: "",
+	},
+	{
+		versions:   []string{"1.9", "1.10"},
+		pkg:        "cri-o-1.10",
+		pkgVersion: "",
 	},
 }
 

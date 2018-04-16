@@ -32,6 +32,7 @@ type VSphereDatacenterSpec struct {
 	Endpoint   string `json:"endpoint"`
 	Datacenter string `json:"datacenter"`
 	Datastore  string `json:"datastore"`
+	Cluster    string `json:"cluster"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
