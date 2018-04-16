@@ -12,13 +12,14 @@ import (
 	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
 
@@ -254,13 +255,13 @@ func (d *TemplateData) GetFreeNodePort() string {
 }
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
-func LoadDeploymentFile(data *TemplateData, masterResourcesPath, yamlFile string) (*v1beta1.Deployment, string, error) {
+func LoadDeploymentFile(data *TemplateData, masterResourcesPath, yamlFile string) (*appsv1.Deployment, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
 	if err != nil {
 		return nil, "", err
 	}
 
-	var dep v1beta1.Deployment
+	var dep appsv1.Deployment
 	json, err := t.Execute(data, &dep)
 	return &dep, json, err
 }
@@ -349,37 +350,37 @@ func LoadServiceAccountFile(data *TemplateData, app, masterResourcesPath string)
 }
 
 // LoadRoleFile loads a role from disk, sets the namespace and returns it
-func LoadRoleFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error) {
+func LoadRoleFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.Role, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-role.yaml"))
 	if err != nil {
 		return nil, "", err
 	}
 
-	var r rbacv1beta1.Role
+	var r rbacv1.Role
 	json, err := t.Execute(data, &r)
 	return &r, json, err
 }
 
 // LoadRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error) {
+func LoadRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.RoleBinding, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
 	if err != nil {
 		return nil, "", err
 	}
 
-	var r rbacv1beta1.RoleBinding
+	var r rbacv1.RoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
 }
 
 // LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error) {
+func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.ClusterRoleBinding, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-clusterrolebinding.yaml"))
 	if err != nil {
 		return nil, "", err
 	}
 
-	var r rbacv1beta1.ClusterRoleBinding
+	var r rbacv1.ClusterRoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
 }

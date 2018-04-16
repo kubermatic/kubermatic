@@ -15,7 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -448,7 +448,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 }
 
 func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
-	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.Role, string, error){
+	roles := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1.Role, string, error){
 		controllerresources.PrometheusRoleName: controllerresources.LoadRoleFile,
 	}
 
@@ -468,7 +468,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
+				if _, err := cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
 					return fmt.Errorf("failed to create role for %s: %v", name, err)
 				}
 				continue
@@ -491,7 +491,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
-	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.RoleBinding, string, error){
+	roleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1.RoleBinding, string, error){
 		controllerresources.PrometheusRoleBindingName: controllerresources.LoadRoleBindingFile,
 	}
 
@@ -511,7 +511,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+				if _, err := cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
 					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
 				}
 				continue
@@ -534,7 +534,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1beta1.ClusterRoleBinding, string, error){
+	clusterRoleBindings := map[string]func(data *controllerresources.TemplateData, app, masterResourcesPath string) (*rbacv1.ClusterRoleBinding, string, error){
 		controllerresources.EtcdOperatorClusterRoleBindingName: controllerresources.LoadClusterRoleBindingFile,
 	}
 
@@ -554,7 +554,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
+				if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
 					return fmt.Errorf("failed to create clusterRoleBinding for %s: %v", name, err)
 				}
 				continue
@@ -567,7 +567,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return err
 			}
-			if _, err = cc.kubeClient.RbacV1beta1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
+			if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
 				return fmt.Errorf("failed to patch clusterRoleBinding for %s: %v", name, err)
 			}
 		}
@@ -608,7 +608,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		deployment, err := cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(name)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
+				if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
 					return fmt.Errorf("failed to create deployment for %s: %v", name, err)
 				}
 				continue
