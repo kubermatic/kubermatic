@@ -254,6 +254,7 @@ versions:
   addonManagerDeploymentYaml: addon-manager-dep.yaml
   machineControllerDeploymentYaml: machine-controller-dep.yaml
   kubeStateMetricsDeploymentYaml: kube-state-metrics-dep.yaml
+  openVPNServerDeploymentYaml: openvpn-server-dep.yaml
   values:
     k8s-version: v1.10.1
     etcd-operator-version: v0.6.0
