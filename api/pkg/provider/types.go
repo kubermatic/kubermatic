@@ -29,9 +29,8 @@ const (
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
 
-	DefaultSSHPort          = 22
-	PodNetworkBridgeSSHPort = 2222
-	DefaultKubeletPort      = 10250
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
