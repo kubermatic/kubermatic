@@ -121,6 +121,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			Endpoint:   dc.Spec.VSphere.Endpoint,
 			Datacenter: dc.Spec.VSphere.Datacenter,
 			Datastore:  dc.Spec.VSphere.Datastore,
+			Cluster:    dc.Spec.VSphere.Cluster,
 		}
 	}
 
