@@ -699,7 +699,10 @@ func TestExecute(t *testing.T) {
 					},
 					Spec: apiv2.NodeSpec{
 						Cloud: apiv2.NodeCloudSpec{
-							VSphere: &apiv2.VSphereNodeSpec{},
+							VSphere: &apiv2.VSphereNodeSpec{
+								Memory: 2048,
+								CPUs:   2,
+							},
 						},
 						OperatingSystem: apiv2.OperatingSystemSpec{
 							Ubuntu: &apiv2.UbuntuSpec{
@@ -718,10 +721,11 @@ func TestExecute(t *testing.T) {
 					Country:  "DE",
 					Spec: provider.DatacenterSpec{
 						VSphere: &provider.VSphereSpec{
-							Datastore:    "vsphere-datastore",
-							Endpoint:     "vsphere-endpoint",
-							ResourcePool: "vsphere-resource-pool",
-							Datacenter:   "vsphere-datacenter",
+							Cluster:       "vsphere-cluster",
+							AllowInsecure: true,
+							Datastore:     "vsphere-datastore",
+							Endpoint:      "http://vsphere.local",
+							Datacenter:    "vsphere-datacenter",
 						},
 					},
 					IsSeed: false,

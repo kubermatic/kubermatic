@@ -3327,6 +3327,10 @@
       "type": "object",
       "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
       "properties": {
+        "cluster": {
+          "type": "string",
+          "x-go-name": "Cluster"
+        },
         "datacenter": {
           "type": "string",
           "x-go-name": "Datacenter"
@@ -3345,6 +3349,18 @@
     "VSphereNodeSpecV2": {
       "description": "VSphereNodeSpec VSphere node settings",
       "type": "object",
+      "properties": {
+        "cpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUs"
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        }
+      },
       "x-go-name": "VSphereNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     }

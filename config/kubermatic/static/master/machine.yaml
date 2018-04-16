@@ -75,11 +75,21 @@ spec:
     {{- if .Node.Spec.Cloud.VSphere }}
     cloudProvider: "vsphere"
     cloudProviderSpec:
-      identityEndpoint: "{{ .Datacenter.Spec.VSphere.Endpoint }}"
+    {{- if .Node.Spec.OperatingSystem.Ubuntu }}
+      templateVMName: "ubuntu-template"
+    {{- end }}
+    {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
+      templateVMName: "container-linux-template"
+    {{- end }}
       username: {{ .Cluster.Spec.Cloud.VSphere.Username | quote }}
       password: {{ .Cluster.Spec.Cloud.VSphere.Password | quote }}
-      datacenter: "{{ .Datacenter.Spec.VSphere.Datacenter }}"
-      datastore: "{{ .Datacenter.Spec.VSphere.Datastore }}"
+      vsphereURL: {{ .Datacenter.Spec.VSphere.Endpoint | quote }}
+      datacenter: {{ .Datacenter.Spec.VSphere.Datacenter | quote }}
+      datastore: {{ .Datacenter.Spec.VSphere.Datastore | quote }}
+      cluster: {{ .Datacenter.Spec.VSphere.Cluster | quote }}
+      allowInsecure: {{ .Datacenter.Spec.VSphere.AllowInsecure }}
+      cpus: {{ .Node.Spec.Cloud.VSphere.CPUs }}
+      memoryMB: {{ .Node.Spec.Cloud.VSphere.Memory }}
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
     operatingSystem: "coreos"
