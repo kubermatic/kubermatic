@@ -32,7 +32,7 @@ type OpenstackSpec struct {
 // VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
 	Endpoint      string `yaml:"endpoint"`
-	AllowInsecure string `yaml:"allow_insecure"`
+	AllowInsecure bool   `yaml:"allow_insecure"`
 
 	Datastore  string `yaml:"datastore"`
 	Datacenter string `yaml:"datacenter"`

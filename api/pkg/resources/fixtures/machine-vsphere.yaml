@@ -10,11 +10,16 @@ spec:
   providerConfig:
     cloudProvider: vsphere
     cloudProviderSpec:
+      allowInsecure: true
+      cluster: vsphere-cluster
+      cpus: 2
       datacenter: vsphere-datacenter
       datastore: vsphere-datastore
-      identityEndpoint: vsphere-endpoint
+      memoryMB: 2048
       password: vsphere-password
+      templateVMName: ubuntu-template
       username: vsphere-username
+      vsphereURL: http://vsphere.local
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false
