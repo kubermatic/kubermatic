@@ -1528,6 +1528,7 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "CreateClusterReqBody": {
+      "description": "CreateClusterReqBody represents the request body for a create cluster request",
       "type": "object",
       "properties": {
         "cluster": {
