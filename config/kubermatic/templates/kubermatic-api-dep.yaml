@@ -12,7 +12,6 @@ spec:
       annotations:
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
-        checksum/node-files: {{ include (print $.Template.BasePath "/node-files-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: kubermatic
       containers:
@@ -45,9 +44,6 @@ spec:
             - name: datacenters
               mountPath: "/opt/datacenter/"
               readOnly: true
-            - name: node-files
-              mountPath: "/opt/template/nodes/"
-              readOnly: true
             - name: master-files
               mountPath: "/opt/master-files/"
               readOnly: true
@@ -64,9 +60,6 @@ spec:
         - name: kubeconfig
           secret:
             secretName: kubeconfig
-        - name: node-files
-          secret:
-            secretName: node-files
         - name: datacenters
           secret:
             secretName: datacenters

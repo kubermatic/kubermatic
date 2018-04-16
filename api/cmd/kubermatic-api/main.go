@@ -32,7 +32,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	client "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -179,6 +179,7 @@ func main() {
 		authenticator,
 		versions,
 		updates,
+		masterResources,
 	)
 
 	mainRouter := mux.NewRouter()
