@@ -339,7 +339,7 @@ func TestLoadFiles(t *testing.T) {
 	}
 }
 
-type Data struct {
+type MachineTestData struct {
 	Cluster    *kubermaticv1.Cluster
 	Node       *apiv2.Node
 	Datacenter provider.DatacenterMeta
@@ -348,15 +348,15 @@ type Data struct {
 	Version    *apiv1.MasterVersion
 }
 
-func TestExecute(t *testing.T) {
+func TestLoadMachineFile(t *testing.T) {
 	tests := map[string]struct {
 		name string
-		data Data
+		data MachineTestData
 		ret  error
 	}{
 		"machine-digitalocean": {
 			name: "get valid machine.yaml for Digitalocean",
-			data: Data{
+			data: MachineTestData{
 				Cluster: &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "docluster-1a2b3c4d5e",
@@ -430,7 +430,7 @@ func TestExecute(t *testing.T) {
 		},
 		"machine-aws": {
 			name: "get valid machine.yaml for AWS",
-			data: Data{
+			data: MachineTestData{
 				Cluster: &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "awscluster-1a2b3c4d5e",
@@ -526,7 +526,7 @@ func TestExecute(t *testing.T) {
 		},
 		"machine-openstack": {
 			name: "get valid machine.yaml for Openstack",
-			data: Data{
+			data: MachineTestData{
 				Cluster: &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "openstackcluster-1a2b3c4d5e",
@@ -608,7 +608,7 @@ func TestExecute(t *testing.T) {
 		},
 		"machine-hetzner": {
 			name: "get valid machine.yaml for Hetzner",
-			data: Data{
+			data: MachineTestData{
 				Cluster: &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "hetznercluster-1a2b3c4d5e",
@@ -676,7 +676,7 @@ func TestExecute(t *testing.T) {
 		},
 		"machine-vsphere": {
 			name: "get valid machine.yaml for VSphere",
-			data: Data{
+			data: MachineTestData{
 				Cluster: &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "vsphere-1a2b3c4d5e",
