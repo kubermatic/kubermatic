@@ -124,7 +124,7 @@ func main() {
 
 		glog.V(2).Infof("adding %s as seed", ctx)
 
-		kubeClient := kubernetes.NewForConfigOrDie(config)
+		kubeClient := kubernetes.NewForConfigOrDie(cfg)
 		kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informerResyncPeriod)
 
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
