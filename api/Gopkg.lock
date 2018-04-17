@@ -517,7 +517,6 @@
   revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
 
 [[projects]]
-  branch = "master"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -530,6 +529,7 @@
     "pkg/cloudprovider/provider/digitalocean",
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
+    "pkg/cloudprovider/provider/vsphere",
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
@@ -538,7 +538,8 @@
     "pkg/userdata/coreos",
     "pkg/userdata/ubuntu"
   ]
-  revision = "ce97438ad809c5d3b1f9a8ea72e4ceab930e2fa9"
+  revision = "4d1d4a746ab1f6487bfa44a8f42e6c33fd0793d6"
+  version = "v0.3.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -722,8 +723,13 @@
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
+    "find",
+    "list",
+    "nfc",
+    "object",
     "property",
     "session",
+    "task",
     "vim25",
     "vim25/debug",
     "vim25/methods",
@@ -1158,6 +1164,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6468f35a63a0e78dda27cd08608f3e578eab389c1cc0c4913438ef6b290145a8"
+  inputs-digest = "31b6d42546ec97b8e1af0889bae60f147d3146cbd1fd5d3c3ab86aa521a5f9ff"
   solver-name = "gps-cdcl"
   solver-version = 1
