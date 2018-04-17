@@ -286,19 +286,19 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		name string
 		gen  func(*kubermaticv1.Cluster, *corev1.Secret) (*corev1.Secret, string, error)
 	}
-	resources := []secretOp{
+	ops := []secretOp{
 		{resources.CAKeySecretName, cc.getRootCAKeySecret},
 		{resources.CACertSecretName, cc.getRootCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
-		{resources.TokenUsersSecretName, cc.getTokenUsersSecret},
+		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
 	}
 
-	for _, op := range resources {
+	for _, op := range ops {
 		exists := false
 		existingSecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(op.name)
 		if err != nil {
