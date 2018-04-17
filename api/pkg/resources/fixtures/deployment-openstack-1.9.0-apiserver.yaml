@@ -35,7 +35,7 @@ spec:
         release: v1.9.0
         role: apiserver
         service-account-key-secret-revision: "123456"
-        token-users-secret-revision: "123456"
+        tokens-secret-revision: "123456"
         version: v1
     spec:
       containers:
@@ -155,7 +155,7 @@ spec:
           name: apiserver-tls
           readOnly: true
         - mountPath: /etc/kubernetes/tokens
-          name: token-users
+          name: tokens
           readOnly: true
         - mountPath: /etc/kubernetes/kubelet
           name: kubelet-client-certificates
@@ -174,10 +174,10 @@ spec:
         secret:
           defaultMode: 256
           secretName: apiserver-tls
-      - name: token-users
+      - name: tokens
         secret:
           defaultMode: 256
-          secretName: token-users
+          secretName: tokens
       - name: openvpn-client-certificates
         secret:
           defaultMode: 256
