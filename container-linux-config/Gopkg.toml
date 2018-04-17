@@ -1,0 +1,28 @@
+#[prune]
+#  go-tests = true
+#  unused-packages = true
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  branch = "v2"
+
+# For container-linux-config-transpiler
+[[override]]
+  name = "github.com/ajeddeloh/yaml"
+  revision = "6b94386aeefd8c4b8470aee72bfca084c2f91da9"
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "2.15.0"
+
+[[constraint]]
+  name = "github.com/urfave/cli"
+  version = "v1.19.1"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  branch = "release-7.0"
+
+[[constraint]]
+  name = "github.com/coreos/container-linux-config-transpiler"
+  version = "v0.8.*"

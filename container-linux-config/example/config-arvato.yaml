@@ -1,0 +1,107 @@
+Global:
+  CA:
+    KeyPath: "/home/henrik/go/src/github.com/kubermatic/kubermatic/container-linux-config/ca.key"
+    CertPath: "/home/henrik/go/src/github.com/kubermatic/kubermatic/container-linux-config/ca.crt"
+  ServiceAccount:
+    KeyPath: "/home/henrik/go/src/github.com/kubermatic/kubermatic/container-linux-config/sa.key"
+  Kubernetes:
+    MasterIP: "145.228.6.203"
+    Version: "v1.10.1"
+    ServiceNodePortRange: "12000-14767"
+    ServiceClusterIPRange: "10.10.10.0/24"
+    PodNetworkIPRange: "172.25.0.0/16"
+    DNSIP: "10.10.10.10"
+    DNSDomain: "cluster.local"
+  SSHKeys:
+  - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC496PqMk7zZuQKXpzcgl3g92LNZMcgEgkfnj4BNoa2CRs5f4wrHMt1Ii78CgY3Ziqw4y191v6IJ3Fby2gT26YWIaK6qSF35sXmjyG/MH+Iu96wIn7JcjlnTkizofGE7zOkRmEtMYcyOVbgnwEH4UNj1W1aalton5JCAqz8kFpKE7sp/2NpxZMqgO68NaqYSd0nDXdwM9HX1grWVF88lBXEJ5YSF03sEpnsOyw0QHhXHyNwHOpfL/wCG0/8OWel1dcXOeQKVVp5V045er0AyIFJVwHSTQCnfyKYCf5i0cLci4+61iSS1hBSl2qBqz6z6mdLy8O7XSP9kPoyQarnQguFO+DHOG8IyTP/Kk3PC/+yR8xGfhFxqM8fGdSdrRwpIgjGH0/7or1vbbUvp52evRMZIdT1YfndahRxafo0iZ36o+VgX1W5oWiZ8Bws/zrV2PCqrmuEbFYSpLati3XvxRQG+Om5p7dzdXx1mb86wqyNe4xpZ2gVInaUYINnwcUmLiaOtCHh4tE/RBMqjcRY7i75gl29H8nbDFwWHGLTULix1W+1FH0XyPiL831XdECYSlw8h+kJW/fYtlynTgeYSLSrIA0atEblf1ui0BPnd8imFX7h8mlUhPgxpfxasI+EQj+m4xjeJUalHTvFuE1wqls8A7A6+J8HP/Ol9cOlDFxexw== henrik@loodse.com"
+Nodes:
+- Name: "gtlocbvh03258.server.arvato-systems.de"
+  Type: master
+  Mounts:
+  - Name: "dev-sdb"
+    Device: "/dev/sdb"
+    Where: "/srv/etcd/data"
+    Type: "ext4"
+    DirectoryMode: "0777"
+  Etcd:
+    Enabled: true
+    Version: "3.1.12"
+    DataDirectory: "/srv/etcd/data"
+  Network:
+    Configure: true
+    Interface: en*
+    Address: 145.228.6.203/27
+    Broadcast: 145.228.6.197/27
+    Gateway: 145.228.6.193
+    DNSServers:
+    - 145.228.121.70
+    - 145.228.185.60
+    - 145.228.121.80
+    Domains:
+    - server.arvato-systems.de
+    - bertelsmann.de
+    - unix.arvato-systems.de
+    NTPServers:
+    - 145.228.39.153
+    - 145.228.183.155
+    - 145.228.205.33
+- Name: "gtlocbva02913.server.arvato-systems.de"
+  Type: worker
+  Network:
+    Configure: true
+    Interface: en*
+    Address: 145.228.6.200/27
+    Broadcast: 145.228.6.197/27
+    Gateway: 145.228.6.193
+    DNSServers:
+    - 145.228.121.70
+    - 145.228.185.60
+    - 145.228.121.80
+    Domains:
+    - server.arvato-systems.de
+    - bertelsmann.de
+    - unix.arvato-systems.de
+    NTPServers:
+    - 145.228.39.153
+    - 145.228.183.155
+    - 145.228.205.33
+- Name: "gtlocbvb02914.server.arvato-systems.de"
+  Type: worker
+  Network:
+    Configure: true
+    Interface: en*
+    Address: 145.228.6.201/27
+    Broadcast: 145.228.6.197/27
+    Gateway: 145.228.6.193
+    DNSServers:
+    - 145.228.121.70
+    - 145.228.185.60
+    - 145.228.121.80
+    Domains:
+    - server.arvato-systems.de
+    - bertelsmann.de
+    - unix.arvato-systems.de
+    NTPServers:
+    - 145.228.39.153
+    - 145.228.183.155
+    - 145.228.205.33
+- Name: "gtlocbvm03003.server.arvato-systems.de"
+  Type: worker
+  Network:
+    Configure: true
+    Interface: en*
+    Address: 145.228.6.202/27
+    Broadcast: 145.228.6.197/27
+    Gateway: 145.228.6.193
+    DNSServers:
+    - 145.228.121.70
+    - 145.228.185.60
+    - 145.228.121.80
+    Domains:
+    - server.arvato-systems.de
+    - bertelsmann.de
+    - unix.arvato-systems.de
+    NTPServers:
+    - 145.228.39.153
+    - 145.228.183.155
+    - 145.228.205.33

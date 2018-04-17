@@ -1,0 +1,435 @@
+passwd:
+  users:
+  - name: core
+    ssh_authorized_keys:
+    {{ range .Global.SSHKeys }}- {{ . | quote }}
+    {{ end -}}
+{{- if .Node.Network.Configure }}
+networkd:
+  units:
+  - name: static.network
+    contents: |
+      [Match]
+      Name={{ .Node.Network.Interface }}
+
+      [Network]
+      {{ range .Node.Network.DNSServers }}DNS={{ . }}
+      {{ end -}}
+      {{ if .Node.Network.Domains }}Domains={{ range .Node.Network.Domains }}{{ . }} {{ end }}{{ end }}
+      {{ if .Node.Network.Gateway }}Gateway={{ .Node.Network.Gateway }}{{ end }}
+      {{ if .Node.Network.NTPServers }}NTP={{ range .Node.Network.NTPServers }}{{ . }} {{ end }}{{ end }}
+
+      [Address]
+      Address={{ .Node.Network.Address }}
+      {{ if .Node.Network.Broadcast }}Broadcast={{ .Node.Network.Broadcast }}{{ end }}
+{{ end }}
+systemd:
+  units:
+  {{ range .Node.Mounts }}
+  - name: {{ .Name }}.mount
+    enabled: true
+    contents: |
+      [Unit]
+      Before=local-fs.target
+      Description=Mount {{ .Device }} to {{ .Where }}
+      [Mount]
+      What={{ .Device }}
+      Where={{ .Where }}
+      Type={{ .Type }}
+      DirectoryMode={{ .DirectoryMode }}
+      [Install]
+      WantedBy=local-fs.target
+  {{ end }}
+  - name: dm_thin_pool.service
+    enabled: true
+    contents: |
+      [Unit]
+      Description=Enable kernel module dm_thin_pool for gluster/heketi
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/sbin/modprobe dm_thin_pool
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - name: docker.service
+    enabled: true
+
+  - name: kubelet.service
+    enabled: true
+    dropins:
+    - name: 40-docker.conf
+      contents: |
+        [Unit]
+        Requires=docker.service
+        After=docker.service
+    contents: |
+      [Unit]
+      Description=Kubernetes Kubelet
+      Requires=docker.service
+      After=docker.service
+      [Service]
+      TimeoutStartSec=5min
+      Environment=KUBELET_IMAGE_TAG={{ .Global.Kubernetes.Version }}_coreos.0
+      Environment="RKT_RUN_ARGS=--uuid-file-save=/var/cache/kubelet-pod.uuid \
+        --volume=resolv,kind=host,source=/etc/resolv.conf \
+        --mount volume=resolv,target=/etc/resolv.conf \
+        --volume cni-bin,kind=host,source=/opt/cni/bin \
+        --mount volume=cni-bin,target=/opt/cni/bin \
+        --volume cni-conf,kind=host,source=/etc/cni/net.d \
+        --mount volume=cni-conf,target=/etc/cni/net.d \
+        --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
+        --mount volume=etc-kubernetes,target=/etc/kubernetes \
+        --volume var-log,kind=host,source=/var/log \
+        --mount volume=var-log,target=/var/log"
+      ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
+      ExecStartPre=/bin/mkdir -p /etc/cni/net.d
+      ExecStartPre=/bin/mkdir -p /opt/cni/bin
+      ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/cache/kubelet-pod.uuid
+      ExecStart=/usr/lib/coreos/kubelet-wrapper \
+        --container-runtime=docker \
+        --allow-privileged=true \
+        --cni-bin-dir=/opt/cni/bin \
+        --cni-conf-dir=/etc/cni/net.d \
+        --cluster-dns={{ .Global.Kubernetes.DNSIP }} \
+        --cluster-domain={{ .Global.Kubernetes.DNSDomain }} \
+        --network-plugin=cni \
+        --cert-dir=/etc/kubernetes/pki/ \
+        --pod-manifest-path=/etc/kubernetes/manifests \
+        --resolv-conf=/etc/resolv.conf \
+        --rotate-certificates=true \
+        --kubeconfig=/etc/kubernetes/kubeconfig \
+        --lock-file=/var/run/lock/kubelet.lock \
+        --exit-on-lock-contention \
+        --read-only-port 0 \
+        --cadvisor-port=0 \
+        --authorization-mode=Webhook \
+        --anonymous-auth=false \
+        --client-ca-file=/etc/kubernetes/pki/ca.crt
+      ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
+      Restart=always
+      RestartSec=10
+      [Install]
+      WantedBy=multi-user.target
+
+storage:
+  filesystems:
+{{ range .Node.Mounts }}
+  - name: {{ .Name }}
+    mount:
+      device: {{ .Device }}
+      format: {{ .Type }}
+      wipe_filesystem: false
+{{ end }}
+  files:
+  - path: /etc/hostname
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: {{ .Node.Name | quote }}
+
+  - path: /etc/kubernetes/pki/ca.crt
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.CA.GetCert | indent 8 }}
+
+{{ if eq .Node.Type "master" }}
+  - path: /etc/kubernetes/pki/ca.key
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.CA.GetKey | indent 8 }}
+
+  - path: /etc/kubernetes/pki/apiserver-kubelet-client.key
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.KubeletClientCertificate.GetKey | indent 8 }}
+
+  - path: /etc/kubernetes/pki/apiserver-kubelet-client.crt
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.KubeletClientCertificate.GetCert | indent 8 }}
+
+  - path: /etc/kubernetes/pki/apiserver.key
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.APIServerTLSCertificate.GetKey | indent 8 }}
+
+  - path: /etc/kubernetes/pki/apiserver.crt
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.APIServerTLSCertificate.GetCert | indent 8 }}
+
+  - path: /etc/kubernetes/pki/sa.key
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.ServiceAccount.GetKey | indent 8 }}
+
+  - path: /etc/kubernetes/controller-manager.conf
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.Kubernetes.ControllerManagerKubeconfig | indent 8 }}
+
+  - path: /etc/kubernetes/scheduler.conf
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Global.Kubernetes.SchedulerKubeconfig | indent 8 }}
+{{ end }}
+  - path: /etc/kubernetes/kubeconfig
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+{{ .Node.Kubeconfig | indent 8 }}
+
+{{ if eq .Node.Type "master" }}
+  - path: /etc/kubernetes/manifests/kube-apiserver.yaml
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ""
+          creationTimestamp: null
+          labels:
+            component: kube-apiserver
+            tier: control-plane
+          name: kube-apiserver
+          namespace: kube-system
+        spec:
+          containers:
+          - command:
+            - kube-apiserver
+            - --secure-port=6443
+            - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
+            - --advertise-address={{ .IPV4 }}
+            - --client-ca-file=/etc/kubernetes/pki/ca.crt
+            - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+            - --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+            - --insecure-port=0
+            - --allow-privileged=true
+            - --service-account-key-file=/etc/kubernetes/pki/sa.key
+            - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+            - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
+            - --enable-bootstrap-token-auth=true
+            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+            - --service-cluster-ip-range={{ .Global.Kubernetes.ServiceClusterIPRange }}
+            - --authorization-mode=Node,RBAC
+            - --etcd-servers=http://127.0.0.1:2379
+            image: k8s.gcr.io/kube-apiserver-amd64:{{ .Global.Kubernetes.Version}}
+            livenessProbe:
+              failureThreshold: 8
+              httpGet:
+                host: {{ .IPV4 }}
+                path: /healthz
+                port: 6443
+                scheme: HTTPS
+              initialDelaySeconds: 15
+              timeoutSeconds: 15
+            name: kube-apiserver
+            resources:
+              requests:
+                cpu: 250m
+            volumeMounts:
+            - mountPath: /etc/kubernetes/pki
+              name: k8s-certs
+              readOnly: true
+            - mountPath: /etc/ssl/certs
+              name: ca-certs
+              readOnly: true
+          hostNetwork: true
+          volumes:
+          - hostPath:
+              path: /etc/kubernetes/pki
+              type: DirectoryOrCreate
+            name: k8s-certs
+          - hostPath:
+              path: /etc/ssl/certs
+              type: DirectoryOrCreate
+            name: ca-certs
+
+  - path: /etc/kubernetes/manifests/kube-controller-manager.yaml
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ""
+          creationTimestamp: null
+          labels:
+            component: kube-controller-manager
+            tier: control-plane
+          name: kube-controller-manager
+          namespace: kube-system
+        spec:
+          containers:
+          - command:
+            - kube-controller-manager
+            - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
+            - --address=127.0.0.1
+            - --leader-elect=true
+            - --service-account-private-key-file=/etc/kubernetes/pki/sa.key
+            - --root-ca-file=/etc/kubernetes/pki/ca.crt
+            - --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
+            - --use-service-account-credentials=true
+            - --controllers=*,bootstrapsigner,tokencleaner
+            - --kubeconfig=/etc/kubernetes/controller-manager.conf
+            image: k8s.gcr.io/kube-controller-manager-amd64:{{ .Global.Kubernetes.Version}}
+            livenessProbe:
+              failureThreshold: 8
+              httpGet:
+                host: 127.0.0.1
+                path: /healthz
+                port: 10252
+                scheme: HTTP
+              initialDelaySeconds: 15
+              timeoutSeconds: 15
+            name: kube-controller-manager
+            resources:
+              requests:
+                cpu: 200m
+            volumeMounts:
+            - mountPath: /etc/kubernetes/pki
+              name: k8s-certs
+              readOnly: true
+            - mountPath: /etc/ssl/certs
+              name: ca-certs
+              readOnly: true
+            - mountPath: /etc/kubernetes/controller-manager.conf
+              name: kubeconfig
+              readOnly: true
+          hostNetwork: true
+          volumes:
+          - hostPath:
+              path: /etc/kubernetes/pki
+              type: DirectoryOrCreate
+            name: k8s-certs
+          - hostPath:
+              path: /etc/ssl/certs
+              type: DirectoryOrCreate
+            name: ca-certs
+          - hostPath:
+              path: /etc/kubernetes/controller-manager.conf
+              type: FileOrCreate
+            name: kubeconfig
+
+  - path: /etc/kubernetes/manifests/kube-scheduler.yaml
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ""
+          creationTimestamp: null
+          labels:
+            component: kube-scheduler
+            tier: control-plane
+          name: kube-scheduler
+          namespace: kube-system
+        spec:
+          containers:
+          - command:
+            - kube-scheduler
+            - --address=127.0.0.1
+            - --leader-elect=true
+            - --kubeconfig=/etc/kubernetes/scheduler.conf
+            image: k8s.gcr.io/kube-scheduler-amd64:{{ .Global.Kubernetes.Version}}
+            livenessProbe:
+              failureThreshold: 8
+              httpGet:
+                host: 127.0.0.1
+                path: /healthz
+                port: 10251
+                scheme: HTTP
+              initialDelaySeconds: 15
+              timeoutSeconds: 15
+            name: kube-scheduler
+            resources:
+              requests:
+                cpu: 100m
+            volumeMounts:
+            - mountPath: /etc/kubernetes/scheduler.conf
+              name: kubeconfig
+              readOnly: true
+          hostNetwork: true
+          volumes:
+          - hostPath:
+              path: /etc/kubernetes/scheduler.conf
+              type: FileOrCreate
+            name: kubeconfig
+{{ if .Node.Etcd.Enabled }}
+  - path: /etc/kubernetes/manifests/etcd.yaml
+    filesystem: root
+    mode: 0644
+    contents:
+      inline: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ""
+          creationTimestamp: null
+          labels:
+            component: etcd
+            tier: control-plane
+          name: etcd
+          namespace: kube-system
+        spec:
+          containers:
+          - command:
+            - etcd
+            - --data-dir=/var/lib/etcd
+            - --advertise-client-urls=http://127.0.0.1:2379
+            - --listen-client-urls=http://127.0.0.1:2379
+            image: k8s.gcr.io/etcd-amd64:{{ .Node.Etcd.Version }}
+            livenessProbe:
+              exec:
+                command:
+                - /bin/sh
+                - -ec
+                - ETCDCTL_API=3 etcdctl --endpoints=127.0.0.1:2379
+                  get foo
+              failureThreshold: 8
+              initialDelaySeconds: 15
+              timeoutSeconds: 15
+            name: etcd
+            resources: {}
+            volumeMounts:
+            - mountPath: /var/lib/etcd
+              name: etcd-data
+          hostNetwork: true
+          volumes:
+          - hostPath:
+              path: {{ .Node.Etcd.DataDirectory | quote }}
+              type: DirectoryOrCreate
+            name: etcd-data
+{{ end }}
+{{ end }}
