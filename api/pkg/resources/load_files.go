@@ -73,8 +73,8 @@ const (
 	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
 	//ServiceAccountKeySecretName is the name for the secret containing the service account key
 	ServiceAccountKeySecretName = "service-account-key"
-	//TokenUsersSecretName is the name for the secret containing the user tokens
-	TokenUsersSecretName = "token-users"
+	//TokensSecretName is the name for the secret containing the user tokens
+	TokensSecretName = "tokens"
 	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates

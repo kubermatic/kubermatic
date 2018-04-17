@@ -26,7 +26,7 @@ spec:
         release: {{index .Version.Values "k8s-version"}}
         role: apiserver
         version: v1
-        token-users-secret-revision: "{{ .SecretRevision "token-users" }}"
+        tokens-secret-revision: "{{ .SecretRevision "tokens" }}"
         apiserver-tls-secret-revision: "{{ .SecretRevision "apiserver-tls" }}"
         kubelet-client-certificates-secret-revision: "{{ .SecretRevision "kubelet-client-certificates" }}"
         ca-cert-secret-revision: "{{ .SecretRevision "ca-cert" }}"
@@ -145,7 +145,7 @@ spec:
         - name: apiserver-tls
           mountPath: /etc/kubernetes/tls
           readOnly: true
-        - name: token-users
+        - name: tokens
           mountPath: /etc/kubernetes/tokens
           readOnly: true
         - name: kubelet-client-certificates
@@ -165,9 +165,9 @@ spec:
         secret:
           secretName: apiserver-tls
           defaultMode: 0400
-      - name: token-users
+      - name: tokens
         secret:
-          secretName: token-users
+          secretName: tokens
           defaultMode: 0400
       - name: openvpn-client-certificates
         secret:
