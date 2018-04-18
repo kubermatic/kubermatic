@@ -1,14 +1,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: prometheus
+  name: prometheus-kubermatic
   labels:
     team: kubermatic
 spec:
-  jobLabel: prometheus
   selector:
     matchLabels:
-      app: prometheus
+      app: prometheus-kubermatic
   namespaceSelector:
     matchNames:
     - monitoring
