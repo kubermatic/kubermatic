@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: prometheus
+  name: kubermatic
   labels:
     app: prometheus
 spec:
   replicas: 2
   version: {{ .Values.prometheus.version }}
   retention: 360h
-  serviceAccountName: prometheus
+  serviceAccountName: prometheus-kubermatic
   externalUrl: https://{{ .Values.prometheus.host | trim }}
   serviceMonitorSelector:
     matchLabels:
@@ -21,7 +21,7 @@ spec:
   ruleSelector:
     matchLabels:
       role: prometheus-rulefiles
-      prometheus: prometheus
+      prometheus: kubermatic
   resources:
     requests:
       memory: 1G
