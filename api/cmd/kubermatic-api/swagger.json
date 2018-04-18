@@ -229,6 +229,12 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
           }
         ],
         "responses": {
@@ -500,12 +506,16 @@
           },
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "ClusterName",
             "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
             "in": "body",
-            "required": true,
             "schema": {
-              "$ref": "#/definitions/Cluster"
+              "$ref": "#/definitions/CreateClusterReqBody"
             }
           }
         ],
@@ -616,6 +626,12 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
           }
         ],
         "responses": {
@@ -1510,6 +1526,16 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "CreateClusterReqBody": {
+      "description": "CreateClusterReqBody represents the request body for a create cluster request",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/Cluster"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "CreateNodeReqBodyV2": {
       "description": "CreateNodeReqBodyV2 represents the request body of a create nodes request",
