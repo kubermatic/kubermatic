@@ -1,13 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: alertmanager
+  name: alertmanager-kubermatic
   annotations:
     kubernetes.io/ingress.class: "nginx"
     # type of authentication
     ingress.kubernetes.io/auth-type: basic
     # name of the secret that contains the user/password definitions
-    ingress.kubernetes.io/auth-secret: alertmanager-auth
+    ingress.kubernetes.io/auth-secret: alertmanager-kubermatic-auth
     # message to display with an appropiate context why the authentication is required
     ingress.kubernetes.io/auth-realm: "Authentication Required"
 spec:
@@ -15,13 +15,13 @@ spec:
   - hosts:
     - {{ .Values.alertmanager.host | trim }}
   backend:
-    serviceName: alertmanager
-    servicePort: 9093
+    serviceName: alertmanager-kubermatic
+    servicePort: web
   rules:
   - host: {{ .Values.alertmanager.host | trim }}
     http:
       paths:
       - path: /
         backend:
-          serviceName: alertmanager
+          serviceName: alertmanager-kubermatic
           servicePort: web

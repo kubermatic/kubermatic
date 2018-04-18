@@ -1,13 +1,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: alertmanager
+  name: alertmanager-kubermatic
   labels:
     team: kubermatic
 spec:
   selector:
     matchLabels:
-      app: alertmanager
+      app: alertmanager-kubermatic
   namespaceSelector:
     matchNames:
     - monitoring
