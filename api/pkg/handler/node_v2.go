@@ -33,6 +33,8 @@ const (
 
 	kubeletVersionConstraint = ">= 1.8"
 	errGlue                  = " & "
+
+	initialConditionParsingDelay = 5
 )
 
 // CreateNodeReqV2 represent a request for specific data to create a node
@@ -72,9 +74,9 @@ func decodeCreateNodeReqV2(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-func outputNode(node *corev1.Node) *apiv2.Node {
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
 	nodeStatus := apiv2.NodeStatus{}
-	nodeStatus = apiNodeStatus(nodeStatus, node)
+	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	var deletionTimestamp *time.Time
 	if node.DeletionTimestamp != nil {
 		deletionTimestamp = &node.DeletionTimestamp.Time
@@ -97,7 +99,7 @@ func outputNode(node *corev1.Node) *apiv2.Node {
 	}
 }
 
-func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeStatus {
+func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv2.NodeStatus {
 	for _, address := range inputNode.Status.Addresses {
 		status.Addresses = append(status.Addresses, apiv2.NodeAddress{
 			Type:    string(address.Type),
@@ -105,9 +107,11 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeSt
 		})
 	}
 
-	reason, message := parseNodeConditions(inputNode)
-	status.ErrorReason += reason
-	status.ErrorMessage += message
+	if !hideInitialNodeConditions || time.Since(inputNode.CreationTimestamp.Time).Minutes() > initialConditionParsingDelay {
+		reason, message := parseNodeConditions(inputNode)
+		status.ErrorReason += reason
+		status.ErrorMessage += message
+	}
 
 	status.Allocatable.Memory = inputNode.Status.Allocatable.Memory().String()
 	status.Allocatable.CPU = inputNode.Status.Allocatable.Cpu().String()
@@ -121,7 +125,7 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeSt
 	return status
 }
 
-func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, error) {
+func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
 	displayName := machine.Spec.Name
 	labels := map[string]string{}
 	annotations := map[string]string{}
@@ -159,7 +163,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, e
 
 		labels = node.Labels
 		annotations = node.Annotations
-		nodeStatus = apiNodeStatus(nodeStatus, node)
+		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	}
 
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
@@ -283,7 +287,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, fmt.Errorf("failed to create machine: %v", err)
 		}
 
-		return outputMachine(machine, nil)
+		return outputMachine(machine, nil, false)
 	}
 }
 
@@ -317,7 +321,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		req := request.(ClusterReq)
+		req := request.(NodesV2Req)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
@@ -353,7 +357,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 			if node != nil {
 				matchedMachineNodes.Insert(string(node.UID))
 			}
-			outNode, err := outputMachine(&machineList.Items[i], node)
+			outNode, err := outputMachine(&machineList.Items[i], node, req.HideInitialConditions)
 			if err != nil {
 				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
 			}
@@ -363,7 +367,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 		// Now all nodes, which do not belong to a machine - Relevant for BYO
 		for i := range nodeList.Items {
 			if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
-				apiNodes = append(apiNodes, outputNode(&nodeList.Items[i]))
+				apiNodes = append(apiNodes, outputNode(&nodeList.Items[i], req.HideInitialConditions))
 			}
 		}
 		return apiNodes, nil
@@ -448,9 +452,9 @@ func getNodeEndpointV2() endpoint.Endpoint {
 		}
 
 		if machine == nil {
-			return outputNode(node), nil
+			return outputNode(node, req.HideInitialConditions), nil
 		}
-		return outputMachine(machine, node)
+		return outputMachine(machine, node, req.HideInitialConditions)
 	}
 }
 
