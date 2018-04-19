@@ -35,6 +35,9 @@ spec:
         - -v=4
         - -cluster-dns=10.10.10.10
         - -internal-listen-address=0.0.0.0:8085
+        env:
+        - name: DO_TOKEN
+          value: do-token
         image: kubermatic/machine-controller:v0.1.2
         livenessProbe:
           httpGet:
