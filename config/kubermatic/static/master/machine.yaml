@@ -12,8 +12,6 @@ spec:
     {{- if .Node.Spec.Cloud.AWS }}
     cloudProvider: "aws"
     cloudProviderSpec:
-      accessKeyId: {{ .Cluster.Spec.Cloud.AWS.AccessKeyID | quote }}
-      secretAccessKey: {{ .Cluster.Spec.Cloud.AWS.SecretAccessKey | quote  }}
       region: "{{ .Datacenter.Spec.AWS.Region }}"
       availabilityZone: "{{ .Datacenter.Spec.AWS.Region }}{{ .Datacenter.Spec.AWS.ZoneCharacter }}"
       vpcId: {{ .Cluster.Spec.Cloud.AWS.VPCID | quote }}
@@ -34,12 +32,7 @@ spec:
     {{- if .Node.Spec.Cloud.Openstack }}
     cloudProvider: "openstack"
     cloudProviderSpec:
-      identityEndpoint: "{{ .Datacenter.Spec.Openstack.AuthURL }}"
       region: "{{ .Datacenter.Spec.Openstack.Region }}"
-      username: {{ .Cluster.Spec.Cloud.Openstack.Username | quote }}
-      password: {{ .Cluster.Spec.Cloud.Openstack.Password | quote }}
-      domainName: {{ .Cluster.Spec.Cloud.Openstack.Domain | quote }}
-      tenantName: {{ .Cluster.Spec.Cloud.Openstack.Tenant | quote }}
       image: {{ .Node.Spec.Cloud.Openstack.Image | quote }}
       flavor: {{ .Node.Spec.Cloud.Openstack.Flavor | quote }}
       securityGroups:
@@ -51,7 +44,6 @@ spec:
     {{- if .Node.Spec.Cloud.Digitalocean }}
     cloudProvider: "digitalocean"
     cloudProviderSpec:
-      token: {{ .Cluster.Spec.Cloud.Digitalocean.Token | quote }}
       region: "{{ .Datacenter.Spec.Digitalocean.Region }}"
       size: "{{ .Node.Spec.Cloud.Digitalocean.Size }}"
       backups: {{ .Node.Spec.Cloud.Digitalocean.Backups }}
@@ -67,7 +59,6 @@ spec:
     {{- if .Node.Spec.Cloud.Hetzner }}
     cloudProvider: "hetzner"
     cloudProviderSpec:
-      token: {{ .Cluster.Spec.Cloud.Hetzner.Token  | quote }}
       serverType: "{{ .Node.Spec.Cloud.Hetzner.Type }}"
       datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
       location: "{{ .Datacenter.Spec.Hetzner.Location }}"
