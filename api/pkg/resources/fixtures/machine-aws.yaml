@@ -10,7 +10,6 @@ spec:
   providerConfig:
     cloudProvider: aws
     cloudProviderSpec:
-      accessKeyId: aws-access-key-id
       ami: aws-ami
       availabilityZone: fra1aws-zone-character
       diskSize: 25
@@ -18,7 +17,6 @@ spec:
       instanceProfile: aws-instance-profile-name
       instanceType: t2.micro
       region: fra1
-      secretAccessKey: aws-secret-access-key
       securityGroupIDs:
       - aws-security-group-id
       subnetId: aws-subnet-id

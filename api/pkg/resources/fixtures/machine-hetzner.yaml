@@ -13,7 +13,6 @@ spec:
       datacenter: hetzner-datacenter
       location: hetzner-location
       serverType: hetzner-type
-      token: hetzner-token
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false
