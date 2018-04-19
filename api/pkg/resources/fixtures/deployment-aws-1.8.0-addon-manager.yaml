@@ -19,7 +19,7 @@ spec:
   strategy:
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
     type: RollingUpdate
   template:
     metadata:
@@ -36,5 +36,14 @@ spec:
         image: kubermatic/addon-manager:v1.8.2
         imagePullPolicy: Always
         name: addon-manager
+        resources: {}
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
+          sleep 2; done;
+        image: busybox
+        name: apiserver-running
         resources: {}
 status: {}
