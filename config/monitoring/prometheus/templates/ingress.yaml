@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: prometheus-kubernetes
+  name: prometheus-kubermatic
   annotations:
     kubernetes.io/ingress.class: "nginx"
     # type of authentication

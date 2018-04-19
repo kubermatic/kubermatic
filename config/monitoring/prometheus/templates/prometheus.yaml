@@ -16,7 +16,7 @@ spec:
   alerting:
     alertmanagers:
     - namespace: {{ .Release.Namespace }}
-      name: alertmanager
+      name: alertmanager-kubermatic
       port: web
   ruleSelector:
     matchLabels:
