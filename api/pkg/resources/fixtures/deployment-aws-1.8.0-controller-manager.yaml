@@ -19,13 +19,10 @@ spec:
   strategy:
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
     type: RollingUpdate
   template:
     metadata:
-      annotations:
-        prometheus.io/port: "10252"
-        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         ca-cert-secret-revision: "123456"
@@ -63,20 +60,18 @@ spec:
           value: aws-availability-zone
         image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
         livenessProbe:
+          failureThreshold: 8
           httpGet:
             path: /healthz
             port: 10252
-          initialDelaySeconds: 60
-          periodSeconds: 60
-          timeoutSeconds: 60
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
         name: controller-manager
         readinessProbe:
           httpGet:
             path: /healthz
             port: 10252
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 30
+          timeoutSeconds: 15
         resources: {}
         volumeMounts:
         - mountPath: /etc/kubernetes/ca-cert
@@ -91,6 +86,15 @@ spec:
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
           readOnly: true
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
+          sleep 2; done;
+        image: busybox
+        name: apiserver-running
+        resources: {}
       volumes:
       - name: ca-cert
         secret:

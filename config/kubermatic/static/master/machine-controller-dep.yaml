@@ -18,7 +18,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -26,21 +26,55 @@ spec:
         release: {{index .Version.Values "machine-controller-version"}}
     spec:
       terminationGracePeriodSeconds: 60
+      initContainers:
+      - name: apiserver-running
+        image: busybox
+        command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
-        - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
-          name: machine-controller
-          command:
-            - /usr/local/bin/machine-controller
-            - -master=http://apiserver:8080
-            - -logtostderr
-            - -v=4
-            - -cluster-dns=10.10.10.10
-            - -internal-listen-address=0.0.0.0:8085
-          livenessProbe:
-            httpGet:
-              path: /live
-              port: 8085
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8085
+      - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
+        name: machine-controller
+        command:
+          - /usr/local/bin/machine-controller
+          - -master=http://apiserver:8080
+          - -logtostderr
+          - -v=4
+          - -cluster-dns=10.10.10.10
+          - -internal-listen-address=0.0.0.0:8085
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8085
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8085
+        env:
+        {{ if .Cluster.Spec.Cloud.AWS }}
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Cluster.Spec.Cloud.AWS.AccessKeyID }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Cluster.Spec.Cloud.AWS.SecretAccessKey }}
+        {{ end }}
+        {{ if .Cluster.Spec.Cloud.Digitalocean }}
+        - name: DO_TOKEN
+          value: {{ .Cluster.Spec.Cloud.Digitalocean.Token }}
+        {{ end }}
+        {{ if .Cluster.Spec.Cloud.Hetzner }}
+        - name: HZ_TOKEN
+          value: {{ .Cluster.Spec.Cloud.Hetzner.Token }}
+        {{ end }}
+        {{ if .Cluster.Spec.Cloud.Openstack }}
+        - name: OS_AUTH_URL
+          value: {{ .DC.Spec.Openstack.AuthURL }}
+        - name: OS_USER_NAME
+          value: {{ .Cluster.Spec.Cloud.Openstack.Username }}
+        - name: OS_PASSWORD
+          value: {{ .Cluster.Spec.Cloud.Openstack.Password }}
+        - name: OS_DOMAIN_NAME
+          value: {{ .Cluster.Spec.Cloud.Openstack.Domain }}
+        - name: OS_TENANT_NAME
+          value: {{ .Cluster.Spec.Cloud.Openstack.Tenant }}
+        {{ end }}

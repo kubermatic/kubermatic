@@ -21,7 +21,6 @@ spec:
       - kubermatic-cluster-docluster-1a2b3c4d5e
       - digitalocean-example-tag-1
       - digitalocean-example-tag-2
-      token: digitalocean-token
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false
