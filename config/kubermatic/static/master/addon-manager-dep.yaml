@@ -19,7 +19,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -27,6 +27,13 @@ spec:
         role: addon-manager
         version: v1
     spec:
+      initContainers:
+      - name: apiserver-running
+        image: busybox
+        command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
       - name: addon-manager
         image: kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
