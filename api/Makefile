@@ -68,7 +68,7 @@ gittag:
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
-fix: 
+fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
@@ -84,7 +84,7 @@ endif
 	echo "golint" ;\
 	golint -set_exit_status $$PACKAGES ;\
 	echo "errcheck -blank" ;\
-	errcheck -blank $$PACKAGES ;\
+	errcheck -exclude errcheck_excludes.txt -blank $$PACKAGES ;\
 	echo "varcheck" ;\
 	varcheck $$PACKAGES ;\
 	echo "structcheck" ;\
