@@ -18,7 +18,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -26,6 +26,13 @@ spec:
         release: {{index .Version.Values "machine-controller-version"}}
     spec:
       terminationGracePeriodSeconds: 60
+      initContainers:
+      - name: apiserver-running
+        image: busybox
+        command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
       - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
         name: machine-controller

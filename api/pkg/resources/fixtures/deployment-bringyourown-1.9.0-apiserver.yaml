@@ -19,13 +19,10 @@ spec:
   strategy:
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
     type: RollingUpdate
   template:
     metadata:
-      annotations:
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         apiserver-tls-secret-revision: "123456"
@@ -130,12 +127,12 @@ spec:
         - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
+          failureThreshold: 8
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 60
-          periodSeconds: 60
-          timeoutSeconds: 60
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
         name: apiserver
         ports:
         - containerPort: 30000
@@ -144,9 +141,8 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 15
         resources: {}
         volumeMounts:
         - mountPath: /etc/kubernetes/tls
@@ -167,6 +163,15 @@ spec:
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379]
+          get foo; do echo waiting for etcd; sleep 2; done;
+        image: quay.io/coreos/etcd:v3.2.7
+        name: etcd-running
+        resources: {}
       volumes:
       - name: apiserver-tls
         secret:
