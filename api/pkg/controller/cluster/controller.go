@@ -370,6 +370,7 @@ func (cc *Controller) syncCluster(key string) error {
 
 	if cluster.Spec.Pause {
 		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
+		return nil
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
