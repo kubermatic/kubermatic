@@ -1278,6 +1278,11 @@
           "type": "string",
           "x-go-name": "MasterVersion"
         },
+        "pause": {
+          "description": "Tells that this cluster should not be processed anymore by any cluster controller",
+          "type": "boolean",
+          "x-go-name": "Pause"
+        },
         "workerName": {
           "type": "string",
           "x-go-name": "WorkerName"
