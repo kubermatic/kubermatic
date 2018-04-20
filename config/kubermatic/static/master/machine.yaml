@@ -10,67 +10,67 @@ spec:
       {{ range .Keys }}- {{ .Spec.PublicKey }}
       {{ end }}
     {{- if .Node.Spec.Cloud.AWS }}
-    cloudProvider: "aws"
+    cloudProvider: aws
     cloudProviderSpec:
-      region: "{{ .Datacenter.Spec.AWS.Region }}"
-      availabilityZone: "{{ .Datacenter.Spec.AWS.Region }}{{ .Datacenter.Spec.AWS.ZoneCharacter }}"
+      region: {{ .Datacenter.Spec.AWS.Region }}
+      availabilityZone: {{ print .Datacenter.Spec.AWS.Region .Datacenter.Spec.AWS.ZoneCharacter | quote }}
       vpcId: {{ .Cluster.Spec.Cloud.AWS.VPCID | quote }}
       subnetId: {{ .Cluster.Spec.Cloud.AWS.SubnetID | quote }}
       instanceProfile: {{ .Cluster.Spec.Cloud.AWS.InstanceProfileName | quote }}
       securityGroupIDs:
       - {{ .Cluster.Spec.Cloud.AWS.SecurityGroupID | quote }}
-      instanceType: "{{ .Node.Spec.Cloud.AWS.InstanceType }}"
+      instanceType: {{ .Node.Spec.Cloud.AWS.InstanceType | quote }}
       diskSize: {{ default 25 .Node.Spec.Cloud.AWS.VolumeSize }}
-      diskType: "{{ default "gp2" .Node.Spec.Cloud.AWS.VolumeType }}"
+      diskType: {{ default "gp2" .Node.Spec.Cloud.AWS.VolumeType | quote }}
       ami: {{ .Node.Spec.Cloud.AWS.AMI | quote }}
       tags:
-        KubernetesCluster: "{{ .Cluster.Name }}"
+        KubernetesCluster: {{ .Cluster.Name | quote }}
         {{- range $key, $value := .Node.Spec.Cloud.AWS.Tags }}
-        {{$key}}: {{$value | quote}}
+        {{$key | quote }}: {{$value | quote }}
         {{- end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Openstack }}
-    cloudProvider: "openstack"
+    cloudProvider: openstack
     cloudProviderSpec:
-      region: "{{ .Datacenter.Spec.Openstack.Region }}"
+      region: {{ .Datacenter.Spec.Openstack.Region | quote }}
       image: {{ .Node.Spec.Cloud.Openstack.Image | quote }}
       flavor: {{ .Node.Spec.Cloud.Openstack.Flavor | quote }}
       securityGroups:
-        - {{ .Cluster.Spec.Cloud.Openstack.SecurityGroups }}
+        - {{ .Cluster.Spec.Cloud.Openstack.SecurityGroups | quote }}
       floatingIpPool: {{ .Cluster.Spec.Cloud.Openstack.FloatingIPPool | quote }}
-      availabilityZone: "{{ .Datacenter.Spec.Openstack.AvailabilityZone }}"
+      availabilityZone: {{ .Datacenter.Spec.Openstack.AvailabilityZone | quote }}
       network: {{ .Cluster.Spec.Cloud.Openstack.Network | quote }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Digitalocean }}
-    cloudProvider: "digitalocean"
+    cloudProvider: digitalocean
     cloudProviderSpec:
-      region: "{{ .Datacenter.Spec.Digitalocean.Region }}"
-      size: "{{ .Node.Spec.Cloud.Digitalocean.Size }}"
+      region: {{ .Datacenter.Spec.Digitalocean.Region | quote }}
+      size: {{ .Node.Spec.Cloud.Digitalocean.Size }}
       backups: {{ .Node.Spec.Cloud.Digitalocean.Backups }}
       ipv6: {{ .Node.Spec.Cloud.Digitalocean.IPv6 }}
       private_networking: true
       monitoring: {{ .Node.Spec.Cloud.Digitalocean.Monitoring }}
       tags:
       - kubermatic
-      - kubermatic-cluster-{{ .Cluster.Name }}
+      - {{ print "kubermatic-cluster-" .Cluster.Name | quote }}
       {{ range .Node.Spec.Cloud.Digitalocean.Tags }}- {{ . | quote }}
       {{ end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Hetzner }}
-    cloudProvider: "hetzner"
+    cloudProvider: hetzner
     cloudProviderSpec:
-      serverType: "{{ .Node.Spec.Cloud.Hetzner.Type }}"
-      datacenter: "{{ .Datacenter.Spec.Hetzner.Datacenter }}"
-      location: "{{ .Datacenter.Spec.Hetzner.Location }}"
+      serverType: {{ .Node.Spec.Cloud.Hetzner.Type | quote }}
+      datacenter: {{ .Datacenter.Spec.Hetzner.Datacenter | quote }}
+      location: {{ .Datacenter.Spec.Hetzner.Location | quote }}
     {{- end }}
     {{- if .Node.Spec.Cloud.VSphere }}
-    cloudProvider: "vsphere"
+    cloudProvider: vsphere
     cloudProviderSpec:
     {{- if .Node.Spec.OperatingSystem.Ubuntu }}
-      templateVMName: "ubuntu-template"
+      templateVMName: ubuntu-template
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
-      templateVMName: "container-linux-template"
+      templateVMName: container-linux-template
     {{- end }}
       username: {{ .Cluster.Spec.Cloud.VSphere.Username | quote }}
       password: {{ .Cluster.Spec.Cloud.VSphere.Password | quote }}
@@ -83,19 +83,19 @@ spec:
       memoryMB: {{ .Node.Spec.Cloud.VSphere.Memory }}
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
-    operatingSystem: "coreos"
+    operatingSystem: coreos
     operatingSystemSpec:
       disableAutoUpdate: {{ .Node.Spec.OperatingSystem.DisableAutoUpdate }}
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.Ubuntu }}
-    operatingSystem: "ubuntu"
+    operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: {{ .Node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot }}
     {{- end }}
   roles:
-  - "Node"
+  - Node
   versions:
-    kubelet: "{{ .Node.Spec.Versions.Kubelet }}"
+    kubelet: {{ .Node.Spec.Versions.Kubelet | quote }}
     containerRuntime:
-      name: "{{ .Node.Spec.Versions.ContainerRuntime.Name }}"
-      version: "{{ .Node.Spec.Versions.ContainerRuntime.Version }}"
+      name: {{ .Node.Spec.Versions.ContainerRuntime.Name | quote }}
+      version: {{ .Node.Spec.Versions.ContainerRuntime.Version | quote }}
