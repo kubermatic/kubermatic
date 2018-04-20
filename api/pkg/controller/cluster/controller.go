@@ -368,6 +368,10 @@ func (cc *Controller) syncCluster(key string) error {
 		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
 	}
 
+	if cluster.Spec.Pause {
+		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
+	}
+
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
 		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
