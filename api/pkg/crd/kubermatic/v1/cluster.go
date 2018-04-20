@@ -99,6 +99,8 @@ type ClusterSpec struct {
 	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
 	MasterVersion     string `json:"masterVersion"`
 	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
+	// Tells that this cluster should not be processed anymore by any cluster controller
+	Pause bool `json:"pause"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
