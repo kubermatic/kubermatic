@@ -40,4 +40,6 @@ spec:
         imagePullPolicy: Always
         env:
         - name: KUBECTL_OPTS
-          value: "--server=http://apiserver:8080"
+          value: --server=http://apiserver:8080
+        - name: ADDON_MANAGER_LEADER_ELECTION
+          value: "false"
