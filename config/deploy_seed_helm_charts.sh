@@ -67,4 +67,4 @@ helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHAR
 helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
 helm ${HELM_OPTS} upgrade -i nodeport-proxy --namespace nodeport-proxy -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-proxy/
 
-helm ${HELM_OPTS} delete --purge nodeport-exposer
+helm ${HELM_OPTS} delete --purge nodeport-exposer || true

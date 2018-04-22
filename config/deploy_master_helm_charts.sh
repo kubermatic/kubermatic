@@ -70,4 +70,4 @@ helm ${HELM_OPTS} upgrade -i cert-manager --namespace cert-manager -f ${VALUESFI
 helm ${HELM_OPTS} upgrade -i certs --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/certs/
 helm ${HELM_OPTS} upgrade -i nodeport-proxy --namespace nodeport-proxy -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-proxy/
 
-helm ${HELM_OPTS} delete --purge nodeport-exposer
+helm ${HELM_OPTS} delete --purge nodeport-exposer || true
