@@ -68,4 +68,6 @@ helm ${HELM_OPTS} upgrade -i oauth --namespace oauth -f ${VALUESFILE} ${CHARTS_P
 helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
 helm ${HELM_OPTS} upgrade -i cert-manager --namespace cert-manager -f ${VALUESFILE} ${CHARTS_PATH}/cert-manager/
 helm ${HELM_OPTS} upgrade -i certs --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/certs/
-helm ${HELM_OPTS} upgrade -i nodeport-exposer --namespace nodeport-exposer -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-exposer/
+helm ${HELM_OPTS} upgrade -i nodeport-proxy --namespace nodeport-proxy -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-proxy/
+
+helm ${HELM_OPTS} delete --purge nodeport-exposer
