@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodeport-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodeport-proxy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nodeport-proxy
+    spec:
+      serviceAccountName: nodeport-proxy
+      containers:
+      - name: nodeport-proxy
+        image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
+        command:
+        - "/nodeport-proxy"
+        args: [
+          "-listen-address", "0.0.0.0",
+          "-lb-namespace", "nodeport-proxy",
+          "-lb-name", "nodeport-lb",
+          "-logtostderr",
+          "-v","6"
+        ]
