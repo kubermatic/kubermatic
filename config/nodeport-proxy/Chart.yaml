@@ -1,0 +1,13 @@
+name: nodeport-proxy
+version: 1.0.0
+description: Kubermatic nodeport-proxy
+keywords:
+  - k8s
+  - kubermatic
+  - nodeport-proxy
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/nodeport-proxy
+maintainers:
+  - name: Henrik Schmidt
+    email: henrik@loodse.com

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    nodeport-exposer.k8s.io/expose: "true"
+    nodeport-proxy.k8s.io/expose: "true"
   creationTimestamp: null
   name: apiserver-external
   ownerReferences:

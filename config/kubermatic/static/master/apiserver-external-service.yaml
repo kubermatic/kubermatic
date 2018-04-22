@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: apiserver-external
   annotations:
-    nodeport-exposer.k8s.io/expose: "true"
+    nodeport-proxy.k8s.io/expose: "true"
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
     blockOwnerDeletion: true

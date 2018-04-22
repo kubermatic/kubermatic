@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/golang/glog"
@@ -13,6 +14,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -239,14 +241,20 @@ func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 
 	//Always update the ip
-	ips, err := net.LookupIP(c.Address.ExternalName)
+	resolvedIPs, err := net.LookupIP(c.Address.ExternalName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup ip address for %s: %v", c.Address.ExternalName, err)
 	}
-	if len(ips) == 0 {
+	if len(resolvedIPs) == 0 {
 		return fmt.Errorf("no ip addresses found for %s: %v", c.Address.ExternalName, err)
 	}
-	c.Address.IP = ips[0].String()
+	ipList := sets.NewString()
+	for _, ip := range resolvedIPs {
+		ipList.Insert(ip.String())
+	}
+	ips := ipList.List()
+	sort.Strings(ips)
+	c.Address.IP = ips[0]
 
 	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
 	if err != nil {
