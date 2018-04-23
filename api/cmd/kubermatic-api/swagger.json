@@ -3390,6 +3390,10 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "Memory"
+        },
+        "template": {
+          "type": "string",
+          "x-go-name": "Template"
         }
       },
       "x-go-name": "VSphereNodeSpec",
