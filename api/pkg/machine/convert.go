@@ -104,8 +104,9 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
 		}
 		cloudSpec.VSphere = &apiv2.VSphereNodeSpec{
-			CPUs:   int(config.CPUs),
-			Memory: int(config.MemoryMB),
+			CPUs:     int(config.CPUs),
+			Memory:   int(config.MemoryMB),
+			Template: config.TemplateVMName.Value,
 		}
 	}
 
