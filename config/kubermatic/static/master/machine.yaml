@@ -67,10 +67,10 @@ spec:
     cloudProvider: vsphere
     cloudProviderSpec:
     {{- if .Node.Spec.OperatingSystem.Ubuntu }}
-      templateVMName: ubuntu-template
+      templateVMName: {{ default "ubuntu-template" .Node.Spec.Cloud.VSphere.Template }}
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
-      templateVMName: container-linux-template
+      templateVMName: {{ default "container-linux-template" .Node.Spec.Cloud.VSphere.Template }}
     {{- end }}
       username: {{ .Cluster.Spec.Cloud.VSphere.Username | quote }}
       password: {{ .Cluster.Spec.Cloud.VSphere.Password | quote }}
