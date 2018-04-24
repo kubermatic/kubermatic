@@ -59,10 +59,7 @@ spec:
           "--cloud-provider=openstack",
           {{ end }}
           "--allocate-node-cidrs=true",
-          {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
-          #TODO: Remove when we drop 1.8 support
-          "--controllers=*,tokencleaner,bootstrapsigner",
-          {{ end }}
+          "--controllers=*,bootstrapsigner,tokencleaner",
           "--v=4"
         ]
         readinessProbe:
