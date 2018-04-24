@@ -45,7 +45,7 @@ spec:
         - --cluster-cidr=172.25.0.0/16
         - --configure-cloud-routes=false
         - --allocate-node-cidrs=true
-        - --controllers=*,tokencleaner,bootstrapsigner
+        - --controllers=*,bootstrapsigner,tokencleaner
         - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
         livenessProbe:
