@@ -35,15 +35,32 @@ func (a *amazonEc2) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if cloud.AWS.VPCID != "" {
-		if _, err = getVPCByID(cloud.AWS.VPCID, client); err != nil {
-			return err
+	// Some settings require the vpc to be set
+	if cloud.AWS.VPCID == "" {
+		if cloud.AWS.SecurityGroup != "" {
+			return fmt.Errorf("vpc must be set when specifying a security group")
+		}
+		if cloud.AWS.SubnetID != "" {
+			return fmt.Errorf("vpc must be set when specifying a subnet")
 		}
 	}
 
-	if cloud.AWS.SubnetID != "" {
-		if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+	if cloud.AWS.VPCID != "" {
+		vpc, err := getVPCByID(cloud.AWS.VPCID, client)
+		if err != nil {
 			return err
+		}
+
+		if cloud.AWS.SubnetID != "" {
+			if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+				return err
+			}
+		}
+
+		if cloud.AWS.SecurityGroup != "" {
+			if _, err = getSecurityGroup(client, vpc, cloud.AWS.SecurityGroup); err != nil {
+				return err
+			}
 		}
 	}
 
