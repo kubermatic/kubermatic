@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +27,6 @@ import (
 )
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	ctx := context.Background()
 
 	datacenters := buildDatacenterMeta()
 	cloudProviders := cloud.Providers(datacenters)
@@ -63,7 +61,6 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	updateManager := version.New(versions, updates)
 
 	r := NewRouting(
-		ctx,
 		datacenters,
 		clusterProviders,
 		cloudProviders,

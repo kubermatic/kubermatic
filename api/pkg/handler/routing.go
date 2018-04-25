@@ -35,7 +35,6 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	ctx              context.Context
 	datacenters      map[string]provider.DatacenterMeta
 	cloudProviders   provider.CloudRegistry
 	sshKeyProvider   provider.SSHKeyProvider
@@ -49,7 +48,6 @@ type Routing struct {
 
 // NewRouting creates a new Routing.
 func NewRouting(
-	ctx context.Context,
 	datacenters map[string]provider.DatacenterMeta,
 	clusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
@@ -60,7 +58,6 @@ func NewRouting(
 	updateManager UpdateManager,
 ) Routing {
 	return Routing{
-		ctx:              ctx,
 		datacenters:      datacenters,
 		clusterProviders: clusterProviders,
 		sshKeyProvider:   sshKeyProvider,

@@ -22,7 +22,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -161,9 +160,6 @@ func main() {
 		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", tokenIssuer, clientID, err)
 	}
 
-	// start server
-	ctx := context.Background()
-
 	updateManager, err := version.NewFromFiles(versionsFile, updatesFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager: %v", err))
@@ -172,7 +168,6 @@ func main() {
 	cloudProviders := cloud.Providers(datacenters)
 
 	r := handler.NewRouting(
-		ctx,
 		datacenters,
 		clusterProviders,
 		cloudProviders,
