@@ -189,6 +189,9 @@ func getSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.Security
 	if err != nil {
 		return nil, fmt.Errorf("failed to get security group: %v", err)
 	}
+	if len(dsgOut.SecurityGroups) == 0 {
+		return nil, fmt.Errorf("security group %s not found in vpc %s", name, *vpc.VpcId)
+	}
 
 	return dsgOut.SecurityGroups[0], nil
 }
