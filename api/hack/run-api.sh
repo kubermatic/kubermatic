@@ -7,6 +7,9 @@ set -x
 
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+
+make build
+
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
