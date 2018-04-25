@@ -135,17 +135,22 @@ func (os *Provider) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	}
 
 	if cloud.Openstack.NetworkCreated {
-
 		if _, err = detachSubnetFromRouter(netClient, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
-			return fmt.Errorf("failed to detach subnet from router: %v", err)
+			if err.Error() != "Resource not found" {
+				return fmt.Errorf("failed to detach subnet from router: %v", err)
+			}
 		}
 
 		if err = deleteNetworkByName(netClient, cloud.Openstack.Network); err != nil {
-			return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
+			if err.Error() != "Resource not found" {
+				return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
+			}
 		}
 
 		if err = deleteRouter(netClient, cloud.Openstack.RouterID); err != nil {
-			return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
+			if err.Error() != "Resource not found" {
+				return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
+			}
 		}
 	}
 
