@@ -12,6 +12,7 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
+  -master-resources=../config/kubermatic/static/master \
   -worker-name="$(uname -n | tr -cd '[:alnum:]')" \
   -token-issuer=https://dev.kubermatic.io/dex \
   -prometheus-address=127.0.0.1:18085 \
