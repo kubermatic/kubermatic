@@ -124,3 +124,22 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 		return nil, clusterProvider.DeleteCluster(user, c.Name)
 	}
 }
+
+func getClusterMetricsEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		req := request.(ClusterReq)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
+		if err != nil {
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
+			}
+			return nil, err
+		}
+
+		// TODO: Implement communicating with Prometheus
+
+		return c, nil
+	}
+}

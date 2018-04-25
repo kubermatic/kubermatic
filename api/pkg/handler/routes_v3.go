@@ -53,6 +53,14 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgradesV3())
+
+	mux.Methods(http.MethodPut).
+		Path("/dc/{dc}/cluster/{cluster}/upgrade").
+		Handler(r.performClusterUpgradeV3())
+
+	mux.Methods(http.MethodGet).
+		Path("/dc/{dc}/cluster/{cluster}/metrics").
+		Handler(r.clusterMetricsHandlerV3())
 }
 
 // Creates a cluster
@@ -297,6 +305,32 @@ func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(getClusterUpgrades(r.updateManager)),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) performClusterUpgradeV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(performClusterUpgrade(r.versions, r.updates)),
+		decodeUpgradeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) clusterMetricsHandlerV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(getClusterMetricsEndpoint()),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
