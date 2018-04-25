@@ -47,6 +47,7 @@ spec:
         - --cloud-config=/etc/kubernetes/cloud/config
         - --cloud-provider=openstack
         - --allocate-node-cidrs=true
+        - --controllers=*,bootstrapsigner,tokencleaner
         - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
         livenessProbe:
