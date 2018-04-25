@@ -508,25 +508,39 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	}
 
 	if cloud.AWS.RoleName != "" {
-		pout, err := iamClient.ListRolePolicies(&iam.ListRolePoliciesInput{
-			RoleName: aws.String(cloud.AWS.RoleName),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to list role policies for role %s: %s", cloud.AWS.RoleName, err.(awserr.Error).Message())
-		}
-		for _, arn := range pout.PolicyNames {
-			paramsDetachPolicy := &iam.DetachRolePolicyInput{
-				PolicyArn: arn,
-				RoleName:  aws.String(cloud.AWS.RoleName),
-			}
-			_, err = iamClient.DetachRolePolicy(paramsDetachPolicy)
-			if err != nil {
-				return fmt.Errorf("failed to detach policy %s from role %s: %s", *arn, cloud.AWS.RoleName, err.(awserr.Error).Message())
-			}
+		if err := detachAllPoliciesFromRole(iamClient, cloud.AWS.RoleName); err != nil {
+			return fmt.Errorf("failed to detach all policies from role: %v", err)
 		}
 		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cloud.AWS.RoleName}); err != nil {
 			if err.(awserr.Error).Code() != "NoSuchEntity" {
 				return fmt.Errorf("failed to delete Role %s: %s", cloud.AWS.RoleName, err.(awserr.Error).Message())
+			}
+		}
+	}
+
+	return nil
+}
+
+func detachAllPoliciesFromRole(client *iam.IAM, roleName string) error {
+	rpout, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
+		RoleName: aws.String(roleName),
+	})
+	if err != nil {
+		return err
+	}
+
+	pout, err := client.ListPolicies(&iam.ListPoliciesInput{OnlyAttached: aws.Bool(true)})
+	if err != nil {
+		return err
+	}
+
+	//Welcome to my arrow...
+	for _, policyName := range rpout.PolicyNames {
+		for _, policy := range pout.Policies {
+			if *policyName == *policy.PolicyName {
+				if _, err = client.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.Arn, RoleName: aws.String(roleName)}); err != nil {
+					return fmt.Errorf("failed to detach policy %s", *policyName)
+				}
 			}
 		}
 	}
