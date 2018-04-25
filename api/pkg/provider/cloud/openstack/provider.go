@@ -136,19 +136,19 @@ func (os *Provider) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 
 	if cloud.Openstack.NetworkCreated {
 		if _, err = detachSubnetFromRouter(netClient, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
-			if _, ok := err.(gophercloud.Err404er); !ok {
+			if _, ok := err.(gophercloud.ErrDefault404); !ok {
 				return fmt.Errorf("failed to detach subnet from router: %v", err)
 			}
 		}
 
 		if err = deleteNetworkByName(netClient, cloud.Openstack.Network); err != nil {
-			if _, ok := err.(gophercloud.Err404er); !ok {
+			if _, ok := err.(gophercloud.ErrDefault404); !ok {
 				return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
 			}
 		}
 
 		if err = deleteRouter(netClient, cloud.Openstack.RouterID); err != nil {
-			if _, ok := err.(gophercloud.Err404er); !ok {
+			if _, ok := err.(gophercloud.ErrDefault404); !ok {
 				return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
 			}
 		}
