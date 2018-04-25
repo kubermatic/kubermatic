@@ -1,7 +1,7 @@
 # User management 
 **Author**: Lukasz Szaszkiewicz(@p0lyn0mial)
 
-**Status**: Draft proposal, contains only the first part, without `RBACGenerator`.
+**Status**: Draft proposal.
 
 ## Introduction
 
@@ -11,9 +11,10 @@ User management describes how to manage user access to various resources like de
 ## Goals
 1. Describe how `kubermatic-server` is going to drive authorization decisions. 
 2. Utilise kubernetes `RBAC` mechanism as much as possible. 
+3. Describe how `RBAC` roles are generated and attached to project’s resources.
 
 ## Non-Goal
-1. Describe how `RBAC` roles are generated and attached to project’s resources. 
+1. Describes how user management will work inside consumer clusters.
 
 
 ## Core concept
@@ -48,17 +49,17 @@ rules:
   verbs: ["get"]
 ```
 
-The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `cluster-editor-role-projectIdentity` `Role` to `cluster-editor-group-projectIdentity` `Group`
+The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `cluster-editor-role-projectIdentity` `Role` to `editor-projectIdentity` `Group`
 
 ```
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: cluster-editor-role-binding-projectIdentity
+  name: cluster-editor-binding-projectIdentity
   namespace: kubermatic
 subjects:
 - kind: Group
-  name: cluster-editor-group-projectIdentity
+  name: editor-projectIdentity
   apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: Role
@@ -72,7 +73,7 @@ roleRef:
 It may turn out that the `verb` list for `Admin`, `Owner`, `Editor` is exactly the same in such case we could generate only one `Role` to rule them all. 
 Does it mean we don't need more than two Groups ? Not necessarly. 
 We could say that the `Admin`group is special in a way that allows them to add other users to the `Project`. 
-In practice this means that they have write access to an instance of `ProjectGroups`. Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`. 
+Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`.
 
 This complexity could be enlosed in `ProjectProvider` and since `RBACGenerator` is parameter driven expressing the above statement will be possible.
 
@@ -83,20 +84,31 @@ One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleB
 
 Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionallity on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Admin` group and let Kubernetes take care of enforcing authorisation decisions. 
 
-One way of doing this we would like to propose is to create new types namely `Project` and `ProjectGroups`. For exact type definitions please refer to `Types` section. An instance of `Project` represents a unique project and gives us an identity we will attach to project’s `resources`. An instance of `ProjectGroups` belongs to a `Project` and helps us to map a particular `User` to a particular `Group` within a particular `Project`. At the same time we would like to extend existing  `apiv1.User` type in a way that would allow us to store a list of `Projects` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to. 
+One way of doing this we would like to propose is to create a new type namely `Project`. For exact type definitions please refer to `Types` section. An instance of `Project` represents a unique project
+and gives us an identity we will attach to project’s `resources`. At the same time we would like to extend existing `apiv1.User` type in a way that would allow us to store a list of `Projects` along with a `Group` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to.
 
 To recap when a user logs-in to our system this is what happens:
 - a user is authenticated
-- we retrieve a list of projects the user belongs to from `apiv1.User`
-- we query the system (using a build-in admin account) to find a matching instance of `ProjectGroups`
+- we retrieve a list of projects the user belongs to along with groups names from `apiv1.User`
 - we map the user to a group.
-- all the future queries will use `Impersonation` to authorise. To make this part more concrete imagine that we want to list clusters a user has access to. Since all `Resources` that belong to the `Project` will have the project's identity attached to them (be it `projectName` or `projectID`). To find corresponding clusters we will use a build-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
+- all the future queries will use `Impersonation` to authorise. To make this part more concrete imagine that we want to list clusters a user has access to. Since all `Resources` that belong to the `Project` will have the project's identity attached to them (be it `projectName` or `projectID`).
+To find corresponding clusters we will use a build-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
 
 
-To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept a modified version of `ClusterProvider`, the new component will also have `RBACGenerator`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will use `RBACGenerator` to create necessary `RBAC` roles passing required parameters like `apiGroupKind`, `groupName`, `resourceName`, `namespace` and an instance of kubernetes client.
+To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept a modified version of `ClusterProvider`, the new component will also rely on `RBACGenerator`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will rely on `RBACGenerator` to create necessary `RBAC` roles.
 
 ## RBACGenerator
-TBD
+`RBACGenerator` is a separate component responsible for creating `Role` and `RoleBindings` for every `Group` we wish to have. It can be implemented as an active
+reconciliation loop that constantly watches for project's resources. The controller pattern guarantees that required `RBAC` are in place
+even in the event of failure, otherwise enforcing I want to "create a resource AND attach `RBAC`" semantic could be hard.
+
+Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `admin-projectIdentity`, `editor-projectIdentity` etc.
+The names of `Role` and `RoleBindings` are `resourceKind-groupName-role-projectIdentity` and `resourceKind-groupName-binding-projectIdentity` respectively.
+When the controller detects a new resource it will generate a pair of `Role` and `RoleBindings`. In order to do this it needs to determine
+the list of valid `verbs` for each `Group`. This part could also be hardcoded and implemented as a `mapper` that accepts the `groupName`and spits out the `verbs`.
+The next step requires `apiGroup`, `resourceKind`, `resourceName` and `verbs` to generate valid `Role`. The last step is to create `RoleBindings` this part
+needs the name of the `Role` and the subject which in our case is the `groupName`.
+
 
 ## Types
 TBD
