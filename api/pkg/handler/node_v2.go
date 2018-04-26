@@ -158,7 +158,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 
 	if node != nil {
 		if node.Name != machine.Spec.Name {
-			displayName = fmt.Sprintf("%s (%s)", node.Name, machine.Spec.Name)
+			displayName = node.Name
 		}
 
 		labels = node.Labels
