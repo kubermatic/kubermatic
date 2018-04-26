@@ -63,7 +63,6 @@ sleep 30
 #helm ${HELM_OPTS} upgrade -i prometheus -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
 
 ############# Kubermatic #############
-helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/storage/
 helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
 helm ${HELM_OPTS} upgrade -i nodeport-proxy --namespace nodeport-proxy -f ${VALUESFILE} ${CHARTS_PATH}/nodeport-proxy/
 

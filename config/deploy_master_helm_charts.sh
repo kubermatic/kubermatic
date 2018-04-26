@@ -62,7 +62,6 @@ helm ${HELM_OPTS} upgrade -i alertmanager --namespace monitoring -f ${VALUESFILE
 helm ${HELM_OPTS} upgrade -i prometheus --namespace monitoring -f ${VALUESFILE} ${CHARTS_PATH}/monitoring/prometheus/
 
 ############# Kubermatic #############
-helm ${HELM_OPTS} upgrade -i storage --namespace default -f ${VALUESFILE} ${CHARTS_PATH}/storage/
 helm ${HELM_OPTS} upgrade -i nginx --namespace ingress-nginx -f ${VALUESFILE} ${CHARTS_PATH}/nginx-ingress-controller/
 helm ${HELM_OPTS} upgrade -i oauth --namespace oauth -f ${VALUESFILE} ${CHARTS_PATH}/oauth/
 helm ${HELM_OPTS} upgrade -i kubermatic --namespace kubermatic -f ${VALUESFILE} ${CHARTS_PATH}/kubermatic/
