@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -40,8 +42,13 @@ type openIDAuthenticator struct {
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) (Authenticator, error) {
-	p, err := oidc.NewProvider(context.Background(), issuer)
+func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, insecureSkipVerify bool) (Authenticator, error) {
+	ctx := context.Background()
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	p, err := oidc.NewProvider(context.WithValue(ctx, oauth2.HTTPClient, client), issuer)
 	if err != nil {
 		return nil, err
 	}
