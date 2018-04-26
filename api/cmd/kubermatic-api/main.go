@@ -61,6 +61,8 @@ var (
 	updatesFile     string
 	tokenIssuer     string
 	clientID        string
+
+	tokenIssuerSkipTLSVerify bool
 )
 
 const (
@@ -77,6 +79,7 @@ func main() {
 	flag.StringVar(&versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.StringVar(&tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
 	flag.Parse()
 
@@ -147,6 +150,7 @@ func main() {
 			handler.NewHeaderBearerTokenExtractor("Authorization"),
 			handler.NewQueryParamBearerTokenExtractor("token"),
 		),
+		tokenIssuerSkipTLSVerify,
 	)
 	if err != nil {
 		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", tokenIssuer, clientID, err)
