@@ -13,7 +13,9 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
+	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Provider struct{}
@@ -55,7 +57,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 	}
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP, kubernetesCACert string) (string, error) {
+func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -81,6 +83,16 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		return "", fmt.Errorf("failed to get coreos config from provider config: %v", err)
 	}
 
+	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
+	if err != nil {
+		return "", err
+	}
+
+	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting cacert: %v", err)
+	}
+
 	data := struct {
 		MachineSpec       machinesv1alpha1.MachineSpec
 		ProviderConfig    *providerconfig.Config
@@ -95,7 +107,7 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		MachineSpec:       spec,
 		ProviderConfig:    pconfig,
 		CoreOSConfig:      coreosConfig,
-		Kubeconfig:        kubeconfig,
+		Kubeconfig:        kubeconfigString,
 		CloudProvider:     cpName,
 		CloudConfig:       cpConfig,
 		HyperkubeImageTag: fmt.Sprintf("v%s_coreos.0", kubeletVersion.String()),
@@ -184,6 +196,7 @@ systemd:
           --cni-conf-dir=/etc/cni/net.d \
           --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
           --cluster-domain=cluster.local \
+          --authentication-token-webhook=true \
           --network-plugin=cni \
           {{- if .CloudProvider }}
           --cloud-provider={{ .CloudProvider }} \
