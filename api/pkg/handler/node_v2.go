@@ -246,7 +246,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, errors.NewBadRequest("cannot create node without cloud provider")
 		}
 		//Only allow container linux + docker
-		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
+		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != "" && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
 			return nil, fmt.Errorf("only docker is allowd when using container linux")
 		}
 		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil {
