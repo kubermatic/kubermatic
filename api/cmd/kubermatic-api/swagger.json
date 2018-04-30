@@ -954,6 +954,9 @@
           },
           "x-go-name": "ClientKeyData"
         },
+        "exec": {
+          "$ref": "#/definitions/ExecConfig"
+        },
         "extensions": {
           "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
           "type": "array",
@@ -1809,6 +1812,55 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "ExecConfig": {
+      "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",
+      "type": "object",
+      "title": "ExecConfig specifies a command to provide client credentials. The command is exec'd\nand outputs structured stdout holding credentials.",
+      "properties": {
+        "apiVersion": {
+          "description": "Preferred input version of the ExecInfo. The returned ExecCredentials MUST use\nthe same encoding version as the input.",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "args": {
+          "description": "Arguments to pass to the command when executing it.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Args"
+        },
+        "command": {
+          "description": "Command to execute.",
+          "type": "string",
+          "x-go-name": "Command"
+        },
+        "env": {
+          "description": "Env defines additional environment variables to expose to the process. These\nare unioned with the host's environment, as well as variables client-go uses\nto pass argument to the plugin.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecEnvVar"
+          },
+          "x-go-name": "Env"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "ExecEnvVar": {
+      "description": "ExecEnvVar is used for setting environment variables when executing an exec-based\ncredential plugin.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "FakeCloudSpec": {
       "type": "object",

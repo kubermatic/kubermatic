@@ -119,7 +119,7 @@ var (
 			"us-west-1":      "ami-65e0e305",
 			"ap-northeast-2": "ami-7248e81c",
 			"ap-southeast-2": "ami-b6bb47d4",
-			"eu-west-2":      "ami-22415846",
+			"eu-west-2":      "ami-ee6a718a",
 			"us-east-2":      "ami-e1496384",
 			"us-west-2":      "ami-a042f4d8",
 			"eu-west-3":      "ami-bfff49c2",
@@ -177,6 +177,19 @@ func getDefaultAMIID(os providerconfig.OperatingSystem, region string) (string, 
 	}
 
 	return id, nil
+}
+
+func getDefaultRootDevicePath(os providerconfig.OperatingSystem) (string, error) {
+	switch os {
+	case providerconfig.OperatingSystemUbuntu:
+		return "/dev/sda1", nil
+	case providerconfig.OperatingSystemCentOS:
+		return "/dev/sda1", nil
+	case providerconfig.OperatingSystemCoreos:
+		return "/dev/xvda", nil
+	}
+
+	return "", fmt.Errorf("no default root path found for %s operating system", os)
 }
 
 func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
@@ -530,8 +543,11 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 			return nil, err
 		}
 		securityGroupIDs = append(securityGroupIDs, sgID)
-	} else {
+	}
 
+	rootDevicePath, err := getDefaultRootDevicePath(pc.OperatingSystem)
+	if err != nil {
+		return nil, err
 	}
 
 	amiID := config.AMI
@@ -568,7 +584,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		ImageId: aws.String(amiID),
 		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
 			{
-				DeviceName: aws.String("/dev/xvda"),
+				DeviceName: aws.String(rootDevicePath),
 				Ebs: &ec2.EbsBlockDevice{
 					VolumeSize:          aws.Int64(config.DiskSize),
 					DeleteOnTermination: aws.Bool(true),

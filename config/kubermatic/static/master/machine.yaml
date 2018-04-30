@@ -85,7 +85,7 @@ spec:
     {{- if .Node.Spec.OperatingSystem.ContainerLinux }}
     operatingSystem: coreos
     operatingSystemSpec:
-      disableAutoUpdate: {{ .Node.Spec.OperatingSystem.DisableAutoUpdate }}
+      disableAutoUpdate: {{ .Node.Spec.OperatingSystem.ContainerLinux.DisableAutoUpdate }}
     {{- end }}
     {{- if .Node.Spec.OperatingSystem.Ubuntu }}
     operatingSystem: ubuntu
