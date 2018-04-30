@@ -15,8 +15,9 @@ spec:
   type: NodePort
   ports:
     - name: secure
-      port: {{ .GetApiserverExternalNodePortOrGetFree }}
-      nodePort: {{ .GetApiserverExternalNodePortOrGetFree }}
+      port: {{ default 443 .GetApiserverExternalNodePort }}
+      nodePort: {{ .GetApiserverExternalNodePort }}
       protocol: TCP
+      targetPort: {{ default 443 .GetApiserverExternalNodePort }}
   selector:
     role: apiserver
