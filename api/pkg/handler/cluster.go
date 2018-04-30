@@ -2,12 +2,17 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	prometheusapi "github.com/prometheus/client_golang/api"
+	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -126,6 +131,11 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 }
 
 func getClusterMetricsEndpoint() endpoint.Endpoint {
+	promClient, _ := prometheusapi.NewClient(prometheusapi.Config{
+		Address: "https://admin:loodse123@prometheus.dev.kubermatic.io",
+	})
+	promApi := prometheusv1.NewAPI(promClient)
+
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
@@ -138,8 +148,32 @@ func getClusterMetricsEndpoint() endpoint.Endpoint {
 			return nil, err
 		}
 
-		// TODO: Implement communicating with Prometheus
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
 
-		return c, nil
+		vals, err := promMachines(ctx, promApi, c.Name)
+
+		return vals, nil
 	}
+}
+
+func promMachines(ctx context.Context, api prometheusv1.API, clusterName string) ([]float64, error) {
+
+	query := fmt.Sprintf(`machine_controller_machines{namespace="cluster-%s"}`, clusterName)
+
+	now := time.Now()
+	val, err := api.QueryRange(ctx, query, prometheusv1.Range{
+		Start: now.Add(-1 * time.Hour),
+		End:   now,
+		Step:  30 * time.Second,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if val.Type() != model.ValMatrix {
+
+	}
+
+	return nil, nil
 }
