@@ -96,7 +96,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 			if test.ns != nil {
 				objects = append(objects, test.ns)
 			}
-			controller := newTestController(objects, []runtime.Object{})
+			controller := newTestController(objects, []runtime.Object{test.cluster})
 			beforeActionCount := len(controller.kubeClient.(*fake.Clientset).Actions())
 			err := controller.ensureNamespaceExists(test.cluster)
 			if err != nil {
