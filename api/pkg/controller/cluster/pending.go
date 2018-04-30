@@ -222,7 +222,8 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: c.Status.NamespaceName,
+			Name:            c.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
 		},
 	}
 	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
