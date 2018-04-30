@@ -3,7 +3,6 @@ package resources
 import (
 	"fmt"
 	"path"
-	"strconv"
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -20,7 +19,6 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
@@ -145,11 +143,6 @@ const (
 	OpenVPNInternalClientCertSecretKey = "client.crt"
 )
 
-const (
-	minNodePort = 30000
-	maxNodePort = 32767
-)
-
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	Cluster         *kubermaticv1.Cluster
@@ -212,48 +205,13 @@ func (d *TemplateData) GetApiserverExternalNodePort() string {
 	s, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("failed to get NodePort for external apiserver service"))
-			return "UNKNOWN"
+			runtime.HandleError(fmt.Errorf("failed to get NodePort for external apiserver service: %v", err))
+			return "ERROR"
 		}
-		return "UNKNOWN"
+
+		return ""
 	}
 	return fmt.Sprintf("%d", s.Spec.Ports[0].NodePort)
-}
-
-// GetApiserverExternalNodePortOrGetFree returns the nodeport of the external apiserver service or returns the next free one
-func (d *TemplateData) GetApiserverExternalNodePortOrGetFree() string {
-	p := d.GetApiserverExternalNodePort()
-	if p == "UNKNOWN" {
-		return d.GetFreeNodePort()
-	}
-	return p
-}
-
-// GetFreeNodePort returns the next free nodeport
-func (d *TemplateData) GetFreeNodePort() string {
-	services, err := d.ServiceLister.List(labels.Everything())
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("failed to get free NodePort"))
-		return "UNKNOWN"
-	}
-	allocatedPorts := map[int]struct{}{}
-
-	for _, s := range services {
-		for _, p := range s.Spec.Ports {
-			if p.NodePort != 0 {
-				allocatedPorts[int(p.NodePort)] = struct{}{}
-			}
-		}
-	}
-
-	for i := minNodePort; i < maxNodePort; i++ {
-		if _, exists := allocatedPorts[i]; !exists {
-			return strconv.Itoa(i)
-		}
-	}
-
-	runtime.HandleError(fmt.Errorf("no free nodeports available"))
-	return "UNKNOWN"
 }
 
 // LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
