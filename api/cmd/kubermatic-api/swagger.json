@@ -130,6 +130,118 @@
         }
       }
     },
+    "/api/v1/projects": {
+      "get": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[authenticated]"
+            ]
+          }
+        ],
+        "description": "This endpoint will list all projects that\nthe authenticated user is a member of",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "List projects filtered by user",
+        "operationId": "projects",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ProjectList"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/project": {
+      "put": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[admin]"
+            ]
+          }
+        ],
+        "description": "Updates the given project",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "project",
+        "responses": {
+          "200": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[authenticated]"
+            ]
+          }
+        ],
+        "description": "Allow to create a brand new project.\nThis endpoint can be consumed by every authenticated user.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Create a project",
+        "operationId": "project",
+        "responses": {
+          "201": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "delete": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[owner]"
+            ]
+          }
+        ],
+        "description": "Note that only the project owner can delete the project.",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Deletes the project with the given ID.",
+        "operationId": "project",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -3067,6 +3179,21 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "Project": {
+      "description": "Project is a top-level container for a set of resources",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "RSAKeys": {
       "type": "object",
