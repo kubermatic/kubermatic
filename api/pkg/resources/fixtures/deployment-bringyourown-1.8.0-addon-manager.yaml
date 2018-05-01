@@ -15,7 +15,6 @@ spec:
   selector:
     matchLabels:
       role: addon-manager
-      version: v1
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -25,20 +24,19 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        release: v1.8.2
         role: addon-manager
-        version: v1
     spec:
       containers:
-      - env:
-        - name: KUBECTL_OPTS
-          value: --server=http://apiserver:8080
-        - name: ADDON_MANAGER_LEADER_ELECTION
-          value: "false"
-        image: kubermatic/addon-manager:v1.8.2
-        imagePullPolicy: Always
+      - args:
+        - -v=4
+        - -logtostderr
+        - -master=http://apiserver:8080
+        image: docker.io/kubermatic/addon-manager:v1.8.2
         name: addon-manager
         resources: {}
+        volumeMounts:
+        - mountPath: /addons
+          name: addons
       initContainers:
       - command:
         - /bin/sh
@@ -48,4 +46,18 @@ spec:
         image: busybox
         name: apiserver-running
         resources: {}
+      - args:
+        - -c
+        - cp -r /addons/* /target-addons
+        command:
+        - /bin/sh
+        image: docker.io/kubermatic/addons:v1.0
+        name: addons
+        resources: {}
+        volumeMounts:
+        - mountPath: /target-addons
+          name: addons
+      volumes:
+      - emptyDir: {}
+        name: addons
 status: {}
