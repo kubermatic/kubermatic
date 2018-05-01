@@ -20,3 +20,10 @@ updates:
   enabled: true
   visible: true
   promote: true
+- from: 1.10.*
+  to: 1.10.2
+  automatic: false
+  rollbackAllowed: false
+  enabled: true
+  visible: true
+  promote: true
