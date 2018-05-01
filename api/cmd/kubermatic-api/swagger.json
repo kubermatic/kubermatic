@@ -880,6 +880,17 @@
       "x-go-name": "AWSNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
+    "Addon": {
+      "description": "Addon is the API representation of a cluster addon, a user could install",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "AttachedVolume": {
       "description": "AttachedVolume describes a volume attached to a node",
       "type": "object",
