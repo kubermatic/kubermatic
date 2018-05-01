@@ -211,6 +211,7 @@ type OpenstackSize struct {
 	IsPublic bool `json:"isPublic"`
 }
 
+// Addon is the API representation of a cluster addon, a user could install
 type Addon struct {
 	Name string `json:"name"`
 }
