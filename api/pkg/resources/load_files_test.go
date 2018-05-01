@@ -86,6 +86,7 @@ func TestLoadFiles(t *testing.T) {
 				"addon-manager-version":      "v1.8.2",
 				"pod-network-bridge":         "v0.2",
 				"machine-controller-version": "v0.1.2",
+				"addons":                     "v1.0",
 			},
 		},
 		{
@@ -107,6 +108,7 @@ func TestLoadFiles(t *testing.T) {
 				"addon-manager-version":      "v1.9.0",
 				"pod-network-bridge":         "v0.2",
 				"machine-controller-version": "v0.1.2",
+				"addons":                     "v1.0",
 			},
 		},
 	}
