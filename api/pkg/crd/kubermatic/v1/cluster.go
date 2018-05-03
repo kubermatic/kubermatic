@@ -99,8 +99,11 @@ type ClusterSpec struct {
 	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
 	MasterVersion     string `json:"masterVersion"`
 	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
-	// Tells that this cluster should not be processed anymore by any cluster controller
+	// Pause tells that this cluster is currently not managed by the controller.
+	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
+	// PauseReason is the reason why the cluster is no being managed.
+	PauseReason string `json:"pauseReason,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
