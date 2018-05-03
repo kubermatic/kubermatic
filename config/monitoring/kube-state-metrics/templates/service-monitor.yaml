@@ -15,14 +15,16 @@ spec:
   endpoints:
   - port: https-main
     scheme: https
-    interval: 30s
+    interval: 1m
+    scrapeTimeout: 30
     honorLabels: true
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
       insecureSkipVerify: true
   - port: https-self
     scheme: https
-    interval: 30s
+    interval: 1m
+    scrapeTimeout: 30
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
       insecureSkipVerify: true
