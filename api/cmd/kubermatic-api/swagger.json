@@ -1282,9 +1282,14 @@
           "x-go-name": "MasterVersion"
         },
         "pause": {
-          "description": "Tells that this cluster should not be processed anymore by any cluster controller",
+          "description": "Pause tells that this cluster is currently not managed by the controller.\nIt indicates that the user needs to do some action to resolve the pause.",
           "type": "boolean",
           "x-go-name": "Pause"
+        },
+        "pauseReason": {
+          "description": "PauseReason is the reason why the cluster is no being managed.",
+          "type": "string",
+          "x-go-name": "PauseReason"
         },
         "workerName": {
           "type": "string",
