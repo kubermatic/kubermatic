@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      cluster: {{ .Cluster.Name }}
+  serviceName: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        cluster: {{ .Cluster.Name }}
+        config-revision: "{{ .ConfigMapRevision "prometheus" }}"
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/config/prometheus.yaml
+        - --storage.tsdb.path=/var/prometheus/data
+        - --storage.tsdb.retention=12h
+        - --web.enable-lifecycle
+        - --storage.tsdb.no-lockfile
+        - --web.route-prefix=/
+        image: quay.io/prometheus/prometheus:v2.2.1
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/healthy
+            port: web
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: web
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /-/ready
+            port: web
+            scheme: HTTP
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: 200Mi
+        volumeMounts:
+        - mountPath: /etc/prometheus/config
+          name: config
+          readOnly: true
+        - mountPath: /var/prometheus/data
+          name: prometheus-prometheus-db
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      serviceAccount: prometheus
+      serviceAccountName: prometheus
+      terminationGracePeriodSeconds: 600
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus
+      - emptyDir: {}
+        name: prometheus-prometheus-db
+  updateStrategy:
+    type: RollingUpdate
