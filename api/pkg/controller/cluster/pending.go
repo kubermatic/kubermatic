@@ -10,7 +10,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -107,14 +106,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 
 	// check that the etcd-cluster cr is available
 	if err := cc.ensureEtcdCluster(cluster); err != nil {
-		return err
-	}
-
-	if err := cc.ensurePrometheus(cluster); err != nil {
-		return err
-	}
-
-	if err := cc.ensureServiceMonitors(cluster); err != nil {
 		return err
 	}
 
@@ -720,96 +711,6 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		}
 		if _, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
 			return fmt.Errorf("failed to create patch etcd-cluster resource: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensurePrometheus(c *kubermaticv1.Cluster) error {
-	proms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error){
-		resources.PrometheusName: resources.LoadPrometheusFile,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for name, gen := range proms {
-		generatedPrometheus, lastApplied, err := gen(data, name, cc.masterResourcesPath)
-		if err != nil {
-			return fmt.Errorf("failed to generate Prometheus %s: %v", name, err)
-		}
-		generatedPrometheus.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedPrometheus.Name = name
-
-		prometheus, err := cc.PrometheusLister.Prometheuses(c.Status.NamespaceName).Get(generatedPrometheus.Name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				_, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Create(generatedPrometheus)
-				if err != nil {
-					return fmt.Errorf("failed to create prometheus resource: %v", err)
-				}
-				return nil
-			}
-			return err
-		}
-		if prometheus.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(prometheus, generatedPrometheus)
-			if err != nil {
-				return err
-			}
-			if _, err := cc.kubermaticClient.MonitoringV1().Prometheuses(c.Status.NamespaceName).Patch(generatedPrometheus.Name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to create patch for prometheus resource: %v", err)
-			}
-		}
-	}
-	return nil
-}
-
-func (cc *Controller) ensureServiceMonitors(c *kubermaticv1.Cluster) error {
-	sms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error){
-		resources.ApiserverServiceMonitorName:         resources.LoadServiceMonitorFile,
-		resources.ControllerManagerServiceMonitorName: resources.LoadServiceMonitorFile,
-		resources.EtcdServiceMonitorName:              resources.LoadServiceMonitorFile,
-		resources.KubeStateMetricsServiceMonitorName:  resources.LoadServiceMonitorFile,
-		resources.MachineControllerServiceMonitorName: resources.LoadServiceMonitorFile,
-		resources.SchedulerServiceMonitorName:         resources.LoadServiceMonitorFile,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for name, gen := range sms {
-		generatedServiceMonitor, lastApplied, err := gen(data, name, cc.masterResourcesPath)
-		if err != nil {
-			return fmt.Errorf("failed to generate service monitor %s: %v", name, err)
-		}
-		generatedServiceMonitor.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedServiceMonitor.Name = name
-
-		serviceMonitor, err := cc.ServiceMonitorLister.ServiceMonitors(c.Status.NamespaceName).Get(generatedServiceMonitor.Name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				_, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Create(generatedServiceMonitor)
-				if err != nil {
-					return fmt.Errorf("failed to create service monitor resource: %v", err)
-				}
-				return nil
-			}
-			return err
-		}
-		if serviceMonitor.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(serviceMonitor, generatedServiceMonitor)
-			if err != nil {
-				return err
-			}
-			if _, err := cc.kubermaticClient.MonitoringV1().ServiceMonitors(c.Status.NamespaceName).Patch(serviceMonitor.Name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to create patch for service monitor resource: %v", err)
-			}
 		}
 	}
 

@@ -9,7 +9,6 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
@@ -343,31 +342,6 @@ func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath str
 	var r rbacv1.ClusterRoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
-}
-
-// LoadPrometheusFile loads a prometheus crd from disk and returns a Cluster crd struct
-func LoadPrometheusFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, "prometheus.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var p prometheusv1.Prometheus
-	json, err := t.Execute(data, &p)
-	return &p, json, err
-}
-
-// LoadServiceMonitorFile loads a service monitor crd from disk and returns a Cluster crd struct
-func LoadServiceMonitorFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error) {
-	filename := fmt.Sprintf("prometheus-service-monitor-%s.yaml", app)
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, filename))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var sm prometheusv1.ServiceMonitor
-	json, err := t.Execute(data, &sm)
-	return &sm, json, err
 }
 
 // LoadMachineFile parses and returns the given machine manifest
