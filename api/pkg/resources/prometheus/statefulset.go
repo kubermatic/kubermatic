@@ -22,9 +22,7 @@ const (
 	volumeDataName   = "data"
 )
 
-var (
-	defaultMemoryRequest = resource.MustParse("200Mi")
-)
+var defaultMemoryRequest = resource.MustParse("200Mi")
 
 func StatefulSet(data *resources.Data) (*appsv1.StatefulSet, error) {
 	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(Name)
