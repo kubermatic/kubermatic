@@ -24,7 +24,8 @@ func ConfigMap(data *resources.Data) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: Name,
+			Name:            Name,
+			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
 		},
 		Data: map[string]string{
 			"prometheus.yaml": configBuffer.String(),
