@@ -410,43 +410,32 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
-	serviceAccounts := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error){
-		resources.EtcdOperatorServiceAccountName: resources.LoadServiceAccountFile,
-		resources.PrometheusServiceAccountName:   resources.LoadServiceAccountFile,
+	names := []string{
+		resources.EtcdOperatorServiceAccountName,
+		resources.PrometheusServiceAccountName,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
+	ref := data.GetClusterRef()
 
-	for name, gen := range serviceAccounts {
-		generatedServiceAccount, lastApplied, err := gen(data, name, cc.masterResourcesPath)
-		if err != nil {
-			return fmt.Errorf("failed to generate ServiceAccount %s: %v", name, err)
-		}
-		generatedServiceAccount.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedServiceAccount.Name = name
+	for _, name := range names {
+		sa := resources.ServiceAccount(name, &ref)
 
-		serviceAccount, err := cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Create(generatedServiceAccount); err != nil {
-					return fmt.Errorf("failed to create serviceAccount for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if _, err = cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Create(sa); err != nil {
+				return fmt.Errorf("failed to create ServiceAccount %s: %v", sa.Name, err)
+			}
+			continue
 		}
-		if serviceAccount.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(serviceAccount, generatedServiceAccount)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch serviceAccount for %s: %v", name, err)
-			}
+		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
+			return fmt.Errorf("failed to update ServiceAccount %s: %v", sa.Name, err)
 		}
 	}
 
