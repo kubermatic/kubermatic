@@ -1,9 +1,6 @@
 package prometheus
 
 import (
-	"fmt"
-	"path"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,25 +13,17 @@ import (
 const (
 	Name = "prometheus"
 
-	defaultImage = "quay.io/prometheus/prometheus"
-
 	volumeConfigName = "config"
 	volumeDataName   = "data"
 )
 
 var defaultMemoryRequest = resource.MustParse("200Mi")
 
-func StatefulSet(data *resources.Data) (*appsv1.StatefulSet, error) {
+func StatefulSet(data *resources.TemplateData) (*appsv1.StatefulSet, error) {
 	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(Name)
 	if err != nil {
 		return nil, err
 	}
-
-	image := defaultImage
-	if data.ImageRepository != "" {
-		image = path.Join(data.ImageRepository, "prometheus/prometheus")
-	}
-	image = fmt.Sprintf("%s:v2.2.1", image)
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -75,7 +64,7 @@ func StatefulSet(data *resources.Data) (*appsv1.StatefulSet, error) {
 					Containers: []corev1.Container{
 						{
 							Name:  Name,
-							Image: image,
+							Image: "quay.io/prometheus/prometheus:v2.2.1",
 							Args: []string{
 								"--config.file=/etc/prometheus/config/prometheus.yaml",
 								"--storage.tsdb.path=/var/prometheus/data",

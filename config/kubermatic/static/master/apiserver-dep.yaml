@@ -23,6 +23,10 @@ spec:
   minReadySeconds: 10
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
       labels:
         release: {{index .Version.Values "k8s-version"}}
         role: apiserver

@@ -18,6 +18,7 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
@@ -150,6 +151,26 @@ type TemplateData struct {
 	SecretLister    corev1lister.SecretLister
 	ConfigMapLister corev1lister.ConfigMapLister
 	ServiceLister   corev1lister.ServiceLister
+}
+
+func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(d.Cluster, gv.WithKind("Cluster"))
+}
+
+// Int32 returns a pointer to of the int32 value passed in.
+func Int32(v int32) *int32 {
+	return &v
+}
+
+// Int64 returns a pointer to of the int64 value passed in.
+func Int64(v int64) *int64 {
+	return &v
+}
+
+// Bool returns a pointer to of the bool value passed in.
+func Bool(v bool) *bool {
+	return &v
 }
 
 // NewTemplateData returns an instance of TemplateData

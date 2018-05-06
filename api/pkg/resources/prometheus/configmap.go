@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ConfigMap(data *resources.Data) (*corev1.ConfigMap, error) {
+func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
 	if err != nil {
@@ -40,7 +40,7 @@ global:
   evaluation_interval: 30s
   scrape_interval: 30s
   external_labels:
-    cluster: "{{ .Data.Cluster.Name }}"
+    cluster: "{{ .Cluster.Name }}"
 rule_files:
 - "/etc/prometheus/config/rules.yaml"
 scrape_configs:
@@ -49,7 +49,7 @@ scrape_configs:
   - role: pod
     namespaces:
       names:
-      - "{{ .Data.Cluster.Status.NamespaceName }}"
+      - "{{ .Cluster.Status.NamespaceName }}"
 
   relabel_configs:
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -64,8 +64,12 @@ scrape_configs:
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
     target_label: __address__
-  - action: labelmap
-    regex: __meta_kubernetes_pod_label_(.+)
+  - source_labels: [__meta_kubernetes_pod_label_role]
+    action: replace
+    target_label: role
+  - source_labels: [__meta_kubernetes_pod_label_release]
+    action: replace
+    target_label: release
   - source_labels: [__meta_kubernetes_namespace]
     action: replace
     target_label: kubernetes_namespace

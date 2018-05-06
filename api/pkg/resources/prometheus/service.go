@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func Service(data *resources.Data) (*corev1.Service, error) {
+func Service(data *resources.TemplateData) (*corev1.Service, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            Name,

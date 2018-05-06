@@ -13,6 +13,10 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
+	"k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	corev1 "k8s.io/api/core/v1"
@@ -101,6 +105,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 
 	// check that all deployments are available
 	if err := cc.ensureDeployments(cluster); err != nil {
+		return err
+	}
+
+	// check that all StatefulSet's are created
+	if err := cc.ensureStatefulSets(cluster); err != nil {
 		return err
 	}
 
@@ -362,9 +371,9 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		resources.ControllerManagerServiceName: resources.LoadServiceFile,
 		resources.KubeStateMetricsServiceName:  resources.LoadServiceFile,
 		resources.MachineControllerServiceName: resources.LoadServiceFile,
-		resources.PrometheusServiceName:        resources.LoadServiceFile,
-		resources.SchedulerServiceName:         resources.LoadServiceFile,
-		resources.OpenVPNServerServiceName:     resources.LoadServiceFile,
+		//resources.PrometheusServiceName:        resources.LoadServiceFile,
+		resources.SchedulerServiceName:     resources.LoadServiceFile,
+		resources.OpenVPNServerServiceName: resources.LoadServiceFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -633,9 +642,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	cms := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error){
-		resources.CloudConfigConfigMapName:         resources.LoadConfigMapFile,
-		resources.OpenVPNClientConfigConfigMapName: resources.LoadConfigMapFile,
+	creators := []func(data *resources.TemplateData) (*corev1.ConfigMap, error){
+		cloudconfig.ConfigMap,
+		openvpn.ConfigMap,
+		prometheus.ConfigMap,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -643,33 +653,24 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range cms {
-		generatedConfigMap, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+	for _, create := range creators {
+		cm, err := create(data)
 		if err != nil {
-			return fmt.Errorf("failed to generate ConfigMap %s: %v", name, err)
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
-		generatedConfigMap.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedConfigMap.Name = name
 
-		configMap, err := cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(generatedConfigMap); err != nil {
-					return fmt.Errorf("failed to create configMap for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if _, err = cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(cm); err != nil {
+				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
+			}
+			continue
 		}
-		if configMap.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(configMap, generatedConfigMap)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch configMap for %s: %v", name, err)
-			}
+		if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Update(cm); err != nil {
+			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
 	}
 
@@ -711,6 +712,40 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 		}
 		if _, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
 			return fmt.Errorf("failed to create patch etcd-cluster resource: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
+	creators := []func(data *resources.TemplateData) (*v1.StatefulSet, error){
+		prometheus.StatefulSet,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		set, err := create(data)
+		if err != nil {
+			return fmt.Errorf("failed to build StatefulSet: %v", err)
+		}
+
+		if _, err = cc.StatefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Create(set); err != nil {
+				return fmt.Errorf("failed to create StatefulSet %s: %v", set.Name, err)
+			}
+			continue
+		}
+		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
+			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
 		}
 	}
 

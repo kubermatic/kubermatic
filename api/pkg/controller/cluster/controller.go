@@ -83,6 +83,7 @@ type Controller struct {
 	ConfigMapLister          corev1lister.ConfigMapLister
 	ServiceAccountLister     corev1lister.ServiceAccountLister
 	DeploymentLister         appsv1lister.DeploymentLister
+	StatefulSetLister        appsv1lister.StatefulSetLister
 	IngressLister            extensionsv1beta1lister.IngressLister
 	RoleLister               rbacb1lister.RoleLister
 	RoleBindingLister        rbacb1lister.RoleBindingLister
@@ -121,6 +122,7 @@ func NewController(
 	ConfigMapInformer corev1informers.ConfigMapInformer,
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
 	DeploymentInformer appsv1informer.DeploymentInformer,
+	StatefulSetInformer appsv1informer.StatefulSetInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
 	RoleInformer rbacv1informer.RoleInformer,
 	RoleBindingInformer rbacv1informer.RoleBindingInformer,
@@ -241,6 +243,7 @@ func NewController(
 	cc.ConfigMapLister = ConfigMapInformer.Lister()
 	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
 	cc.DeploymentLister = DeploymentInformer.Lister()
+	cc.StatefulSetLister = StatefulSetInformer.Lister()
 	cc.IngressLister = IngressInformer.Lister()
 	cc.RoleLister = RoleInformer.Lister()
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
