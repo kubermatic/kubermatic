@@ -368,12 +368,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	services := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
 		resources.ApiserverInternalServiceName: resources.LoadServiceFile,
 		resources.ApiserverExternalServiceName: resources.LoadServiceFile,
-		resources.ControllerManagerServiceName: resources.LoadServiceFile,
-		resources.KubeStateMetricsServiceName:  resources.LoadServiceFile,
-		resources.MachineControllerServiceName: resources.LoadServiceFile,
-		//resources.PrometheusServiceName:        resources.LoadServiceFile,
-		resources.SchedulerServiceName:     resources.LoadServiceFile,
-		resources.OpenVPNServerServiceName: resources.LoadServiceFile,
+		resources.OpenVPNServerServiceName:     resources.LoadServiceFile,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

@@ -14,7 +14,6 @@ spec:
   selector:
     matchLabels:
       role: apiserver
-      version: v1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -30,7 +29,6 @@ spec:
       labels:
         release: {{index .Version.Values "k8s-version"}}
         role: apiserver
-        version: v1
         tokens-secret-revision: "{{ .SecretRevision "tokens" }}"
         apiserver-tls-secret-revision: "{{ .SecretRevision "apiserver-tls" }}"
         kubelet-client-certificates-secret-revision: "{{ .SecretRevision "kubelet-client-certificates" }}"
