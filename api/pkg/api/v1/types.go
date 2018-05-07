@@ -166,6 +166,13 @@ type User struct {
 	Roles map[string]struct{}
 }
 
+// Project is a top-level container for a set of resources
+// swagger:model Project
+type Project struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Kubeconfig is a clusters kubeconfig
 // swagger:model Kubeconfig
 type Kubeconfig struct {
