@@ -3124,6 +3124,14 @@
           "description": "image to use",
           "type": "string",
           "x-go-name": "Image"
+        },
+        "tags": {
+          "description": "Additional metadata to set",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         }
       },
       "x-go-name": "OpenstackNodeSpec",

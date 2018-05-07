@@ -40,6 +40,11 @@ spec:
       floatingIpPool: {{ .Cluster.Spec.Cloud.Openstack.FloatingIPPool | quote }}
       availabilityZone: {{ .Datacenter.Spec.Openstack.AvailabilityZone | quote }}
       network: {{ .Cluster.Spec.Cloud.Openstack.Network | quote }}
+      tags:
+        "kubermatic-cluster": {{ .Cluster.Name }}
+        {{- range $key, $value := .Node.Spec.Cloud.Openstack.Tags }}
+        {{$key | quote }}: {{$value | quote }}
+        {{- end }}
     {{- end }}
     {{- if .Node.Spec.Cloud.Digitalocean }}
     cloudProvider: digitalocean

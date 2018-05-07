@@ -561,6 +561,9 @@ func TestExecute(t *testing.T) {
 							Openstack: &apiv2.OpenstackNodeSpec{
 								Flavor: "os-flavor",
 								Image:  "os-image",
+								Tags: map[string]string{
+									"foo": "bar",
+								},
 							},
 						},
 						OperatingSystem: apiv2.OperatingSystemSpec{
