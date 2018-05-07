@@ -197,6 +197,7 @@ systemd:
           --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
           --cluster-domain=cluster.local \
           --authentication-token-webhook=true \
+          --hostname-override={{ .MachineSpec.Name }} \
           --network-plugin=cni \
           {{- if .CloudProvider }}
           --cloud-provider={{ .CloudProvider }} \
@@ -257,4 +258,23 @@ storage:
       mode: 0600
       contents:
         inline: '{{ .MachineSpec.Name }}'
+
+    - path: /etc/ssh/sshd_config
+      filesystem: root
+      mode: 0600
+      user:
+        id: 0
+      group:
+        id: 0
+      contents:
+        inline: |
+          # Use most defaults for sshd configuration.
+          Subsystem sftp internal-sftp
+          ClientAliveInterval 180
+          UseDNS no
+          UsePAM yes
+          PrintLastLog no # handled by PAM
+          PrintMotd no # handled by PAM
+          PasswordAuthentication no
+          ChallengeResponseAuthentication no
 `
