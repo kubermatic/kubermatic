@@ -52,30 +52,13 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/openstack/sizes").
 		Handler(r.listOpenstackSizes())
 
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/ssh-keys").
-		Handler(r.listProjectSSHKeys())
-
-	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/ssh-keys").
-		Handler(r.createProjectSSHKey())
-
-	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/ssh-keys/{meta_name}").
-		Handler(r.deleteProjectSSHKey())
-
-	// Member and organization endpoints
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/me").
-		Handler(r.getProjectMe())
-
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
 		Handler(r.getProjects())
 
 	mux.Methods(http.MethodPost).
-		Path("projects/{project_id}/projects").
+		Path("projects/project").
 		Handler(r.createProject())
 
 	mux.Methods(http.MethodPut).
@@ -85,23 +68,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}").
 		Handler(r.deleteProject())
-
-	// Members in project
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/members").
-		Handler(r.getProjectMembers())
-
-	mux.Methods(http.MethodPut).
-		Path("/projects/{project_id}/members").
-		Handler(r.updateProjectMember())
-
-	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/member").
-		Handler(r.addProjectMember())
-
-	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/member/{member_id}").
-		Handler(r.deleteProjectMember())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -270,31 +236,53 @@ func (r Routing) getUser() http.Handler {
 	)
 }
 
-func (r Routing) getProjectMe() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(getProjectMeEndpoint()),
-		decodeProjectPathReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
+// swagger:route GET /api/v1/projects projects
+//
+//     List projects filtered by user
+//
+//     This endpoint will list all projects that
+//     the authenticated user is a member of
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//       openIdConnect: [authenticated]
+//
+//     Responses:
+//       default: errorResponse
+//       200: ProjectList
 func (r Routing) getProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(getProjectsEndpoint()),
-		// We don't have to write a decoder only for a request without incoming information
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
+// swagger:route POST /api/v1/projects/project project
+//
+//     Create a project
+//
+//     Allow to create a brand new project.
+//     This endpoint can be consumed by every authenticated user.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//       openIdConnect: [authenticated]
+//
+//     Responses:
+//       default: errorResponse
+//       201: Project
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -307,6 +295,20 @@ func (r Routing) createProject() http.Handler {
 	)
 }
 
+// swagger:route PUT /api/v1/projects/project project
+//
+//    Updates the given project
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//       openIdConnect: [admin]
+//
+//     Responses:
+//       default: errorResponse
+//       200: Project
+//       401: Unauthorized
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -319,6 +321,22 @@ func (r Routing) updateProject() http.Handler {
 	)
 }
 
+// swagger:route DELETE /api/v1/projects/{project_id} project
+//
+//    Deletes the project with the given ID.
+//
+//    Note that only the project owner can delete the project.
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//       openIdConnect: [owner]
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: Unauthorized
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -326,90 +344,6 @@ func (r Routing) deleteProject() http.Handler {
 			r.userSaverMiddleware(),
 		)(deleteProjectEndpoint()),
 		decodeProjectPathReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) getProjectMembers() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(getProjectMembersEndpoint()),
-		decodeProjectPathReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) addProjectMember() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(addProjectMemberEndpoint()),
-		decodeAddProjectMember,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) deleteProjectMember() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(deleteProjectMemberEndpoint()),
-		decodeDeleteProjectMember,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) updateProjectMember() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(updateProjectMemberEndpoint()),
-		decodeUpdateProjectMember,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) listProjectSSHKeys() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(listSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeListSSHKeyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) createProjectSSHKey() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(createSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeCreateSSHKeyReq,
-		createStatusResource(encodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) deleteProjectSSHKey() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(deleteSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
