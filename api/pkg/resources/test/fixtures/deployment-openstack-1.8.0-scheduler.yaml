@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: scheduler
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: scheduler
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "10251"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        release: v1.8.5
+        role: scheduler
+    spec:
+      containers:
+      - command:
+        - /hyperkube
+        - scheduler
+        - --master=http://apiserver:8080
+        - --v=4
+        image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: 10251
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10251
+          timeoutSeconds: 15
+        resources: {}
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
+          sleep 2; done;
+        image: busybox
+        name: apiserver-running
+        resources: {}
+status: {}
