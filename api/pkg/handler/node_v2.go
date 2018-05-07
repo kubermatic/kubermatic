@@ -176,6 +176,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 			Labels:            labels,
 			Annotations:       annotations,
 			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: machine.CreationTimestamp.Time,
 		},
 		Spec: apiv2.NodeSpec{
 			Versions: apiv2.NodeVersionInfo{
@@ -194,7 +195,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 
 func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeConfigOK
+		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
 		if goodConditionType && condition.Status != corev1.ConditionTrue {
 			reason += condition.Reason + errGlue
 			message += condition.Message + errGlue

@@ -27,13 +27,12 @@ import (
 )
 
 func (cc *Controller) secretWithData(data map[string][]byte, c *kubermaticv1.Cluster) *corev1.Secret {
-	gv := kubermaticv1.SchemeGroupVersion
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations:     map[string]string{},
 			Labels:          map[string]string{},
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(c, gv.WithKind("Cluster"))},
+			OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
 		},
 		Data: data,
 	}

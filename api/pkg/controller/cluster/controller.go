@@ -539,3 +539,8 @@ func (cc *Controller) handleChildObject(i interface{}) {
 		return
 	}
 }
+
+func (cc *Controller) getOwnerRefForCluster(c *kubermaticv1.Cluster) metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(c, gv.WithKind("Cluster"))
+}
