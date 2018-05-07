@@ -89,6 +89,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		cloudSpec.Openstack = &apiv2.OpenstackNodeSpec{
 			Flavor: config.Flavor.Value,
 			Image:  config.Image.Value,
+			Tags:   config.Tags,
 		}
 	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderHetzner {
 		config := &hetzner.RawConfig{}
