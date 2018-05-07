@@ -2851,8 +2851,14 @@
           },
           "x-go-name": "Annotations"
         },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
         "deletionTimestamp": {
-          "description": "Tells that the resource is being deleted",
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
           "type": "string",
           "format": "date-time",
           "x-go-name": "DeletionTimestamp"
