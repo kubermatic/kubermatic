@@ -18,7 +18,7 @@ spec:
     nodePort: 30000
     port: 30000
     protocol: TCP
-    targetPort: 0
+    targetPort: 30000
   selector:
     role: apiserver
   type: NodePort

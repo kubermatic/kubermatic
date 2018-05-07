@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"fmt"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -34,11 +32,7 @@ type UserProvider struct {
 
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
-	selector, err := labels.Parse(fmt.Sprintf("%s=%s", userEmailLabelKey, kubernetes.ToLabelValue(email)))
-	if err != nil {
-		return nil, err
-	}
-
+	selector := labels.SelectorFromSet(map[string]string{userEmailLabelKey: kubernetes.ToLabelValue(email)})
 	users, err := p.userLister.List(selector)
 	if err != nil {
 		return nil, err

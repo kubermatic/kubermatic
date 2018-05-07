@@ -89,6 +89,7 @@ func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
 			Labels:            node.Labels,
 			Annotations:       node.Annotations,
 			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: node.CreationTimestamp.Time,
 		},
 		Spec: apiv2.NodeSpec{
 			Versions:        apiv2.NodeVersionInfo{},
@@ -176,6 +177,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 			Labels:            labels,
 			Annotations:       annotations,
 			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: machine.CreationTimestamp.Time,
 		},
 		Spec: apiv2.NodeSpec{
 			Versions: apiv2.NodeVersionInfo{
