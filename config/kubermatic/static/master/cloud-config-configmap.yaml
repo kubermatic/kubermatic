@@ -37,4 +37,7 @@ data:
     {{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
     ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
     {{- end }}
+    {{- if eq (substr 0 5 (index .Version.Values "k8s-version")) "v1.10" }}
+    ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+    {{- end }}
     {{- end }}
