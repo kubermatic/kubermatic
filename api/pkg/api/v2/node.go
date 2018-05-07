@@ -111,6 +111,9 @@ type OpenstackNodeSpec struct {
 	// image to use
 	// required: true
 	Image string `json:"image"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 // AWSNodeSpec aws specific node settings
