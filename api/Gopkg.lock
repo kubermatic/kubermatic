@@ -487,6 +487,7 @@
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1",
     "pkg/cloudprovider/cloud",
+    "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
@@ -503,8 +504,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "0ec55ec6213fcdcca38c3f31349667b5ae85d21a"
-  version = "v0.5.1"
+  revision = "126a083d62f6d9d2ddae867b322658bbbcb24dad"
+  version = "v0.6.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1126,6 +1127,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "087a66a0dec5b6a4d6bb3fafdfcb54c4f75072f68876b6311529f92c96c7cc8d"
+  inputs-digest = "a731ff05c6fc63a74e775b8afb3363786fa351c0e4f652806094efd55df42445"
   solver-name = "gps-cdcl"
   solver-version = 1

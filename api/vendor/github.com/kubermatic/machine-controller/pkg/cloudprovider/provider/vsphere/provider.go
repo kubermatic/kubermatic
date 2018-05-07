@@ -188,7 +188,7 @@ func machineInvalidConfigurationTerminalError(err error) error {
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
-	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -198,14 +198,19 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		return nil, fmt.Errorf("failed to get vsphere client: '%v'", err)
 	}
 
-	_, err = CreateLinkClonedVm(machine.Spec.Name,
+	var containerLinuxUserdata string
+	if pc.OperatingSystem == providerconfig.OperatingSystemCoreos {
+		containerLinuxUserdata = userdata
+	}
+
+	if err = CreateLinkClonedVm(machine.Spec.Name,
 		config.TemplateVMName,
 		config.Datacenter,
 		config.Cluster,
 		config.CPUs,
 		config.MemoryMB,
-		client)
-	if err != nil {
+		client,
+		containerLinuxUserdata); err != nil {
 		return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to create linked vm: '%v'", err))
 	}
 
@@ -218,21 +223,23 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		return nil, fmt.Errorf("failed to get virtual machine object: %v", err)
 	}
 
-	localUserdataIsoFilePath, err := generateLocalUserdataIso(userdata, machine.Spec.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		err := os.Remove(localUserdataIsoFilePath)
+	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
+		localUserdataIsoFilePath, err := generateLocalUserdataIso(userdata, machine.Spec.Name)
 		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to clean up local userdata iso file at %s: %v", localUserdataIsoFilePath, err))
+			return nil, err
 		}
-	}()
 
-	err = uploadAndAttachISO(finder, virtualMachine, localUserdataIsoFilePath, config.Datastore, client)
-	if err != nil {
-		return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to upload and attach userdata iso: %v", err))
+		defer func() {
+			err := os.Remove(localUserdataIsoFilePath)
+			if err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed to clean up local userdata iso file at %s: %v", localUserdataIsoFilePath, err))
+			}
+		}()
+
+		err = uploadAndAttachISO(finder, virtualMachine, localUserdataIsoFilePath, config.Datastore, client)
+		if err != nil {
+			return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to upload and attach userdata iso: %v", err))
+		}
 	}
 
 	// Ubuntu wont boot with attached floppy device, because it tries to write to it
@@ -259,7 +266,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 }
 
 func (p *provider) Delete(machine *v1alpha1.Machine, _ instance.Instance) error {
-	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -298,15 +305,17 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ instance.Instance) error 
 	}
 	destroyTask.Wait(context.TODO())
 
-	datastore, err := finder.Datastore(context.TODO(), config.Datastore)
-	if err != nil {
-		return fmt.Errorf("failed to get datastore %s: %v", config.Datastore, err)
-	}
-	filemanager := datastore.NewFileManager(dc, false)
+	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
+		datastore, err := finder.Datastore(context.TODO(), config.Datastore)
+		if err != nil {
+			return fmt.Errorf("failed to get datastore %s: %v", config.Datastore, err)
+		}
+		filemanager := datastore.NewFileManager(dc, false)
 
-	err = filemanager.Delete(context.TODO(), virtualMachine.Name())
-	if err != nil {
-		return fmt.Errorf("failed to delete storage of deleted instance %s: %v", virtualMachine.Name(), err)
+		err = filemanager.Delete(context.TODO(), virtualMachine.Name())
+		if err != nil {
+			return fmt.Errorf("failed to delete storage of deleted instance %s: %v", virtualMachine.Name(), err)
+		}
 	}
 
 	glog.V(2).Infof("Successfully destroyed vm %s", virtualMachine.Name())

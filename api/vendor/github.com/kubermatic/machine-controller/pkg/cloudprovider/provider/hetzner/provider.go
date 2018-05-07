@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/common/ssh"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
@@ -175,6 +177,26 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	if err != nil {
 		return nil, hzErrorToTerminalError(err, "failed to get server type")
 	}
+
+	sshkey, err := ssh.NewSSHKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ssh key: %v", err)
+	}
+
+	hkey, res, err := client.SSHKey.Create(ctx, hcloud.SSHKeyCreateOpts{
+		Name:      sshkey.Name,
+		PublicKey: sshkey.PublicKey,
+	})
+	if err != nil || res.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("creating temporary ssh key failed with http status %d and error %v", res.StatusCode, err)
+	}
+	defer func() {
+		_, err := client.SSHKey.Delete(ctx, hkey)
+		if err != nil {
+			glog.Errorf("Failed to delete temporary ssh key: %v", err)
+		}
+	}()
+	serverCreateOpts.SSHKeys = []*hcloud.SSHKey{hkey}
 
 	serverCreateRes, res, err := client.Server.Create(ctx, serverCreateOpts)
 	if err != nil {

@@ -53,6 +53,7 @@ type RawConfig struct {
 	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
 	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
 	Region           providerconfig.ConfigVarString   `json:"region"`
+	Tags             map[string]string                `json:"tags"`
 }
 
 type Config struct {
@@ -72,6 +73,8 @@ type Config struct {
 	FloatingIPPool   string
 	AvailabilityZone string
 	Region           string
+
+	Tags map[string]string
 }
 
 const (
@@ -156,6 +159,8 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	c.Tags = rawConfig.Tags
+
 	return &c, &pconfig, &rawConfig, err
 }
 
@@ -328,6 +333,11 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		}
 	}
 
+	// validate reserved tags
+	if _, ok := c.Tags[machineUIDMetaKey]; ok {
+		return fmt.Errorf("the tag with the given name =%s is reserved, choose a different one", machineUIDMetaKey)
+	}
+
 	return nil
 }
 
@@ -394,6 +404,10 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		securityGroups = append(securityGroups, securityGroupName)
 	}
 
+	// we check against reserved tags in Validation method
+	allTags := c.Tags
+	allTags[machineUIDMetaKey] = string(machine.UID)
+
 	serverOpts := osservers.CreateOpts{
 		Name:             machine.Spec.Name,
 		FlavorRef:        flavor.ID,
@@ -402,9 +416,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		SecurityGroups:   securityGroups,
 		AvailabilityZone: c.AvailabilityZone,
 		Networks:         []osservers.Network{{UUID: network.ID}},
-		Metadata: map[string]string{
-			machineUIDMetaKey: string(machine.UID),
-		},
+		Metadata:         allTags,
 	}
 	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
 	if err != nil {

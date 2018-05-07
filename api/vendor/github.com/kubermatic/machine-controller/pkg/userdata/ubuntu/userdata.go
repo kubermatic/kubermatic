@@ -161,6 +161,8 @@ package_upgrade: true
 package_reboot_if_required: true
 {{- end }}
 
+ssh_pwauth: no
+
 ssh_authorized_keys:
 {{- range .ProviderConfig.SSHPublicKeys }}
 - "{{ . }}"
@@ -179,9 +181,14 @@ write_files:
     set -xeuo pipefail
     mkdir -p /opt/bin
     if ! [[ -x /opt/bin/kubelet ]]; then
-      curl -L --fail -o /opt/bin/kubelet https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubelet
-      chmod +x /opt/bin/kubelet
+      for try in {1..3}; do
+         if curl -L --fail -o /opt/bin/kubelet https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubelet; then
+          chmod +x /opt/bin/kubelet
+          exit 0
+         fi
+      done
     fi
+    exit 1
 
 - path: "/usr/local/bin/download-kubeadm"
   permissions: "0777"
@@ -190,9 +197,14 @@ write_files:
     set -xeuo pipefail
     mkdir -p /opt/bin
     if ! [[ -x /opt/bin/kubeadm ]]; then
-      curl -L --fail -o /opt/bin/kubeadm https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubeadm
-      chmod +x /opt/bin/kubeadm
+      for try in {1..3}; do
+        if curl -L --fail -o /opt/bin/kubeadm https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubeadm; then
+          chmod +x /opt/bin/kubeadm
+          exit 0
+        fi
+      done
     fi
+    exit 1
 
 - path: "/usr/local/bin/download-cni"
   permissions: "0777"
@@ -202,8 +214,13 @@ write_files:
     mkdir -p /opt/cni/bin
     if ! [[ -x /opt/cni/bin/bridge ]]; then
       cd /opt/cni/bin/
-      curl -L --fail https://storage.googleapis.com/cni-plugins/cni-plugins-amd64-v0.6.0.tgz|tar -xvz
+      for try in {1..3}; do
+        if curl -L --fail https://storage.googleapis.com/cni-plugins/cni-plugins-amd64-v0.6.0.tgz|tar -xvz; then
+          exit 0
+        fi
+      done
     fi
+    exit 1
 
 - path: "/usr/local/bin/download-kubelet-kubeadm-unitfile"
   permissions: "0777"
@@ -211,10 +228,15 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
     if ! [[ -f /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]]; then
-      curl -L --fail https://raw.githubusercontent.com/kubernetes/kubernetes/v{{ .KubernetesVersion }}/build/debs/10-kubeadm.conf \
-        |sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-      systemctl daemon-reload
+      for try in {1..3}; do
+        if curl -L --fail https://raw.githubusercontent.com/kubernetes/kubernetes/v{{ .KubernetesVersion }}/build/debs/10-kubeadm.conf \
+          |sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf; then
+         systemctl daemon-reload
+        exit 0
+       fi
+      done
     fi
+    exit 1
 
 {{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
 - path: "/usr/local/bin/download-crictl"
@@ -224,7 +246,10 @@ write_files:
     set -xeuo pipefail
     mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
     if ! [[ -x /opt/bin/crictl ]]; then
-      curl -L --fail https://github.com/kubernetes-incubator/cri-tools/releases/download/{{ .CrictlVersion }}/crictl-{{ .CrictlVersion }}-linux-amd64.tar.gz |tar -xzC /opt/bin
+      for try in {1..3}; do
+        curl -L --fail https://github.com/kubernetes-incubator/cri-tools/releases/download/{{ .CrictlVersion }}/crictl-{{ .CrictlVersion }}-linux-amd64.tar.gz |tar -xzC /opt/bin
+        break
+      done
     fi
 
 - path: "/etc/systemd/system/crictl-binary.service"
@@ -313,7 +338,8 @@ write_files:
 - path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
   content: |
     [Service]
-    Environment="KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} --authentication-token-webhook=true \
+    Environment="KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
+      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} \
       {{ if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o"}} --container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --cgroup-driver=systemd{{ end }}"
 
 - path: "/etc/systemd/system/kubelet.service.d/30-clusterdns.conf"
@@ -356,11 +382,6 @@ write_files:
 {{- end }}
 
 runcmd:
-# Required for Hetzner, because they set some arbitrary password
-# if the sshkey wasnt set via their API and require as to change
-# that password on first login, which we cant do since we dont know
-# it
-- chage -d $(date +%s) root
 - systemctl enable kubelet
 - systemctl start kubeadm-join
 
