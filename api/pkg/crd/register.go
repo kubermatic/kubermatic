@@ -48,13 +48,7 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
-		{
-			plural:  kubermaticv1.GroupPlural,
-			kind:    reflect.TypeOf(kubermaticv1.Group{}).Name(),
-			group:   kubermaticv1.GroupName,
-			version: kubermaticv1.SchemeGroupVersion.Version,
-			scope:   apiextensionsv1beta1.ClusterScoped,
-		},
+		// TODO(p0lyn0mial) : add project custom resource
 		{
 			plural:  etcdoperatorv1beta2.EtcdClusterPlural,
 			kind:    reflect.TypeOf(etcdoperatorv1beta2.EtcdCluster{}).Name(),

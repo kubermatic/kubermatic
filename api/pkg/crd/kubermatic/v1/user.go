@@ -5,8 +5,7 @@ import (
 )
 
 const (
-	UserPlural  = "users"
-	GroupPlural = "groups"
+	UserPlural = "users"
 )
 
 //+genclient
@@ -23,10 +22,10 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID     string   `json:"id"`
-	Name   string   `json:"name"`
-	Email  string   `json:"email"`
-	Groups []string `json:"groups"`
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	Email    string         `json:"email"`
+	Projects []ProjectGroup `json:"projects, omitempty"`
 }
 
 // UserList is a list of users
@@ -38,24 +37,10 @@ type UserList struct {
 	Items []User `json:"items"`
 }
 
-// GroupSpec specifies a group
-type GroupSpec struct {
-	// Name references a group name in kubernetes
-	Name string `json:"name"`
-}
-
-// Group specifies a group several users can link to.
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type Group struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-}
-
-// GroupList is a list of groups
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type GroupList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []Group `json:"items"`
+// ProjectGroup is a helper data structure that
+// stores the information about a project and a group that
+// a user belongs to
+type ProjectGroup struct {
+	ID    string `json:"id"`
+	Group string `json:"group"`
 }

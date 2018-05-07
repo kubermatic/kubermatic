@@ -10,6 +10,7 @@ import (
 type KubermaticV1Interface interface {
 	RESTClient() rest.Interface
 	ClustersGetter
+	ProjectsGetter
 	UsersGetter
 	UserSSHKeiesGetter
 }
@@ -21,6 +22,10 @@ type KubermaticV1Client struct {
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
 	return newClusters(c)
+}
+
+func (c *KubermaticV1Client) Projects() ProjectInterface {
+	return newProjects(c)
 }
 
 func (c *KubermaticV1Client) Users() UserInterface {
