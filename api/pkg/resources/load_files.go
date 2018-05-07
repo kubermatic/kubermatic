@@ -15,7 +15,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,6 +152,7 @@ type TemplateData struct {
 	ServiceLister   corev1lister.ServiceLister
 }
 
+// GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
 func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(d.Cluster, gv.WithKind("Cluster"))
@@ -258,53 +258,6 @@ func LoadServiceFile(data *TemplateData, app, masterResourcesPath string) (*core
 	return &service, json, err
 }
 
-// LoadSecretFile returns the secret for the given cluster and app
-func LoadSecretFile(data *TemplateData, app, masterResourcesPath string) (*corev1.Secret, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-secret.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var secret corev1.Secret
-	json, err := t.Execute(data, &secret)
-	return &secret, json, err
-}
-
-// LoadConfigMapFile returns the configmap for the given cluster and app
-func LoadConfigMapFile(data *TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-configmap.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var secret corev1.ConfigMap
-	json, err := t.Execute(data, &secret)
-	return &secret, json, err
-}
-
-// LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(data *TemplateData, app, masterResourcesPath string) (*v1beta1.Ingress, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-ingress.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-	var ingress v1beta1.Ingress
-	json, err := t.Execute(data, &ingress)
-	return &ingress, json, err
-}
-
-// LoadPVCFile returns the PVC for the given cluster & app
-func LoadPVCFile(data *TemplateData, app, masterResourcesPath string) (*corev1.PersistentVolumeClaim, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-pvc.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var pvc corev1.PersistentVolumeClaim
-	json, err := t.Execute(data, &pvc)
-	return &pvc, json, err
-}
-
 // LoadEtcdClusterFile loads a etcd-operator crd from disk and returns a Cluster crd struct
 func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile string) (*etcdoperatorv1beta2.EtcdCluster, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
@@ -315,18 +268,6 @@ func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile strin
 	var c etcdoperatorv1beta2.EtcdCluster
 	json, err := t.Execute(data, &c)
 	return &c, json, err
-}
-
-// LoadServiceAccountFile loads a service account from disk and returns it
-func LoadServiceAccountFile(data *TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-serviceaccount.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var sa corev1.ServiceAccount
-	json, err := t.Execute(data, &sa)
-	return &sa, json, err
 }
 
 // LoadRoleFile loads a role from disk, sets the namespace and returns it

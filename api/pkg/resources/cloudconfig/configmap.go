@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	Name = "cloud-config"
+	name = "cloud-config"
 )
 
+// ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
 func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
@@ -28,7 +29,7 @@ func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            Name,
+			Name:            name,
 			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
 		},
 		Data: map[string]string{
@@ -69,6 +70,4 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 {{- end }}
 `
-
-	prometheusRules = ``
 )

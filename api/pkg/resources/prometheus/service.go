@@ -8,10 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// Service returns a service for the prometheus
 func Service(data *resources.TemplateData) (*corev1.Service, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            Name,
+			Name:            name,
 			Labels:          map[string]string{},
 			Annotations:     map[string]string{},
 			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
@@ -19,7 +20,7 @@ func Service(data *resources.TemplateData) (*corev1.Service, error) {
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
 			Selector: map[string]string{
-				"app":     Name,
+				"app":     name,
 				"cluster": data.Cluster.Name,
 			},
 			Ports: []corev1.ServicePort{

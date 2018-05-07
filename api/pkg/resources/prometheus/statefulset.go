@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	Name = "prometheus"
+	name = "prometheus"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -19,15 +19,16 @@ const (
 
 var defaultMemoryRequest = resource.MustParse("200Mi")
 
+// StatefulSet returns the prometheus statefulset
 func StatefulSet(data *resources.TemplateData) (*appsv1.StatefulSet, error) {
-	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(Name)
+	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
 		return nil, err
 	}
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            Name,
+			Name:            name,
 			Labels:          map[string]string{},
 			Annotations:     map[string]string{},
 			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
@@ -37,17 +38,17 @@ func StatefulSet(data *resources.TemplateData) (*appsv1.StatefulSet, error) {
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
 			Replicas:    resources.Int32(1),
-			ServiceName: Name,
+			ServiceName: name,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app":     Name,
+					"app":     name,
 					"cluster": data.Cluster.Name,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":             Name,
+						"app":             name,
 						"cluster":         data.Cluster.Name,
 						"config-revision": cm.ObjectMeta.ResourceVersion,
 					},
@@ -59,11 +60,11 @@ func StatefulSet(data *resources.TemplateData) (*appsv1.StatefulSet, error) {
 						RunAsNonRoot: resources.Bool(true),
 						RunAsUser:    resources.Int64(1000),
 					},
-					ServiceAccountName:            Name,
+					ServiceAccountName:            name,
 					TerminationGracePeriodSeconds: resources.Int64(600),
 					Containers: []corev1.Container{
 						{
-							Name:  Name,
+							Name:  name,
 							Image: "quay.io/prometheus/prometheus:v2.2.1",
 							Args: []string{
 								"--config.file=/etc/prometheus/config/prometheus.yaml",
@@ -127,7 +128,7 @@ func StatefulSet(data *resources.TemplateData) (*appsv1.StatefulSet, error) {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: Name,
+										Name: name,
 									},
 								},
 							},

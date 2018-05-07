@@ -44,8 +44,6 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 		t.Fatal(err)
 	}
 
-	ioutil.WriteFile(path, res, 0644)
-
 	exp, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
