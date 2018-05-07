@@ -4,6 +4,10 @@ package v1
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
+// ProjectListerExpansion allows custom methods to be added to
+// ProjectLister.
+type ProjectListerExpansion interface{}
+
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}
