@@ -327,19 +327,6 @@ func TestLoadFiles(t *testing.T) {
 
 					checkTestResult(t, fixture, res)
 				}
-
-				//serviceAccounts := map[string]string{
-				//	"etcd-operator": fmt.Sprintf("service-account-%s-%s-etcd-operator", prov, version.ID),
-				//	"prometheus":    fmt.Sprintf("service-account-%s-%s-prometheus", prov, version.ID),
-				//}
-				//for name, fixture := range serviceAccounts {
-				//	res, _, err := LoadServiceAccountFile(data, name, masterResourcePath)
-				//	if err != nil {
-				//		t.Fatalf("failed to load service account %q: %v", name, err)
-				//	}
-				//
-				//	checkTestResult(t, fixture, res)
-				//}
 			})
 		}
 	}
