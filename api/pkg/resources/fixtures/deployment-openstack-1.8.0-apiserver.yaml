@@ -11,6 +11,7 @@ metadata:
     name: de-test-01
     uid: "1234567890"
 spec:
+  minReadySeconds: 10
   replicas: 1
   selector:
     matchLabels:
