@@ -569,13 +569,15 @@
   revision = "0dec1b30a0215bb68605dfc568e8855066c9202d"
 
 [[projects]]
+  branch = "master"
   name = "github.com/prometheus/client_golang"
   packages = [
+    "api",
+    "api/prometheus/v1",
     "prometheus",
     "prometheus/promhttp"
   ]
-  revision = "c5b7fccd204277076155f10851dad72b76a49317"
-  version = "v0.8.0"
+  revision = "82f5ff156b29e276022b1a958f7d385870fb9814"
 
 [[projects]]
   branch = "master"
