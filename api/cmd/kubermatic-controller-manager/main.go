@@ -50,7 +50,7 @@ var (
 )
 
 const (
-	controllerName = "kubermatic-cluster-controller"
+	controllerName = "kubermatic-controller-manager"
 )
 
 func main() {
@@ -161,7 +161,7 @@ func main() {
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(config, "kubermatic-cluster-controller-leader-election"))
+			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
 			if err != nil {
 				return err
 			}
