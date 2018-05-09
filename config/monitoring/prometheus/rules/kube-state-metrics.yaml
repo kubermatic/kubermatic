@@ -42,7 +42,7 @@ groups:
       summary: "Daemonsets are not scheduled correctly"
       description: "A number of daemonsets are running where they are not supposed to run."
   - alert: KubernetesPodFrequentlyRestarting
-    expr: increase(kube_pod_container_status_restarts_total[1h]) > 5
+    expr: increase(kube_pod_container_status_restarts_total[1h]) > 10
     for: 10m
     labels:
       severity: warning
