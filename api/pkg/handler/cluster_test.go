@@ -84,8 +84,12 @@ func TestClusterEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
-			e.ServeHTTP(res, req)
+			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
 			checkStatusCode(test.responseCode, res, t)
 
 			if test.responseCode != http.StatusOK {
@@ -93,7 +97,7 @@ func TestClusterEndpoint(t *testing.T) {
 			}
 
 			gotCluster := &kubermaticv1.Cluster{}
-			err := json.Unmarshal(res.Body.Bytes(), gotCluster)
+			err = json.Unmarshal(res.Body.Bytes(), gotCluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,12 +191,15 @@ func TestClustersEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
-			e.ServeHTTP(res, req)
+			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
 			gotClusters := []kubermaticv1.Cluster{}
-			err := json.Unmarshal(res.Body.Bytes(), &gotClusters)
+			err = json.Unmarshal(res.Body.Bytes(), &gotClusters)
 			if err != nil {
 				t.Fatal(err, res.Body.String())
 			}
@@ -353,7 +360,10 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
+			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
 
 			updatedCluster := test.cluster.DeepCopy()
 			updatedCluster = test.modifyCluster(updatedCluster)
@@ -363,7 +373,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			}
 
 			req := httptest.NewRequest("PUT", "/api/v3/dc/us-central1/cluster/"+test.cluster.Name, body)
-			e.ServeHTTP(res, req)
+			ep.ServeHTTP(res, req)
 			checkStatusCode(test.responseCode, res, t)
 
 			if test.responseCode != http.StatusOK {
@@ -371,7 +381,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			}
 
 			gotCluster := &kubermaticv1.Cluster{}
-			err := json.Unmarshal(res.Body.Bytes(), gotCluster)
+			err = json.Unmarshal(res.Body.Bytes(), gotCluster)
 			if err != nil {
 				t.Fatal(err)
 			}

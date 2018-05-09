@@ -92,12 +92,15 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v1/ssh-keys", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, keyList, nil, nil)
-			e.ServeHTTP(res, req)
+			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, keyList, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
 			checkStatusCode(http.StatusOK, res, t)
 
 			var gotKeys []kubermaticv1.UserSSHKey
-			err := json.Unmarshal(res.Body.Bytes(), &gotKeys)
+			err = json.Unmarshal(res.Body.Bytes(), &gotKeys)
 			if err != nil {
 				t.Fatal(err, res.Body.String())
 			}
