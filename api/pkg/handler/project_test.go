@@ -22,7 +22,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 		{
 			Name:     "scenario 1: a user doesn't have any projects, thus creating one succeeds",
 			Body:     `{"name":"my-first-project"}`,
-			Response: `{"id":"","name":"my-first-project"}`,
+			Response: `{"id":"","name":"my-first-project","status":"Inactive"}`,
 			// TODO(p0lyn0mial): the response should be http.StatusCreated
 			HTTPStatus: http.StatusOK,
 		},

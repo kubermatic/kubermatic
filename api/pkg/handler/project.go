@@ -29,16 +29,16 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
-			if err == kubernetes.ErrProjectAlreadyExist {
+			if err == kubernetes.ErrAlreadyExist {
 				return nil, errors.NewAlreadyExists("Project", projectRq.Name)
 			}
 			return nil, err
 		}
 
 		return apiv1.Project{
-			ID:   string(kubermaticProject.UID),
-			Name: kubermaticProject.Spec.Name,
-			// TODO (p0lyn0mial): add/set the status
+			ID:     string(kubermaticProject.UID),
+			Name:   kubermaticProject.Spec.Name,
+			Status: kubermaticProject.Status.Phase,
 		}, nil
 	}
 }

@@ -1,19 +1,12 @@
 package kubernetes
 
 import (
-	"errors"
-
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	restclient "k8s.io/client-go/rest"
-)
-
-var (
-	// ErrProjectAlreadyExist an error indicating that the project with the given name already exists
-	ErrProjectAlreadyExist = errors.New("AlreadyExist")
 )
 
 // kubermaticImpersonationClient gives kubermatic client set that uses user impersonation
@@ -57,7 +50,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		owners := project.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.UID == user.UID && project.Spec.Name == projectName {
-				return nil, ErrProjectAlreadyExist
+				return nil, ErrAlreadyExist
 			}
 		}
 	}
