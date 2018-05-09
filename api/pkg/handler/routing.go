@@ -12,6 +12,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 // ContextKey defines a dedicated type for keys to use on contexts
@@ -44,6 +45,7 @@ type Routing struct {
 	authenticator    Authenticator
 	clusterProviders map[string]provider.ClusterProvider
 	updateManager    UpdateManager
+	promAPI          prometheusv1.API
 }
 
 // NewRouting creates a new Routing.
@@ -56,6 +58,7 @@ func NewRouting(
 	projectProvider provider.ProjectProvider,
 	authenticator Authenticator,
 	updateManager UpdateManager,
+	promAPI prometheusv1.API,
 ) Routing {
 	return Routing{
 		datacenters:      datacenters,
@@ -67,6 +70,7 @@ func NewRouting(
 		logger:           log.NewLogfmtLogger(os.Stderr),
 		authenticator:    authenticator,
 		updateManager:    updateManager,
+		promAPI:          promAPI,
 	}
 }
 

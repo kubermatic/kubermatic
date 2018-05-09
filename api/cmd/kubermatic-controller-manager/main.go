@@ -31,9 +31,9 @@ import (
 )
 
 type controllerRunOptions struct {
-	kubeconfig     string
-	masterURL      string
-	prometheusAddr string
+	kubeconfig   string
+	masterURL    string
+	internalAddr string
 
 	masterResources   string
 	externalURL       string
@@ -64,7 +64,7 @@ func main() {
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOp.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&runOp.prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
+	flag.StringVar(&runOp.internalAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
 	flag.StringVar(&runOp.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&runOp.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&runOp.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
@@ -136,14 +136,14 @@ func main() {
 		m.Handle("/metrics", promhttp.Handler())
 
 		s := http.Server{
-			Addr:         runOp.prometheusAddr,
+			Addr:         runOp.internalAddr,
 			Handler:      m,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 10 * time.Second,
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", runOp.prometheusAddr)
+			glog.Infof("Starting the internal http server: %s\n", runOp.internalAddr)
 			err := s.ListenAndServe()
 			if err != nil {
 				return fmt.Errorf("internal http server failed: %v", err)
