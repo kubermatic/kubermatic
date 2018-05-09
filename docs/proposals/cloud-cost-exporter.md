@@ -23,10 +23,10 @@ This Exporter uses SDKs of various Cloud Providers:
 * https://github.com/GoogleCloudPlatform/google-cloud-go
 * https://github.com/hetznercloud/hcloud-go
 
-For non-public Cloud Providers, we want the Exporter to be configurable via a config file / configmap.
+We want the exporter to be configurable via a config file / configmap.
 
-The Exporter can then scrape the Cloud Providers for the number of Nodes, Disks and simliar infrastructure under controll by Kubermatic.
-With this data in Prometheus we can query various different costs.
+The exporter can then scrape the Cloud Providers for the number of Nodes, Disks and simliar infrastructure under controll by Kubermatic.
+With this data ingested into Prometheus we can query various different costs with PromQL queries.
 
 ## Task & effort:
 * Implement the basic exporter and one first collector - 1d
