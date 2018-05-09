@@ -58,7 +58,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.getProjects())
 
 	mux.Methods(http.MethodPost).
-		Path("projects/project").
+		Path("/projects").
 		Handler(r.createProject())
 
 	mux.Methods(http.MethodPut).
@@ -264,7 +264,7 @@ func (r Routing) getProjects() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/project project
+// swagger:route POST /api/v1/projects project
 //
 //     Create a project
 //
@@ -288,9 +288,9 @@ func (r Routing) createProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(createProjectEndpoint()),
+		)(createProjectEndpoint(r.projectProvider)),
 		decodeCreateProject,
-		encodeJSON,
+		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

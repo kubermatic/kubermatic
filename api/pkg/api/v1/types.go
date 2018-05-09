@@ -169,8 +169,9 @@ type User struct {
 // Project is a top-level container for a set of resources
 // swagger:model Project
 type Project struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 // Kubeconfig is a clusters kubeconfig

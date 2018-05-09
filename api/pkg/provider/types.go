@@ -95,6 +95,13 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 }
 
+// ProjectProvider declares the set of method for interacting with kubermatic's project
+type ProjectProvider interface {
+	// New creates a brand new project in the system with the given name
+	// Note that a user cannot own more than one project with the given name
+	New(user *kubermaticv1.User, name string) (*kubermaticv1.Project, error)
+}
+
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	if spec == nil {

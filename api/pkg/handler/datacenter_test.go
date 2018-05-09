@@ -13,8 +13,11 @@ func TestDatacentersEndpoint(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
@@ -28,8 +31,11 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
 		t.Fatalf("Expected route to return code 404, got %d: %s", res.Code, res.Body.String())
@@ -41,8 +47,11 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
 		t.Fatalf("Expected route to return code 404, got %d: %s", res.Code, res.Body.String())
@@ -54,8 +63,11 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, true), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, true), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
@@ -70,8 +82,11 @@ func TestDatacenterEndpointFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())

@@ -153,6 +153,35 @@
             "$ref": "#/responses/errorResponse"
           }
         }
+      },
+      "post": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[authenticated]"
+            ]
+          }
+        ],
+        "description": "Allow to create a brand new project.\nThis endpoint can be consumed by every authenticated user.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Create a project",
+        "operationId": "project",
+        "responses": {
+          "201": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
       }
     },
     "/api/v1/projects/project": {
@@ -178,35 +207,6 @@
           },
           "401": {
             "$ref": "#/responses/Unauthorized"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "openIdConnect": [
-              "[authenticated]"
-            ]
-          }
-        ],
-        "description": "Allow to create a brand new project.\nThis endpoint can be consumed by every authenticated user.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "summary": "Create a project",
-        "operationId": "project",
-        "responses": {
-          "201": {
-            "description": "Project",
-            "schema": {
-              "$ref": "#/definitions/Project"
-            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -3262,6 +3262,10 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "status": {
+          "type": "string",
+          "x-go-name": "Status"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

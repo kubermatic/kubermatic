@@ -105,6 +105,11 @@ func main() {
 
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), handler.IsAdmin)
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
+	defaultImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
+	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
+	if err != nil {
+		glog.Fatalf("failed to create project provider due to %v", err)
+	}
 
 	// create a cluster provider for each context
 	clientcmdConfig, err := clientcmd.LoadFromFile(kubeconfig)
@@ -180,6 +185,7 @@ func main() {
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
+		projectProvider,
 		authenticator,
 		versions,
 		updates,
