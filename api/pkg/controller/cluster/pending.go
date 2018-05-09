@@ -251,7 +251,9 @@ func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	}
 	ipList := sets.NewString()
 	for _, ip := range resolvedIPs {
-		ipList.Insert(ip.String())
+		if ip.To4() != nil {
+			ipList.Insert(ip.String())
+		}
 	}
 	ips := ipList.List()
 	sort.Strings(ips)
