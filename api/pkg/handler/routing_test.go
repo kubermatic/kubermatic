@@ -17,15 +17,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
+	restclient "k8s.io/client-go/rest"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 )
 
-func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate,
-) http.Handler {
+func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) (http.Handler, error) {
 	ctx := context.Background()
 
 	datacenters := buildDatacenterMeta()
@@ -41,6 +42,14 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+		return kubermaticClient.KubermaticV1(), nil
+	}
+	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
+	if err != nil {
+		return nil, err
+	}
+
 	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, client.New(kubeInformerFactory.Core().V1().Secrets().Lister()), kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
@@ -57,6 +66,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
+		projectProvider,
 		authenticator,
 		versions,
 		updates,
@@ -70,7 +80,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	r.RegisterV2(v2Router)
 	r.RegisterV3(v3Router)
 
-	return mainRouter
+	return mainRouter, nil
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
@@ -152,7 +162,10 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 func TestUpRoute(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
-	e.ServeHTTP(res, req)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+	ep.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
 }

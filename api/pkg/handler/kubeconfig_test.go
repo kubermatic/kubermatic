@@ -66,9 +66,12 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		},
 	}
 
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{secret}, []runtime.Object{cluster}, nil, nil)
+	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{secret}, []runtime.Object{cluster}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
 
-	e.ServeHTTP(res, req)
+	ep.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
 
 	b, err := yaml.YAMLToJSON(res.Body.Bytes())

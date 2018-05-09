@@ -5,7 +5,9 @@ import (
 )
 
 const (
-	UserPlural = "users"
+	UserPlural     = "users"
+	ProjectPlural  = "projects"
+	OwnerGroupName = "owner"
 )
 
 //+genclient

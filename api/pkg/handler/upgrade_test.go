@@ -140,8 +140,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/foo/upgrades", nil)
 			res := httptest.NewRecorder()
-			e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
-			e.ServeHTTP(res, req)
+			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
 				t.Errorf("Expected status code to be 200, got %d", res.Code)
 				t.Error(res.Body.String())
@@ -149,7 +152,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			}
 
 			gotUpdates := []string{}
-			err := json.Unmarshal(res.Body.Bytes(), &gotUpdates)
+			err = json.Unmarshal(res.Body.Bytes(), &gotUpdates)
 			if err != nil {
 				t.Fatal(err)
 			}
