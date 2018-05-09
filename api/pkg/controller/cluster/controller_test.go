@@ -5,14 +5,15 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"k8s.io/client-go/informers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -46,6 +47,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		dcs,
 		cps,
 		ControllerMetrics{},
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
@@ -55,11 +57,11 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
 		kubeInformerFactory.Core().V1().ConfigMaps(),
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
-		kubeInformerFactory.Extensions().V1beta1().Deployments(),
+		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
-		kubeInformerFactory.Rbac().V1beta1().Roles(),
-		kubeInformerFactory.Rbac().V1beta1().RoleBindings(),
-		kubeInformerFactory.Rbac().V1beta1().ClusterRoleBindings(),
+		kubeInformerFactory.Rbac().V1().Roles(),
+		kubeInformerFactory.Rbac().V1().RoleBindings(),
+		kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
 		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)

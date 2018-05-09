@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
@@ -88,6 +89,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		cloudSpec.Openstack = &apiv2.OpenstackNodeSpec{
 			Flavor: config.Flavor.Value,
 			Image:  config.Image.Value,
+			Tags:   config.Tags,
 		}
 	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderHetzner {
 		config := &hetzner.RawConfig{}
@@ -96,6 +98,16 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		}
 		cloudSpec.Hetzner = &apiv2.HetznerNodeSpec{
 			Type: config.ServerType.Value,
+		}
+	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderVsphere {
+		config := &vsphere.RawConfig{}
+		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
+		}
+		cloudSpec.VSphere = &apiv2.VSphereNodeSpec{
+			CPUs:     int(config.CPUs),
+			Memory:   int(config.MemoryMB),
+			Template: config.TemplateVMName.Value,
 		}
 	}
 

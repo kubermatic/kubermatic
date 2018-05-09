@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -36,12 +38,17 @@ type openIDAuthenticator struct {
 	issuer         string
 	tokenExtractor TokenExtractor
 	clientID       string
+	provider       *oidc.Provider
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) (Authenticator, error) {
-	// Sanity check for config!
-	_, err := oidc.NewProvider(context.Background(), issuer)
+func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, insecureSkipVerify bool) (Authenticator, error) {
+	ctx := context.Background()
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	p, err := oidc.NewProvider(context.WithValue(ctx, oauth2.HTTPClient, client), issuer)
 	if err != nil {
 		return nil, err
 	}
@@ -50,19 +57,14 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor) (
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
+		provider:       p,
 	}, nil
 }
 
 func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			// This should only be called once!
-			p, err := oidc.NewProvider(ctx, o.issuer)
-			if err != nil {
-				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
-			}
-			idTokenVerifier := p.Verifier(&oidc.Config{ClientID: o.clientID})
+			idTokenVerifier := o.provider.Verifier(&oidc.Config{ClientID: o.clientID})
 			t := ctx.Value(rawToken)
 			token, ok := t.(string)
 			if !ok || token == "" {

@@ -12,7 +12,6 @@ spec:
       annotations:
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
-        checksum/node-files: {{ include (print $.Template.BasePath "/node-files-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: kubermatic
       containers:
@@ -30,6 +29,8 @@ spec:
           - -updates=/opt/master-files/updates.yaml
           - -prometheus-address=0.0.0.0:8085
           - -kubeconfig=/opt/.kube/kubeconfig
+          - -master-resources=/opt/master-files
+          - -token-issuer-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:
@@ -44,9 +45,6 @@ spec:
               readOnly: true
             - name: datacenters
               mountPath: "/opt/datacenter/"
-              readOnly: true
-            - name: node-files
-              mountPath: "/opt/template/nodes/"
               readOnly: true
             - name: master-files
               mountPath: "/opt/master-files/"
@@ -64,9 +62,6 @@ spec:
         - name: kubeconfig
           secret:
             secretName: kubeconfig
-        - name: node-files
-          secret:
-            secretName: node-files
         - name: datacenters
           secret:
             secretName: datacenters

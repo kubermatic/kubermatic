@@ -32,6 +32,7 @@ type VSphereDatacenterSpec struct {
 	Endpoint   string `json:"endpoint"`
 	Datacenter string `json:"datacenter"`
 	Datastore  string `json:"datastore"`
+	Cluster    string `json:"cluster"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
@@ -108,10 +109,10 @@ type MasterVersion struct {
 	ApiserverDeploymentYaml         string            `yaml:"apiserverDeploymentYaml"`
 	ControllerDeploymentYaml        string            `yaml:"controllerDeploymentYaml"`
 	SchedulerDeploymentYaml         string            `yaml:"schedulerDeploymentYaml"`
-	NodeControllerDeploymentYaml    string            `yaml:"nodeControllerDeploymentYaml"`
 	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
 	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
 	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`
+	OpenVPNServerDeploymentYaml     string            `yaml:"openVPNServerDeploymentYaml"`
 	Values                          map[string]string `yaml:"values"`
 }
 
@@ -163,6 +164,13 @@ type User struct {
 	Name  string
 	Email string
 	Roles map[string]struct{}
+}
+
+// Project is a top-level container for a set of resources
+// swagger:model Project
+type Project struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // Kubeconfig is a clusters kubeconfig

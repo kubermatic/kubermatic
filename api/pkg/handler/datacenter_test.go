@@ -13,7 +13,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -28,7 +28,7 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -41,7 +41,7 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -54,7 +54,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, true), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, true), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -70,7 +70,7 @@ func TestDatacenterEndpointFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
 
 	res := httptest.NewRecorder()
-	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, nil, nil)
+	e := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	e.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {

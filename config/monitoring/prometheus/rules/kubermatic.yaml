@@ -2,7 +2,7 @@ groups:
 - name: kubermatic
   rules:
   - alert: KubermaticUnhandledErrorsTotal
-    expr: sum(rate(kubermatic_cluster_controller_unhandled_errors_total[5m])) > 0.25
+    expr: sum(rate(kubermatic_cluster_controller_unhandled_errors_total[5m])) > 0.01
     for: 10m
     labels:
       severity: warning

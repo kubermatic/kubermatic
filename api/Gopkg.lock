@@ -145,15 +145,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  name = "github.com/emicklei/go-restful"
-  packages = [
-    ".",
-    "log"
-  ]
-  revision = "26b41036311f2da8242db402557a0dbd09dc83da"
-  version = "v2.6.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/evanphx/json-patch"
   packages = ["."]
@@ -333,12 +324,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/google/btree"
-  packages = ["."]
-  revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
-
-[[projects]]
-  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
@@ -406,15 +391,6 @@
   packages = ["."]
   revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
   version = "v1.6.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/gregjones/httpcache"
-  packages = [
-    ".",
-    "diskcache"
-  ]
-  revision = "2bcd89a1743fd4b373f7370ce8ddc14dfbd18229"
 
 [[projects]]
   branch = "master"
@@ -487,12 +463,6 @@
   version = "1.0.5"
 
 [[projects]]
-  name = "github.com/juju/ratelimit"
-  packages = ["."]
-  revision = "59fac5042749a5afb9af70e813da1dd5474f0167"
-  version = "1.0.1"
-
-[[projects]]
   branch = "master"
   name = "github.com/kr/logfmt"
   packages = ["."]
@@ -511,39 +481,31 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/kube-node/nodeset"
-  packages = [
-    "pkg/client/clientset/versioned",
-    "pkg/client/clientset/versioned/scheme",
-    "pkg/client/clientset/versioned/typed/nodeset/v1alpha1",
-    "pkg/nodeset/v1alpha1"
-  ]
-  revision = "6a55101a96e59a3fd67bf011061df017dcc2c22b"
-
-[[projects]]
-  branch = "master"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1",
     "pkg/cloudprovider/cloud",
+    "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/digitalocean",
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
+    "pkg/cloudprovider/provider/vsphere",
     "pkg/containerruntime",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
     "pkg/template",
     "pkg/userdata/cloud",
     "pkg/userdata/coreos",
+    "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "ce97438ad809c5d3b1f9a8ea72e4ceab930e2fa9"
+  revision = "126a083d62f6d9d2ddae867b322658bbbcb24dad"
+  version = "v0.6.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -590,18 +552,6 @@
   packages = ["."]
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/petar/GoLLRB"
-  packages = ["llrb"]
-  revision = "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
-
-[[projects]]
-  name = "github.com/peterbourgon/diskv"
-  packages = ["."]
-  revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
-  version = "v2.0.1"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -727,8 +677,13 @@
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
+    "find",
+    "list",
+    "nfc",
+    "object",
     "property",
     "session",
+    "task",
     "vim25",
     "vim25/debug",
     "vim25/methods",
@@ -812,6 +767,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/time"
+  packages = ["rate"]
+  revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -867,7 +828,7 @@
   revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
 
 [[projects]]
-  branch = "master"
+  branch = "release-1.10"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1alpha1",
@@ -899,10 +860,10 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "0d0b2f481328d8bae556061a08a02175054059f4"
+  revision = "edd5e319fc45211023fffb41c7aa5555229c4179"
 
 [[projects]]
-  branch = "release-1.9"
+  branch = "release-1.10"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
@@ -911,10 +872,10 @@
     "pkg/client/clientset/clientset/scheme",
     "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
   ]
-  revision = "ad6ca8e94ec6b6d0a9f22147f98cfbf47b932700"
+  revision = "e8ab413e0ae1e19df66d60088a1e11c97b73fdd9"
 
 [[projects]]
-  branch = "release-1.9"
+  branch = "release-1.10"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -925,7 +886,7 @@
     "pkg/apis/meta/internalversion",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
-    "pkg/apis/meta/v1alpha1",
+    "pkg/apis/meta/v1beta1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -963,10 +924,10 @@
     "third_party/forked/golang/json",
     "third_party/forked/golang/reflect"
   ]
-  revision = "19e3f5aa3adca672c153d324e6b7d82ff8935f03"
+  revision = "01bc873149a1802eb74df583613872d126449ed5"
 
 [[projects]]
-  branch = "release-6.0"
+  branch = "release-7.0"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1094,7 +1055,10 @@
     "listers/storage/v1",
     "listers/storage/v1alpha1",
     "listers/storage/v1beta1",
+    "pkg/apis/clientauthentication",
+    "pkg/apis/clientauthentication/v1alpha1",
     "pkg/version",
+    "plugin/pkg/client/auth/exec",
     "rest",
     "rest/watch",
     "testing",
@@ -1117,12 +1081,13 @@
     "util/flowcontrol",
     "util/homedir",
     "util/integer",
+    "util/retry",
     "util/workqueue"
   ]
-  revision = "9389c055a838d4f208b699b3c7c51b70f2368861"
+  revision = "33f2870a2b83179c823ddc90e5513f9e5fe43b38"
 
 [[projects]]
-  branch = "release-1.9"
+  branch = "release-1.10"
   name = "k8s.io/code-generator"
   packages = [
     "cmd/client-gen",
@@ -1133,9 +1098,11 @@
     "cmd/client-gen/generators/util",
     "cmd/client-gen/path",
     "cmd/client-gen/types",
-    "cmd/deepcopy-gen"
+    "cmd/deepcopy-gen",
+    "cmd/deepcopy-gen/args",
+    "pkg/util"
   ]
-  revision = "91d3f6a57905178524105a085085901bb73bd3dc"
+  revision = "cbd9dba38c3d8e0035d4bb554bd321e2c190e629"
 
 [[projects]]
   name = "k8s.io/gengo"
@@ -1154,15 +1121,12 @@
 [[projects]]
   branch = "master"
   name = "k8s.io/kube-openapi"
-  packages = [
-    "pkg/common",
-    "pkg/util/proto"
-  ]
+  packages = ["pkg/util/proto"]
   revision = "275e2ce91dec4c05a4094a7b1daee5560b555ac9"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a3b8174d250bc55ecb1090c5bd3a38415c72f3c4db47b8f02afb952548dfc66b"
+  inputs-digest = "a731ff05c6fc63a74e775b8afb3363786fa351c0e4f652806094efd55df42445"
   solver-name = "gps-cdcl"
   solver-version = 1

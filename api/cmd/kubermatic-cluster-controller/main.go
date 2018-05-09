@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -241,6 +242,7 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 		dcs,
 		cps,
 		clusterMetrics,
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
@@ -250,11 +252,11 @@ func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kube
 		kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
 		kubeInformerFactory.Core().V1().ConfigMaps(),
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
-		kubeInformerFactory.Extensions().V1beta1().Deployments(),
+		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
-		kubeInformerFactory.Rbac().V1beta1().Roles(),
-		kubeInformerFactory.Rbac().V1beta1().RoleBindings(),
-		kubeInformerFactory.Rbac().V1beta1().ClusterRoleBindings(),
+		kubeInformerFactory.Rbac().V1().Roles(),
+		kubeInformerFactory.Rbac().V1().RoleBindings(),
+		kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
 		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)

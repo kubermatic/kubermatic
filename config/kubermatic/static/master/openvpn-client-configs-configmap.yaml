@@ -1,0 +1,15 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: openvpn-client-configs
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: {{ .Cluster.Name }}
+    uid: "{{ .Cluster.ObjectMeta.UID }}"
+data:
+  user-cluster-client: |
+    iroute 172.25.0.0 255.255.0.0
+    iroute 10.10.10.0 255.255.255.0

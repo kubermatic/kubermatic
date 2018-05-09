@@ -14,8 +14,12 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
+	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+const crictlVersion = "v0.2"
 
 type Provider struct{}
 
@@ -54,7 +58,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 	return runtimes
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -80,6 +84,21 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		return "", fmt.Errorf("failed to get ubuntu config from provider config: %v", err)
 	}
 
+	bootstrapToken, err := userdatahelper.GetTokenFromKubeconfig(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting token: %v", err)
+	}
+
+	kubeadmCACertHash, err := userdatahelper.GetKubeadmCACertHash(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting kubeadm cacert hash: %v", err)
+	}
+
+	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
+	}
+
 	var crPkg, crPkgVersion string
 	if spec.Versions.ContainerRuntime.Name == containerruntime.Docker {
 		crPkg, crPkgVersion, err = getDockerInstallCandidate(spec.Versions.ContainerRuntime.Version)
@@ -99,24 +118,30 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		MachineSpec         machinesv1alpha1.MachineSpec
 		ProviderConfig      *providerconfig.Config
 		OSConfig            *Config
-		Kubeconfig          string
+		BoostrapToken       string
 		CloudProvider       string
 		CloudConfig         string
 		CRAptPackage        string
 		CRAptPackageVersion string
-		KubeletDownloadURL  string
+		KubernetesVersion   string
 		ClusterDNSIPs       []net.IP
+		KubeadmCACertHash   string
+		CrictlVersion       string
+		ServerAddr          string
 	}{
 		MachineSpec:         spec,
 		ProviderConfig:      pconfig,
 		OSConfig:            osConfig,
-		Kubeconfig:          kubeconfig,
+		BoostrapToken:       bootstrapToken,
 		CloudProvider:       cpName,
 		CloudConfig:         cpConfig,
 		CRAptPackage:        crPkg,
 		CRAptPackageVersion: crPkgVersion,
-		KubeletDownloadURL:  fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kubelet", kubeletVersion.String()),
+		KubernetesVersion:   kubeletVersion.String(),
 		ClusterDNSIPs:       clusterDNSIPs,
+		KubeadmCACertHash:   kubeadmCACertHash,
+		CrictlVersion:       crictlVersion,
+		ServerAddr:          serverAddr,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -136,6 +161,8 @@ package_upgrade: true
 package_reboot_if_required: true
 {{- end }}
 
+ssh_pwauth: no
+
 ssh_authorized_keys:
 {{- range .ProviderConfig.SSHPublicKeys }}
 - "{{ . }}"
@@ -146,31 +173,188 @@ write_files:
   content: |
 {{ if ne .CloudConfig "" }}{{ .CloudConfig | indent 4 }}{{ end }}
 
-- path: "/etc/kubernetes/bootstrap.kubeconfig"
-  content: |
-{{ .Kubeconfig | indent 4 }}
 
-- path: "/etc/kubernetes/download.sh"
+- path: "/usr/local/bin/download-kubelet"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    mkdir -p /opt/bin
+    if ! [[ -x /opt/bin/kubelet ]]; then
+      for try in {1..3}; do
+         if curl -L --fail -o /opt/bin/kubelet https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubelet; then
+          chmod +x /opt/bin/kubelet
+          exit 0
+         fi
+      done
+    fi
+    exit 1
+
+- path: "/usr/local/bin/download-kubeadm"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    mkdir -p /opt/bin
+    if ! [[ -x /opt/bin/kubeadm ]]; then
+      for try in {1..3}; do
+        if curl -L --fail -o /opt/bin/kubeadm https://storage.googleapis.com/kubernetes-release/release/v{{ .KubernetesVersion }}/bin/linux/amd64/kubeadm; then
+          chmod +x /opt/bin/kubeadm
+          exit 0
+        fi
+      done
+    fi
+    exit 1
+
+- path: "/usr/local/bin/download-cni"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    mkdir -p /opt/cni/bin
+    if ! [[ -x /opt/cni/bin/bridge ]]; then
+      cd /opt/cni/bin/
+      for try in {1..3}; do
+        if curl -L --fail https://storage.googleapis.com/cni-plugins/cni-plugins-amd64-v0.6.0.tgz|tar -xvz; then
+          exit 0
+        fi
+      done
+    fi
+    exit 1
+
+- path: "/usr/local/bin/download-kubelet-kubeadm-unitfile"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    if ! [[ -f /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]]; then
+      for try in {1..3}; do
+        if curl -L --fail https://raw.githubusercontent.com/kubernetes/kubernetes/v{{ .KubernetesVersion }}/build/debs/10-kubeadm.conf \
+          |sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf; then
+         systemctl daemon-reload
+        exit 0
+       fi
+      done
+    fi
+    exit 1
+
+{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
+- path: "/usr/local/bin/download-crictl"
   permissions: '0777'
   content: |
     #!/bin/bash
     set -xeuo pipefail
     mkdir -p /opt/bin /opt/cni/bin /etc/cni/net.d /var/run/kubernetes /var/lib/kubelet /etc/kubernetes/manifests /var/log/containers
-    if [ ! -f /opt/bin/kubelet ]; then
-      curl -L -o /opt/bin/kubelet {{ .KubeletDownloadURL }}
-      chmod +x /opt/bin/kubelet
+    if ! [[ -x /opt/bin/crictl ]]; then
+      for try in {1..3}; do
+        curl -L --fail https://github.com/kubernetes-incubator/cri-tools/releases/download/{{ .CrictlVersion }}/crictl-{{ .CrictlVersion }}-linux-amd64.tar.gz |tar -xzC /opt/bin
+        break
+      done
     fi
-    if [ ! -f /opt/cni/bin/bridge ]; then
-      curl -L -o /opt/cni.tgz https://storage.googleapis.com/cni-plugins/cni-plugins-amd64-v0.6.0.tgz
-      mkdir -p /opt/cni/bin/
-      tar -xzf /opt/cni.tgz -C /opt/cni/bin/
-    fi
+
+- path: "/etc/systemd/system/crictl-binary.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/download-crictl
+{{- end }}
+
+
+- path: "/etc/systemd/system/kubelet-binary.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/download-kubelet
+
+- path: "/etc/systemd/system/kubeadm-binary.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/download-kubeadm
+
+- path: "/etc/systemd/system/cni-binary.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/download-cni
+
+- path: "/etc/systemd/system/kubeadm-unitfile.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/download-kubelet-kubeadm-unitfile
+
+- path: "/etc/systemd/system/kubeadm-join.service"
+  content: |
+    [Unit]
+    Requires=network-online.target
+    Requires=kubelet-binary.service kubeadm-binary.service cni-binary.service kubeadm-unitfile.service
+    After=network-online.target
+    After=kubelet-binary.service kubeadm-binary.service cni-binary.service kubeadm-unitfile.service
+{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
+    Requires=crio.service
+    After=crio.service
+{{- end }}
+
+
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
+    ExecStartPre=/sbin/modprobe br_netfilter
+    ExecStart=/opt/bin/kubeadm join \
+{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
+      --cri-socket /var/run/crio/crio.sock \
+{{- end }}
+      --token {{ .BoostrapToken }} \
+      --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
+      {{ .ServerAddr }}
+
+- path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
+  content: |
+    [Service]
+    Environment="KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
+      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} \
+      {{ if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o"}} --container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --cgroup-driver=systemd{{ end }}"
+
+- path: "/etc/systemd/system/kubelet.service.d/30-clusterdns.conf"
+  content: |
+    [Service]
+    Environment="KUBELET_DNS_ARGS=--cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} --cluster-domain=cluster.local"
 
 - path: "/etc/systemd/system/kubelet.service"
   content: |
     [Unit]
     Description=Kubelet
-    Requires=network.target
+    Requires=network-online.target
+    After=network-online.target
+    Requires=kubelet-binary.service kubeadm-binary.service cni-binary.service kubeadm-unitfile.service
+    After=kubelet-binary.service kubeadm-binary.service cni-binary.service kubeadm-unitfile.service
 {{- if eq .MachineSpec.Versions.ContainerRuntime.Name "docker" }}
     Requires=docker.service
     After=docker.service
@@ -179,61 +363,27 @@ write_files:
     Requires=crio.service
     After=crio.service
 {{- end }}
-    After=network.target
 
     [Service]
-    Restart=always
-    RestartSec=10
-    StartLimitInterval=600
-    StartLimitBurst=50
-    TimeoutStartSec=5min
     Environment="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin"
-    ExecStartPre=/etc/kubernetes/download.sh
-    ExecStart=/opt/bin/kubelet \
-{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "docker" }}
-      --container-runtime=docker \
-{{- end }}
-{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
-      --container-runtime=remote \
-      --container-runtime-endpoint=unix:///var/run/crio/crio.sock \
-      --cgroup-driver="systemd" \
-{{- end }}
-      --allow-privileged=true \
-      --cni-bin-dir=/opt/cni/bin \
-      --cni-conf-dir=/etc/cni/net.d \
-      --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
-      --cluster-domain=cluster.local \
-      --network-plugin=cni \
-      {{- if .CloudProvider }}
-      --cloud-provider={{ .CloudProvider }} \
-      --cloud-config=/etc/kubernetes/cloud-config \
-      {{- end }}
-      --cert-dir=/etc/kubernetes/ \
-      --pod-manifest-path=/etc/kubernetes/manifests \
-      --resolv-conf=/etc/resolv.conf \
-      --rotate-certificates=true \
-      --kubeconfig=/etc/kubernetes/kubeconfig \
-      --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
-      --lock-file=/var/run/lock/kubelet.lock \
-      --exit-on-lock-contention
+    ExecStart=/opt/bin/kubelet
+    Restart=always
+    StartLimitInterval=0
+    RestartSec=10
+    Restart=always
 
     [Install]
     WantedBy=multi-user.target
 
 {{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
-
 - path: "/etc/sysconfig/crio-network"
   content: |
     CRIO_NETWORK_OPTIONS="--registry=docker.io"
 {{- end }}
 
 runcmd:
-{{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
-- systemctl enable crio
-- systemctl start crio
-{{- end }}
 - systemctl enable kubelet
-- systemctl start kubelet
+- systemctl start kubeadm-join
 
 apt:
   sources:
@@ -331,7 +481,11 @@ packages:
 - "nfs-common"
 - "socat"
 - "util-linux"
+- "open-vm-tools"
 {{- if .CRAptPackage }}
+{{- if ne .CRAptPackageVersion "" }}
 - ["{{ .CRAptPackage }}", "{{ .CRAptPackageVersion }}"]
-{{- end }}
+{{- else }}
+- "{{ .CRAptPackage }}"
+{{- end }}{{ end }}
 `

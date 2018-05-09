@@ -18,6 +18,9 @@ import (
 	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+	appsv1informer "k8s.io/client-go/informers/apps/v1"
+	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,11 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
-	rbacv1beta1informers "k8s.io/client-go/informers/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes"
+	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
-	rbacv1beta1lister "k8s.io/client-go/listers/rbac/v1beta1"
+	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -45,10 +48,17 @@ const (
 	runningSyncPeriod    = 60 * time.Second
 )
 
+// UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+type UserClusterConnectionProvider interface {
+	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+}
+
 // Controller is a controller which is responsible for managing clusters
 type Controller struct {
-	kubermaticClient kubermaticclientset.Interface
-	kubeClient       kubernetes.Interface
+	kubermaticClient        kubermaticclientset.Interface
+	kubeClient              kubernetes.Interface
+	userClusterConnProvider UserClusterConnectionProvider
 
 	masterResourcesPath string
 	externalURL         string
@@ -74,11 +84,11 @@ type Controller struct {
 	PvcLister                corev1lister.PersistentVolumeClaimLister
 	ConfigMapLister          corev1lister.ConfigMapLister
 	ServiceAccountLister     corev1lister.ServiceAccountLister
-	DeploymentLister         extensionsv1beta1lister.DeploymentLister
+	DeploymentLister         appsv1lister.DeploymentLister
 	IngressLister            extensionsv1beta1lister.IngressLister
-	RoleLister               rbacv1beta1lister.RoleLister
-	RoleBindingLister        rbacv1beta1lister.RoleBindingLister
-	ClusterRoleBindingLister rbacv1beta1lister.ClusterRoleBindingLister
+	RoleLister               rbacb1lister.RoleLister
+	RoleBindingLister        rbacb1lister.RoleBindingLister
+	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	PrometheusLister         prometheusv1lister.PrometheusLister
 	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
 }
@@ -104,6 +114,7 @@ func NewController(
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
 	metrics ControllerMetrics,
+	userClusterConnProvider UserClusterConnectionProvider,
 
 	ClusterInformer kubermaticv1informers.ClusterInformer,
 	EtcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
@@ -113,17 +124,18 @@ func NewController(
 	PvcInformer corev1informers.PersistentVolumeClaimInformer,
 	ConfigMapInformer corev1informers.ConfigMapInformer,
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
-	DeploymentInformer extensionsv1beta1informers.DeploymentInformer,
+	DeploymentInformer appsv1informer.DeploymentInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
-	RoleInformer rbacv1beta1informers.RoleInformer,
-	RoleBindingInformer rbacv1beta1informers.RoleBindingInformer,
-	ClusterRoleBindingInformer rbacv1beta1informers.ClusterRoleBindingInformer,
+	RoleInformer rbacv1informer.RoleInformer,
+	RoleBindingInformer rbacv1informer.RoleBindingInformer,
+	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
 	PrometheusInformer prometheusv1informers.PrometheusInformer,
 	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
 ) (*Controller, error) {
 	cc := &Controller{
-		kubermaticClient: kubermaticClient,
-		kubeClient:       kubeClient,
+		kubermaticClient:        kubermaticClient,
+		kubeClient:              kubeClient,
+		userClusterConnProvider: userClusterConnProvider,
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
@@ -356,6 +368,11 @@ func (cc *Controller) syncCluster(key string) error {
 		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
 	}
 
+	if cluster.Spec.Pause {
+		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
+		return nil
+	}
+
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
 		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
@@ -521,4 +538,9 @@ func (cc *Controller) handleChildObject(i interface{}) {
 		cc.enqueue(c)
 		return
 	}
+}
+
+func (cc *Controller) getOwnerRefForCluster(c *kubermaticv1.Cluster) metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(c, gv.WithKind("Cluster"))
 }

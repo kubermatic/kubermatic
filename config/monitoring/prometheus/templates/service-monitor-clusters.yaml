@@ -18,4 +18,5 @@ spec:
     params:
       'match[]':
         - '{__name__="up"}'
+        - '{__name__=~"etcd.*"}'
         - '{__name__=~"machine_controller.*"}'

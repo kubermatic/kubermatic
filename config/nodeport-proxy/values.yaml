@@ -1,0 +1,5 @@
+nodePortPoxy:
+  image:
+    repository: "kubermatic/nodeport-proxy"
+    tag: "v1.1"
+

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
@@ -28,10 +29,12 @@ import (
 )
 
 const (
-	tplPath = "/opt/template/nodes/machine.yaml"
+	tplName = "machine.yaml"
 
 	kubeletVersionConstraint = ">= 1.8"
 	errGlue                  = " & "
+
+	initialConditionParsingDelay = 5
 )
 
 // CreateNodeReqV2 represent a request for specific data to create a node
@@ -71,9 +74,9 @@ func decodeCreateNodeReqV2(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-func outputNode(node *corev1.Node) *apiv2.Node {
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
 	nodeStatus := apiv2.NodeStatus{}
-	nodeStatus = apiNodeStatus(nodeStatus, node)
+	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	var deletionTimestamp *time.Time
 	if node.DeletionTimestamp != nil {
 		deletionTimestamp = &node.DeletionTimestamp.Time
@@ -86,6 +89,7 @@ func outputNode(node *corev1.Node) *apiv2.Node {
 			Labels:            node.Labels,
 			Annotations:       node.Annotations,
 			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: node.CreationTimestamp.Time,
 		},
 		Spec: apiv2.NodeSpec{
 			Versions:        apiv2.NodeVersionInfo{},
@@ -96,7 +100,7 @@ func outputNode(node *corev1.Node) *apiv2.Node {
 	}
 }
 
-func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeStatus {
+func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv2.NodeStatus {
 	for _, address := range inputNode.Status.Addresses {
 		status.Addresses = append(status.Addresses, apiv2.NodeAddress{
 			Type:    string(address.Type),
@@ -104,9 +108,11 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeSt
 		})
 	}
 
-	reason, message := parseNodeConditions(inputNode)
-	status.ErrorReason += reason
-	status.ErrorMessage += message
+	if !hideInitialNodeConditions || time.Since(inputNode.CreationTimestamp.Time).Minutes() > initialConditionParsingDelay {
+		reason, message := parseNodeConditions(inputNode)
+		status.ErrorReason += reason
+		status.ErrorMessage += message
+	}
 
 	status.Allocatable.Memory = inputNode.Status.Allocatable.Memory().String()
 	status.Allocatable.CPU = inputNode.Status.Allocatable.Cpu().String()
@@ -120,7 +126,7 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node) apiv2.NodeSt
 	return status
 }
 
-func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, error) {
+func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
 	displayName := machine.Spec.Name
 	labels := map[string]string{}
 	annotations := map[string]string{}
@@ -153,12 +159,12 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, e
 
 	if node != nil {
 		if node.Name != machine.Spec.Name {
-			displayName = fmt.Sprintf("%s (%s)", node.Name, machine.Spec.Name)
+			displayName = node.Name
 		}
 
 		labels = node.Labels
 		annotations = node.Annotations
-		nodeStatus = apiNodeStatus(nodeStatus, node)
+		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	}
 
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
@@ -171,6 +177,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, e
 			Labels:            labels,
 			Annotations:       annotations,
 			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: machine.CreationTimestamp.Time,
 		},
 		Spec: apiv2.NodeSpec{
 			Versions: apiv2.NodeVersionInfo{
@@ -189,7 +196,7 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node) (*apiv2.Node, e
 
 func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeConfigOK
+		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
 		if goodConditionType && condition.Status != corev1.ConditionTrue {
 			reason += condition.Reason + errGlue
 			message += condition.Message + errGlue
@@ -201,7 +208,7 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion) endpoint.Endpoint {
+func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion, masterResourcesPath string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
@@ -227,17 +234,21 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, fmt.Errorf("unknown cluster datacenter %s", c.Spec.Cloud.DatacenterName)
 		}
 
-		client, err := c.GetMachineClient()
+		client, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
 		node := req.Body
-		if node.Spec.Cloud.Openstack == nil && node.Spec.Cloud.Digitalocean == nil && node.Spec.Cloud.AWS == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud sshKeyProvider")
+		if node.Spec.Cloud.Openstack == nil &&
+			node.Spec.Cloud.Digitalocean == nil &&
+			node.Spec.Cloud.AWS == nil &&
+			node.Spec.Cloud.Hetzner == nil &&
+			node.Spec.Cloud.VSphere == nil {
+			return nil, errors.NewBadRequest("cannot create node without cloud provider")
 		}
 		//Only allow container linux + docker
-		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
+		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != "" && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
 			return nil, fmt.Errorf("only docker is allowd when using container linux")
 		}
 		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil {
@@ -268,7 +279,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Metadata.Name = "kubermatic-" + c.Name + "-" + rand.String(5)
 		}
 
-		machine, err := resources.LoadMachineFile(tplPath, c, &node.Node, dc, keys, version)
+		machine, err := resources.LoadMachineFile(path.Join(masterResourcesPath, tplName), c, &node.Node, dc, keys, version)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine from template: %v", err)
 		}
@@ -278,7 +289,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, fmt.Errorf("failed to create machine: %v", err)
 		}
 
-		return outputMachine(machine, nil)
+		return outputMachine(machine, nil, false)
 	}
 }
 
@@ -312,18 +323,18 @@ func getNodesEndpointV2() endpoint.Endpoint {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		req := request.(ClusterReq)
+		req := request.(NodesV2Req)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
@@ -348,7 +359,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 			if node != nil {
 				matchedMachineNodes.Insert(string(node.UID))
 			}
-			outNode, err := outputMachine(&machineList.Items[i], node)
+			outNode, err := outputMachine(&machineList.Items[i], node, req.HideInitialConditions)
 			if err != nil {
 				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
 			}
@@ -358,7 +369,7 @@ func getNodesEndpointV2() endpoint.Endpoint {
 		// Now all nodes, which do not belong to a machine - Relevant for BYO
 		for i := range nodeList.Items {
 			if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
-				apiNodes = append(apiNodes, outputNode(&nodeList.Items[i]))
+				apiNodes = append(apiNodes, outputNode(&nodeList.Items[i], req.HideInitialConditions))
 			}
 		}
 		return apiNodes, nil
@@ -424,12 +435,12 @@ func getNodeEndpointV2() endpoint.Endpoint {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
@@ -443,9 +454,9 @@ func getNodeEndpointV2() endpoint.Endpoint {
 		}
 
 		if machine == nil {
-			return outputNode(node), nil
+			return outputNode(node, req.HideInitialConditions), nil
 		}
-		return outputMachine(machine, node)
+		return outputMachine(machine, node, req.HideInitialConditions)
 	}
 }
 
@@ -460,12 +471,12 @@ func deleteNodeEndpointV2() endpoint.Endpoint {
 			return nil, err
 		}
 
-		machineClient, err := c.GetMachineClient()
+		machineClient, err := clusterProvider.GetMachineClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		kubeClient, err := c.GetClient()
+		kubeClient, err := clusterProvider.GetClient(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}

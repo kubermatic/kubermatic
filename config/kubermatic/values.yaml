@@ -5,8 +5,10 @@ kubermatic:
   auth:
     # the full path to the openid connect token issuer. For example 'https://dev.kubermatic.io/dex'
     tokenIssuer: ""
-    # die client id for openid connect
+    # the client id for openid connect
     clientID: ""
+    # skip tls verification on the token issuer
+    skipTokenIssuerTLSVerify: "false"
   # base64 encoded datacenters.yaml
   datacenters: ""
   # external domain for the kubermatic installation. For example 'dev.kubermatic.io'

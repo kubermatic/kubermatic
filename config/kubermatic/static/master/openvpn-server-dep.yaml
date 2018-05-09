@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openvpn-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: openvpn-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        role: openvpn-server
+        ca-cert-secret-revision: "{{ .SecretRevision "ca-cert" }}"
+        openvpn-client-configs-configmap-revision: "{{ .ConfigMapRevision "openvpn-client-configs" }}"
+    spec:
+      initContainers:
+      - name: openssl-dhparam
+        image: kubermatic/openvpn:v0.2
+        command: ["/usr/bin/openssl"]
+        args: [
+          "dhparam",
+          "-out", "/etc/openvpn/dh/dh2048.pem",
+          "2048",
+        ]
+        volumeMounts:
+        - mountPath: /etc/openvpn/dh
+          name: diffie-hellman-params
+      containers:
+      - name: openvpn-server
+        image: kubermatic/openvpn:v0.2
+        command: ["/usr/sbin/openvpn"]
+        args: [
+          "--proto", "tcp",
+          "--dev", "tun",
+          "--mode", "server",
+          "--lport", "1194",
+          "--server", "10.20.0.0", "255.255.255.0",
+          "--ca", "/etc/kubernetes/ca-cert/ca.crt",
+          "--cert", "/etc/openvpn/certs/server.crt",
+          "--key", "/etc/openvpn/certs/server.key",
+          "--dh", "/etc/openvpn/dh/dh2048.pem",
+          "--duplicate-cn",
+          "--route", "172.25.0.0", "255.255.0.0",
+          "--route", "10.10.10.0", "255.255.255.0",
+          "--push", "route 172.25.0.0 255.255.0.0",
+          "--push", "route 10.10.10.0 255.255.255.0",
+          "--client-to-client",
+          "--client-config-dir", "/etc/openvpn/clients",
+          "--link-mtu", "1432",
+          "--cipher", "AES-256-GCM",
+          "--auth", "SHA1",
+          "--keysize", "256",
+          "--script-security", "2",
+          "--up", "/bin/touch /tmp/running",
+          "--ping", "5",
+          "--verb", "3",
+          "--log", "/dev/stdout",
+        ]
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/running
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        ports:
+        - containerPort: 1194
+          protocol: TCP
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/openvpn/dh
+          name: diffie-hellman-params
+          readOnly: true
+        - mountPath: /etc/openvpn/certs
+          name: openvpn-server-certificates
+          readOnly: true
+        - name: ca-cert
+          mountPath: /etc/kubernetes/ca-cert
+          readOnly: true
+        - name: openvpn-client-configs
+          mountPath: /etc/openvpn/clients
+          readOnly: true
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 5
+      volumes:
+      - name: diffie-hellman-params
+        emptyDir: {}
+      - name: openvpn-client-configs
+        configMap:
+          name: openvpn-client-configs
+      - name: openvpn-server-certificates
+        secret:
+          secretName: openvpn-server-certificates
+          defaultMode: 256
+      - name: ca-cert
+        secret:
+          secretName: ca-cert
+          defaultMode: 0400

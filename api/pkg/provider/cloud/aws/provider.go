@@ -10,17 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/template"
-	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 )
 
 const (
-	tplPath = "/opt/template/nodes/aws.yaml"
-
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 )
@@ -41,15 +35,32 @@ func (a *amazonEc2) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if cloud.AWS.VPCID != "" {
-		if _, err = getVPCByID(cloud.AWS.VPCID, client); err != nil {
-			return err
+	// Some settings require the vpc to be set
+	if cloud.AWS.VPCID == "" {
+		if cloud.AWS.SecurityGroup != "" {
+			return fmt.Errorf("vpc must be set when specifying a security group")
+		}
+		if cloud.AWS.SubnetID != "" {
+			return fmt.Errorf("vpc must be set when specifying a subnet")
 		}
 	}
 
-	if cloud.AWS.SubnetID != "" {
-		if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+	if cloud.AWS.VPCID != "" {
+		vpc, err := getVPCByID(cloud.AWS.VPCID, client)
+		if err != nil {
 			return err
+		}
+
+		if cloud.AWS.SubnetID != "" {
+			if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+				return err
+			}
+		}
+
+		if cloud.AWS.SecurityGroup != "" {
+			if _, err = getSecurityGroup(client, vpc, cloud.AWS.SecurityGroup); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -195,6 +206,9 @@ func getSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.Security
 	if err != nil {
 		return nil, fmt.Errorf("failed to get security group: %v", err)
 	}
+	if len(dsgOut.SecurityGroups) == 0 {
+		return nil, fmt.Errorf("security group %s not found in vpc %s", name, *vpc.VpcId)
+	}
 
 	return dsgOut.SecurityGroups[0], nil
 }
@@ -232,18 +246,6 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to authorize security group ingress for ssh: %v", err)
-	}
-
-	// Allow SSH for the network bridge from everywhere
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		CidrIp:     aws.String("0.0.0.0/0"),
-		FromPort:   aws.Int64(provider.PodNetworkBridgeSSHPort),
-		ToPort:     aws.Int64(provider.PodNetworkBridgeSSHPort),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("tcp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for pod network bridge ssh: %v", err)
 	}
 
 	// Allow kubelet 10250 from everywhere
@@ -433,34 +435,6 @@ func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name 
 	return cloud, nil
 }
 
-func (a *amazonEc2) CreateNodeClass(c *kubermaticv1.Cluster, nSpec *apiv1.NodeSpec, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*v1alpha1.NodeClass, error) {
-	dc, found := a.dcs[c.Spec.Cloud.DatacenterName]
-	if !found || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", c.Spec.Cloud.DatacenterName)
-	}
-
-	nc, err := resources.LoadNodeClassFile(tplPath, a.NodeClassName(nSpec), c, nSpec, dc, keys, version)
-	if err != nil {
-		return nil, fmt.Errorf("could not load nodeclass: %v", err)
-	}
-
-	client, err := c.GetNodesetClient()
-	if err != nil {
-		return nil, fmt.Errorf("could not get nodeclass client: %v", err)
-	}
-
-	cnc, err := client.NodesetV1alpha1().NodeClasses().Create(nc)
-	if err != nil {
-		return nil, fmt.Errorf("could not create nodeclass: %v", err)
-	}
-
-	return cnc, nil
-}
-
-func (a *amazonEc2) NodeClassName(nSpec *apiv1.NodeSpec) string {
-	return fmt.Sprintf("kubermatic-%s", uuid.ShortUID(5))
-}
-
 func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
 	dc, found := a.dcs[cloud.DatacenterName]
@@ -534,30 +508,23 @@ func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	}
 
 	if cloud.AWS.RoleName != "" {
-		for _, arn := range roleARNS {
-			paramsDetachPolicy := &iam.DetachRolePolicyInput{
-				PolicyArn: aws.String(arn),
-				RoleName:  aws.String(cloud.AWS.RoleName),
-			}
-			_, err = iamClient.DetachRolePolicy(paramsDetachPolicy)
-			if err != nil {
-				if err.(awserr.Error).Code() != "NoSuchEntity" {
-					return fmt.Errorf("failed to detach policy %s from role %s: %s", arn, cloud.AWS.RoleName, err.(awserr.Error).Message())
-				}
+		rpout, err := iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(cloud.AWS.RoleName)})
+		if err != nil {
+			return err
+		}
+
+		for _, policy := range rpout.AttachedPolicies {
+			if _, err = iamClient.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.PolicyArn, RoleName: aws.String(cloud.AWS.RoleName)}); err != nil {
+				return fmt.Errorf("failed to detach policy %s", *policy.PolicyName)
 			}
 		}
 
-		_, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cloud.AWS.RoleName})
-		if err != nil {
+		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cloud.AWS.RoleName}); err != nil {
 			if err.(awserr.Error).Code() != "NoSuchEntity" {
 				return fmt.Errorf("failed to delete Role %s: %s", cloud.AWS.RoleName, err.(awserr.Error).Message())
 			}
 		}
 	}
 
-	return nil
-}
-
-func (a *amazonEc2) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
 	return nil
 }

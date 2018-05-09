@@ -32,6 +32,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -40,8 +41,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/tools/clientcmd"
@@ -58,6 +61,8 @@ var (
 	updatesFile     string
 	tokenIssuer     string
 	clientID        string
+
+	tokenIssuerSkipTLSVerify bool
 )
 
 const (
@@ -74,6 +79,7 @@ func main() {
 	flag.StringVar(&versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.StringVar(&tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
 	flag.Parse()
 
@@ -97,8 +103,8 @@ func main() {
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informerResyncPeriod)
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), handler.IsAdmin)
-	userProvider := kubernetes.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
+	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), handler.IsAdmin)
+	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
 
 	// create a cluster provider for each context
 	clientcmdConfig, err := clientcmd.LoadFromFile(kubeconfig)
@@ -121,15 +127,19 @@ func main() {
 
 		glog.V(2).Infof("adding %s as seed", ctx)
 
+		kubeClient := kubernetes.NewForConfigOrDie(cfg)
+		kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informerResyncPeriod)
+
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
-		clusterProviders[ctx] = kubernetes.NewClusterProvider(kubermaticSeedClient, kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName, handler.IsAdmin)
+		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(kubermaticSeedClient, client.New(kubeInformerFactory.Core().V1().Secrets().Lister()), kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName, handler.IsAdmin)
+
+		kubeInformerFactory.Start(wait.NeverStop)
+		kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
-	optimisticClusterProvider := kubernetes.NewOptimisticClusterProvider(clusterProviders, clientcmdConfig.CurrentContext, workerName)
-
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
@@ -140,6 +150,7 @@ func main() {
 			handler.NewHeaderBearerTokenExtractor("Authorization"),
 			handler.NewQueryParamBearerTokenExtractor("token"),
 		),
+		tokenIssuerSkipTLSVerify,
 	)
 	if err != nil {
 		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", tokenIssuer, clientID, err)
@@ -166,13 +177,13 @@ func main() {
 		ctx,
 		datacenters,
 		clusterProviders,
-		optimisticClusterProvider,
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
 		authenticator,
 		versions,
 		updates,
+		masterResources,
 	)
 
 	mainRouter := mux.NewRouter()

@@ -13,8 +13,8 @@ echo "Resetting admin token..."
 kubectl patch cluster $1 --type json --patch='[{"op": "remove", "path": "/address/adminToken"}]'
 echo "Deleting apiserver deployment"
 kubectl -n cluster-$1 delete deployment apiserver
-echo "Deleting token-users secret"
-kubectl -n cluster-$1 delete secret token-users
+echo "Deleting tokens secret"
+kubectl -n cluster-$1 delete secret tokens
 echo "Waiting 30 sec until the apiserver deployment and the secret are gone"
 sleep 30
 echo "Triggering new deployment"

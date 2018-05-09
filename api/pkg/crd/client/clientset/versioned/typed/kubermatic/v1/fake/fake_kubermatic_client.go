@@ -14,6 +14,10 @@ func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
 
+func (c *FakeKubermaticV1) Projects() v1.ProjectInterface {
+	return &FakeProjects{c}
+}
+
 func (c *FakeKubermaticV1) Users() v1.UserInterface {
 	return &FakeUsers{c}
 }

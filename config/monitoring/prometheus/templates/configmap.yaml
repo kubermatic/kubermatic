@@ -4,6 +4,6 @@ metadata:
   name: prometheus-kubermatic-rules
   labels:
     role: prometheus-rulefiles
-    prometheus: prometheus
+    prometheus: kubermatic
 data:
 {{ (.Files.Glob "rules/*").AsConfig | indent 2 }}

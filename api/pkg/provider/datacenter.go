@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 // DigitaloceanSpec describes a DigitalOcean datacenter
@@ -29,15 +29,17 @@ type OpenstackSpec struct {
 	DNSServers []string `yaml:"dns_servers"`
 }
 
-// VSphereSpec describes a open stack datacenter
+// VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
-	Datastore    string `yaml:"datastore"`
-	Endpoint     string `yaml:"endpoint"`
-	ResourcePool string `yaml:"resource_pool"`
-	Datacenter   string `yaml:"datacenter"`
+	Endpoint      string `yaml:"endpoint"`
+	AllowInsecure bool   `yaml:"allow_insecure"`
+
+	Datastore  string `yaml:"datastore"`
+	Datacenter string `yaml:"datacenter"`
+	Cluster    string `yaml:"cluster"`
 }
 
-// AWSSpec describes a digital ocean datacenter
+// AWSSpec describes a aws datacenter
 type AWSSpec struct {
 	Region        string `yaml:"region"`
 	AMI           string `yaml:"ami"`

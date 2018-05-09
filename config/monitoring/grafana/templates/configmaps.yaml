@@ -37,7 +37,7 @@ items:
                   "name": "prometheus",
                   "org_id": 1,
                   "type": "prometheus",
-                  "url": "http://prometheus.monitoring.svc.cluster.local:9090",
+                  "url": "http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
                   "version": 1
               }
           ]

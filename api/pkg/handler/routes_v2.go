@@ -44,8 +44,8 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.optimisticDatacenterMiddleware(),
-		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions)),
+			r.datacenterMiddleware(),
+		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions, r.masterResourcesPath)),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -66,9 +66,9 @@ func (r Routing) getNodesHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.optimisticDatacenterMiddleware(),
+			r.datacenterMiddleware(),
 		)(getNodesEndpointV2()),
-		decodeClusterReq,
+		decodeNodesV2Req,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -88,7 +88,7 @@ func (r Routing) getNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.optimisticDatacenterMiddleware(),
+			r.datacenterMiddleware(),
 		)(getNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,
@@ -110,7 +110,7 @@ func (r Routing) deleteNodeHandlerV2() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.optimisticDatacenterMiddleware(),
+			r.datacenterMiddleware(),
 		)(deleteNodeEndpointV2()),
 		decodeNodeReq,
 		encodeJSON,

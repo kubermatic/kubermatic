@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: apiserver-external
   annotations:
-    nodeport-exposer.k8s.io/expose: "true"
+    nodeport-proxy.k8s.io/expose: "true"
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
     blockOwnerDeletion: true
@@ -15,8 +15,9 @@ spec:
   type: NodePort
   ports:
     - name: secure
-      port: {{ .Cluster.Address.ExternalPort }}
-      nodePort: {{ .Cluster.Address.ExternalPort }}
+      port: {{ default 443 .GetApiserverExternalNodePort }}
+      nodePort: {{ .GetApiserverExternalNodePort }}
       protocol: TCP
+      targetPort: {{ default 443 .GetApiserverExternalNodePort }}
   selector:
     role: apiserver

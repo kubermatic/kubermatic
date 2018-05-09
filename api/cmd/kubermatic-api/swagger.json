@@ -17,308 +17,6 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
-    "/api/v1/cluster": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "listClusters",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterListV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterListV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/NewClusterReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/kubeconfig": {
-      "get": {
-        "produces": [
-          "application/yaml"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterKubeconfig",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/node": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterNodes",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "NodeListV1",
-            "schema": {
-              "$ref": "#/definitions/NodeListV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createClusterNodes",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/CreateNodesReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/cluster/{cluster}/node/{node}": {
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteClusterNode",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -432,6 +130,118 @@
         }
       }
     },
+    "/api/v1/projects": {
+      "get": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[authenticated]"
+            ]
+          }
+        ],
+        "description": "This endpoint will list all projects that\nthe authenticated user is a member of",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "List projects filtered by user",
+        "operationId": "projects",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ProjectList"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/project": {
+      "put": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[admin]"
+            ]
+          }
+        ],
+        "description": "Updates the given project",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "project",
+        "responses": {
+          "200": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[authenticated]"
+            ]
+          }
+        ],
+        "description": "Allow to create a brand new project.\nThis endpoint can be consumed by every authenticated user.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Create a project",
+        "operationId": "project",
+        "responses": {
+          "201": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "delete": {
+        "security": [
+          {
+            "openIdConnect": [
+              "[owner]"
+            ]
+          }
+        ],
+        "description": "Note that only the project owner can delete the project.",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Deletes the project with the given ID.",
+        "operationId": "project",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -531,6 +341,12 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
           }
         ],
         "responses": {
@@ -802,12 +618,16 @@
           },
           {
             "type": "string",
-            "x-go-name": "Cluster",
+            "x-go-name": "ClusterName",
             "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
             "in": "body",
-            "required": true,
             "schema": {
-              "$ref": "#/definitions/Cluster"
+              "$ref": "#/definitions/CreateClusterReqBody"
             }
           }
         ],
@@ -918,6 +738,12 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
           }
         ],
         "responses": {
@@ -1240,6 +1066,9 @@
           },
           "x-go-name": "ClientKeyData"
         },
+        "exec": {
+          "$ref": "#/definitions/ExecConfig"
+        },
         "extensions": {
           "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
           "type": "array",
@@ -1469,11 +1298,6 @@
           "type": "string",
           "x-go-name": "ExternalName"
         },
-        "externalPort": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ExternalPort"
-        },
         "ip": {
           "type": "string",
           "x-go-name": "IP"
@@ -1511,10 +1335,6 @@
         "machineController": {
           "type": "boolean",
           "x-go-name": "MachineController"
-        },
-        "nodeController": {
-          "type": "boolean",
-          "x-go-name": "NodeController"
         },
         "scheduler": {
           "type": "boolean",
@@ -1572,6 +1392,16 @@
         "masterVersion": {
           "type": "string",
           "x-go-name": "MasterVersion"
+        },
+        "pause": {
+          "description": "Pause tells that this cluster is currently not managed by the controller.\nIt indicates that the user needs to do some action to resolve the pause.",
+          "type": "boolean",
+          "x-go-name": "Pause"
+        },
+        "pauseReason": {
+          "description": "PauseReason is the reason why the cluster is no being managed.",
+          "type": "string",
+          "x-go-name": "PauseReason"
         },
         "workerName": {
           "type": "string",
@@ -1821,6 +1651,16 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "CreateClusterReqBody": {
+      "description": "CreateClusterReqBody represents the request body for a create cluster request",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/Cluster"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "CreateNodeReqBodyV2": {
       "description": "CreateNodeReqBodyV2 represents the request body of a create nodes request",
@@ -2090,6 +1930,55 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
+    "ExecConfig": {
+      "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",
+      "type": "object",
+      "title": "ExecConfig specifies a command to provide client credentials. The command is exec'd\nand outputs structured stdout holding credentials.",
+      "properties": {
+        "apiVersion": {
+          "description": "Preferred input version of the ExecInfo. The returned ExecCredentials MUST use\nthe same encoding version as the input.",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "args": {
+          "description": "Arguments to pass to the command when executing it.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Args"
+        },
+        "command": {
+          "description": "Command to execute.",
+          "type": "string",
+          "x-go-name": "Command"
+        },
+        "env": {
+          "description": "Env defines additional environment variables to expose to the process. These\nare unioned with the host's environment, as well as variables client-go uses\nto pass argument to the plugin.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecEnvVar"
+          },
+          "x-go-name": "Env"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "ExecEnvVar": {
+      "description": "ExecEnvVar is used for setting environment variables when executing an exec-based\ncredential plugin.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
     "FakeCloudSpec": {
       "type": "object",
       "title": "FakeCloudSpec specifies access data for a fake cloud.",
@@ -2316,7 +2205,7 @@
         "Name": {
           "type": "string"
         },
-        "NodeControllerDeploymentYaml": {
+        "OpenVPNServerDeploymentYaml": {
           "type": "string"
         },
         "SchedulerDeploymentYaml": {
@@ -3074,8 +2963,14 @@
           },
           "x-go-name": "Annotations"
         },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
         "deletionTimestamp": {
-          "description": "Tells that the resource is being deleted",
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
           "type": "string",
           "format": "date-time",
           "x-go-name": "DeletionTimestamp"
@@ -3229,6 +3124,14 @@
           "description": "image to use",
           "type": "string",
           "x-go-name": "Image"
+        },
+        "tags": {
+          "description": "Additional metadata to set",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         }
       },
       "x-go-name": "OpenstackNodeSpec",
@@ -3347,6 +3250,21 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "Project": {
+      "description": "Project is a top-level container for a set of resources",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "RSAKeys": {
       "type": "object",
@@ -3638,6 +3556,10 @@
       "type": "object",
       "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
       "properties": {
+        "cluster": {
+          "type": "string",
+          "x-go-name": "Cluster"
+        },
         "datacenter": {
           "type": "string",
           "x-go-name": "Datacenter"
@@ -3656,6 +3578,22 @@
     "VSphereNodeSpecV2": {
       "description": "VSphereNodeSpec VSphere node settings",
       "type": "object",
+      "properties": {
+        "cpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUs"
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "template": {
+          "type": "string",
+          "x-go-name": "Template"
+        }
+      },
       "x-go-name": "VSphereNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     }

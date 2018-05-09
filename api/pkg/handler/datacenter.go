@@ -121,6 +121,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			Endpoint:   dc.Spec.VSphere.Endpoint,
 			Datacenter: dc.Spec.VSphere.Datacenter,
 			Datastore:  dc.Spec.VSphere.Datastore,
+			Cluster:    dc.Spec.VSphere.Cluster,
 		}
 	}
 
@@ -142,15 +143,6 @@ func (r Routing) datacenterMiddleware() endpoint.Middleware {
 				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
 			}
 			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
-			return next(ctx, request)
-		}
-	}
-}
-
-func (r Routing) optimisticDatacenterMiddleware() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			ctx = context.WithValue(ctx, clusterProviderContextKey, r.optimisticClusterProvider)
 			return next(ctx, request)
 		}
 	}

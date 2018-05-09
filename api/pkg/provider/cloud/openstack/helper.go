@@ -178,12 +178,12 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			Protocol:     osecruritygrouprules.ProtocolTCP,
 		},
 		{
-			// Allows ssh for the pod network bridge from external
+			// Allows kubelet from external
 			Direction:    osecruritygrouprules.DirIngress,
 			EtherType:    osecruritygrouprules.EtherType4,
 			SecGroupID:   g.ID,
-			PortRangeMin: provider.PodNetworkBridgeSSHPort,
-			PortRangeMax: provider.PodNetworkBridgeSSHPort,
+			PortRangeMin: provider.DefaultKubeletPort,
+			PortRangeMax: provider.DefaultKubeletPort,
 			Protocol:     osecruritygrouprules.ProtocolTCP,
 		},
 	}

@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kube-node/nodeset/pkg/nodeset/v1alpha1"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+
+	"k8s.io/client-go/kubernetes"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 var (
@@ -26,15 +29,13 @@ const (
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
 
-	DefaultSSHPort          = 22
-	PodNetworkBridgeSSHPort = 2222
-	DefaultKubeletPort      = 10250
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
 	CloudSpecProvider
-	NodeClassProvider
 }
 
 // CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
@@ -43,13 +44,6 @@ type CloudSpecProvider interface {
 	InitializeCloudProvider(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
 	ValidateCloudSpec(*kubermaticv1.CloudSpec) error
 	CleanUpCloudProvider(*kubermaticv1.CloudSpec) error
-}
-
-// NodeClassProvider declares a set of methods to manage NodeClasses
-type NodeClassProvider interface {
-	ValidateNodeSpec(*kubermaticv1.CloudSpec, *apiv1.NodeSpec) error
-	CreateNodeClass(*kubermaticv1.Cluster, *apiv1.NodeSpec, []*kubermaticv1.UserSSHKey, *apiv1.MasterVersion) (*v1alpha1.NodeClass, error)
-	NodeClassName(*apiv1.NodeSpec) string
 }
 
 // ClusterProvider declares the set of methods for storing and loading clusters.
@@ -71,6 +65,12 @@ type ClusterProvider interface {
 
 	// UpdateCluster updates a cluster
 	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+
+	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
+
+	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+
+	GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys

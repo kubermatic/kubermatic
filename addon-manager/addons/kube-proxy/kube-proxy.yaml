@@ -24,6 +24,16 @@ spec:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
+      initContainers:
+      - name: copy-kubeconfig
+        image: busybox
+        command:
+        - /bin/sh
+        - -ec
+        - "cp /etc/kubernetes/kubelet.conf /etc/kubernetes/kubeconfig & sleep 2"
+        volumeMounts:
+        - name: etc-kubernetes
+          mountPath: /etc/kubernetes
       hostNetwork: true
       tolerations:
       - operator: "Exists"
@@ -57,6 +67,8 @@ spec:
           readOnly: false
         - name: etc-kubernetes
           mountPath: /etc/kubernetes
+        - name: var-lib-kubelet-pki
+          mountPath: /var/lib/kubelet/pki
       volumes:
       - name: varlog
         hostPath:
@@ -74,3 +86,7 @@ spec:
       - name: etc-kubernetes
         hostPath:
           path: /etc/kubernetes
+      - name: var-lib-kubelet-pki
+        hostPath:
+          path: /var/lib/kubelet/pki
+          type: DirectoryOrCreate

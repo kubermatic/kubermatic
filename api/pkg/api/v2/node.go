@@ -97,6 +97,9 @@ type HetznerNodeSpec struct {
 // VSphereNodeSpec VSphere node settings
 // swagger:model VSphereNodeSpecV2
 type VSphereNodeSpec struct {
+	CPUs     int    `json:"cpus"`
+	Memory   int    `json:"memory"`
+	Template string `json:"template"`
 }
 
 // OpenstackNodeSpec openstack node settings
@@ -108,6 +111,9 @@ type OpenstackNodeSpec struct {
 	// image to use
 	// required: true
 	Image string `json:"image"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 // AWSNodeSpec aws specific node settings

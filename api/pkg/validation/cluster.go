@@ -65,6 +65,12 @@ func ValidateCloudChange(newSpec, oldSpec *kubermaticv1.CloudSpec) error {
 	if newSpec.Fake == nil && oldSpec.Fake != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Hetzner == nil && oldSpec.Hetzner != nil {
+		return ErrCloudChangeNotAllowed
+	}
+	if newSpec.VSphere == nil && oldSpec.VSphere != nil {
+		return ErrCloudChangeNotAllowed
+	}
 
 	return nil
 }
@@ -80,10 +86,6 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 
 	if newCluster.Address.ExternalName != oldCluster.Address.ExternalName {
 		return errors.New("changing the external name is not allowed")
-	}
-
-	if newCluster.Address.ExternalPort != oldCluster.Address.ExternalPort {
-		return errors.New("changing the external port is not allowed")
 	}
 
 	if newCluster.Address.IP != oldCluster.Address.IP {
@@ -195,7 +197,6 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	if spec.VSphere != nil {
 		if spec.VSphere.Username == "" {
 			return errors.New("no username specified")
-
 		}
 
 		if spec.VSphere.Password == "" {

@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
@@ -10,33 +10,44 @@ metadata:
     name: {{ .Cluster.Name }}
     uid: "{{ .Cluster.ObjectMeta.UID }}"
 spec:
+  replicas: 1
   selector:
     matchLabels:
       role: controller-manager
       version: v1
-  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         role: controller-manager
         release: {{index .Version.Values "k8s-version"}}
         version: v1
-        tokencsvversion: "{{ .TokenCSVRevision }}"
-        cloudconfigversion: "{{ .CloudConfigRevision }}"
-      annotations:
-        prometheus.io/port: '10252'
-        prometheus.io/scrape: 'true'
+        ca-cert-secret-revision: "{{ .SecretRevision "ca-cert" }}"
+        ca-key-secret-revision: "{{ .SecretRevision "ca-key" }}"
+        service-account-key-secret-revision: "{{ .SecretRevision "service-account-key" }}"
+        cloud-config-configmap-revision: "{{ .ConfigMapRevision "cloud-config" }}"
     spec:
+      initContainers:
+      - name: apiserver-running
+        image: busybox
+        command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
       - name: controller-manager
         image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [
           "/hyperkube", "controller-manager",
           "--master=http://apiserver:8080",
-          "--service-account-private-key-file=/var/run/kubernetes/auth/service-account.key",
-          "--root-ca-file=/var/run/kubernetes/auth/root-ca.crt",
-          "--cluster-signing-cert-file=/var/run/kubernetes/auth/root-ca.crt",
-          "--cluster-signing-key-file=/var/run/kubernetes/auth/root-ca.key",
+          "--service-account-private-key-file=/etc/kubernetes/service-account-key/sa.key",
+          "--root-ca-file=/etc/kubernetes/ca-cert/ca.crt",
+          "--cluster-signing-cert-file=/etc/kubernetes/ca-cert/ca.crt",
+          "--cluster-signing-key-file=/etc/kubernetes/ca-key/ca.key",
           "--cluster-cidr=172.25.0.0/16",
           "--configure-cloud-routes=false",
           {{ if eq .ProviderName "aws" }}
@@ -48,26 +59,21 @@ spec:
           "--cloud-provider=openstack",
           {{ end }}
           "--allocate-node-cidrs=true",
-          {{ if contains "v1.8" (index .Version.Values "k8s-version") }}
-          #TODO: Remove when we drop 1.8 support
-          "--controllers=*,tokencleaner,bootstrapsigner",
-          {{ end }}
+          "--controllers=*,bootstrapsigner,tokencleaner",
           "--v=4"
         ]
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10252
-          initialDelaySeconds: 60
-          periodSeconds: 60
-          timeoutSeconds: 60
         readinessProbe:
           httpGet:
             path: /healthz
             port: 10252
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 30
+          timeoutSeconds: 15
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: 10252
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
         env:
         {{ if eq .ProviderName "aws" }}
         - name: AWS_ACCESS_KEY_ID
@@ -80,16 +86,31 @@ spec:
           value: {{.Cluster.Spec.Cloud.AWS.AvailabilityZone}}
         {{ end }}
         volumeMounts:
-        - name: controller-manager
-          mountPath: /var/run/kubernetes/auth
+        - name: ca-cert
+          mountPath: /etc/kubernetes/ca-cert
+          readOnly: true
+        - name: ca-key
+          mountPath: /etc/kubernetes/ca-key
           readOnly: true
         - name: cloud-config
           mountPath: /etc/kubernetes/cloud
           readOnly: true
+        - name: service-account-key
+          mountPath: /etc/kubernetes/service-account-key
+          readOnly: true
       volumes:
-      - name: controller-manager
+      - name: ca-cert
         secret:
-          secretName: controller-manager
+          secretName: ca-cert
+          defaultMode: 0400
+      - name: ca-key
+        secret:
+          secretName: ca-key
+          defaultMode: 0400
+      - name: service-account-key
+        secret:
+          secretName: service-account-key
+          defaultMode: 0400
       - name: cloud-config
         configMap:
           name: cloud-config

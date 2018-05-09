@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -32,7 +33,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterNodesV2 getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterNodesV3
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterV3 getClusterKubeconfigV3 deleteClusterV3
 type ClusterReq struct {
 	DCReq
 	// in: path
@@ -52,12 +53,39 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// NodesV2Req represent a request to fetch all cluster nodes
+// swagger:parameters getClusterNodesV3 getClusterNodesV2
+type NodesV2Req struct {
+	ClusterReq
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+func decodeNodesV2Req(c context.Context, r *http.Request) (interface{}, error) {
+	var req NodesV2Req
+	req.ClusterName = mux.Vars(r)["cluster"]
+	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
+
+	cr, err := decodeClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterReq = cr.(ClusterReq)
+
+	return req, nil
+}
+
+// CreateClusterReqBody represents the request body for a create cluster request
+type CreateClusterReqBody struct {
+	Cluster *kubermaticv1.Cluster `json:"cluster"`
+}
+
 // UpdateClusterReq represent a update request for a specific cluster
 // swagger:parameters updateClusterV3
 type UpdateClusterReq struct {
 	ClusterReq
 	// in: body
-	Cluster *kubermaticv1.Cluster `json:"cluster"`
+	Body CreateClusterReqBody
 }
 
 func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -68,7 +96,7 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 	}
 	req.ClusterReq = cr.(ClusterReq)
 
-	if err := json.NewDecoder(r.Body).Decode(&req.Cluster); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
 		return nil, err
 	}
 
@@ -194,28 +222,14 @@ type CreateNodesReqBody struct {
 	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
-func decodeCreateNodesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodesReq
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = cr.(ClusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NodeReq represent a request for node specific data
 // swagger:parameters getClusterNode deleteClusterNode
 type NodeReq struct {
 	ClusterReq
 	// in: path
 	NodeName string `json:"node"`
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
 }
 
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -227,6 +241,7 @@ func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.ClusterReq = cr.(ClusterReq)
 	req.NodeName = mux.Vars(r)["node"]
+	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
 
 	return req, nil
 }

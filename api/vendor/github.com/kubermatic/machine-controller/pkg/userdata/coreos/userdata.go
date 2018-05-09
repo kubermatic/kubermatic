@@ -13,7 +13,9 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
+	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Provider struct{}
@@ -55,7 +57,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 	}
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -81,6 +83,16 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		return "", fmt.Errorf("failed to get coreos config from provider config: %v", err)
 	}
 
+	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
+	if err != nil {
+		return "", err
+	}
+
+	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting cacert: %v", err)
+	}
+
 	data := struct {
 		MachineSpec       machinesv1alpha1.MachineSpec
 		ProviderConfig    *providerconfig.Config
@@ -90,15 +102,17 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig string,
 		CloudConfig       string
 		HyperkubeImageTag string
 		ClusterDNSIPs     []net.IP
+		KubernetesCACert  string
 	}{
 		MachineSpec:       spec,
 		ProviderConfig:    pconfig,
 		CoreOSConfig:      coreosConfig,
-		Kubeconfig:        kubeconfig,
+		Kubeconfig:        kubeconfigString,
 		CloudProvider:     cpName,
 		CloudConfig:       cpConfig,
 		HyperkubeImageTag: fmt.Sprintf("v%s_coreos.0", kubeletVersion.String()),
 		ClusterDNSIPs:     clusterDNSIPs,
+		KubernetesCACert:  kubernetesCACert,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -182,6 +196,8 @@ systemd:
           --cni-conf-dir=/etc/cni/net.d \
           --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
           --cluster-domain=cluster.local \
+          --authentication-token-webhook=true \
+          --hostname-override={{ .MachineSpec.Name }} \
           --network-plugin=cni \
           {{- if .CloudProvider }}
           --cloud-provider={{ .CloudProvider }} \
@@ -194,7 +210,11 @@ systemd:
           --kubeconfig=/etc/kubernetes/kubeconfig \
           --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
           --lock-file=/var/run/lock/kubelet.lock \
-          --exit-on-lock-contention
+          --exit-on-lock-contention \
+          --read-only-port 0 \
+          --authorization-mode=Webhook \
+          --anonymous-auth=false \
+          --client-ca-file=/etc/kubernetes/ca.crt
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
         Restart=always
         RestartSec=10
@@ -217,6 +237,13 @@ storage:
         inline: |
 {{ .CloudConfig | indent 10 }}
 
+    - path: /etc/kubernetes/ca.crt
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+{{ .KubernetesCACert | indent 10 }}
+
 {{- if contains "1.12" .MachineSpec.Versions.ContainerRuntime.Version }}
     - path: /etc/coreos/docker-1.12
       mode: 0644
@@ -231,4 +258,23 @@ storage:
       mode: 0600
       contents:
         inline: '{{ .MachineSpec.Name }}'
+
+    - path: /etc/ssh/sshd_config
+      filesystem: root
+      mode: 0600
+      user:
+        id: 0
+      group:
+        id: 0
+      contents:
+        inline: |
+          # Use most defaults for sshd configuration.
+          Subsystem sftp internal-sftp
+          ClientAliveInterval 180
+          UseDNS no
+          UsePAM yes
+          PrintLastLog no # handled by PAM
+          PrintMotd no # handled by PAM
+          PasswordAuthentication no
+          ChallengeResponseAuthentication no
 `

@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/golang/glog"
+
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osextendedstatus "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedstatus"
@@ -17,8 +18,9 @@ import (
 	osservers "github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	"github.com/gophercloud/gophercloud/pagination"
+
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
-	cloudproviererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
+	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -51,6 +53,7 @@ type RawConfig struct {
 	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
 	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
 	Region           providerconfig.ConfigVarString   `json:"region"`
+	Tags             map[string]string                `json:"tags"`
 }
 
 type Config struct {
@@ -70,6 +73,8 @@ type Config struct {
 	FloatingIPPool   string
 	AvailabilityZone string
 	Region           string
+
+	Tags map[string]string
 }
 
 const (
@@ -95,25 +100,25 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 	c := Config{}
-	c.IdentityEndpoint, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
+	c.IdentityEndpoint, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.IdentityEndpoint, "OS_AUTH_URL")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"identityEndpoint\" field, error = %v", err)
 	}
-	c.Username, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Username)
+	c.Username, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, "OS_USER_NAME")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"username\" field, error = %v", err)
 	}
-	c.Password, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Password)
+	c.Password, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Password, "OS_PASSWORD")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"password\" field, error = %v", err)
 	}
-	c.DomainName, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.DomainName)
+	c.DomainName, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, "OS_DOMAIN_NAME")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"domainName\" field, error = %v", err)
 	}
-	c.TenantName, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
+	c.TenantName, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantName, "OS_TENANT_NAME")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantName\" field, error = %v", err)
 	}
 	c.TokenID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
 	if err != nil {
@@ -154,6 +159,8 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	c.Tags = rawConfig.Tags
+
 	return &c, &pconfig, &rawConfig, err
 }
 
@@ -194,19 +201,22 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 	c, _, rawConfig, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, fmt.Errorf("failed to parse config: %v", err)
+		return spec, changed, cloudprovidererrors.TerminalError{
+			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
 	}
 
 	client, err := getClient(c)
 	if err != nil {
-		return spec, changed, fmt.Errorf("failed to get a openstack client: %v", err)
+		return spec, changed, osErrorToTerminalError(err, "failed to get a openstack client")
 	}
 
 	if c.Region == "" {
 		glog.V(4).Infof("Trying to default region for machine '%s'...", spec.Name)
 		regions, err := getRegions(client)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get regions: %s", err)
+			return spec, changed, osErrorToTerminalError(err, "failed to get regions")
 		}
 		if len(regions) == 1 {
 			glog.V(4).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
@@ -221,7 +231,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		glog.V(4).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
 		availabilityZones, err := getAvailabilityZones(client, c.Region)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get availability zones: '%v'", err)
+			return spec, changed, osErrorToTerminalError(err, "failed to get availability zones")
 		}
 		if len(availabilityZones) == 1 {
 			glog.V(4).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
@@ -234,7 +244,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		glog.V(4).Infof("Trying to default network for machine '%s'...", spec.Name)
 		net, err := getDefaultNetwork(client, c.Region)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to default network: '%v'", err)
+			return spec, changed, osErrorToTerminalError(err, "failed to default network")
 		}
 		if net != nil {
 			glog.V(4).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
@@ -252,11 +262,11 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 		net, err := getNetwork(client, c.Region, networkID)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get network for subnet defaulting '%s': '%v'", networkID, err)
+			return spec, changed, osErrorToTerminalError(err, fmt.Sprintf("failed to get network for subnet defaulting '%s", networkID))
 		}
 		subnet, err := getDefaultSubnet(client, net, c.Region)
 		if err != nil {
-			return spec, changed, fmt.Errorf("error defaulting subnet: '%v'", err)
+			return spec, changed, osErrorToTerminalError(err, "error defaulting subnet")
 		}
 		if subnet != nil {
 			glog.V(4).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
@@ -267,7 +277,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 	spec.ProviderConfig, err = setProviderConfig(*rawConfig, spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, fmt.Errorf("error marshaling providerconfig: '%v'", err)
+		return spec, changed, osErrorToTerminalError(err, "error marshaling providerconfig")
 	}
 	return spec, changed, nil
 }
@@ -323,33 +333,41 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		}
 	}
 
+	// validate reserved tags
+	if _, ok := c.Tags[machineUIDMetaKey]; ok {
+		return fmt.Errorf("the tag with the given name =%s is reserved, choose a different one", machineUIDMetaKey)
+	}
+
 	return nil
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config: %v", err)
+		return nil, cloudprovidererrors.TerminalError{
+			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
 	}
 
 	client, err := getClient(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get a openstack client: %v", err)
+		return nil, osErrorToTerminalError(err, "failed to get a openstack client")
 	}
 
 	flavor, err := getFlavor(client, c.Region, c.Flavor)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get flavor %s: %v", c.Flavor, err)
+		return nil, osErrorToTerminalError(err, fmt.Sprintf("failed to get flavor %s", c.Flavor))
 	}
 
 	image, err := getImageByName(client, c.Region, c.Image)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get image %s: %v", c.Image, err)
+		return nil, osErrorToTerminalError(err, fmt.Sprintf("failed to get image %s", c.Image))
 	}
 
 	network, err := getNetwork(client, c.Region, c.Network)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get network %s: %v", c.Network, err)
+		return nil, osErrorToTerminalError(err, fmt.Sprintf("failed to get network %s", c.Network))
 	}
 
 	var ip *floatingips.FloatingIP
@@ -358,18 +376,18 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		defer floatingIPAssignLock.Unlock()
 		floatingIPPool, err := getNetwork(client, c.Region, c.FloatingIPPool)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get floating ip pool %q: %v", c.FloatingIPPool, err)
+			return nil, osErrorToTerminalError(err, fmt.Sprintf("failed to get floating ip pool %q", c.FloatingIPPool))
 		}
 
 		freeFloatingIps, err := getFreeFloatingIPs(client, c.Region, floatingIPPool)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get free floating ips: %v", err)
+			return nil, osErrorToTerminalError(err, "failed to get free floating ips")
 		}
 
 		if len(freeFloatingIps) < 1 {
 			ip, err = createFloatingIP(client, c.Region, floatingIPPool)
 			if err != nil {
-				return nil, fmt.Errorf("failed to allocate a floating ip: %v", err)
+				return nil, osErrorToTerminalError(err, "failed to allocate a floating ip")
 			}
 		} else {
 			ip = &freeFloatingIps[0]
@@ -381,10 +399,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		glog.V(2).Infof("creating security group %s for worker nodes", securityGroupName)
 		err = ensureKubernetesSecurityGroupExist(client, c.Region, securityGroupName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to ensure that the kubernetes security group %q exists: %v", securityGroupName, err)
+			return nil, err
 		}
 		securityGroups = append(securityGroups, securityGroupName)
 	}
+
+	// we check against reserved tags in Validation method
+	allTags := c.Tags
+	allTags[machineUIDMetaKey] = string(machine.UID)
 
 	serverOpts := osservers.CreateOpts{
 		Name:             machine.Spec.Name,
@@ -394,13 +416,11 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		SecurityGroups:   securityGroups,
 		AvailabilityZone: c.AvailabilityZone,
 		Networks:         []osservers.Network{{UUID: network.ID}},
-		Metadata: map[string]string{
-			machineUIDMetaKey: string(machine.UID),
-		},
+		Metadata:         allTags,
 	}
 	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
 	if err != nil {
-		return nil, err
+		return nil, osErrorToTerminalError(err, "failed to get compute client")
 	}
 
 	var server serverWithExt
@@ -409,7 +429,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		"",
 	}).ExtractInto(&server)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create server: %v", err)
+		return nil, osErrorToTerminalError(err, "failed to create server")
 	}
 
 	if ip != nil {
@@ -418,6 +438,10 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		instanceIsReady := func() (bool, error) {
 			currentServer, err := osservers.Get(computeClient, server.ID).Extract()
 			if err != nil {
+				tErr := osErrorToTerminalError(err, fmt.Sprintf("failed to get current instance %s", server.ID))
+				if isTerminalErr, _, _ := cloudprovidererrors.IsTerminalError(tErr); isTerminalErr {
+					return true, tErr
+				}
 				// Only log the error but don't exit. in case of a network failure we want to retry
 				glog.V(2).Infof("failed to get current instance %s: %v", server.ID, err)
 				return false, nil
@@ -440,47 +464,46 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	return &osInstance{server: &server}, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, instance instance.Instance) error {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return fmt.Errorf("failed to parse config: %v", err)
+		return cloudprovidererrors.TerminalError{
+			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
 	}
 
 	client, err := getClient(c)
 	if err != nil {
-		return fmt.Errorf("failed to get a openstack client: %v", err)
+		return osErrorToTerminalError(err, "failed to get a openstack client")
 	}
 
 	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
 	if err != nil {
-		return err
+		return osErrorToTerminalError(err, "failed to get compute client")
 	}
 
-	s, err := p.Get(machine)
-	if err != nil {
-		if err == cloudproviererrors.ErrInstanceNotFound {
-			return nil
-		}
-		return err
-	}
-
-	return osservers.Delete(computeClient, s.ID()).ExtractErr()
+	err = osservers.Delete(computeClient, instance.ID()).ExtractErr()
+	return osErrorToTerminalError(err, "failed to delete instance")
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config: %v", err)
+		return nil, cloudprovidererrors.TerminalError{
+			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
 	}
 
 	client, err := getClient(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get a openstack client: %v", err)
+		return nil, osErrorToTerminalError(err, "failed to get a openstack client")
 	}
 
 	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
 	if err != nil {
-		return nil, err
+		return nil, osErrorToTerminalError(err, "failed to get compute client")
 	}
 
 	var allServers []serverWithExt
@@ -489,13 +512,13 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 		var servers []serverWithExt
 		err = osservers.ExtractServersInto(page, &servers)
 		if err != nil {
-			return false, err
+			return false, osErrorToTerminalError(err, "failed to extract instance info")
 		}
 		allServers = append(allServers, servers...)
 		return true, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, osErrorToTerminalError(err, "failed to list instances")
 	}
 
 	for i, s := range allServers {
@@ -504,7 +527,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 		}
 	}
 
-	return nil, cloudproviererrors.ErrInstanceNotFound
+	return nil, cloudprovidererrors.ErrInstanceNotFound
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
@@ -563,4 +586,30 @@ func (d *osInstance) Status() instance.Status {
 	default:
 		return instance.StatusUnknown
 	}
+}
+
+// osErrorToTerminalError judges if the given error
+// can be qualified as a "terminal" error, for more info see v1alpha1.MachineStatus
+//
+// if the given error doesn't qualify the error passed as an argument will be returned
+func osErrorToTerminalError(err error, msg string) error {
+	prepareAndReturnError := func() error {
+		return fmt.Errorf("%s, due to %s", msg, err)
+	}
+	if err != nil {
+		default401 := gophercloud.ErrDefault401{}
+
+		switch err.Error() {
+		case "Authentication failed", default401.Error():
+			// authorization primitives come from MachineSpec
+			// thus we are setting InvalidConfigurationMachineError
+			return cloudprovidererrors.TerminalError{
+				Reason:  v1alpha1.InvalidConfigurationMachineError,
+				Message: "A request has been rejected due to invalid credentials which were taken from the MachineSpec",
+			}
+		default:
+			return prepareAndReturnError()
+		}
+	}
+	return err
 }
