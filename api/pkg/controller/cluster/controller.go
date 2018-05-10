@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -75,19 +76,34 @@ type Controller struct {
 	metrics ControllerMetrics
 
 	ClusterLister            kubermaticv1lister.ClusterLister
+	ClusterSynced            cache.InformerSynced
 	EtcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
+	EtcdClusterSynced        cache.InformerSynced
 	NamespaceLister          corev1lister.NamespaceLister
+	NamespaceSynced          cache.InformerSynced
 	SecretLister             corev1lister.SecretLister
+	SecretSynced             cache.InformerSynced
 	ServiceLister            corev1lister.ServiceLister
+	ServiceSynced            cache.InformerSynced
 	PvcLister                corev1lister.PersistentVolumeClaimLister
+	PvcSynced                cache.InformerSynced
 	ConfigMapLister          corev1lister.ConfigMapLister
+	ConfigMapSynced          cache.InformerSynced
 	ServiceAccountLister     corev1lister.ServiceAccountLister
+	ServiceAccountSynced     cache.InformerSynced
 	DeploymentLister         appsv1lister.DeploymentLister
+	DeploymentSynced         cache.InformerSynced
 	StatefulSetLister        appsv1lister.StatefulSetLister
 	IngressLister            extensionsv1beta1lister.IngressLister
+	IngressSynced            cache.InformerSynced
 	RoleLister               rbacb1lister.RoleLister
+	RoleSynced               cache.InformerSynced
 	RoleBindingLister        rbacb1lister.RoleBindingLister
+	RoleBindingSynced        cache.InformerSynced
 	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
+	ClusterRoleBindingSynced cache.InformerSynced
+	PrometheusSynced         cache.InformerSynced
+	ServiceMonitorSynced     cache.InformerSynced
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -235,19 +251,34 @@ func NewController(
 	})
 
 	cc.ClusterLister = ClusterInformer.Lister()
+	cc.ClusterSynced = ClusterInformer.Informer().HasSynced
 	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
+	cc.EtcdClusterSynced = EtcdClusterInformer.Informer().HasSynced
 	cc.NamespaceLister = NamespaceInformer.Lister()
+	cc.NamespaceSynced = NamespaceInformer.Informer().HasSynced
 	cc.SecretLister = SecretInformer.Lister()
+	cc.SecretSynced = SecretInformer.Informer().HasSynced
 	cc.ServiceLister = ServiceInformer.Lister()
+	cc.ServiceSynced = ServiceInformer.Informer().HasSynced
 	cc.PvcLister = PvcInformer.Lister()
+	cc.PvcSynced = PvcInformer.Informer().HasSynced
 	cc.ConfigMapLister = ConfigMapInformer.Lister()
+	cc.ConfigMapSynced = ConfigMapInformer.Informer().HasSynced
 	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
+	cc.ServiceAccountSynced = ServiceAccountInformer.Informer().HasSynced
 	cc.DeploymentLister = DeploymentInformer.Lister()
+	cc.DeploymentSynced = DeploymentInformer.Informer().HasSynced
 	cc.StatefulSetLister = StatefulSetInformer.Lister()
 	cc.IngressLister = IngressInformer.Lister()
+	cc.IngressSynced = IngressInformer.Informer().HasSynced
 	cc.RoleLister = RoleInformer.Lister()
+	cc.RoleSynced = RoleInformer.Informer().HasSynced
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
+	cc.RoleBindingSynced = RoleBindingInformer.Informer().HasSynced
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
+	cc.ClusterRoleBindingSynced = ClusterRoleBindingInformer.Informer().HasSynced
+	cc.PrometheusSynced = PrometheusInformer.Informer().HasSynced
+	cc.ServiceMonitorSynced = ServiceMonitorInformer.Informer().HasSynced
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
@@ -477,6 +508,27 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 
 	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
+	defer glog.Info("Shutting down cluster controller")
+
+	if !cache.WaitForCacheSync(stopCh,
+		cc.ClusterSynced,
+		cc.EtcdClusterSynced,
+		cc.NamespaceSynced,
+		cc.SecretSynced,
+		cc.ServiceSynced,
+		cc.PvcSynced,
+		cc.ConfigMapSynced,
+		cc.ServiceAccountSynced,
+		cc.DeploymentSynced,
+		cc.IngressSynced,
+		cc.RoleSynced,
+		cc.RoleBindingSynced,
+		cc.ClusterRoleBindingSynced,
+		cc.PrometheusSynced,
+		cc.ServiceMonitorSynced) {
+		runtime.HandleError(errors.New("Unable to sync caches for cluster controller"))
+		return
+	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, time.Second, stopCh)
@@ -488,8 +540,6 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
 
 	<-stopCh
-
-	glog.Info("Shutting down cluster controller")
 }
 
 func (cc *Controller) handleChildObject(i interface{}) {
