@@ -1,6 +1,5 @@
 data:
-  user-cluster-client: |2
-
+  user-cluster-client: |
     iroute 172.25.0.0 255.255.0.0
     iroute 10.10.10.0 255.255.255.0
 metadata:
