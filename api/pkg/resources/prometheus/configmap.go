@@ -13,7 +13,14 @@ import (
 )
 
 // ConfigMap returns a ConfigMap containing the prometheus config for the supplied data
-func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
+func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	var cm *corev1.ConfigMap
+	if existing != nil {
+		cm = existing
+	} else {
+		cm = &corev1.ConfigMap{}
+	}
+
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
 	if err != nil {
@@ -23,16 +30,14 @@ func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
 		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
 	}
 
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
-		},
-		Data: map[string]string{
-			"prometheus.yaml": configBuffer.String(),
-			"rules.yaml":      prometheusRules,
-		},
-	}, nil
+	cm.Name = name
+	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	cm.Data = map[string]string{
+		"prometheus.yaml": configBuffer.String(),
+		"rules.yaml":      prometheusRules,
+	}
+
+	return cm, nil
 }
 
 const (

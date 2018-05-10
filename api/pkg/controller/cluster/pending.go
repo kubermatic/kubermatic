@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -17,8 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -37,6 +38,8 @@ const (
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
+
+	emptyPatch = "{}"
 )
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
@@ -98,7 +101,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	// check that all configmaps are available
+	// check that all ConfigMap's are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
 	}
@@ -422,9 +425,10 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 	ref := data.GetClusterRef()
 
 	for _, name := range names {
-		sa := resources.ServiceAccount(name, &ref)
+		var existing *corev1.ServiceAccount
+		sa := resources.ServiceAccount(name, &ref, nil)
 
-		if _, err = cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
+		if existing, err = cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -434,8 +438,14 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 			}
 			continue
 		}
+
+		// We update the existing SA
+		sa = resources.ServiceAccount(name, &ref, existing.DeepCopy())
+		if diff := deep.Equal(sa, existing); diff == nil {
+			continue
+		}
 		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
-			return fmt.Errorf("failed to update ServiceAccount %s: %v", sa.Name, err)
+			return fmt.Errorf("failed to patch ServiceAccount %s: %v", sa.Name, err)
 		}
 	}
 
@@ -626,7 +636,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	creators := []func(data *resources.TemplateData) (*corev1.ConfigMap, error){
+	creators := []resources.ConfigMapCreator{
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
@@ -638,12 +648,13 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		cm, err := create(data)
+		var existing *corev1.ConfigMap
+		cm, err := create(data, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
-		if _, err = cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
+		if existing, err = cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -653,6 +664,16 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			}
 			continue
 		}
+
+		cm, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
+		}
+
+		if diff := deep.Equal(cm, existing); diff == nil {
+			continue
+		}
+
 		if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Update(cm); err != nil {
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
@@ -703,7 +724,7 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
-	creators := []func(data *resources.TemplateData) (*v1.StatefulSet, error){
+	creators := []func(data *resources.TemplateData, existing *v1.StatefulSet) (*v1.StatefulSet, error){
 		prometheus.StatefulSet,
 	}
 
@@ -713,12 +734,13 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		set, err := create(data)
+		var existing *v1.StatefulSet
+		set, err := create(data, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if _, err = cc.StatefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
+		if existing, err = cc.StatefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -728,10 +750,34 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			}
 			continue
 		}
+
+		set, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build StatefulSet: %v", err)
+		}
+
+		if diff := deep.Equal(set, existing); diff == nil {
+			continue
+		}
+
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
-			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
+			return fmt.Errorf("failed to patch StatefulSet %s: %v", set.Name, err)
 		}
 	}
 
 	return nil
+}
+
+func (cc *Controller) createStrategicMergePatch(modified interface{}, original interface{}, dataStruct interface{}) ([]byte, error) {
+	mb, err := json.Marshal(modified)
+	if err != nil {
+		return nil, err
+	}
+
+	ob, err := json.Marshal(original)
+	if err != nil {
+		return nil, err
+	}
+
+	return strategicpatch.CreateTwoWayMergePatch(ob, mb, dataStruct)
 }

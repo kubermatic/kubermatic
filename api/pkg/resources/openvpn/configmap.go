@@ -12,21 +12,25 @@ const (
 )
 
 // ConfigMap returns a ConfigMap containing the openvpn config
-func ConfigMap(data *resources.TemplateData) (*corev1.ConfigMap, error) {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
-		},
-		Data: map[string]string{
-			"user-cluster-client": config,
-		},
-	}, nil
+func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	var cm *corev1.ConfigMap
+	if existing != nil {
+		cm = existing
+	} else {
+		cm = &corev1.ConfigMap{}
+	}
+
+	cm.Name = name
+	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	cm.Data = map[string]string{
+		"user-cluster-client": config,
+	}
+
+	return cm, nil
 }
 
 const (
-	config = `
-iroute 172.25.0.0 255.255.0.0
+	config = `iroute 172.25.0.0 255.255.0.0
 iroute 10.10.10.0 255.255.255.0
 `
 )
