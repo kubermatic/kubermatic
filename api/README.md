@@ -24,7 +24,7 @@ dep ensure -update
 ./hack/run-api.sh
 ```
 
-#### kubermatic-cluster-controller
+#### kubermatic-controller-manager
 ```bash
 ./hack/run-controller.sh
 ```
