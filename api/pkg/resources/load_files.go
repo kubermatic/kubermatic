@@ -48,7 +48,8 @@ const (
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
-	PrometheusServiceName        = "prometheus"
+	//PrometheusServiceName is the name for the prometheus service
+	PrometheusServiceName = "prometheus"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
