@@ -8,10 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	name = "openvpn"
-)
-
 // Service returns a service for the prometheus
 func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service
@@ -21,7 +17,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 		se = &corev1.Service{}
 	}
 
-	se.Name = name
+	se.Name = resources.OpenVPNServerServiceName
 	se.Annotations = map[string]string{
 		"nodeport-proxy.k8s.io/expose": "true",
 	}

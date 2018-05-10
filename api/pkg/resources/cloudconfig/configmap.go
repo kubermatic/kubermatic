@@ -12,10 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	name = "cloud-config"
-)
-
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
 func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
@@ -34,7 +30,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
 	}
 
-	cm.Name = name
+	cm.Name = resources.CloudConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
 		"config": configBuffer.String(),

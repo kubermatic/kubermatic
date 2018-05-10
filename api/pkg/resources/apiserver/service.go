@@ -8,11 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	name         = "apiserver"
-	externalName = "apiserver-external"
-)
-
 // Service returns the internal service for the apiserver
 func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service
@@ -22,11 +17,11 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 		se = &corev1.Service{}
 	}
 
-	se.Name = name
+	se.Name = resources.ApiserverInternalServiceName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	se.Spec.Type = corev1.ServiceTypeClusterIP
 	se.Spec.Selector = map[string]string{
-		"role": name,
+		"role": "apiserver",
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
@@ -49,14 +44,14 @@ func ExternalService(data *resources.TemplateData, existing *corev1.Service) (*c
 		se = &corev1.Service{}
 	}
 
-	se.Name = externalName
+	se.Name = resources.ApiserverExternalServiceName
 	se.Annotations = map[string]string{
 		"nodeport-proxy.k8s.io/expose": "true",
 	}
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	se.Spec.Type = corev1.ServiceTypeNodePort
 	se.Spec.Selector = map[string]string{
-		"role": name,
+		"role": "apiserver",
 	}
 
 	if len(se.Spec.Ports) == 0 {

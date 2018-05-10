@@ -41,20 +41,14 @@ const (
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 
+	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
+	PrometheusStatefulSetName = "prometheus"
+
 	//ApiserverExternalServiceName is the name for the external apiserver service
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
-	//ControllerManagerServiceName is the name for the controller manager service
-	ControllerManagerServiceName = "controller-manager"
-	//KubeStateMetricsServiceName is the name for the kube-state-metrics service
-	KubeStateMetricsServiceName = "kube-state-metrics"
-	//MachineControllerServiceName is the name for the machine controller service
-	MachineControllerServiceName = "machine-controller"
-	//PrometheusServiceName is the name for the prometheus service
-	PrometheusServiceName = "prometheus"
-	//SchedulerServiceName is the name for the scheduler service
-	SchedulerServiceName = "scheduler"
+	PrometheusServiceName        = "prometheus"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -81,14 +75,13 @@ const (
 	CloudConfigConfigMapName = "cloud-config"
 	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
+	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
+	PrometheusConfigConfigMapName = "prometheus"
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
 	EtcdOperatorServiceAccountName = "etcd-operator"
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
-
-	//PrometheusName is the name for the Prometheus
-	PrometheusName = "prometheus"
 
 	//PrometheusRoleName is the name for the Prometheus role
 	PrometheusRoleName = "prometheus"
@@ -98,19 +91,6 @@ const (
 
 	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
 	EtcdOperatorClusterRoleBindingName = "etcd-operator"
-
-	//ApiserverServiceMonitorName is the name for the apiserver servicemonitor
-	ApiserverServiceMonitorName = "apiserver"
-	//ControllerManagerServiceMonitorName is the name for the controller manager servicemonitor
-	ControllerManagerServiceMonitorName = "controller-manager"
-	//EtcdServiceMonitorName is the name for the etcd servicemonitor
-	EtcdServiceMonitorName = "etcd"
-	//KubeStateMetricsServiceMonitorName is the name for the kube state metrics servicemonitor
-	KubeStateMetricsServiceMonitorName = "kube-state-metrics"
-	//MachineControllerServiceMonitorName is the name for the machine controller servicemonitor
-	MachineControllerServiceMonitorName = "machine-controller"
-	//SchedulerServiceMonitorName is the name for the scheduler servicemonitor
-	SchedulerServiceMonitorName = "scheduler"
 )
 
 const (

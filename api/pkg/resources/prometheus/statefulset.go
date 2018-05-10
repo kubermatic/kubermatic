@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	name = "prometheus"
-
 	volumeConfigName = "config"
 	volumeDataName   = "data"
 )
@@ -28,27 +26,27 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		set = &appsv1.StatefulSet{}
 	}
 
-	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(name)
+	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(resources.PrometheusConfigConfigMapName)
 	if err != nil {
 		return nil, err
 	}
 
-	set.Name = name
+	set.Name = resources.PrometheusStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 	set.Spec.Replicas = resources.Int32(1)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	set.Spec.ServiceName = name
+	set.Spec.ServiceName = resources.PrometheusServiceName
 	set.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"app":     name,
+			"app":     "prometheus",
 			"cluster": data.Cluster.Name,
 		},
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"app":             name,
+			"app":             "prometheus",
 			"cluster":         data.Cluster.Name,
 			"config-revision": cm.ObjectMeta.ResourceVersion,
 		},
@@ -59,7 +57,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		RunAsNonRoot: resources.Bool(true),
 		RunAsUser:    resources.Int64(1000),
 	}
-	set.Spec.Template.Spec.ServiceAccountName = name
+	set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
 	set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
 
 	// Checking if its already set. Otherwise initialize it with 1.
@@ -67,7 +65,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	if len(set.Spec.Template.Spec.Containers) == 0 {
 		set.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 	}
-	set.Spec.Template.Spec.Containers[0].Name = name
+	set.Spec.Template.Spec.Containers[0].Name = "prometheus"
 	set.Spec.Template.Spec.Containers[0].Image = "quay.io/prometheus/prometheus:v2.2.0"
 	set.Spec.Template.Spec.Containers[0].Args = []string{
 		"--config.file=/etc/prometheus/config/prometheus.yaml",
@@ -136,7 +134,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.Template.Spec.Volumes[0].VolumeSource = corev1.VolumeSource{
 		ConfigMap: &corev1.ConfigMapVolumeSource{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: name,
+				Name: resources.PrometheusConfigConfigMapName,
 			},
 		},
 	}

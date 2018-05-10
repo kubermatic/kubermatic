@@ -30,7 +30,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
 	}
 
-	cm.Name = name
+	cm.Name = resources.PrometheusConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
 		"prometheus.yaml": configBuffer.String(),

@@ -7,10 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	clientConfigName = "openvpn-client-configs"
-)
-
 // ConfigMap returns a ConfigMap containing the openvpn config
 func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
@@ -20,7 +16,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm = &corev1.ConfigMap{}
 	}
 
-	cm.Name = clientConfigName
+	cm.Name = resources.OpenVPNClientConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
 		"user-cluster-client": `iroute 172.25.0.0 255.255.0.0
