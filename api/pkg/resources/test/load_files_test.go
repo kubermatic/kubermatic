@@ -306,7 +306,7 @@ func TestLoadFiles(t *testing.T) {
 
 				serviceCreators := map[string]resources.ServiceCreator{
 					fmt.Sprintf("service-%s-%s-apiserver", prov, version.ID):          apiserver.Service,
-					fmt.Sprintf("service-%s-%s-apiserver-external", prov, version.ID): apiserver.Service,
+					fmt.Sprintf("service-%s-%s-apiserver-external", prov, version.ID): apiserver.ExternalService,
 					fmt.Sprintf("service-%s-%s-openvpn", prov, version.ID):            openvpn.Service,
 				}
 

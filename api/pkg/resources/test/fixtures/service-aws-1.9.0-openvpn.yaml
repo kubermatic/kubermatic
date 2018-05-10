@@ -1,6 +1,8 @@
 metadata:
+  annotations:
+    nodeport-proxy.k8s.io/expose: "true"
   creationTimestamp: null
-  name: apiserver
+  name: openvpn-client-configs
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
     blockOwnerDeletion: true
@@ -10,12 +12,12 @@ metadata:
     uid: "1234567890"
 spec:
   ports:
-  - name: insecure
-    port: 8080
+  - name: secure
+    port: 1194
     protocol: TCP
-    targetPort: 8080
+    targetPort: 1194
   selector:
-    role: apiserver
-  type: ClusterIP
+    role: openvpn-server
+  type: NodePort
 status:
   loadBalancer: {}
