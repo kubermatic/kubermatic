@@ -8,6 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	name = "openvpn"
+)
+
 // Service returns a service for the prometheus
 func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service

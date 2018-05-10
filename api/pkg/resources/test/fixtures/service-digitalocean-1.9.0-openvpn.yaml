@@ -2,7 +2,7 @@ metadata:
   annotations:
     nodeport-proxy.k8s.io/expose: "true"
   creationTimestamp: null
-  name: openvpn-client-configs
+  name: openvpn
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
     blockOwnerDeletion: true
