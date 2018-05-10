@@ -29,7 +29,6 @@ func runAllControllers(ctrlCtx controllerContext) error {
 
 	for name, startControllerFun := range allControllers {
 		glog.Infof("Running %s controller", name)
-
 		err := startControllerFun(ctrlCtx)
 		if err != nil {
 			return err

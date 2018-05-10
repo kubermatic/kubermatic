@@ -119,12 +119,12 @@ func main() {
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 
-	// This group is forever waiting in a goroutine for signals to stopCh
+	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
 			select {
 			case <-stopCh:
-				return errors.New("user requested to stopCh the application")
+				return errors.New("user requested to stop the application")
 			case <-ctx.Done():
 				return errors.New("parent context has been closed - propagating the request")
 			}
