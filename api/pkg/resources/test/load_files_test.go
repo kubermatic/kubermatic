@@ -289,13 +289,13 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixture, res)
 				}
 
-				creators := map[string]func(data *resources.TemplateData) (*v1.ConfigMap, error){
+				creators := map[string]resources.ConfigMapCreator{
 					fmt.Sprintf("configmap-%s-%s-cloud-config", prov, version.ID): cloudconfig.ConfigMap,
 					fmt.Sprintf("configmap-%s-%s-openvpn", prov, version.ID):      openvpn.ConfigMap,
 					fmt.Sprintf("configmap-%s-%s-prometheus", prov, version.ID):   prometheus.ConfigMap,
 				}
 				for fixture, create := range creators {
-					res, err := create(data)
+					res, err := create(data, nil)
 					if err != nil {
 						t.Fatalf("failed to create configmap for %s: %v", fixture, err)
 					}

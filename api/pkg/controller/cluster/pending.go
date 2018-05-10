@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -38,8 +37,6 @@ const (
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
-
-	emptyPatch = "{}"
 )
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
@@ -766,18 +763,4 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	}
 
 	return nil
-}
-
-func (cc *Controller) createStrategicMergePatch(modified interface{}, original interface{}, dataStruct interface{}) ([]byte, error) {
-	mb, err := json.Marshal(modified)
-	if err != nil {
-		return nil, err
-	}
-
-	ob, err := json.Marshal(original)
-	if err != nil {
-		return nil, err
-	}
-
-	return strategicpatch.CreateTwoWayMergePatch(ob, mb, dataStruct)
 }
