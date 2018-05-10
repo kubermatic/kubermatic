@@ -6,7 +6,7 @@ set -o pipefail
 
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
-./_build/kubermatic-cluster-controller \
+./_build/kubermatic-controller-manager \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -datacenter-name=europe-west3-c \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
