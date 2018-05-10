@@ -14,6 +14,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -365,10 +366,10 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
-	services := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error){
-		resources.ApiserverInternalServiceName: resources.LoadServiceFile,
-		resources.ApiserverExternalServiceName: resources.LoadServiceFile,
-		resources.OpenVPNServerServiceName:     resources.LoadServiceFile,
+	creators := []resources.ServiceCreator{
+		apiserver.Service,
+		apiserver.ExternalService,
+		openvpn.Service,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -376,33 +377,35 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range services {
-		generatedService, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+	for _, create := range creators {
+		var existing *corev1.Service
+		service, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to generate Service %s: %v", name, err)
+			return fmt.Errorf("failed to build Service: %v", err)
 		}
-		generatedService.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedService.Name = name
 
-		service, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Create(generatedService); err != nil {
-					return fmt.Errorf("failed to create service for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if existing, err = cc.ServiceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Create(service); err != nil {
+				return fmt.Errorf("failed to create Service %s: %v", service.Name, err)
+			}
+			continue
 		}
-		if service.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(service, generatedService)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch service for %s: %v", name, err)
-			}
+
+		service, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Service: %v", err)
+		}
+
+		if diff := deep.Equal(service, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Update(service); err != nil {
+			return fmt.Errorf("failed to patch Service %s: %v", service.Name, err)
 		}
 	}
 
@@ -721,7 +724,7 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
-	creators := []func(data *resources.TemplateData, existing *v1.StatefulSet) (*v1.StatefulSet, error){
+	creators := []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
 	}
 

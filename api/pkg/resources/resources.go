@@ -1,6 +1,7 @@
 package resources
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -9,3 +10,9 @@ type ConfigMapCreator = func(data *TemplateData, existing *corev1.ConfigMap) (*c
 
 // SecretCreator defines an interface to create/update Secret's
 type SecretCreator = func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error)
+
+// StatefulSetCreator defines an interface to create/update StatefulSet
+type StatefulSetCreator = func(data *TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+
+// ServiceCreator defines an interface to create/update Services
+type ServiceCreator = func(data *TemplateData, existing *corev1.Service) (*corev1.Service, error)

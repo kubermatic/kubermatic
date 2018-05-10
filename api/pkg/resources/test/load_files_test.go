@@ -16,6 +16,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -289,12 +290,12 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixture, res)
 				}
 
-				creators := map[string]resources.ConfigMapCreator{
+				cmCreators := map[string]resources.ConfigMapCreator{
 					fmt.Sprintf("configmap-%s-%s-cloud-config", prov, version.ID): cloudconfig.ConfigMap,
 					fmt.Sprintf("configmap-%s-%s-openvpn", prov, version.ID):      openvpn.ConfigMap,
 					fmt.Sprintf("configmap-%s-%s-prometheus", prov, version.ID):   prometheus.ConfigMap,
 				}
-				for fixture, create := range creators {
+				for fixture, create := range cmCreators {
 					res, err := create(data, nil)
 					if err != nil {
 						t.Fatalf("failed to create configmap for %s: %v", fixture, err)
@@ -303,14 +304,16 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixture, res)
 				}
 
-				svcs := map[string]string{
-					"apiserver":          fmt.Sprintf("service-%s-%s-apiserver", prov, version.ID),
-					"apiserver-external": fmt.Sprintf("service-%s-%s-apiserver-external", prov, version.ID),
+				serviceCreators := map[string]resources.ServiceCreator{
+					fmt.Sprintf("service-%s-%s-apiserver", prov, version.ID):          apiserver.Service,
+					fmt.Sprintf("service-%s-%s-apiserver-external", prov, version.ID): apiserver.Service,
+					fmt.Sprintf("service-%s-%s-openvpn", prov, version.ID):            openvpn.Service,
 				}
-				for name, fixture := range svcs {
-					res, _, err := resources.LoadServiceFile(data, name, masterResourcePath)
+
+				for fixture, create := range serviceCreators {
+					res, err := create(data, nil)
 					if err != nil {
-						t.Fatalf("failed to load service %q: %v", name, err)
+						t.Fatalf("failed to create Service for %s: %v", fixture, err)
 					}
 
 					checkTestResult(t, fixture, res)

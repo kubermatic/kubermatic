@@ -1,4 +1,4 @@
-package prometheus
+package openvpn
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -18,20 +18,22 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	}
 
 	se.Name = name
+	se.Annotations = map[string]string{
+		"nodeport-proxy.k8s.io/expose": "true",
+	}
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
-		"app":     name,
-		"cluster": data.Cluster.Name,
+		"role": "openvpn-server",
 	}
-	se.Spec.Ports = []corev1.ServicePort{
-		{
-			Name:       "web",
-			Port:       9090,
-			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromString("web"),
-		},
+	se.Spec.Type = corev1.ServiceTypeNodePort
+	if len(se.Spec.Ports) == 0 {
+		se.Spec.Ports = make([]corev1.ServicePort, 1)
 	}
+
+	se.Spec.Ports[0].Name = "secure"
+	se.Spec.Ports[0].Port = 1194
+	se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+	se.Spec.Ports[0].TargetPort = intstr.FromInt(1194)
 
 	return se, nil
 }

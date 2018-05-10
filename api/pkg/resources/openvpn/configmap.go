@@ -23,14 +23,10 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Name = name
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
-		"user-cluster-client": config,
+		"user-cluster-client": `iroute 172.25.0.0 255.255.0.0
+iroute 10.10.10.0 255.255.255.0
+`,
 	}
 
 	return cm, nil
 }
-
-const (
-	config = `iroute 172.25.0.0 255.255.0.0
-iroute 10.10.10.0 255.255.255.0
-`
-)
