@@ -1,13 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: cluster-controller-v1
+  name: controller-manager-v1
 spec:
-  replicas: {{ .Values.kubermatic.controller.replicas }}
+  replicas: {{ .Values.kubermatic.controller.manager.replicas }}
   template:
     metadata:
       labels:
-        role: cluster-controller
+        role: controller-manager
         version: v1
       annotations:
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
@@ -15,9 +15,9 @@ spec:
     spec:
       serviceAccountName: kubermatic
       containers:
-        - name: cluster-controller
+        - name: controller-manager
           command:
-          - /kubermatic-cluster-controller
+          - /kubermatic-controller-manager
           args:
           - -v=4
           - -logtostderr
