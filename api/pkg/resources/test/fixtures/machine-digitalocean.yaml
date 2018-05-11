@@ -1,5 +1,3 @@
-apiVersion: machine.k8s.io/v1alpha1
-kind: Machine
 metadata:
   creationTimestamp: null
   name: machine-docluster-1a2b3c4d5e-te5s7
@@ -17,10 +15,11 @@ spec:
       region: fra1
       size: s-1vcpu-1gb
       tags:
-      - kubermatic
-      - kubermatic-cluster-docluster-1a2b3c4d5e
       - digitalocean-example-tag-1
       - digitalocean-example-tag-2
+      - kubermatic
+      - kubermatic-cluster-docluster-1a2b3c4d5e
+      token: ""
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false

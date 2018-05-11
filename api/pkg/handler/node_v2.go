@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 
@@ -13,9 +12,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-	machine2 "github.com/kubermatic/kubermatic/api/pkg/machine"
+	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
@@ -29,8 +28,6 @@ import (
 )
 
 const (
-	tplName = "machine.yaml"
-
 	kubeletVersionConstraint = ">= 1.8"
 	errGlue                  = " & "
 
@@ -142,12 +139,12 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
 	}
 
-	operatingSystemSpec, err := machine2.GetAPIV2OperatingSystemSpec(machine)
+	operatingSystemSpec, err := machineconversions.GetAPIV2OperatingSystemSpec(machine)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
 	}
 
-	cloudSpec, err := machine2.GetAPIV2NodeCloudSpec(machine)
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
@@ -279,7 +276,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Metadata.Name = "kubermatic-" + c.Name + "-" + rand.String(5)
 		}
 
-		machine, err := resources.LoadMachineFile(path.Join(masterResourcesPath, tplName), c, &node.Node, dc, keys, version)
+		machine, err := machineresource.Machine(c, &node.Node, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine from template: %v", err)
 		}
