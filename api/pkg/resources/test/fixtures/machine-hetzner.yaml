@@ -1,5 +1,3 @@
-apiVersion: machine.k8s.io/v1alpha1
-kind: Machine
 metadata:
   creationTimestamp: null
   name: machine-hetznercluster-1a2b3c4d5e-te5s7
@@ -13,6 +11,7 @@ spec:
       datacenter: hetzner-datacenter
       location: hetzner-location
       serverType: hetzner-type
+      token: ""
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false

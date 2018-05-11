@@ -134,6 +134,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.D
 	for key, value := range node.Spec.Cloud.AWS.Tags {
 		config.Tags[key] = value
 	}
+	config.Tags["KubernetesCluster"] = c.Name
 
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
