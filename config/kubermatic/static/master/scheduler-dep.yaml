@@ -43,6 +43,13 @@ spec:
             "--master=http://apiserver:8080",
             "--v=4"
         ]
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "20m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
         readinessProbe:
           httpGet:
             path: /healthz

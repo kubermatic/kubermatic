@@ -68,6 +68,13 @@ spec:
           "--up", "/bin/touch /tmp/running",
           "--log", "/dev/stdout",
         ]
+        resources:
+          requests:
+            memory: "30Mi"
+            cpu: "10m"
+          limits:
+            memory: "64Mi"
+            cpu: "40m"
         readinessProbe:
           exec:
             command:
@@ -131,6 +138,13 @@ spec:
             {{ end }}
             "--kubelet-preferred-address-types=ExternalIP,InternalIP",
             "--v=4" ]
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
         readinessProbe:
           httpGet:
             path: /healthz

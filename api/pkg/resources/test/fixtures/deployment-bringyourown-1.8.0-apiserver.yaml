@@ -87,7 +87,13 @@ spec:
             - /tmp/running
           initialDelaySeconds: 5
           periodSeconds: 5
-        resources: {}
+        resources:
+          limits:
+            cpu: 40m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 30Mi
         securityContext:
           privileged: true
         volumeMounts:
@@ -146,7 +152,13 @@ spec:
             port: 8080
           periodSeconds: 5
           timeoutSeconds: 15
-        resources: {}
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
         volumeMounts:
         - mountPath: /etc/kubernetes/tls
           name: apiserver-tls
