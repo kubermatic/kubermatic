@@ -74,7 +74,13 @@ spec:
             path: /healthz
             port: 10252
           timeoutSeconds: 15
-        resources: {}
+        resources:
+          limits:
+            cpu: 250m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
         volumeMounts:
         - mountPath: /etc/kubernetes/ca-cert
           name: ca-cert

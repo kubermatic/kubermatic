@@ -38,7 +38,13 @@ spec:
         image: kubermatic/addon-manager:v1.9.0
         imagePullPolicy: Always
         name: addon-manager
-        resources: {}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 50m
+            memory: 20Mi
       initContainers:
       - command:
         - /bin/sh
