@@ -499,8 +499,8 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
-	roleBindings := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.RoleBinding, string, error){
-		resources.PrometheusRoleBindingName: resources.LoadRoleBindingFile,
+	creators := []resources.RoleBindingCreator{
+		prometheus.RoleBinding,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -508,33 +508,35 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range roleBindings {
-		generatedRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+	for _, create := range creators {
+		var existing *rbacv1.RoleBinding
+		rb, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to generate RoleBinding %s: %v", name, err)
+			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
-		generatedRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedRoleBinding.Name = name
 
-		roleBinding, err := cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(generatedRoleBinding.Name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
-					return fmt.Errorf("failed to create roleBinding for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if existing, err = cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Create(rb); err != nil {
+				return fmt.Errorf("failed to create RoleBinding %s: %v", rb.Name, err)
+			}
+			continue
 		}
-		if roleBinding.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(roleBinding, generatedRoleBinding)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.RbacV1beta1().RoleBindings(c.Status.NamespaceName).Patch(generatedRoleBinding.Name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch roleBinding for %s: %v", name, err)
-			}
+
+		rb, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build RoleBinding: %v", err)
+		}
+
+		if diff := deep.Equal(rb, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Update(rb); err != nil {
+			return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
 		}
 	}
 
