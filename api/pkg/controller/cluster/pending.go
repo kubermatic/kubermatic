@@ -18,7 +18,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
-	"k8s.io/api/apps/v1"
+
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -453,8 +454,8 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 }
 
 func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
-	roles := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.Role, string, error){
-		resources.PrometheusRoleName: resources.LoadRoleFile,
+	creators := []resources.RoleCreator{
+		prometheus.Role,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -462,33 +463,35 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range roles {
-		generatedRole, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+	for _, create := range creators {
+		var existing *rbacv1.Role
+		role, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to generate role %s: %v", name, err)
+			return fmt.Errorf("failed to build Role: %v", err)
 		}
-		generatedRole.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedRole.Name = name
 
-		role, err := cc.RoleLister.Roles(c.Status.NamespaceName).Get(generatedRole.Name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err := cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Create(generatedRole); err != nil {
-					return fmt.Errorf("failed to create role for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if existing, err = cc.RoleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Create(role); err != nil {
+				return fmt.Errorf("failed to create Role %s: %v", role.Name, err)
+			}
+			continue
 		}
-		if role.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(role, generatedRole)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.RbacV1beta1().Roles(c.Status.NamespaceName).Patch(generatedRole.Name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch role for %s: %v", name, err)
-			}
+
+		role, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Role: %v", err)
+		}
+
+		if diff := deep.Equal(role, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Update(role); err != nil {
+			return fmt.Errorf("failed to update Role %s: %v", role.Name, err)
 		}
 	}
 
@@ -734,7 +737,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *v1.StatefulSet
+		var existing *appsv1.StatefulSet
 		set, err := create(data, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
@@ -761,7 +764,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 		}
 
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
-			return fmt.Errorf("failed to patch StatefulSet %s: %v", set.Name, err)
+			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
 		}
 	}
 
