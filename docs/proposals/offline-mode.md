@@ -23,7 +23,7 @@ Kubermatic:
 
 * Making the base repository for all images in all charts configurable (Currently 15 components)
 * Writing a script that downloads all required images, retags them and uploads them to a private registry
-* Provide an easy/convenient way to set just the repository for all images
+* Add flag to the `cluster-controller` to set just the repository for all images
 * Provide an easy/convenient way to have an image pull secret available on all nodes
 * Provide a way to pass in certificates for Dex
 * Write an e2e test for this:
