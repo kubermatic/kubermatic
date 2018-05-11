@@ -25,7 +25,7 @@ Kubermatic:
 * Writing a script that downloads all required images, retags them and uploads them to a private registry
 * Add flag to the `cluster-controller` to set just the repository for all images
 * Provide an easy/convenient way to have an image pull secret available on all nodes
-* Provide a way to pass in certificates for Dex
+* Allow dex to be configured to either use a customer-provided IDP or static user definitions
 * Write an e2e test for this:
     * Create a kubeadm seed + master cluster, during this phase Internet may be reachable
     * Execute the script that downloads and retags the images, during this phase Internet may be reachable
