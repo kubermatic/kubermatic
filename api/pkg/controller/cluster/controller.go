@@ -94,6 +94,7 @@ type Controller struct {
 	DeploymentLister         appsv1lister.DeploymentLister
 	DeploymentSynced         cache.InformerSynced
 	StatefulSetLister        appsv1lister.StatefulSetLister
+	StatefulSynced           cache.InformerSynced
 	IngressLister            extensionsv1beta1lister.IngressLister
 	IngressSynced            cache.InformerSynced
 	RoleLister               rbacb1lister.RoleLister
@@ -269,6 +270,7 @@ func NewController(
 	cc.DeploymentLister = DeploymentInformer.Lister()
 	cc.DeploymentSynced = DeploymentInformer.Informer().HasSynced
 	cc.StatefulSetLister = StatefulSetInformer.Lister()
+	cc.StatefulSynced = StatefulSetInformer.Informer().HasSynced
 	cc.IngressLister = IngressInformer.Lister()
 	cc.IngressSynced = IngressInformer.Informer().HasSynced
 	cc.RoleLister = RoleInformer.Lister()
@@ -520,6 +522,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		cc.ConfigMapSynced,
 		cc.ServiceAccountSynced,
 		cc.DeploymentSynced,
+		cc.StatefulSynced,
 		cc.IngressSynced,
 		cc.RoleSynced,
 		cc.RoleBindingSynced,
