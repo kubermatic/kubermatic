@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: controller-manager-v1
 spec:
-  replicas: {{ .Values.kubermatic.controller.manager.replicas }}
+  replicas: {{ .Values.kubermatic.controller.replicas }}
   template:
     metadata:
       labels:
