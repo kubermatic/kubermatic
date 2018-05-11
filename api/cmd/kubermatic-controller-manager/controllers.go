@@ -90,12 +90,11 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
 		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
+		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
 		ctrlCtx.kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
-		ctrlCtx.kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)
 	if err != nil {
 		return err

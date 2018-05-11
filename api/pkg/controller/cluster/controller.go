@@ -103,8 +103,6 @@ type Controller struct {
 	RoleBindingSynced        cache.InformerSynced
 	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	ClusterRoleBindingSynced cache.InformerSynced
-	PrometheusSynced         cache.InformerSynced
-	ServiceMonitorSynced     cache.InformerSynced
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -279,8 +277,6 @@ func NewController(
 	cc.RoleBindingSynced = RoleBindingInformer.Informer().HasSynced
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
 	cc.ClusterRoleBindingSynced = ClusterRoleBindingInformer.Informer().HasSynced
-	cc.PrometheusSynced = PrometheusInformer.Informer().HasSynced
-	cc.ServiceMonitorSynced = ServiceMonitorInformer.Informer().HasSynced
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
@@ -526,9 +522,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		cc.IngressSynced,
 		cc.RoleSynced,
 		cc.RoleBindingSynced,
-		cc.ClusterRoleBindingSynced,
-		cc.PrometheusSynced,
-		cc.ServiceMonitorSynced) {
+		cc.ClusterRoleBindingSynced) {
 		runtime.HandleError(errors.New("Unable to sync caches for cluster controller"))
 		return
 	}

@@ -222,5 +222,3 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
 	return recorder, nil
 }
-
-		kubeInformerFactory.Apps().V1().StatefulSets(),
