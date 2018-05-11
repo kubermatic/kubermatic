@@ -1,6 +1,22 @@
 groups:
 - name: kubermatic
   rules:
+  - alert: KubermaticAPIDown
+    expr: absent(up{job="kubermatic-api"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: "Kubermatic API is down for more than 5 minutes."
+      summary: "Kubermatic API is down"
+  - alert: KubermaticControllerManagerDown
+    expr: absent(up{job="kubermatic-controller-manager"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: "Kubermatic Controller Manager is down for more than 5 minutes."
+      summary: "Kubermatic Controller Manager is down"
   - alert: KubermaticUnhandledErrorsTotal
     expr: sum(rate(kubermatic_cluster_controller_unhandled_errors_total[5m])) > 0.01
     for: 10m
