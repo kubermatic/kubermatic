@@ -9,16 +9,15 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	prometheusv1 "github.com/kubermatic/kubermatic/api/pkg/crd/prometheus/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
@@ -42,20 +41,15 @@ const (
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 
+	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
+	PrometheusStatefulSetName = "prometheus"
+
 	//ApiserverExternalServiceName is the name for the external apiserver service
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
-	//ControllerManagerServiceName is the name for the controller manager service
-	ControllerManagerServiceName = "controller-manager"
-	//KubeStateMetricsServiceName is the name for the kube-state-metrics service
-	KubeStateMetricsServiceName = "kube-state-metrics"
-	//MachineControllerServiceName is the name for the machine controller service
-	MachineControllerServiceName = "machine-controller"
 	//PrometheusServiceName is the name for the prometheus service
 	PrometheusServiceName = "prometheus"
-	//SchedulerServiceName is the name for the scheduler service
-	SchedulerServiceName = "scheduler"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -82,14 +76,13 @@ const (
 	CloudConfigConfigMapName = "cloud-config"
 	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
+	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
+	PrometheusConfigConfigMapName = "prometheus"
 
 	//EtcdOperatorServiceAccountName is the name for the etcd-operator serviceaccount
 	EtcdOperatorServiceAccountName = "etcd-operator"
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
-
-	//PrometheusName is the name for the Prometheus
-	PrometheusName = "prometheus"
 
 	//PrometheusRoleName is the name for the Prometheus role
 	PrometheusRoleName = "prometheus"
@@ -99,19 +92,6 @@ const (
 
 	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
 	EtcdOperatorClusterRoleBindingName = "etcd-operator"
-
-	//ApiserverServiceMonitorName is the name for the apiserver servicemonitor
-	ApiserverServiceMonitorName = "apiserver"
-	//ControllerManagerServiceMonitorName is the name for the controller manager servicemonitor
-	ControllerManagerServiceMonitorName = "controller-manager"
-	//EtcdServiceMonitorName is the name for the etcd servicemonitor
-	EtcdServiceMonitorName = "etcd"
-	//KubeStateMetricsServiceMonitorName is the name for the kube state metrics servicemonitor
-	KubeStateMetricsServiceMonitorName = "kube-state-metrics"
-	//MachineControllerServiceMonitorName is the name for the machine controller servicemonitor
-	MachineControllerServiceMonitorName = "machine-controller"
-	//SchedulerServiceMonitorName is the name for the scheduler servicemonitor
-	SchedulerServiceMonitorName = "scheduler"
 )
 
 const (
@@ -151,6 +131,27 @@ type TemplateData struct {
 	SecretLister    corev1lister.SecretLister
 	ConfigMapLister corev1lister.ConfigMapLister
 	ServiceLister   corev1lister.ServiceLister
+}
+
+// GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
+func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(d.Cluster, gv.WithKind("Cluster"))
+}
+
+// Int32 returns a pointer to of the int32 value passed in.
+func Int32(v int32) *int32 {
+	return &v
+}
+
+// Int64 returns a pointer to of the int64 value passed in.
+func Int64(v int64) *int64 {
+	return &v
+}
+
+// Bool returns a pointer to of the bool value passed in.
+func Bool(v bool) *bool {
+	return &v
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -238,53 +239,6 @@ func LoadServiceFile(data *TemplateData, app, masterResourcesPath string) (*core
 	return &service, json, err
 }
 
-// LoadSecretFile returns the secret for the given cluster and app
-func LoadSecretFile(data *TemplateData, app, masterResourcesPath string) (*corev1.Secret, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-secret.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var secret corev1.Secret
-	json, err := t.Execute(data, &secret)
-	return &secret, json, err
-}
-
-// LoadConfigMapFile returns the configmap for the given cluster and app
-func LoadConfigMapFile(data *TemplateData, app, masterResourcesPath string) (*corev1.ConfigMap, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-configmap.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var secret corev1.ConfigMap
-	json, err := t.Execute(data, &secret)
-	return &secret, json, err
-}
-
-// LoadIngressFile returns the ingress for the given cluster and app
-func LoadIngressFile(data *TemplateData, app, masterResourcesPath string) (*v1beta1.Ingress, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-ingress.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-	var ingress v1beta1.Ingress
-	json, err := t.Execute(data, &ingress)
-	return &ingress, json, err
-}
-
-// LoadPVCFile returns the PVC for the given cluster & app
-func LoadPVCFile(data *TemplateData, app, masterResourcesPath string) (*corev1.PersistentVolumeClaim, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-pvc.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var pvc corev1.PersistentVolumeClaim
-	json, err := t.Execute(data, &pvc)
-	return &pvc, json, err
-}
-
 // LoadEtcdClusterFile loads a etcd-operator crd from disk and returns a Cluster crd struct
 func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile string) (*etcdoperatorv1beta2.EtcdCluster, string, error) {
 	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
@@ -295,18 +249,6 @@ func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile strin
 	var c etcdoperatorv1beta2.EtcdCluster
 	json, err := t.Execute(data, &c)
 	return &c, json, err
-}
-
-// LoadServiceAccountFile loads a service account from disk and returns it
-func LoadServiceAccountFile(data *TemplateData, app, masterResourcesPath string) (*corev1.ServiceAccount, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-serviceaccount.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var sa corev1.ServiceAccount
-	json, err := t.Execute(data, &sa)
-	return &sa, json, err
 }
 
 // LoadRoleFile loads a role from disk, sets the namespace and returns it
@@ -343,31 +285,6 @@ func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath str
 	var r rbacv1.ClusterRoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
-}
-
-// LoadPrometheusFile loads a prometheus crd from disk and returns a Cluster crd struct
-func LoadPrometheusFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.Prometheus, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, "prometheus.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var p prometheusv1.Prometheus
-	json, err := t.Execute(data, &p)
-	return &p, json, err
-}
-
-// LoadServiceMonitorFile loads a service monitor crd from disk and returns a Cluster crd struct
-func LoadServiceMonitorFile(data *TemplateData, app, masterResourcesPath string) (*prometheusv1.ServiceMonitor, string, error) {
-	filename := fmt.Sprintf("prometheus-service-monitor-%s.yaml", app)
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, filename))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var sm prometheusv1.ServiceMonitor
-	json, err := t.Execute(data, &sm)
-	return &sm, json, err
 }
 
 // LoadMachineFile parses and returns the given machine manifest

@@ -160,6 +160,9 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 	c.Tags = rawConfig.Tags
+	if c.Tags == nil {
+		c.Tags = map[string]string{}
+	}
 
 	return &c, &pconfig, &rawConfig, err
 }

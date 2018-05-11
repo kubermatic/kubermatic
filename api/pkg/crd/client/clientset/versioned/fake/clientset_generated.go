@@ -6,8 +6,6 @@ import (
 	fakeetcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	fakekubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1/fake"
-	monitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/prometheus/v1"
-	fakemonitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/prometheus/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -74,14 +72,4 @@ func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
 // Kubermatic retrieves the KubermaticV1Client
 func (c *Clientset) Kubermatic() kubermaticv1.KubermaticV1Interface {
 	return &fakekubermaticv1.FakeKubermaticV1{Fake: &c.Fake}
-}
-
-// MonitoringV1 retrieves the MonitoringV1Client
-func (c *Clientset) MonitoringV1() monitoringv1.MonitoringV1Interface {
-	return &fakemonitoringv1.FakeMonitoringV1{Fake: &c.Fake}
-}
-
-// Monitoring retrieves the MonitoringV1Client
-func (c *Clientset) Monitoring() monitoringv1.MonitoringV1Interface {
-	return &fakemonitoringv1.FakeMonitoringV1{Fake: &c.Fake}
 }

@@ -14,7 +14,6 @@ spec:
   selector:
     matchLabels:
       role: scheduler
-      version: v1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,10 +21,13 @@ spec:
       maxUnavailable: 0
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "10251"
       labels:
         role: scheduler
         release: {{index .Version.Values "k8s-version"}}
-        version: v1
     spec:
       initContainers:
       - name: apiserver-running

@@ -13,7 +13,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: kube-state-metrics
+      role: kube-state-metrics
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,8 +21,13 @@ spec:
       maxUnavailable: 1
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
       labels:
-        name: kube-state-metrics
+        release: {{index .Version.Values "kube-state-metrics-version"}}
+        role: kube-state-metrics
     spec:
       containers:
       - name: kube-state-metrics
