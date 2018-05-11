@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/pmezard/go-difflib/difflib"
@@ -341,7 +341,6 @@ type Data struct {
 	Datacenter provider.DatacenterMeta
 	Name       string
 	Keys       []*kubermaticv1.UserSSHKey
-	Version    *apiv1.MasterVersion
 }
 
 func TestExecute(t *testing.T) {
@@ -420,7 +419,6 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Version: &apiv1.MasterVersion{},
 			},
 			ret: nil,
 		},
@@ -516,7 +514,6 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Version: &apiv1.MasterVersion{},
 			},
 			ret: nil,
 		},
@@ -601,7 +598,6 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Version: &apiv1.MasterVersion{},
 			},
 			ret: nil,
 		},
@@ -669,7 +665,6 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Version: &apiv1.MasterVersion{},
 			},
 			ret: nil,
 		},
@@ -742,7 +737,6 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Version: &apiv1.MasterVersion{},
 			},
 			ret: nil,
 		},
@@ -751,10 +745,9 @@ func TestExecute(t *testing.T) {
 	for fixture, test := range tests {
 		//TODO: Each test above needs to be executed for every supported version
 		t.Run(test.name, func(t *testing.T) {
-			tplPath := path.Join(masterResourcePath, "machine.yaml")
-			machine, err := resources.LoadMachineFile(tplPath, test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys, test.data.Version)
+			machine, err := machine2.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys)
 			if err != nil {
-				t.Fatalf("failed to load machine %q: %v", tplPath, err)
+				t.Fatalf("failed to generate machine: %v", err)
 			}
 
 			checkTestResult(t, fixture, machine)

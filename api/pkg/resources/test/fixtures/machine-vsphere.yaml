@@ -1,5 +1,3 @@
-apiVersion: machine.k8s.io/v1alpha1
-kind: Machine
 metadata:
   creationTimestamp: null
   name: machine-vsphere-1a2b3c4d5e-te5s7
@@ -17,7 +15,7 @@ spec:
       datastore: vsphere-datastore
       memoryMB: 2048
       password: vsphere-password
-      templateVMName: ubuntu-template
+      templateVMName: ""
       username: vsphere-username
       vsphereURL: http://vsphere.local
     operatingSystem: ubuntu
