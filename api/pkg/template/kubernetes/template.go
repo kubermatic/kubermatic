@@ -13,14 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-var overwriteRegistry = ""
-
-// SetOverwriteRegistry configures a registry at the package level which will
-// then be used by the overwriteRegistryOrDefault template func
-func SetOverwriteRegistry(registry string) {
-	overwriteRegistry = registry
-}
-
 // Template holds the actual cluster template
 type Template struct {
 	tpl *texttemplate.Template
@@ -72,12 +64,7 @@ func (t *Template) Execute(data interface{}, object v1.Object) (string, error) {
 }
 
 // FuncMap defines the available functions to kubermatic templates.
-var funcs = texttemplate.FuncMap{"overwriteRegistryOrDefault": func(defaultRegistry string) string {
-	if overwriteRegistry != "" {
-		return overwriteRegistry
-	}
-	return defaultRegistry
-}}
+var funcs = texttemplate.FuncMap{}
 
 // TxtFuncMap returns an aggregated template function map. Currently (custom functions + sprig)
 func TxtFuncMap() texttemplate.FuncMap {
