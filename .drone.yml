@@ -179,55 +179,187 @@ pipeline:
         include: [ master, release/* ]
         exclude: [ release/v1.* ]
 
-  deploy-dev:
-    group: deploy
-    image: kubeciio/kubectl:0.2
-    pull: true
-    kubectl: create
-    templates:
-      - config/installer/master-install-job.template.yaml
+  kubeconfig_dev:
+    image: kubeciio/helm
+    helm: upgrade --install
     secrets:
-      - source: kubeconfig_dev
-        target: kubeconfig
+    - source: [ kubeconfig_dev ]
+      target: kubeconfig
+    charts:
+    - name: prometheus-operator
+      path: config/monitoring/prometheus-operator/
+      namespace: monitoring
+    - name: node-exporter
+      path: config/monitoring/node-exporter/
+      namespace: monitoring
+    - name: kube-state-metrics
+      path: config/monitoring/kube-state-metrics/
+      namespace: monitoring
+    - name: grafana
+      path: config/monitoring/grafana/
+      namespace: monitoring
+    - name: alertmanager
+      path: config/monitoring/alertmanager/
+      namespace: monitoring
+    - name: prometheus
+      path: config/monitoring/prometheus/
+      namespace: monitoring
+    - name: nginx
+      path: config/nginx-ingress-controller/
+      namespace: ingress-nginx
+    - name: oauth
+      path: config/oauth/
+      namespace: oauth
+    - name: kubermatic
+      path: config/kubermatic/
+      namespace: kubermatic
+    - name: cert-manager
+      path: config/cert-manager/
+      namespace: cert-manager
+    - name: certs
+      path: config/certs/
+      namespace: default
+    - name: nodeport-proxy
+      path: config/nodeport-proxy/
+      namespace: nodeport-proxy
     when:
       branch: master
 
-  deploy-cloud-master-europe-west3-c-1:
-    group: deploy
-    image: kubeciio/kubectl:0.2
-    pull: true
-    kubectl: create
-    templates:
-      - config/installer/master-install-job.template.yaml
+  kubeconfig_cloud_europe-west3-c-1:
+    image: kubeciio/helm
+    helm: upgrade --install
     secrets:
-      - source: kubeconfig_cloud_europe-west3-c-1
-        target: kubeconfig
+    - source: [ kubeconfig_cloud_europe-west3-c-1 ]
+      target: kubeconfig
+    charts:
+    - name: prometheus-operator
+      path: config/monitoring/prometheus-operator/
+      namespace: monitoring
+    - name: node-exporter
+      path: config/monitoring/node-exporter/
+      namespace: monitoring
+    - name: kube-state-metrics
+      path: config/monitoring/kube-state-metrics/
+      namespace: monitoring
+    - name: grafana
+      path: config/monitoring/grafana/
+      namespace: monitoring
+    - name: alertmanager
+      path: config/monitoring/alertmanager/
+      namespace: monitoring
+    - name: prometheus
+      path: config/monitoring/prometheus/
+      namespace: monitoring
+    - name: nginx
+      path: config/nginx-ingress-controller/
+      namespace: ingress-nginx
+    - name: oauth
+      path: config/oauth/
+      namespace: oauth
+    - name: kubermatic
+      path: config/kubermatic/
+      namespace: kubermatic
+    - name: cert-manager
+      path: config/cert-manager/
+      namespace: cert-manager
+    - name: certs
+      path: config/certs/
+      namespace: default
+    - name: nodeport-proxy
+      path: config/nodeport-proxy/
+      namespace: nodeport-proxy
     when:
       branch: master
 
   deploy-cloud-seed-us-central1-c-1:
-    group: deploy
-    image: kubeciio/kubectl:0.2
-    pull: true
-    kubectl: create
-    templates:
-      - config/installer/seed-install-job.template.yaml
+    image: kubeciio/helm
+    helm: upgrade --install
     secrets:
-      - source: kubeconfig_cloud_us-central1-c-1
-        target: kubeconfig
+    - source: [ deploy-cloud-seed-us-central1-c-1 ]
+      target: kubeconfig
+    charts:
+    - name: prometheus-operator
+      path: config/monitoring/prometheus-operator/
+      namespace: monitoring
+    - name: node-exporter
+      path: config/monitoring/node-exporter/
+      namespace: monitoring
+    - name: kube-state-metrics
+      path: config/monitoring/kube-state-metrics/
+      namespace: monitoring
+    - name: grafana
+      path: config/monitoring/grafana/
+      namespace: monitoring
+    - name: alertmanager
+      path: config/monitoring/alertmanager/
+      namespace: monitoring
+    - name: prometheus
+      path: config/monitoring/prometheus/
+      namespace: monitoring
+    - name: nginx
+      path: config/nginx-ingress-controller/
+      namespace: ingress-nginx
+    - name: oauth
+      path: config/oauth/
+      namespace: oauth
+    - name: kubermatic
+      path: config/kubermatic/
+      namespace: kubermatic
+    - name: cert-manager
+      path: config/cert-manager/
+      namespace: cert-manager
+    - name: certs
+      path: config/certs/
+      namespace: default
+    - name: nodeport-proxy
+      path: config/nodeport-proxy/
+      namespace: nodeport-proxy
     when:
       branch: master
 
   deploy-cloud-seed-asia-east1-a-1:
-    group: deploy
-    image: kubeciio/kubectl:0.2
-    pull: true
-    kubectl: create
-    templates:
-      - config/installer/seed-install-job.template.yaml
+    image: kubeciio/helm
+    helm: upgrade --install
     secrets:
-      - source: kubeconfig_cloud_asia-east1-a-1
-        target: kubeconfig
+    - source: [ deploy-cloud-seed-asia-east1-a-1 ]
+      target: kubeconfig
+    charts:
+    - name: prometheus-operator
+      path: config/monitoring/prometheus-operator/
+      namespace: monitoring
+    - name: node-exporter
+      path: config/monitoring/node-exporter/
+      namespace: monitoring
+    - name: kube-state-metrics
+      path: config/monitoring/kube-state-metrics/
+      namespace: monitoring
+    - name: grafana
+      path: config/monitoring/grafana/
+      namespace: monitoring
+    - name: alertmanager
+      path: config/monitoring/alertmanager/
+      namespace: monitoring
+    - name: prometheus
+      path: config/monitoring/prometheus/
+      namespace: monitoring
+    - name: nginx
+      path: config/nginx-ingress-controller/
+      namespace: ingress-nginx
+    - name: oauth
+      path: config/oauth/
+      namespace: oauth
+    - name: kubermatic
+      path: config/kubermatic/
+      namespace: kubermatic
+    - name: cert-manager
+      path: config/cert-manager/
+      namespace: cert-manager
+    - name: certs
+      path: config/certs/
+      namespace: default
+    - name: nodeport-proxy
+      path: config/nodeport-proxy/
+      namespace: nodeport-proxy
     when:
       branch: master
 
