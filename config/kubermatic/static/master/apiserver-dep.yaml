@@ -38,7 +38,7 @@ spec:
     spec:
       initContainers:
       - name: etcd-running
-        image:  {{ or .OverwriteRegistry "quay.io/coreos" }}/etcd:v3.2.7
+        image:  {{ default .OverwriteRegistry "quay.io/coreos" }}/etcd:v3.2.7
         command:
         - /bin/sh
         - -ec
@@ -92,7 +92,7 @@ spec:
           mountPath: /etc/kubernetes/ca-cert
           readOnly: true
       - name: apiserver
-        image: {{ or .OverwriteRegistry "gcr.io/google_containers" }}/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: {{ default .OverwriteRegistry "gcr.io/google_containers" }}/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "apiserver",
             "--advertise-address={{ .Cluster.Address.IP }}",
             "--secure-port={{ .GetApiserverExternalNodePort }}",

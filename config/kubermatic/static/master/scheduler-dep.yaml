@@ -38,7 +38,7 @@ spec:
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
       - name: scheduler
-        image: {{ or .OverwriteRegistry "gcr.io/google_containers" }}/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: {{ default .OverwriteRegistry "gcr.io/google_containers" }}/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "scheduler",
             "--master=http://apiserver:8080",
             "--v=4"

@@ -30,7 +30,7 @@ spec:
       serviceAccountName: etcd-operator
       containers:
       - name: etcd-operator
-        image: {{ or .OverwriteRegistry "quay.io/coreos" }}/etcd-operator:{{index .Version.Values "etcd-operator-version"}}
+        image: {{ default .OverwriteRegistry "quay.io/coreos" }}/etcd-operator:{{index .Version.Values "etcd-operator-version"}}
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:

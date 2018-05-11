@@ -38,7 +38,7 @@ spec:
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
-      - image: {{ or .OverwriteRegistry "kubermatic" }}/machine-controller:{{index .Version.Values "machine-controller-version"}}
+      - image: {{ default .OverwriteRegistry "kubermatic" }}/machine-controller:{{index .Version.Values "machine-controller-version"}}
         name: machine-controller
         command:
           - /usr/local/bin/machine-controller
