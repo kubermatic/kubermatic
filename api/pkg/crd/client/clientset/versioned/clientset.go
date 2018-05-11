@@ -4,7 +4,6 @@ import (
 	glog "github.com/golang/glog"
 	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	monitoringv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/prometheus/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -18,9 +17,6 @@ type Interface interface {
 	KubermaticV1() kubermaticv1.KubermaticV1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Kubermatic() kubermaticv1.KubermaticV1Interface
-	MonitoringV1() monitoringv1.MonitoringV1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Monitoring() monitoringv1.MonitoringV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -29,7 +25,6 @@ type Clientset struct {
 	*discovery.DiscoveryClient
 	etcdV1beta2  *etcdv1beta2.EtcdV1beta2Client
 	kubermaticV1 *kubermaticv1.KubermaticV1Client
-	monitoringV1 *monitoringv1.MonitoringV1Client
 }
 
 // EtcdV1beta2 retrieves the EtcdV1beta2Client
@@ -52,17 +47,6 @@ func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
 // Please explicitly pick a version.
 func (c *Clientset) Kubermatic() kubermaticv1.KubermaticV1Interface {
 	return c.kubermaticV1
-}
-
-// MonitoringV1 retrieves the MonitoringV1Client
-func (c *Clientset) MonitoringV1() monitoringv1.MonitoringV1Interface {
-	return c.monitoringV1
-}
-
-// Deprecated: Monitoring retrieves the default version of MonitoringClient.
-// Please explicitly pick a version.
-func (c *Clientset) Monitoring() monitoringv1.MonitoringV1Interface {
-	return c.monitoringV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -89,10 +73,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
-	cs.monitoringV1, err = monitoringv1.NewForConfig(&configShallowCopy)
-	if err != nil {
-		return nil, err
-	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -108,7 +88,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.etcdV1beta2 = etcdv1beta2.NewForConfigOrDie(c)
 	cs.kubermaticV1 = kubermaticv1.NewForConfigOrDie(c)
-	cs.monitoringV1 = monitoringv1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -119,7 +98,6 @@ func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.etcdV1beta2 = etcdv1beta2.New(c)
 	cs.kubermaticV1 = kubermaticv1.New(c)
-	cs.monitoringV1 = monitoringv1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

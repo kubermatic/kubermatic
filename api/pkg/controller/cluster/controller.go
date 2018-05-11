@@ -12,10 +12,8 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	prometheusv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/prometheus/v1"
 	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
@@ -85,12 +83,11 @@ type Controller struct {
 	ConfigMapLister          corev1lister.ConfigMapLister
 	ServiceAccountLister     corev1lister.ServiceAccountLister
 	DeploymentLister         appsv1lister.DeploymentLister
+	StatefulSetLister        appsv1lister.StatefulSetLister
 	IngressLister            extensionsv1beta1lister.IngressLister
 	RoleLister               rbacb1lister.RoleLister
 	RoleBindingLister        rbacb1lister.RoleBindingLister
 	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
-	PrometheusLister         prometheusv1lister.PrometheusLister
-	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -125,12 +122,11 @@ func NewController(
 	ConfigMapInformer corev1informers.ConfigMapInformer,
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
 	DeploymentInformer appsv1informer.DeploymentInformer,
+	StatefulSetInformer appsv1informer.StatefulSetInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
 	RoleInformer rbacv1informer.RoleInformer,
 	RoleBindingInformer rbacv1informer.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-	PrometheusInformer prometheusv1informers.PrometheusInformer,
-	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
 ) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
@@ -237,16 +233,6 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	PrometheusInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
-	ServiceMonitorInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
 
 	cc.ClusterLister = ClusterInformer.Lister()
 	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
@@ -257,12 +243,11 @@ func NewController(
 	cc.ConfigMapLister = ConfigMapInformer.Lister()
 	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
 	cc.DeploymentLister = DeploymentInformer.Lister()
+	cc.StatefulSetLister = StatefulSetInformer.Lister()
 	cc.IngressLister = IngressInformer.Lister()
 	cc.RoleLister = RoleInformer.Lister()
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
-	cc.PrometheusLister = PrometheusInformer.Lister()
-	cc.ServiceMonitorLister = ServiceMonitorInformer.Lister()
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)

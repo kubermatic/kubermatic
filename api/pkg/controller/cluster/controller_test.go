@@ -58,12 +58,11 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		kubeInformerFactory.Core().V1().ConfigMaps(),
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
 		kubeInformerFactory.Apps().V1().Deployments(),
+		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		kubeInformerFactory.Rbac().V1().Roles(),
 		kubeInformerFactory.Rbac().V1().RoleBindings(),
 		kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
-		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
 	)
 	if err != nil {
 		log.Fatal(err)

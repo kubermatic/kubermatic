@@ -14,7 +14,6 @@ spec:
   selector:
     matchLabels:
       role: apiserver
-      version: v1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,10 +22,13 @@ spec:
   minReadySeconds: 10
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
       labels:
         release: {{index .Version.Values "k8s-version"}}
         role: apiserver
-        version: v1
         tokens-secret-revision: "{{ .SecretRevision "tokens" }}"
         apiserver-tls-secret-revision: "{{ .SecretRevision "apiserver-tls" }}"
         kubelet-client-certificates-secret-revision: "{{ .SecretRevision "kubelet-client-certificates" }}"
@@ -50,7 +52,7 @@ spec:
           "--proto", "tcp",
           "--dev", "tun",
           "--auth-nocache",
-          "--remote", "openvpn-server", "1194",
+          "--remote", "openvpn", "1194",
           "--nobind",
           "--connect-timeout", "5",
           "--connect-retry", "1",
