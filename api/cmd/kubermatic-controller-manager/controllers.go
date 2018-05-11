@@ -107,7 +107,11 @@ func startClusterController(ctrlCtx controllerContext) error {
 }
 
 func startRBACGeneratorController(ctrlCtx controllerContext) error {
-	ctrl, err := rbacController.New()
+	metrics := NewRBACGeneratorControllerMetrics()
+	rbacMetrics := rbacController.Metrics{
+		Workers: metrics.Workers,
+	}
+	ctrl, err := rbacController.New(rbacMetrics)
 	if err != nil {
 		return err
 	}
