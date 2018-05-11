@@ -7,6 +7,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	rbacController "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -19,7 +20,8 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]func(controllerContext) error{
-	"cluster": startClusterController,
+	"cluster":       startClusterController,
+	"RBACGenerator": startRBACGeneratorController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -101,6 +103,14 @@ func startClusterController(ctrlCtx controllerContext) error {
 	}
 
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+	return nil
+}
 
+func startRBACGeneratorController(ctrlCtx controllerContext) error {
+	ctrl, err := rbacController.New()
+	if err != nil {
+		return err
+	}
+	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 	return nil
 }
