@@ -8,7 +8,7 @@ spec:
   jobLabel: prom-job
   selector:
     matchLabels:
-      app: cluster-controller
+      app: controller-manager
   namespaceSelector:
     matchNames:
     - kubermatic
