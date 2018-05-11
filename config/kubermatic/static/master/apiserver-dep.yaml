@@ -52,7 +52,7 @@ spec:
           "--proto", "tcp",
           "--dev", "tun",
           "--auth-nocache",
-          "--remote", "openvpn", "1194",
+          "--remote", "openvpn-server", "1194",
           "--nobind",
           "--connect-timeout", "5",
           "--connect-retry", "1",
