@@ -43,6 +43,8 @@ type controllerRunOptions struct {
 	versionsFile    string
 	updatesFile     string
 	workerCount     int
+
+	overwriteRegistry string
 }
 
 type controllerContext struct {
@@ -71,6 +73,7 @@ func main() {
 	flag.StringVar(&runOp.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&runOp.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
+	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.Parse()
 
 	if runOp.masterResources == "" {

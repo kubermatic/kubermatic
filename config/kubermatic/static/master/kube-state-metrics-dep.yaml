@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: kube-state-metrics
-        image: metalmatze/kube-state-metrics:{{index .Version.Values "kube-state-metrics-version"}}
+        image: {{ default .OverwriteRegistry "metalmatze" }}/kube-state-metrics:{{index .Version.Values "kube-state-metrics-version"}}
         args:
           - "--apiserver=http://apiserver:8080"
         ports:
@@ -44,7 +44,7 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 5
       - name: addon-resizer
-        image: k8s.gcr.io/addon-resizer:1.7
+        image: {{ default .OverwriteRegistry "k8s.gcr.io" }}/addon-resizer:1.7
         resources:
           limits:
             cpu: 100m

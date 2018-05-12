@@ -123,12 +123,13 @@ const (
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	Cluster         *kubermaticv1.Cluster
-	Version         *apiv1.MasterVersion
-	DC              *provider.DatacenterMeta
-	SecretLister    corev1lister.SecretLister
-	ConfigMapLister corev1lister.ConfigMapLister
-	ServiceLister   corev1lister.ServiceLister
+	Cluster           *kubermaticv1.Cluster
+	Version           *apiv1.MasterVersion
+	DC                *provider.DatacenterMeta
+	SecretLister      corev1lister.SecretLister
+	ConfigMapLister   corev1lister.ConfigMapLister
+	ServiceLister     corev1lister.ServiceLister
+	OverwriteRegistry string
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
@@ -159,14 +160,16 @@ func NewTemplateData(
 	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
-	serviceLister corev1lister.ServiceLister) *TemplateData {
+	serviceLister corev1lister.ServiceLister,
+	overwriteRegistry string) *TemplateData {
 	return &TemplateData{
-		Cluster:         cluster,
-		DC:              dc,
-		Version:         version,
-		ConfigMapLister: configMapLister,
-		SecretLister:    secretLister,
-		ServiceLister:   serviceLister,
+		Cluster:           cluster,
+		DC:                dc,
+		Version:           version,
+		ConfigMapLister:   configMapLister,
+		SecretLister:      secretLister,
+		ServiceLister:     serviceLister,
+		OverwriteRegistry: overwriteRegistry,
 	}
 }
 

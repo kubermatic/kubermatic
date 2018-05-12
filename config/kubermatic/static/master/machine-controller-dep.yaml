@@ -32,13 +32,13 @@ spec:
       terminationGracePeriodSeconds: 60
       initContainers:
       - name: apiserver-running
-        image: busybox
+        image: {{ if .OverwriteRegistry }}{{ .OverwriteRegistry }}/{{ end }}busybox
         command:
         - /bin/sh
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
-      - image: kubermatic/machine-controller:{{index .Version.Values "machine-controller-version"}}
+      - image: {{ default .OverwriteRegistry "kubermatic" }}/machine-controller:{{index .Version.Values "machine-controller-version"}}
         name: machine-controller
         command:
           - /usr/local/bin/machine-controller
