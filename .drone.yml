@@ -75,7 +75,7 @@ pipeline:
     tags:
     - ${DRONE_COMMIT}
   5-kubermatic-installer-docker-always:
-    context: api
+    context: config
     dockerfile: config/Dockerfile
     group: push-always
     image: plugins/docker
@@ -101,7 +101,7 @@ pipeline:
     when:
       branch: master
   6-kubermatic-installer-docker-master:
-    context: api
+    context: config
     dockerfile: config/Dockerfile
     group: push-master
     image: plugins/docker
@@ -131,7 +131,7 @@ pipeline:
       event:
       - tag
   7-kubermatic-installer-docker-release:
-    context: api
+    context: config
     dockerfile: config/Dockerfile
     group: push-release
     image: plugins/docker

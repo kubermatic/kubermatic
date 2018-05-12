@@ -43,7 +43,7 @@ local drone = import 'drone/drone.libsonnet';
       secrets=dockerSecrets,
       dockerfile='config/Dockerfile',
       tags=['${DRONE_COMMIT}'],
-      context='api',
+      context='config',
       ),
 
     // Push Master
@@ -63,7 +63,7 @@ local drone = import 'drone/drone.libsonnet';
       secrets=dockerSecrets,
       dockerfile='config/Dockerfile',
       tags=['master'],
-      context='api',
+      context='config',
       ) + whenBranchMaster,
 
     // Push Release
@@ -83,7 +83,7 @@ local drone = import 'drone/drone.libsonnet';
         secrets=dockerSecrets,
         dockerfile='config/Dockerfile',
         tags=['${DRONE_TAG}', 'latest'],
-        context='api',
+        context='config',
       ) + whenEventTag,
 
     // Deployments
