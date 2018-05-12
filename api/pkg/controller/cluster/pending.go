@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 
@@ -544,8 +545,8 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	clusterRoleBindings := map[string]func(data *resources.TemplateData, app, masterResourcesPath string) (*rbacv1.ClusterRoleBinding, string, error){
-		resources.EtcdOperatorClusterRoleBindingName: resources.LoadClusterRoleBindingFile,
+	creators := []resources.ClusterRoleBindingCreator{
+		etcdoperator.ClusterRoleBinding,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -553,33 +554,35 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, gen := range clusterRoleBindings {
-		generatedClusterRoleBinding, lastApplied, err := gen(data, name, cc.masterResourcesPath)
+	for _, create := range creators {
+		var existing *rbacv1.ClusterRoleBinding
+		crb, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to generate ClusterRoleBinding %s: %v", name, err)
+			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
-		generatedClusterRoleBinding.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedClusterRoleBinding.Name = fmt.Sprintf("cluster-%s-etcd-operator", c.Name)
 
-		clusterRoleBinding, err := cc.ClusterRoleBindingLister.Get(generatedClusterRoleBinding.Name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Create(generatedClusterRoleBinding); err != nil {
-					return fmt.Errorf("failed to create clusterRoleBinding for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if existing, err = cc.ClusterRoleBindingLister.Get(crb.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Create(crb); err != nil {
+				return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
+			}
+			continue
 		}
-		if clusterRoleBinding.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(clusterRoleBinding, generatedClusterRoleBinding)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Patch(generatedClusterRoleBinding.Name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch clusterRoleBinding for %s: %v", name, err)
-			}
+
+		crb, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
+		}
+
+		if diff := deep.Equal(crb, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Update(crb); err != nil {
+			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
 	}
 
