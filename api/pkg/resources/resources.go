@@ -23,3 +23,6 @@ type RoleCreator = func(data *TemplateData, existing *rbacv1.Role) (*rbacv1.Role
 
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
 type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
+
+// ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
+type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)

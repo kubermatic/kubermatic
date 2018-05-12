@@ -318,18 +318,6 @@ func TestLoadFiles(t *testing.T) {
 
 					checkTestResult(t, fixture, res)
 				}
-
-				clusterRoleBindings := map[string]string{
-					"etcd-operator": fmt.Sprintf("cluster-role-binding-%s-%s-etcd-operator", prov, version.ID),
-				}
-				for name, fixture := range clusterRoleBindings {
-					res, _, err := resources.LoadClusterRoleBindingFile(data, name, masterResourcePath)
-					if err != nil {
-						t.Fatalf("failed to load cluster role binding %q: %v", name, err)
-					}
-
-					checkTestResult(t, fixture, res)
-				}
 			})
 		}
 	}
