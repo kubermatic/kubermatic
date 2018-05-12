@@ -1,407 +1,381 @@
-workspace:
-  base: /go
-  path: src/github.com/kubermatic/kubermatic
-
 pipeline:
-  dep:
+  0-dep:
+    commands:
+    - cd api
+    - dep status -v
     image: metalmatze/dep:0.4.1
     pull: true
+  1-gofmt:
     commands:
-      - cd api
-      - dep status -v
-
-  gofmt:
-    group: lint
+    - cd api
+    - make gofmt
     image: golang:1.9
+    pull: true
+  2-verify-codegen:
     commands:
-      - cd api
-      - make gofmt
-
-  license-validation:
+    - cd api
+    - ./hack/verify-codegen.sh
+    image: golang:1.9
+    pull: true
+  3-license-validation:
+    commands:
+    - cd api
+    - wwhrd check -f ../allowed_licensed.yaml
     group: lint
     image: metalmatze/wwhrd:1.9
     pull: true
+  3-lint:
     commands:
-      - cd api
-      - wwhrd check -f ../allowed_licensed.yaml
-
-  lint:
+    - cd api
+    - make lint
     group: lint
-    image: metalmatze/gometalinter:1.9
+    image: metalmatze/gometalinter:1,9
     pull: true
+  3-verify-swagger-spec:
     commands:
-      - cd api
-      - make lint
-
-  verify-codegen:
-    group: codegen
-    image: golang:1.9
-    commands:
-      - cd api
-      - ./hack/verify-codegen.sh
-
-  verify-swagger-spec:
+    - cd api
+    - ./hack/verify-swagger.sh
     group: lint
     image: golang:1.9
+    pull: true
+  4-build:
     commands:
-      - cd api
-      - ./hack/verify-swagger.sh
-
-  test:
+    - cd api
+    - CGO_ENABLED=0 make build
     group: build
     image: golang:1.9
+    pull: true
+  4-test:
     commands:
-      - cd api
-      - make test
-
-  build:
+    - cd api
+    - make test
     group: build
     image: golang:1.9
+    pull: true
+  4-write-version:
     commands:
-      - cd api
-      - CGO_ENABLED=0 make build
-
-  write-version:
+    - cd config
+    - sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+    - sed -i "s/{CONTROLLER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+    - sed -i "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
+    - cat versions-values.yaml
     group: build
     image: ubuntu
-    commands:
-      - cd config
-      - sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-      - sed -i "s/{CONTROLLER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-      - sed -i "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-      - cat versions-values.yaml
-
-  kubermatic-docker-always:
+    pull: true
+  5-kubermatic-docker-always:
+    context: api
+    dockerfile: api/Dockerfile
     group: push-always
-    image: plugins/docker:17
+    image: plugins/docker
     pull: true
     repo: kubermatic/api
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - ${DRONE_COMMIT}
-    dockerfile: api/Dockerfile
+    - ${DRONE_COMMIT}
+  5-kubermatic-installer-docker-always:
     context: api
-    secrets: [ docker_username, docker_password ]
-
-  kubermatic-installer-docker-always:
+    dockerfile: config/Dockerfile
     group: push-always
-    image: plugins/docker:17
+    image: plugins/docker
     pull: true
     repo: kubermatic/installer
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - ${DRONE_COMMIT}
-    dockerfile: config/Dockerfile
-    context: config
-    secrets: [ docker_username, docker_password ]
-
-  kubermatic-docker-master:
+    - ${DRONE_COMMIT}
+  6-kubermatic-docker-master:
+    context: api
+    dockerfile: api/Dockerfile
     group: push-master
-    image: plugins/docker:17
+    image: plugins/docker
     pull: true
     repo: kubermatic/api
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - master
-    dockerfile: api/Dockerfile
-    context: api
-    secrets: [ docker_username, docker_password ]
+    - master
     when:
       branch: master
-
-  kubermatic-installer-docker-master:
+  6-kubermatic-installer-docker-master:
+    context: api
+    dockerfile: config/Dockerfile
     group: push-master
-    image: plugins/docker:17
+    image: plugins/docker
     pull: true
     repo: kubermatic/installer
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - master
-    dockerfile: config/Dockerfile
-    context: config
-    secrets: [ docker_username, docker_password ]
+    - master
     when:
       branch: master
-
-  kubermatic-docker-release:
-    group: push-release
-    image: plugins/docker:17
+  7-kubermatic-docker-release:
+    context: api
+    dockerfile: api/Dockerfile
+    group: push-master
+    image: plugins/docker
     pull: true
     repo: kubermatic/api
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - ${DRONE_TAG}
-      - latest
-    dockerfile: api/Dockerfile
-    context: api
-    secrets: [ docker_username, docker_password ]
+    - ${DRONE_TAG}
+    - latest
     when:
-      event: [tag]
-
-  kubermatic-installer-docker-release:
+      event:
+      - tag
+  7-kubermatic-installer-docker-release:
+    context: api
+    dockerfile: config/Dockerfile
     group: push-release
-    image: plugins/docker:17
+    image: plugins/docker
     pull: true
     repo: kubermatic/installer
-    password: ${DOCKER_PASSWORD}
-    username: ${DOCKER_USERNAME}
+    secrets:
+    - docker_username
+    - docker_password
     tags:
-      - ${DRONE_TAG}
-      - latest
-    dockerfile: config/Dockerfile
-    context: config
-    secrets: [ docker_username, docker_password ]
+    - ${DRONE_TAG}
+    - latest
     when:
-      event: [tag]
-
-  sync-charts:
-    image: alpine:3.7
+      event:
+      - tag
+  8-deploy-dev:
+    charts:
+    - name: prometheus-operator
+      namespace: monitoring
+      path: config/monitoring/prometheus-operator/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    helm: upgrade --install
+    image: kubeciio/helm
     pull: true
-    commands:
-      - apk add --no-cache -U git
-      - git config --global user.email "dev@loodse.com"
-      - git config --global user.name "drone"
-      - export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
-      - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts
-      - cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller config/nodeport-proxy config/oauth $INSTALLER_DIR/charts
-      - cd $INSTALLER_DIR
-      - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"
-      - git tag ${DRONE_TAG}
-      - git push origin master --tags
-    when:
-      event: [tag]
-      branch:
-        include: [ master, release/* ]
-        exclude: [ release/v1.* ]
-
-  kubeconfig_dev:
-    image: kubeciio/helm
-    helm: upgrade --install
     secrets:
-      - source: [ kubeconfig_dev ]
-        target: kubeconfig
-    charts:
-      - name: prometheus-operator
-        path: config/monitoring/prometheus-operator/
-        namespace: monitoring
-      - name: node-exporter
-        path: config/monitoring/node-exporter/
-        namespace: monitoring
-      - name: kube-state-metrics
-        path: config/monitoring/kube-state-metrics/
-        namespace: monitoring
-      - name: grafana
-        path: config/monitoring/grafana/
-        namespace: monitoring
-      - name: alertmanager
-        path: config/monitoring/alertmanager/
-        namespace: monitoring
-      - name: prometheus
-        path: config/monitoring/prometheus/
-        namespace: monitoring
-      - name: nginx
-        path: config/nginx-ingress-controller/
-        namespace: ingress-nginx
-      - name: oauth
-        path: config/oauth/
-        namespace: oauth
-      - name: kubermatic
-        path: config/kubermatic/
-        namespace: kubermatic
-      - name: cert-manager
-        path: config/cert-manager/
-        namespace: cert-manager
-      - name: certs
-        path: config/certs/
-        namespace: default
-      - name: nodeport-proxy
-        path: config/nodeport-proxy/
-        namespace: nodeport-proxy
+    - source: kubeconfig_dev
+      target: kubeconfig
     when:
       branch: master
-
-  kubeconfig_cloud_europe-west3-c-1:
-    image: kubeciio/helm
-    helm: upgrade --install
-    secrets:
-      - source: [ kubeconfig_cloud_europe-west3-c-1 ]
-        target: kubeconfig
+  9-deploy-cloud-asia:
     charts:
-      - name: prometheus-operator
-        path: config/monitoring/prometheus-operator/
-        namespace: monitoring
-      - name: node-exporter
-        path: config/monitoring/node-exporter/
-        namespace: monitoring
-      - name: kube-state-metrics
-        path: config/monitoring/kube-state-metrics/
-        namespace: monitoring
-      - name: grafana
-        path: config/monitoring/grafana/
-        namespace: monitoring
-      - name: alertmanager
-        path: config/monitoring/alertmanager/
-        namespace: monitoring
-      - name: prometheus
-        path: config/monitoring/prometheus/
-        namespace: monitoring
-      - name: nginx
-        path: config/nginx-ingress-controller/
-        namespace: ingress-nginx
-      - name: oauth
-        path: config/oauth/
-        namespace: oauth
-      - name: kubermatic
-        path: config/kubermatic/
-        namespace: kubermatic
-      - name: cert-manager
-        path: config/cert-manager/
-        namespace: cert-manager
-      - name: certs
-        path: config/certs/
-        namespace: default
-      - name: nodeport-proxy
-        path: config/nodeport-proxy/
-        namespace: nodeport-proxy
-    when:
-      branch: master
-
-  deploy-cloud-seed-us-central1-c-1:
-    image: kubeciio/helm
+    - name: prometheus-operator
+      namespace: monitoring
+      path: config/monitoring/prometheus-operator/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    group: deploy-cloud
     helm: upgrade --install
-    secrets:
-      - source: [ deploy-cloud-seed-us-central1-c-1 ]
-        target: kubeconfig
-    charts:
-      - name: prometheus-operator
-        path: config/monitoring/prometheus-operator/
-        namespace: monitoring
-      - name: node-exporter
-        path: config/monitoring/node-exporter/
-        namespace: monitoring
-      - name: kube-state-metrics
-        path: config/monitoring/kube-state-metrics/
-        namespace: monitoring
-      - name: grafana
-        path: config/monitoring/grafana/
-        namespace: monitoring
-      - name: alertmanager
-        path: config/monitoring/alertmanager/
-        namespace: monitoring
-      - name: prometheus
-        path: config/monitoring/prometheus/
-        namespace: monitoring
-      - name: nginx
-        path: config/nginx-ingress-controller/
-        namespace: ingress-nginx
-      - name: oauth
-        path: config/oauth/
-        namespace: oauth
-      - name: kubermatic
-        path: config/kubermatic/
-        namespace: kubermatic
-      - name: cert-manager
-        path: config/cert-manager/
-        namespace: cert-manager
-      - name: certs
-        path: config/certs/
-        namespace: default
-      - name: nodeport-proxy
-        path: config/nodeport-proxy/
-        namespace: nodeport-proxy
-    when:
-      branch: master
-
-  deploy-cloud-seed-asia-east1-a-1:
     image: kubeciio/helm
-    helm: upgrade --install
-    secrets:
-      - source: [ deploy-cloud-seed-asia-east1-a-1 ]
-        target: kubeconfig
-    charts:
-      - name: prometheus-operator
-        path: config/monitoring/prometheus-operator/
-        namespace: monitoring
-      - name: node-exporter
-        path: config/monitoring/node-exporter/
-        namespace: monitoring
-      - name: kube-state-metrics
-        path: config/monitoring/kube-state-metrics/
-        namespace: monitoring
-      - name: grafana
-        path: config/monitoring/grafana/
-        namespace: monitoring
-      - name: alertmanager
-        path: config/monitoring/alertmanager/
-        namespace: monitoring
-      - name: prometheus
-        path: config/monitoring/prometheus/
-        namespace: monitoring
-      - name: nginx
-        path: config/nginx-ingress-controller/
-        namespace: ingress-nginx
-      - name: oauth
-        path: config/oauth/
-        namespace: oauth
-      - name: kubermatic
-        path: config/kubermatic/
-        namespace: kubermatic
-      - name: cert-manager
-        path: config/cert-manager/
-        namespace: cert-manager
-      - name: certs
-        path: config/certs/
-        namespace: default
-      - name: nodeport-proxy
-        path: config/nodeport-proxy/
-        namespace: nodeport-proxy
-    when:
-      branch: master
-
-  slack-failure:
-    group: notify
-    image: kubermaticbot/drone-slack
     pull: true
-    webhook: https://hooks.slack.com/services/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
-    username: drone
-    icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
-    recipient: ${DRONE_COMMIT_AUTHOR}
-    image_url: https://media.giphy.com/media/m6tmCnGCNvTby/giphy-downsized.gif
-    template: >
-        Your build failed! Shame. Shame. Shame.
-        ${DRONE_BUILD_LINK}
-    author_recipient_mapping:
-      - alvaroaleman=alvaro
-      - guusvw=guus
-      - j3ank=eugenia
-      - kgroschoff=kristin
-      - metalmatze=matthias
-      - mrIncompetent=henrik
-      - p0lyn0mial=lukasz
-      - scheeles=sebastian
-      - kdomanski=kamil
-      - kron4eg=artiom.diomin
-      - thz=thz
-      - cbrgm=Chris
-      - toschneck=Tobi
+    secrets:
+    - source: kubeconfig_cloud_asia-east1-a-1
+      target: kubeconfig
     when:
-      status: [ failure ]
-
-  slack-deploy:
-    group: notify
-    image: kubermaticbot/drone-slack
+      branch: master
+  9-deploy-cloud-europe:
+    charts:
+    - name: prometheus-operator
+      namespace: monitoring
+      path: config/monitoring/prometheus-operator/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    group: deploy-cloud
+    helm: upgrade --install
+    image: kubeciio/helm
     pull: true
-    webhook: https://hooks.slack.com/services/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
-    username: drone
-    icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
+    secrets:
+    - source: kubeconfig_cloud_europe-west3-c-1
+      target: kubeconfig
+    when:
+      branch: master
+  9-deploy-cloud-us:
+    charts:
+    - name: prometheus-operator
+      namespace: monitoring
+      path: config/monitoring/prometheus-operator/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    group: deploy-cloud
+    helm: upgrade --install
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_cloud_us-central1-c-1
+      target: kubeconfig
+    when:
+      branch: master
+  10-slack:
     channel: dev
-    template: >
-        ${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud. :heart:
+    group: slack
+    icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
+    image: kubermaticbot/drone-slack
+    pull: true
+    template: '${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud.
+      :heart:'
+    username: drone
+    webhook: https://hooks.slack.com/services/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
     when:
-      status: [ success ]
       branch: master
+      status:
+      - success
+  10-slack-failure:
+    author_recipient_mapping:
+    - alvaroaleman=alvaro
+    - guusvw=guus
+    - j3ank=eugenia
+    - kgroschoff=kristin
+    - metalmatze=matthias
+    - mrIncompetent=henrik
+    - p0lyn0mial=lukasz
+    - scheeles=sebastian
+    - kdomanski=kamil
+    - kron4eg=artiom.diomin
+    - thz=thz
+    - cbrgm=Chris
+    - toschneck=Tobi
+    group: slack
+    icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
+    image: kubermaticbot/drone-slack
+    image_url: https://media.giphy.com/media/m6tmCnGCNvTby/giphy-downsized.gif
+    pull: true
+    recipient: ${DRONE_COMMIT_AUTHOR}
+    template: |-
+      Your build failed! Shame. Shame. Shame.
+            ${DRONE_BUILD_LINK}
+    username: drone
+    webhook: https://hooks.slack.com/services/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
+    when:
+      status:
+      - failure
+workspace:
+  base: /go
+  path: src/github.com/kubermatic/kubermatic
