@@ -175,6 +175,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.SecretLister,
 		cc.ConfigMapLister,
 		cc.ServiceLister,
+		cc.OverwriteRegistry,
 	), nil
 }
 

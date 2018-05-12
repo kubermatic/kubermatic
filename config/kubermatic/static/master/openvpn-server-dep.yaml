@@ -21,7 +21,7 @@ spec:
     spec:
       initContainers:
       - name: openssl-dhparam
-        image: kubermatic/openvpn:v0.2
+        image: {{ default .OverwriteRegistry "kubermatic" }}/openvpn:v0.2
         command: ["/usr/bin/openssl"]
         args: [
           "dhparam",
@@ -33,7 +33,7 @@ spec:
           name: diffie-hellman-params
       containers:
       - name: openvpn-server
-        image: kubermatic/openvpn:v0.2
+        image: {{ default .OverwriteRegistry "kubermatic" }}/openvpn:v0.2
         command: ["/usr/sbin/openvpn"]
         args: [
           "--proto", "tcp",
