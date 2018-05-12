@@ -1,5 +1,3 @@
-apiVersion: machine.k8s.io/v1alpha1
-kind: Machine
 metadata:
   creationTimestamp: null
   name: machine-awscluster-1a2b3c4d5e-te5s7
@@ -10,6 +8,7 @@ spec:
   providerConfig:
     cloudProvider: aws
     cloudProviderSpec:
+      accessKeyId: ""
       ami: aws-ami
       availabilityZone: fra1aws-zone-character
       diskSize: 25
@@ -17,6 +16,7 @@ spec:
       instanceProfile: aws-instance-profile-name
       instanceType: t2.micro
       region: fra1
+      secretAccessKey: ""
       securityGroupIDs:
       - aws-security-group-id
       subnetId: aws-subnet-id

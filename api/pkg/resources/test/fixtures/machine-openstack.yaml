@@ -1,5 +1,3 @@
-apiVersion: machine.k8s.io/v1alpha1
-kind: Machine
 metadata:
   creationTimestamp: null
   name: machine-openstackcluster-1a2b3c4d5e-te5s7
@@ -11,16 +9,23 @@ spec:
     cloudProvider: openstack
     cloudProviderSpec:
       availabilityZone: os-availability-zone
+      domainName: ""
       flavor: os-flavor
       floatingIpPool: os-floating-ip-pool
+      identityEndpoint: os-auth-url
       image: os-image
       network: os-network
+      password: ""
       region: os-region
       securityGroups:
       - os-security-groups
+      subnet: os-subnet-id
       tags:
         foo: bar
         kubermatic-cluster: openstackcluster-1a2b3c4d5e
+      tenantName: ""
+      tokenId: ""
+      username: ""
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false
