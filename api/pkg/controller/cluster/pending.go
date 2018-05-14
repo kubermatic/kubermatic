@@ -19,7 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -118,11 +118,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 
 	// check that all StatefulSet's are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
-		return err
-	}
-
-	// check that the etcd-cluster cr is available
-	if err := cc.ensureEtcdCluster(cluster); err != nil {
 		return err
 	}
 
@@ -382,6 +377,8 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		apiserver.ExternalService,
 		prometheus.Service,
 		openvpn.Service,
+		etcd.DiscoveryService,
+		etcd.Service,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -412,7 +409,8 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if diff := deep.Equal(service, existing); diff == nil {
+		diff := deep.Equal(service, existing)
+		if diff == nil {
 			continue
 		}
 
@@ -426,7 +424,6 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
 	names := []string{
-		resources.EtcdOperatorServiceAccountName,
 		resources.PrometheusServiceAccountName,
 	}
 
@@ -555,9 +552,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	creators := []resources.ClusterRoleBindingCreator{
-		etcdoperator.ClusterRoleBinding,
-	}
+	creators := []resources.ClusterRoleBindingCreator{}
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -601,7 +596,6 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	creators := []resources.DeploymentCreator{
-		etcdoperator.Deployment,
 		addonmanager.Deployment,
 		machinecontroller.Deployment,
 		openvpn.Deployment,
@@ -703,50 +697,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
-	masterVersion, found := cc.versions[c.Spec.MasterVersion]
-	if !found {
-		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	generatedEtcd, lastApplied, err := resources.LoadEtcdClusterFile(data, cc.masterResourcesPath, masterVersion.EtcdClusterYaml)
-	if err != nil {
-		return fmt.Errorf("failed to load etcd-cluster: %v", err)
-	}
-	generatedEtcd.Annotations[lastAppliedConfigAnnotation] = lastApplied
-
-	etcd, err := cc.etcdClusterLister.EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			_, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Create(generatedEtcd)
-			if err != nil {
-				return fmt.Errorf("failed to create etcd-cluster resource: %v", err)
-			}
-			return nil
-		}
-		return err
-	}
-	if etcd.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-		patch, err := getPatch(etcd, generatedEtcd)
-		if err != nil {
-			return err
-		}
-		if _, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
-			return fmt.Errorf("failed to create patch etcd-cluster resource: %v", err)
-		}
-	}
-
-	return nil
-}
-
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	creators := []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
+		etcd.StatefulSet,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

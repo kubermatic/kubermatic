@@ -86,7 +86,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379] get foo; do echo waiting for etcd; sleep 2; done;",
+				"until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-client:2379] get foo; do echo waiting for etcd; sleep 2; done;",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -245,7 +245,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", "http://etcd-cluster-client:2379",
+		"--etcd-servers", "http://etcd-client:2379",
 		"--storage-backend", "etcd3",
 		"--admission-control", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
 		"--authorization-mode", "Node,RBAC",

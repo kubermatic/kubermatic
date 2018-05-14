@@ -2,23 +2,16 @@ package resources
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
 
 const (
-	// EtcdClusterName is the name of the etcd cluster
-	EtcdClusterName = "etcd-cluster"
-
 	//AddonManagerDeploymentName is the name for the addon-manager deployment
 	AddonManagerDeploymentName = "addon-manager"
 	//ApiserverDeploymenName is the name for the apiserver deployment
@@ -36,6 +29,8 @@ const (
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
+	//EtcdStatefulSetName is the name for the etcd StatefulSet
+	EtcdStatefulSetName = "etcd"
 
 	//ApiserverExternalServiceName is the name for the external apiserver service
 	ApiserverExternalServiceName = "apiserver-external"
@@ -43,6 +38,10 @@ const (
 	ApiserverInternalServiceName = "apiserver"
 	//PrometheusServiceName is the name for the prometheus service
 	PrometheusServiceName = "prometheus"
+	//EtcdServiceName is the name for the etcd service
+	EtcdServiceName = "etcd"
+	//EtcdClientServiceName is the name for the etcd service
+	EtcdClientServiceName = "etcd-client"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -139,18 +138,23 @@ func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 	return *metav1.NewControllerRef(d.Cluster, gv.WithKind("Cluster"))
 }
 
-// Int32 returns a pointer to of the int32 value passed in.
+// Int32 returns a pointer to the int32 value passed in.
 func Int32(v int32) *int32 {
 	return &v
 }
 
-// Int64 returns a pointer to of the int64 value passed in.
+// Int64 returns a pointer to the int64 value passed in.
 func Int64(v int64) *int64 {
 	return &v
 }
 
-// Bool returns a pointer to of the bool value passed in.
+// Bool returns a pointer to the bool value passed in.
 func Bool(v bool) *bool {
+	return &v
+}
+
+// String returns a pointer to the string value passed in.
+func String(v string) *string {
 	return &v
 }
 
@@ -218,18 +222,6 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 		return d.OverwriteRegistry
 	}
 	return defaultRegistry
-}
-
-// LoadEtcdClusterFile loads a etcd-operator crd from disk and returns a Cluster crd struct
-func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile string) (*etcdoperatorv1beta2.EtcdCluster, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var c etcdoperatorv1beta2.EtcdCluster
-	json, err := t.Execute(data, &c)
-	return &c, json, err
 }
 
 // GetLabels returns default labels every resource should have
