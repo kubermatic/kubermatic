@@ -598,7 +598,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	creators := []resources.DeploymentCreator{
 		etcdoperator.Deployment,
 		addonmanager.Deployment,
-		machinecontroler.Deployment,
+		machinecontroller.Deployment,
 		openvpn.Deployment,
 		apiserver.Deployment,
 		scheduler.Deployment,

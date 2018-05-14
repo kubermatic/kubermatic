@@ -1,4 +1,4 @@
-package machinecontroler
+package machinecontroller
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
