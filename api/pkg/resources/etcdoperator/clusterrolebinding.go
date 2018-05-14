@@ -17,7 +17,6 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 	}
 
 	rb.Name = data.Cluster.Status.NamespaceName + "-etcd-operator"
-	rb.Namespace = data.Cluster.Status.NamespaceName
 	rb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 	rb.RoleRef = rbacv1.RoleRef{

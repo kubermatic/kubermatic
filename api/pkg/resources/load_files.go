@@ -11,12 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
 
@@ -174,23 +169,21 @@ func NewTemplateData(
 }
 
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
-func (d *TemplateData) SecretRevision(name string) string {
+func (d *TemplateData) SecretRevision(name string) (string, error) {
 	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("could not get secret %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
-		return ""
+		return "", fmt.Errorf("could not get secret %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
 	}
-	return secret.ResourceVersion
+	return secret.ResourceVersion, nil
 }
 
 // ConfigMapRevision returns the resource version of the configmap specified by name. A empty string will be returned in case of an error
-func (d *TemplateData) ConfigMapRevision(name string) string {
+func (d *TemplateData) ConfigMapRevision(name string) (string, error) {
 	cm, err := d.ConfigMapLister.ConfigMaps(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("could not get configmap %s from lister for cluster %s: %v", name, d.Cluster.Name, err))
-		return ""
+		return "", fmt.Errorf("could not get configmap %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
 	}
-	return cm.ResourceVersion
+	return cm.ResourceVersion, nil
 }
 
 // ProviderName returns the name of the clusters providerName
@@ -203,41 +196,22 @@ func (d *TemplateData) ProviderName() string {
 }
 
 // GetApiserverExternalNodePort returns the nodeport of the external apiserver service
-func (d *TemplateData) GetApiserverExternalNodePort() string {
+func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 	s, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
-		if !errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("failed to get NodePort for external apiserver service: %v", err))
-			return "ERROR"
-		}
 
-		return ""
+		return 0, fmt.Errorf("failed to get NodePort for external apiserver service: %v", err)
+
 	}
-	return fmt.Sprintf("%d", s.Spec.Ports[0].NodePort)
+	return s.Spec.Ports[0].NodePort, nil
 }
 
-// LoadDeploymentFile loads a k8s yaml deployment from disk and returns a Deployment struct
-func LoadDeploymentFile(data *TemplateData, masterResourcesPath, yamlFile string) (*appsv1.Deployment, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, yamlFile))
-	if err != nil {
-		return nil, "", err
+// ImageRegistry returns the image registry to use or the passed in default if no override is specified
+func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
+	if d.OverwriteRegistry != "" {
+		return d.OverwriteRegistry
 	}
-
-	var dep appsv1.Deployment
-	json, err := t.Execute(data, &dep)
-	return &dep, json, err
-}
-
-// LoadServiceFile returns the service for the given cluster and app
-func LoadServiceFile(data *TemplateData, app, masterResourcesPath string) (*corev1.Service, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-service.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var service corev1.Service
-	json, err := t.Execute(data, &service)
-	return &service, json, err
+	return defaultRegistry
 }
 
 // LoadEtcdClusterFile loads a etcd-operator crd from disk and returns a Cluster crd struct
@@ -250,40 +224,4 @@ func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile strin
 	var c etcdoperatorv1beta2.EtcdCluster
 	json, err := t.Execute(data, &c)
 	return &c, json, err
-}
-
-// LoadRoleFile loads a role from disk, sets the namespace and returns it
-func LoadRoleFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.Role, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-role.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var r rbacv1.Role
-	json, err := t.Execute(data, &r)
-	return &r, json, err
-}
-
-// LoadRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.RoleBinding, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-rolebinding.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var r rbacv1.RoleBinding
-	json, err := t.Execute(data, &r)
-	return &r, json, err
-}
-
-// LoadClusterRoleBindingFile loads a role binding from disk, sets the namespace and returns it
-func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath string) (*rbacv1.ClusterRoleBinding, string, error) {
-	t, err := k8stemplate.ParseFile(path.Join(masterResourcesPath, app+"-clusterrolebinding.yaml"))
-	if err != nil {
-		return nil, "", err
-	}
-
-	var r rbacv1.ClusterRoleBinding
-	json, err := t.Execute(data, &r)
-	return &r, json, err
 }

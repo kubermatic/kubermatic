@@ -14,11 +14,15 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/addonmanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -591,19 +595,14 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
-	masterVersion, found := cc.versions[c.Spec.MasterVersion]
-	if !found {
-		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
-	}
-
-	deps := map[string]string{
-		resources.EtcdOperatorDeploymentName:      masterVersion.EtcdOperatorDeploymentYaml,
-		resources.ApiserverDeploymenName:          masterVersion.ApiserverDeploymentYaml,
-		resources.ControllerManagerDeploymentName: masterVersion.ControllerDeploymentYaml,
-		resources.SchedulerDeploymentName:         masterVersion.SchedulerDeploymentYaml,
-		resources.AddonManagerDeploymentName:      masterVersion.AddonManagerDeploymentYaml,
-		resources.MachineControllerDeploymentName: masterVersion.MachineControllerDeploymentYaml,
-		resources.OpenVPNServerDeploymentName:     masterVersion.OpenVPNServerDeploymentYaml,
+	creators := []resources.DeploymentCreator{
+		etcdoperator.Deployment,
+		addonmanager.Deployment,
+		machinecontroler.Deployment,
+		openvpn.Deployment,
+		apiserver.Deployment,
+		scheduler.Deployment,
+		controllermanager.Deployment,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -611,33 +610,35 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for name, yamlFile := range deps {
-		generatedDeployment, lastApplied, err := resources.LoadDeploymentFile(data, cc.masterResourcesPath, yamlFile)
+	for _, create := range creators {
+		var existing *appsv1.Deployment
+		dep, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to generate Deployment %s: %v", name, err)
+			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
-		generatedDeployment.Annotations[lastAppliedConfigAnnotation] = lastApplied
-		generatedDeployment.Name = name
 
-		deployment, err := cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(name)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Create(generatedDeployment); err != nil {
-					return fmt.Errorf("failed to create deployment for %s: %v", name, err)
-				}
-				continue
-			} else {
+		if existing, err = cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
+			if !errors.IsNotFound(err) {
 				return err
 			}
+
+			if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Create(dep); err != nil {
+				return fmt.Errorf("failed to create Deployment %s: %v", dep.Name, err)
+			}
+			continue
 		}
-		if deployment.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-			patch, err := getPatch(deployment, generatedDeployment)
-			if err != nil {
-				return err
-			}
-			if _, err = cc.kubeClient.ExtensionsV1beta1().Deployments(c.Status.NamespaceName).Patch(name, types.MergePatchType, patch); err != nil {
-				return fmt.Errorf("failed to patch deployment for %s: %v", name, err)
-			}
+
+		dep, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Deployment: %v", err)
+		}
+
+		if diff := deep.Equal(dep, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
+			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
 		}
 	}
 
