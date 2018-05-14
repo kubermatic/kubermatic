@@ -86,6 +86,7 @@ const (
 	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
 	EtcdOperatorClusterRoleBindingName = "etcd-operator"
 
+	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256
 )
 
