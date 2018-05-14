@@ -85,6 +85,8 @@ const (
 
 	//EtcdOperatorClusterRoleBindingName is the name for the etcd-operator clusterrolebinding
 	EtcdOperatorClusterRoleBindingName = "etcd-operator"
+
+	DefaultOwnerReadOnlyMode = 256
 )
 
 const (
