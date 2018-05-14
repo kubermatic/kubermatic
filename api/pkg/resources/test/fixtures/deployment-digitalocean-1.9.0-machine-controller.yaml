@@ -1,5 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
 metadata:
   creationTimestamp: null
   name: machine-controller
@@ -29,38 +27,57 @@ spec:
       creationTimestamp: null
       labels:
         app: machine-controller
-        release: v0.1.2
+        role: machine-controller
     spec:
       containers:
-      - command:
-        - /usr/local/bin/machine-controller
-        - -master=http://apiserver:8080
+      - args:
+        - -master
+        - http://apiserver:8080
         - -logtostderr
-        - -v=4
-        - -cluster-dns=10.10.10.10
-        - -internal-listen-address=0.0.0.0:8085
+        - -v
+        - "4"
+        - -cluster-dns
+        - 10.10.10.10
+        - -internal-listen-address
+        - 0.0.0.0:8085
+        command:
+        - /usr/local/bin/machine-controller
         env:
         - name: DO_TOKEN
           value: do-token
-        image: kubermatic/machine-controller:v0.1.2
+        image: docker.io/kubermatic/machine-controller:v0.1.2
+        imagePullPolicy: IfNotPresent
         livenessProbe:
+          failureThreshold: 8
           httpGet:
             path: /live
             port: 8085
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
         name: machine-controller
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /ready
             port: 8085
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
         resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       initContainers:
       - command:
         - /bin/sh
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
           sleep 2; done;
-        image: busybox
+        image: docker.io/busybox
+        imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}
-      terminationGracePeriodSeconds: 60
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
 status: {}

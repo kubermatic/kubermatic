@@ -1,5 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
 metadata:
   creationTimestamp: null
   name: controller-manager
@@ -36,32 +34,49 @@ spec:
         service-account-key-secret-revision: "123456"
     spec:
       containers:
-      - command:
+      - args:
+        - --master
+        - http://apiserver:8080
+        - --service-account-private-key-file
+        - /etc/kubernetes/service-account-key/sa.key
+        - --root-ca-file
+        - /etc/kubernetes/ca-cert/ca.crt
+        - --cluster-signing-cert-file
+        - /etc/kubernetes/ca-cert/ca.crt
+        - --cluster-signing-key-file
+        - /etc/kubernetes/ca-key/ca.key
+        - --cluster-cidr
+        - 172.25.0.0/16
+        - --configure-cloud-routes
+        - "false"
+        - --allocate-node-cidrs
+        - "true"
+        - --controllers
+        - '*,bootstrapsigner,tokencleaner'
+        - --v
+        - "4"
+        command:
         - /hyperkube
         - controller-manager
-        - --master=http://apiserver:8080
-        - --service-account-private-key-file=/etc/kubernetes/service-account-key/sa.key
-        - --root-ca-file=/etc/kubernetes/ca-cert/ca.crt
-        - --cluster-signing-cert-file=/etc/kubernetes/ca-cert/ca.crt
-        - --cluster-signing-key-file=/etc/kubernetes/ca-key/ca.key
-        - --cluster-cidr=172.25.0.0/16
-        - --configure-cloud-routes=false
-        - --allocate-node-cidrs=true
-        - --controllers=*,bootstrapsigner,tokencleaner
-        - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
             path: /healthz
             port: 10252
           initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 15
         name: controller-manager
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /healthz
             port: 10252
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 15
         resources:
           limits:
@@ -70,6 +85,8 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/ca-cert
           name: ca-cert
@@ -77,11 +94,11 @@ spec:
         - mountPath: /etc/kubernetes/ca-key
           name: ca-key
           readOnly: true
-        - mountPath: /etc/kubernetes/cloud
-          name: cloud-config
-          readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
           readOnly: true
       initContainers:
       - command:
@@ -89,9 +106,12 @@ spec:
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
           sleep 2; done;
-        image: busybox
+        image: docker.io/busybox
+        imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       volumes:
       - name: ca-cert
         secret:
@@ -106,6 +126,7 @@ spec:
           defaultMode: 256
           secretName: service-account-key
       - configMap:
+          defaultMode: 420
           name: cloud-config
         name: cloud-config
 status: {}
