@@ -509,7 +509,6 @@ func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
-	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
 	defer glog.Info("Shutting down cluster controller")
 
@@ -535,6 +534,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, time.Second, stopCh)
 	}
+	cc.metrics.Workers.Set(float64(workerCount))
 
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.ValidatingClusterStatusPhase) }, validatingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)

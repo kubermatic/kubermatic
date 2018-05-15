@@ -6,21 +6,29 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/go-kit/kit/metrics"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 )
 
+// Metrics contains metrics that this controller will collect and expose
+type Metrics struct {
+	Workers metrics.Gauge
+}
+
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
-	queue workqueue.RateLimitingInterface
+	queue   workqueue.RateLimitingInterface
+	metrics Metrics
 }
 
 // New creates a new RBACGenerator controller that is responsible for
 // managing RBAC roles for project's resources
-func New() (*Controller, error) {
+func New(metrics Metrics) (*Controller, error) {
 	return &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGenerator"),
+		queue:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGenerator"),
+		metrics: metrics,
 	}, nil
 }
 
@@ -34,6 +42,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		go wait.Until(cc.runWorker, time.Second, stopCh)
 	}
 
+	cc.metrics.Workers.Set(float64(workerCount))
 	<-stopCh
 }
 
