@@ -51,7 +51,13 @@ spec:
             path: /healthz
             port: 10251
           timeoutSeconds: 15
-        resources: {}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 64Mi
       initContainers:
       - command:
         - /bin/sh

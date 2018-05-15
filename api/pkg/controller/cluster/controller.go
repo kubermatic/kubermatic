@@ -103,6 +103,8 @@ type Controller struct {
 	RoleBindingSynced        cache.InformerSynced
 	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	ClusterRoleBindingSynced cache.InformerSynced
+
+	OverwriteRegistry string
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -142,7 +144,8 @@ func NewController(
 	RoleInformer rbacv1informer.RoleInformer,
 	RoleBindingInformer rbacv1informer.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-) (*Controller, error) {
+
+	OverwriteRegistry string) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -160,6 +163,8 @@ func NewController(
 		dcs:                 dcs,
 		cps:                 cps,
 		metrics:             metrics,
+
+		OverwriteRegistry: OverwriteRegistry,
 	}
 
 	ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

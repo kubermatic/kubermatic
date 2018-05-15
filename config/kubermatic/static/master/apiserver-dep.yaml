@@ -38,14 +38,14 @@ spec:
     spec:
       initContainers:
       - name: etcd-running
-        image: quay.io/coreos/etcd:v3.2.7
+        image:  {{ default .OverwriteRegistry "quay.io/coreos" }}/etcd:v3.2.7
         command:
         - /bin/sh
         - -ec
         - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379] get foo; do echo waiting for etcd; sleep 2; done;
       containers:
       - name: openvpn-client
-        image: kubermatic/openvpn:v0.2
+        image: {{ if .OverwriteRegistry }}{{ .OverwriteRegistry }}/{{ end }}kubermatic/openvpn:v0.2
         command: ["/usr/sbin/openvpn"]
         args: [
           "--client",
@@ -68,6 +68,13 @@ spec:
           "--up", "/bin/touch /tmp/running",
           "--log", "/dev/stdout",
         ]
+        resources:
+          requests:
+            memory: "30Mi"
+            cpu: "10m"
+          limits:
+            memory: "64Mi"
+            cpu: "40m"
         readinessProbe:
           exec:
             command:
@@ -85,7 +92,7 @@ spec:
           mountPath: /etc/kubernetes/ca-cert
           readOnly: true
       - name: apiserver
-        image: gcr.io/google_containers/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
+        image: {{ default .OverwriteRegistry "gcr.io/google_containers" }}/hyperkube-amd64:{{index .Version.Values "k8s-version"}}
         command: [ "/hyperkube", "apiserver",
             "--advertise-address={{ .Cluster.Address.IP }}",
             "--secure-port={{ .GetApiserverExternalNodePort }}",
@@ -131,6 +138,13 @@ spec:
             {{ end }}
             "--kubelet-preferred-address-types=ExternalIP,InternalIP",
             "--v=4" ]
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
         readinessProbe:
           httpGet:
             path: /healthz

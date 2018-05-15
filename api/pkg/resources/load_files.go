@@ -6,12 +6,10 @@ import (
 
 	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8stemplate "github.com/kubermatic/kubermatic/api/pkg/template/kubernetes"
-	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -125,12 +123,13 @@ const (
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	Cluster         *kubermaticv1.Cluster
-	Version         *apiv1.MasterVersion
-	DC              *provider.DatacenterMeta
-	SecretLister    corev1lister.SecretLister
-	ConfigMapLister corev1lister.ConfigMapLister
-	ServiceLister   corev1lister.ServiceLister
+	Cluster           *kubermaticv1.Cluster
+	Version           *apiv1.MasterVersion
+	DC                *provider.DatacenterMeta
+	SecretLister      corev1lister.SecretLister
+	ConfigMapLister   corev1lister.ConfigMapLister
+	ServiceLister     corev1lister.ServiceLister
+	OverwriteRegistry string
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
@@ -161,14 +160,16 @@ func NewTemplateData(
 	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
-	serviceLister corev1lister.ServiceLister) *TemplateData {
+	serviceLister corev1lister.ServiceLister,
+	overwriteRegistry string) *TemplateData {
 	return &TemplateData{
-		Cluster:         cluster,
-		DC:              dc,
-		Version:         version,
-		ConfigMapLister: configMapLister,
-		SecretLister:    secretLister,
-		ServiceLister:   serviceLister,
+		Cluster:           cluster,
+		DC:                dc,
+		Version:           version,
+		ConfigMapLister:   configMapLister,
+		SecretLister:      secretLister,
+		ServiceLister:     serviceLister,
+		OverwriteRegistry: overwriteRegistry,
 	}
 }
 
@@ -285,31 +286,4 @@ func LoadClusterRoleBindingFile(data *TemplateData, app, masterResourcesPath str
 	var r rbacv1.ClusterRoleBinding
 	json, err := t.Execute(data, &r)
 	return &r, json, err
-}
-
-// LoadMachineFile parses and returns the given machine manifest
-func LoadMachineFile(filename string, c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey, version *apiv1.MasterVersion) (*machinev1alpha1.Machine, error) {
-	t, err := k8stemplate.ParseFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	data := struct {
-		Cluster    *kubermaticv1.Cluster
-		Node       *apiv2.Node
-		Datacenter provider.DatacenterMeta
-		Name       string
-		Keys       []*kubermaticv1.UserSSHKey
-		Version    *apiv1.MasterVersion
-	}{
-		Cluster:    c,
-		Node:       node,
-		Datacenter: dc,
-		Keys:       keys,
-		Version:    version,
-	}
-
-	var machine machinev1alpha1.Machine
-	_, err = t.Execute(data, &machine)
-	return &machine, err
 }

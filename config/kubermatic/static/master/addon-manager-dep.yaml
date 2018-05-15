@@ -29,17 +29,24 @@ spec:
     spec:
       initContainers:
       - name: apiserver-running
-        image: busybox
+        image: {{ if .OverwriteRegistry }}{{ .OverwriteRegistry }}/{{ end }}busybox
         command:
         - /bin/sh
         - -ec
         - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;
       containers:
       - name: addon-manager
-        image: kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
+        image: {{ if .OverwriteRegistry }}{{ .OverwriteRegistry }}/{{ end }}kubermatic/addon-manager:{{index .Version.Values "addon-manager-version"}}
         imagePullPolicy: Always
         env:
         - name: KUBECTL_OPTS
           value: --server=http://apiserver:8080
         - name: ADDON_MANAGER_LEADER_ELECTION
           value: "false"
+        resources:
+          requests:
+            memory: "20Mi"
+            cpu: "50m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
