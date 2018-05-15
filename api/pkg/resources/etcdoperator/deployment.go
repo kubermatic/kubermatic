@@ -25,6 +25,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		MatchLabels: map[string]string{
 			"role":    "etcd-operator",
 			"version": "v1",
+			"release": data.Version.Values["etcd-operator-version"],
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -43,6 +44,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		Labels: map[string]string{
 			"role":    "etcd-operator",
 			"version": "v1",
+			"release": data.Version.Values["etcd-operator-version"],
 		},
 	}
 	dep.Spec.Template.Spec.ServiceAccountName = resources.EtcdOperatorServiceAccountName
