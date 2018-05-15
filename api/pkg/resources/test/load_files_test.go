@@ -15,11 +15,16 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/addonmanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/pmezard/go-difflib/difflib"
 
 	"k8s.io/api/core/v1"
@@ -28,10 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-)
-
-const (
-	masterResourcePath = "../../../../config/kubermatic/static/master/"
 )
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
@@ -272,19 +273,19 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				deps := map[string]string{
-					version.EtcdOperatorDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-etcd-operator", prov, version.ID),
-					version.SchedulerDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID),
-					version.ControllerDeploymentYaml:        fmt.Sprintf("deployment-%s-%s-controller-manager", prov, version.ID),
-					version.ApiserverDeploymentYaml:         fmt.Sprintf("deployment-%s-%s-apiserver", prov, version.ID),
-					version.AddonManagerDeploymentYaml:      fmt.Sprintf("deployment-%s-%s-addon-manager", prov, version.ID),
-					version.MachineControllerDeploymentYaml: fmt.Sprintf("deployment-%s-%s-machine-controller", prov, version.ID),
+				deps := map[string]resources.DeploymentCreator{
+					fmt.Sprintf("deployment-%s-%s-etcd-operator", prov, version.ID):      etcdoperator.Deployment,
+					fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID):          scheduler.Deployment,
+					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, version.ID): controllermanager.Deployment,
+					fmt.Sprintf("deployment-%s-%s-apiserver", prov, version.ID):          apiserver.Deployment,
+					fmt.Sprintf("deployment-%s-%s-addon-manager", prov, version.ID):      addonmanager.Deployment,
+					fmt.Sprintf("deployment-%s-%s-machine-controller", prov, version.ID): machinecontroller.Deployment,
 				}
 
-				for path, fixture := range deps {
-					res, _, err := resources.LoadDeploymentFile(data, masterResourcePath, path)
+				for fixture, create := range deps {
+					res, err := create(data, nil)
 					if err != nil {
-						t.Fatalf("failed to load deployment %q: %v", path, err)
+						t.Fatalf("failed to create Deployment for %s: %v", fixture, err)
 					}
 
 					checkTestResult(t, fixture, res)
@@ -298,7 +299,7 @@ func TestLoadFiles(t *testing.T) {
 				for fixture, create := range cmCreators {
 					res, err := create(data, nil)
 					if err != nil {
-						t.Fatalf("failed to create configmap for %s: %v", fixture, err)
+						t.Fatalf("failed to create ConfigMap for %s: %v", fixture, err)
 					}
 
 					checkTestResult(t, fixture, res)

@@ -1,5 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
 metadata:
   creationTimestamp: null
   name: apiserver
@@ -11,7 +9,6 @@ metadata:
     name: de-test-01
     uid: "1234567890"
 spec:
-  minReadySeconds: 10
   replicas: 1
   selector:
     matchLabels:
@@ -78,15 +75,9 @@ spec:
         - /dev/stdout
         command:
         - /usr/sbin/openvpn
-        image: kubermatic/openvpn:v0.2
+        image: docker.io/kubermatic/openvpn:v0.2
+        imagePullPolicy: IfNotPresent
         name: openvpn-client
-        readinessProbe:
-          exec:
-            command:
-            - cat
-            - /tmp/running
-          initialDelaySeconds: 5
-          periodSeconds: 5
         resources:
           limits:
             cpu: 40m
@@ -96,6 +87,8 @@ spec:
             memory: 30Mi
         securityContext:
           privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/openvpn/certs
           name: openvpn-client-certificates
@@ -103,56 +96,91 @@ spec:
         - mountPath: /etc/kubernetes/ca-cert
           name: ca-cert
           readOnly: true
-      - command:
+      - args:
+        - --advertise-address
+        - 35.198.93.90
+        - --secure-port
+        - "30000"
+        - --kubernetes-service-node-port
+        - "30000"
+        - --insecure-bind-address
+        - 0.0.0.0
+        - --insecure-port
+        - "8080"
+        - --etcd-servers
+        - http://etcd-cluster-client:2379
+        - --storage-backend
+        - etcd3
+        - --admission-control
+        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction
+        - --authorization-mode
+        - Node,RBAC
+        - --external-hostname
+        - jh8j81chn.europe-west3-c.dev.kubermatic.io
+        - --token-auth-file
+        - /etc/kubernetes/tokens/tokens.csv
+        - --enable-bootstrap-token-auth
+        - "true"
+        - --service-account-key-file
+        - /etc/kubernetes/service-account-key/sa.key
+        - --service-cluster-ip-range
+        - 10.10.10.0/24
+        - --service-node-port-range
+        - 30000-32767
+        - --allow-privileged
+        - --audit-log-maxage
+        - "30"
+        - --audit-log-maxbackup
+        - "3"
+        - --audit-log-maxsize
+        - "100"
+        - --audit-log-path
+        - /var/log/audit.log
+        - --tls-cert-file
+        - /etc/kubernetes/tls/apiserver-tls.crt
+        - --tls-private-key-file
+        - /etc/kubernetes/tls/apiserver-tls.key
+        - --client-ca-file
+        - /etc/kubernetes/ca-cert/ca.crt
+        - --kubelet-client-certificate
+        - /etc/kubernetes/kubelet/kubelet-client.crt
+        - --kubelet-client-key
+        - /etc/kubernetes/kubelet/kubelet-client.key
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
+        - --v
+        - "4"
+        - --cloud-provider
+        - openstack
+        - --cloud-config
+        - /etc/kubernetes/cloud/config
+        command:
         - /hyperkube
         - apiserver
-        - --advertise-address=35.198.93.90
-        - --secure-port=30000
-        - --kubernetes-service-node-port=30000
-        - --insecure-bind-address=0.0.0.0
-        - --insecure-port=8080
-        - --etcd-servers=http://etcd-cluster-client:2379
-        - --storage-backend=etcd3
-        - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction
-        - --authorization-mode=Node,RBAC
-        - --external-hostname=jh8j81chn.europe-west3-c.dev.kubermatic.io
-        - --token-auth-file=/etc/kubernetes/tokens/tokens.csv
-        - --enable-bootstrap-token-auth=true
-        - --feature-gates=DynamicKubeletConfig=true
-        - --service-account-key-file=/etc/kubernetes/service-account-key/sa.key
-        - --service-cluster-ip-range=10.10.10.0/24
-        - --service-node-port-range=30000-32767
-        - --allow-privileged
-        - --audit-log-maxage=30
-        - --audit-log-maxbackup=3
-        - --audit-log-maxsize=100
-        - --audit-log-path=/var/log/audit.log
-        - --tls-cert-file=/etc/kubernetes/tls/apiserver-tls.crt
-        - --tls-private-key-file=/etc/kubernetes/tls/apiserver-tls.key
-        - --client-ca-file=/etc/kubernetes/ca-cert/ca.crt
-        - --kubelet-client-certificate=/etc/kubernetes/kubelet/kubelet-client.crt
-        - --kubelet-client-key=/etc/kubernetes/kubelet/kubelet-client.key
-        - --cloud-config=/etc/kubernetes/cloud/config
-        - --cloud-provider=openstack
-        - --kubelet-preferred-address-types=ExternalIP,InternalIP
-        - --v=4
         image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
             path: /healthz
             port: 8080
           initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 15
         name: apiserver
         ports:
         - containerPort: 30000
+          protocol: TCP
         - containerPort: 8080
+          protocol: TCP
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /healthz
             port: 8080
           periodSeconds: 5
+          successThreshold: 1
           timeoutSeconds: 15
         resources:
           limits:
@@ -161,6 +189,8 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/tls
           name: apiserver-tls
@@ -187,8 +217,11 @@ spec:
         - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379]
           get foo; do echo waiting for etcd; sleep 2; done;
         image: quay.io/coreos/etcd:v3.2.7
+        imagePullPolicy: IfNotPresent
         name: etcd-running
         resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       volumes:
       - name: apiserver-tls
         secret:
@@ -215,6 +248,7 @@ spec:
           defaultMode: 256
           secretName: service-account-key
       - configMap:
+          defaultMode: 420
           name: cloud-config
         name: cloud-config
 status: {}
