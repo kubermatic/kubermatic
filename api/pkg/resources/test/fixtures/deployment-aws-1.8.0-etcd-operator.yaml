@@ -1,0 +1,46 @@
+metadata:
+  creationTimestamp: null
+  name: etcd-operator
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: etcd-operator
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        role: etcd-operator
+    spec:
+      containers:
+      - env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: quay.io/coreos/etcd-operator:v0.6.0
+        imagePullPolicy: IfNotPresent
+        name: etcd-operator
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      serviceAccountName: etcd-operator
+status: {}

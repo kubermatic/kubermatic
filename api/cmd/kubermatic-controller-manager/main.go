@@ -9,16 +9,12 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,7 +30,7 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-var (
+type controllerRunOptions struct {
 	kubeconfig     string
 	masterURL      string
 	prometheusAddr string
@@ -47,56 +43,69 @@ var (
 	versionsFile    string
 	updatesFile     string
 	workerCount     int
-)
+
+	overwriteRegistry string
+}
+
+type controllerContext struct {
+	runOptions                controllerRunOptions
+	stopCh                    <-chan struct{}
+	kubeClient                kubernetes.Interface
+	kubermaticClient          kubermaticclientset.Interface
+	kubermaticInformerFactory externalversions.SharedInformerFactory
+	kubeInformerFactory       kuberinformers.SharedInformerFactory
+}
 
 const (
 	controllerName = "kubermatic-controller-manager"
 )
 
 func main() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
-	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
-	flag.StringVar(&externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
-	flag.StringVar(&dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
-	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
-	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
-	flag.StringVar(&versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
-	flag.StringVar(&updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
-	flag.IntVar(&workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
+	runOp := controllerRunOptions{}
+	flag.StringVar(&runOp.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&runOp.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&runOp.prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
+	flag.StringVar(&runOp.masterResources, "master-resources", "", "The path to the master resources (Required).")
+	flag.StringVar(&runOp.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
+	flag.StringVar(&runOp.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
+	flag.StringVar(&runOp.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	flag.StringVar(&runOp.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
+	flag.StringVar(&runOp.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
+	flag.StringVar(&runOp.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
+	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
+	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.Parse()
 
-	if masterResources == "" {
+	if runOp.masterResources == "" {
 		glog.Fatal("master-resources path is undefined\n\n")
 	}
 
-	if externalURL == "" {
+	if runOp.externalURL == "" {
 		glog.Fatal("external-url is undefined\n\n")
 	}
 
-	if dc == "" {
+	if runOp.dc == "" {
 		glog.Fatal("datacenter-name is undefined")
 	}
 
-	dcs, err := provider.LoadDatacentersMeta(dcFile)
+	// dcFile, versionFile, updatesFile are required by cluster controller
+	// the following code ensures that the files are available and fails fast if not.
+	_, err := provider.LoadDatacentersMeta(runOp.dcFile)
 	if err != nil {
-		glog.Fatalf("failed to load datacenter yaml %q: %v", dcFile, err)
+		glog.Fatalf("failed to load datacenter yaml %q: %v", runOp.dcFile, err)
 	}
 
-	// load versions
-	versions, err := version.LoadVersions(versionsFile)
+	_, err = version.LoadVersions(runOp.versionsFile)
 	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", versionsFile, err)
+		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
 	}
 
-	// load updates
-	updates, err := version.LoadUpdates(updatesFile)
+	_, err = version.LoadUpdates(runOp.updatesFile)
 	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", versionsFile, err)
+		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags(runOp.masterURL, runOp.kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -133,14 +142,14 @@ func main() {
 		m.Handle("/metrics", promhttp.Handler())
 
 		s := http.Server{
-			Addr:         prometheusAddr,
+			Addr:         runOp.prometheusAddr,
 			Handler:      m,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 10 * time.Second,
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", prometheusAddr)
+			glog.Infof("Starting the internal http server: %s\n", runOp.prometheusAddr)
 			err := s.ListenAndServe()
 			if err != nil {
 				return fmt.Errorf("internal http server failed: %v", err)
@@ -167,7 +176,8 @@ func main() {
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					err := startController(ctx.Done(), kubeClient, kubermaticClient, dcs, versions, updates)
+					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient}
+					err := runAllControllers(ctrlCtx)
 					if err != nil {
 						glog.Error(err)
 						ctxDone()
@@ -180,8 +190,8 @@ func main() {
 			}
 
 			leaderName := controllerName
-			if workerName != "" {
-				leaderName = workerName + "-" + leaderName
+			if runOp.workerName != "" {
+				leaderName = runOp.workerName + "-" + leaderName
 			}
 			leader, err := leaderelection.New(leaderName, leaderElectionClient, recorder, callbacks)
 			if err != nil {
@@ -214,64 +224,4 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
 	return recorder, nil
-}
-
-func startController(stop <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface, dcs map[string]provider.DatacenterMeta, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) error {
-	metrics := NewClusterControllerMetrics()
-	clusterMetrics := cluster.ControllerMetrics{
-		Clusters:        metrics.Clusters,
-		ClusterPhases:   metrics.ClusterPhases,
-		Workers:         metrics.Workers,
-		UnhandledErrors: metrics.UnhandledErrors,
-	}
-
-	kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
-	kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
-
-	cps := cloud.Providers(dcs)
-
-	ctrl, err := cluster.NewController(
-		kubeClient,
-		kubermaticClient,
-		versions,
-		updates,
-		masterResources,
-		externalURL,
-		workerName,
-		dc,
-		dcs,
-		cps,
-		clusterMetrics,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
-
-		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
-		kubeInformerFactory.Core().V1().Namespaces(),
-		kubeInformerFactory.Core().V1().Secrets(),
-		kubeInformerFactory.Core().V1().Services(),
-		kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
-		kubeInformerFactory.Core().V1().ConfigMaps(),
-		kubeInformerFactory.Core().V1().ServiceAccounts(),
-		kubeInformerFactory.Apps().V1().Deployments(),
-		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
-		kubeInformerFactory.Rbac().V1().Roles(),
-		kubeInformerFactory.Rbac().V1().RoleBindings(),
-		kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		kubermaticInformerFactory.Monitoring().V1().Prometheuses(),
-		kubermaticInformerFactory.Monitoring().V1().ServiceMonitors(),
-	)
-	if err != nil {
-		return err
-	}
-
-	kubermaticInformerFactory.Start(stop)
-	kubeInformerFactory.Start(stop)
-
-	kubermaticInformerFactory.WaitForCacheSync(stop)
-	kubeInformerFactory.WaitForCacheSync(stop)
-
-	glog.Info("Starting controller")
-	ctrl.Run(workerCount, stop)
-
-	return nil
 }

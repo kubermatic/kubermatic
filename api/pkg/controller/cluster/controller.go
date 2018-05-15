@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,10 +13,8 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	prometheusv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/prometheus/v1"
 	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	prometheusv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/prometheus/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
@@ -77,20 +76,35 @@ type Controller struct {
 	metrics ControllerMetrics
 
 	ClusterLister            kubermaticv1lister.ClusterLister
+	ClusterSynced            cache.InformerSynced
 	EtcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
+	EtcdClusterSynced        cache.InformerSynced
 	NamespaceLister          corev1lister.NamespaceLister
+	NamespaceSynced          cache.InformerSynced
 	SecretLister             corev1lister.SecretLister
+	SecretSynced             cache.InformerSynced
 	ServiceLister            corev1lister.ServiceLister
+	ServiceSynced            cache.InformerSynced
 	PvcLister                corev1lister.PersistentVolumeClaimLister
+	PvcSynced                cache.InformerSynced
 	ConfigMapLister          corev1lister.ConfigMapLister
+	ConfigMapSynced          cache.InformerSynced
 	ServiceAccountLister     corev1lister.ServiceAccountLister
+	ServiceAccountSynced     cache.InformerSynced
 	DeploymentLister         appsv1lister.DeploymentLister
+	DeploymentSynced         cache.InformerSynced
+	StatefulSetLister        appsv1lister.StatefulSetLister
+	StatefulSynced           cache.InformerSynced
 	IngressLister            extensionsv1beta1lister.IngressLister
+	IngressSynced            cache.InformerSynced
 	RoleLister               rbacb1lister.RoleLister
+	RoleSynced               cache.InformerSynced
 	RoleBindingLister        rbacb1lister.RoleBindingLister
+	RoleBindingSynced        cache.InformerSynced
 	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
-	PrometheusLister         prometheusv1lister.PrometheusLister
-	ServiceMonitorLister     prometheusv1lister.ServiceMonitorLister
+	ClusterRoleBindingSynced cache.InformerSynced
+
+	OverwriteRegistry string
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -125,13 +139,13 @@ func NewController(
 	ConfigMapInformer corev1informers.ConfigMapInformer,
 	ServiceAccountInformer corev1informers.ServiceAccountInformer,
 	DeploymentInformer appsv1informer.DeploymentInformer,
+	StatefulSetInformer appsv1informer.StatefulSetInformer,
 	IngressInformer extensionsv1beta1informers.IngressInformer,
 	RoleInformer rbacv1informer.RoleInformer,
 	RoleBindingInformer rbacv1informer.RoleBindingInformer,
 	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-	PrometheusInformer prometheusv1informers.PrometheusInformer,
-	ServiceMonitorInformer prometheusv1informers.ServiceMonitorInformer,
-) (*Controller, error) {
+
+	OverwriteRegistry string) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -149,6 +163,8 @@ func NewController(
 		dcs:                 dcs,
 		cps:                 cps,
 		metrics:             metrics,
+
+		OverwriteRegistry: OverwriteRegistry,
 	}
 
 	ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -237,32 +253,35 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	PrometheusInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
-	ServiceMonitorInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
 
 	cc.ClusterLister = ClusterInformer.Lister()
+	cc.ClusterSynced = ClusterInformer.Informer().HasSynced
 	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
+	cc.EtcdClusterSynced = EtcdClusterInformer.Informer().HasSynced
 	cc.NamespaceLister = NamespaceInformer.Lister()
+	cc.NamespaceSynced = NamespaceInformer.Informer().HasSynced
 	cc.SecretLister = SecretInformer.Lister()
+	cc.SecretSynced = SecretInformer.Informer().HasSynced
 	cc.ServiceLister = ServiceInformer.Lister()
+	cc.ServiceSynced = ServiceInformer.Informer().HasSynced
 	cc.PvcLister = PvcInformer.Lister()
+	cc.PvcSynced = PvcInformer.Informer().HasSynced
 	cc.ConfigMapLister = ConfigMapInformer.Lister()
+	cc.ConfigMapSynced = ConfigMapInformer.Informer().HasSynced
 	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
+	cc.ServiceAccountSynced = ServiceAccountInformer.Informer().HasSynced
 	cc.DeploymentLister = DeploymentInformer.Lister()
+	cc.DeploymentSynced = DeploymentInformer.Informer().HasSynced
+	cc.StatefulSetLister = StatefulSetInformer.Lister()
+	cc.StatefulSynced = StatefulSetInformer.Informer().HasSynced
 	cc.IngressLister = IngressInformer.Lister()
+	cc.IngressSynced = IngressInformer.Informer().HasSynced
 	cc.RoleLister = RoleInformer.Lister()
+	cc.RoleSynced = RoleInformer.Informer().HasSynced
 	cc.RoleBindingLister = RoleBindingInformer.Lister()
+	cc.RoleBindingSynced = RoleBindingInformer.Informer().HasSynced
 	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
-	cc.PrometheusLister = PrometheusInformer.Lister()
-	cc.ServiceMonitorLister = ServiceMonitorInformer.Lister()
+	cc.ClusterRoleBindingSynced = ClusterRoleBindingInformer.Informer().HasSynced
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
@@ -490,12 +509,32 @@ func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
-	cc.metrics.Workers.Set(float64(workerCount))
 	glog.Infof("Starting cluster controller with %d workers", workerCount)
+	defer glog.Info("Shutting down cluster controller")
+
+	if !cache.WaitForCacheSync(stopCh,
+		cc.ClusterSynced,
+		cc.EtcdClusterSynced,
+		cc.NamespaceSynced,
+		cc.SecretSynced,
+		cc.ServiceSynced,
+		cc.PvcSynced,
+		cc.ConfigMapSynced,
+		cc.ServiceAccountSynced,
+		cc.DeploymentSynced,
+		cc.StatefulSynced,
+		cc.IngressSynced,
+		cc.RoleSynced,
+		cc.RoleBindingSynced,
+		cc.ClusterRoleBindingSynced) {
+		runtime.HandleError(errors.New("Unable to sync caches for cluster controller"))
+		return
+	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, time.Second, stopCh)
 	}
+	cc.metrics.Workers.Set(float64(workerCount))
 
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.ValidatingClusterStatusPhase) }, validatingSyncPeriod, stopCh)
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
@@ -503,8 +542,6 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
 
 	<-stopCh
-
-	glog.Info("Shutting down cluster controller")
 }
 
 func (cc *Controller) handleChildObject(i interface{}) {

@@ -9,7 +9,6 @@ import (
 	etcdoperator "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator"
 	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/internalinterfaces"
 	kubermatic "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic"
-	prometheus "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/prometheus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -109,7 +108,6 @@ type SharedInformerFactory interface {
 
 	Etcd() etcdoperator.Interface
 	Kubermatic() kubermatic.Interface
-	Monitoring() prometheus.Interface
 }
 
 func (f *sharedInformerFactory) Etcd() etcdoperator.Interface {
@@ -118,8 +116,4 @@ func (f *sharedInformerFactory) Etcd() etcdoperator.Interface {
 
 func (f *sharedInformerFactory) Kubermatic() kubermatic.Interface {
 	return kubermatic.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Monitoring() prometheus.Interface {
-	return prometheus.New(f, f.namespace, f.tweakListOptions)
 }
