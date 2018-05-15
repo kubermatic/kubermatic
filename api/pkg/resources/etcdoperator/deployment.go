@@ -23,7 +23,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role": "etcd-operator",
+			"role":    "etcd-operator",
+			"version": "v1",
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -40,7 +41,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"role": "etcd-operator",
+			"role":    "etcd-operator",
+			"version": "v1",
 		},
 	}
 	dep.Spec.Template.Spec.ServiceAccountName = resources.EtcdOperatorServiceAccountName
