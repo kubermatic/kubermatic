@@ -26,3 +26,6 @@ type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding)
 
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
 type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
+
+// DeploymentCreator defines an interface to create/update Deployment's
+type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
