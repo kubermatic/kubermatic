@@ -101,4 +101,10 @@ endif
 cover:
 	./hack/cover.sh --html
 
-.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push $(CMD)
+run-controller-manager: kubermatic-controller-manager
+	./hack/run-controller.sh
+
+run-api-server: kubermatic-api
+	./hack/run-api.sh
+
+.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push run-controller-manager run-api-server $(CMD)
