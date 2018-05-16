@@ -5,13 +5,9 @@ set -o nounset
 set -o pipefail
 set -x
 
-
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
-
-make build
-
 # Please make sure to port-forward prometheus to localhost:9090 if you want to talk to it.
 
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
