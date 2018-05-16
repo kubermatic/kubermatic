@@ -46,6 +46,8 @@ data:
   rules.yaml: ""
 metadata:
   creationTimestamp: null
+  labels:
+    app: prometheus
   name: prometheus
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
