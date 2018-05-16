@@ -88,7 +88,7 @@ func main() {
 	flag.Parse()
 
 	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
-		Address: "https://admin:loodse123@prometheus.dev.kubermatic.io",
+		Address: prometheusURL,
 	})
 	if err != nil {
 		glog.Fatal(err)
