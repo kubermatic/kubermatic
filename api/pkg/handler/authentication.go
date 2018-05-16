@@ -38,7 +38,7 @@ type openIDAuthenticator struct {
 	issuer         string
 	tokenExtractor TokenExtractor
 	clientID       string
-	provider       *oidc.Provider
+	verifier       *oidc.IDTokenVerifier
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
@@ -57,21 +57,20 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, i
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
-		provider:       p,
+		verifier:       p.Verifier(&oidc.Config{ClientID: clientID}),
 	}, nil
 }
 
 func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			idTokenVerifier := o.provider.Verifier(&oidc.Config{ClientID: o.clientID})
 			t := ctx.Value(rawToken)
 			token, ok := t.(string)
 			if !ok || token == "" {
 				return nil, errors.NewNotAuthorized()
 			}
 
-			idToken, err := idTokenVerifier.Verify(ctx, token)
+			idToken, err := o.verifier.Verify(ctx, token)
 			if err != nil {
 				glog.Error(err)
 				return nil, errors.NewNotAuthorized()
