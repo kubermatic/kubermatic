@@ -75,36 +75,36 @@ type Controller struct {
 
 	metrics ControllerMetrics
 
-	ClusterLister            kubermaticv1lister.ClusterLister
-	ClusterSynced            cache.InformerSynced
-	EtcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
-	EtcdClusterSynced        cache.InformerSynced
-	NamespaceLister          corev1lister.NamespaceLister
-	NamespaceSynced          cache.InformerSynced
-	SecretLister             corev1lister.SecretLister
-	SecretSynced             cache.InformerSynced
-	ServiceLister            corev1lister.ServiceLister
-	ServiceSynced            cache.InformerSynced
-	PvcLister                corev1lister.PersistentVolumeClaimLister
-	PvcSynced                cache.InformerSynced
-	ConfigMapLister          corev1lister.ConfigMapLister
-	ConfigMapSynced          cache.InformerSynced
-	ServiceAccountLister     corev1lister.ServiceAccountLister
-	ServiceAccountSynced     cache.InformerSynced
-	DeploymentLister         appsv1lister.DeploymentLister
-	DeploymentSynced         cache.InformerSynced
-	StatefulSetLister        appsv1lister.StatefulSetLister
-	StatefulSynced           cache.InformerSynced
-	IngressLister            extensionsv1beta1lister.IngressLister
-	IngressSynced            cache.InformerSynced
-	RoleLister               rbacb1lister.RoleLister
-	RoleSynced               cache.InformerSynced
-	RoleBindingLister        rbacb1lister.RoleBindingLister
-	RoleBindingSynced        cache.InformerSynced
-	ClusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
-	ClusterRoleBindingSynced cache.InformerSynced
+	clusterLister            kubermaticv1lister.ClusterLister
+	clusterSynced            cache.InformerSynced
+	etcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
+	etcdClusterSynced        cache.InformerSynced
+	namespaceLister          corev1lister.NamespaceLister
+	namespaceSynced          cache.InformerSynced
+	secretLister             corev1lister.SecretLister
+	secretSynced             cache.InformerSynced
+	serviceLister            corev1lister.ServiceLister
+	serviceSynced            cache.InformerSynced
+	pvcLister                corev1lister.PersistentVolumeClaimLister
+	pvcSynced                cache.InformerSynced
+	configMapLister          corev1lister.ConfigMapLister
+	configMapSynced          cache.InformerSynced
+	serviceAccountLister     corev1lister.ServiceAccountLister
+	serviceAccountSynced     cache.InformerSynced
+	deploymentLister         appsv1lister.DeploymentLister
+	deploymentSynced         cache.InformerSynced
+	statefulSetLister        appsv1lister.StatefulSetLister
+	statefulSynced           cache.InformerSynced
+	ingressLister            extensionsv1beta1lister.IngressLister
+	ingressSynced            cache.InformerSynced
+	roleLister               rbacb1lister.RoleLister
+	roleSynced               cache.InformerSynced
+	roleBindingLister        rbacb1lister.RoleBindingLister
+	roleBindingSynced        cache.InformerSynced
+	clusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
+	clusterRoleBindingSynced cache.InformerSynced
 
-	OverwriteRegistry string
+	overwriteRegistry string
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -130,20 +130,20 @@ func NewController(
 	metrics ControllerMetrics,
 	userClusterConnProvider UserClusterConnectionProvider,
 
-	ClusterInformer kubermaticv1informers.ClusterInformer,
-	EtcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
-	NamespaceInformer corev1informers.NamespaceInformer,
-	SecretInformer corev1informers.SecretInformer,
-	ServiceInformer corev1informers.ServiceInformer,
-	PvcInformer corev1informers.PersistentVolumeClaimInformer,
-	ConfigMapInformer corev1informers.ConfigMapInformer,
-	ServiceAccountInformer corev1informers.ServiceAccountInformer,
-	DeploymentInformer appsv1informer.DeploymentInformer,
-	StatefulSetInformer appsv1informer.StatefulSetInformer,
-	IngressInformer extensionsv1beta1informers.IngressInformer,
-	RoleInformer rbacv1informer.RoleInformer,
-	RoleBindingInformer rbacv1informer.RoleBindingInformer,
-	ClusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
+	clusterInformer kubermaticv1informers.ClusterInformer,
+	etcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
+	namespaceInformer corev1informers.NamespaceInformer,
+	secretInformer corev1informers.SecretInformer,
+	serviceInformer corev1informers.ServiceInformer,
+	pvcInformer corev1informers.PersistentVolumeClaimInformer,
+	configMapInformer corev1informers.ConfigMapInformer,
+	serviceAccountInformer corev1informers.ServiceAccountInformer,
+	deploymentInformer appsv1informer.DeploymentInformer,
+	statefulSetInformer appsv1informer.StatefulSetInformer,
+	ingressInformer extensionsv1beta1informers.IngressInformer,
+	roleInformer rbacv1informer.RoleInformer,
+	roleBindingInformer rbacv1informer.RoleBindingInformer,
+	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
 
 	OverwriteRegistry string) (*Controller, error) {
 	cc := &Controller{
@@ -164,10 +164,10 @@ func NewController(
 		cps:                 cps,
 		metrics:             metrics,
 
-		OverwriteRegistry: OverwriteRegistry,
+		overwriteRegistry: OverwriteRegistry,
 	}
 
-	ClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			cc.enqueue(obj.(*kubermaticv1.Cluster))
 		},
@@ -193,95 +193,95 @@ func NewController(
 	})
 
 	//In case one of our child objects change, we should update our state
-	NamespaceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	namespaceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	DeploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	SecretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	ServiceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	IngressInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	ingressInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	PvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	pvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	ConfigMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	configMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	ServiceAccountInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	serviceAccountInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	RoleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	roleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	RoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	roleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	ClusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	clusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	EtcdClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	etcdClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
 
-	cc.ClusterLister = ClusterInformer.Lister()
-	cc.ClusterSynced = ClusterInformer.Informer().HasSynced
-	cc.EtcdClusterLister = EtcdClusterInformer.Lister()
-	cc.EtcdClusterSynced = EtcdClusterInformer.Informer().HasSynced
-	cc.NamespaceLister = NamespaceInformer.Lister()
-	cc.NamespaceSynced = NamespaceInformer.Informer().HasSynced
-	cc.SecretLister = SecretInformer.Lister()
-	cc.SecretSynced = SecretInformer.Informer().HasSynced
-	cc.ServiceLister = ServiceInformer.Lister()
-	cc.ServiceSynced = ServiceInformer.Informer().HasSynced
-	cc.PvcLister = PvcInformer.Lister()
-	cc.PvcSynced = PvcInformer.Informer().HasSynced
-	cc.ConfigMapLister = ConfigMapInformer.Lister()
-	cc.ConfigMapSynced = ConfigMapInformer.Informer().HasSynced
-	cc.ServiceAccountLister = ServiceAccountInformer.Lister()
-	cc.ServiceAccountSynced = ServiceAccountInformer.Informer().HasSynced
-	cc.DeploymentLister = DeploymentInformer.Lister()
-	cc.DeploymentSynced = DeploymentInformer.Informer().HasSynced
-	cc.StatefulSetLister = StatefulSetInformer.Lister()
-	cc.StatefulSynced = StatefulSetInformer.Informer().HasSynced
-	cc.IngressLister = IngressInformer.Lister()
-	cc.IngressSynced = IngressInformer.Informer().HasSynced
-	cc.RoleLister = RoleInformer.Lister()
-	cc.RoleSynced = RoleInformer.Informer().HasSynced
-	cc.RoleBindingLister = RoleBindingInformer.Lister()
-	cc.RoleBindingSynced = RoleBindingInformer.Informer().HasSynced
-	cc.ClusterRoleBindingLister = ClusterRoleBindingInformer.Lister()
-	cc.ClusterRoleBindingSynced = ClusterRoleBindingInformer.Informer().HasSynced
+	cc.clusterLister = clusterInformer.Lister()
+	cc.clusterSynced = clusterInformer.Informer().HasSynced
+	cc.etcdClusterLister = etcdClusterInformer.Lister()
+	cc.etcdClusterSynced = etcdClusterInformer.Informer().HasSynced
+	cc.namespaceLister = namespaceInformer.Lister()
+	cc.namespaceSynced = namespaceInformer.Informer().HasSynced
+	cc.secretLister = secretInformer.Lister()
+	cc.secretSynced = secretInformer.Informer().HasSynced
+	cc.serviceLister = serviceInformer.Lister()
+	cc.serviceSynced = serviceInformer.Informer().HasSynced
+	cc.pvcLister = pvcInformer.Lister()
+	cc.pvcSynced = pvcInformer.Informer().HasSynced
+	cc.configMapLister = configMapInformer.Lister()
+	cc.configMapSynced = configMapInformer.Informer().HasSynced
+	cc.serviceAccountLister = serviceAccountInformer.Lister()
+	cc.serviceAccountSynced = serviceAccountInformer.Informer().HasSynced
+	cc.deploymentLister = deploymentInformer.Lister()
+	cc.deploymentSynced = deploymentInformer.Informer().HasSynced
+	cc.statefulSetLister = statefulSetInformer.Lister()
+	cc.statefulSynced = statefulSetInformer.Informer().HasSynced
+	cc.ingressLister = ingressInformer.Lister()
+	cc.ingressSynced = ingressInformer.Informer().HasSynced
+	cc.roleLister = roleInformer.Lister()
+	cc.roleSynced = roleInformer.Informer().HasSynced
+	cc.roleBindingLister = roleBindingInformer.Lister()
+	cc.roleBindingSynced = roleBindingInformer.Informer().HasSynced
+	cc.clusterRoleBindingLister = clusterRoleBindingInformer.Lister()
+	cc.clusterRoleBindingSynced = clusterRoleBindingInformer.Informer().HasSynced
 
 	var err error
 	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
@@ -317,7 +317,7 @@ func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 }
 
 func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
-	currentCluster, err := cc.ClusterLister.Get(modifiedCluster.Name)
+	currentCluster, err := cc.clusterLister.Get(modifiedCluster.Name)
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 	}
 
 	return wait.Poll(10*time.Millisecond, 30*time.Second, func() (bool, error) {
-		listerCluster, err := cc.ClusterLister.Get(updatedCluster.Name)
+		listerCluster, err := cc.clusterLister.Get(updatedCluster.Name)
 		if err != nil {
 			// In case we remove the last finalizer, the object will be gone after the patch
 			if kubeapierrors.IsNotFound(err) {
@@ -373,7 +373,7 @@ func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason k
 }
 
 func (cc *Controller) syncCluster(key string) error {
-	listerCluster, err := cc.ClusterLister.Get(key)
+	listerCluster, err := cc.clusterLister.Get(key)
 	if err != nil {
 		if kubeapierrors.IsNotFound(err) {
 			return nil
@@ -490,7 +490,7 @@ func (cc *Controller) handleErr(err error, key interface{}) {
 }
 
 func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
-	clusters, err := cc.ClusterLister.List(labels.Everything())
+	clusters, err := cc.clusterLister.List(labels.Everything())
 	if err != nil {
 		cc.metrics.Clusters.Set(0)
 		runtime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
@@ -513,20 +513,20 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer glog.Info("Shutting down cluster controller")
 
 	if !cache.WaitForCacheSync(stopCh,
-		cc.ClusterSynced,
-		cc.EtcdClusterSynced,
-		cc.NamespaceSynced,
-		cc.SecretSynced,
-		cc.ServiceSynced,
-		cc.PvcSynced,
-		cc.ConfigMapSynced,
-		cc.ServiceAccountSynced,
-		cc.DeploymentSynced,
-		cc.StatefulSynced,
-		cc.IngressSynced,
-		cc.RoleSynced,
-		cc.RoleBindingSynced,
-		cc.ClusterRoleBindingSynced) {
+		cc.clusterSynced,
+		cc.etcdClusterSynced,
+		cc.namespaceSynced,
+		cc.secretSynced,
+		cc.serviceSynced,
+		cc.pvcSynced,
+		cc.configMapSynced,
+		cc.serviceAccountSynced,
+		cc.deploymentSynced,
+		cc.statefulSynced,
+		cc.ingressSynced,
+		cc.roleSynced,
+		cc.roleBindingSynced,
+		cc.clusterRoleBindingSynced) {
 		runtime.HandleError(errors.New("Unable to sync caches for cluster controller"))
 		return
 	}
@@ -562,7 +562,7 @@ func (cc *Controller) handleChildObject(i interface{}) {
 			//Not for us
 			return
 		}
-		c, err := cc.ClusterLister.Get(controllerRef.Name)
+		c, err := cc.clusterLister.Get(controllerRef.Name)
 		if err != nil {
 			if kubeapierrors.IsNotFound(err) {
 				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))

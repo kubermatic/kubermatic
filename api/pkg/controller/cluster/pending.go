@@ -177,10 +177,10 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		c,
 		version,
 		&dc,
-		cc.SecretLister,
-		cc.ConfigMapLister,
-		cc.ServiceLister,
-		cc.OverwriteRegistry,
+		cc.secretLister,
+		cc.configMapLister,
+		cc.serviceLister,
+		cc.overwriteRegistry,
 	), nil
 }
 
@@ -225,7 +225,7 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 		c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
 	}
 
-	if _, err := cc.NamespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
+	if _, err := cc.namespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	sort.Strings(ips)
 	c.Address.IP = ips[0]
 
-	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
+	s, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err
@@ -323,7 +323,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 
 	for _, op := range ops {
 		exists := false
-		existingSecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(op.name)
+		existingSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(op.name)
 		if err != nil {
 			if !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to get secret %s from lister: %v", op.name, err)
@@ -345,7 +345,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			}
 
 			secretExistsInLister := func() (bool, error) {
-				_, err = cc.SecretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
+				_, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
 				if err != nil {
 					if os.IsNotExist(err) {
 						return false, nil
@@ -395,7 +395,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if existing, err = cc.ServiceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
+		if existing, err = cc.serviceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -439,7 +439,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 		var existing *corev1.ServiceAccount
 		sa := resources.ServiceAccount(name, &ref, nil)
 
-		if existing, err = cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
+		if existing, err = cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -480,7 +480,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if existing, err = cc.RoleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
+		if existing, err = cc.roleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -525,7 +525,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if existing, err = cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
+		if existing, err = cc.roleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -570,7 +570,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if existing, err = cc.ClusterRoleBindingLister.Get(crb.Name); err != nil {
+		if existing, err = cc.clusterRoleBindingLister.Get(crb.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -621,7 +621,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
 
-		if existing, err = cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
+		if existing, err = cc.deploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -674,7 +674,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
-		if existing, err = cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
+		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -719,7 +719,7 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 	}
 	generatedEtcd.Annotations[lastAppliedConfigAnnotation] = lastApplied
 
-	etcd, err := cc.EtcdClusterLister.EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
+	etcd, err := cc.etcdClusterLister.EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Create(generatedEtcd)
@@ -760,7 +760,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if existing, err = cc.StatefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
+		if existing, err = cc.statefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
