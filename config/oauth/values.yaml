@@ -2,8 +2,8 @@
 dex:
   image:
     repository: "quay.io/coreos/dex"
-    tag: "v2.9.0"
-  replicas: 3
+    tag: "v2.10.0"
+  replicas: 1
   ingress:
     host: ""
     path: "/dex"
