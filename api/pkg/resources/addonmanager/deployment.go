@@ -17,6 +17,10 @@ var (
 	defaultCPULimit      = resource.MustParse("100m")
 )
 
+const (
+	name = "addon-manager"
+)
+
 // Deployment returns the addon-manager Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -28,14 +32,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.AddonManagerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role":    "addon-manager",
-			"version": "v1",
+			resources.AppLabelKey: name,
 		},
 	}
+
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
 		MaxSurge: &intstr.IntOrString{
@@ -50,9 +55,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"role":    "addon-manager",
-			"version": "v1",
-			"release": data.Version.Values["addon-manager-version"],
+			resources.AppLabelKey: name,
 		},
 	}
 
@@ -73,7 +76,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "addon-manager",
+			Name:            name,
 			Image:           data.ImageRegistry("docker.io") + "/kubermatic/addon-manager:" + data.Version.Values["addon-manager-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{

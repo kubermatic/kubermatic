@@ -1,5 +1,7 @@
 metadata:
   creationTimestamp: null
+  labels:
+    app: scheduler
   name: scheduler
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -12,7 +14,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      role: scheduler
+      app: scheduler
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -26,8 +28,7 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
-        release: v1.8.5
-        role: scheduler
+        app: scheduler
     spec:
       containers:
       - args:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"sort"
 	"time"
 
@@ -640,6 +641,12 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
+		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+		if !reflect.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+			propagation := metav1.DeletePropagationForeground
+			return cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
+		}
+
 		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
 			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
 		}
@@ -771,6 +778,12 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 
 		if diff := deep.Equal(set, existing); diff == nil {
 			continue
+		}
+
+		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+		if !reflect.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+			propagation := metav1.DeletePropagationForeground
+			return cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Delete(set.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
 
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {

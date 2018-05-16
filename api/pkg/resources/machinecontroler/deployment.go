@@ -8,6 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	name = "machine-controller"
+)
+
 // Deployment returns the machine-controller Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -20,10 +24,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Name = resources.MachineControllerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
+	dep.Labels = resources.GetLabels(name)
+
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"app": "machine-controller",
+			resources.AppLabelKey: "machine-controller",
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -40,8 +46,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"role": "machine-controller",
-			"app":  "machine-controller",
+			resources.AppLabelKey: name,
 		},
 		Annotations: map[string]string{
 			"prometheus.io/scrape": "true",
@@ -66,7 +71,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "machine-controller",
+			Name:            name,
 			Image:           data.ImageRegistry("docker.io") + "/kubermatic/machine-controller:" + data.Version.Values["machine-controller-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},

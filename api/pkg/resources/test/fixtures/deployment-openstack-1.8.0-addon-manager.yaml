@@ -1,5 +1,7 @@
 metadata:
   creationTimestamp: null
+  labels:
+    app: addon-manager
   name: addon-manager
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -12,8 +14,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      role: addon-manager
-      version: v1
+      app: addon-manager
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -23,9 +24,7 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        release: v1.8.2
-        role: addon-manager
-        version: v1
+        app: addon-manager
     spec:
       containers:
       - env:
