@@ -87,9 +87,12 @@ func main() {
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
 	flag.Parse()
 
-	promClient, _ := prometheusapi.NewClient(prometheusapi.Config{
+	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
 		Address: "https://admin:loodse123@prometheus.dev.kubermatic.io",
 	})
+	if err != nil {
+		glog.Fatal(err)
+	}
 	promAPI := prometheusv1.NewAPI(promClient)
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
