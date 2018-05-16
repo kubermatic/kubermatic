@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	name = "prometheus"
+
 	volumeConfigName = "config"
 	volumeDataName   = "data"
 )
@@ -33,22 +35,23 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 
 	set.Name = resources.PrometheusStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	set.Labels = resources.GetLabels(name)
 
 	set.Spec.Replicas = resources.Int32(1)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.ServiceName = resources.PrometheusServiceName
 	set.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"app":     "prometheus",
-			"cluster": data.Cluster.Name,
+			resources.AppLabelKey: name,
+			"cluster":             data.Cluster.Name,
 		},
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"app":             "prometheus",
-			"cluster":         data.Cluster.Name,
-			"config-revision": cm.ObjectMeta.ResourceVersion,
+			resources.AppLabelKey: name,
+			"cluster":             data.Cluster.Name,
+			"config-revision":     cm.ObjectMeta.ResourceVersion,
 		},
 	}
 	set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
@@ -65,7 +68,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	if len(set.Spec.Template.Spec.Containers) == 0 {
 		set.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 	}
-	set.Spec.Template.Spec.Containers[0].Name = "prometheus"
+	set.Spec.Template.Spec.Containers[0].Name = name
 	set.Spec.Template.Spec.Containers[0].Image = data.ImageRegistry("quay.io") + "/prometheus/prometheus:v2.2.0"
 	set.Spec.Template.Spec.Containers[0].Args = []string{
 		"--config.file=/etc/prometheus/config/prometheus.yaml",

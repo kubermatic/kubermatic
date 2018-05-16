@@ -16,6 +16,10 @@ var (
 	defaultCPULimit      = resource.MustParse("100m")
 )
 
+const (
+	name = "scheduler"
+)
+
 // Deployment returns the kubernetes Controller-Manager Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -27,11 +31,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.SchedulerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role": "scheduler",
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -48,8 +53,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"role":    "scheduler",
-			"release": data.Version.Values["k8s-version"],
+			resources.AppLabelKey: name,
 		},
 		Annotations: map[string]string{
 			"prometheus.io/scrape": "true",
@@ -74,7 +78,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "scheduler",
+			Name:            name,
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:" + data.Version.Values["k8s-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},

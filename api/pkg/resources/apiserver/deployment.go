@@ -23,6 +23,10 @@ var (
 	defaultOpenVPNCPULimit      = resource.MustParse("40m")
 )
 
+const (
+	name = "apiserver"
+)
+
 // Deployment returns the kubernetes Apiserver Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -34,11 +38,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ApiserverDeploymenName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role": "apiserver",
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -143,7 +148,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 		{
-			Name:            "apiserver",
+			Name:            name,
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:" + data.Version.Values["k8s-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
@@ -276,8 +281,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
 	podLabels := map[string]string{
-		"role":    "apiserver",
-		"release": data.Version.Values["k8s-version"],
+		resources.AppLabelKey: "apiserver",
 	}
 
 	secretDependencies := []string{
