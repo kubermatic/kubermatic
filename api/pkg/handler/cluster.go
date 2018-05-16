@@ -129,6 +129,17 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 	}
 }
 
+type (
+	metricsResponse struct {
+		Metrics []metricResponse `json:"metrics"`
+	}
+	metricResponse struct {
+		Name   string    `json:"name"`
+		Value  float64   `json:"value,omitempty"`
+		Values []float64 `json:"values,omitempty"`
+	}
+)
+
 func getClusterMetricsEndpoint(promAPI prometheusv1.API) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
@@ -145,15 +156,49 @@ func getClusterMetricsEndpoint(promAPI prometheusv1.API) endpoint.Endpoint {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 
-		vals, err := promMachines(ctx, promAPI, c.Name)
+		var resp metricsResponse
 
-		return vals, nil
+		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
+			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:  "Machines",
+			Value: val,
+		})
+
+		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
+			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:   "Machines (1h)",
+			Values: vals,
+		})
+
+		return resp, nil
 	}
 }
 
-func promMachines(ctx context.Context, api prometheusv1.API, clusterName string) ([]float64, error) {
-	query := fmt.Sprintf(`machine_controller_machines{namespace="cluster-%s"}`, clusterName)
+func prometheusQuery(ctx context.Context, api prometheusv1.API, query string) (float64, error) {
+	now := time.Now()
+	val, err := api.Query(ctx, query, now)
+	if err != nil {
+		return 0, nil
+	}
+	if val.Type() != model.ValVector {
+		return 0, fmt.Errorf("failed to retreive correct value type")
+	}
 
+	vec := val.(model.Vector)
+	for _, sample := range vec {
+		return float64(sample.Value), nil
+	}
+
+	return 0, nil
+}
+
+func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query string) ([]float64, error) {
 	now := time.Now()
 	val, err := api.QueryRange(ctx, query, prometheusv1.Range{
 		Start: now.Add(-1 * time.Hour),
@@ -163,10 +208,17 @@ func promMachines(ctx context.Context, api prometheusv1.API, clusterName string)
 	if err != nil {
 		return nil, err
 	}
-
 	if val.Type() != model.ValMatrix {
-
+		return nil, fmt.Errorf("failed to retreive correct value type")
 	}
 
-	return nil, nil
+	var vals []float64
+	matrix := val.(model.Matrix)
+	for _, sample := range matrix {
+		for _, v := range sample.Values {
+			vals = append(vals, float64(v.Value))
+		}
+	}
+
+	return vals, nil
 }
