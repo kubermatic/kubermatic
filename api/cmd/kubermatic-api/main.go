@@ -90,7 +90,7 @@ func main() {
 	promClient, _ := prometheusapi.NewClient(prometheusapi.Config{
 		Address: "https://admin:loodse123@prometheus.dev.kubermatic.io",
 	})
-	promApi := prometheusv1.NewAPI(promClient)
+	promAPI := prometheusv1.NewAPI(promClient)
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
@@ -186,7 +186,7 @@ func main() {
 		projectProvider,
 		authenticator,
 		updateManager,
-		promApi,
+		promAPI,
 	)
 
 	mainRouter := mux.NewRouter()
