@@ -88,6 +88,9 @@ const (
 
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256
+
+	// AppLabelKey defines the label key app which should be used within resources
+	AppLabelKey = "app"
 )
 
 const (
@@ -227,4 +230,9 @@ func LoadEtcdClusterFile(data *TemplateData, masterResourcesPath, yamlFile strin
 	var c etcdoperatorv1beta2.EtcdCluster
 	json, err := t.Execute(data, &c)
 	return &c, json, err
+}
+
+// GetLabels returns default labels every resource should have
+func GetLabels(app string) map[string]string {
+	return map[string]string{AppLabelKey: app}
 }

@@ -18,6 +18,10 @@ var (
 	defaultCPULimit      = resource.MustParse("250m")
 )
 
+const (
+	name = "controller-manager"
+)
+
 // Deployment returns the kubernetes Controller-Manager Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -29,11 +33,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ControllerManagerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role": "controller-manager",
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -79,7 +84,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "controller-manager",
+			Name:            name,
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:" + data.Version.Values["k8s-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "controller-manager"},
@@ -176,8 +181,7 @@ func getFlags(data *resources.TemplateData) []string {
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
 	podLabels := map[string]string{
-		"role":    "controller-manager",
-		"release": data.Version.Values["k8s-version"],
+		resources.AppLabelKey: name,
 	}
 
 	secretDependencies := []string{

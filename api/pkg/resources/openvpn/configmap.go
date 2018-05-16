@@ -18,6 +18,8 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 
 	cm.Name = resources.OpenVPNClientConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	cm.Labels = resources.GetLabels(name)
+
 	cm.Data = map[string]string{
 		"user-cluster-client": `iroute 172.25.0.0 255.255.0.0
 iroute 10.10.10.0 255.255.255.0
