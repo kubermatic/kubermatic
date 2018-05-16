@@ -18,12 +18,13 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	}
 
 	se.Name = resources.OpenVPNServerServiceName
+	se.Labels = resources.GetLabels("openvpn")
 	se.Annotations = map[string]string{
 		"nodeport-proxy.k8s.io/expose": "true",
 	}
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	se.Spec.Selector = map[string]string{
-		"role": "openvpn-server",
+		resources.AppLabelKey: name,
 	}
 	se.Spec.Type = corev1.ServiceTypeNodePort
 	if len(se.Spec.Ports) == 0 {

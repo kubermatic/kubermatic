@@ -1,5 +1,7 @@
 metadata:
   creationTimestamp: null
+  labels:
+    app: apiserver
   name: apiserver
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -12,7 +14,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      role: apiserver
+      app: apiserver
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -27,11 +29,10 @@ spec:
       creationTimestamp: null
       labels:
         apiserver-tls-secret-revision: "123456"
+        app: apiserver
         ca-cert-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
-        release: v1.8.5
-        role: apiserver
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:

@@ -16,11 +16,12 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 		rb = &rbacv1.ClusterRoleBinding{}
 	}
 
-	rb.Name = data.Cluster.Status.NamespaceName + "-etcd-operator"
+	rb.Name = data.Cluster.Status.NamespaceName + "-" + name
 	rb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	rb.Labels = resources.GetLabels("etcd-operator")
 
 	rb.RoleRef = rbacv1.RoleRef{
-		Name:     "etcd-operator",
+		Name:     name,
 		Kind:     "ClusterRole",
 		APIGroup: "rbac.authorization.k8s.io",
 	}

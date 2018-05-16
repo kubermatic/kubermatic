@@ -19,10 +19,12 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 
 	se.Name = resources.PrometheusServiceName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	se.Labels = resources.GetLabels(name)
+
 	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
-		"app":     "prometheus",
-		"cluster": data.Cluster.Name,
+		resources.AppLabelKey: "prometheus",
+		"cluster":             data.Cluster.Name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{

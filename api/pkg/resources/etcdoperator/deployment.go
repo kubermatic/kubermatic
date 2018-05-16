@@ -8,6 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	name = "etcd-operator"
+)
+
 // Deployment returns the CoreOS etcd-operator Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -19,13 +23,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.EtcdOperatorDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role":    "etcd-operator",
-			"version": "v1",
-			"release": data.Version.Values["etcd-operator-version"],
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -42,15 +45,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: map[string]string{
-			"role":    "etcd-operator",
-			"version": "v1",
-			"release": data.Version.Values["etcd-operator-version"],
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Template.Spec.ServiceAccountName = resources.EtcdOperatorServiceAccountName
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "etcd-operator",
+			Name:            name,
 			Image:           data.ImageRegistry("quay.io") + "/coreos/etcd-operator:" + data.Version.Values["etcd-operator-version"],
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{
