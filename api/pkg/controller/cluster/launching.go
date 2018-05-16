@@ -233,7 +233,7 @@ func (cc *Controller) launchingCreateOpenVPNConfigMap(c *kubermaticv1.Cluster) e
 	_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			openvpnSvc, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+			openvpnSvc, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
 			if err != nil {
 				return err
 			}

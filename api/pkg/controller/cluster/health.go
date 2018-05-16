@@ -7,7 +7,7 @@ import (
 )
 
 func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {
-	dep, err := cc.DeploymentLister.Deployments(ns).Get(name)
+	dep, err := cc.deploymentLister.Deployments(ns).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil
@@ -19,7 +19,7 @@ func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, 
 }
 
 func (cc *Controller) healthyEtcd(ns, name string) (bool, error) {
-	etcd, err := cc.EtcdClusterLister.EtcdClusters(ns).Get(resources.EtcdClusterName)
+	etcd, err := cc.etcdClusterLister.EtcdClusters(ns).Get(resources.EtcdClusterName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil

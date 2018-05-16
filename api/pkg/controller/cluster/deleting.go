@@ -103,7 +103,7 @@ func (cc *Controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	ns, err := cc.NamespaceLister.Get(c.Status.NamespaceName)
+	ns, err := cc.namespaceLister.Get(c.Status.NamespaceName)
 	// Only delete finalizer if namespace is really gone
 	if err != nil {
 		if errors.IsNotFound(err) {
