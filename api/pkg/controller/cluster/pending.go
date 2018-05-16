@@ -380,6 +380,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	creators := []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
+		prometheus.Service,
 		openvpn.Service,
 	}
 
