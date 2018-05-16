@@ -96,7 +96,7 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 
 func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	//Load the ca key
-	keySecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
+	keySecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to check if a private CA key already exists: %v", err)
 	}
@@ -117,7 +117,7 @@ func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecre
 }
 
 func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyPair, error) {
-	caCertSecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(resources.CACertSecretName)
+	caCertSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CACertSecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
@@ -128,7 +128,7 @@ func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyP
 	}
 
 	//Load the ca key
-	caKeySecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
+	caKeySecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
 	}
