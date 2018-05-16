@@ -187,7 +187,7 @@ func prometheusQuery(ctx context.Context, api prometheusv1.API, query string) (f
 		return 0, nil
 	}
 	if val.Type() != model.ValVector {
-		return 0, fmt.Errorf("failed to retreive correct value type")
+		return 0, fmt.Errorf("failed to retrieve correct value type")
 	}
 
 	vec := val.(model.Vector)
@@ -209,7 +209,7 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 		return nil, err
 	}
 	if val.Type() != model.ValMatrix {
-		return nil, fmt.Errorf("failed to retreive correct value type")
+		return nil, fmt.Errorf("failed to retrieve correct value type")
 	}
 
 	var vals []float64
