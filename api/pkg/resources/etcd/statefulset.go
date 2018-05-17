@@ -48,6 +48,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
+			"cluster":             data.Cluster.Name,
 		},
 	}
 
@@ -55,6 +56,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		Name: name,
 		Labels: map[string]string{
 			resources.AppLabelKey: name,
+			"cluster":             data.Cluster.Name,
 		},
 	}
 

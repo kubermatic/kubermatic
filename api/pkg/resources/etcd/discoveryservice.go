@@ -25,6 +25,7 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
+		"cluster":             data.Cluster.Name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
