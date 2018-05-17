@@ -2,6 +2,8 @@ package fake
 
 import (
 	clientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	etcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2"
+	fakeetcdv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/etcdoperator/v1beta2/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	fakekubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,6 +53,16 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 }
 
 var _ clientset.Interface = &Clientset{}
+
+// EtcdV1beta2 retrieves the EtcdV1beta2Client
+func (c *Clientset) EtcdV1beta2() etcdv1beta2.EtcdV1beta2Interface {
+	return &fakeetcdv1beta2.FakeEtcdV1beta2{Fake: &c.Fake}
+}
+
+// Etcd retrieves the EtcdV1beta2Client
+func (c *Clientset) Etcd() etcdv1beta2.EtcdV1beta2Interface {
+	return &fakeetcdv1beta2.FakeEtcdV1beta2{Fake: &c.Fake}
+}
 
 // KubermaticV1 retrieves the KubermaticV1Client
 func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
