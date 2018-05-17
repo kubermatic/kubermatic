@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -87,6 +88,11 @@ func main() {
 	for _, image := range images {
 		fmt.Println(image)
 	}
+
+	err = downloadImages(images)
+	if err != nil {
+		glog.Fatalf(err.Error())
+	}
 }
 
 func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, requestedVersion string) (*[]Image, error) {
@@ -109,4 +115,22 @@ func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, req
 
 	}
 	return &imagesValue, nil
+}
+
+func downloadImages(images []Image) error {
+	for _, image := range images {
+		for _, tag := range image.Tags {
+			if tag == "" {
+				continue
+			}
+			imageWithTag := fmt.Sprintf("%s:%s", image.Name, tag)
+			fmt.Printf("Downloading image '%s'...\n", imageWithTag)
+			cmd := exec.Command("docker", "pull", imageWithTag)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("Error pulling image: %v\nOuput: %s\n", err, output)
+			}
+		}
+	}
+	return nil
 }
