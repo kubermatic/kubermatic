@@ -1,6 +1,0 @@
-##### Kubermatic coreos-ipxe-server
-
-## ToDo(Jason): Add kernel images, add profile mounts, add ssh key mounts
-BareMetalAuthUser: ""
-BareMetalAuthPassword: ""
-BareMetalProviderURL: ""
