@@ -84,7 +84,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
