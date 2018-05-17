@@ -14,7 +14,7 @@ import (
 	"github.com/golang/glog"
 )
 
-type Image struct {
+type image struct {
 	Name      string
 	Tags      []string
 	ValueName string
@@ -22,7 +22,7 @@ type Image struct {
 
 func main() {
 
-	var images []Image
+	var images []image
 	var masterResources string
 	var requestedVersion string
 	var registryName string
@@ -76,22 +76,26 @@ func main() {
 
 			imageAndTags := strings.Split(imageSanitized, ":")
 			if len(imageAndTags) == 1 {
-				images = append(images, Image{Name: imageAndTags[0], ValueName: valueName})
+				images = append(images, image{Name: imageAndTags[0], ValueName: valueName})
 				continue
 			}
 
 			if len(imageAndTags) > 1 {
-				images = append(images, Image{Name: imageAndTags[0], Tags: imageAndTags[1:], ValueName: valueName})
+				images = append(images, image{Name: imageAndTags[0], Tags: imageAndTags[1:], ValueName: valueName})
 			}
 		}
 	}
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
-		for version, _ := range versions {
-			setImageTags(versions, &images, version)
+		for version := range versions {
+			if err = setImageTags(versions, &images, version); err != nil {
+				glog.Fatalf("Error tagging image: %v", err)
+			}
 		}
 	} else {
-		setImageTags(versions, &images, requestedVersion)
+		if err = setImageTags(versions, &images, requestedVersion); err != nil {
+			glog.Fatalf("Error tagging image: %v", err)
+		}
 	}
 
 	imageTagList := getImageTagList(images)
@@ -130,10 +134,10 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 	return retaggedImages, nil
 }
 
-func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, requestedVersion string) (*[]Image, error) {
+func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]image, requestedVersion string) error {
 	version, found := versions[requestedVersion]
 	if !found {
-		return nil, fmt.Errorf("Version %s could not be found!", requestedVersion)
+		return fmt.Errorf("version %s could not be found", requestedVersion)
 	}
 
 	imagesValue := *images
@@ -144,25 +148,25 @@ func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, req
 
 		imageVersion, found := version.Values[image.ValueName]
 		if !found {
-			return nil, fmt.Errorf("Found no version value named %s!", image.ValueName)
+			return fmt.Errorf("found no version value named %s", image.ValueName)
 		}
 		imagesValue[idx].Tags = append(imagesValue[idx].Tags, imageVersion)
 
 	}
-	return &imagesValue, nil
+	return nil
 }
 
 func downloadImages(images []string) error {
 	for _, image := range images {
 		glog.Infof("Downloading image '%s'...\n", image)
 		if out, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
-			return fmt.Errorf("Error pulling image: %v\nOuput: %s\n", err, out)
+			return fmt.Errorf("error pulling image: %v\nOutput: %s", err, out)
 		}
 	}
 	return nil
 }
 
-func getImageTagList(images []Image) (imageWithTagList []string) {
+func getImageTagList(images []image) (imageWithTagList []string) {
 	var intermediateImageWithTagList []string
 	for _, image := range images {
 		for _, tag := range image.Tags {
