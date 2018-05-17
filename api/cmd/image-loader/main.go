@@ -89,7 +89,8 @@ func main() {
 		fmt.Println(image)
 	}
 
-	err = downloadImages(images)
+	imageTagList := getImageTagList(images)
+	err = downloadImages(imageTagList)
 	if err != nil {
 		glog.Fatalf(err.Error())
 	}
@@ -117,20 +118,42 @@ func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, req
 	return &imagesValue, nil
 }
 
-func downloadImages(images []Image) error {
+func downloadImages(images []string) error {
+	for _, image := range images {
+		fmt.Printf("Downloading image '%s'...\n", image)
+		cmd := exec.Command("docker", "pull", image)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("Error pulling image: %v\nOuput: %s\n", err, output)
+		}
+	}
+	return nil
+}
+
+func getImageTagList(images []Image) (imageWithTagList []string) {
+	var intermediateImageWithTagList []string
 	for _, image := range images {
 		for _, tag := range image.Tags {
 			if tag == "" {
 				continue
 			}
-			imageWithTag := fmt.Sprintf("%s:%s", image.Name, tag)
-			fmt.Printf("Downloading image '%s'...\n", imageWithTag)
-			cmd := exec.Command("docker", "pull", imageWithTag)
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				return fmt.Errorf("Error pulling image: %v\nOuput: %s\n", err, output)
-			}
+			intermediateImageWithTagList = append(intermediateImageWithTagList, fmt.Sprintf("%s:%s", image.Name, tag))
 		}
 	}
-	return nil
+
+	for _, newItem := range intermediateImageWithTagList {
+		if !stringListContains(imageWithTagList, newItem) {
+			imageWithTagList = append(imageWithTagList, newItem)
+		}
+	}
+	return imageWithTagList
+}
+
+func stringListContains(list []string, item string) bool {
+	for _, listItem := range list {
+		if listItem == item {
+			return true
+		}
+	}
+	return false
 }
