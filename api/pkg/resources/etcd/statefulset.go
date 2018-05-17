@@ -222,6 +222,7 @@ const (
 --initial-cluster-state=new \
 --advertise-client-urls http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379 \
 --listen-client-urls http://0.0.0.0:2379 \
+--enable-v2=false \
 --listen-peer-urls http://0.0.0.0:2380
 `
 
