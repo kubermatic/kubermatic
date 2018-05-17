@@ -11,6 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	name = "openvpn-server"
+)
+
 // Deployment returns the kubernetes Controller-Manager Deployment
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
@@ -22,11 +26,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.OpenVPNServerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"role": "openvpn-server",
+			resources.AppLabelKey: name,
 		},
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -74,7 +79,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            "openvpn-server",
+			Name:            name,
 			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.2",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
@@ -161,8 +166,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
 	podLabels := map[string]string{
-		"role": "openvpn-server",
-		"app":  "openvpn-server",
+		resources.AppLabelKey: name,
 	}
 
 	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)

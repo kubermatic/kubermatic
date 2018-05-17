@@ -4,6 +4,8 @@ data:
     iroute 10.10.10.0 255.255.255.0
 metadata:
   creationTimestamp: null
+  labels:
+    app: openvpn-server
   name: openvpn-client-configs
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1

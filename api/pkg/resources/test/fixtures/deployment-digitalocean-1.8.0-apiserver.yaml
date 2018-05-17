@@ -1,5 +1,7 @@
 metadata:
   creationTimestamp: null
+  labels:
+    app: apiserver
   name: apiserver
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -12,7 +14,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      role: apiserver
+      app: apiserver
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -27,11 +29,10 @@ spec:
       creationTimestamp: null
       labels:
         apiserver-tls-secret-revision: "123456"
+        app: apiserver
         ca-cert-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
-        release: v1.8.5
-        role: apiserver
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:
@@ -108,7 +109,7 @@ spec:
         - --insecure-port
         - "8080"
         - --etcd-servers
-        - http://etcd-cluster-client:2379
+        - http://etcd-client:2379
         - --storage-backend
         - etcd3
         - --admission-control
@@ -210,7 +211,7 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379]
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-client:2379]
           get foo; do echo waiting for etcd; sleep 2; done;
         image: quay.io/coreos/etcd:v3.2.7
         imagePullPolicy: IfNotPresent

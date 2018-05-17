@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"sort"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -70,6 +71,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	// Set default network configuration
+	if err := cc.ensureClusterNetworkDefaults(cluster); err != nil {
+		return err
+	}
+
 	// Generate the kubelet and admin token
 	if err := cc.ensureTokens(cluster); err != nil {
 		return err
@@ -117,11 +123,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 
 	// check that all StatefulSet's are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
-		return err
-	}
-
-	// check that the etcd-cluster cr is available
-	if err := cc.ensureEtcdCluster(cluster); err != nil {
 		return err
 	}
 
@@ -176,10 +177,10 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		c,
 		version,
 		&dc,
-		cc.SecretLister,
-		cc.ConfigMapLister,
-		cc.ServiceLister,
-		cc.OverwriteRegistry,
+		cc.secretLister,
+		cc.configMapLister,
+		cc.serviceLister,
+		cc.overwriteRegistry,
 	), nil
 }
 
@@ -224,7 +225,7 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 		c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
 	}
 
-	if _, err := cc.NamespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
+	if _, err := cc.namespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
 		return err
 	}
 
@@ -270,7 +271,7 @@ func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
 	sort.Strings(ips)
 	c.Address.IP = ips[0]
 
-	s, err := cc.ServiceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
+	s, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err
@@ -322,7 +323,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 
 	for _, op := range ops {
 		exists := false
-		existingSecret, err := cc.SecretLister.Secrets(c.Status.NamespaceName).Get(op.name)
+		existingSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(op.name)
 		if err != nil {
 			if !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to get secret %s from lister: %v", op.name, err)
@@ -344,7 +345,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			}
 
 			secretExistsInLister := func() (bool, error) {
-				_, err = cc.SecretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
+				_, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
 				if err != nil {
 					if os.IsNotExist(err) {
 						return false, nil
@@ -379,7 +380,10 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	creators := []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
+		prometheus.Service,
 		openvpn.Service,
+		etcd.DiscoveryService,
+		etcd.Service,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -394,7 +398,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if existing, err = cc.ServiceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
+		if existing, err = cc.serviceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -424,7 +428,6 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
 	names := []string{
-		resources.EtcdOperatorServiceAccountName,
 		resources.PrometheusServiceAccountName,
 	}
 
@@ -438,7 +441,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 		var existing *corev1.ServiceAccount
 		sa := resources.ServiceAccount(name, &ref, nil)
 
-		if existing, err = cc.ServiceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
+		if existing, err = cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -479,7 +482,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if existing, err = cc.RoleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
+		if existing, err = cc.roleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -524,7 +527,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if existing, err = cc.RoleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
+		if existing, err = cc.roleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -553,9 +556,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	creators := []resources.ClusterRoleBindingCreator{
-		etcdoperator.ClusterRoleBinding,
-	}
+	creators := []resources.ClusterRoleBindingCreator{}
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -569,7 +570,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if existing, err = cc.ClusterRoleBindingLister.Get(crb.Name); err != nil {
+		if existing, err = cc.clusterRoleBindingLister.Get(crb.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -599,7 +600,6 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	creators := []resources.DeploymentCreator{
-		etcdoperator.Deployment,
 		addonmanager.Deployment,
 		machinecontroller.Deployment,
 		openvpn.Deployment,
@@ -620,7 +620,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
 
-		if existing, err = cc.DeploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
+		if existing, err = cc.deploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -638,6 +638,12 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 
 		if diff := deep.Equal(dep, existing); diff == nil {
 			continue
+		}
+
+		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+		if !reflect.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+			propagation := metav1.DeletePropagationForeground
+			return cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
 
 		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
@@ -667,7 +673,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
-		if existing, err = cc.ConfigMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
+		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -695,50 +701,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
-	masterVersion, found := cc.versions[c.Spec.MasterVersion]
-	if !found {
-		return fmt.Errorf("unknown new cluster %q master version %q", c.Name, c.Spec.MasterVersion)
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	generatedEtcd, lastApplied, err := resources.LoadEtcdClusterFile(data, cc.masterResourcesPath, masterVersion.EtcdClusterYaml)
-	if err != nil {
-		return fmt.Errorf("failed to load etcd-cluster: %v", err)
-	}
-	generatedEtcd.Annotations[lastAppliedConfigAnnotation] = lastApplied
-
-	etcd, err := cc.EtcdClusterLister.EtcdClusters(c.Status.NamespaceName).Get(generatedEtcd.Name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			_, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Create(generatedEtcd)
-			if err != nil {
-				return fmt.Errorf("failed to create etcd-cluster resource: %v", err)
-			}
-			return nil
-		}
-		return err
-	}
-	if etcd.Annotations[lastAppliedConfigAnnotation] != lastApplied {
-		patch, err := getPatch(etcd, generatedEtcd)
-		if err != nil {
-			return err
-		}
-		if _, err = cc.kubermaticClient.EtcdV1beta2().EtcdClusters(c.Status.NamespaceName).Patch(generatedEtcd.Name, types.MergePatchType, patch); err != nil {
-			return fmt.Errorf("failed to create patch etcd-cluster resource: %v", err)
-		}
-	}
-
-	return nil
-}
-
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	creators := []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
+		etcd.StatefulSet,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -753,7 +719,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if existing, err = cc.StatefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
+		if existing, err = cc.statefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -773,10 +739,30 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
+		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+		if !reflect.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+			propagation := metav1.DeletePropagationForeground
+			return cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Delete(set.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
+		}
+
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
 			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
 		}
 	}
 
+	return nil
+}
+
+// ensureClusterNetworkDefaults will apply default cluster network configuration
+func (cc *Controller) ensureClusterNetworkDefaults(c *kubermaticv1.Cluster) error {
+	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+	}
+	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+	}
+	if c.Spec.ClusterNetwork.DNSDomain == "" {
+		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+	}
 	return nil
 }
