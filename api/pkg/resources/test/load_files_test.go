@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcdoperator"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -273,6 +274,7 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 				deps := map[string]resources.DeploymentCreator{
+					fmt.Sprintf("deployment-%s-%s-etcd-operator", prov, version.ID):      etcdoperator.Deployment,
 					fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID):          scheduler.Deployment,
 					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, version.ID): controllermanager.Deployment,
 					fmt.Sprintf("deployment-%s-%s-apiserver", prov, version.ID):          apiserver.Deployment,
