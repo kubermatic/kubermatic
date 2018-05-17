@@ -190,6 +190,7 @@ pipeline:
     secrets:
     - source: kubeconfig_dev
       target: kubeconfig
+    values: '[ values_dev ]'
     when:
       branch: master
   9-deploy-cloud-asia:
@@ -237,6 +238,7 @@ pipeline:
     secrets:
     - source: kubeconfig_cloud_asia-east1-a-1
       target: kubeconfig
+    values: '[ values_cloud ]'
     when:
       branch: master
   9-deploy-cloud-europe:
@@ -284,6 +286,7 @@ pipeline:
     secrets:
     - source: kubeconfig_cloud_europe-west3-c-1
       target: kubeconfig
+    values: '[ values_cloud ]'
     when:
       branch: master
   9-deploy-cloud-us:
@@ -331,6 +334,7 @@ pipeline:
     secrets:
     - source: kubeconfig_cloud_us-central1-c-1
       target: kubeconfig
+    values: '[ values_cloud ]'
     when:
       branch: master
   10-slack:
