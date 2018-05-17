@@ -36,11 +36,6 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 
 	set.Name = resources.EtcdStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	set.Annotations = map[string]string{
-		"prometheus.io/scrape": "true",
-		"prometheus.io/path":   "/metrics",
-		"prometheus.io/port":   "2379",
-	}
 
 	set.Spec.Replicas = resources.Int32(3)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -58,6 +53,11 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		Labels: map[string]string{
 			resources.AppLabelKey: name,
 			"cluster":             data.Cluster.Name,
+		},
+		Annotations: map[string]string{
+			"prometheus.io/scrape": "true",
+			"prometheus.io/path":   "/metrics",
+			"prometheus.io/port":   "2379",
 		},
 	}
 
