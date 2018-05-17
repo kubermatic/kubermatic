@@ -216,7 +216,7 @@ func getEtcdCommand(data *resources.TemplateData, cmdTpl string) ([]string, erro
 const (
 	etcdStartCommandTpl = `/usr/local/bin/etcd \
 --name=${POD_NAME} \
---data-dir="/var/run/etcd" \
+--data-dir="/var/run/etcd/pod_${POD_NAME}/" \
 --heartbeat-interval=500 \
 --election-timeout=5000 \
 --initial-cluster="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
@@ -228,11 +228,11 @@ const (
 --listen-peer-urls http://0.0.0.0:2380
 `
 
-	etcdRestoreCommandTpl = `if [ ! -d "/var/run/etcd/${POD_NAME}/" ]; then
+	etcdRestoreCommandTpl = `if [ ! -d "/var/run/etcd/pod_${POD_NAME}/" ]; then
 	ETCDCTL_API=3 etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
 	ETCDCTL_API=3 etcdctl snapshot restore snapshot.db \
 		--name ${POD_NAME} \
-		--data-dir="/var/run/etcd/${POD_NAME}/" \
+		--data-dir="/var/run/etcd/pod_${POD_NAME}/" \
 		--initial-cluster="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
 		--initial-cluster-token="{{ .Token }}" \
 		--initial-advertise-peer-urls http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
