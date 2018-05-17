@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	etcdoperatorv1beta2 "github.com/kubermatic/kubermatic/api/pkg/crd/etcdoperator/v1beta2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,13 +53,6 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
-		},
-		{
-			plural:  etcdoperatorv1beta2.EtcdClusterPlural,
-			kind:    reflect.TypeOf(etcdoperatorv1beta2.EtcdCluster{}).Name(),
-			group:   etcdoperatorv1beta2.GroupName,
-			version: etcdoperatorv1beta2.SchemeGroupVersion.Version,
-			scope:   apiextensionsv1beta1.NamespaceScoped,
 		},
 	}
 
