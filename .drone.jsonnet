@@ -109,6 +109,7 @@ local drone = import 'drone/drone.libsonnet';
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
+          {source: 'values_dev', target: 'values_dev'},
         ],
         charts: charts,
         values: "[ values_dev ]",
@@ -120,6 +121,7 @@ local drone = import 'drone/drone.libsonnet';
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_europe-west3-c-1', target: 'kubeconfig'},
+          {source: 'values_cloud', target: 'values_cloud'},
         ],
         charts: charts,
         values: "[ values_cloud ]",
@@ -129,6 +131,7 @@ local drone = import 'drone/drone.libsonnet';
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_us-central1-c-1', target: 'kubeconfig'},
+          {source: 'values_cloud', target: 'values_cloud'},
         ],
         values: "[ values_cloud ]",
         charts: charts,
@@ -138,6 +141,7 @@ local drone = import 'drone/drone.libsonnet';
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_asia-east1-a-1', target: 'kubeconfig'},
+          {source: 'values_cloud', target: 'values_cloud'},
         ],
         values: "[ values_cloud ]",
         charts: charts,
