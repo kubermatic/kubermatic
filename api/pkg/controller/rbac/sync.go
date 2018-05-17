@@ -22,11 +22,7 @@ func (c *Controller) sync(key string) error {
 
 	// ensure owner
 	err = c.ensureProjectOwner(project)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
