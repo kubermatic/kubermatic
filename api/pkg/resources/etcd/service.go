@@ -22,6 +22,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	se.Spec.Type = corev1.ServiceTypeClusterIP
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
+		"cluster":             data.Cluster.Name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
