@@ -111,6 +111,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
         ],
         charts: charts,
+        values: "[ values_dev ]",
       } + {when: {branch: 'master'}},
 
     // cloud
@@ -121,6 +122,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_cloud_europe-west3-c-1', target: 'kubeconfig'},
         ],
         charts: charts,
+        values: "[ values_cloud ]",
       } + {when: {branch: 'master'}},
 
     '9-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
@@ -128,6 +130,7 @@ local drone = import 'drone/drone.libsonnet';
         secrets: [
           {source: 'kubeconfig_cloud_us-central1-c-1', target: 'kubeconfig'},
         ],
+        values: "[ values_cloud ]",
         charts: charts,
       } + {when: {branch: 'master'}},
 
@@ -136,6 +139,7 @@ local drone = import 'drone/drone.libsonnet';
         secrets: [
           {source: 'kubeconfig_cloud_asia-east1-a-1', target: 'kubeconfig'},
         ],
+        values: "[ values_cloud ]",
         charts: charts,
       } + {when: {branch: 'master'}},
 
