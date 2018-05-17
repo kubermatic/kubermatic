@@ -50,7 +50,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
 		kubeInformerFactory.Core().V1().Namespaces(),
 		kubeInformerFactory.Core().V1().Secrets(),
 		kubeInformerFactory.Core().V1().Services(),
