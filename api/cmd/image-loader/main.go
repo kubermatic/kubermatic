@@ -25,9 +25,17 @@ func main() {
 	var images []Image
 	var masterResources string
 	var requestedVersion string
+	var registryName string
 
 	flag.StringVar(&masterResources, "master-resources", "../config/kubermatic/static/master/versions.yaml", "")
 	flag.StringVar(&requestedVersion, "version", "", "")
+	flag.StringVar(&registryName, "registry-name", "", "Name of the registry to push to")
+	flag.Parse()
+
+	if registryName == "" {
+		glog.Fatalf("Registry name must not be empty!")
+	}
+
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {
 		glog.Fatalf("Error loading versions: %v", err)
@@ -85,15 +93,40 @@ func main() {
 		setImageTags(versions, &images, requestedVersion)
 	}
 
-	for _, image := range images {
-		fmt.Println(image)
-	}
-
 	imageTagList := getImageTagList(images)
-	err = downloadImages(imageTagList)
+	//err = downloadImages(imageTagList)
+	retaggedImages, err := retagImages(registryName, imageTagList)
 	if err != nil {
 		glog.Fatalf(err.Error())
 	}
+	if err = pushImages(retaggedImages); err != nil {
+		glog.Fatalf(err.Error())
+	}
+}
+
+func pushImages(imageTagList []string) error {
+	for _, image := range imageTagList {
+		glog.Infof("Pushing image %s", image)
+		if out, err := exec.Command("docker", "push", image).CombinedOutput(); err != nil {
+			return fmt.Errorf("Failed to push image: Error: %v Output: %s", err, string(out))
+		}
+	}
+	return nil
+}
+
+func retagImages(registryName string, imageTagList []string) (retaggedImages []string, err error) {
+	for _, image := range imageTagList {
+		imageSplitted := strings.Split(image, "/")
+		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
+		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
+		out, err := exec.Command("docker", "tag", image, retaggedImageName).CombinedOutput()
+		if err != nil {
+			return retaggedImages, fmt.Errorf("Failed to retag image: Error: %v, Output: %s", err, string(out))
+		}
+		retaggedImages = append(retaggedImages, retaggedImageName)
+	}
+
+	return retaggedImages, nil
 }
 
 func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, requestedVersion string) (*[]Image, error) {
@@ -120,7 +153,7 @@ func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, req
 
 func downloadImages(images []string) error {
 	for _, image := range images {
-		fmt.Printf("Downloading image '%s'...\n", image)
+		glog.Infof("Downloading image '%s'...\n", image)
 		cmd := exec.Command("docker", "pull", image)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
