@@ -27,18 +27,19 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	type depInfo struct {
-		healthy *bool
+		healthy  *bool
+		minReady int32
 	}
 
 	healthMapping := map[string]*depInfo{
-		resources.ApiserverDeploymenName:          {healthy: &health.Apiserver},
-		resources.ControllerManagerDeploymentName: {healthy: &health.Controller},
-		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler},
-		resources.MachineControllerDeploymentName: {healthy: &health.MachineController},
+		resources.ApiserverDeploymenName:          {healthy: &health.Apiserver, minReady: 1},
+		resources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
+		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
+		resources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDeployment(ns, name)
+		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -46,7 +47,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName)
+	health.Etcd, err = cc.healthyEtcd(ns, resources.EtcdClusterName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}

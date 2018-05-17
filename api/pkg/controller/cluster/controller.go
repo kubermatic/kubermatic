@@ -11,7 +11,9 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
+	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -75,6 +77,8 @@ type Controller struct {
 
 	clusterLister            kubermaticv1lister.ClusterLister
 	clusterSynced            cache.InformerSynced
+	etcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
+	etcdClusterSynced        cache.InformerSynced
 	namespaceLister          corev1lister.NamespaceLister
 	namespaceSynced          cache.InformerSynced
 	secretLister             corev1lister.SecretLister
@@ -127,6 +131,7 @@ func NewController(
 	userClusterConnProvider UserClusterConnectionProvider,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
+	etcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
 	secretInformer corev1informers.SecretInformer,
 	serviceInformer corev1informers.ServiceInformer,
@@ -243,9 +248,16 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
+	etcdClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
 
 	cc.clusterLister = clusterInformer.Lister()
 	cc.clusterSynced = clusterInformer.Informer().HasSynced
+	cc.etcdClusterLister = etcdClusterInformer.Lister()
+	cc.etcdClusterSynced = etcdClusterInformer.Informer().HasSynced
 	cc.namespaceLister = namespaceInformer.Lister()
 	cc.namespaceSynced = namespaceInformer.Informer().HasSynced
 	cc.secretLister = secretInformer.Lister()
@@ -502,6 +514,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 
 	if !cache.WaitForCacheSync(stopCh,
 		cc.clusterSynced,
+		cc.etcdClusterSynced,
 		cc.namespaceSynced,
 		cc.secretSynced,
 		cc.serviceSynced,
