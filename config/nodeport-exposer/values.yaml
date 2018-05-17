@@ -1,5 +1,0 @@
-nodePortExposer:
-  image:
-    repository: "kubermatic/nodeport-exposer"
-    tag: "v1.1"
-

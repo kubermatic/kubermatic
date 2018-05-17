@@ -14,9 +14,6 @@ RUN tar -zxvf /tmp/helm.tar.gz -C /tmp && \
     rm -rf /tmp/linux-amd64 /tmp/helm-$HELM_VERSION-linux-amd64.tar.gz
 RUN mv /tmp/kubectl /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 
-COPY bare-metal-provider /kubermatic/bare-metal-provider
-COPY coreos-ipxe-server /kubermatic/coreos-ipxe-server
-COPY efk-logging /kubermatic/efk-logging
 COPY kubermatic /kubermatic/kubermatic
 COPY nginx-ingress-controller /kubermatic/nginx-ingress-controller
 COPY oauth /kubermatic/oauth
