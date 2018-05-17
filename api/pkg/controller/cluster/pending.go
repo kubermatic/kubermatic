@@ -71,6 +71,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	// Set default network configuration
+	if err := cc.ensureClusterNetworkDefaults(cluster); err != nil {
+		return err
+	}
+
 	// Generate the kubelet and admin token
 	if err := cc.ensureTokens(cluster); err != nil {
 		return err
@@ -745,5 +750,19 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 		}
 	}
 
+	return nil
+}
+
+// ensureClusterNetworkDefaults will apply default cluster network configuration
+func (cc *Controller) ensureClusterNetworkDefaults(c *kubermaticv1.Cluster) error {
+	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+	}
+	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+	}
+	if c.Spec.ClusterNetwork.DNSDomain == "" {
+		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+	}
 	return nil
 }
