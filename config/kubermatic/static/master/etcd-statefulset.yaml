@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: etcd
+  namespace: cluster-qx6ll4bhvc
+spec:
+  podManagementPolicy: Parallel
+  serviceName: etcd
+  replicas: 3
+  selector:
+    matchLabels:
+      app: etcd
+      cluster: qx6ll4bhvc
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      name: etcd
+      labels:
+        app: etcd
+        cluster: qx6ll4bhvc
+    spec:
+      initContainers:
+      - name: snapshot
+        image: "quay.io/coreos/etcd:v3.2.17"
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: data
+          mountPath: /var/run/etcd
+        command:
+        - /bin/sh
+        - -ec
+        - |-
+            if [ ! -d "/var/run/etcd/${POD_NAME}/" ]; then
+              ETCDCTL_API=3 etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
+              ETCDCTL_API=3 etcdctl snapshot restore snapshot.db \
+              --name ${POD_NAME} \
+              --data-dir="/var/run/etcd/${POD_NAME}/" \
+              --initial-cluster="etcd-0=http://etcd-0.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380" \
+              --initial-cluster-token qx6ll4bhvc \
+              --initial-advertise-peer-urls http://${POD_NAME}.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380
+            fi
+      containers:
+      - name: "etcd"
+        image: "quay.io/coreos/etcd:v3.2.17"
+        ports:
+        - containerPort: 2379
+          name: client
+        - containerPort: 2380
+          name: peer
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        command:
+          - "/bin/sh"
+          - "-ecx"
+          - |
+            /usr/local/bin/etcd \
+              --name="${POD_NAME}" \
+              --data-dir="/var/run/etcd/${POD_NAME}/" \
+              --initial-cluster-state=new \
+              --strict-reconfig-check=true \
+              --initial-cluster="etcd-0=http://etcd-0.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2380" \
+              --initial-cluster-token="qx6ll4bhvc" \
+              --advertise-client-urls http://${POD_NAME}.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2379 \
+              --listen-client-urls http://0.0.0.0:2379 \
+              --listen-peer-urls http://0.0.0.0:2380
+              http://etcd-0.etcd.cluster-qx6ll4bhvc.svc.cluster.local:2379
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 2379
+        volumeMounts:
+        - name: data
+          mountPath: /var/run/etcd
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      storageClassName: kubermatic-fast
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 5Gi
