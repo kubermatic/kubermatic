@@ -409,20 +409,12 @@ func (cc *Controller) syncCluster(key string) error {
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
 	}
-	var updateErr error
-	if err = cc.validateCluster(cluster); err != nil {
-		updateErr = cc.updateClusterError(cluster, kubermaticv1.InvalidConfigurationClusterError, err.Error(), originalData)
-		if updateErr != nil {
-			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
-		}
-		return err
-	}
 
 	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 	}
 	if err := cc.reconcileCluster(cluster); err != nil {
-		updateErr = cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
+		updateErr := cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
 		if updateErr != nil {
 			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
 		}
