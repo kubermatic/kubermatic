@@ -1,22 +1,36 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+
 	"github.com/golang/glog"
 )
 
 type Image struct {
-	Name string
-	Tags []string
+	Name      string
+	Tags      []string
+	ValueName string
 }
 
 func main() {
 
 	var images []Image
+	var masterResources string
+	var requestedVersion string
+
+	flag.StringVar(&masterResources, "master-resources", "../config/kubermatic/static/master/versions.yaml", "")
+	flag.StringVar(&requestedVersion, "version", "", "")
+	versions, err := version.LoadVersions(masterResources)
+	if err != nil {
+		glog.Fatalf("Error loading versions: %v", err)
+	}
 
 	data, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
@@ -28,6 +42,7 @@ func main() {
 	for _, line := range lines {
 		if strings.Contains(line, "ImageRegistry(") {
 			var imageSanitized string
+			var valueName string
 
 			// Remove everything up until the image name
 			splitted := strings.SplitAfter(line, "ImageRegistry(")
@@ -39,6 +54,12 @@ func main() {
 			if strings.Contains(imageSanitized, "+data.Version.Values") {
 				splitted := strings.Split(imageSanitized, "+data.Version")
 				imageSanitized = splitted[0]
+				splittedByQuotationSign := strings.Split(splitted[1], "\"")
+				if len(splittedByQuotationSign) != 3 {
+					glog.Fatalf("Can not extract name of version from string %s!", splitted[1])
+				}
+				valueName = splittedByQuotationSign[1]
+
 			}
 
 			imageSanitized = strings.Replace(imageSanitized, "\"", "", -1)
@@ -46,17 +67,46 @@ func main() {
 
 			imageAndTags := strings.Split(imageSanitized, ":")
 			if len(imageAndTags) == 1 {
-				images = append(images, Image{Name: imageAndTags[0]})
+				images = append(images, Image{Name: imageAndTags[0], ValueName: valueName})
 				continue
 			}
 
 			if len(imageAndTags) > 1 {
-				images = append(images, Image{Name: imageAndTags[0], Tags: imageAndTags[1:]})
+				images = append(images, Image{Name: imageAndTags[0], Tags: imageAndTags[1:], ValueName: valueName})
 			}
 		}
+	}
+	if requestedVersion == "" {
+		for version, _ := range versions {
+			setImageTags(versions, &images, version)
+		}
+	} else {
+		setImageTags(versions, &images, requestedVersion)
 	}
 
 	for _, image := range images {
 		fmt.Println(image)
 	}
+}
+
+func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]Image, requestedVersion string) (*[]Image, error) {
+	version, found := versions[requestedVersion]
+	if !found {
+		return nil, fmt.Errorf("Version %s could not be found!", requestedVersion)
+	}
+
+	imagesValue := *images
+	for idx, image := range imagesValue {
+		if image.ValueName == "" {
+			continue
+		}
+
+		imageVersion, found := version.Values[image.ValueName]
+		if !found {
+			return nil, fmt.Errorf("Found no version value named %s!", image.ValueName)
+		}
+		imagesValue[idx].Tags = append(imagesValue[idx].Tags, imageVersion)
+
+	}
+	return &imagesValue, nil
 }
