@@ -409,8 +409,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		diff := deep.Equal(service, existing)
-		if diff == nil {
+		if diff := deep.Equal(service, existing); diff == nil {
 			continue
 		}
 

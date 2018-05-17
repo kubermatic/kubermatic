@@ -21,8 +21,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	se.Spec.Type = corev1.ServiceTypeClusterIP
 	se.Spec.Selector = map[string]string{
-		"app":     "etcd",
-		"cluster": data.Cluster.Name,
+		resources.AppLabelKey: name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{

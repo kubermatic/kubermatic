@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DiscoveryService returns a service for the etcd
+// DiscoveryService returns a service for the etcd peers to find each other?
 func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service
 	if existing != nil {
@@ -24,8 +24,7 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	}
 	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
-		"app":     "etcd",
-		"cluster": data.Cluster.Name,
+		resources.AppLabelKey: name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
