@@ -72,6 +72,8 @@ type Controller struct {
 	updates               []apiv1.MasterUpdate
 	defaultMasterVersion  *apiv1.MasterVersion
 	automaticUpdateSearch *version.UpdatePathSearch
+	overwriteRegistry     string
+	nodePortRange         string
 
 	metrics ControllerMetrics
 
@@ -103,8 +105,6 @@ type Controller struct {
 	roleBindingSynced        cache.InformerSynced
 	clusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	clusterRoleBindingSynced cache.InformerSynced
-
-	overwriteRegistry string
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -129,6 +129,8 @@ func NewController(
 	cps map[string]provider.CloudProvider,
 	metrics ControllerMetrics,
 	userClusterConnProvider UserClusterConnectionProvider,
+	overwriteRegistry string,
+	nodePortRange string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	etcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
@@ -143,9 +145,7 @@ func NewController(
 	ingressInformer extensionsv1beta1informers.IngressInformer,
 	roleInformer rbacv1informer.RoleInformer,
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
-	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-
-	OverwriteRegistry string) (*Controller, error) {
+	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -153,8 +153,10 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		updates:  updates,
-		versions: versions,
+		updates:           updates,
+		versions:          versions,
+		overwriteRegistry: overwriteRegistry,
+		nodePortRange:     nodePortRange,
 
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
@@ -163,8 +165,6 @@ func NewController(
 		dcs:                 dcs,
 		cps:                 cps,
 		metrics:             metrics,
-
-		overwriteRegistry: OverwriteRegistry,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

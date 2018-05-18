@@ -82,6 +82,8 @@ func startClusterController(ctrlCtx controllerContext) error {
 		cps,
 		clusterMetrics,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.nodePortRange,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
@@ -97,8 +99,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-
-		ctrlCtx.runOptions.overwriteRegistry,
 	)
 	if err != nil {
 		return err
