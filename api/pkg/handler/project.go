@@ -57,7 +57,7 @@ func deleteProjectEndpoint() endpoint.Endpoint {
 
 func updateProjectEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return apiv1.Project{}, nil
+		return apiv1.Project{}, errors.NewNotImplemented()
 	}
 }
 

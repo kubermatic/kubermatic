@@ -878,6 +878,7 @@
   branch = "release-1.10"
   name = "k8s.io/apimachinery"
   packages = [
+    "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
@@ -1127,6 +1128,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c3b35c6541d2b0781a269cd25a0101b299aa0676f85e12494167052dfbb4ed8c"
+  inputs-digest = "f341a952637d84e047bac3001a0723d417c71de5e9972d44656c0e41a8f79acc"
   solver-name = "gps-cdcl"
   solver-version = 1

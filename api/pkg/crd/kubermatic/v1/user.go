@@ -43,6 +43,6 @@ type UserList struct {
 // stores the information about a project and a group that
 // a user belongs to
 type ProjectGroup struct {
-	ID    string `json:"id"`
+	Name  string `json:"name"`
 	Group string `json:"group"`
 }
