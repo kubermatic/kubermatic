@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"os/exec"
 	"strings"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/golang/glog"
@@ -25,7 +24,6 @@ type image struct {
 
 func main() {
 
-	var images []image
 	var masterResources string
 	var requestedVersion string
 	var registryName string
@@ -44,68 +42,33 @@ func main() {
 		glog.Fatalf("Error loading versions: %v", err)
 	}
 
-	data, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		glog.Fatalf("Error reading from stdin: %v", err)
-	}
-	dataSanitized := strings.Replace(string(data), "\t", "", -1)
-	dataSanitized = strings.Replace(dataSanitized, " ", "", -1)
-	lines := strings.Split(dataSanitized, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "ImageRegistry(") {
-			var imageSanitized string
-			var valueName string
-
-			// Remove everything up until the image name
-			splitted := strings.SplitAfter(line, "ImageRegistry(")
-			if len(splitted) == 2 {
-				imageSanitized = strings.Replace(splitted[1], ")+\"", "", -1)
-			}
-
-			// Remove trailing "+data.Version.Values" if it exists
-			if strings.Contains(imageSanitized, "+data.Version.Values") {
-				splitted := strings.Split(imageSanitized, "+data.Version")
-				imageSanitized = splitted[0]
-				splittedByQuotationSign := strings.Split(splitted[1], "\"")
-				if len(splittedByQuotationSign) != 3 {
-					glog.Fatalf("Can not extract name of version from string %s!", splitted[1])
-				}
-				valueName = splittedByQuotationSign[1]
-
-			}
-
-			imageSanitized = strings.Replace(imageSanitized, "\"", "", -1)
-			imageSanitized = strings.Replace(imageSanitized, ",", "", -1)
-
-			imageAndTags := strings.Split(imageSanitized, ":")
-			if len(imageAndTags) == 1 {
-				images = append(images, image{Name: imageAndTags[0], ValueName: valueName})
-				continue
-			}
-
-			if len(imageAndTags) > 1 {
-				images = append(images, image{Name: imageAndTags[0], Tags: imageAndTags[1:], ValueName: valueName})
-			}
-		}
-	}
+	var imagesUnfiltered []string
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
-		for version := range versions {
-			if err = setImageTags(versions, &images, version); err != nil {
-				glog.Fatalf("Error tagging image: %v", err)
+		for version, _ := range versions {
+			imagesUnfiltered, err = getImagesForVersion(versions, version)
+			if err != nil {
+				glog.Fatalf(err.Error())
 			}
 		}
 	} else {
-		if err = setImageTags(versions, &images, requestedVersion); err != nil {
-			glog.Fatalf("Error tagging image: %v", err)
+		imagesUnfiltered, err = getImagesForVersion(versions, requestedVersion)
+		if err != nil {
+			glog.Fatalf(err.Error())
 		}
 	}
 
-	imageTagList := getImageTagList(images)
-	if err = downloadImages(imageTagList); err != nil {
+	var images []string
+	for _, image := range imagesUnfiltered {
+		if !stringListContains(images, image) && len(strings.Split(image, ":")) == 2 {
+			images = append(images, image)
+		}
+
+	}
+	if err = downloadImages(images); err != nil {
 		glog.Fatalf(err.Error())
 	}
-	retaggedImages, err := retagImages(registryName, imageTagList)
+	retaggedImages, err := retagImages(registryName, images)
 	if err != nil {
 		glog.Fatalf(err.Error())
 	}
@@ -197,6 +160,14 @@ func stringListContains(list []string, item string) bool {
 	return false
 }
 
+func getImagesForVersion(versions map[string]*apiv1.MasterVersion, requestedVersion string) (images []string, err error) {
+	templateData, err := getTemplateData(versions, requestedVersion)
+	if err != nil {
+		return nil, err
+	}
+	return getImagesFromCreators(templateData)
+}
+
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
 	deploymentCreators := cluster.GetDeploymentCreators()
@@ -236,5 +207,5 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	if !found {
 		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
 	}
-	return &resources.TemplateData{Version: version}, nil
+	return &resources.TemplateData{Version: version, DC: &provider.DatacenterMeta{}}, nil
 }
