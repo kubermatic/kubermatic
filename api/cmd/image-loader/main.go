@@ -245,50 +245,12 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{apiServerExternalService},
 	}
-	caCertSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ca-cert",
-			Namespace: "mock",
-		},
-	}
-	tokensSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tokens",
-			Namespace: "mock",
-		},
-	}
-	apisreverTLSSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apiserver-tls",
-			Namespace: "mock",
-		},
-	}
-	kubeletClientCertificateSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kubelet-client-certificates",
-			Namespace: "mock",
-		},
-	}
-	serviceAccountKeySecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "service-account-key",
-			Namespace: "mock",
-		},
-	}
-	caKeySecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ca-key",
-			Namespace: "mock",
-		},
-	}
-	secretList := &corev1.SecretList{
-		Items: []corev1.Secret{caCertSecret,
-			tokensSecret,
-			apisreverTLSSecret,
-			kubeletClientCertificateSecret,
-			serviceAccountKeySecret,
-			caKeySecret},
-	}
+	secretList := createNamedSecrets([]string{"ca-cert",
+		"ca-key",
+		"tokens",
+		"apiserver-tls",
+		"kubelet-client-certificates",
+		"service-account-key"})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)
 
@@ -318,4 +280,18 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 		ServiceLister:   serviceLister,
 		ConfigMapLister: configMapLister,
 		Cluster:         fakeCluster}, nil
+}
+
+func createNamedSecrets(secretNames []string) *corev1.SecretList {
+	secretList := corev1.SecretList{}
+	for _, secretName := range secretNames {
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: "mock",
+			},
+		}
+		secretList.Items = append(secretList.Items, secret)
+	}
+	return &secretList
 }
