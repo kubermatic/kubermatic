@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"crypto/tls"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -46,9 +47,20 @@ type openIDAuthenticator struct {
 func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, insecureSkipVerify bool) (Authenticator, error) {
 	ctx := context.Background()
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: insecureSkipVerify},
 	}
 	client := &http.Client{Transport: tr}
+
 	p, err := oidc.NewProvider(context.WithValue(ctx, oauth2.HTTPClient, client), issuer)
 	if err != nil {
 		return nil, err
