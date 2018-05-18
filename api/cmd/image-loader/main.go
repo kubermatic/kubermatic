@@ -52,7 +52,7 @@ func main() {
 	var imagesUnfiltered []string
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
-		for version, _ := range versions {
+		for version := range versions {
 			returnedImages, err := getImagesForVersion(versions, version)
 			if err != nil {
 				glog.Fatalf(err.Error())

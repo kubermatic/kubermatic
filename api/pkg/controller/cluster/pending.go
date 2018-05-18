@@ -599,6 +599,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
+// GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators() []resources.DeploymentCreator {
 	return []resources.DeploymentCreator{
 		addonmanager.Deployment,
@@ -706,6 +707,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
+// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
 func GetStatefulSetCreators() []resources.StatefulSetCreator {
 	return []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
