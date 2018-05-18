@@ -25,13 +25,6 @@ pipeline:
       - cd api
       - wwhrd check -f ../allowed_licensed.yaml
 
-  image-loader-validation:
-    group: lint
-    image: golang:1.10
-    commands:
-      - cd api
-      - ./hack/download_images.sh
-
   lint:
     group: lint
     image: metalmatze/gometalinter:1.9
