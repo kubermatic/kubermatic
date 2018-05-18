@@ -5,15 +5,23 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kubeinformers "k8s.io/client-go/informers"
+	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/cache"
 )
 
 type image struct {
@@ -207,5 +215,107 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	if !found {
 		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
 	}
-	return &resources.TemplateData{Version: version, DC: &provider.DatacenterMeta{}}, nil
+
+	// We need listers and a set of objects to not have our deployment/statefulset creators
+	// fail with a NPE
+	cloudConfigConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cloud-config",
+			Namespace: "mock",
+		},
+	}
+	prometheusConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prometheus",
+			Namespace: "mock",
+		},
+	}
+	configMapList := &corev1.ConfigMapList{
+		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap},
+	}
+	apiServerExternalService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apiserver-external",
+			Namespace: "mock",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{{NodePort: 99}},
+		},
+	}
+	serviceList := &corev1.ServiceList{
+		Items: []corev1.Service{apiServerExternalService},
+	}
+	caCertSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca-cert",
+			Namespace: "mock",
+		},
+	}
+	tokensSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tokens",
+			Namespace: "mock",
+		},
+	}
+	apisreverTLSSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apiserver-tls",
+			Namespace: "mock",
+		},
+	}
+	kubeletClientCertificateSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-client-certificates",
+			Namespace: "mock",
+		},
+	}
+	serviceAccountKeySecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "service-account-key",
+			Namespace: "mock",
+		},
+	}
+	caKeySecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca-key",
+			Namespace: "mock",
+		},
+	}
+	secretList := &corev1.SecretList{
+		Items: []corev1.Secret{caCertSecret,
+			tokensSecret,
+			apisreverTLSSecret,
+			kubeletClientCertificateSecret,
+			serviceAccountKeySecret,
+			caKeySecret},
+	}
+	objects := []runtime.Object{configMapList, secretList, serviceList}
+	client := kubefake.NewSimpleClientset(objects...)
+
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(client, time.Second*30)
+	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
+	configMapLister := configMapInformer.Lister()
+	secretInformer := kubeInformerFactory.Core().V1().Secrets()
+	secretLister := secretInformer.Lister()
+	serviceInformer := kubeInformerFactory.Core().V1().Services()
+	serviceLister := serviceInformer.Lister()
+
+	fakeCluster := &clusterv1.Cluster{}
+	fakeCluster.Spec.Cloud = &clusterv1.CloudSpec{}
+	fakeCluster.Status.NamespaceName = "mock"
+	fakeCluster.Address = &clusterv1.ClusterAddress{}
+
+	go configMapInformer.Informer().Run(wait.NeverStop)
+	go secretInformer.Informer().Run(wait.NeverStop)
+	go serviceInformer.Informer().Run(wait.NeverStop)
+	cache.WaitForCacheSync(wait.NeverStop, configMapInformer.Informer().HasSynced)
+	cache.WaitForCacheSync(wait.NeverStop, secretInformer.Informer().HasSynced)
+	cache.WaitForCacheSync(wait.NeverStop, serviceInformer.Informer().HasSynced)
+
+	return &resources.TemplateData{Version: version,
+		DC:              &provider.DatacenterMeta{},
+		SecretLister:    secretLister,
+		ServiceLister:   serviceLister,
+		ConfigMapLister: configMapLister,
+		Cluster:         fakeCluster}, nil
 }
