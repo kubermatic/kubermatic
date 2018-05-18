@@ -131,6 +131,7 @@ type TemplateData struct {
 	ConfigMapLister   corev1lister.ConfigMapLister
 	ServiceLister     corev1lister.ServiceLister
 	OverwriteRegistry string
+	NodePortRange     string
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
@@ -162,7 +163,8 @@ func NewTemplateData(
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
 	serviceLister corev1lister.ServiceLister,
-	overwriteRegistry string) *TemplateData {
+	overwriteRegistry string,
+	nodePortRange string) *TemplateData {
 	return &TemplateData{
 		Cluster:           cluster,
 		DC:                dc,
@@ -171,6 +173,7 @@ func NewTemplateData(
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,
 		OverwriteRegistry: overwriteRegistry,
+		NodePortRange:     nodePortRange,
 	}
 }
 
