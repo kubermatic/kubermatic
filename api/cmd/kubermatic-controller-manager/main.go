@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/apimachinery/pkg/util/net"
 
 	"k8s.io/api/core/v1"
 	kuberinformers "k8s.io/client-go/informers"
@@ -35,16 +36,16 @@ type controllerRunOptions struct {
 	masterURL      string
 	prometheusAddr string
 
-	masterResources string
-	externalURL     string
-	dc              string
-	dcFile          string
-	workerName      string
-	versionsFile    string
-	updatesFile     string
-	workerCount     int
-
+	masterResources   string
+	externalURL       string
+	dc                string
+	dcFile            string
+	workerName        string
+	versionsFile      string
+	updatesFile       string
+	workerCount       int
 	overwriteRegistry string
+	nodePortRange     string
 }
 
 type controllerContext struct {
@@ -74,6 +75,7 @@ func main() {
 	flag.StringVar(&runOp.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
+	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
@@ -87,6 +89,9 @@ func main() {
 	if runOp.dc == "" {
 		glog.Fatal("datacenter-name is undefined")
 	}
+
+	// Validate node-port range
+	net.ParsePortRangeOrDie(runOp.nodePortRange)
 
 	// dcFile, versionFile, updatesFile are required by cluster controller
 	// the following code ensures that the files are available and fails fast if not.
