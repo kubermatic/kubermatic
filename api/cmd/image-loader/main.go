@@ -26,12 +26,6 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-type image struct {
-	Name      string
-	Tags      []string
-	ValueName string
-}
-
 func main() {
 
 	var masterResources string
@@ -110,28 +104,6 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 	return retaggedImages, nil
 }
 
-func setImageTags(versions map[string]*apiv1.MasterVersion, images *[]image, requestedVersion string) error {
-	version, found := versions[requestedVersion]
-	if !found {
-		return fmt.Errorf("version %s could not be found", requestedVersion)
-	}
-
-	imagesValue := *images
-	for idx, image := range imagesValue {
-		if image.ValueName == "" {
-			continue
-		}
-
-		imageVersion, found := version.Values[image.ValueName]
-		if !found {
-			return fmt.Errorf("found no version value named %s", image.ValueName)
-		}
-		imagesValue[idx].Tags = append(imagesValue[idx].Tags, imageVersion)
-
-	}
-	return nil
-}
-
 func downloadImages(images []string) error {
 	for _, image := range images {
 		glog.Infof("Downloading image '%s'...\n", image)
@@ -140,25 +112,6 @@ func downloadImages(images []string) error {
 		}
 	}
 	return nil
-}
-
-func getImageTagList(images []image) (imageWithTagList []string) {
-	var intermediateImageWithTagList []string
-	for _, image := range images {
-		for _, tag := range image.Tags {
-			if tag == "" {
-				continue
-			}
-			intermediateImageWithTagList = append(intermediateImageWithTagList, fmt.Sprintf("%s:%s", image.Name, tag))
-		}
-	}
-
-	for _, newItem := range intermediateImageWithTagList {
-		if !stringListContains(imageWithTagList, newItem) {
-			imageWithTagList = append(imageWithTagList, newItem)
-		}
-	}
-	return imageWithTagList
 }
 
 func stringListContains(list []string, item string) bool {
@@ -218,8 +171,7 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
 	}
 
-	// We need listers and a set of objects to not have our deployment/statefulset creators
-	// fail with a NPE
+	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cloud-config",
