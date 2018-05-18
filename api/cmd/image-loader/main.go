@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -31,13 +32,15 @@ func main() {
 	var masterResources string
 	var requestedVersion string
 	var registryName string
+	var printOnly bool
 
 	flag.StringVar(&masterResources, "master-resources", "../config/kubermatic/static/master/versions.yaml", "")
 	flag.StringVar(&requestedVersion, "version", "", "")
 	flag.StringVar(&registryName, "registry-name", "", "Name of the registry to push to")
+	flag.BoolVar(&printOnly, "print-only", false, "Only print the names of found images")
 	flag.Parse()
 
-	if registryName == "" {
+	if registryName == "" && !printOnly {
 		glog.Fatalf("Registry name must not be empty!")
 	}
 
@@ -50,10 +53,11 @@ func main() {
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
 		for version, _ := range versions {
-			imagesUnfiltered, err = getImagesForVersion(versions, version)
+			returnedImages, err := getImagesForVersion(versions, version)
 			if err != nil {
 				glog.Fatalf(err.Error())
 			}
+			imagesUnfiltered = append(imagesUnfiltered, returnedImages...)
 		}
 	} else {
 		imagesUnfiltered, err = getImagesForVersion(versions, requestedVersion)
@@ -69,6 +73,15 @@ func main() {
 		}
 
 	}
+
+	if printOnly {
+		for _, image := range images {
+			glog.Infoln(image)
+		}
+		glog.Infoln("Existing gracefully, because -printOnly was specified...")
+		os.Exit(0)
+	}
+
 	if err = downloadImages(images); err != nil {
 		glog.Fatalf(err.Error())
 	}
