@@ -112,7 +112,11 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	rbacMetrics := rbacController.Metrics{
 		Workers: metrics.Workers,
 	}
-	ctrl, err := rbacController.New(rbacMetrics)
+	ctrl, err := rbacController.New(
+		rbacMetrics,
+		ctrlCtx.kubermaticClient,
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Projects(),
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	if err != nil {
 		return err
 	}
