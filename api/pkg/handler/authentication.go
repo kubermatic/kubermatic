@@ -84,10 +84,21 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 
+			var (
+				name  string
+				email string
+			)
+			if cn, found := claims["name"]; found {
+				name = cn.(string)
+			}
+			if ce, found := claims["email"]; found {
+				email = ce.(string)
+			}
+
 			user := apiv1.User{
 				ID:    claims["sub"].(string),
-				Name:  claims["name"].(string),
-				Email: claims["email"].(string),
+				Name:  name,
+				Email: email,
 				Roles: map[string]struct{}{},
 			}
 
