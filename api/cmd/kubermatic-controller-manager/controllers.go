@@ -82,9 +82,10 @@ func startClusterController(ctrlCtx controllerContext) error {
 		cps,
 		clusterMetrics,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.nodePortRange,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubermaticInformerFactory.Etcd().V1beta2().EtcdClusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
@@ -97,8 +98,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-
-		ctrlCtx.runOptions.overwriteRegistry,
 	)
 	if err != nil {
 		return err
@@ -113,7 +112,11 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	rbacMetrics := rbacController.Metrics{
 		Workers: metrics.Workers,
 	}
-	ctrl, err := rbacController.New(rbacMetrics)
+	ctrl, err := rbacController.New(
+		rbacMetrics,
+		ctrlCtx.kubermaticClient,
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Projects(),
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	if err != nil {
 		return err
 	}

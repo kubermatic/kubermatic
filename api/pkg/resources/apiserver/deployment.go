@@ -25,6 +25,8 @@ var (
 
 const (
 	name = "apiserver"
+
+	defaultNodePortRange = "30000-32767"
 )
 
 // Deployment returns the kubernetes Apiserver Deployment
@@ -86,7 +88,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-cluster-client:2379] get foo; do echo waiting for etcd; sleep 2; done;",
+				"until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-client:2379] get foo; do echo waiting for etcd; sleep 2; done;",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -239,13 +241,18 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 }
 
 func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []string {
+	nodePortRange := data.NodePortRange
+	if nodePortRange == "" {
+		nodePortRange = defaultNodePortRange
+	}
+
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
 		"--secure-port", fmt.Sprintf("%d", externalNodePort),
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", "http://etcd-cluster-client:2379",
+		"--etcd-servers", "http://etcd-client:2379",
 		"--storage-backend", "etcd3",
 		"--admission-control", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
 		"--authorization-mode", "Node,RBAC",
@@ -254,7 +261,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--enable-bootstrap-token-auth", "true",
 		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--service-cluster-ip-range", "10.10.10.0/24",
-		"--service-node-port-range", "30000-32767",
+		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
 		"--audit-log-maxbackup", "3",

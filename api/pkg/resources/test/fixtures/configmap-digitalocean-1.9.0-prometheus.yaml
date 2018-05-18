@@ -9,7 +9,7 @@ data:
     rule_files:
     - "/etc/prometheus/config/rules.yaml"
     scrape_configs:
-    - job_name: 'pods-0'
+    - job_name: 'pods'
       kubernetes_sd_configs:
       - role: pod
         namespaces:
@@ -31,16 +31,14 @@ data:
         target_label: __address__
       - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
         action: replace
-        target_label: role
-      - source_labels: [__meta_kubernetes_pod_label_release]
-        action: replace
-        target_label: release
+        target_label: job
+        separator: ''
       - source_labels: [__meta_kubernetes_namespace]
         action: replace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - source_labels: [__meta_kubernetes_pod_name]
         action: replace
-        target_label: kubernetes_pod_name
+        target_label: pod
     alerting:
       alertmanagers: []
   rules.yaml: ""

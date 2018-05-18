@@ -11,9 +11,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	etcdoperatorv1beta2informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/etcdoperator/v1beta2"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	etcdoperatorv1beta2lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/etcdoperator/v1beta2"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -72,13 +70,13 @@ type Controller struct {
 	updates               []apiv1.MasterUpdate
 	defaultMasterVersion  *apiv1.MasterVersion
 	automaticUpdateSearch *version.UpdatePathSearch
+	overwriteRegistry     string
+	nodePortRange         string
 
 	metrics ControllerMetrics
 
 	clusterLister            kubermaticv1lister.ClusterLister
 	clusterSynced            cache.InformerSynced
-	etcdClusterLister        etcdoperatorv1beta2lister.EtcdClusterLister
-	etcdClusterSynced        cache.InformerSynced
 	namespaceLister          corev1lister.NamespaceLister
 	namespaceSynced          cache.InformerSynced
 	secretLister             corev1lister.SecretLister
@@ -103,8 +101,6 @@ type Controller struct {
 	roleBindingSynced        cache.InformerSynced
 	clusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	clusterRoleBindingSynced cache.InformerSynced
-
-	overwriteRegistry string
 }
 
 // ControllerMetrics contains metrics about the clusters & workers
@@ -129,9 +125,10 @@ func NewController(
 	cps map[string]provider.CloudProvider,
 	metrics ControllerMetrics,
 	userClusterConnProvider UserClusterConnectionProvider,
+	overwriteRegistry string,
+	nodePortRange string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
-	etcdClusterInformer etcdoperatorv1beta2informers.EtcdClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
 	secretInformer corev1informers.SecretInformer,
 	serviceInformer corev1informers.ServiceInformer,
@@ -143,9 +140,7 @@ func NewController(
 	ingressInformer extensionsv1beta1informers.IngressInformer,
 	roleInformer rbacv1informer.RoleInformer,
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
-	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-
-	OverwriteRegistry string) (*Controller, error) {
+	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -153,8 +148,10 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		updates:  updates,
-		versions: versions,
+		updates:           updates,
+		versions:          versions,
+		overwriteRegistry: overwriteRegistry,
+		nodePortRange:     nodePortRange,
 
 		masterResourcesPath: masterResourcesPath,
 		externalURL:         externalURL,
@@ -163,8 +160,6 @@ func NewController(
 		dcs:                 dcs,
 		cps:                 cps,
 		metrics:             metrics,
-
-		overwriteRegistry: OverwriteRegistry,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -248,16 +243,9 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	etcdClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
 
 	cc.clusterLister = clusterInformer.Lister()
 	cc.clusterSynced = clusterInformer.Informer().HasSynced
-	cc.etcdClusterLister = etcdClusterInformer.Lister()
-	cc.etcdClusterSynced = etcdClusterInformer.Informer().HasSynced
 	cc.namespaceLister = namespaceInformer.Lister()
 	cc.namespaceSynced = namespaceInformer.Informer().HasSynced
 	cc.secretLister = secretInformer.Lister()
@@ -421,20 +409,12 @@ func (cc *Controller) syncCluster(key string) error {
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
 	}
-	var updateErr error
-	if err = cc.validateCluster(cluster); err != nil {
-		updateErr = cc.updateClusterError(cluster, kubermaticv1.InvalidConfigurationClusterError, err.Error(), originalData)
-		if updateErr != nil {
-			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
-		}
-		return err
-	}
 
 	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 	}
 	if err := cc.reconcileCluster(cluster); err != nil {
-		updateErr = cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
+		updateErr := cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
 		if updateErr != nil {
 			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
 		}
@@ -514,7 +494,6 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 
 	if !cache.WaitForCacheSync(stopCh,
 		cc.clusterSynced,
-		cc.etcdClusterSynced,
 		cc.namespaceSynced,
 		cc.secretSynced,
 		cc.serviceSynced,
