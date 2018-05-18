@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/golang/glog"
 )
@@ -192,4 +194,20 @@ func stringListContains(list []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func getImagesFromCreators(templateData *resources.TemplateData) []string {
+	statefulsetCreators := cluster.GetStatefulSetCreators()
+	deploymentCreators := cluster.GetDeploymentCreators()
+	_ = statefulsetCreators
+	_ = deploymentCreators
+	return nil
+}
+
+func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion string) (*resources.TemplateData, error) {
+	version, found := versions[requestedVersion]
+	if !found {
+		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
+	}
+	return &resources.TemplateData{Version: version}, nil
 }

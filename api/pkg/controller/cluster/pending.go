@@ -599,8 +599,8 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
-	creators := []resources.DeploymentCreator{
+func GetDeploymentCreators() []resources.DeploymentCreator {
+	return []resources.DeploymentCreator{
 		etcdoperator.Deployment,
 		addonmanager.Deployment,
 		machinecontroller.Deployment,
@@ -609,6 +609,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		scheduler.Deployment,
 		controllermanager.Deployment,
 	}
+}
+
+func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
+	creators := GetDeploymentCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -744,10 +748,14 @@ func (cc *Controller) ensureEtcdCluster(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
-	creators := []resources.StatefulSetCreator{
+func GetStatefulSetCreators() []resources.StatefulSetCreator {
+	return []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
 	}
+}
+
+func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
+	creators := GetStatefulSetCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
