@@ -1,3 +1,6 @@
+.golangImage: &golangImage
+  image: golang:1.10.2
+
 workspace:
   base: /go
   path: src/github.com/kubermatic/kubermatic
@@ -12,7 +15,7 @@ pipeline:
 
   gofmt:
     group: lint
-    image: golang:1.9
+    <<: *golangImage
     commands:
       - cd api
       - make gofmt
@@ -27,7 +30,7 @@ pipeline:
 
   image-loader-validation:
     group: lint
-    image: golang:1.10
+    <<: *golangImage
     commands:
       - cd api
       - ./hack/download_images.sh
@@ -42,28 +45,27 @@ pipeline:
 
   verify-codegen:
     group: codegen
-    image: golang:1.9
+    <<: *golangImage
     commands:
       - cd api
       - ./hack/verify-codegen.sh
 
   verify-swagger-spec:
     group: lint
-    image: golang:1.9
     commands:
       - cd api
       - ./hack/verify-swagger.sh
 
   test:
     group: build
-    image: golang:1.9
+    <<: *golangImage
     commands:
       - cd api
       - make test
 
   build:
     group: build
-    image: golang:1.9
+    <<: *golangImage
     commands:
       - cd api
       - CGO_ENABLED=0 make build
