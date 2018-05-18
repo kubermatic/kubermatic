@@ -24,6 +24,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const mockNamespaceName = "mock-namespace"
+
 type image struct {
 	Name      string
 	Tags      []string
@@ -221,13 +223,13 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cloud-config",
-			Namespace: "mock",
+			Namespace: mockNamespaceName,
 		},
 	}
 	prometheusConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "prometheus",
-			Namespace: "mock",
+			Namespace: mockNamespaceName,
 		},
 	}
 	configMapList := &corev1.ConfigMapList{
@@ -236,7 +238,7 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "apiserver-external",
-			Namespace: "mock",
+			Namespace: mockNamespaceName,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{{NodePort: 99}},
@@ -264,7 +266,7 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 
 	fakeCluster := &clusterv1.Cluster{}
 	fakeCluster.Spec.Cloud = &clusterv1.CloudSpec{}
-	fakeCluster.Status.NamespaceName = "mock"
+	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Address = &clusterv1.ClusterAddress{}
 
 	go configMapInformer.Informer().Run(wait.NeverStop)
@@ -288,7 +290,7 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
-				Namespace: "mock",
+				Namespace: mockNamespaceName,
 			},
 		}
 		secretList.Items = append(secretList.Items, secret)
