@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/golang/glog"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type image struct {
@@ -196,12 +197,38 @@ func stringListContains(list []string, item string) bool {
 	return false
 }
 
-func getImagesFromCreators(templateData *resources.TemplateData) []string {
+func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
 	deploymentCreators := cluster.GetDeploymentCreators()
-	_ = statefulsetCreators
-	_ = deploymentCreators
-	return nil
+
+	for _, createFunc := range statefulsetCreators {
+		statefulset, err := createFunc(templateData, nil)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodTemplateSpec(statefulset.Spec.Template)...)
+	}
+
+	for _, createFunc := range deploymentCreators {
+		deployment, err := createFunc(templateData, nil)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodTemplateSpec(deployment.Spec.Template)...)
+	}
+	return images, nil
+}
+
+func getImagesFromPodTemplateSpec(template corev1.PodTemplateSpec) (images []string) {
+	for _, initContainer := range template.Spec.InitContainers {
+		images = append(images, initContainer.Image)
+	}
+
+	for _, container := range template.Spec.Containers {
+		images = append(images, container.Image)
+	}
+
+	return images
 }
 
 func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion string) (*resources.TemplateData, error) {
