@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc"
 	"github.com/go-kit/kit/endpoint"
@@ -70,7 +71,9 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 
-			idToken, err := o.verifier.Verify(ctx, token)
+			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+			idToken, err := o.verifier.Verify(verifyCtx, token)
 			if err != nil {
 				glog.Error(err)
 				return nil, errors.NewNotAuthorized()
