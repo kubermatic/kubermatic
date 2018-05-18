@@ -136,7 +136,7 @@ func stringListContains(list []string, item string) bool {
 	return false
 }
 
-func getImagesForVersion(versions map[string]*apiv1.MasterVersion, requestedVersion string) (images []string, err error) {
+func getImagesForVersion(versions map[string]*apiv1.MasterVersion, requestedVersion string) ([]string, error) {
 	templateData, err := getTemplateData(versions, requestedVersion)
 	if err != nil {
 		return nil, err
