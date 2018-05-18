@@ -25,6 +25,8 @@ var (
 
 const (
 	name = "apiserver"
+
+	defaultNodePortRange = "30000-32767"
 )
 
 // Deployment returns the kubernetes Apiserver Deployment
@@ -239,6 +241,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 }
 
 func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []string {
+	nodePortRange := data.NodePortRange
+	if nodePortRange == "" {
+		nodePortRange = defaultNodePortRange
+	}
+
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
 		"--secure-port", fmt.Sprintf("%d", externalNodePort),
@@ -254,7 +261,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--enable-bootstrap-token-auth", "true",
 		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--service-cluster-ip-range", "10.10.10.0/24",
-		"--service-node-port-range", "30000-32767",
+		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
 		"--audit-log-maxbackup", "3",
