@@ -6,15 +6,17 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	rbacinformer "k8s.io/client-go/informers/rbac/v1"
+	rbaclister "k8s.io/client-go/listers/rbac/v1"
 
 	"github.com/go-kit/kit/metrics"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -33,6 +35,13 @@ type Controller struct {
 	projectLister    kubermaticv1lister.ProjectLister
 	projectSynced    cache.InformerSynced
 	userLister       kubermaticv1lister.UserLister
+	userSynced       cache.InformerSynced
+
+	kubeClient                      kubernetes.Interface
+	rbacClusterRoleLister           rbaclister.ClusterRoleLister
+	rbacClusterRoleHasSynced        cache.InformerSynced
+	rbacClusterRoleBindingLister    rbaclister.ClusterRoleBindingLister
+	rbacClusterRoleBindingHasSynced cache.InformerSynced
 }
 
 // New creates a new RBACGenerator controller that is responsible for
@@ -41,12 +50,15 @@ func New(
 	metrics Metrics,
 	kubermaticClient kubermaticclientset.Interface,
 	projectInformer kubermaticv1informers.ProjectInformer,
-	userLister kubermaticv1lister.UserLister) (*Controller, error) {
+	userInformer kubermaticv1informers.UserInformer,
+	kubeClient kubernetes.Interface,
+	rbacClusterRoleInformer rbacinformer.ClusterRoleInformer,
+	rbacClusterRoleBindingInformer rbacinformer.ClusterRoleBindingInformer) (*Controller, error) {
 	c := &Controller{
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGenerator"),
 		metrics:          metrics,
 		kubermaticClient: kubermaticClient,
-		userLister:       userLister,
+		kubeClient:       kubeClient,
 	}
 
 	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -76,6 +88,15 @@ func New(
 	c.projectLister = projectInformer.Lister()
 	c.projectSynced = projectInformer.Informer().HasSynced
 
+	c.userLister = userInformer.Lister()
+	c.userSynced = userInformer.Informer().HasSynced
+
+	c.rbacClusterRoleBindingLister = rbacClusterRoleBindingInformer.Lister()
+	c.rbacClusterRoleBindingHasSynced = rbacClusterRoleBindingInformer.Informer().HasSynced
+
+	c.rbacClusterRoleLister = rbacClusterRoleInformer.Lister()
+	c.rbacClusterRoleHasSynced = rbacClusterRoleInformer.Informer().HasSynced
+
 	return c, nil
 }
 
@@ -85,7 +106,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Infof("Starting RBACGenerator controller with %d workers", workerCount)
 	defer glog.Info("Shutting down RBACGenerator controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.projectSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.projectSynced, c.userSynced, c.rbacClusterRoleHasSynced, c.rbacClusterRoleBindingHasSynced) {
 		runtime.HandleError(errors.New("Unable to sync caches for RBACGenerator controller"))
 		return
 	}

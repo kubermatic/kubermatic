@@ -6,6 +6,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 	restclient "k8s.io/client-go/rest"
 )
 
@@ -65,7 +66,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 					Name:       user.Name,
 				},
 			},
-			GenerateName: "project-",
+			Name: rand.String(10),
 		},
 		Spec: kubermaticapiv1.ProjectSpec{
 			Name: projectName,
