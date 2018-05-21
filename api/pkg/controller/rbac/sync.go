@@ -30,9 +30,6 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 	err = c.ensureProjectRBACRoleBinding(project)
-	if err != nil {
-		return err
-	}
 	return err
 }
 
