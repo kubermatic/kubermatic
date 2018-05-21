@@ -19,7 +19,7 @@ func generateOwnersGroupName(projectName string) string {
 	return fmt.Sprintf("%s-%s", ownerGroupName, projectName)
 }
 
-func generateRBACRole(resource, resourceKind, groupName, policyApiGroups, policyResourceName string) (*rbacv1.ClusterRole, error) {
+func generateRBACRole(resource, resourceKind, groupName, policyAPIGroups, policyResourceName string) (*rbacv1.ClusterRole, error) {
 	verbs, err := generateVerbs(groupName)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func generateRBACRole(resource, resourceKind, groupName, policyApiGroups, policy
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups:     []string{policyApiGroups},
+				APIGroups:     []string{policyAPIGroups},
 				Resources:     []string{resource},
 				ResourceNames: []string{policyResourceName},
 				Verbs:         verbs,
