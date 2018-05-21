@@ -19,14 +19,14 @@ User management describes how to manage user access to various resources like de
 
 ## Core concept
 
-Since we are going to use kubernete’s `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the `Introduction` section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `Editor Group` and describes access to `cluster` `Resource`
+Since we are going to use kubernete’s `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the `Introduction` section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `editors Group` and describes access to `cluster` `Resource`
 
 ```
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   namespace: kubermatic
-  name: cluster-editor-role-projectIdentity
+  name: kubermatic:cluster:editors-htwhln8jnb
 rules:
 - apiGroups: ["kubermatic.k8s.io"] 
   resources: [“clusters”]
@@ -34,14 +34,14 @@ rules:
   verbs: ["get", “update”, "create", "delete", "patch"]
 ```
 
-If we were to generate a `Role` for a different `Group` let’s say `Reader` the only difference would be in the `verbs` field and the `name` 
+If we were to generate a `Role` for a different `Group` let’s say `readers` the only difference would be in the `verbs` field and the `name`
 
 ```
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   namespace: kubermatic
-  name: cluster-reader-role-projectIdentity
+  name: kubermatic:cluster:readers-htwhln8jnb
 rules:
 - apiGroups: ["kubermatic.k8s.io"] 
   resources: [“clusters”]
@@ -49,13 +49,13 @@ rules:
   verbs: ["get"]
 ```
 
-The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `cluster-editor-role-projectIdentity` `Role` to `editor-projectIdentity` `Group`
+The next step is to create a connection between the `Groups` and the `Roles`. This essentially gives the `Groups` certain permissions to the `Resources`. In our case the number of `RoleBindings`  we have to create also stems directly from the types and the number of the `Groups` we have in our system. For example the following binding assigns `kubermatic:cluster:editors-htwhln8jnb` `Role` to `editors-projectIdentity` `Group`
 
 ```
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: cluster-editor-binding-projectIdentity
+  name: kubermatic:cluster:editors-htwhln8jnb
   namespace: kubermatic
 subjects:
 - kind: Group
@@ -102,10 +102,10 @@ To hide complexity from developers and to present a more hierarchical view we wi
 reconciliation loop that constantly watches for project's resources. The controller pattern guarantees that required `RBAC` are in place
 even in the event of failure, otherwise enforcing I want to "create a resource AND attach `RBAC`" semantic could be hard.
 
-Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `admin-projectIdentity`, `editor-projectIdentity` etc.
-The names of `Role` and `RoleBindings` are `resourceKind-groupName-role-projectIdentity` and `resourceKind-groupName-binding-projectIdentity` respectively.
+Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `admins-projectIdentity`, `editors-projectIdentity` etc.
+The names of `Role` and `RoleBindings` are `prefix:resourceKind:groupName` and `prefix:resourceKind:groupName` respectively.
 When the controller detects a new resource it will generate a pair of `Role` and `RoleBindings`. In order to do this it needs to determine
-the list of valid `verbs` for each `Group`. This part could also be hardcoded and implemented as a `mapper` that accepts the `groupName`and spits out the `verbs`.
+the list of valid `verbs` for each `Group`. This part could also be hardcoded and implemented as a `mapper` that accepts the `groupName` and spits out the `verbs`.
 The next step requires `apiGroup`, `resourceKind`, `resourceName` and `verbs` to generate valid `Role`. The last step is to create `RoleBindings` this part
 needs the name of the `Role` and the subject which in our case is the `groupName`.
 
