@@ -57,7 +57,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		owners := project.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.UID == user.UID && project.Spec.Name == projectName {
-				return nil, ErrAlreadyExist
+				return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: project.GroupVersionKind().Group, Resource: kubermaticapiv1.ProjectPlural}, projectName)
 			}
 		}
 	}

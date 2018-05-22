@@ -13,7 +13,6 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 )
 
 // createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
@@ -31,10 +30,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
-			if err == kubernetes.ErrAlreadyExist {
-				return nil, errors.NewAlreadyExists("Project", projectRq.Name)
-			}
-			return nil, err
+			return nil, errors.KubernetesErrorToHTTPError(err)
 		}
 
 		return apiv1.Project{
