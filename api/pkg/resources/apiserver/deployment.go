@@ -151,7 +151,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:" + data.Version.Values["k8s-version"],
+			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version.String(),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Args:            getApiserverFlags(data, externalNodePort),

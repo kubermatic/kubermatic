@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -57,21 +55,16 @@ type Controller struct {
 	kubeClient              kubernetes.Interface
 	userClusterConnProvider UserClusterConnectionProvider
 
-	masterResourcesPath string
-	externalURL         string
-	dcs                 map[string]provider.DatacenterMeta
-	dc                  string
-	cps                 map[string]provider.CloudProvider
+	externalURL string
+	dcs         map[string]provider.DatacenterMeta
+	dc          string
+	cps         map[string]provider.CloudProvider
 
 	queue      workqueue.RateLimitingInterface
 	workerName string
 
-	versions              map[string]*apiv1.MasterVersion
-	updates               []apiv1.MasterUpdate
-	defaultMasterVersion  *apiv1.MasterVersion
-	automaticUpdateSearch *version.UpdatePathSearch
-	overwriteRegistry     string
-	nodePortRange         string
+	overwriteRegistry string
+	nodePortRange     string
 
 	metrics ControllerMetrics
 
@@ -115,9 +108,6 @@ type ControllerMetrics struct {
 func NewController(
 	kubeClient kubernetes.Interface,
 	kubermaticClient kubermaticclientset.Interface,
-	versions map[string]*apiv1.MasterVersion,
-	updates []apiv1.MasterUpdate,
-	masterResourcesPath string,
 	externalURL string,
 	workerName string,
 	dc string,
@@ -148,18 +138,15 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		updates:           updates,
-		versions:          versions,
 		overwriteRegistry: overwriteRegistry,
 		nodePortRange:     nodePortRange,
 
-		masterResourcesPath: masterResourcesPath,
-		externalURL:         externalURL,
-		workerName:          workerName,
-		dc:                  dc,
-		dcs:                 dcs,
-		cps:                 cps,
-		metrics:             metrics,
+		externalURL: externalURL,
+		workerName:  workerName,
+		dc:          dc,
+		dcs:         dcs,
+		cps:         cps,
+		metrics:     metrics,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -271,20 +258,6 @@ func NewController(
 	cc.clusterRoleBindingLister = clusterRoleBindingInformer.Lister()
 	cc.clusterRoleBindingSynced = clusterRoleBindingInformer.Informer().HasSynced
 
-	var err error
-	cc.defaultMasterVersion, err = version.DefaultMasterVersion(versions)
-	if err != nil {
-		return nil, fmt.Errorf("could not get default master version: %v", err)
-	}
-
-	var automaticUpdates []apiv1.MasterUpdate
-	for _, u := range cc.updates {
-		if u.Automatic {
-			automaticUpdates = append(automaticUpdates, u)
-		}
-	}
-	cc.automaticUpdateSearch = version.NewUpdatePathSearch(cc.versions, automaticUpdates, version.SemverMatcher{})
-
 	// register error handler that will increment a counter that will be scraped by prometheus,
 	// that accounts for all errors reported via a call to runtime.HandleError
 	runtime.ErrorHandlers = append(runtime.ErrorHandlers, func(err error) {
@@ -387,6 +360,9 @@ func (cc *Controller) syncCluster(key string) error {
 
 	glog.V(4).Infof("syncing cluster %s", key)
 
+	// In case we change fields
+	cc.migrateCluster(cluster)
+
 	for _, phase := range kubermaticv1.ClusterPhases {
 		value := 0.0
 		if phase == cluster.Status.Phase {
@@ -422,6 +398,12 @@ func (cc *Controller) syncCluster(key string) error {
 	}
 
 	return cc.updateCluster(originalData, cluster)
+}
+
+func (cc *Controller) migrateCluster(cluster *kubermaticv1.Cluster) {
+	if cluster.Spec.Version == nil {
+		cluster.Spec.Version = cluster.Spec.MasterVersion
+	}
 }
 
 func (cc *Controller) runWorker() {

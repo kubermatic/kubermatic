@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -48,14 +47,6 @@ const (
 )
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
-	if cluster.Spec.MasterVersion == "" {
-		cluster.Spec.MasterVersion = cc.defaultMasterVersion.ID
-	}
-
-	if err := cc.ensureAutomaticMasterUpdate(cluster); err != nil {
-		return err
-	}
-
 	// Create the namespace
 	if err := cc.ensureNamespaceExists(cluster); err != nil {
 		return err
@@ -163,11 +154,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resources.TemplateData, error) {
-	version, found := cc.versions[c.Spec.MasterVersion]
-	if !found {
-		return nil, fmt.Errorf("failed to get version %s", c.Spec.MasterVersion)
-	}
-
 	dc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", c.Spec.Cloud.DatacenterName)
@@ -175,7 +161,6 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 
 	return resources.NewTemplateData(
 		c,
-		version,
 		&dc,
 		cc.secretLister,
 		cc.configMapLister,
@@ -203,20 +188,6 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 		cluster.Finalizers = append(cluster.Finalizers, cloudProviderCleanupFinalizer)
 	}
 
-	return nil
-}
-
-func (cc *Controller) ensureAutomaticMasterUpdate(c *kubermaticv1.Cluster) error {
-	updateVersion, err := version.BestAutomaticUpdate(c.Spec.MasterVersion, cc.updates)
-	if err != nil {
-		return err
-	}
-
-	if updateVersion != nil {
-		// start automatic update
-		glog.V(4).Infof("applying automatic update cluster %s. From version %s to %s", c.Name, c.Spec.MasterVersion, updateVersion.To)
-		c.Spec.MasterVersion = updateVersion.To
-	}
 	return nil
 }
 

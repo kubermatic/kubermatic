@@ -4,11 +4,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	rbacController "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -50,15 +48,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		return err
 	}
 
-	versions, err := version.LoadVersions(ctrlCtx.runOptions.versionsFile)
-	if err != nil {
-		return err
-	}
-
-	updates, err := version.LoadUpdates(ctrlCtx.runOptions.updatesFile)
-	if err != nil {
-		return err
-	}
 	metrics := NewClusterControllerMetrics()
 	clusterMetrics := cluster.ControllerMetrics{
 		Clusters:        metrics.Clusters,
@@ -72,9 +61,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 	ctrl, err := cluster.NewController(
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticClient,
-		versions,
-		updates,
-		ctrlCtx.runOptions.masterResources,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.dc,

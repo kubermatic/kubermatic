@@ -221,11 +221,6 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			return nil, fmt.Errorf("failed to retrieve ssh keys: %v", err)
 		}
 
-		version, found := versions[c.Spec.MasterVersion]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster version %s", c.Spec.MasterVersion)
-		}
-
 		dc, found := dcs[c.Spec.Cloud.DatacenterName]
 		if !found {
 			return nil, fmt.Errorf("unknown cluster datacenter %s", c.Spec.Cloud.DatacenterName)
@@ -269,7 +264,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Spec.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO(mrIncompetent): rework the versions
-			node.Spec.Versions.Kubelet = version.Values["k8s-version"]
+			node.Spec.Versions.Kubelet = c.Spec.Version.String()
 		}
 
 		if node.Metadata.Name == "" {

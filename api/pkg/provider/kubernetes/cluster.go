@@ -156,18 +156,6 @@ func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 	return p.client.KubermaticV1().Clusters().Delete(cluster.Name, &metav1.DeleteOptions{})
 }
 
-// InitiateClusterUpgrade sets the version of the given cluster
-func (p *ClusterProvider) InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error) {
-	cluster, err := p.Cluster(user, name)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster.Spec.MasterVersion = version
-
-	return p.client.KubermaticV1().Clusters().Update(cluster)
-}
-
 // UpdateCluster updates a cluster
 func (p *ClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	_, err := p.Cluster(user, newCluster.Name)
