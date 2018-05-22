@@ -98,21 +98,6 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
-// MasterVersion is the object representing a Kubernetes Master version.
-// swagger:model MasterVersion
-type MasterVersion struct {
-	Version             *semver.Version `yaml:"version"`
-	Default             bool            `yaml:"default"`
-	AllowedNodeVersions []string        `yaml:"allowedNodeVersions"`
-}
-
-// MasterUpdate represents an update option for K8s master components
-type MasterUpdate struct {
-	From      string `yaml:"from"`
-	To        string `yaml:"to"`
-	Automatic bool   `yaml:"automatic"`
-}
-
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
@@ -188,4 +173,15 @@ type OpenstackSize struct {
 	Region string `json:"region"`
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
 	IsPublic bool `json:"isPublic"`
+}
+
+// AvailableMasterVersions describes all possible update versions for a cluster
+// swagger:model AvailableMasterVersions
+type AvailableMasterVersions []MasterVersion
+
+// MasterVersion describes a version of the master components
+// swagger:model MasterVersion
+type MasterVersion struct {
+	Version             *semver.Version `json:"version"`
+	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
 }

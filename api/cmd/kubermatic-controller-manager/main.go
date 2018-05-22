@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -98,16 +97,6 @@ func main() {
 	_, err := provider.LoadDatacentersMeta(runOp.dcFile)
 	if err != nil {
 		glog.Fatalf("failed to load datacenter yaml %q: %v", runOp.dcFile, err)
-	}
-
-	_, err = version.LoadVersions(runOp.versionsFile)
-	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
-	}
-
-	_, err = version.LoadUpdates(runOp.updatesFile)
-	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags(runOp.masterURL, runOp.kubeconfig)

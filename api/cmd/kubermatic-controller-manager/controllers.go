@@ -1,15 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	rbacController "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	kuberinformers "k8s.io/client-go/informers"
 )
@@ -20,6 +23,7 @@ import (
 var allControllers = map[string]func(controllerContext) error{
 	"cluster":       startClusterController,
 	"RBACGenerator": startRBACGeneratorController,
+	"update":        startUpdateController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -95,10 +99,10 @@ func startClusterController(ctrlCtx controllerContext) error {
 
 func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	metrics := NewRBACGeneratorControllerMetrics()
-	rbacMetrics := rbacController.Metrics{
+	rbacMetrics := rbaccontroller.Metrics{
 		Workers: metrics.Workers,
 	}
-	ctrl, err := rbacController.New(
+	ctrl, err := rbaccontroller.New(
 		rbacMetrics,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Projects(),
@@ -106,6 +110,29 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings())
+	if err != nil {
+		return err
+	}
+	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+	return nil
+}
+
+func startUpdateController(ctrlCtx controllerContext) error {
+	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile)
+	if err != nil {
+		return fmt.Errorf("failed to create update manager: %v", err)
+	}
+
+	metrics := NewUpdateControllerMetrics()
+	updateMetrics := updatecontroller.Metrics{
+		Workers: metrics.Workers,
+	}
+	ctrl, err := updatecontroller.New(
+		updateMetrics,
+		updateManager,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.kubermaticClient,
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
 	if err != nil {
 		return err
 	}

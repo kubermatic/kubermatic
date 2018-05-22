@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -26,9 +25,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	dcs := buildDatacenterMeta()
 	cps := cloud.Providers(dcs)
 
-	versions := buildMasterVerionsMap()
-	updates := buildMasterUpdates()
-
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
 	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjects...)
 
@@ -38,9 +34,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	controller, err := NewController(
 		kubeClient,
 		kubermaticClient,
-		versions,
-		updates,
-		"./../../master-resources/",
 		TestExternalURL,
 		"",
 		TestDC,
@@ -76,88 +69,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	return controller
-}
-
-func buildMasterVerionsMap() map[string]*apiv1.MasterVersion {
-	return map[string]*apiv1.MasterVersion{
-		"1.9.6": {
-			Name:                       "1.9.6",
-			ID:                         "1.9.6",
-			Default:                    false,
-			AllowedNodeVersions:        []string{"1.9.0"},
-			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-			EtcdClusterYaml:            "etcd-cluster.yaml",
-			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":  "v1.9.6",
-				"etcd-version": "3.0.14-kubeadm",
-			},
-		},
-		"1.8.10": {
-			Name:                       "1.8.10",
-			ID:                         "1.8.10",
-			Default:                    true,
-			AllowedNodeVersions:        []string{"1.8.0"},
-			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-			EtcdClusterYaml:            "etcd-cluster.yaml",
-			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":  "v1.8.10",
-				"etcd-version": "3.0.14-kubeadm",
-			},
-		},
-		"1.8.0": {
-			Name:                       "1.8.0",
-			ID:                         "1.8.0",
-			Default:                    true,
-			AllowedNodeVersions:        []string{"1.8.0"},
-			EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-			EtcdClusterYaml:            "etcd-cluster.yaml",
-			ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-			ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":  "v1.8.0",
-				"etcd-version": "3.0.14-kubeadm",
-			},
-		},
-	}
-}
-
-func buildMasterUpdates() []apiv1.MasterUpdate {
-	return []apiv1.MasterUpdate{
-		{
-			From:            "1.9.*",
-			To:              "1.9.6",
-			Automatic:       true,
-			RollbackAllowed: false,
-			Enabled:         true,
-			Visible:         false,
-			Promote:         false,
-		},
-		{
-			From:            "1.8.*",
-			To:              "1.9.0",
-			Automatic:       false,
-			RollbackAllowed: false,
-			Enabled:         true,
-			Visible:         true,
-			Promote:         true,
-		},
-		{
-			From:            "1.8.*",
-			To:              "1.8.10",
-			Automatic:       true,
-			RollbackAllowed: false,
-			Enabled:         true,
-			Visible:         false,
-			Promote:         false,
-		},
-	}
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {

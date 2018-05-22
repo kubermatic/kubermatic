@@ -33,7 +33,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterV3 getClusterKubeconfigV3 deleteClusterV3
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3
 type ClusterReq struct {
 	DCReq
 	// in: path

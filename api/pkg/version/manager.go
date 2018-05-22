@@ -1,31 +1,129 @@
 package version
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+)
+
+var (
+	versionNotFoundErr  = errors.New("version not found")
+	noDefaultVersionErr = errors.New("no default version configured")
 )
 
 type Manager struct {
-	versions []*apiv1.MasterVersion
-	updates  []*apiv1.MasterUpdate
+	versions []*MasterVersion
+	updates  []*MasterUpdate
 }
 
-func New(versions []*apiv1.MasterVersion, updates []*apiv1.MasterUpdate) *Manager {
+// MasterVersion is the object representing a Kubernetes Master version.
+type MasterVersion struct {
+	Version             *semver.Version `json:"version"`
+	Default             bool            `json:"default"`
+	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
+}
+
+// MasterUpdate represents an update option for K8s master components
+type MasterUpdate struct {
+	From      string `json:"from"`
+	To        string `json:"to"`
+	Automatic bool   `json:"automatic"`
+}
+
+func New(versions []*MasterVersion, updates []*MasterUpdate) *Manager {
 	return &Manager{
 		updates:  updates,
 		versions: versions,
 	}
 }
 
-func (m *Manager) AutomaticUpdate(from *semver.Version) (*apiv1.MasterVersion, error) {
-	var toConstraints []*semver.Constraints
+func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
+	updates, err := LoadUpdates(updatesFilename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load updates from %s: %v", updatesFilename, err)
+	}
+	versions, err := LoadVersions(versionsFilename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load versions from %s: %v", versionsFilename, err)
+	}
+
+	return New(versions, updates), nil
+}
+
+func (m *Manager) GetDefault() (*MasterVersion, error) {
+	for _, v := range m.versions {
+		if v.Default {
+			return v, nil
+		}
+	}
+	return nil, noDefaultVersionErr
+}
+
+func (m *Manager) GetVersion(s string) (*MasterVersion, error) {
+	sv, err := semver.NewVersion(s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", s, err)
+	}
+
+	for _, v := range m.versions {
+		if v.Version.Equal(sv) {
+			return v, nil
+		}
+	}
+	return nil, versionNotFoundErr
+}
+
+func (m *Manager) AutomaticUpdate(sfrom string) (*MasterVersion, error) {
+	from, err := semver.NewVersion(sfrom)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", sfrom, err)
+	}
+
+	var toVersions []string
 	for _, u := range m.updates {
 		if !u.Automatic {
 			continue
 		}
 
+		uFrom, err := semver.NewConstraint(u.From)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+		}
+		if !uFrom.Check(from) {
+			continue
+		}
+
+		// Automatic updates must not be a constraint. They must be version.
+		if _, err = semver.NewVersion(u.To); err != nil {
+			return nil, fmt.Errorf("failed to parse to version %s: %v", u.To, err)
+		}
+		toVersions = append(toVersions, u.To)
+	}
+
+	if len(toVersions) == 0 {
+		return nil, nil
+	}
+
+	if len(toVersions) > 1 {
+		return nil, fmt.Errorf("more than one automatic update found for version. Not allowed")
+	}
+
+	mVersion, err := m.GetVersion(toVersions[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MasterVersion for %s: %v", toVersions[0], err)
+	}
+	return mVersion, nil
+}
+
+func (m *Manager) GetPossibleUpdates(sfrom string) ([]*MasterVersion, error) {
+	from, err := semver.NewVersion(sfrom)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", sfrom, err)
+	}
+
+	var toConstraints []*semver.Constraints
+	for _, u := range m.updates {
 		uFrom, err := semver.NewConstraint(u.From)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
@@ -41,16 +139,14 @@ func (m *Manager) AutomaticUpdate(from *semver.Version) (*apiv1.MasterVersion, e
 		toConstraints = append(toConstraints, uTo)
 	}
 
-	if len(tos) == 0 {
-		return nil, nil
-	}
-
-	best := tos[0]
-	for _, dest := range tos[1:] {
-		if best.to.LessThan(dest.to) {
-			best = dest
+	var possibleVersions []*MasterVersion
+	for _, c := range toConstraints {
+		for _, v := range m.versions {
+			if c.Check(v.Version) && !from.Equal(v.Version) {
+				possibleVersions = append(possibleVersions, v)
+			}
 		}
 	}
 
-	return best.update, nil
+	return possibleVersions, nil
 }

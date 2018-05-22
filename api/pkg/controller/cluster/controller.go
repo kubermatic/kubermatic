@@ -401,8 +401,11 @@ func (cc *Controller) syncCluster(key string) error {
 }
 
 func (cc *Controller) migrateCluster(cluster *kubermaticv1.Cluster) {
-	if cluster.Spec.Version == nil {
+	if cluster.Spec.Version == "" {
 		cluster.Spec.Version = cluster.Spec.MasterVersion
+	}
+	if cluster.Spec.MasterVersion == "" {
+		cluster.Spec.MasterVersion = cluster.Spec.Version
 	}
 }
 

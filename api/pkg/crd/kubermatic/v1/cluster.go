@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/semver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -74,8 +73,8 @@ type ClusterSpec struct {
 	Cloud          *CloudSpec              `json:"cloud"`
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
-	Version       *semver.Version `json:"version"`       // Cluster version
-	MasterVersion *semver.Version `json:"masterVersion"` // Deprecated cluster version
+	Version       string `json:"version"`       // Cluster version
+	MasterVersion string `json:"masterVersion"` // Deprecated cluster version
 
 	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
 	WorkerName        string `json:"workerName"`        // WorkerName is a cluster used in development, compare --worker-name flag.
