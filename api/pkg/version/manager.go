@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	versionNotFoundErr  = errors.New("version not found")
-	noDefaultVersionErr = errors.New("no default version configured")
+	errVersionNotFound  = errors.New("version not found")
+	errNoDefaultVersion = errors.New("no default version configured")
 )
 
+// Manager is a object to handle versions & updates from a predefined config
 type Manager struct {
 	versions []*MasterVersion
 	updates  []*MasterUpdate
@@ -31,6 +32,7 @@ type MasterUpdate struct {
 	Automatic bool   `json:"automatic"`
 }
 
+// New returns a instance of Manager
 func New(versions []*MasterVersion, updates []*MasterUpdate) *Manager {
 	return &Manager{
 		updates:  updates,
@@ -38,6 +40,7 @@ func New(versions []*MasterVersion, updates []*MasterUpdate) *Manager {
 	}
 }
 
+// NewFromFiles returns a instance of manager with the versions & updates loaded from the given paths
 func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
 	updates, err := LoadUpdates(updatesFilename)
 	if err != nil {
@@ -51,15 +54,17 @@ func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
 	return New(versions, updates), nil
 }
 
+// GetDefault returns the default version
 func (m *Manager) GetDefault() (*MasterVersion, error) {
 	for _, v := range m.versions {
 		if v.Default {
 			return v, nil
 		}
 	}
-	return nil, noDefaultVersionErr
+	return nil, errNoDefaultVersion
 }
 
+// GetVersion returns the MasterVersions for s
 func (m *Manager) GetVersion(s string) (*MasterVersion, error) {
 	sv, err := semver.NewVersion(s)
 	if err != nil {
@@ -71,9 +76,10 @@ func (m *Manager) GetVersion(s string) (*MasterVersion, error) {
 			return v, nil
 		}
 	}
-	return nil, versionNotFoundErr
+	return nil, errVersionNotFound
 }
 
+// AutomaticUpdate returns a version if an automatic update can be found for version sfrom
 func (m *Manager) AutomaticUpdate(sfrom string) (*MasterVersion, error) {
 	from, err := semver.NewVersion(sfrom)
 	if err != nil {
@@ -116,6 +122,7 @@ func (m *Manager) AutomaticUpdate(sfrom string) (*MasterVersion, error) {
 	return mVersion, nil
 }
 
+// GetPossibleUpdates returns possible updates for the version sfrom
 func (m *Manager) GetPossibleUpdates(sfrom string) ([]*MasterVersion, error) {
 	from, err := semver.NewVersion(sfrom)
 	if err != nil {

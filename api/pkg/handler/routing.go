@@ -25,6 +25,7 @@ const (
 	clusterProviderContextKey ContextKey = "cluster-provider"
 )
 
+// UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
 	GetVersion(string) (*version.MasterVersion, error)
 	GetDefault() (*version.MasterVersion, error)

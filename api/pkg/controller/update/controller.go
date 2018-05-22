@@ -29,7 +29,7 @@ type Metrics struct {
 type Controller struct {
 	queue         workqueue.RateLimitingInterface
 	metrics       Metrics
-	updateManager UpdateManager
+	updateManager Manager
 	workerName    string
 
 	kubermaticClient kubermaticclientset.Interface
@@ -37,8 +37,8 @@ type Controller struct {
 	clusterSynced    cache.InformerSynced
 }
 
-// UpdateManager specifies a set of methods to find suitable update versions for clusters
-type UpdateManager interface {
+// Manager specifies a set of methods to find suitable update versions for clusters
+type Manager interface {
 	AutomaticUpdate(from string) (*version.MasterVersion, error)
 }
 
@@ -46,7 +46,7 @@ type UpdateManager interface {
 // managing automatic updates to clusters while following a pre defined update path
 func New(
 	metrics Metrics,
-	updateManager UpdateManager,
+	updateManager Manager,
 	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
