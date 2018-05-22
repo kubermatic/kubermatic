@@ -3,12 +3,21 @@ package errors
 import (
 	"fmt"
 	"net/http"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // HTTPError represents an HTTP server error.
 type HTTPError struct {
 	code int
 	msg  string
+}
+
+func New(code int, msg string) HTTPError {
+	return HTTPError{
+		code: code,
+		msg:  msg,
+	}
 }
 
 // Error implements the error interface.
@@ -51,7 +60,7 @@ func NewConflict(kind, dc, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q in dc %q already exists", kind, name, dc)}
 }
 
-// NewNotAuthorized creates a HTTP 403 error.
+// NewNotAuthorized creates a HTTP 401 error.
 func NewNotAuthorized() error {
 	return HTTPError{http.StatusUnauthorized, "not authorized"}
 }
@@ -64,4 +73,15 @@ func NewNotImplemented() error {
 // NewAlreadyExists creates a HTTP 409 already exists error
 func NewAlreadyExists(kind, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q already exists", kind, name)}
+}
+
+// KubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
+// Otherwise unmodified err will be returned to the caller.
+func KubernetesErrorToHTTPError(err error) error {
+	if kErr, ok := err.(*kerrors.StatusError); ok {
+		httpCode := kErr.Status().Code
+		httpMessage := kErr.Status().Message
+		return New(int(httpCode), httpMessage)
+	}
+	return err
 }

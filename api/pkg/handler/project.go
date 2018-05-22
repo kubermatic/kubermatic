@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -36,7 +38,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		return apiv1.Project{
-			ID:     string(kubermaticProject.UID),
+			ID:     kubermaticProject.Name,
 			Name:   kubermaticProject.Spec.Name,
 			Status: kubermaticProject.Status.Phase,
 		}, nil
@@ -49,9 +51,19 @@ func getProjectsEndpoint() endpoint.Endpoint {
 	}
 }
 
-func deleteProjectEndpoint() endpoint.Endpoint {
+func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return nil, errors.NewNotImplemented()
+		projectName, ok := request.(string)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		if len(projectName) == 0 {
+			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
+		}
+
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		err := projectProvider.Delete(user, projectName)
+		return nil, errors.KubernetesErrorToHTTPError(err)
 	}
 }
 
@@ -66,7 +78,12 @@ type projectReq struct {
 }
 
 func decodeProjectPathReq(c context.Context, r *http.Request) (interface{}, error) {
-	return nil, errors.NewNotImplemented()
+	// project_id is actually an internal name of the object
+	projectName, ok := mux.Vars(r)["project_id"]
+	if !ok {
+		return nil, fmt.Errorf("'project_id' parameter is required in order to delete the project")
+	}
+	return projectName, nil
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
