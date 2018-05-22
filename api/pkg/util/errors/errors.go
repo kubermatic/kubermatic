@@ -13,6 +13,7 @@ type HTTPError struct {
 	msg  string
 }
 
+// New creates a brand new HTTPError object
 func New(code int, msg string) HTTPError {
 	return HTTPError{
 		code: code,
@@ -78,9 +79,9 @@ func NewAlreadyExists(kind, name string) error {
 // KubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
 // Otherwise unmodified err will be returned to the caller.
 func KubernetesErrorToHTTPError(err error) error {
-	if kErr, ok := err.(*kerrors.StatusError); ok {
-		httpCode := kErr.Status().Code
-		httpMessage := kErr.Status().Message
+	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
+		httpCode := kubernetesError.Status().Code
+		httpMessage := kubernetesError.Status().Message
 		return New(int(httpCode), httpMessage)
 	}
 	return err
