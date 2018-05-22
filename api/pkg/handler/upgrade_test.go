@@ -32,18 +32,18 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUsername},
 				},
-				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
 			wantUpdates: []string{"1.6.1", "1.7.0"},
 			versions: []*version.MasterVersion{
 				{
-					Version: semver.MustParse("v1.6.0"),
+					Version: semver.MustParse("1.6.0"),
 				},
 				{
-					Version: semver.MustParse("v1.6.1"),
+					Version: semver.MustParse("1.6.1"),
 				},
 				{
-					Version: semver.MustParse("v1.7.0"),
+					Version: semver.MustParse("1.7.0"),
 				},
 			},
 			updates: []*version.MasterUpdate{
@@ -66,12 +66,12 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUsername},
 				},
-				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
 			wantUpdates: []string{},
 			versions: []*version.MasterVersion{
 				{
-					Version: semver.MustParse("v1.6.0"),
+					Version: semver.MustParse("1.6.0"),
 				},
 			},
 			updates: []*version.MasterUpdate{},
