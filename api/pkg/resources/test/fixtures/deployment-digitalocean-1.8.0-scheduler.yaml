@@ -39,7 +39,7 @@ spec:
         command:
         - /hyperkube
         - scheduler
-        image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
+        image: gcr.io/google_containers/hyperkube-amd64:v1.8.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
