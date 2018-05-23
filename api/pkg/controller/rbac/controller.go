@@ -28,8 +28,9 @@ type Metrics struct {
 
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
-	queue   workqueue.RateLimitingInterface
-	metrics Metrics
+	queue      workqueue.RateLimitingInterface
+	metrics    Metrics
+	workerName string
 
 	kubermaticClient kubermaticclientset.Interface
 	projectLister    kubermaticv1lister.ProjectLister
@@ -48,6 +49,7 @@ type Controller struct {
 // managing RBAC roles for project's resources
 func New(
 	metrics Metrics,
+	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
 	projectInformer kubermaticv1informers.ProjectInformer,
 	userInformer kubermaticv1informers.UserInformer,
@@ -57,6 +59,7 @@ func New(
 	c := &Controller{
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGenerator"),
 		metrics:          metrics,
+		workerName:       workerName,
 		kubermaticClient: kubermaticClient,
 		kubeClient:       kubeClient,
 	}
