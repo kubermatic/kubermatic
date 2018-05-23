@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -33,7 +32,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ClusterReq represent a request for cluster specific data
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterV3 getClusterKubeconfigV3 deleteClusterV3
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterNodes getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3
 type ClusterReq struct {
 	DCReq
 	// in: path
@@ -284,45 +283,6 @@ type ListSSHKeyReq struct{}
 
 func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error) {
 	var req ListSSHKeyReq
-	return req, nil
-}
-
-// UpgradeReq represent a request for cluster upgrade specific data
-type UpgradeReq struct {
-	ClusterReq
-	To string
-}
-
-func decodeUpgradeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpgradeReq
-
-	dr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterReq = dr.(ClusterReq)
-
-	defer func() {
-		if err := r.Body.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	v := new(struct {
-		To string
-	})
-
-	err = json.Unmarshal(b, v)
-	if err != nil {
-		return nil, err
-	}
-
-	req.To = v.To
-
 	return req, nil
 }
 

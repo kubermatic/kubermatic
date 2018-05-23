@@ -11,24 +11,33 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
+func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		if req.Body.Cluster == nil {
+		spec := req.Body.Cluster
+		if spec == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
 		}
 
-		if err := validation.ValidateCreateClusterSpec(req.Body.Cluster, cloudProviders); err != nil {
+		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		c, err := clusterProvider.NewCluster(user, req.Body.Cluster)
+		if spec.Version == "" {
+			v, err := updateManager.GetDefault()
+			if err != nil {
+				return nil, err
+			}
+			spec.Version = v.Version.String()
+		}
+
+		c, err := clusterProvider.NewCluster(user, spec)
 		if err != nil {
 			if kerrors.IsAlreadyExists(err) {
-				return nil, errors.NewConflict("cluster", req.Body.Cluster.Cloud.DatacenterName, req.Body.Cluster.HumanReadableName)
+				return nil, errors.NewConflict("cluster", spec.Cloud.DatacenterName, spec.HumanReadableName)
 			}
 			return nil, err
 		}
