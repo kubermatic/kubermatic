@@ -104,6 +104,7 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	}
 	ctrl, err := rbaccontroller.New(
 		rbacMetrics,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Projects(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Users(),

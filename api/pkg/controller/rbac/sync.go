@@ -11,7 +11,7 @@ import (
 )
 
 func (c *Controller) sync(key string) error {
-	projectFromCache, err := c.projectLister.Get(key)
+	sharedProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			glog.V(2).Infof("project '%s' in work queue no longer exists", key)
@@ -19,8 +19,12 @@ func (c *Controller) sync(key string) error {
 		}
 		return err
 	}
-	project := projectFromCache.DeepCopy()
+	if sharedProject.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
+		glog.V(8).Infof("skipping project %s due to different worker assigned to it", key)
+		return nil
+	}
 
+	project := sharedProject.DeepCopy()
 	err = c.ensureProjectOwner(project)
 	if err != nil {
 		return err

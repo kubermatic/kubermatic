@@ -69,7 +69,7 @@ func main() {
 	flag.StringVar(&runOp.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&runOp.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&runOp.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
-	flag.StringVar(&runOp.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
+	flag.StringVar(&runOp.workerName, "worker-name", "", "Processes resources assigned to the given worker name")
 	flag.StringVar(&runOp.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&runOp.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")

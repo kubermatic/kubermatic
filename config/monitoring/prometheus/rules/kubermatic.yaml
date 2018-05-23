@@ -23,8 +23,8 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: "Average increase of unhandled errors in the controller sync loop is greater than 0.25. The metric has been collected over 5min duration."
-      summary: "Too many unhandled errors"
+      description: "Kubermatic Controller Manager in {{ $labels.namespace }} has too many errors in its loop."
+      summary: "Kubermatic Controller Manager has many errors"
   - alert: KubermaticClusterPhase
     expr: kubermatic_cluster_controller_cluster_status_phase{phase="running"} == 0 and
       kubermatic_cluster_controller_cluster_status_phase{phase="deleting"} == 0
@@ -33,4 +33,4 @@ groups:
       severity: warning
     annotations:
       description: "Cluster {{ $labels.cluster }} is in phase '{{ $labels.phase }}' for more then 10min."
-      summary: "Cluster too long in unexpected phase"
+      summary: "Cluster stuck in unexpected phase"
