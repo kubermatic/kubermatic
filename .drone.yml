@@ -173,8 +173,8 @@ pipeline:
       - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}" && git tag ${DRONE_TAG}
       - git push origin master --tags
     when:
-      # event: [tag]
-      branch: sync-charts
+      event: [tag]
+      branch: master
 
   deploy-dev:
     group: deploy
