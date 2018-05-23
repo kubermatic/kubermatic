@@ -80,3 +80,25 @@ func NewRBACGeneratorControllerMetrics() *RBACGeneratorControllerMetrics {
 	cm.Workers.Set(0)
 	return cm
 }
+
+// UpdateControllerMetrics holds metrics used by Update controller
+type UpdateControllerMetrics struct {
+	Workers metrics.Gauge
+}
+
+// NewUpdateControllerMetrics creates UpdateControllerMetrics
+// with default values initialized, so metrics always show up.
+func NewUpdateControllerMetrics() *UpdateControllerMetrics {
+	subsystem := "update_controller"
+	cm := &UpdateControllerMetrics{
+		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "workers",
+			Help:      "The number of running Update controller workers",
+		}, nil),
+	}
+
+	cm.Workers.Set(0)
+	return cm
+}

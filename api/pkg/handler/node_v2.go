@@ -205,7 +205,7 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider, versions map[string]*apiv1.MasterVersion, masterResourcesPath string) endpoint.Endpoint {
+func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
@@ -219,11 +219,6 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 		keys, err := dp.ClusterSSHKeys(user, c.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve ssh keys: %v", err)
-		}
-
-		version, found := versions[c.Spec.MasterVersion]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster version %s", c.Spec.MasterVersion)
 		}
 
 		dc, found := dcs[c.Spec.Cloud.DatacenterName]
@@ -269,7 +264,7 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Spec.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO(mrIncompetent): rework the versions
-			node.Spec.Versions.Kubelet = version.Values["k8s-version"]
+			node.Spec.Versions.Kubelet = c.Spec.Version
 		}
 
 		if node.Metadata.Name == "" {

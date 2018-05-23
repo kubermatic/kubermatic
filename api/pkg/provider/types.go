@@ -60,9 +60,6 @@ type ClusterProvider interface {
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user apiv1.User, name string) error
 
-	// InitiateClusterUpgrade upgrades a Cluster to a specific version
-	InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error)
-
 	// UpdateCluster updates a cluster
 	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 

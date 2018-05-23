@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -26,7 +27,7 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 )
 
-func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions map[string]*apiv1.MasterVersion, updates []apiv1.MasterUpdate) (http.Handler, error) {
+func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
 	ctx := context.Background()
 
 	datacenters := buildDatacenterMeta()
@@ -59,6 +60,8 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
+	updateManager := version.New(versions, updates)
+
 	r := NewRouting(
 		ctx,
 		datacenters,
@@ -68,9 +71,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		userProvider,
 		projectProvider,
 		authenticator,
-		versions,
-		updates,
-		"",
+		updateManager,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()

@@ -33,7 +33,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -42,6 +41,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -164,16 +164,9 @@ func main() {
 	// start server
 	ctx := context.Background()
 
-	// load versions
-	versions, err := version.LoadVersions(versionsFile)
+	updateManager, err := version.NewFromFiles(versionsFile, updatesFile)
 	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", versionsFile, err))
-	}
-
-	// load updates
-	updates, err := version.LoadUpdates(updatesFile)
-	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to load version yaml %q: %v", versionsFile, err))
+		glog.Fatal(fmt.Sprintf("failed to create update manager: %v", err))
 	}
 
 	cloudProviders := cloud.Providers(datacenters)
@@ -187,9 +180,7 @@ func main() {
 		userProvider,
 		projectProvider,
 		authenticator,
-		versions,
-		updates,
-		masterResources,
+		updateManager,
 	)
 
 	mainRouter := mux.NewRouter()

@@ -19,6 +19,8 @@ var (
 
 const (
 	name = "addon-manager"
+
+	tag = "v1.9.5"
 )
 
 // Deployment returns the addon-manager Deployment
@@ -77,7 +79,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/addon-manager:" + data.Version.Values["addon-manager-version"],
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/addon-manager:" + tag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{
 				{
