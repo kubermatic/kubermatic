@@ -1,0 +1,19 @@
+groups:
+- name: machine-controller
+  rules:
+  - alert: MachineControllerDown
+    expr: absent(up{job="machine-controller"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: "Machine Controller in namespace {{ $labels.namespace }} is down for more than 5 minutes."
+      summary: "Machine Controller is down"
+  - alert: MachineControllerTooManyErrors
+    expr: sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: "Machine Controller in {{ $labels.namespace }} has too many errors in its loop."
+      summary: "Machine Controller has many errors"
