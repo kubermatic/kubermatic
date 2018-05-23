@@ -13,6 +13,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
@@ -30,7 +31,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
-			return nil, errors.KubernetesErrorToHTTPError(err)
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		return apiv1.Project{
@@ -51,15 +52,12 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectName, ok := request.(string)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
-		}
-		if len(projectName) == 0 {
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		err := projectProvider.Delete(user, projectName)
-		return nil, errors.KubernetesErrorToHTTPError(err)
+		return nil, kubernetesErrorToHTTPError(err)
 	}
 }
 
@@ -94,4 +92,15 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	}
 
 	return req, nil
+}
+
+// kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
+// Otherwise unmodified err will be returned to the caller.
+func kubernetesErrorToHTTPError(err error) error {
+	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
+		httpCode := kubernetesError.Status().Code
+		httpMessage := kubernetesError.Status().Message
+		return errors.New(int(httpCode), httpMessage)
+	}
+	return err
 }
