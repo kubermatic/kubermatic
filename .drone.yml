@@ -164,7 +164,7 @@ pipeline:
     pull: true
     commands:
       - apk add --no-cache -U git
-      - export $INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
+      - export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
       - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts
       - cp -r cert-manager certs kubermatic monitoring nginx-ingress-controller nodeport-proxy oauth $INSTALLER_DIR/charts
       - cd $INSTALLER_DIR
