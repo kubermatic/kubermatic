@@ -147,10 +147,10 @@ spec:
         - /etc/kubernetes/kubelet/kubelet-client.crt
         - --kubelet-client-key
         - /etc/kubernetes/kubelet/kubelet-client.key
-        - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
         - --v
         - "4"
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver
