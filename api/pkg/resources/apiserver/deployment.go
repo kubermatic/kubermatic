@@ -272,7 +272,6 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
-		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 		"--v", "4",
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
@@ -282,6 +281,12 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 	if data.Cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
+
+	if data.Cluster.Spec.Cloud.BringYourOwn != nil {
+		flags = append(flags, "--kubelet-preferred-address-types", "Hostname,InternalIP,ExternalIP")
+	} else {
+		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 	return flags
 }
