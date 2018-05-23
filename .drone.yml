@@ -175,7 +175,9 @@ pipeline:
       - git push origin master --tags
     when:
       event: [tag]
-      branch: master
+      branch:
+        include: [ master, release/* ]
+        exclude: [ release/v1.* ]
 
   deploy-dev:
     group: deploy
