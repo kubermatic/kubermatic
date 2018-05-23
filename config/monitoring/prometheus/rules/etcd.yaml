@@ -2,7 +2,7 @@ groups:
 - name: etcd.rules
   rules:
   - alert: EtcdInsufficientMembers
-    expr: count(up{job="etcd-cluster"} == 0) > (count(up{job="etcd-cluster"}) by (namespace) / 2 - 1)
+    expr: count(up{job="etcd"} == 0) > (count(up{job="etcd"}) by (namespace) / 2 - 1)
     for: 3m
     labels:
       severity: critical
@@ -10,7 +10,7 @@ groups:
       description: If one more etcd member goes down {{ $labels.namespace }} will be unavailable
       summary: etcd cluster insufficient members
   - alert: EtcdNoLeader
-    expr: etcd_server_has_leader{job="etcd-cluster"} == 0
+    expr: etcd_server_has_leader{job="etcd"} == 0
     for: 1m
     labels:
       severity: critical
@@ -18,15 +18,15 @@ groups:
       description: etcd cluster {{ $labels.namespace }} has no leader
       summary: etcd member has no leader
   - alert: HighNumberOfLeaderChanges
-    expr: increase(etcd_server_leader_changes_seen_total{job="etcd-cluster"}[1h]) > 5
+    expr: increase(etcd_server_leader_changes_seen_total{job="etcd"}[1h]) > 5
     labels:
-      severity: warning
+      severity: 1
     annotations:
       description: etcd in namespace {{ $labels.namespace }} has seen {{ $value }} leader changes within the last hour
       summary: a high number of leader changes within the etcd cluster are happening
   # TODO: Move alerting to namespace prometheus as we don't federate grpc_.* metrics.
   # - alert: HighNumberOfFailedGRPCRequests
-  #   expr: 100 * (sum(rate(grpc_server_handled_total{grpc_code!="OK",job="etcd-cluster"}[5m])) BY (grpc_service, grpc_method) / sum(rate(grpc_server_handled_total{job="etcd-cluster"}[5m])) BY (grpc_service, grpc_method)) > 1
+  #   expr: 100 * (sum(rate(grpc_server_handled_total{grpc_code!="OK",job="etcd"}[5m])) BY (grpc_service, grpc_method) / sum(rate(grpc_server_handled_total{job="etcd"}[5m])) BY (grpc_service, grpc_method)) > 1
   #   for: 10m
   #   labels:
   #     severity: warning
@@ -34,7 +34,7 @@ groups:
   #     description: '{{ $value }}% of requests for {{ $labels.grpc_method }} failed on etcd instance {{ $labels.instance }}'
   #     summary: a high number of gRPC requests are failing
   # - alert: HighNumberOfFailedGRPCRequests
-  #   expr: 100 * (sum(rate(grpc_server_handled_total{grpc_code!="OK",job="etcd-cluster"}[5m])) BY (grpc_service, grpc_method) / sum(rate(grpc_server_handled_total{job="etcd-cluster"}[5m])) BY (grpc_service, grpc_method)) > 5
+  #   expr: 100 * (sum(rate(grpc_server_handled_total{grpc_code!="OK",job="etcd"}[5m])) BY (grpc_service, grpc_method) / sum(rate(grpc_server_handled_total{job="etcd"}[5m])) BY (grpc_service, grpc_method)) > 5
   #   for: 5m
   #   labels:
   #     severity: critical
@@ -58,7 +58,7 @@ groups:
       description: etcd in namespace {{ $labels.namespace }} member communication is slow
       summary: etcd member communication is slow
   - alert: HighNumberOfFailedProposals
-    expr: increase(etcd_server_proposals_failed_total{job="etcd-cluster"}[1h]) > 5
+    expr: increase(etcd_server_proposals_failed_total{job="etcd"}[1h]) > 5
     labels:
       severity: warning
     annotations:
