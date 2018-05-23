@@ -49,7 +49,6 @@ kubectl delete -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml || tru
 kubectl create -f ${CHARTS_PATH}/installer/tiller-clusterrolebinding.yaml
 
 helm ${HELM_OPTS} init --history-max 5 --service-account tiller --upgrade --stable-repo-url=""
-sleep 10
 
 #TODO: Add federation
 ############# MONITORING #############
