@@ -1,29 +1,27 @@
 updates:
+# ======= 1.8 =======
+# Allow to change to any patch version
+- from: 1.8.*
+  to: 1.8.*
+  automatic: false
+# Allow to next minor release
 - from: 1.8.*
   to: 1.9.0
   automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
-- from: 1.9.x
-  to: 1.9.6
-  automatic: true
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
-- from: 1.9.x
+
+# ======= 1.9 =======
+# Allow to change to any patch version
+- from: 1.9.*
+  to: 1.9.*
+  automatic: false
+# Allow to next minor release
+- from: 1.9.*
   to: 1.10.1
   automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true
+
+# ======= 1.10 =======
+# Allow to change to any patch version
 - from: 1.10.*
-  to: 1.10.2
+  #We need to skip 1.10.0 as it broke OpenStack.
+  to: ^1.10.1
   automatic: false
-  rollbackAllowed: false
-  enabled: true
-  visible: true
-  promote: true

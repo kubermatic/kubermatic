@@ -72,7 +72,7 @@ spec:
           value: aws-vpn-id
         - name: AWS_AVAILABILITY_ZONE
           value: aws-availability-zone
-        image: gcr.io/google_containers/hyperkube-amd64:v1.8.5
+        image: gcr.io/google_containers/hyperkube-amd64:v1.8.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

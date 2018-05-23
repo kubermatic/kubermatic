@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/Masterminds/semver"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	corev1 "k8s.io/api/core/v1"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -97,51 +98,6 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
-// MasterVersion is the object representing a Kubernetes Master version.
-// swagger:model MasterVersion
-type MasterVersion struct {
-	Name                            string            `yaml:"name"`
-	ID                              string            `yaml:"id"`
-	Default                         bool              `yaml:"default"`
-	AllowedNodeVersions             []string          `yaml:"allowedNodeVersions"`
-	EtcdOperatorDeploymentYaml      string            `yaml:"etcdOperatorDeploymentYaml"`
-	EtcdClusterYaml                 string            `yaml:"etcdClusterYaml"`
-	ApiserverDeploymentYaml         string            `yaml:"apiserverDeploymentYaml"`
-	ControllerDeploymentYaml        string            `yaml:"controllerDeploymentYaml"`
-	SchedulerDeploymentYaml         string            `yaml:"schedulerDeploymentYaml"`
-	AddonManagerDeploymentYaml      string            `yaml:"addonManagerDeploymentYaml"`
-	MachineControllerDeploymentYaml string            `yaml:"machineControllerDeploymentYaml"`
-	KubeStateMetricsDeploymentYaml  string            `yaml:"kubeStateMetricsDeploymentYaml"`
-	OpenVPNServerDeploymentYaml     string            `yaml:"openVPNServerDeploymentYaml"`
-	Values                          map[string]string `yaml:"values"`
-}
-
-// NodeVersion is the object representing a Kubernetes Kubelet version.
-type NodeVersion struct {
-	Name, ID string
-	Latest   bool
-}
-
-// MasterUpdate represents an update option for K8s master components
-type MasterUpdate struct {
-	From            string `yaml:"from"`
-	To              string `yaml:"to"`
-	Automatic       bool   `yaml:"automatic"`
-	RollbackAllowed bool   `yaml:"rollbackAllowed"`
-	Enabled         bool   `yaml:"enabled"`
-	Visible         bool   `yaml:"visible"`
-	Promote         bool   `yaml:"promote"`
-}
-
-// NodeUpdate represents an update option for K8s node components
-type NodeUpdate struct {
-	From, To                   string
-	Automatic, RollbackAllowed bool
-	Enabled                    bool
-	Visible                    bool
-	Promote                    bool
-}
-
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
@@ -217,4 +173,15 @@ type OpenstackSize struct {
 	Region string `json:"region"`
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
 	IsPublic bool `json:"isPublic"`
+}
+
+// AvailableMasterVersions describes all possible update versions for a cluster
+// swagger:model AvailableMasterVersions
+type AvailableMasterVersions []MasterVersion
+
+// MasterVersion describes a version of the master components
+// swagger:model MasterVersion
+type MasterVersion struct {
+	Version             *semver.Version `json:"version"`
+	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
 }

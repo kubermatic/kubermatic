@@ -889,6 +889,44 @@
           }
         }
       }
+    },
+    "/api/v3/dc/{dc}/cluster/{cluster}/upgrades": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "operationId": "getClusterUpdatesV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AvailableMasterVersions",
+            "schema": {
+              "$ref": "#/definitions/AvailableMasterVersions"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1117,6 +1155,14 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "AvailableMasterVersions": {
+      "description": "AvailableMasterVersions describes all possible update versions for a cluster",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MasterVersion"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "BringYourOwnCloudSpec": {
       "type": "object",
@@ -1403,6 +1449,10 @@
           "type": "string",
           "x-go-name": "PauseReason"
         },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        },
         "workerName": {
           "type": "string",
           "x-go-name": "WorkerName"
@@ -1439,9 +1489,6 @@
         },
         "lastUpdated": {
           "$ref": "#/definitions/Time"
-        },
-        "masterUpdatePhase": {
-          "$ref": "#/definitions/MasterUpdatePhase"
         },
         "namespaceName": {
           "type": "string",
@@ -2132,90 +2179,19 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "MasterUpdate": {
-      "description": "MasterUpdate represents an update option for K8s master components",
-      "type": "object",
-      "properties": {
-        "Automatic": {
-          "type": "boolean"
-        },
-        "Enabled": {
-          "type": "boolean"
-        },
-        "From": {
-          "type": "string"
-        },
-        "Promote": {
-          "type": "boolean"
-        },
-        "RollbackAllowed": {
-          "type": "boolean"
-        },
-        "To": {
-          "type": "string"
-        },
-        "Visible": {
-          "type": "boolean"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "MasterUpdatePhase": {
-      "type": "string",
-      "title": "MasterUpdatePhase represents the current master update phase.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
     "MasterVersion": {
+      "description": "MasterVersion describes a version of the master components",
       "type": "object",
-      "title": "MasterVersion is the object representing a Kubernetes Master version.",
       "properties": {
-        "AddonManagerDeploymentYaml": {
-          "type": "string"
-        },
-        "AllowedNodeVersions": {
+        "allowedNodeVersions": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "x-go-name": "AllowedNodeVersions"
         },
-        "ApiserverDeploymentYaml": {
-          "type": "string"
-        },
-        "ControllerDeploymentYaml": {
-          "type": "string"
-        },
-        "Default": {
-          "type": "boolean"
-        },
-        "EtcdClusterYaml": {
-          "type": "string"
-        },
-        "EtcdOperatorDeploymentYaml": {
-          "type": "string"
-        },
-        "ID": {
-          "type": "string"
-        },
-        "KubeStateMetricsDeploymentYaml": {
-          "type": "string"
-        },
-        "MachineControllerDeploymentYaml": {
-          "type": "string"
-        },
-        "Name": {
-          "type": "string"
-        },
-        "OpenVPNServerDeploymentYaml": {
-          "type": "string"
-        },
-        "SchedulerDeploymentYaml": {
-          "type": "string"
-        },
-        "Values": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+        "version": {
+          "$ref": "#/definitions/Version"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -2739,28 +2715,6 @@
       "x-go-name": "NodeSystemInfo",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
-    "NodeUpdate": {
-      "description": "NodeUpdate represents an update option for K8s node components",
-      "type": "object",
-      "properties": {
-        "Automatic": {
-          "type": "boolean"
-        },
-        "Enabled": {
-          "type": "boolean"
-        },
-        "From": {
-          "type": "string"
-        },
-        "Promote": {
-          "type": "boolean"
-        },
-        "Visible": {
-          "type": "boolean"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "NodeV1": {
       "type": "object",
       "title": "Node is the object representing a cluster node.",
@@ -2890,19 +2844,6 @@
       },
       "x-go-name": "Node",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-    },
-    "NodeVersion": {
-      "type": "object",
-      "title": "NodeVersion is the object representing a Kubernetes Kubelet version.",
-      "properties": {
-        "Latest": {
-          "type": "boolean"
-        },
-        "Name": {
-          "type": "string"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "NodeVersionInfoV2": {
       "description": "NodeVersionInfo node version information",
@@ -3600,6 +3541,11 @@
       },
       "x-go-name": "VSphereNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "Version": {
+      "type": "object",
+      "title": "Version represents a single semantic version.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/Masterminds/semver"
     }
   },
   "responses": {
