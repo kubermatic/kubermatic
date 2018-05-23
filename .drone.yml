@@ -169,7 +169,7 @@ pipeline:
       - cp -r cert-manager certs kubermatic monitoring nginx-ingress-controller nodeport-proxy oauth $INSTALLER_DIR/charts
       - cd $INSTALLER_DIR
       - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}" && git tag ${DRONE_TAG}
-      - git commit -m "Synchronising helm charts from commit $DRONE_COMMIT" && git push origin master --tags
+      - git push origin master --tags
     when:
       event: tag
       branch: master
