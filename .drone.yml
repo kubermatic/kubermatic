@@ -170,7 +170,8 @@ pipeline:
       - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts
       - cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller config/nodeport-proxy config/oauth $INSTALLER_DIR/charts
       - cd $INSTALLER_DIR
-      - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}" && git tag ${DRONE_TAG}
+      - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"
+      - git tag ${DRONE_TAG}
       - git push origin master --tags
     when:
       event: [tag]
