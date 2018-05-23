@@ -160,15 +160,15 @@ pipeline:
       event: [tag]
 
   sync-charts:
-    group: push-release
-    image: cbrgm/alpine-git:latest
+    image: alpine:3.7
     pull: true
     commands:
+      - apk add --no-cache -U git
       - export $INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
-      - mkdir $INSTALLER_DIR && git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts
-      - cp -r --parents cert-manager certs kubermatic monitoring nginx-ingress-controller nodeport-proxy oauth $INSTALLER_DIR/charts
+      - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts
+      - cp -r cert-manager certs kubermatic monitoring nginx-ingress-controller nodeport-proxy oauth $INSTALLER_DIR/charts
       - cd $INSTALLER_DIR
-      - git tag ${DRONE_TAG}
+      - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}" && git tag ${DRONE_TAG}
       - git commit -m "Synchronising helm charts from commit $DRONE_COMMIT" && git push origin master --tags
     when:
       event: tag
