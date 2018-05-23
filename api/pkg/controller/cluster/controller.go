@@ -404,9 +404,7 @@ func (cc *Controller) migrateCluster(cluster *kubermaticv1.Cluster) {
 	if cluster.Spec.Version == "" {
 		cluster.Spec.Version = cluster.Spec.MasterVersion
 	}
-	if cluster.Spec.MasterVersion == "" {
-		cluster.Spec.MasterVersion = cluster.Spec.Version
-	}
+	cluster.Spec.MasterVersion = cluster.Spec.Version
 }
 
 func (cc *Controller) runWorker() {
