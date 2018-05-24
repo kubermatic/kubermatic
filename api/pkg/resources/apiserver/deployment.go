@@ -76,8 +76,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	var etcds []string
-	for _, num := range []int{0, 1, 2} {
-		etcds = append(etcds, fmt.Sprintf("http://etcd-%d.%s.%s.svc.cluster.local:2379", num, resources.EtcdServiceName, data.Cluster.Status.NamespaceName))
+	for i := 0; i < resources.EtcdClusterSize; i++ {
+		etcds = append(etcds, fmt.Sprintf("http://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName))
 	}
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()

@@ -83,6 +83,8 @@ const (
 
 	// AppLabelKey defines the label key app which should be used within resources
 	AppLabelKey = "app"
+
+	EtcdClusterSize = 3
 )
 
 const (
