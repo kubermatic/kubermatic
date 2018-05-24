@@ -2,7 +2,6 @@ package rbac
 
 import (
 	"fmt"
-
 	"strings"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -19,14 +18,15 @@ func generateOwnersGroupName(projectName string) string {
 	return fmt.Sprintf("%s-%s", ownerGroupName, projectName)
 }
 
-func generateRBACRole(resource, resourceKind, groupName, policyAPIGroups, policyResourceName string) (*rbacv1.ClusterRole, error) {
+func generateRBACRole(resource, resourceKind, groupName, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
 	verbs, err := generateVerbs(groupName)
 	if err != nil {
 		return nil, err
 	}
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s:%s:%s", rbacPrefix, strings.ToLower(resourceKind), groupName),
+			Name:            fmt.Sprintf("%s:%s:%s", rbacPrefix, strings.ToLower(resourceKind), groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -40,10 +40,11 @@ func generateRBACRole(resource, resourceKind, groupName, policyAPIGroups, policy
 	return role, nil
 }
 
-func generateRBACRoleBinding(resourceKind, groupName string) *rbacv1.ClusterRoleBinding {
+func generateRBACRoleBinding(resourceKind, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s:%s:%s", rbacPrefix, strings.ToLower(resourceKind), groupName),
+			Name:            fmt.Sprintf("%s:%s:%s", rbacPrefix, strings.ToLower(resourceKind), groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
 		},
 		Subjects: []rbacv1.Subject{
 			{
