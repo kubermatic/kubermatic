@@ -2,12 +2,11 @@ package rbac
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
-	"strings"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,20 +37,16 @@ func (c *Controller) sync(key string) error {
 	}
 
 	project := sharedProject.DeepCopy()
-	err = c.ensureProjectInitialized(project)
-	if err != nil {
+	if err = c.ensureProjectInitialized(project); err != nil {
 		return err
 	}
-	err = c.ensureProjectOwner(project)
-	if err != nil {
+	if err = c.ensureProjectOwner(project); err != nil {
 		return err
 	}
-	err = c.ensureProjectRBACRole(project)
-	if err != nil {
+	if err = c.ensureProjectRBACRole(project); err != nil {
 		return err
 	}
-	err = c.ensureProjectRBACRoleBinding(project)
-	if err != nil {
+	if err = c.ensureProjectRBACRoleBinding(project); err != nil {
 		return err
 	}
 	err = c.ensureProjectIsInActivePhase(project)
@@ -201,8 +196,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 		if len(updatedProjectGroup) != len(sharedUser.Spec.Projects) {
 			user := sharedUser.DeepCopy()
 			user.Spec.Projects = updatedProjectGroup
-			_, err = c.kubermaticClient.KubermaticV1().Users().Update(user)
-			if err != nil {
+			if _, err = c.kubermaticClient.KubermaticV1().Users().Update(user); err != nil {
 				return err
 			}
 		}
@@ -212,7 +206,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	finalizers.Delete(cleanupFinalizerName)
 	project.Finalizers = finalizers.List()
 	_, err = c.kubermaticClient.KubermaticV1().Projects().Update(project)
-	return nil
+	return err
 }
 
 func (c *Controller) shouldSkipProject(project *kubermaticv1.Project) bool {
