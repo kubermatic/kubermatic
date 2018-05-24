@@ -40,8 +40,6 @@ const (
 	PrometheusServiceName = "prometheus"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
-	//EtcdClientServiceName is the name for the etcd service
-	EtcdClientServiceName = "etcd-client"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
