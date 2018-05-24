@@ -68,8 +68,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					// don't know why but sometimes user.Kind and user.APIVersion are empty
-					APIVersion: kubermaticv1.SchemeGroupVersion.Version,
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       "User",
 					UID:        user.GetUID(),
 					Name:       user.Name,
