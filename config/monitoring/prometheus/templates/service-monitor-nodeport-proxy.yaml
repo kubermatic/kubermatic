@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nodeport-proxy
+  labels:
+    team: kubermatic
+spec:
+  jobLabel: prom-job
+  selector:
+    matchLabels:
+      app: nodeport-proxy
+      prom-job: nodeport-proxy
+  namespaceSelector:
+    matchNames:
+    - nodeport-proxy
+  endpoints:
+  - port: metrics
+    interval: 30s
