@@ -4,6 +4,8 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -66,8 +68,9 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: user.APIVersion,
-					Kind:       user.Kind,
+					// don't know why but sometimes user.Kind and user.APIVersion are empty
+					APIVersion: kubermaticv1.SchemeGroupVersion.Version,
+					Kind:       "User",
 					UID:        user.GetUID(),
 					Name:       user.Name,
 				},
