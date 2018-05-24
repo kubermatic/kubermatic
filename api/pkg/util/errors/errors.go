@@ -11,6 +11,14 @@ type HTTPError struct {
 	msg  string
 }
 
+// New creates a brand new HTTPError object
+func New(code int, msg string) HTTPError {
+	return HTTPError{
+		code: code,
+		msg:  msg,
+	}
+}
+
 // Error implements the error interface.
 func (err HTTPError) Error() string {
 	return err.msg
@@ -51,7 +59,7 @@ func NewConflict(kind, dc, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q in dc %q already exists", kind, name, dc)}
 }
 
-// NewNotAuthorized creates a HTTP 403 error.
+// NewNotAuthorized creates a HTTP 401 error.
 func NewNotAuthorized() error {
 	return HTTPError{http.StatusUnauthorized, "not authorized"}
 }

@@ -342,7 +342,7 @@ func (r Routing) deleteProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(deleteProjectEndpoint()),
+		)(deleteProjectEndpoint(r.projectProvider)),
 		decodeProjectPathReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
