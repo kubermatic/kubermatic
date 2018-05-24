@@ -64,10 +64,10 @@ region = "{{ .DC.Spec.Openstack.Region }}"
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
-{{- if eq (substr 0 4 (index .Version.Values "k8s-version")) "v1.9" }}
+{{- if eq (substr 0 3 .Cluster.Spec.Version) "1.9" }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
-{{- if eq (substr 0 5 (index .Version.Values "k8s-version")) "v1.10" }}
+{{- if eq (substr 0 4 .Cluster.Spec.Version) "1.10" }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 {{- end }}

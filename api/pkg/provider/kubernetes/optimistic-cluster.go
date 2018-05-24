@@ -75,22 +75,6 @@ func (p *OptimisticClusterProvider) DeleteCluster(user apiv1.User, name string) 
 	return provider.ErrNotFound
 }
 
-// InitiateClusterUpgrade sets the version of the given cluster
-func (p *OptimisticClusterProvider) InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error) {
-	for _, prov := range p.providers {
-		_, err := prov.Cluster(user, name)
-		if err != nil {
-			if err == provider.ErrNotFound {
-				continue
-			} else {
-				return nil, err
-			}
-		}
-		return prov.InitiateClusterUpgrade(user, name, version)
-	}
-	return nil, provider.ErrNotFound
-}
-
 // UpdateCluster updates a cluster
 func (p *OptimisticClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	for _, prov := range p.providers {

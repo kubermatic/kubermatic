@@ -53,10 +53,6 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgradesV3())
-
-	mux.Methods(http.MethodPut).
-		Path("/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.performClusterUpgradeV3())
 }
 
 // Creates a cluster
@@ -77,7 +73,7 @@ func (r Routing) newClusterHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(newClusterEndpoint(r.sshKeyProvider, r.cloudProviders)),
+		)(newClusterEndpoint(r.sshKeyProvider, r.cloudProviders, r.updateManager)),
 		decodeNewClusterReq,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -234,7 +230,7 @@ func (r Routing) createNodesHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions, r.masterResourcesPath)),
+		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider)),
 		decodeCreateNodeReqV2,
 		createStatusResource(encodeJSON),
 		r.defaultServerOptions()...,
@@ -285,27 +281,23 @@ func (r Routing) getNodeHandlerV3() http.Handler {
 	)
 }
 
+// Get possible cluster upgrades
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/upgrades cluster getClusterUpdatesV3
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AvailableMasterVersions
 func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(getClusterUpgrades(r.versions, r.updates)),
+		)(getClusterUpgrades(r.updateManager)),
 		decodeClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) performClusterUpgradeV3() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
-		)(performClusterUpgrade(r.versions, r.updates)),
-		decodeUpgradeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -40,29 +40,6 @@ var ClusterPhases = []ClusterPhase{
 	DeletingClusterStatusPhase,
 }
 
-// MasterUpdatePhase represents the current master update phase.
-type MasterUpdatePhase string
-
-const (
-	// StartMasterUpdatePhase means that the update controller is updating etcd operator.
-	StartMasterUpdatePhase MasterUpdatePhase = "Starting"
-
-	// EtcdOperatorUpdatePhase means that the update controller is waiting for etcd operator and updating the etcd cluster.
-	EtcdOperatorUpdatePhase MasterUpdatePhase = "WaitEtcdOperatorReady"
-
-	// EtcdClusterUpdatePhase means that the update controller is waiting for etcd cluster and updating the API server.
-	EtcdClusterUpdatePhase MasterUpdatePhase = "WaitEtcdReady"
-
-	// APIServerMasterUpdatePhase means that the update controller is waiting for the apiserver and updating the controllers.
-	APIServerMasterUpdatePhase MasterUpdatePhase = "WaitAPIReady"
-
-	// ControllersMasterUpdatePhase means that the update controller is waiting for the controllers.
-	ControllersMasterUpdatePhase MasterUpdatePhase = "WaitControllersReady"
-
-	// FinishMasterUpdatePhase means that the update controller has finished the update.
-	FinishMasterUpdatePhase MasterUpdatePhase = "Finished"
-)
-
 const (
 	WorkerNameLabelKey = "worker-name"
 )
@@ -96,9 +73,11 @@ type ClusterSpec struct {
 	Cloud          *CloudSpec              `json:"cloud"`
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
+	Version       string `json:"version"`       // Cluster version
+	MasterVersion string `json:"masterVersion"` // Deprecated cluster version
+
 	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
-	MasterVersion     string `json:"masterVersion"`
-	WorkerName        string `json:"workerName"` // WorkerName is a cluster used in development, compare --worker-name flag.
+	WorkerName        string `json:"workerName"`        // WorkerName is a cluster used in development, compare --worker-name flag.
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -135,11 +114,10 @@ type ClusterAddress struct {
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastUpdated               metav1.Time       `json:"lastUpdated,omitempty"`
-	Phase                     ClusterPhase      `json:"phase,omitempty"`
-	Health                    *ClusterHealth    `json:"health,omitempty"`
-	LastDeployedMasterVersion string            `json:"lastDeployedMasterVersion"`
-	MasterUpdatePhase         MasterUpdatePhase `json:"masterUpdatePhase"`
+	LastUpdated               metav1.Time    `json:"lastUpdated,omitempty"`
+	Phase                     ClusterPhase   `json:"phase,omitempty"`
+	Health                    *ClusterHealth `json:"health,omitempty"`
+	LastDeployedMasterVersion string         `json:"lastDeployedMasterVersion"`
 
 	RootCA            KeyCert `json:"rootCA"`
 	ApiserverCert     KeyCert `json:"apiserverCert"`

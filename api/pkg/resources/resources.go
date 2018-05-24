@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	appsv1 "k8s.io/api/apps/v1"
@@ -144,7 +143,6 @@ type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	Cluster           *kubermaticv1.Cluster
-	Version           *apiv1.MasterVersion
 	DC                *provider.DatacenterMeta
 	SecretLister      corev1lister.SecretLister
 	ConfigMapLister   corev1lister.ConfigMapLister
@@ -182,7 +180,6 @@ func String(v string) *string {
 // NewTemplateData returns an instance of TemplateData
 func NewTemplateData(
 	cluster *kubermaticv1.Cluster,
-	version *apiv1.MasterVersion,
 	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
@@ -192,7 +189,6 @@ func NewTemplateData(
 	return &TemplateData{
 		Cluster:           cluster,
 		DC:                dc,
-		Version:           version,
 		ConfigMapLister:   configMapLister,
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,
