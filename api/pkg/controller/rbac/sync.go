@@ -113,8 +113,8 @@ func (c *Controller) ensureProjectRBACRole(project *kubermaticv1.Project) error 
 		generateOwnersGroupName(project.Name),
 		project.GroupVersionKind().Group, project.Name,
 		metav1.OwnerReference{
-			APIVersion: project.APIVersion,
-			Kind:       project.Kind,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       "Project",
 			UID:        project.GetUID(),
 			Name:       project.Name,
 		},
@@ -150,8 +150,8 @@ func (c *Controller) ensureProjectRBACRoleBinding(project *kubermaticv1.Project)
 		"Project",
 		generateOwnersGroupName(project.Name),
 		metav1.OwnerReference{
-			APIVersion: project.APIVersion,
-			Kind:       project.Kind,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       "Project",
 			UID:        project.GetUID(),
 			Name:       project.Name,
 		},
