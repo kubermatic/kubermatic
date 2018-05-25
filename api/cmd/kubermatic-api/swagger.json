@@ -178,6 +178,12 @@
               "$ref": "#/definitions/Project"
             }
           },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
           "default": {
             "$ref": "#/responses/errorResponse"
           }
@@ -208,6 +214,9 @@
           "401": {
             "$ref": "#/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/responses/Forbidden"
+          },
           "default": {
             "$ref": "#/responses/errorResponse"
           }
@@ -235,6 +244,9 @@
           },
           "401": {
             "$ref": "#/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/Forbidden"
           },
           "default": {
             "$ref": "#/responses/errorResponse"

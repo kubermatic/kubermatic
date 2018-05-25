@@ -112,7 +112,7 @@ func (r Routing) createSSHKey() http.Handler {
 			r.userSaverMiddleware(),
 		)(createSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeCreateSSHKeyReq,
-		createStatusResource(encodeJSON),
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -282,7 +282,9 @@ func (r Routing) getProjects() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
+//       401: Unauthorized
 //       201: Project
+//       409: AlreadyExists
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -290,7 +292,7 @@ func (r Routing) createProject() http.Handler {
 			r.userSaverMiddleware(),
 		)(createProjectEndpoint(r.projectProvider)),
 		decodeCreateProject,
-		createStatusResource(encodeJSON),
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -309,6 +311,7 @@ func (r Routing) createProject() http.Handler {
 //       default: errorResponse
 //       200: Project
 //       401: Unauthorized
+//       403: Forbidden
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -337,6 +340,7 @@ func (r Routing) updateProject() http.Handler {
 //       default: errorResponse
 //       200: empty
 //       401: Unauthorized
+//       403: Forbidden
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
