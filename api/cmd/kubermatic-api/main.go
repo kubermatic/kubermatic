@@ -41,8 +41,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	prometheusapi "github.com/prometheus/client_golang/api"
-	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -53,17 +51,18 @@ import (
 )
 
 var (
-	listenAddress   string
-	kubeconfig      string
-	internalAddr    string
-	prometheusURL   string
-	masterResources string
-	dcFile          string
-	workerName      string
-	versionsFile    string
-	updatesFile     string
-	tokenIssuer     string
-	clientID        string
+	listenAddress      string
+	kubeconfig         string
+	internalAddr       string
+	prometheusURL      string
+	prometheusEndpoint bool
+	masterResources    string
+	dcFile             string
+	workerName         string
+	versionsFile       string
+	updatesFile        string
+	tokenIssuer        string
+	clientID           string
 
 	tokenIssuerSkipTLSVerify bool
 )
@@ -77,6 +76,7 @@ func main() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&prometheusURL, "prometheus-url", "http://prometheus-kubermatic.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
+	flag.BoolVar(&prometheusEndpoint, "prometheus-endpoint", false, "Activate the API endpoint to expose metrics")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
@@ -86,14 +86,6 @@ func main() {
 	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
 	flag.Parse()
-
-	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
-		Address: prometheusURL,
-	})
-	if err != nil {
-		glog.Fatal(err)
-	}
-	promAPI := prometheusv1.NewAPI(promClient)
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
@@ -180,6 +172,12 @@ func main() {
 
 	cloudProviders := cloud.Providers(datacenters)
 
+	// Only enable the metrics endpoint when prometheusEndpoint is true
+	var promURL *string
+	if prometheusEndpoint {
+		promURL = &prometheusURL
+	}
+
 	r := handler.NewRouting(
 		datacenters,
 		clusterProviders,
@@ -189,7 +187,7 @@ func main() {
 		projectProvider,
 		authenticator,
 		updateManager,
-		promAPI,
+		promURL,
 	)
 
 	mainRouter := mux.NewRouter()
