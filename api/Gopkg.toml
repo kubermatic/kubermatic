@@ -115,6 +115,10 @@ required = [
   name = "github.com/kubermatic/machine-controller"
   version = "v0.6.1"
 
+[[constraint]]
+  name = "github.com/prometheus/client_golang"
+  branch = "master"
+
 # For container-linux-config-transpiler
 [[override]]
   name = "github.com/ajeddeloh/yaml"

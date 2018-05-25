@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +17,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	prometheusapi "github.com/prometheus/client_golang/api"
+	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -28,7 +29,6 @@ import (
 )
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	ctx := context.Background()
 
 	datacenters := buildDatacenterMeta()
 	cloudProviders := cloud.Providers(datacenters)
@@ -62,8 +62,13 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 
 	updateManager := version.New(versions, updates)
 
+	promClient, err := prometheusapi.NewClient(prometheusapi.Config{Address: "http://localhost:9090"})
+	if err != nil {
+		return nil, err
+	}
+	promAPI := prometheusv1.NewAPI(promClient)
+
 	r := NewRouting(
-		ctx,
 		datacenters,
 		clusterProviders,
 		cloudProviders,
@@ -72,6 +77,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		projectProvider,
 		authenticator,
 		updateManager,
+		promAPI,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()

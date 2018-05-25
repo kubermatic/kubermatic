@@ -27,7 +27,7 @@ spec:
           - -client-id={{ .Values.kubermatic.auth.clientID }}
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
-          - -prometheus-address=0.0.0.0:8085
+          - -internal-address=0.0.0.0:8085
           - -kubeconfig=/opt/.kube/kubeconfig
           - -master-resources=/opt/master-files
           - -token-issuer-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
