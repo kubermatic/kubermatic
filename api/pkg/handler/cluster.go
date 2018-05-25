@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -140,7 +142,21 @@ type (
 	}
 )
 
-func getClusterMetricsEndpoint(promAPI prometheusv1.API) endpoint.Endpoint {
+func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
+	if prometheusURL == nil {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			return nil, fmt.Errorf("metrics endpoint disabled")
+		}
+	}
+
+	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
+		Address: *prometheusURL,
+	})
+	if err != nil {
+		glog.Fatal(err)
+	}
+	promAPI := prometheusv1.NewAPI(promClient)
+
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)

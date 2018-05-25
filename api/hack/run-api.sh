@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 set -x
 
-# Please make sure to port-forward prometheus to localhost:9090 if you want to talk to it.
+# Please make sure to set -enable-prometheus-endpoint=true if you want to use that endpoint.
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
