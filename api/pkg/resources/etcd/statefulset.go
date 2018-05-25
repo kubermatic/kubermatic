@@ -42,7 +42,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Name = resources.EtcdStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	set.Spec.Replicas = resources.Int32(3)
+	set.Spec.Replicas = resources.Int32(resources.EtcdClusterSize)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName

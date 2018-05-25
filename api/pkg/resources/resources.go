@@ -40,8 +40,6 @@ const (
 	PrometheusServiceName = "prometheus"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
-	//EtcdClientServiceName is the name for the etcd service
-	EtcdClientServiceName = "etcd-client"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -85,6 +83,9 @@ const (
 
 	// AppLabelKey defines the label key app which should be used within resources
 	AppLabelKey = "app"
+
+	// EtcdClusterSize defines the size of the etcd to use
+	EtcdClusterSize = 3
 )
 
 const (

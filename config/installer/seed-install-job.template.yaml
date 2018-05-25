@@ -26,6 +26,7 @@ spec:
       restartPolicy: Never
       imagePullSecrets:
         - name: dockercfg
+        - name: quay
       volumes:
       - name: values
         secret:
