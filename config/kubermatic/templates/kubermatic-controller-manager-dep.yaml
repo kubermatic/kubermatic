@@ -44,7 +44,7 @@ spec:
           - -datacenters=/opt/datacenter/datacenters.yaml
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
-          - -prometheus-address=0.0.0.0:8085
+          - -internal-address=0.0.0.0:8085
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
