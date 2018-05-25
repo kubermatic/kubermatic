@@ -76,7 +76,7 @@ func main() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&prometheusURL, "prometheus-url", "http://prometheus-kubermatic.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
-	flag.BoolVar(&prometheusEndpoint, "prometheus-endpoint", false, "Activate the API endpoint to expose metrics")
+	flag.BoolVar(&prometheusEndpoint, "enable-prometheus-endpoint", false, "Activate the API endpoint to expose metrics")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
