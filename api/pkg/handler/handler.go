@@ -67,14 +67,10 @@ func StatusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func createStatusResource(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
+func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, r http.ResponseWriter, i interface{}) error {
-		err := f(ctx, r, i)
-		if err != nil {
-			return err
-		}
 		r.WriteHeader(http.StatusCreated)
-		return nil
+		return f(ctx, r, i)
 	}
 }
 

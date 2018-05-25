@@ -99,6 +99,9 @@ type ProjectProvider interface {
 	New(user *kubermaticv1.User, name string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
+	//
+	// Note:
+	// Before deletion project's status.phase is set to ProjectTerminating
 	Delete(user *kubermaticv1.User, projectInternalName string) error
 }
 
