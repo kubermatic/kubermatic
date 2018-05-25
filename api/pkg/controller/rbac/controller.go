@@ -48,6 +48,8 @@ type Controller struct {
 
 // New creates a new RBACGenerator controller that is responsible for
 // managing RBAC roles for project's resources
+// The controller will also set proper ownership chain through OwnerReferences
+// so that whenever a project is deleted dependants object will be garbage collected.
 func New(
 	metrics Metrics,
 	workerName string,
