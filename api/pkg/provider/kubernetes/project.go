@@ -88,6 +88,9 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 }
 
 // Delete deletes the given project as the given user
+//
+// Note:
+// Before deletion project's status.phase is set to ProjectTerminating
 func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName string) error {
 	groupName, err := user.GroupForProject(projectInternalName)
 	if err != nil {
@@ -100,6 +103,15 @@ func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName
 
 	impersonatedClient, err := p.createImpersonatedClient(impersonationCfg)
 	if err != nil {
+		return err
+	}
+
+	existingProject, err := impersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
+	if _, err := impersonatedClient.Projects().Update(existingProject); err != nil {
 		return err
 	}
 
