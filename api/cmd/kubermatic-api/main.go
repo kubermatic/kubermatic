@@ -22,7 +22,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -42,6 +41,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	prometheusapi "github.com/prometheus/client_golang/api"
+	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -53,7 +55,8 @@ import (
 var (
 	listenAddress   string
 	kubeconfig      string
-	prometheusAddr  string
+	internalAddr    string
+	prometheusURL   string
 	masterResources string
 	dcFile          string
 	workerName      string
@@ -72,7 +75,8 @@ const (
 func main() {
 	flag.StringVar(&listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
-	flag.StringVar(&prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The Address on which the prometheus handler should be exposed")
+	flag.StringVar(&internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
+	flag.StringVar(&prometheusURL, "prometheus-url", "http://prometheus-kubermatic.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
@@ -82,6 +86,14 @@ func main() {
 	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
 	flag.Parse()
+
+	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
+		Address: prometheusURL,
+	})
+	if err != nil {
+		glog.Fatal(err)
+	}
+	promAPI := prometheusv1.NewAPI(promClient)
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
@@ -161,9 +173,6 @@ func main() {
 		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s): %v", tokenIssuer, clientID, err)
 	}
 
-	// start server
-	ctx := context.Background()
-
 	updateManager, err := version.NewFromFiles(versionsFile, updatesFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager: %v", err))
@@ -172,7 +181,6 @@ func main() {
 	cloudProviders := cloud.Providers(datacenters)
 
 	r := handler.NewRouting(
-		ctx,
 		datacenters,
 		clusterProviders,
 		cloudProviders,
@@ -181,6 +189,7 @@ func main() {
 		projectProvider,
 		authenticator,
 		updateManager,
+		promAPI,
 	)
 
 	mainRouter := mux.NewRouter()
@@ -191,7 +200,7 @@ func main() {
 	r.RegisterV2(v2Router)
 	r.RegisterV3(v3Router)
 
-	go metrics.ServeForever(prometheusAddr, "/metrics")
+	go metrics.ServeForever(internalAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))
 	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, mainRouter)))
 }
