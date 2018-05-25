@@ -4,7 +4,7 @@
 
 **Status**: Proposal
 
-Since migrating from the etcd-operator zu a etcd StatefulSet, we need to provider a automatic backup solution for etcd clusters.
+Since migrating from the etcd-operator to a etcd StatefulSet, we need to provide an automatic backup solution for etcd clusters.
 The etcd-operator had integrated backup&recovery mechanisms which we now need to replace.
 Goal of this proposal is to have a fairly dynamic backup solution which also provides good monitoring/alerting.
 Recovery will be a documented, manual process. As we now use a StatefulSet with PVC's the case when a restore is needed should be less than before.
