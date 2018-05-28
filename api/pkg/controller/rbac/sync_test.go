@@ -19,6 +19,122 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+func TestEnsureProjectIsInActivePhase(t *testing.T) {
+	tests := []struct {
+		name            string
+		projectToSync   *kubermaticv1.Project
+		expectedProject *kubermaticv1.Project
+	}{
+		{
+			name:          "scenario 1: a project's phase is set to Active",
+			projectToSync: createProject("thunderball", createUser("James Bond")),
+			expectedProject: func() *kubermaticv1.Project {
+				project := createProject("thunderball", createUser("James Bond"))
+				project.Status.Phase = "Active"
+				return project
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			objs = append(objs, test.expectedProject)
+			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+
+			// act
+			target := Controller{}
+			target.kubermaticClient = kubermaticFakeClient
+			err := target.ensureProjectIsInActivePhase(test.projectToSync)
+
+			// validate
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.expectedProject == nil {
+				if len(kubermaticFakeClient.Actions()) != 0 {
+					t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
+				}
+				return
+			}
+			if len(kubermaticFakeClient.Actions()) != 1 {
+				t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
+			}
+
+			action := kubermaticFakeClient.Actions()[0]
+			if !action.Matches("update", "projects") {
+				t.Fatalf("unexpected action %#v", action)
+			}
+			updateAction, ok := action.(clienttesting.UpdateAction)
+			if !ok {
+				t.Fatalf("unexpected action %#v", action)
+			}
+			if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.Project), test.expectedProject) {
+				t.Fatalf("%v", diff.ObjectDiff(test.expectedProject, updateAction.GetObject().(*kubermaticv1.Project)))
+			}
+		})
+	}
+}
+
+func TestEnsureProjectInitialized(t *testing.T) {
+	tests := []struct {
+		name            string
+		projectToSync   *kubermaticv1.Project
+		expectedProject *kubermaticv1.Project
+	}{
+		{
+			name:          "scenario 1: cleanup finializer is added to a project",
+			projectToSync: createProject("thunderball", createUser("James Bond")),
+			expectedProject: func() *kubermaticv1.Project {
+				project := createProject("thunderball", createUser("James Bond"))
+				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				return project
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			objs = append(objs, test.expectedProject)
+			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+
+			// act
+			target := Controller{}
+			target.kubermaticClient = kubermaticFakeClient
+			err := target.ensureProjectInitialized(test.projectToSync)
+
+			// validate
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.expectedProject == nil {
+				if len(kubermaticFakeClient.Actions()) != 0 {
+					t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
+				}
+				return
+			}
+			if len(kubermaticFakeClient.Actions()) != 1 {
+				t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
+			}
+
+			action := kubermaticFakeClient.Actions()[0]
+			if !action.Matches("update", "projects") {
+				t.Fatalf("unexpected action %#v", action)
+			}
+			updateAction, ok := action.(clienttesting.UpdateAction)
+			if !ok {
+				t.Fatalf("unexpected action %#v", action)
+			}
+			if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.Project), test.expectedProject) {
+				t.Fatalf("%v", diff.ObjectDiff(test.expectedProject, updateAction.GetObject().(*kubermaticv1.Project)))
+			}
+		})
+	}
+}
+
 func TestEnsureProjectRBACRoleBinding(t *testing.T) {
 	tests := []struct {
 		name                       string
