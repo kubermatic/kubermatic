@@ -43,10 +43,10 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureProjectOwner(project); err != nil {
 		return err
 	}
-	if err = c.ensureProjectRBACRole(project); err != nil {
+	if err = c.ensureProjectRBACRoles(project); err != nil {
 		return err
 	}
-	if err = c.ensureProjectRBACRoleBinding(project); err != nil {
+	if err = c.ensureProjectRBACRoleBindings(project); err != nil {
 		return err
 	}
 	err = c.ensureProjectIsInActivePhase(project)
@@ -96,83 +96,95 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	owner := sharedOwner.DeepCopy()
 
 	for _, pg := range owner.Spec.Projects {
-		if pg.Name == project.Name && pg.Group == generateOwnersGroupName(project.Name) {
+		if pg.Name == project.Name && pg.Group == generateGroupNameFor(project.Name, ownerGroupName) {
 			return nil
 		}
 	}
-	owner.Spec.Projects = append(owner.Spec.Projects, kubermaticv1.ProjectGroup{Name: project.Name, Group: generateOwnersGroupName(project.Name)})
+	owner.Spec.Projects = append(owner.Spec.Projects, kubermaticv1.ProjectGroup{Name: project.Name, Group: generateGroupNameFor(project.Name, ownerGroupName)})
 	_, err := c.kubermaticClient.KubermaticV1().Users().Update(owner)
 	return err
 }
 
-// ensureProjectRBACRole makes sure that desired RBAC roles are created
-func (c *Controller) ensureProjectRBACRole(project *kubermaticv1.Project) error {
-	generatedRole, err := generateRBACRole(
-		"projects",
-		"Project",
-		generateOwnersGroupName(project.Name),
-		project.GroupVersionKind().Group, project.Name,
-		metav1.OwnerReference{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       "Project",
-			UID:        project.GetUID(),
-			Name:       project.Name,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	sharedExistingRole, err := c.rbacClusterRoleLister.Get(generatedRole.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
+// ensureProjectRBACRoles makes sure that desired RBAC roles are created
+func (c *Controller) ensureProjectRBACRoles(project *kubermaticv1.Project) error {
+	for _, groupName := range allGroups {
+		generatedRole, err := generateRBACRole(
+			"projects",
+			"Project",
+			generateGroupNameFor(project.Name, groupName),
+			project.GroupVersionKind().Group, project.Name,
+			metav1.OwnerReference{
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Kind:       "Project",
+				UID:        project.GetUID(),
+				Name:       project.Name,
+			},
+		)
+		if err != nil {
+			return err
+		}
+		sharedExistingRole, err := c.rbacClusterRoleLister.Get(generatedRole.Name)
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+
+		// make sure that existing rbac role has appropriate rules/policies
+		if sharedExistingRole != nil {
+			if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+				continue
+			}
+			existingRole := sharedExistingRole.DeepCopy()
+			existingRole.Rules = generatedRole.Rules
+			if _, err = c.kubeClient.RbacV1().ClusterRoles().Update(existingRole); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if _, err = c.kubeClient.RbacV1().ClusterRoles().Create(generatedRole); err != nil {
 			return err
 		}
 	}
-
-	// make sure that existing rbac role has appropriate rules/policies
-	if sharedExistingRole != nil {
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
-			return nil
-		}
-		existingRole := sharedExistingRole.DeepCopy()
-		existingRole.Rules = generatedRole.Rules
-		_, err = c.kubeClient.RbacV1().ClusterRoles().Update(existingRole)
-		return err
-	}
-
-	_, err = c.kubeClient.RbacV1().ClusterRoles().Create(generatedRole)
-	return err
+	return nil
 }
 
-// ensureProjectRBACRoleBinding makes sure that project's groups are bind to appropriate roles
-func (c *Controller) ensureProjectRBACRoleBinding(project *kubermaticv1.Project) error {
-	generatedRoleBinding := generateRBACRoleBinding(
-		"Project",
-		generateOwnersGroupName(project.Name),
-		metav1.OwnerReference{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       "Project",
-			UID:        project.GetUID(),
-			Name:       project.Name,
-		},
-	)
-	sharedExistingRoleBinding, err := c.rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
+// ensureProjectRBACRoleBindings makes sure that project's groups are bind to appropriate roles
+func (c *Controller) ensureProjectRBACRoleBindings(project *kubermaticv1.Project) error {
+	for _, groupName := range allGroups {
+		generatedRoleBinding := generateRBACRoleBinding(
+			"Project",
+			generateGroupNameFor(project.Name, groupName),
+			metav1.OwnerReference{
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Kind:       "Project",
+				UID:        project.GetUID(),
+				Name:       project.Name,
+			},
+		)
+		sharedExistingRoleBinding, err := c.rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+		if sharedExistingRoleBinding != nil {
+			if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+				continue
+			}
+			existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+			existingRoleBinding.Subjects = generatedRoleBinding.Subjects
+			if _, err = c.kubeClient.RbacV1().ClusterRoleBindings().Update(existingRoleBinding); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err = c.kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
 			return err
 		}
 	}
-	if sharedExistingRoleBinding != nil {
-		if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
-			return nil
-		}
-		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
-		existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-		_, err = c.kubeClient.RbacV1().ClusterRoleBindings().Update(existingRoleBinding)
-		return err
-	}
-	_, err = c.kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding)
-	return err
+	return nil
 }
 
 // ensureProjectCleanup ensures proper clean up of dependent resources upon deletion
