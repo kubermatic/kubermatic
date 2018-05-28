@@ -929,9 +929,9 @@
         ],
         "responses": {
           "200": {
-            "description": "AvailableMasterVersions",
+            "description": "MasterVersion",
             "schema": {
-              "$ref": "#/definitions/AvailableMasterVersions"
+              "$ref": "#/definitions/MasterVersion"
             }
           },
           "default": {
