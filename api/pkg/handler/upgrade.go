@@ -32,11 +32,7 @@ func getClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		var sv []string
-		for _, v := range versions {
-			sv = append(sv, v.Version.String())
-		}
 
-		return sv, nil
+		return versions, nil
 	}
 }

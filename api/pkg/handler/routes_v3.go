@@ -293,7 +293,7 @@ func (r Routing) getNodeHandlerV3() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: AvailableMasterVersions
+//       200: MasterVersion
 func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

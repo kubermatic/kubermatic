@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"testing"
 
 	"github.com/Masterminds/semver"
@@ -23,7 +22,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		cluster     *kubermaticv1.Cluster
 		versions    []*version.MasterVersion
 		updates     []*version.MasterUpdate
-		wantUpdates []string
+		wantUpdates []*version.MasterVersion
 	}{
 		{
 			name: "upgrade available",
@@ -34,7 +33,14 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			wantUpdates: []string{"1.6.1", "1.7.0"},
+			wantUpdates: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+				},
+			},
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
@@ -68,7 +74,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			wantUpdates: []string{},
+			wantUpdates: []*version.MasterVersion{},
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
@@ -92,14 +98,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 				return
 			}
 
-			var gotUpdates []string
+			var gotUpdates []*version.MasterVersion
 			err = json.Unmarshal(res.Body.Bytes(), &gotUpdates)
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			sort.Strings(gotUpdates)
-			sort.Strings(test.wantUpdates)
 
 			if diff := deep.Equal(gotUpdates, test.wantUpdates); diff != nil {
 				t.Errorf("got different upgrade response than expected. Diff: %v", diff)
