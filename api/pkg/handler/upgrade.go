@@ -32,7 +32,14 @@ func getClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+		var sv []*apiv1.MasterVersion
+		for v := range versions {
+			sv = append(sv, &apiv1.MasterVersion{
+				Version:             versions[v].Version,
+				AllowedNodeVersions: versions[v].AllowedNodeVersions,
+			})
+		}
 
-		return versions, nil
+		return sv, nil
 	}
 }
