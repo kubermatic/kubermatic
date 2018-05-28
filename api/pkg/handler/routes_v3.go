@@ -313,7 +313,7 @@ func (r Routing) clusterMetricsHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(getClusterMetricsEndpoint(r.promAPI)),
+		)(getClusterMetricsEndpoint(r.promURL)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
