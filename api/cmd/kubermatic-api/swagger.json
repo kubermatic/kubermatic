@@ -104,29 +104,6 @@
         }
       }
     },
-    "/api/v1/masterversions": {
-      "get": {
-        "description": "Lists all versions which don't result in automatic updates",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "versions"
-        ],
-        "operationId": "getMasterVersions",
-        "responses": {
-          "200": {
-            "description": "MasterVersion",
-            "schema": {
-              "$ref": "#/definitions/MasterVersion"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/openstack/sizes": {
       "get": {
         "description": "Lists sizes from openstack",
@@ -346,6 +323,32 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/versions": {
+      "get": {
+        "description": "Lists all versions which don't result in automatic updates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "versions"
+        ],
+        "operationId": "getMasterVersions",
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
