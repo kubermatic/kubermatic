@@ -23,7 +23,7 @@ func (c *Controller) sync(key string) error {
 	sharedProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("project '%s' in work queue no longer exists", key)
+			glog.V(2).Infof("project '%s' in work projectQueue no longer exists", key)
 			return nil
 		}
 		return err
