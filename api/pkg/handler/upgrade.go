@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -38,6 +39,25 @@ func getClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
 				Version:             versions[v].Version,
 				AllowedNodeVersions: versions[v].AllowedNodeVersions,
 			})
+		}
+
+		return sv, nil
+	}
+}
+
+func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		versions, err := updateManager.GetMasterVersions()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get master versions: %v", err)
+		}
+
+		sv := make([]*apiv1.MasterVersion, len(versions))
+		for v := range versions {
+			sv[v] = &apiv1.MasterVersion{
+				Version:             versions[v].Version,
+				AllowedNodeVersions: versions[v].AllowedNodeVersions,
+			}
 		}
 
 		return sv, nil
