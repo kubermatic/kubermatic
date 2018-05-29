@@ -216,8 +216,8 @@ pipeline:
     - source: kubeconfig_dev
       target: kubeconfig
     - source: values_dev
-      target: values_dev
-    values: '[ values_dev ]'
+      target: values
+    values: '[ values ]'
     when:
       branch: master
   10-deploy-cloud-asia:
@@ -263,11 +263,11 @@ pipeline:
     image: kubeciio/helm
     pull: true
     secrets:
-    - source: kubeconfig_cloud_asia-east1-a-1
+    - source: kubeconfig_cloud
       target: kubeconfig
-    - source: values_cloud
-      target: values_cloud
-    values: '[ values_cloud ]'
+    - source: values_cloud_as
+      target: values
+    values: '[ values ]'
     when:
       branch: master
   10-deploy-cloud-europe:
@@ -313,11 +313,11 @@ pipeline:
     image: kubeciio/helm
     pull: true
     secrets:
-    - source: kubeconfig_cloud_europe-west3-c-1
+    - source: kubeconfig_cloud
       target: kubeconfig
-    - source: values_cloud
-      target: values_cloud
-    values: '[ values_cloud ]'
+    - source: values_cloud_eu
+      target: values
+    values: '[ values ]'
     when:
       branch: master
   10-deploy-cloud-us:
@@ -363,11 +363,11 @@ pipeline:
     image: kubeciio/helm
     pull: true
     secrets:
-    - source: kubeconfig_cloud_us-central1-c-1
+    - source: kubeconfig_cloud
       target: kubeconfig
-    - source: values_cloud
-      target: values_cloud
-    values: '[ values_cloud ]'
+    - source: values_cloud_us
+      target: values
+    values: '[ values ]'
     when:
       branch: master
   11-slack:

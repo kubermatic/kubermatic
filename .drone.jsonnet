@@ -132,10 +132,10 @@ local drone = import 'drone/drone.libsonnet';
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
-          {source: 'values_dev', target: 'values_dev'},
+          {source: 'values_dev', target: 'values'},
         ],
         charts: charts,
-        values: "[ values_dev ]",
+        values: "[ values ]",
       } + {when: {branch: 'master'}},
 
     // cloud
@@ -143,30 +143,30 @@ local drone = import 'drone/drone.libsonnet';
     '10-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
-          {source: 'kubeconfig_cloud_europe-west3-c-1', target: 'kubeconfig'},
-          {source: 'values_cloud', target: 'values_cloud'},
+          {source: 'kubeconfig_cloud', target: 'kubeconfig'},
+          {source: 'values_cloud_eu', target: 'values'},
         ],
         charts: charts,
-        values: "[ values_cloud ]",
+        values: "[ values ]",
       } + {when: {branch: 'master'}},
 
     '10-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
-          {source: 'kubeconfig_cloud_us-central1-c-1', target: 'kubeconfig'},
-          {source: 'values_cloud', target: 'values_cloud'},
+          {source: 'kubeconfig_cloud', target: 'kubeconfig'},
+          {source: 'values_cloud_us', target: 'values'},
         ],
-        values: "[ values_cloud ]",
+        values: "[ values ]",
         charts: charts,
       } + {when: {branch: 'master'}},
 
     '10-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
-          {source: 'kubeconfig_cloud_asia-east1-a-1', target: 'kubeconfig'},
-          {source: 'values_cloud', target: 'values_cloud'},
+          {source: 'kubeconfig_cloud', target: 'kubeconfig'},
+          {source: 'values_cloud_as', target: 'values'},
         ],
-        values: "[ values_cloud ]",
+        values: "[ values ]",
         charts: charts,
       } + {when: {branch: 'master'}},
 
