@@ -83,7 +83,7 @@ func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project)
 func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	var sharedOwner *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
-		if ref.Kind == "User" {
+		if ref.Kind == kubermaticv1.UserKind {
 			var err error
 			if sharedOwner, err = c.userLister.Get(ref.Name); err != nil {
 				return err
@@ -109,13 +109,13 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 func (c *Controller) ensureProjectRBACRoles(project *kubermaticv1.Project) error {
 	for _, groupName := range allGroups {
 		generatedRole, err := generateRBACRole(
-			"projects",
-			"Project",
+			kubermaticv1.ProjectResourceName,
+			kubermaticv1.ProjectKindName,
 			generateGroupNameFor(project.Name, groupName),
 			project.GroupVersionKind().Group, project.Name,
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-				Kind:       "Project",
+				Kind:       kubermaticv1.ProjectKindName,
 				UID:        project.GetUID(),
 				Name:       project.Name,
 			},
@@ -154,11 +154,11 @@ func (c *Controller) ensureProjectRBACRoles(project *kubermaticv1.Project) error
 func (c *Controller) ensureProjectRBACRoleBindings(project *kubermaticv1.Project) error {
 	for _, groupName := range allGroups {
 		generatedRoleBinding := generateRBACRoleBinding(
-			"Project",
+			kubermaticv1.ProjectKindName,
 			generateGroupNameFor(project.Name, groupName),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-				Kind:       "Project",
+				Kind:       kubermaticv1.ProjectKindName,
 				UID:        project.GetUID(),
 				Name:       project.Name,
 			},

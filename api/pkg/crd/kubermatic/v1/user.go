@@ -7,9 +7,11 @@ import (
 )
 
 const (
-	UserPlural     = "users"
-	ProjectPlural  = "projects"
-	OwnerGroupName = "owner"
+	// UserResourceName represents "Resource" defined in Kubernetes
+	UserResourceName = "users"
+
+	// UserKind represents "Kind" defined in Kubernetes
+	UserKind = "User"
 )
 
 //+genclient
