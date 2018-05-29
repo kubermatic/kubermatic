@@ -330,6 +330,32 @@
         }
       }
     },
+    "/api/v1/versions": {
+      "get": {
+        "description": "Lists all versions which don't result in automatic updates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "versions"
+        ],
+        "operationId": "getMasterVersions",
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v2/cluster/{cluster}/nodes": {
       "get": {
         "produces": [
@@ -929,9 +955,9 @@
         ],
         "responses": {
           "200": {
-            "description": "AvailableMasterVersions",
+            "description": "MasterVersion",
             "schema": {
-              "$ref": "#/definitions/AvailableMasterVersions"
+              "$ref": "#/definitions/MasterVersion"
             }
           },
           "default": {
