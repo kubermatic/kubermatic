@@ -102,3 +102,25 @@ func NewUpdateControllerMetrics() *UpdateControllerMetrics {
 	cm.Workers.Set(0)
 	return cm
 }
+
+// AddonControllerMetrics holds metrics used by Addon controller
+type AddonControllerMetrics struct {
+	Workers metrics.Gauge
+}
+
+// NewAddonControllerMetrics creates AddonControllerMetrics
+// with default values initialized, so metrics always show up.
+func NewAddonControllerMetrics() *AddonControllerMetrics {
+	subsystem := "addon_controller"
+	cm := &AddonControllerMetrics{
+		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "workers",
+			Help:      "The number of running addon controller workers",
+		}, nil),
+	}
+
+	cm.Workers.Set(0)
+	return cm
+}

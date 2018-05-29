@@ -38,10 +38,10 @@ const (
 // AddonSpec specifies details of an addon
 type AddonSpec struct {
 	// Name defines the name of the addon to install
-	Name string
+	Name string `json:"name"`
 	// Cluster is the reference to the cluster the addon should be installed in
-	Cluster corev1.ObjectReference
-	// Free form data to use for parsing the manifest templates
+	Cluster corev1.ObjectReference `json:"cluster"`
+	// Variables is free form data to use for parsing the manifest templates
 	Variables runtime.RawExtension `json:"variables"`
 }
 
