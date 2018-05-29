@@ -79,6 +79,22 @@ func (m *Manager) GetVersion(s string) (*MasterVersion, error) {
 	return nil, errVersionNotFound
 }
 
+// GetMasterVersions returns all MasterVersions which don't result in automatic updates
+func (m *Manager) GetMasterVersions() ([]*MasterVersion, error) {
+	var masterVersions []*MasterVersion
+	for _, v := range m.versions {
+		autoUpdate, err := m.AutomaticUpdate(v.Version.String())
+		if err != nil {
+			return nil, fmt.Errorf("failed get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+		}
+		if autoUpdate != nil {
+			continue
+		}
+		masterVersions = append(masterVersions, v)
+	}
+	return masterVersions, nil
+}
+
 // AutomaticUpdate returns a version if an automatic update can be found for version sfrom
 func (m *Manager) AutomaticUpdate(sfrom string) (*MasterVersion, error) {
 	from, err := semver.NewVersion(sfrom)

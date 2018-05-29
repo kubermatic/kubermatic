@@ -52,6 +52,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/openstack/sizes").
 		Handler(r.listOpenstackSizes())
 
+	mux.Methods(http.MethodGet).
+		Path("/masterversions").
+		Handler(r.getMasterVersions())
+
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
@@ -231,6 +235,28 @@ func (r Routing) getUser() http.Handler {
 			r.userSaverMiddleware(),
 		)(getUserHandler()),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/masterversions versions getMasterVersions
+//
+// Lists all versions which don't result in automatic updates
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: MasterVersion
+func (r Routing) getMasterVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getMasterVersions(r.updateManager)),
+		decodeGetMasterVersionsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

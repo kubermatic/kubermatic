@@ -290,3 +290,11 @@ func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req struct{}
 	return req, nil
 }
+
+// GetMasterVersionsReq represent a request for listing all versions
+type GetMasterVersionsReq struct{}
+
+func decodeGetMasterVersionsReq(c context.Context, _ *http.Request) (interface{}, error) {
+	var req GetMasterVersionsReq
+	return req, nil
+}
