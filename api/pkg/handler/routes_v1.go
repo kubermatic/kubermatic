@@ -256,7 +256,7 @@ func (r Routing) getMasterVersions() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(getMasterVersions(r.updateManager)),
-		decodeGetMasterVersionsReq,
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

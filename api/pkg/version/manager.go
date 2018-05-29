@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver"
+	"github.com/golang/glog"
 )
 
 var (
@@ -85,7 +86,8 @@ func (m *Manager) GetMasterVersions() ([]*MasterVersion, error) {
 	for _, v := range m.versions {
 		autoUpdate, err := m.AutomaticUpdate(v.Version.String())
 		if err != nil {
-			return nil, fmt.Errorf("failed get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+			glog.V(0).Infof("failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+			continue
 		}
 		if autoUpdate != nil {
 			continue

@@ -52,12 +52,12 @@ func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
 
-		var sv []*apiv1.MasterVersion
+		sv := make([]*apiv1.MasterVersion, len(versions))
 		for v := range versions {
-			sv = append(sv, &apiv1.MasterVersion{
+			sv[v] = &apiv1.MasterVersion{
 				Version:             versions[v].Version,
 				AllowedNodeVersions: versions[v].AllowedNodeVersions,
-			})
+			}
 		}
 
 		return sv, nil
