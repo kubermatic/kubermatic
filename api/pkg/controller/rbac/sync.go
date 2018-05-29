@@ -112,7 +112,8 @@ func (c *Controller) ensureProjectRBACRoles(project *kubermaticv1.Project) error
 			kubermaticv1.ProjectResourceName,
 			kubermaticv1.ProjectKindName,
 			generateGroupNameFor(project.Name, groupName),
-			project.GroupVersionKind().Group, project.Name,
+			kubermaticv1.SchemeGroupVersion.Group,
+			project.Name,
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ProjectKindName,

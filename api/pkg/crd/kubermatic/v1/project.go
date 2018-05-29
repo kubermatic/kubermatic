@@ -18,7 +18,7 @@ const (
 
 const (
 	// ProjectResourceName represents "Resource" defined in Kubernetes
-	ProjectResourceName  = "projects"
+	ProjectResourceName = "projects"
 
 	// ProjectKindName represents "Kind" defined in Kubernetes
 	ProjectKindName = "Project"
