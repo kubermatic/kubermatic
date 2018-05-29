@@ -146,7 +146,32 @@ pipeline:
     when:
       event:
       - tag
-  8-deploy-dev:
+  8-sync-charts:
+    commands:
+    - apk add --no-cache -U git
+    - git config --global user.email "dev@loodse.com"
+    - git config --global user.name "drone"
+    - export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
+    - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR
+      && mkdir -p $INSTALLER_DIR/charts
+    - cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller
+      config/nodeport-proxy config/oauth $INSTALLER_DIR/charts
+    - cd $INSTALLER_DIR
+    - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"
+    - git tag ${DRONE_TAG}
+    - git push origin master --tags
+    image: alpine:3.7
+    pull: true
+    when:
+      branch:
+        exclude:
+        - release/v1.*
+        include:
+        - master
+        - release/*
+      event:
+      - tag
+  9-deploy-dev:
     charts:
     - name: prometheus-operator
       namespace: monitoring
@@ -195,7 +220,7 @@ pipeline:
     values: '[ values_dev ]'
     when:
       branch: master
-  9-deploy-cloud-asia:
+  10-deploy-cloud-asia:
     charts:
     - name: prometheus-operator
       namespace: monitoring
@@ -245,7 +270,7 @@ pipeline:
     values: '[ values_cloud ]'
     when:
       branch: master
-  9-deploy-cloud-europe:
+  10-deploy-cloud-europe:
     charts:
     - name: prometheus-operator
       namespace: monitoring
@@ -295,7 +320,7 @@ pipeline:
     values: '[ values_cloud ]'
     when:
       branch: master
-  9-deploy-cloud-us:
+  10-deploy-cloud-us:
     charts:
     - name: prometheus-operator
       namespace: monitoring
@@ -345,7 +370,7 @@ pipeline:
     values: '[ values_cloud ]'
     when:
       branch: master
-  10-slack:
+  11-slack:
     channel: dev
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -359,7 +384,7 @@ pipeline:
       branch: master
       status:
       - success
-  10-slack-failure:
+  11-slack-failure:
     author_recipient_mapping:
     - alvaroaleman=alvaro
     - guusvw=guus

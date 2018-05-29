@@ -1,5 +1,7 @@
 local drone = import 'drone/drone.libsonnet';
 
+// Please take a look into the README.md for instructions on how to build this.
+
 {
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
   pipeline: {
@@ -86,6 +88,27 @@ local drone = import 'drone/drone.libsonnet';
         context='config',
       ) + whenEventTag,
 
+    '8-sync-charts': drone.step.new('alpine:3.7', commands=[
+      'apk add --no-cache -U git',
+      'git config --global user.email "dev@loodse.com"',
+      'git config --global user.name "drone"',
+      'export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"',
+      'git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts',
+      'cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller config/nodeport-proxy config/oauth $INSTALLER_DIR/charts',
+      'cd $INSTALLER_DIR',
+      'git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"',
+      'git tag ${DRONE_TAG}',
+      'git push origin master --tags',
+    ]) + {
+      when: {
+        event: [ 'tag' ],
+        branch: {
+          include: [ 'master', 'release/*' ],
+          exclude: [ 'release/v1.*' ],
+        },
+      },
+    },
+
     // Deployments
 
     local charts = [
@@ -105,7 +128,7 @@ local drone = import 'drone/drone.libsonnet';
 
     // dev
 
-    '8-deploy-dev': drone.step.new('kubeciio/helm') + {
+    '9-deploy-dev': drone.step.new('kubeciio/helm') + {
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
@@ -117,7 +140,7 @@ local drone = import 'drone/drone.libsonnet';
 
     // cloud
 
-    '9-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
+    '10-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_europe-west3-c-1', target: 'kubeconfig'},
@@ -127,7 +150,7 @@ local drone = import 'drone/drone.libsonnet';
         values: "[ values_cloud ]",
       } + {when: {branch: 'master'}},
 
-    '9-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
+    '10-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_us-central1-c-1', target: 'kubeconfig'},
@@ -137,7 +160,7 @@ local drone = import 'drone/drone.libsonnet';
         charts: charts,
       } + {when: {branch: 'master'}},
 
-    '9-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
+    '10-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install',
         secrets: [
           {source: 'kubeconfig_cloud_asia-east1-a-1', target: 'kubeconfig'},
@@ -148,7 +171,7 @@ local drone = import 'drone/drone.libsonnet';
       } + {when: {branch: 'master'}},
 
     // Slack
-    '10-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
+    '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
       webhook: 'https://hooks.slack.com/services/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',
       username: 'drone',
       icon_url: 'https://avatars2.githubusercontent.com/u/2181346?v=4&s=200',
@@ -156,7 +179,7 @@ local drone = import 'drone/drone.libsonnet';
       template: '${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud. :heart:',
       when: {status:['success'], branch: 'master'},
     },
-    '10-slack-failure': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
+    '11-slack-failure': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
       webhook: 'https://hooks.slack.com/services/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',
       username: 'drone',
       icon_url: 'https://avatars2.githubusercontent.com/u/2181346?v=4&s=200',
