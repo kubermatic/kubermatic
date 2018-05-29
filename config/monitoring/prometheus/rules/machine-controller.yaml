@@ -2,7 +2,7 @@ groups:
 - name: machine-controller
   rules:
   - alert: MachineControllerDown
-    expr: absent(up{job="machine-controller"} == 1)
+    expr: absent(up{job="machine-controller"} == 1) and (sum(kubermatic_cluster_controller_clusters) > 0)
     for: 5m
     labels:
       severity: critical
