@@ -69,7 +69,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserKind,
+					Kind:       kubermaticv1.UserKindName,
 					UID:        user.GetUID(),
 					Name:       user.Name,
 				},

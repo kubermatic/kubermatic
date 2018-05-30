@@ -122,9 +122,9 @@ func New(
 			gvr: schema.GroupVersionResource{
 				Group:    kubermaticv1.GroupName,
 				Version:  kubermaticv1.GroupVersion,
-				Resource: "clusters",
+				Resource: kubermaticv1.ClusterResourceName,
 			},
-			kind: "Cluster",
+			kind: kubermaticv1.ClusterKindName,
 		},
 	}
 

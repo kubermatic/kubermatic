@@ -10,8 +10,8 @@ const (
 	// UserResourceName represents "Resource" defined in Kubernetes
 	UserResourceName = "users"
 
-	// UserKind represents "Kind" defined in Kubernetes
-	UserKind = "User"
+	// UserKindName represents "Kind" defined in Kubernetes
+	UserKindName = "User"
 )
 
 //+genclient
