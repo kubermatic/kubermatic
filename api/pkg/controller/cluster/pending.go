@@ -569,8 +569,9 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
-	creators := []resources.DeploymentCreator{
+// GetDeploymentCreators returns all DeploymentCreators that are currently in use
+func GetDeploymentCreators() []resources.DeploymentCreator {
+	return []resources.DeploymentCreator{
 		addonmanager.Deployment,
 		machinecontroller.Deployment,
 		openvpn.Deployment,
@@ -578,6 +579,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		scheduler.Deployment,
 		controllermanager.Deployment,
 	}
+}
+
+func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
+	creators := GetDeploymentCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -672,11 +677,16 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
-	creators := []resources.StatefulSetCreator{
+// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
+func GetStatefulSetCreators() []resources.StatefulSetCreator {
+	return []resources.StatefulSetCreator{
 		prometheus.StatefulSet,
 		etcd.StatefulSet,
 	}
+}
+
+func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
+	creators := GetStatefulSetCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
