@@ -29,7 +29,7 @@ import (
 const mockNamespaceName = "mock-namespace"
 
 var (
-	masterResources  string
+	versionsFile     string
 	requestedVersion string
 	registryName     string
 	printOnly        bool
@@ -37,7 +37,7 @@ var (
 
 func main() {
 
-	flag.StringVar(&masterResources, "master-resources", "../config/kubermatic/static/master/versions.yaml", "")
+	flag.StringVar(&versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&requestedVersion, "version", "", "")
 	flag.StringVar(&registryName, "registry-name", "", "Name of the registry to push to")
 	flag.BoolVar(&printOnly, "print-only", false, "Only print the names of found images")
@@ -47,7 +47,7 @@ func main() {
 		glog.Fatalf("Registry name must not be empty!")
 	}
 
-	versions, err := version.LoadVersions(masterResources)
+	versions, err := version.LoadVersions(versionsFile)
 	if err != nil {
 		glog.Fatalf("Error loading versions: %v", err)
 	}
