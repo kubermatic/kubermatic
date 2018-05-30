@@ -209,7 +209,7 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -217,7 +217,6 @@ pipeline:
       target: kubeconfig
     - source: values_dev
       target: values
-    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -261,7 +260,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -269,7 +268,6 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_as
       target: values
-    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -313,7 +311,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -321,7 +319,6 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_eu
       target: values
-    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -365,7 +362,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -373,7 +370,6 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_us
       target: values
-    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
