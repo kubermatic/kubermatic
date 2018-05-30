@@ -4,7 +4,17 @@
 ---
 
 ## Development environment
-To setup your enviroment click [here](docs/setup.md).
+
+````bash
+mkdir -p $(go env GOPATH)/src/github.com/kubermatic
+cd $(go env GOPATH)/src/github.com/kubermatic
+git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/secrets
+cd api
+```
+
+There are a couple of scripts in the `api/hacks` directory to aid in running the components locally for testing
+purposes.
 
 #### Update dependencies
 Sure that you want to update? And not just install dependencies?
