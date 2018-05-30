@@ -209,7 +209,7 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -217,7 +217,8 @@ pipeline:
       target: kubeconfig
     - source: values_dev
       target: values
-    values: '[ values ]'
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-asia:
@@ -259,7 +260,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -267,7 +268,8 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_as
       target: values
-    values: '[ values ]'
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-europe:
@@ -309,7 +311,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -317,7 +319,8 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_eu
       target: values
-    values: '[ values ]'
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-us:
@@ -359,7 +362,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --values config/versions-values.yaml
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -367,7 +370,8 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_us
       target: values
-    values: '[ values ]'
+    values:
+    - values
     when:
       branch: master
   11-slack:
