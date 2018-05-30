@@ -20,10 +20,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/tools/cache"
 )
 
 const mockNamespaceName = "mock-namespace"
@@ -252,12 +250,9 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Address = &clusterv1.ClusterAddress{}
 
-	go configMapInformer.Informer().Run(wait.NeverStop)
-	go secretInformer.Informer().Run(wait.NeverStop)
-	go serviceInformer.Informer().Run(wait.NeverStop)
-	cache.WaitForCacheSync(wait.NeverStop, configMapInformer.Informer().HasSynced)
-	cache.WaitForCacheSync(wait.NeverStop, secretInformer.Informer().HasSynced)
-	cache.WaitForCacheSync(wait.NeverStop, serviceInformer.Informer().HasSynced)
+	stopChannel := make(chan struct{})
+	kubeInformerFactory.Start(stopChannel)
+	kubeInformerFactory.WaitForCacheSync(stopChannel)
 
 	return &resources.TemplateData{
 		DC:              &provider.DatacenterMeta{},
