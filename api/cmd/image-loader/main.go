@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,8 +55,8 @@ func main() {
 	var imagesUnfiltered []string
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
-		for version := range versions {
-			returnedImages, err := getImagesForVersion(versions, version)
+		for _, version := range versions {
+			returnedImages, err := getImagesForVersion(versions, version.Version.String())
 			if err != nil {
 				glog.Fatalf(err.Error())
 			}
@@ -139,7 +139,7 @@ func stringListContains(list []string, item string) bool {
 	return false
 }
 
-func getImagesForVersion(versions map[string]*apiv1.MasterVersion, requestedVersion string) ([]string, error) {
+func getImagesForVersion(versions []*version.MasterVersion, requestedVersion string) ([]string, error) {
 	templateData, err := getTemplateData(versions, requestedVersion)
 	if err != nil {
 		return nil, err
@@ -181,9 +181,22 @@ func getImagesFromPodTemplateSpec(template corev1.PodTemplateSpec) (images []str
 	return images
 }
 
-func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion string) (*resources.TemplateData, error) {
-	version, found := versions[requestedVersion]
-	if !found {
+func getVersion(versions []*version.MasterVersion, requestedVersion string) (*version.MasterVersion, error) {
+	semver, err := semver.NewVersion(requestedVersion)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range versions {
+		if v.Version.Equal(semver) {
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf("version not found")
+}
+
+func getTemplateData(versions []*version.MasterVersion, requestedVersion string) (*resources.TemplateData, error) {
+	masterVersion, err := getVersion(versions, requestedVersion)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
 	}
 
@@ -234,6 +247,7 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 
 	fakeCluster := &clusterv1.Cluster{}
 	fakeCluster.Spec.Cloud = &clusterv1.CloudSpec{}
+	fakeCluster.Spec.Version = masterVersion.Version.String()
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Address = &clusterv1.ClusterAddress{}
 
@@ -244,7 +258,7 @@ func getTemplateData(versions map[string]*apiv1.MasterVersion, requestedVersion 
 	cache.WaitForCacheSync(wait.NeverStop, secretInformer.Informer().HasSynced)
 	cache.WaitForCacheSync(wait.NeverStop, serviceInformer.Informer().HasSynced)
 
-	return &resources.TemplateData{Version: version,
+	return &resources.TemplateData{
 		DC:              &provider.DatacenterMeta{},
 		SecretLister:    secretLister,
 		ServiceLister:   serviceLister,

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
 
 func TestGetImageForAllVersions(t *testing.T) {
@@ -16,8 +16,8 @@ func TestGetImageForAllVersions(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error loading versions: %v", err)
 	}
-	for version := range versions {
-		_, err := getImagesForVersion(versions, version)
+	for _, masterVersion := range versions {
+		_, err := getImagesForVersion(versions, masterVersion.Version.String())
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
