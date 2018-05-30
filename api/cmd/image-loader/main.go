@@ -56,6 +56,7 @@ func main() {
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
 		for _, version := range versions {
+			glog.Infof("Collecting images for v%s", version.Version.String())
 			returnedImages, err := getImagesForVersion(versions, version.Version.String())
 			if err != nil {
 				glog.Fatalf(err.Error())
