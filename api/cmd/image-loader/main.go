@@ -111,7 +111,7 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 	for _, image := range imageTagList {
 		imageSplitted := strings.Split(image, "/")
 		if len(imageSplitted) < 2 {
-			return nil, fmt.Errorf("image %s does not contain a registry...", image)
+			return nil, fmt.Errorf("image %s does not contain a registry", image)
 		}
 		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
 		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
