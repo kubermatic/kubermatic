@@ -39,17 +39,17 @@ func main() {
 
 	flag.StringVar(&versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&requestedVersion, "version", "", "")
-	flag.StringVar(&registryName, "registry-name", "", "Name of the registry to push to")
+	flag.StringVar(&registryName, "registry-name", "registry.corp.local", "Name of the registry to push to")
 	flag.BoolVar(&printOnly, "print-only", false, "Only print the names of found images")
 	flag.Parse()
 
 	if registryName == "" && !printOnly {
-		glog.Fatalf("Registry name must not be empty!")
+		glog.Fatalf("Error: registry-name parameter must contain a valid registry address!")
 	}
 
 	versions, err := version.LoadVersions(versionsFile)
 	if err != nil {
-		glog.Fatalf("Error loading versions: %v", err)
+		glog.Fatalf("Error loading versions from %s: %v", versionsFile, err)
 	}
 
 	var imagesUnfiltered []string
