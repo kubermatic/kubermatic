@@ -9,7 +9,11 @@ import (
 )
 
 const (
-	ClusterPlural = "clusters"
+	// ClusterResourceName represents "Resource" defined in Kubernetes
+	ClusterResourceName = "clusters"
+
+	// ClusterKind represents "Kind" defined in Kubernetes
+	ClusterKind = "Cluster"
 )
 
 // ClusterPhase is the life cycle phase of a cluster.

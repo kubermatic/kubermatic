@@ -10,16 +10,26 @@ import (
 
 const (
 	ownerGroupName = "owners"
+	adminGroupName = "admins"
 
 	rbacPrefix = "kubermatic"
 )
 
-func generateOwnersGroupName(projectName string) string {
-	return fmt.Sprintf("%s-%s", ownerGroupName, projectName)
+// allGroups holds a list of groups that we will generate RBAC Roles/Binding for.
+//
+// Note:
+// adding a new group also requires updating generateVerbs method.
+var allGroups = []string{
+	ownerGroupName,
+	adminGroupName,
+}
+
+func generateGroupNameFor(projectName, groupName string) string {
+	return fmt.Sprintf("%s-%s", groupName, projectName)
 }
 
 func generateRBACRole(resource, resourceKind, groupName, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
-	verbs, err := generateVerbs(groupName)
+	verbs, err := generateVerbs(groupName, resourceKind)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +72,14 @@ func generateRBACRoleBinding(resourceKind, groupName string, oRef metav1.OwnerRe
 	return binding
 }
 
-func generateVerbs(groupName string) ([]string, error) {
-	if strings.HasPrefix(groupName, ownerGroupName) {
+func generateVerbs(groupName, resourceKind string) ([]string, error) {
+	// owners of a project
+	if strings.HasPrefix(groupName, ownerGroupName) && resourceKind == "Project" {
 		return []string{"get", "update", "delete"}, nil
+	}
+	// admins of a project
+	if strings.HasPrefix(groupName, adminGroupName) && resourceKind == "Project" {
+		return []string{"get", "update"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
