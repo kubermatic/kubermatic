@@ -101,8 +101,8 @@ func main() {
 func pushImages(imageTagList []string) error {
 	for _, image := range imageTagList {
 		glog.Infof("Pushing image %s", image)
-		if out, err := exec.Command("docker", "push", image).CombinedOutput(); err != nil {
-			return fmt.Errorf("Failed to push image: Error: %v Output: %s", err, string(out))
+		if out, err := execCommand("docker", "push", image); err != nil {
+			return fmt.Errorf("failed to push image: Error: %v Output: %s", err, out)
 		}
 	}
 	return nil
@@ -113,8 +113,8 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 		imageSplitted := strings.Split(image, "/")
 		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
 		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
-		if out, err := exec.Command("docker", "tag", image, retaggedImageName).CombinedOutput(); err != nil {
-			return retaggedImages, fmt.Errorf("Failed to retag image: Error: %v, Output: %s", err, string(out))
+		if out, err := execCommand("docker", "tag", image, retaggedImageName); err != nil {
+			return retaggedImages, fmt.Errorf("Failed to retag image: Error: %v, Output: %s", err, out)
 		}
 	}
 
@@ -124,7 +124,7 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 func downloadImages(images []string) error {
 	for _, image := range images {
 		glog.Infof("Downloading image '%s'...\n", image)
-		if out, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
+		if out, err := execCommand("docker", "pull", image); err != nil {
 			return fmt.Errorf("error pulling image: %v\nOutput: %s", err, out)
 		}
 	}
@@ -279,4 +279,14 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 		secretList.Items = append(secretList.Items, secret)
 	}
 	return &secretList
+}
+
+func execCommand(command ...string) (string, error) {
+	glog.V(2).Infof("Executing command '%s'", strings.Join(command, " "))
+	var args []string
+	if len(command) > 1 {
+		args = command[1:]
+	}
+	out, err := exec.Command(command[0], args...).CombinedOutput()
+	return string(out), err
 }
