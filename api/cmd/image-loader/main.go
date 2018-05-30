@@ -27,6 +27,7 @@ import (
 const mockNamespaceName = "mock-namespace"
 
 var (
+	test             bool
 	versionsFile     string
 	requestedVersion string
 	registryName     string
@@ -109,6 +110,9 @@ func pushImages(imageTagList []string) error {
 func retagImages(registryName string, imageTagList []string) (retaggedImages []string, err error) {
 	for _, image := range imageTagList {
 		imageSplitted := strings.Split(image, "/")
+		if len(imageSplitted) < 2 {
+			return nil, fmt.Errorf("image %s does not contain a registry...", image)
+		}
 		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
 		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
 		if out, err := execCommand("docker", "tag", image, retaggedImageName); err != nil {
@@ -281,6 +285,10 @@ func execCommand(command ...string) (string, error) {
 	var args []string
 	if len(command) > 1 {
 		args = command[1:]
+	}
+	if test {
+		glog.Infof("Not executing command as testing is enabled")
+		return "", nil
 	}
 	out, err := exec.Command(command[0], args...).CombinedOutput()
 	return string(out), err
