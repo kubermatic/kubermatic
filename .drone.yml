@@ -209,7 +209,7 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
-    helm: upgrade --install
+    helm: upgrade --install --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -259,7 +259,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install
+    helm: upgrade --install --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -309,7 +309,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install
+    helm: upgrade --install --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -359,7 +359,7 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install
+    helm: upgrade --install --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:

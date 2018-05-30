@@ -126,10 +126,12 @@ local drone = import 'drone/drone.libsonnet';
       {namespace: 'nodeport-proxy', name: 'nodeport-proxy', path: 'config/nodeport-proxy/'},
     ],
 
+    local versionsValues = ' --values config/versions-values.yaml',
+
     // dev
 
     '9-deploy-dev': drone.step.new('kubeciio/helm') + {
-        helm: 'upgrade --install',
+        helm: 'upgrade --install' + versionsValues,
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
           {source: 'values_dev', target: 'values'},
@@ -141,7 +143,7 @@ local drone = import 'drone/drone.libsonnet';
     // cloud
 
     '10-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install',
+        helm: 'upgrade --install' + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
@@ -151,7 +153,7 @@ local drone = import 'drone/drone.libsonnet';
       } + {when: {branch: 'master'}},
 
     '10-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install',
+        helm: 'upgrade --install' + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_us', target: 'values'},
@@ -161,7 +163,7 @@ local drone = import 'drone/drone.libsonnet';
       } + {when: {branch: 'master'}},
 
     '10-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install',
+        helm: 'upgrade --install' + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_as', target: 'values'},
