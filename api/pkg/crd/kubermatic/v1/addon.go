@@ -7,9 +7,11 @@ import (
 )
 
 const (
-	AddonPlural = "addons"
+	// AddonResourceName represents "Resource" defined in Kubernetes
+	AddonResourceName = "addons"
 
-	AddonKind = "Addon"
+	// ProjectKindName represents "Kind" defined in Kubernetes
+	AddonKindName = "Addon"
 )
 
 //+genclient
@@ -22,18 +24,6 @@ type Addon struct {
 
 	Spec AddonSpec `json:"spec"`
 }
-
-type AddonMode string
-
-const (
-	// AddonModeLabelKey is the label key which needs to exist on every manifest and defines how to manage the manifest
-	AddonModeLabelKey = "addonmanager.kubernetes.io/mode"
-
-	//AddonModeReconcile tells that the addon manager should overwrite any change made to the manifest
-	AddonModeReconcile AddonMode = "Reconcile"
-	//AddonModeEnsureExists tells that the addon manager should only make sure the manifest exist. The manifest can later get modified and wont be overwritten
-	AddonModeEnsureExists AddonMode = "EnsureExists"
-)
 
 // AddonSpec specifies details of an addon
 type AddonSpec struct {

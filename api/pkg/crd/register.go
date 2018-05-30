@@ -54,8 +54,8 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
-			plural:  kubermaticv1.AddonPlural,
-			kind:    reflect.TypeOf(kubermaticv1.Addon{}).Name(),
+			plural:  kubermaticv1.AddonResourceName,
+			kind:    kubermaticv1.AddonKindName,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.NamespaceScoped,
