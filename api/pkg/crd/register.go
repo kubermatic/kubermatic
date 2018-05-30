@@ -34,14 +34,14 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 		},
 		{
 			plural:  kubermaticv1.ClusterResourceName,
-			kind:    kubermaticv1.ClusterKind,
+			kind:    kubermaticv1.ClusterKindName,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
 			plural:  kubermaticv1.UserResourceName,
-			kind:    kubermaticv1.UserKind,
+			kind:    kubermaticv1.UserKindName,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
