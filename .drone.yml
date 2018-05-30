@@ -217,7 +217,9 @@ pipeline:
       target: kubeconfig
     - source: values_dev
       target: values
-    values: '[ values ]'
+    tillerNamespace: kubermatic-installer
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-asia:
@@ -267,7 +269,9 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_as
       target: values
-    values: '[ values ]'
+    tillerNamespace: kubermatic-installer
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-europe:
@@ -317,7 +321,9 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_eu
       target: values
-    values: '[ values ]'
+    tillerNamespace: kubermatic-installer
+    values:
+    - values
     when:
       branch: master
   10-deploy-cloud-us:
@@ -367,7 +373,9 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_us
       target: values
-    values: '[ values ]'
+    tillerNamespace: kubermatic-installer
+    values:
+    - values
     when:
       branch: master
   11-slack:
