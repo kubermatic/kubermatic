@@ -263,6 +263,9 @@ func (c *Controller) sync(key string) error {
 	}
 
 	//Reconciling
+	if cluster.Status.Health == nil || cluster.Status.Health.Apiserver {
+		return nil
+	}
 	if err := c.ensureIsInstalled(addon, cluster); err != nil {
 		return err
 	}
@@ -520,16 +523,18 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 }
 
 func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
-	if err != nil {
-		return err
-	}
-	defer done()
+	if cluster.DeletionTimestamp == nil {
+		kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
+		if err != nil {
+			return err
+		}
+		defer done()
 
-	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
-	glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		return err
+		cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
+		glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+		if err := cmd.Run(); err != nil {
+			return err
+		}
 	}
 
 	finalizers := sets.NewString(addon.Finalizers...)
@@ -539,6 +544,6 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 
 	finalizers.Delete(cleanupFinalizerName)
 	addon.Finalizers = finalizers.List()
-	addon, err = c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
+	addon, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
 	return err
 }
