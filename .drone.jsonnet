@@ -133,7 +133,7 @@ local drone = import 'drone/drone.libsonnet';
 
     '9-deploy-dev': drone.step.new('kubeciio/helm') + {
         helm: 'upgrade --install' + versionsValues,
-        tillerNamespace: tillerNamespace,
+        'tiller-namespace': tillerNamespace,
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
           {source: 'values_dev', target: 'values'},
@@ -146,7 +146,7 @@ local drone = import 'drone/drone.libsonnet';
 
     '10-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install' + versionsValues,
-        tillerNamespace: tillerNamespace,
+        'tiller-namespace': tillerNamespace,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
@@ -157,7 +157,7 @@ local drone = import 'drone/drone.libsonnet';
 
     '10-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install' + versionsValues,
-        tillerNamespace: tillerNamespace,
+        'tiller-namespace': tillerNamespace,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_us', target: 'values'},
@@ -168,7 +168,7 @@ local drone = import 'drone/drone.libsonnet';
 
     '10-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
         helm: 'upgrade --install' + versionsValues,
-        tillerNamespace: tillerNamespace,
+        'tiller-namespace': tillerNamespace,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_as', target: 'values'},

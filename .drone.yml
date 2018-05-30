@@ -217,7 +217,7 @@ pipeline:
       target: kubeconfig
     - source: values_dev
       target: values
-    tillerNamespace: kubermatic-installer
+    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -269,7 +269,7 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_as
       target: values
-    tillerNamespace: kubermatic-installer
+    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -321,7 +321,7 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_eu
       target: values
-    tillerNamespace: kubermatic-installer
+    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
@@ -373,7 +373,7 @@ pipeline:
       target: kubeconfig
     - source: values_cloud_us
       target: values
-    tillerNamespace: kubermatic-installer
+    tiller-namespace: kubermatic-installer
     values:
     - values
     when:
