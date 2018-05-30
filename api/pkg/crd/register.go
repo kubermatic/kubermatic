@@ -1,7 +1,6 @@
 package crd
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/golang/glog"
@@ -27,29 +26,29 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 
 	resourceNames := []resource{
 		{
-			plural:  kubermaticv1.SSHKeyPlural,
-			kind:    reflect.TypeOf(kubermaticv1.UserSSHKey{}).Name(),
+			plural:  kubermaticv1.SSHKeyResourceName,
+			kind:    kubermaticv1.SSHKeyKind,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
-			plural:  kubermaticv1.ClusterPlural,
-			kind:    reflect.TypeOf(kubermaticv1.Cluster{}).Name(),
+			plural:  kubermaticv1.ClusterResourceName,
+			kind:    kubermaticv1.ClusterKind,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
-			plural:  kubermaticv1.UserPlural,
-			kind:    reflect.TypeOf(kubermaticv1.User{}).Name(),
+			plural:  kubermaticv1.UserResourceName,
+			kind:    kubermaticv1.UserKind,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
 		{
-			plural:  kubermaticv1.ProjectPlural,
-			kind:    reflect.TypeOf(kubermaticv1.Project{}).Name(),
+			plural:  kubermaticv1.ProjectResourceName,
+			kind:    kubermaticv1.ProjectKindName,
 			group:   kubermaticv1.GroupName,
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,

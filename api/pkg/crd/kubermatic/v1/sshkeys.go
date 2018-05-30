@@ -5,7 +5,11 @@ import (
 )
 
 const (
-	SSHKeyPlural = "usersshkeies"
+	// SSHKeyResourceName represents "Resource" defined in Kubernetes
+	SSHKeyResourceName = "usersshkeies"
+
+	// SSHKeyKind represents "Kind" defined in Kubernetes
+	SSHKeyKind = "UserSSHKey"
 )
 
 //+genclient

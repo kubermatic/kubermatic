@@ -16,6 +16,14 @@ const (
 	ProjectTerminating string = "Terminating"
 )
 
+const (
+	// ProjectResourceName represents "Resource" defined in Kubernetes
+	ProjectResourceName = "projects"
+
+	// ProjectKindName represents "Kind" defined in Kubernetes
+	ProjectKindName = "Project"
+)
+
 //+genclient
 //+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
