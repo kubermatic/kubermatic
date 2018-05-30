@@ -83,7 +83,7 @@ func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project)
 func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	var sharedOwner *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
-		if ref.Kind == kubermaticv1.UserKind {
+		if ref.Kind == kubermaticv1.UserKindName {
 			var err error
 			if sharedOwner, err = c.userLister.Get(ref.Name); err != nil {
 				return err
@@ -109,9 +109,9 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 func (c *Controller) ensureProjectRBACRoles(project *kubermaticv1.Project) error {
 	for _, groupName := range allGroups {
 		generatedRole, err := generateRBACRole(
-			kubermaticv1.ProjectResourceName,
 			kubermaticv1.ProjectKindName,
 			generateGroupNameFor(project.Name, groupName),
+			kubermaticv1.ProjectResourceName,
 			kubermaticv1.SchemeGroupVersion.Group,
 			project.Name,
 			metav1.OwnerReference{
@@ -156,6 +156,7 @@ func (c *Controller) ensureProjectRBACRoleBindings(project *kubermaticv1.Project
 	for _, groupName := range allGroups {
 		generatedRoleBinding := generateRBACRoleBinding(
 			kubermaticv1.ProjectKindName,
+			project.Name,
 			generateGroupNameFor(project.Name, groupName),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
