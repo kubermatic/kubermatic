@@ -12,8 +12,8 @@ const (
 	// ClusterResourceName represents "Resource" defined in Kubernetes
 	ClusterResourceName = "clusters"
 
-	// ClusterKind represents "Kind" defined in Kubernetes
-	ClusterKind = "Cluster"
+	// ClusterKindName represents "Kind" defined in Kubernetes
+	ClusterKindName = "Cluster"
 )
 
 // ClusterPhase is the life cycle phase of a cluster.
