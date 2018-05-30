@@ -28,12 +28,14 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-func main() {
+var (
+	masterResources  string
+	requestedVersion string
+	registryName     string
+	printOnly        bool
+)
 
-	var masterResources string
-	var requestedVersion string
-	var registryName string
-	var printOnly bool
+func main() {
 
 	flag.StringVar(&masterResources, "master-resources", "../config/kubermatic/static/master/versions.yaml", "")
 	flag.StringVar(&requestedVersion, "version", "", "")
