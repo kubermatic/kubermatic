@@ -17,7 +17,12 @@ const (
 	volumeDataName   = "data"
 )
 
-var defaultMemoryRequest = resource.MustParse("200Mi")
+var (
+	defaultCPURequest    = resource.MustParse("50m")
+	defaultMemoryRequest = resource.MustParse("128Mi")
+	defaultCPULimit      = resource.MustParse("100m")
+	defaultMemoryLimit   = resource.MustParse("512Mi")
+)
 
 // StatefulSet returns the prometheus StatefulSet
 func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
@@ -87,9 +92,15 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 	set.Spec.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    defaultCPURequest,
 			corev1.ResourceMemory: defaultMemoryRequest,
 		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    defaultCPULimit,
+			corev1.ResourceMemory: defaultMemoryLimit,
+		},
 	}
+
 	set.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 		{
 			Name:      volumeConfigName,

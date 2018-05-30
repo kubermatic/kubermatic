@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	appsv1 "k8s.io/api/apps/v1"
@@ -74,6 +75,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	var etcds []string
+	for i := 0; i < resources.EtcdClusterSize; i++ {
+		etcds = append(etcds, fmt.Sprintf("http://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName))
+	}
+
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
 		return nil, err
@@ -88,7 +94,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-client:2379] get foo; do echo waiting for etcd; sleep 2; done;",
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", strings.Join(etcds, ",")),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -151,10 +157,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:" + data.Version.Values["k8s-version"],
+			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
-			Args:            getApiserverFlags(data, externalNodePort),
+			Args:            getApiserverFlags(data, externalNodePort, etcds),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
@@ -240,7 +246,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []string {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcds []string) []string {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -252,7 +258,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", "http://etcd-client:2379",
+		"--etcd-servers", strings.Join(etcds, ","),
 		"--storage-backend", "etcd3",
 		"--admission-control", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
 		"--authorization-mode", "Node,RBAC",
@@ -272,7 +278,6 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
-		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 		"--v", "4",
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
@@ -282,6 +287,12 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32) []s
 	if data.Cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
+
+	if data.Cluster.Spec.Cloud.BringYourOwn != nil {
+		flags = append(flags, "--kubelet-preferred-address-types", "Hostname,InternalIP,ExternalIP")
+	} else {
+		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 	return flags
 }

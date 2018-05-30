@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"github.com/pmezard/go-difflib/difflib"
 
 	"k8s.io/api/core/v1"
@@ -71,48 +72,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadFiles(t *testing.T) {
-	versions := []*apiv1.MasterVersion{
+	versions := []*version.MasterVersion{
 		{
-			Name:                            "1.8.0",
-			ID:                              "1.8.0",
-			Default:                         true,
-			AllowedNodeVersions:             []string{"1.3.0"},
-			EtcdOperatorDeploymentYaml:      "etcd-operator-dep.yaml",
-			ApiserverDeploymentYaml:         "apiserver-dep.yaml",
-			ControllerDeploymentYaml:        "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
-			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":                "v1.8.5",
-				"etcd-operator-version":      "v0.6.0",
-				"etcd-cluster-version":       "3.2.7",
-				"kube-machine-version":       "v0.2.3",
-				"addon-manager-version":      "v1.8.2",
-				"pod-network-bridge":         "v0.2",
-				"machine-controller-version": "v0.1.2",
-			},
+			Version: semver.MustParse("1.8.0"),
 		},
 		{
-			Name:                            "1.9.0",
-			ID:                              "1.9.0",
-			Default:                         true,
-			AllowedNodeVersions:             []string{"1.3.0"},
-			EtcdOperatorDeploymentYaml:      "etcd-operator-dep.yaml",
-			ApiserverDeploymentYaml:         "apiserver-dep.yaml",
-			ControllerDeploymentYaml:        "controller-manager-dep.yaml",
-			SchedulerDeploymentYaml:         "scheduler-dep.yaml",
-			AddonManagerDeploymentYaml:      "addon-manager-dep.yaml",
-			MachineControllerDeploymentYaml: "machine-controller-dep.yaml",
-			Values: map[string]string{
-				"k8s-version":                "v1.9.0",
-				"etcd-operator-version":      "v0.6.0",
-				"etcd-cluster-version":       "3.2.7",
-				"kube-machine-version":       "v0.2.3",
-				"addon-manager-version":      "v1.9.0",
-				"pod-network-bridge":         "v0.2",
-				"machine-controller-version": "v0.1.2",
-			},
+			Version: semver.MustParse("1.9.0"),
 		},
 	}
 
@@ -175,16 +140,17 @@ func TestLoadFiles(t *testing.T) {
 		},
 	}
 
-	for _, version := range versions {
+	for _, ver := range versions {
 		for prov, cloudspec := range clouds {
-			t.Run(fmt.Sprintf("resources-%s-%s", prov, version.ID), func(t *testing.T) {
+			t.Run(fmt.Sprintf("resources-%s-%s", prov, ver.Version.String()), func(t *testing.T) {
 				cluster := &kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
 						UID:  types.UID("1234567890"),
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: cloudspec,
+						Cloud:   cloudspec,
+						Version: ver.Version.String(),
 					},
 					Address: &kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
@@ -268,16 +234,16 @@ func TestLoadFiles(t *testing.T) {
 				}()
 
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
-				data := resources.NewTemplateData(cluster, version, &dc, kubeInformerFactory.Core().V1().Secrets().Lister(), kubeInformerFactory.Core().V1().ConfigMaps().Lister(), kubeInformerFactory.Core().V1().Services().Lister(), "", "")
+				data := resources.NewTemplateData(cluster, &dc, kubeInformerFactory.Core().V1().Secrets().Lister(), kubeInformerFactory.Core().V1().ConfigMaps().Lister(), kubeInformerFactory.Core().V1().Services().Lister(), "", "")
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 				deps := map[string]resources.DeploymentCreator{
-					fmt.Sprintf("deployment-%s-%s-scheduler", prov, version.ID):          scheduler.Deployment,
-					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, version.ID): controllermanager.Deployment,
-					fmt.Sprintf("deployment-%s-%s-apiserver", prov, version.ID):          apiserver.Deployment,
-					fmt.Sprintf("deployment-%s-%s-addon-manager", prov, version.ID):      addonmanager.Deployment,
-					fmt.Sprintf("deployment-%s-%s-machine-controller", prov, version.ID): machinecontroller.Deployment,
+					fmt.Sprintf("deployment-%s-%s-scheduler", prov, ver.Version.String()):          scheduler.Deployment,
+					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, ver.Version.String()): controllermanager.Deployment,
+					fmt.Sprintf("deployment-%s-%s-apiserver", prov, ver.Version.String()):          apiserver.Deployment,
+					fmt.Sprintf("deployment-%s-%s-addon-manager", prov, ver.Version.String()):      addonmanager.Deployment,
+					fmt.Sprintf("deployment-%s-%s-machine-controller", prov, ver.Version.String()): machinecontroller.Deployment,
 				}
 
 				for fixture, create := range deps {
@@ -290,9 +256,9 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				cmCreators := map[string]resources.ConfigMapCreator{
-					fmt.Sprintf("configmap-%s-%s-cloud-config", prov, version.ID): cloudconfig.ConfigMap,
-					fmt.Sprintf("configmap-%s-%s-openvpn", prov, version.ID):      openvpn.ConfigMap,
-					fmt.Sprintf("configmap-%s-%s-prometheus", prov, version.ID):   prometheus.ConfigMap,
+					fmt.Sprintf("configmap-%s-%s-cloud-config", prov, ver.Version.String()): cloudconfig.ConfigMap,
+					fmt.Sprintf("configmap-%s-%s-openvpn", prov, ver.Version.String()):      openvpn.ConfigMap,
+					fmt.Sprintf("configmap-%s-%s-prometheus", prov, ver.Version.String()):   prometheus.ConfigMap,
 				}
 				for fixture, create := range cmCreators {
 					res, err := create(data, nil)
@@ -304,9 +270,9 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				serviceCreators := map[string]resources.ServiceCreator{
-					fmt.Sprintf("service-%s-%s-apiserver", prov, version.ID):          apiserver.Service,
-					fmt.Sprintf("service-%s-%s-apiserver-external", prov, version.ID): apiserver.ExternalService,
-					fmt.Sprintf("service-%s-%s-openvpn", prov, version.ID):            openvpn.Service,
+					fmt.Sprintf("service-%s-%s-apiserver", prov, ver.Version.String()):          apiserver.Service,
+					fmt.Sprintf("service-%s-%s-apiserver-external", prov, ver.Version.String()): apiserver.ExternalService,
+					fmt.Sprintf("service-%s-%s-openvpn", prov, ver.Version.String()):            openvpn.Service,
 				}
 
 				for fixture, create := range serviceCreators {

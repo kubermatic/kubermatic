@@ -60,9 +60,6 @@ type ClusterProvider interface {
 	// DeleteCluster deletes a Cluster from a user by it's name.
 	DeleteCluster(user apiv1.User, name string) error
 
-	// InitiateClusterUpgrade upgrades a Cluster to a specific version
-	InitiateClusterUpgrade(user apiv1.User, name, version string) (*kubermaticv1.Cluster, error)
-
 	// UpdateCluster updates a cluster
 	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
@@ -100,6 +97,12 @@ type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
 	New(user *kubermaticv1.User, name string) (*kubermaticv1.Project, error)
+
+	// Delete deletes the given project as the given user
+	//
+	// Note:
+	// Before deletion project's status.phase is set to ProjectTerminating
+	Delete(user *kubermaticv1.User, projectInternalName string) error
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

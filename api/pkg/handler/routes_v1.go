@@ -52,6 +52,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/openstack/sizes").
 		Handler(r.listOpenstackSizes())
 
+	mux.Methods(http.MethodGet).
+		Path("/versions").
+		Handler(r.getMasterVersions())
+
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
@@ -112,7 +116,7 @@ func (r Routing) createSSHKey() http.Handler {
 			r.userSaverMiddleware(),
 		)(createSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeCreateSSHKeyReq,
-		createStatusResource(encodeJSON),
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -236,6 +240,28 @@ func (r Routing) getUser() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/versions versions getMasterVersions
+//
+// Lists all versions which don't result in automatic updates
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+func (r Routing) getMasterVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getMasterVersions(r.updateManager)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/projects projects
 //
 //     List projects filtered by user
@@ -282,7 +308,9 @@ func (r Routing) getProjects() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
+//       401: Unauthorized
 //       201: Project
+//       409: AlreadyExists
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -290,7 +318,7 @@ func (r Routing) createProject() http.Handler {
 			r.userSaverMiddleware(),
 		)(createProjectEndpoint(r.projectProvider)),
 		decodeCreateProject,
-		createStatusResource(encodeJSON),
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -309,6 +337,7 @@ func (r Routing) createProject() http.Handler {
 //       default: errorResponse
 //       200: Project
 //       401: Unauthorized
+//       403: Forbidden
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -337,12 +366,13 @@ func (r Routing) updateProject() http.Handler {
 //       default: errorResponse
 //       200: empty
 //       401: Unauthorized
+//       403: Forbidden
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(deleteProjectEndpoint()),
+		)(deleteProjectEndpoint(r.projectProvider)),
 		decodeProjectPathReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

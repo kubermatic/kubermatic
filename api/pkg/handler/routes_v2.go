@@ -45,9 +45,9 @@ func (r Routing) createNodeHandlerV2() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider, r.versions, r.masterResourcesPath)),
+		)(createNodeEndpointV2(r.datacenters, r.sshKeyProvider)),
 		decodeCreateNodeReqV2,
-		createStatusResource(encodeJSON),
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

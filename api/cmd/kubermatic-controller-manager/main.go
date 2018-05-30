@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/version"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -32,9 +31,9 @@ import (
 )
 
 type controllerRunOptions struct {
-	kubeconfig     string
-	masterURL      string
-	prometheusAddr string
+	kubeconfig   string
+	masterURL    string
+	internalAddr string
 
 	masterResources   string
 	externalURL       string
@@ -65,12 +64,12 @@ func main() {
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOp.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&runOp.prometheusAddr, "prometheus-address", "127.0.0.1:8085", "The address on which the prometheus handler should be exposed")
+	flag.StringVar(&runOp.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
 	flag.StringVar(&runOp.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&runOp.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&runOp.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&runOp.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
-	flag.StringVar(&runOp.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
+	flag.StringVar(&runOp.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.StringVar(&runOp.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&runOp.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
@@ -98,16 +97,6 @@ func main() {
 	_, err := provider.LoadDatacentersMeta(runOp.dcFile)
 	if err != nil {
 		glog.Fatalf("failed to load datacenter yaml %q: %v", runOp.dcFile, err)
-	}
-
-	_, err = version.LoadVersions(runOp.versionsFile)
-	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
-	}
-
-	_, err = version.LoadUpdates(runOp.updatesFile)
-	if err != nil {
-		glog.Fatalf("failed to load version yaml %q: %v", runOp.versionsFile, err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags(runOp.masterURL, runOp.kubeconfig)
@@ -147,14 +136,14 @@ func main() {
 		m.Handle("/metrics", promhttp.Handler())
 
 		s := http.Server{
-			Addr:         runOp.prometheusAddr,
+			Addr:         runOp.internalAddr,
 			Handler:      m,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 10 * time.Second,
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", runOp.prometheusAddr)
+			glog.Infof("Starting the internal http server: %s\n", runOp.internalAddr)
 			err := s.ListenAndServe()
 			if err != nil {
 				return fmt.Errorf("internal http server failed: %v", err)

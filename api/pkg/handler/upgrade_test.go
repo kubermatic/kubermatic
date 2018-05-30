@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,9 +21,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 	tests := []struct {
 		name        string
 		cluster     *kubermaticv1.Cluster
-		versions    map[string]*apiv1.MasterVersion
-		updates     []apiv1.MasterUpdate
-		wantUpdates []string
+		versions    []*version.MasterVersion
+		updates     []*version.MasterUpdate
+		wantUpdates []*apiv1.MasterVersion
 	}{
 		{
 			name: "upgrade available",
@@ -31,77 +32,37 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUsername},
 				},
-				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			wantUpdates: []string{"1.6.1", "1.7.0"},
-			versions: map[string]*apiv1.MasterVersion{
-				"1.6.0": {
-					Name:                       "v1.6.0",
-					ID:                         "1.6.0",
-					Default:                    false,
-					AllowedNodeVersions:        []string{"1.3.0"},
-					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-					EtcdClusterYaml:            "etcd-cluster.yaml",
-					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-					Values: map[string]string{
-						"k8s-version":        "v1.6.0",
-						"etcd-version":       "3.2.8",
-						"pod-network-bridge": "v0.1",
-					},
-				},
-				"1.6.1": {
-					Name:                       "v1.6.1",
-					ID:                         "1.6.1",
-					Default:                    false,
-					AllowedNodeVersions:        []string{"1.3.0"},
-					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-					EtcdClusterYaml:            "etcd-cluster.yaml",
-					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-					Values: map[string]string{
-						"k8s-version":        "v1.6.1",
-						"etcd-version":       "3.2.8",
-						"pod-network-bridge": "v0.1",
-					},
-				},
-				"1.7.0": {
-					Name:                       "v1.7.0",
-					ID:                         "1.7.0",
-					Default:                    false,
-					AllowedNodeVersions:        []string{"1.3.0"},
-					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-					EtcdClusterYaml:            "etcd-cluster.yaml",
-					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-					Values: map[string]string{
-						"k8s-version":        "v1.7.0",
-						"etcd-version":       "3.2.8",
-						"pod-network-bridge": "v0.1",
-					},
-				},
-			},
-			updates: []apiv1.MasterUpdate{
+			wantUpdates: []*apiv1.MasterVersion{
 				{
-					From:            "1.6.0",
-					To:              "1.6.1",
-					Automatic:       false,
-					RollbackAllowed: false,
-					Enabled:         true,
-					Visible:         true,
-					Promote:         true,
+					Version: semver.MustParse("1.6.1"),
 				},
 				{
-					From:            "1.6.x",
-					To:              "1.7.0",
-					Automatic:       false,
-					RollbackAllowed: false,
-					Enabled:         true,
-					Visible:         true,
-					Promote:         true,
+					Version: semver.MustParse("1.7.0"),
+				},
+			},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.0"),
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+				},
+			},
+			updates: []*version.MasterUpdate{
+				{
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
+				},
+				{
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
 				},
 			},
 		},
@@ -112,28 +73,15 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUsername},
 				},
-				Spec: kubermaticv1.ClusterSpec{MasterVersion: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			wantUpdates: []string{},
-			versions: map[string]*apiv1.MasterVersion{
-				"1.6.0": {
-					Name:                       "v1.6.0",
-					ID:                         "1.6.0",
-					Default:                    false,
-					AllowedNodeVersions:        []string{"1.3.0"},
-					EtcdOperatorDeploymentYaml: "etcd-dep.yaml",
-					EtcdClusterYaml:            "etcd-cluster.yaml",
-					ApiserverDeploymentYaml:    "apiserver-dep.yaml",
-					ControllerDeploymentYaml:   "controller-manager-dep.yaml",
-					SchedulerDeploymentYaml:    "scheduler-dep.yaml",
-					Values: map[string]string{
-						"k8s-version":        "v1.6.0",
-						"etcd-version":       "3.2.8",
-						"pod-network-bridge": "v0.1",
-					},
+			wantUpdates: []*apiv1.MasterVersion{},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.0"),
 				},
 			},
-			updates: []apiv1.MasterUpdate{},
+			updates: []*version.MasterUpdate{},
 		},
 	}
 	for _, test := range tests {
@@ -151,14 +99,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 				return
 			}
 
-			gotUpdates := []string{}
+			var gotUpdates []*apiv1.MasterVersion
 			err = json.Unmarshal(res.Body.Bytes(), &gotUpdates)
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			sort.Strings(gotUpdates)
-			sort.Strings(test.wantUpdates)
 
 			if diff := deep.Equal(gotUpdates, test.wantUpdates); diff != nil {
 				t.Errorf("got different upgrade response than expected. Diff: %v", diff)

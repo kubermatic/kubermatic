@@ -4,8 +4,13 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/rand"
 	restclient "k8s.io/client-go/rest"
 )
 
@@ -39,7 +44,11 @@ type ProjectProvider struct {
 }
 
 // New creates a brand new project in the system with the given name
-// Note that a user cannot own more than one project with the given name
+//
+// Note:
+// a user cannot own more than one project with the given name
+// since we get the list of the current projects from a cache (lister) there is a small time window
+// during which a user can create more that one project with the given name.
 func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*kubermaticapiv1.Project, error) {
 	projects, err := p.projectLister.List(labels.Everything())
 	if err != nil {
@@ -50,7 +59,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		owners := project.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.UID == user.UID && project.Spec.Name == projectName {
-				return nil, ErrAlreadyExist
+				return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: project.GroupVersionKind().Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
 			}
 		}
 	}
@@ -59,13 +68,13 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: user.APIVersion,
-					Kind:       user.Kind,
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.UserKind,
 					UID:        user.GetUID(),
 					Name:       user.Name,
 				},
 			},
-			GenerateName: "project-",
+			Name: rand.String(10),
 		},
 		Spec: kubermaticapiv1.ProjectSpec{
 			Name: projectName,
@@ -76,6 +85,37 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 	}
 
 	return p.clientPrivileged.Create(project)
+}
+
+// Delete deletes the given project as the given user
+//
+// Note:
+// Before deletion project's status.phase is set to ProjectTerminating
+func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName string) error {
+	groupName, err := user.GroupForProject(projectInternalName)
+	if err != nil {
+		return kerrors.NewForbidden(schema.GroupResource{}, projectInternalName, err)
+	}
+	impersonationCfg := restclient.ImpersonationConfig{
+		UserName: user.Spec.Email,
+		Groups:   []string{groupName},
+	}
+
+	impersonatedClient, err := p.createImpersonatedClient(impersonationCfg)
+	if err != nil {
+		return err
+	}
+
+	existingProject, err := impersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
+	if _, err := impersonatedClient.Projects().Update(existingProject); err != nil {
+		return err
+	}
+
+	return impersonatedClient.Projects().Delete(projectInternalName, &metav1.DeleteOptions{})
 }
 
 // NewKubermaticImpersonationClient creates a new default impersonation client

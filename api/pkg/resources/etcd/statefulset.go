@@ -18,6 +18,11 @@ import (
 
 var (
 	etcdDiskSize = resource.MustParse("5Gi")
+
+	defaultEtcdMemoryRequest = resource.MustParse("256Mi")
+	defaultEtcdCPURequest    = resource.MustParse("50m")
+	defaultEtcdMemoryLimit   = resource.MustParse("1Gi")
+	defaultEtcdCPULimit      = resource.MustParse("100m")
 )
 
 const (
@@ -37,7 +42,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Name = resources.EtcdStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	set.Spec.Replicas = resources.Int32(3)
+	set.Spec.Replicas = resources.Int32(resources.EtcdClusterSize)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
@@ -94,6 +99,16 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					ContainerPort: 2380,
 					Protocol:      corev1.ProtocolTCP,
 					Name:          "peer",
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: defaultEtcdMemoryRequest,
+					corev1.ResourceCPU:    defaultEtcdCPURequest,
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: defaultEtcdMemoryLimit,
+					corev1.ResourceCPU:    defaultEtcdCPULimit,
 				},
 			},
 			ReadinessProbe: &corev1.Probe{
