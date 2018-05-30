@@ -106,8 +106,7 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		rbacMetrics,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Projects(),
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Users(),
+		ctrlCtx.kubermaticInformerFactory,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings())

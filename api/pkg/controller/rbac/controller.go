@@ -9,10 +9,14 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
+	kubermaticsharedinformer "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticsharedinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	rbacinformer "k8s.io/client-go/informers/rbac/v1"
@@ -29,9 +33,9 @@ type Metrics struct {
 
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
-	queue      workqueue.RateLimitingInterface
-	metrics    Metrics
-	workerName string
+	projectQueue workqueue.RateLimitingInterface
+	metrics      Metrics
+	workerName   string
 
 	kubermaticClient kubermaticclientset.Interface
 	projectLister    kubermaticv1lister.ProjectLister
@@ -44,6 +48,10 @@ type Controller struct {
 	rbacClusterRoleHasSynced        cache.InformerSynced
 	rbacClusterRoleBindingLister    rbaclister.ClusterRoleBindingLister
 	rbacClusterRoleBindingHasSynced cache.InformerSynced
+
+	dependantInformers         []cache.Controller
+	dependantInformesHasSynced []cache.InformerSynced
+	dependantsQueue            workqueue.RateLimitingInterface
 }
 
 // New creates a new RBACGenerator controller that is responsible for
@@ -54,25 +62,26 @@ func New(
 	metrics Metrics,
 	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
-	projectInformer kubermaticv1informers.ProjectInformer,
-	userInformer kubermaticv1informers.UserInformer,
+	kubermaticInformerFactory kubermaticsharedinformer.SharedInformerFactory,
 	kubeClient kubernetes.Interface,
 	rbacClusterRoleInformer rbacinformer.ClusterRoleInformer,
 	rbacClusterRoleBindingInformer rbacinformer.ClusterRoleBindingInformer) (*Controller, error) {
 	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGenerator"),
+		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProject"),
+		dependantsQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorDependants"),
 		metrics:          metrics,
 		workerName:       workerName,
 		kubermaticClient: kubermaticClient,
 		kubeClient:       kubeClient,
 	}
 
+	projectInformer := kubermaticInformerFactory.Kubermatic().V1().Projects()
 	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueue(obj.(*kubermaticv1.Project))
+			c.enqueueProject(obj.(*kubermaticv1.Project))
 		},
 		UpdateFunc: func(old, cur interface{}) {
-			c.enqueue(cur.(*kubermaticv1.Project))
+			c.enqueueProject(cur.(*kubermaticv1.Project))
 		},
 		DeleteFunc: func(obj interface{}) {
 			project, ok := obj.(*kubermaticv1.Project)
@@ -88,12 +97,13 @@ func New(
 					return
 				}
 			}
-			c.enqueue(project)
+			c.enqueueProject(project)
 		},
 	})
 	c.projectLister = projectInformer.Lister()
 	c.projectSynced = projectInformer.Informer().HasSynced
 
+	userInformer := kubermaticInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
 	c.userSynced = userInformer.Informer().HasSynced
 
@@ -102,6 +112,30 @@ func New(
 
 	c.rbacClusterRoleLister = rbacClusterRoleInformer.Lister()
 	c.rbacClusterRoleHasSynced = rbacClusterRoleInformer.Informer().HasSynced
+
+	// a list of dependent resources that we would like to watch/monitor
+	resources := []struct {
+		gvr  schema.GroupVersionResource
+		kind string
+	}{
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: "clusters",
+			},
+			kind: "Cluster",
+		},
+	}
+
+	for _, resource := range resources {
+		informer, err := c.informerFor(kubermaticInformerFactory, resource.gvr, resource.kind)
+		if err != nil {
+			return nil, err
+		}
+		c.dependantInformers = append(c.dependantInformers, informer)
+		c.dependantInformesHasSynced = append(c.dependantInformesHasSynced, informer.HasSynced)
+	}
 
 	return c, nil
 }
@@ -116,65 +150,160 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		runtime.HandleError(errors.New("Unable to sync caches for RBACGenerator controller"))
 		return
 	}
+	if !cache.WaitForCacheSync(stopCh, c.dependantInformesHasSynced...) {
+		runtime.HandleError(errors.New("Unable to sync caches for dependant resource of RBACGenerator controller"))
+		return
+	}
 
 	for i := 0; i < workerCount; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
+		go wait.Until(c.runProjectWorker, time.Second, stopCh)
+		go wait.Until(c.runDependantsWorker, time.Second, stopCh)
 	}
 
 	c.metrics.Workers.Set(float64(workerCount))
 	<-stopCh
 }
 
-func (c *Controller) runWorker() {
-	for c.processNextItem() {
+func (c *Controller) runProjectWorker() {
+	for c.processProjectNextItem() {
 	}
 }
 
-func (c *Controller) processNextItem() bool {
-	key, quit := c.queue.Get()
+func (c *Controller) processProjectNextItem() bool {
+	key, quit := c.projectQueue.Get()
 	if quit {
 		return false
 	}
-	defer c.queue.Done(key)
+	defer c.projectQueue.Done(key)
 
 	err := c.sync(key.(string))
 
-	c.handleErr(err, key)
+	c.handleProjectErr(err, key)
 	return true
 }
 
-// handleErr checks if an error happened and makes sure we will retry later.
-func (c *Controller) handleErr(err error, key interface{}) {
+// handleProjectErr checks if an error happened and makes sure we will retry later.
+func (c *Controller) handleProjectErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
-		c.queue.Forget(key)
+		c.projectQueue.Forget(key)
 		return
 	}
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.queue.NumRequeues(key) < 5 {
+	if c.projectQueue.NumRequeues(key) < 5 {
 		glog.V(0).Infof("Error syncing %v: %v", key, err)
 
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		c.queue.AddRateLimited(key)
+		// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+		// projectQueue and the re-enqueueProject history, the key will be processed later again.
+		c.projectQueue.AddRateLimited(key)
 		return
 	}
 
-	c.queue.Forget(key)
+	c.projectQueue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping %q out of the queue: %v", key, err)
+	glog.V(0).Infof("Dropping %q out of the projectQueue: %v", key, err)
 }
 
-func (c *Controller) enqueue(project *kubermaticv1.Project) {
+func (c *Controller) enqueueProject(project *kubermaticv1.Project) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(project)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", project, err))
 		return
 	}
 
-	c.queue.Add(key)
+	c.projectQueue.Add(key)
+}
+
+func (c *Controller) runDependantsWorker() {
+	for c.processDepentantsNextItem() {
+	}
+}
+
+func (c *Controller) processDepentantsNextItem() bool {
+	item, quit := c.dependantsQueue.Get()
+	if quit {
+		return false
+	}
+	defer c.projectQueue.Done(item)
+	queueItem := item.(*dependantQueueItem)
+
+	err := c.syncDependant(queueItem)
+
+	c.handleDependantsErr(err, queueItem)
+	return true
+}
+
+// handleDependantsErr checks if an error happened and makes sure we will retry later.
+func (c *Controller) handleDependantsErr(err error, item *dependantQueueItem) {
+	if err == nil {
+		// Forget about the #AddRateLimited history of the key on every successful synchronization.
+		// This ensures that future processing of updates for this key is not delayed because of
+		// an outdated error history.
+		c.dependantsQueue.Forget(item)
+		return
+	}
+
+	// This controller retries 5 times if something goes wrong. After that, it stops trying.
+	if c.dependantsQueue.NumRequeues(item) < 5 {
+		glog.V(0).Infof("Error syncing gvr %s, kind %s, err %v", item.gvr.String(), item.kind, err)
+
+		// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+		// projectQueue and the re-enqueueProject history, the key will be processed later again.
+		c.dependantsQueue.AddRateLimited(item)
+		return
+	}
+
+	c.dependantsQueue.Forget(item)
+	// Report to an external entity that, even after several retries, we could not successfully process this key
+	runtime.HandleError(err)
+	glog.V(0).Infof("Dropping %q out of the dependantsQueue: %v", item, err)
+}
+
+func (c *Controller) enqueueDependant(obj interface{}, gvr schema.GroupVersionResource, kind string) {
+	metaObj, err := meta.Accessor(obj)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s", obj, gvr.String()))
+	}
+	item := &dependantQueueItem{
+		gvr:        gvr,
+		kind:       kind,
+		metaObject: metaObj,
+	}
+	c.dependantsQueue.Add(item)
+}
+
+const dependantResyncTime time.Duration = 5 * time.Minute
+
+type dependantQueueItem struct {
+	gvr        schema.GroupVersionResource
+	kind       string
+	metaObject metav1.Object
+}
+
+func (c *Controller) informerFor(sharedInformers kubermaticsharedinformers.SharedInformerFactory, gvr schema.GroupVersionResource, kind string) (cache.Controller, error) {
+	handlers := cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			c.enqueueDependant(obj, gvr, kind)
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			c.enqueueDependant(newObj, gvr, kind)
+		},
+		DeleteFunc: func(obj interface{}) {
+			if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				obj = deletedFinalStateUnknown.Obj
+			}
+			c.enqueueDependant(obj, gvr, kind)
+		},
+	}
+	shared, err := sharedInformers.ForResource(gvr)
+	if err == nil {
+		glog.V(4).Infof("using a shared informer for dependant/resource %q", gvr.String())
+		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, dependantResyncTime)
+		return shared.Informer().GetController(), nil
+	}
+	return nil, fmt.Errorf("uanble to create shared informer fo the given dependant/resourece %v", gvr.String())
 }
