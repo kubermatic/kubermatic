@@ -15,8 +15,11 @@ import (
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
 	"k8s.io/client-go/kubernetes"
@@ -62,10 +65,7 @@ func New(
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	cronJobInformer informersbatchv1beta1.CronJobInformer) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
-		return err
-	}
-	if err := parseDuration(backupSchedule); err != nil {
-		return err
+		return nil, err
 	}
 	backupScheduleString, err := parseDuration(backupSchedule)
 	if err != nil {
@@ -78,10 +78,10 @@ func New(
 	}
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueue(obj.(*batchv1beta1.CronJob))
+			c.handleObject(obj.(*batchv1beta1.CronJob))
 		},
 		UpdateFunc: func(_, new interface{}) {
-			c.enqueue(new.(*batchv1beta1.CronJob))
+			c.handleObject(new.(*batchv1beta1.CronJob))
 		},
 		DeleteFunc: func(obj interface{}) {
 			cronJob, ok := obj.(*batchv1beta1.CronJob)
@@ -97,7 +97,7 @@ func New(
 					return
 				}
 			}
-			c.enqueue(cronJob)
+			c.handleObject(cronJob)
 		},
 	})
 
@@ -130,6 +130,25 @@ func New(
 	c.cronJobLister = cronJobInformer.Lister()
 	c.cronJobSynced = cronJobInformer.Informer().HasSynced
 	return c, nil
+}
+
+func (c *Controller) handleObject(obj interface{}) {
+	object, ok := obj.(metav1.Object)
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("error decoding object, invalid type"))
+		return
+	}
+
+	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
+		cluster, err := c.clusterLister.Get(ownerRef.Name)
+		if err != nil {
+			glog.V(4).Infof("Ignoring orphaned object '%s' from cluster '%s'", object.GetSelfLink(), ownerRef.Name)
+			return
+		}
+		c.enqueue(cluster)
+		return
+	}
+	return
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
@@ -215,16 +234,46 @@ func (c *Controller) sync(key string) error {
 	}
 
 	cluster := clusterFromCache.DeepCopy()
-	//ifNotExsists => Create
-	//ifExsists => Validate
+	// We need the namespace
+	if cluster.Status.NamespaceName == "" {
+		return nil
+	}
+
+	cronJob, err := c.cronJob(cluster)
+	if err != nil {
+		return err
+	}
+
+	existing, err := c.cronJobLister.CronJobs(cluster.Status.NamespaceName).Get(CronJobName)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+		_, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Create(cronJob)
+		return err
+	}
+
+	if equal := apiequality.Semantic.DeepEqual(existing.Spec, cronJob.Spec); equal {
+		return nil
+	}
+
+	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Update(cronJob); err != nil {
+		return fmt.Errorf("failed to update cronJob: %v", err)
+	}
+	return nil
 }
 
-func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.Cronjob, error) {
-	if cluster.Status.NamespaceName == "" {
-		return nil, errNamespaceNotDefined
-	}
+func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
+	// Name and Namespace
 	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: CronJobName,
 		Namespace: cluster.Status.NamespaceName}}
+
+	// OwnerRef
+	gv := kubermaticv1.SchemeGroupVersion
+	cronJob.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster,
+		gv.WithKind(kubermaticv1.ClusterKindName))}
+
+	// Spec
 	cronJob.Spec.Schedule = c.backupScheduleString
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
@@ -233,7 +282,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.Cronj
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
 
-	return cronJob, nil
+	return &cronJob, nil
 }
 
 func boolPtr(b bool) *bool {
@@ -241,7 +290,7 @@ func boolPtr(b bool) *bool {
 }
 
 func parseDuration(interval time.Duration) (string, error) {
-	scheduleString := fmt.Sprintf("@every %sm", interval.Minutes)
+	scheduleString := fmt.Sprintf("@every %vm", interval.Round(time.Minute).Minutes())
 	// We verify the validity of the scheduleString here, because the cronjob controller
 	// only does that inside its sync loop, which means it is entirely possible to create
 	// a cronJob with an invalid scheduleString
