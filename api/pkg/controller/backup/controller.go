@@ -18,6 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
+	"k8s.io/client-go/kubernetes"
+	listersbatchv1beta1 "k8s.io/client-go/listers/batch/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -42,8 +45,11 @@ type Controller struct {
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
+	kubernetesClient kubernetes.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
+	cronJobLister    listersbatchv1beta1.CronJobLister
 	clusterSynced    cache.InformerSynced
+	cronJobSynced    cache.InformerSynced
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -52,7 +58,9 @@ func New(
 	storeContainer corev1.Container,
 	backupSchedule time.Duration,
 	kubermaticClient kubermaticclientset.Interface,
-	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
+	kubernetesClient kubernetes.Interface,
+	clusterInformer kubermaticv1informers.ClusterInformer,
+	cronJobInformer informersbatchv1beta1.CronJobInformer) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return err
 	}
@@ -68,13 +76,37 @@ func New(
 		kubermaticClient:     kubermaticClient,
 		backupScheduleString: backupScheduleString,
 	}
+	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			c.enqueue(obj.(*batchv1beta1.CronJob))
+		},
+		UpdateFunc: func(_, new interface{}) {
+			c.enqueue(new.(*batchv1beta1.CronJob))
+		},
+		DeleteFunc: func(obj interface{}) {
+			cronJob, ok := obj.(*batchv1beta1.CronJob)
+			if !ok {
+				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+					return
+				}
+				cronJob, ok = tombstone.Obj.(*batchv1beta1.CronJob)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a cronJob %#v", obj))
+					return
+				}
+			}
+			c.enqueue(cronJob)
+		},
+	})
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueue(obj.(*kubermaticv1.Cluster))
 		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueue(cur.(*kubermaticv1.Cluster))
+		UpdateFunc: func(_, new interface{}) {
+			c.enqueue(new.(*kubermaticv1.Cluster))
 		},
 		DeleteFunc: func(obj interface{}) {
 			cluster, ok := obj.(*kubermaticv1.Cluster)
@@ -95,7 +127,8 @@ func New(
 	})
 	c.clusterLister = clusterInformer.Lister()
 	c.clusterSynced = clusterInformer.Informer().HasSynced
-
+	c.cronJobLister = cronJobInformer.Lister()
+	c.cronJobSynced = cronJobInformer.Informer().HasSynced
 	return c, nil
 }
 
@@ -105,7 +138,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Infof("Starting Backup controller with %d workers", workerCount)
 	defer glog.Info("Shutting down Backup  controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) || !cache.WaitForCacheSync(stopCh, c.clusterSynced) {
 		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
 		return
 	}
