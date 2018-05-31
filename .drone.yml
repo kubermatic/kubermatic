@@ -224,7 +224,8 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -275,7 +276,8 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -308,7 +310,8 @@ pipeline:
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
