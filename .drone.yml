@@ -173,24 +173,6 @@ pipeline:
       - tag
   9-deploy-dev:
     charts:
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -223,24 +205,6 @@ pipeline:
       branch: master
   10-deploy-cloud-asia:
     charts:
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -274,24 +238,6 @@ pipeline:
       branch: master
   10-deploy-cloud-europe:
     charts:
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -310,21 +256,6 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
-    group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
-    image: kubeciio/helm
-    pull: true
-    secrets:
-    - source: kubeconfig_cloud
-      target: kubeconfig
-    - source: values_cloud_eu
-      target: values
-    values:
-    - values
-    when:
-      branch: master
-  10-deploy-cloud-us:
-    charts:
     - name: prometheus-operator
       namespace: monitoring
       path: config/monitoring/prometheus-operator/
@@ -343,6 +274,21 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    group: deploy-cloud
+    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_cloud
+      target: kubeconfig
+    - source: values_cloud_eu
+      target: values
+    values:
+    - values
+    when:
+      branch: master
+  10-deploy-cloud-us:
+    charts:
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/

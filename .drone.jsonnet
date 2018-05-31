@@ -1,6 +1,6 @@
 local drone = import 'drone/drone.libsonnet';
 
-// Please take a look into the README.md for instructions on how to build this.
+// Please take a look at the README.md for instructions on how to build this.
 
 {
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
@@ -112,18 +112,21 @@ local drone = import 'drone/drone.libsonnet';
     // Deployments
 
     local charts = [
-      {namespace: 'monitoring', name: 'prometheus-operator', path: 'config/monitoring/prometheus-operator/'},
-      {namespace: 'monitoring', name: 'node-exporter', path: 'config/monitoring/node-exporter/'},
-      {namespace: 'monitoring', name: 'kube-state-metrics', path: 'config/monitoring/kube-state-metrics/'},
-      {namespace: 'monitoring', name: 'grafana', path: 'config/monitoring/grafana/'},
-      {namespace: 'monitoring', name: 'alertmanager', path: 'config/monitoring/alertmanager/'},
-      {namespace: 'monitoring', name: 'prometheus', path: 'config/monitoring/prometheus/'},
       {namespace: 'ingress-nginx', name: 'nginx', path: 'config/nginx-ingress-controller/'},
       {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
       {namespace: 'kubermatic', name: 'kubermatic', path: 'config/kubermatic/'},
       {namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/'},
       {namespace: 'default', name: 'certs', path: 'config/certs/'},
       {namespace: 'nodeport-proxy', name: 'nodeport-proxy', path: 'config/nodeport-proxy/'},
+    ],
+
+    local chartsMonitoring = [
+      {namespace: 'monitoring', name: 'prometheus-operator', path: 'config/monitoring/prometheus-operator/'},
+      {namespace: 'monitoring', name: 'node-exporter', path: 'config/monitoring/node-exporter/'},
+      {namespace: 'monitoring', name: 'kube-state-metrics', path: 'config/monitoring/kube-state-metrics/'},
+      {namespace: 'monitoring', name: 'grafana', path: 'config/monitoring/grafana/'},
+      {namespace: 'monitoring', name: 'alertmanager', path: 'config/monitoring/alertmanager/'},
+      {namespace: 'monitoring', name: 'prometheus', path: 'config/monitoring/prometheus/'},
     ],
 
     local versionsValues = ' --values config/versions-values.yaml',
@@ -149,7 +152,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
         ],
-        charts: charts,
+        charts: charts + chartsMonitoring,
         values: [ 'values' ],
       } + {when: {branch: 'master'}},
 
