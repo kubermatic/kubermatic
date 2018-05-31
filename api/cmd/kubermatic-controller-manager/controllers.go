@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
@@ -26,6 +27,7 @@ var allControllers = map[string]func(controllerContext) error{
 	"RBACGenerator": startRBACGeneratorController,
 	"update":        startUpdateController,
 	"addon":         startAddonController,
+	"backup":        startBackupController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -112,6 +114,21 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings())
+	if err != nil {
+		return err
+	}
+	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+	return nil
+}
+
+func startBackupController(ctrlCtx controllerContext) error {
+	ctrl, err := backupcontroller.New(
+		backupcontroller.DefaultStoreContainer,
+		20*time.Minute,
+		ctrlCtx.kubermaticClient,
+		ctrlCtx.kubeClient,
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs())
 	if err != nil {
 		return err
 	}

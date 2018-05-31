@@ -36,6 +36,9 @@ const (
 )
 
 var (
+	DefaultStoreContainer = corev1.Container{Name: "kubermaticStore",
+		Image:   "busybox",
+		Command: []string{"/bin/sh", "-c", "sleep 99d"}}
 	errNamespaceNotDefined = errors.New("cluster has no namespace")
 )
 
@@ -278,7 +281,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
-		corev1.Container{Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
+		corev1.Container{Name: "backupCreator", Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
 
