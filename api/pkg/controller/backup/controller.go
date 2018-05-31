@@ -11,15 +11,22 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
 
+const (
+	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
+	// will write the backup to
+	SharedVolumeName = "etcd-backup"
+)
+
 // Controller stores all components required to create backups
 type Controller struct {
-	backupTemplate string
+	storeContainer corev1.Container
 	backupSchedule time.Duration
 
 	queue            workqueue.RateLimitingInterface
@@ -31,10 +38,13 @@ type Controller struct {
 // New creates a new Backup controller that is responsible for creating backupjobs
 // for all managed user clusters
 func New(
-	backupTemplate string,
+	storeContainer corev1.Container,
 	backupSchedule time.Duration,
 	kubermaticClient kubermaticclientset.Interface,
-	clusterInformer kubermaticv1informers.ClusterInformer) *Controller {
+	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
+	if err := validateStoreContainer(storeContainer); err != nil {
+		return err
+	}
 	c := &Controller{
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
 		kubermaticClient: kubermaticClient,
@@ -67,7 +77,7 @@ func New(
 	c.clusterLister = clusterInformer.Lister()
 	c.clusterSynced = clusterInformer.Informer().HasSynced
 
-	return c
+	return c, nil
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
@@ -140,4 +150,18 @@ func (c *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 	}
 
 	c.queue.Add(key)
+}
+
+func (c *Controller) sync(key string) error {
+	//ifNotExsists => Create
+	//ifExsists => Validate
+}
+
+func validateStoreContainer(storeContainer corev1.Container) error {
+	for _, volumeMount := range storeContainer.VolumeMounts {
+		if volumeMount.Name == SharedVolumeName {
+			return nil
+		}
+	}
+	return fmt.Errorf("storeContainer does not have a mount for the shared volume %s", SharedVolumeName)
 }
