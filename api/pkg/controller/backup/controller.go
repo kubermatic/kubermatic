@@ -1,17 +1,21 @@
 package backup
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/robfig/cron"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -22,12 +26,19 @@ const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
+	CronJobName      = "etcd-backup"
+)
+
+var (
+	errNamespaceNotDefined = errors.New("cluster has no namespace")
 )
 
 // Controller stores all components required to create backups
 type Controller struct {
 	storeContainer corev1.Container
-	backupSchedule time.Duration
+	// backupScheduleString is the cron string representing
+	// the backupSchedule
+	backupScheduleString string
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -45,9 +56,17 @@ func New(
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return err
 	}
+	if err := parseDuration(backupSchedule); err != nil {
+		return err
+	}
+	backupScheduleString, err := parseDuration(backupSchedule)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse backup duration: %v", err)
+	}
 	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
-		kubermaticClient: kubermaticClient,
+		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
+		kubermaticClient:     kubermaticClient,
+		backupScheduleString: backupScheduleString,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -153,8 +172,54 @@ func (c *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 }
 
 func (c *Controller) sync(key string) error {
+	clusterFromCache, err := c.clusterLister.Get(key)
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			glog.V(2).Infof("cluster '%s' in work queue no longer exists", key)
+			return nil
+		}
+		return err
+	}
+
+	cluster := clusterFromCache.DeepCopy()
 	//ifNotExsists => Create
 	//ifExsists => Validate
+}
+
+func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.Cronjob, error) {
+	if cluster.Status.NamespaceName == "" {
+		return nil, errNamespaceNotDefined
+	}
+	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: CronJobName,
+		Namespace: cluster.Status.NamespaceName}}
+	cronJob.Spec.Schedule = c.backupScheduleString
+	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
+	cronJob.Spec.Suspend = boolPtr(false)
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
+		corev1.Container{Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
+	}
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
+
+	return cronJob, nil
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+func parseDuration(interval time.Duration) (string, error) {
+	scheduleString := fmt.Sprintf("@every %sm", interval.Minutes)
+	// We verify the validity of the scheduleString here, because the cronjob controller
+	// only does that inside its sync loop, which means it is entirely possible to create
+	// a cronJob with an invalid scheduleString
+	// Refs:
+	// https://github.com/kubernetes/kubernetes/blob/d02cf08e27f640f09ebd489e094176fd075f3463/pkg/controller/cronjob/cronjob_controller.go#L253
+	// https://github.com/kubernetes/kubernetes/blob/d02cf08e27f640f09ebd489e094176fd075f3463/pkg/controller/cronjob/utils.go#L98
+	_, err := cron.ParseStandard(scheduleString)
+	if err != nil {
+		return "", err
+	}
+	return scheduleString, nil
 }
 
 func validateStoreContainer(storeContainer corev1.Container) error {
