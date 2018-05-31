@@ -36,9 +36,10 @@ const (
 )
 
 var (
-	DefaultStoreContainer = corev1.Container{Name: "kubermaticStore",
-		Image:   "busybox",
-		Command: []string{"/bin/sh", "-c", "sleep 99d"}}
+	DefaultStoreContainer = corev1.Container{Name: "kubermatic-store",
+		Image:        "busybox",
+		Command:      []string{"/bin/sh", "-c", "sleep 99d"},
+		VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
 	errNamespaceNotDefined = errors.New("cluster has no namespace")
 )
 
@@ -77,7 +78,9 @@ func New(
 	c := &Controller{
 		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
 		kubermaticClient:     kubermaticClient,
+		kubernetesClient:     kubernetesClient,
 		backupScheduleString: backupScheduleString,
+		storeContainer:       storeContainer,
 	}
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -160,7 +163,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Infof("Starting Backup controller with %d workers", workerCount)
 	defer glog.Info("Shutting down Backup  controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) || !cache.WaitForCacheSync(stopCh, c.clusterSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) || !cache.WaitForCacheSync(stopCh, c.cronJobSynced) {
 		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
 		return
 	}
@@ -281,9 +284,12 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
-		corev1.Container{Name: "backupCreator", Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
+		corev1.Container{Name: "backup-creator", Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{{Name: SharedVolumeName,
+		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 
 	return &cronJob, nil
 }
