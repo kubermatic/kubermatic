@@ -112,15 +112,15 @@ local drone = import 'drone/drone.libsonnet';
     // Deployments
 
     local charts = [
-      {namespace: 'ingress-nginx', name: 'nginx', path: 'config/nginx-ingress-controller/'},
-      {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
       {namespace: 'kubermatic', name: 'kubermatic', path: 'config/kubermatic/'},
-      {namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/'},
-      {namespace: 'default', name: 'certs', path: 'config/certs/'},
       {namespace: 'nodeport-proxy', name: 'nodeport-proxy', path: 'config/nodeport-proxy/'},
     ],
 
-    local chartsMonitoring = [
+    local chartsEU = [
+      {namespace: 'ingress-nginx', name: 'nginx', path: 'config/nginx-ingress-controller/'},
+      {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
+      {namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/'},
+      {namespace: 'default', name: 'certs', path: 'config/certs/'},
       {namespace: 'monitoring', name: 'prometheus-operator', path: 'config/monitoring/prometheus-operator/'},
       {namespace: 'monitoring', name: 'node-exporter', path: 'config/monitoring/node-exporter/'},
       {namespace: 'monitoring', name: 'kube-state-metrics', path: 'config/monitoring/kube-state-metrics/'},
@@ -152,7 +152,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
         ],
-        charts: charts + chartsMonitoring,
+        charts: charts + chartsEU,
         values: [ 'values' ],
       } + {when: {branch: 'master'}},
 
