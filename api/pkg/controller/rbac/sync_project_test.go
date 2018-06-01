@@ -366,7 +366,7 @@ func TestEnsureProjectRBACRoleBinding(t *testing.T) {
 			target := Controller{}
 			target.rbacClusterRoleBindingLister = clusterRoleBindingLister
 			target.kubeClient = fakeKubeClient
-			err := target.ensureProjectRBACRoleBindings(test.projectToSync)
+			err := target.ensureRBACRoleBindingFor(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 
 			// validate
 			if err != nil {
@@ -605,7 +605,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 			target := Controller{}
 			target.rbacClusterRoleLister = clusterRoleLister
 			target.kubeClient = fakeKubeClient
-			err := target.ensureProjectRBACRoles(test.projectToSync)
+			err := target.ensureRBACRoleFor(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 
 			// validate
 			if err != nil {

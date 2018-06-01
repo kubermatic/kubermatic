@@ -34,23 +34,23 @@ func (c *Controller) syncDependant(item *dependantQueueItem) error {
 		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
-	if err = c.ensureDependantRBACRole(project, item.gvr.Resource, item.kind, item.metaObject); err != nil {
+	if err = c.ensureRBACRoleFor(project.Name, item.gvr.Resource, item.kind, item.metaObject); err != nil {
 		return err
 	}
-	return c.ensureDependantRBACRoleBindings(project, item.kind, item.metaObject)
+	return c.ensureRBACRoleBindingFor(project.Name, item.kind, item.metaObject)
 }
 
-func (c *Controller) ensureDependantRBACRole(project *kubermaticv1.Project, resources string, kind string, object metav1.Object) error {
+func (c *Controller) ensureRBACRoleFor(projectName string, objectResource string, objectKind string, object metav1.Object) error {
 	for _, groupName := range allGroups {
 		generatedRole, err := generateRBACRole(
-			kind,
-			generateGroupNameFor(project.Name, groupName),
-			resources,
+			objectKind,
+			generateGroupNameFor(projectName, groupName),
+			objectResource,
 			kubermaticv1.SchemeGroupVersion.Group,
 			object.GetName(),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-				Kind:       kind,
+				Kind:       objectKind,
 				UID:        object.GetUID(),
 				Name:       object.GetName(),
 			},
@@ -85,15 +85,15 @@ func (c *Controller) ensureDependantRBACRole(project *kubermaticv1.Project, reso
 	return nil
 }
 
-func (c *Controller) ensureDependantRBACRoleBindings(project *kubermaticv1.Project, kind string, object metav1.Object) error {
+func (c *Controller) ensureRBACRoleBindingFor(projectName string, objectKind string, object metav1.Object) error {
 	for _, groupName := range allGroups {
 		generatedRoleBinding := generateRBACRoleBinding(
-			kind,
+			objectKind,
 			object.GetName(),
-			generateGroupNameFor(project.Name, groupName),
+			generateGroupNameFor(projectName, groupName),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-				Kind:       kind,
+				Kind:       objectKind,
 				UID:        object.GetUID(),
 				Name:       object.GetName(),
 			},
