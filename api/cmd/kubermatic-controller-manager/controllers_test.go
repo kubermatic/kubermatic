@@ -29,7 +29,7 @@ spec: bar`,
 		t.Fatalf("Failed to crteate tempdir: %v", err)
 	}
 	defer func() {
-		if err := os.RemoveAll; err != nil {
+		if err := os.RemoveAll(tempdir); err != nil {
 			glog.Errorf("Failed to clean up temp dir: %v", err)
 		}
 	}()
