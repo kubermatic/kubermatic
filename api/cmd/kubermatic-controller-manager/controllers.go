@@ -139,7 +139,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 	ctrl, err := backupcontroller.New(
 		*storeContainer,
 		20*time.Minute,
-		"",
+		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,

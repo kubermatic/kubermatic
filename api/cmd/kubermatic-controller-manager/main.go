@@ -35,17 +35,18 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	masterResources     string
-	externalURL         string
-	dc                  string
-	dcFile              string
-	workerName          string
-	versionsFile        string
-	updatesFile         string
-	workerCount         int
-	overwriteRegistry   string
-	nodePortRange       string
-	backupContainerFile string
+	masterResources      string
+	externalURL          string
+	dc                   string
+	dcFile               string
+	workerName           string
+	versionsFile         string
+	updatesFile          string
+	workerCount          int
+	overwriteRegistry    string
+	nodePortRange        string
+	backupContainerFile  string
+	backupContainerImage string
 }
 
 type controllerContext struct {
@@ -78,6 +79,7 @@ func main() {
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", "Filepath of a backupContainer yaml")
+	flag.StringVar(&runOp.backupContainerImage, "backup-container-image", "", "Custom docker image to use for the backkup container")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
