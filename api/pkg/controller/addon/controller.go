@@ -263,7 +263,7 @@ func (c *Controller) sync(key string) error {
 	}
 
 	//Reconciling
-	if cluster.Status.Health == nil || cluster.Status.Health.Apiserver {
+	if cluster.Status.Health == nil || !cluster.Status.Health.Apiserver {
 		return nil
 	}
 	if err := c.ensureIsInstalled(addon, cluster); err != nil {
@@ -519,7 +519,9 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 	cmd := c.getApplyCommand(kubeconfigFilename, manifestFilename, selector)
 
 	glog.V(6).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	return err
 }
 
 func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -532,9 +534,9 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 
 		cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
 		glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+		out, err := cmd.CombinedOutput()
+		glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+		return err
 	}
 
 	finalizers := sets.NewString(addon.Finalizers...)

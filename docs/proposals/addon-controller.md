@@ -12,14 +12,14 @@ The addon-controller is a controller written in Go to replace the existing addon
 
 The current approaches to deploy and manage addons withing user clusters comes with several downsides:
 
-*   1 addon-manager pod per user cluster
+*   One addon-manager pod per user cluster
 *   Only limited to kube-system namespace
 *   No templating
 *   No way of deploying just a subset of all addons. All clusters always get the same manifests
 
 The idea is to make the addon deployment more configurable.
 
-With the new addon-controller, we archive that:
+With the new addon-controller, we achieve that:
 
 *   Offers templating
 *   A resource can be in any namespace
