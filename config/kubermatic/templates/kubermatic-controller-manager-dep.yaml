@@ -31,6 +31,14 @@ spec:
                 kubectl -n $CLUSTER delete servicemonitor machine-controller || true;
                 kubectl -n $CLUSTER delete servicemonitor scheduler || true;
             done
+      - name: copy-addons
+        image: '{{.Values.kubermatic.controller.addons.image.repository}}:{{.Values.kubermatic.controller.addons.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.controller.addons.image.pullPolicy}}
+          command:
+          - cp -r /addons/* /opt/addons/
+        volumeMounts:
+        - name: addons
+          mountPath: /opt/addons
       containers:
         - name: controller-manager
           command:
@@ -45,6 +53,7 @@ spec:
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
+          - -addons=/opt/addons
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
@@ -57,6 +66,9 @@ spec:
               readOnly: true
             - name: datacenters
               mountPath: "/opt/datacenter/"
+              readOnly: true
+            - name: addons
+              mountPath: "/opt/addons/"
               readOnly: true
           resources:
             requests:
@@ -74,3 +86,5 @@ spec:
         - name: datacenters
           secret:
             secretName: datacenters
+        - name: addons
+          emptyDir: {}
