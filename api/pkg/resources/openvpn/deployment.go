@@ -7,12 +7,23 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
+var (
 	name = "openvpn-server"
+
+	defaultInitMemoryRequest = resource.MustParse("128Mi")
+	defaultInitCPURequest    = resource.MustParse("250m")
+	defaultInitMemoryLimit   = resource.MustParse("512Mi")
+	defaultInitCPULimit      = resource.MustParse("500m")
+
+	defaultMemoryRequest = resource.MustParse("64Mi")
+	defaultCPURequest    = resource.MustParse("25m")
+	defaultMemoryLimit   = resource.MustParse("256Mi")
+	defaultCPULimit      = resource.MustParse("250m")
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
@@ -69,6 +80,16 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: defaultInitMemoryRequest,
+					corev1.ResourceCPU:    defaultInitCPURequest,
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: defaultInitMemoryLimit,
+					corev1.ResourceCPU:    defaultInitCPULimit,
+				},
+			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "diffie-hellman-params",
@@ -120,6 +141,16 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: resources.Bool(true),
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: defaultMemoryRequest,
+					corev1.ResourceCPU:    defaultCPURequest,
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: defaultMemoryLimit,
+					corev1.ResourceCPU:    defaultCPULimit,
+				},
 			},
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
