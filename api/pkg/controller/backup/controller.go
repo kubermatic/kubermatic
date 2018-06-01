@@ -32,15 +32,16 @@ const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
-	CronJobName      = "etcd-backup"
+	// CronJobName is the name of the generated backup cronjob
+	CronJobName = "etcd-backup"
 )
 
 var (
+	// DefaultStoreContainer is the default container for uploading backups
 	DefaultStoreContainer = corev1.Container{Name: "kubermatic-store",
 		Image:        "busybox",
 		Command:      []string{"/bin/sh", "-c", "sleep 99d"},
 		VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
-	errNamespaceNotDefined = errors.New("cluster has no namespace")
 )
 
 // Controller stores all components required to create backups
@@ -154,7 +155,6 @@ func (c *Controller) handleObject(obj interface{}) {
 		c.enqueue(cluster)
 		return
 	}
-	return
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
