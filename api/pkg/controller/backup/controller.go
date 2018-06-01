@@ -34,6 +34,8 @@ const (
 	SharedVolumeName = "etcd-backup"
 	// CronJobName is the name of the generated backup cronjob
 	CronJobName = "etcd-backup"
+	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
+	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
 )
 
 var (
@@ -50,6 +52,9 @@ type Controller struct {
 	// backupScheduleString is the cron string representing
 	// the backupSchedule
 	backupScheduleString string
+	// backupContainerImage holds the image used for creating the etcd backup
+	// It must be configurable to cover offline use cases
+	backupContainerImage string
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -65,6 +70,7 @@ type Controller struct {
 func New(
 	storeContainer corev1.Container,
 	backupSchedule time.Duration,
+	backupContainerImage string,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -76,12 +82,16 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse backup duration: %v", err)
 	}
+	if backupContainerImage == "" {
+		backupContainerImage = DefaultBackupContainerImage
+	}
 	c := &Controller{
 		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
 		kubermaticClient:     kubermaticClient,
 		kubernetesClient:     kubernetesClient,
 		backupScheduleString: backupScheduleString,
 		storeContainer:       storeContainer,
+		backupContainerImage: backupContainerImage,
 	}
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -284,7 +294,11 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
-		corev1.Container{Name: "backup-creator", Image: "busybox", Command: []string{"/bin/sh", "-c", "sleep 3s"}},
+		corev1.Container{Name: "backup-creator",
+			Image:        c.backupContainerImage,
+			Env:          []corev1.EnvVar{corev1.EnvVar{Name: "ETCDCTL_API", Value: "3"}},
+			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", "etcd:2379", "snapshot", "save", "/bu/snap.db"},
+			VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/bu"}}},
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{{Name: SharedVolumeName,
