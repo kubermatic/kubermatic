@@ -140,7 +140,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
           {source: 'values_dev', target: 'values'},
         ],
-        charts: charts,
+        charts: charts + chartsEU,
         values: [ 'values' ],
       } + {when: {branch: 'master'}},
 
