@@ -55,6 +55,8 @@ type Controller struct {
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
+	// workerName holds the name of this worker, only clusters with matching `.Spec.WorkerName` will be worked on
+	workerName string
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -71,6 +73,7 @@ func New(
 	storeContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
+	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -92,6 +95,7 @@ func New(
 		backupScheduleString: backupScheduleString,
 		storeContainer:       storeContainer,
 		backupContainerImage: backupContainerImage,
+		workerName:           workerName,
 	}
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -247,6 +251,10 @@ func (c *Controller) sync(key string) error {
 			return nil
 		}
 		return err
+	}
+
+	if clusterFromCache.Spec.WorkerName != c.workerName {
+		return nil
 	}
 
 	cluster := clusterFromCache.DeepCopy()

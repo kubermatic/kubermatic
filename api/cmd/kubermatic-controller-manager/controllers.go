@@ -126,6 +126,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 		backupcontroller.DefaultStoreContainer,
 		20*time.Minute,
 		"",
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
