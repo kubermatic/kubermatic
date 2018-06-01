@@ -17,9 +17,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/apimachinery/pkg/util/net"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/net"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -35,17 +35,17 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	masterResources   string
-	externalURL       string
-	dc                string
-	dcFile            string
-	workerName        string
-	versionsFile      string
-	updatesFile       string
-	workerCount       int
-	overwriteRegistry string
-	nodePortRange     string
-	addons            string
+	masterResources     string
+	externalURL         string
+	dc                  string
+	dcFile              string
+	workerName          string
+	versionsFile        string
+	updatesFile         string
+	workerCount         int
+	overwriteRegistry   string
+	nodePortRange       string
+	backupContainerFile string
 }
 
 type controllerContext struct {
@@ -77,6 +77,7 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", "Filepath of a backupContainer yaml")
 	flag.Parse()
 
 	if runOp.masterResources == "" {

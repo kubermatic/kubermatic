@@ -99,8 +99,7 @@ func main() {
 
 	// Create crd's
 	extclient := apiextclient.NewForConfigOrDie(config)
-	err = crd.EnsureCustomResourceDefinitions(extclient)
-	if err != nil {
+	if err = crd.EnsureCustomResourceDefinitions(extclient); err != nil {
 		glog.Fatal(err)
 	}
 

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/golang/glog"
@@ -16,6 +18,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	kuberinformers "k8s.io/client-go/informers"
 )
 
@@ -122,8 +126,18 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 }
 
 func startBackupController(ctrlCtx controllerContext) error {
+	var storeContainer *corev1.Container
+	var err error
+	if ctrlCtx.runOptions.backupContainerFile != "" {
+		storeContainer, err = getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
+		if err != nil {
+			return err
+		}
+	} else {
+		storeContainer = &backupcontroller.DefaultStoreContainer
+	}
 	ctrl, err := backupcontroller.New(
-		backupcontroller.DefaultStoreContainer,
+		*storeContainer,
 		20*time.Minute,
 		"",
 		ctrlCtx.runOptions.workerName,
@@ -136,6 +150,20 @@ func startBackupController(ctrlCtx controllerContext) error {
 	}
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 	return nil
+}
+
+func getBackupContainer(path string) (*corev1.Container, error) {
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	container := &corev1.Container{}
+	manifestReader := bytes.NewReader(fileContents)
+	manifestDecoder := yaml.NewYAMLToJSONDecoder(manifestReader)
+	if err := manifestDecoder.Decode(container); err != nil {
+		return nil, err
+	}
+	return container, nil
 }
 
 func startUpdateController(ctrlCtx controllerContext) error {
