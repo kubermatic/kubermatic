@@ -163,6 +163,16 @@ func getBackupContainer(path string) (*corev1.Container, error) {
 	if err := manifestDecoder.Decode(container); err != nil {
 		return nil, err
 	}
+
+	// Just because its a valid corev1.Container does not mean
+	// the APIServer will accept it, thus we do some additional
+	// checks
+	if container.Name == "" {
+		return nil, fmt.Errorf("container must have a name")
+	}
+	if container.Image == "" {
+		return nil, fmt.Errorf("container must have an image")
+	}
 	return container, nil
 }
 
