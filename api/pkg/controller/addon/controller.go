@@ -482,16 +482,12 @@ func (c *Controller) setupManifestInteraction(addon *kubermaticv1.Addon, cluster
 
 func (c *Controller) getDeleteCommand(kubeconfigFilename, manifestFilename string) *exec.Cmd {
 	cmd := exec.Command("kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	return cmd
 }
 
 func (c *Controller) getApplyCommand(kubeconfigFilename, manifestFilename string, selector labels.Selector) *exec.Cmd {
 	//kubectl apply --prune -f manifest.yaml -l app=nginx
 	cmd := exec.Command("kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	return cmd
 }
 
