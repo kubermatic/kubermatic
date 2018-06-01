@@ -44,7 +44,7 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureRBACRoleFor(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return err
 	}
-	if c.ensureRBACRoleBindingFor(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err = c.ensureRBACRoleBindingFor(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return err
 	}
 	err = c.ensureProjectIsInActivePhase(project)
