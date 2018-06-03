@@ -36,6 +36,8 @@ const (
 	CronJobName = "etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
 	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
+	// DefaultBackupInterval defines the default interval used to create backups
+	DefaultBackupInterval = "20m"
 )
 
 var (

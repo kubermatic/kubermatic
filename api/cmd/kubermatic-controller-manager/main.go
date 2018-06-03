@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -47,6 +48,7 @@ type controllerRunOptions struct {
 	nodePortRange        string
 	backupContainerFile  string
 	backupContainerImage string
+	backupInterval       string
 }
 
 type controllerContext struct {
@@ -80,6 +82,7 @@ func main() {
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", "Filepath of a backupContainer yaml")
 	flag.StringVar(&runOp.backupContainerImage, "backup-container-image", "", "Custom docker image to use for the backkup container")
+	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.Parse()
 
 	if runOp.masterResources == "" {

@@ -136,9 +136,13 @@ func startBackupController(ctrlCtx controllerContext) error {
 	} else {
 		storeContainer = &backupcontroller.DefaultStoreContainer
 	}
+	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s as duratation: %v", ctrlCtx.runOptions.backupInterval, err)
+	}
 	ctrl, err := backupcontroller.New(
 		*storeContainer,
-		20*time.Minute,
+		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
