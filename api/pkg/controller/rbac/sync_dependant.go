@@ -8,36 +8,32 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
+// syncDependant generates RBAC Role and Binding for a resource that belongs to a project.
+// in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
+// instead it assumes that all required information is stored in OwnerReferences
+//
+// note:
+// the project resources live only on master cluster and there are times
+// that this code will be run on a seed cluster
 func (c *Controller) syncDependant(item *dependantQueueItem) error {
-	projects, err := c.projectLister.List(labels.Everything())
-	if err != nil {
-		return err
-	}
-
-	owners := item.metaObject.GetOwnerReferences()
-	var project *kubermaticv1.Project
-	for _, p := range projects {
-		for _, owner := range owners {
-			if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == "Project" && owner.UID == p.UID {
-				project = p
-				break
-			}
-		}
-		if project != nil {
+	projectName := ""
+	for _, owner := range item.metaObject.GetOwnerReferences() {
+		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+			len(owner.Name) > 0 && len(owner.UID) > 0 {
+			projectName = owner.Name
 			break
 		}
 	}
-	if project == nil {
+	if len(projectName) == 0 {
 		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
-	if err = c.ensureRBACRoleFor(project.Name, item.gvr.Resource, item.kind, item.metaObject); err != nil {
+	if err := c.ensureRBACRoleFor(projectName, item.gvr.Resource, item.kind, item.metaObject); err != nil {
 		return err
 	}
-	return c.ensureRBACRoleBindingFor(project.Name, item.kind, item.metaObject)
+	return c.ensureRBACRoleBindingFor(projectName, item.kind, item.metaObject)
 }
 
 func (c *Controller) ensureRBACRoleFor(projectName string, objectResource string, objectKind string, object metav1.Object) error {
