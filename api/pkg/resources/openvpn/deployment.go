@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"net"
 )
 
 var (
@@ -66,6 +67,16 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		Labels: podLabels,
 	}
 
+	podNetIP, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+	if err != nil {
+		return nil, err
+	}
+
+	serviceNetIP, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -115,10 +126,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--key", "/etc/openvpn/certs/server.key",
 				"--dh", "/etc/openvpn/dh/dh2048.pem",
 				"--duplicate-cn",
-				"--route", "172.25.0.0", "255.255.0.0",
-				"--route", "10.10.10.0", "255.255.255.0",
-				"--push", "route 172.25.0.0 255.255.0.0",
-				"--push", "route 10.10.10.0 255.255.255.0",
+				"--route", podNetIP.String(), net.IP(podNet.Mask).String(),
+				"--route", serviceNetIP.String(), net.IP(serviceNet.Mask).String(),
+				"--push", fmt.Sprintf("route %s %s", podNetIP.String(), net.IP(podNet.Mask).String()),
+				"--push", fmt.Sprintf("route %s %s", serviceNetIP.String(), net.IP(serviceNet.Mask).String()),
 				"--client-to-client",
 				"--client-config-dir", "/etc/openvpn/clients",
 				"--link-mtu", "1432",

@@ -162,7 +162,7 @@ func getFlags(data *resources.TemplateData) []string {
 		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/ca-key/ca.key",
-		"--cluster-cidr", "172.25.0.0/16",
+		"--cluster-cidr", data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--configure-cloud-routes", "false",
 		"--allocate-node-cidrs", "true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",

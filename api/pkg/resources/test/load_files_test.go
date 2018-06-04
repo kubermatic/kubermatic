@@ -11,6 +11,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
+	"github.com/pmezard/go-difflib/difflib"
+
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -24,7 +26,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	"github.com/pmezard/go-difflib/difflib"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -150,6 +151,15 @@ func TestLoadFiles(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud:   cloudspec,
 						Version: ver.Version.String(),
+						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+							Services: kubermaticv1.NetworkRanges{
+								CIDRBlocks: []string{"10.10.10.0/24"},
+							},
+							Pods: kubermaticv1.NetworkRanges{
+								CIDRBlocks: []string{"172.25.0.0/16"},
+							},
+							DNSDomain: "cluster.local",
+						},
 					},
 					Address: &kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
