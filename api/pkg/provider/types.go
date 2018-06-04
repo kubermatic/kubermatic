@@ -103,6 +103,9 @@ type ProjectProvider interface {
 	// Note:
 	// Before deletion project's status.phase is set to ProjectTerminating
 	Delete(user *kubermaticv1.User, projectInternalName string) error
+
+	// Get returns the project with the given name
+	Get(user *kubermaticv1.User, projectInternalName string) (*kubermaticv1.Project, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
