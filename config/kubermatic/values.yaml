@@ -23,9 +23,10 @@ kubermatic:
       tag: "latest"
       pullPolicy: "IfNotPresent"
     addons:
-      repository: "quay.io/kubermatic/addons"
-      tag: "v0.0.1"
-      pullPolicy: "IfNotPresent"
+      image:
+        repository: "quay.io/kubermatic/addons"
+        tag: "v0.0.1"
+        pullPolicy: "IfNotPresent"
   api:
     replicas: 2
     image:
