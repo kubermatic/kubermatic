@@ -247,10 +247,11 @@ func (c *Controller) sync(key string) error {
 	}
 
 	addon := addonFromCache.DeepCopy()
-	cluster, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
+	clusterFromCache, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster %s: %v", addon.Spec.Cluster.Name, err)
 	}
+	cluster := clusterFromCache.DeepCopy()
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
 		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
