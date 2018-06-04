@@ -34,8 +34,10 @@ spec:
       - name: copy-addons
         image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
-        command:
-          - cp -r /addons/* /opt/addons/
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - "cp -r /addons/* /opt/addons/"
         volumeMounts:
         - name: addons
           mountPath: /opt/addons
