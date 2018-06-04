@@ -1,16 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
 
 func TestRetagImageForAllVersions(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	masterResources := fmt.Sprintf("%s/%s", gopath, "src/github.com/kubermatic/kubermatic/config/kubermatic/static/master/versions.yaml")
+	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
 
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {

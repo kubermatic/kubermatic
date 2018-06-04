@@ -15,7 +15,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/addonmanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
@@ -242,7 +241,6 @@ func TestLoadFiles(t *testing.T) {
 					fmt.Sprintf("deployment-%s-%s-scheduler", prov, ver.Version.String()):          scheduler.Deployment,
 					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, ver.Version.String()): controllermanager.Deployment,
 					fmt.Sprintf("deployment-%s-%s-apiserver", prov, ver.Version.String()):          apiserver.Deployment,
-					fmt.Sprintf("deployment-%s-%s-addon-manager", prov, ver.Version.String()):      addonmanager.Deployment,
 					fmt.Sprintf("deployment-%s-%s-machine-controller", prov, ver.Version.String()): machinecontroller.Deployment,
 				}
 

@@ -9,6 +9,7 @@ import (
 
 type KubermaticV1Interface interface {
 	RESTClient() rest.Interface
+	AddonsGetter
 	ClustersGetter
 	ProjectsGetter
 	UsersGetter
@@ -18,6 +19,10 @@ type KubermaticV1Interface interface {
 // KubermaticV1Client is used to interact with features provided by the kubermatic.k8s.io group.
 type KubermaticV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *KubermaticV1Client) Addons(namespace string) AddonInterface {
+	return newAddons(c, namespace)
 }
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {

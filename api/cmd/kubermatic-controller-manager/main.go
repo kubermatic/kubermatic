@@ -45,6 +45,7 @@ type controllerRunOptions struct {
 	workerCount       int
 	overwriteRegistry string
 	nodePortRange     string
+	addons            string
 }
 
 type controllerContext struct {
@@ -75,6 +76,7 @@ func main() {
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
+	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.Parse()
 
 	if runOp.masterResources == "" {

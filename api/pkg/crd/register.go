@@ -53,6 +53,13 @@ func EnsureCustomResourceDefinitions(clientset apiextensionsclient.Interface) er
 			version: kubermaticv1.SchemeGroupVersion.Version,
 			scope:   apiextensionsv1beta1.ClusterScoped,
 		},
+		{
+			plural:  kubermaticv1.AddonResourceName,
+			kind:    kubermaticv1.AddonKindName,
+			group:   kubermaticv1.GroupName,
+			version: kubermaticv1.SchemeGroupVersion.Version,
+			scope:   apiextensionsv1beta1.NamespaceScoped,
+		},
 	}
 
 	for _, res := range resourceNames {

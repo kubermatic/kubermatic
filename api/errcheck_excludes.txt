@@ -1,1 +1,2 @@
 strconv.ParseBool
+os.RemoveAll

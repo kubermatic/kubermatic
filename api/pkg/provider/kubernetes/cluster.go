@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -79,18 +80,20 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		return nil, errors.NewBadRequest("cluster humanReadableName is required")
 	}
 
+	name := rand.String(10)
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
 				userLabelKey:                    user.ID,
 			},
-			Name: rand.String(10),
+			Name: name,
 		},
 		Spec: *spec,
 		Status: kubermaticv1.ClusterStatus{
-			UserEmail: user.Email,
-			UserName:  user.Name,
+			UserEmail:     user.Email,
+			UserName:      user.Name,
+			NamespaceName: NamespaceName(name),
 		},
 		Address: &kubermaticv1.ClusterAddress{},
 	}
@@ -101,6 +104,40 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 			return nil, provider.ErrAlreadyExists
 		}
 		return nil, err
+	}
+
+	addons := []string{
+		"canal",
+		"dashboard",
+		"dns",
+		"heapster",
+		"kube-proxy",
+		"openvpn",
+		"rbac",
+	}
+	gv := kubermaticv1.SchemeGroupVersion
+	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+	for _, addon := range addons {
+		_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            addon,
+				Namespace:       cluster.Status.NamespaceName,
+				OwnerReferences: []metav1.OwnerReference{ownerRef},
+			},
+			Spec: kubermaticv1.AddonSpec{
+				Name: addon,
+				Cluster: corev1.ObjectReference{
+					Name:       cluster.Name,
+					Namespace:  "",
+					UID:        cluster.UID,
+					APIVersion: cluster.APIVersion,
+					Kind:       "Cluster",
+				},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//We wait until the cluster exists in the lister so we can use this instead of doing api calls
