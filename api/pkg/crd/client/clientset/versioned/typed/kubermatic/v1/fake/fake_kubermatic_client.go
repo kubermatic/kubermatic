@@ -10,6 +10,10 @@ type FakeKubermaticV1 struct {
 	*testing.Fake
 }
 
+func (c *FakeKubermaticV1) Addons(namespace string) v1.AddonInterface {
+	return &FakeAddons{c, namespace}
+}
+
 func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }

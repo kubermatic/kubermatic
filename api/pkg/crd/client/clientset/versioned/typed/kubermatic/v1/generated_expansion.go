@@ -1,5 +1,7 @@
 package v1
 
+type AddonExpansion interface{}
+
 type ClusterExpansion interface{}
 
 type ProjectExpansion interface{}

@@ -14,7 +14,6 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/addonmanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
@@ -572,7 +571,6 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators() []resources.DeploymentCreator {
 	return []resources.DeploymentCreator{
-		addonmanager.Deployment,
 		machinecontroller.Deployment,
 		openvpn.Deployment,
 		apiserver.Deployment,
