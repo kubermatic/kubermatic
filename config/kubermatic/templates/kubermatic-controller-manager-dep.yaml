@@ -32,9 +32,9 @@ spec:
                 kubectl -n $CLUSTER delete servicemonitor scheduler || true;
             done
       - name: copy-addons
-        image: '{{.Values.kubermatic.controller.addons.image.repository}}:{{.Values.kubermatic.controller.addons.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.controller.addons.image.pullPolicy}}
-          command:
+        image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
+        command:
           - cp -r /addons/* /opt/addons/
         volumeMounts:
         - name: addons
