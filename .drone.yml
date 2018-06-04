@@ -173,6 +173,24 @@ pipeline:
       - tag
   9-deploy-dev:
     charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
     - name: prometheus-operator
       namespace: monitoring
       path: config/monitoring/prometheus-operator/
@@ -191,24 +209,6 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
-    - name: nginx
-      namespace: ingress-nginx
-      path: config/nginx-ingress-controller/
-    - name: oauth
-      namespace: oauth
-      path: config/oauth/
-    - name: kubermatic
-      namespace: kubermatic
-      path: config/kubermatic/
-    - name: cert-manager
-      namespace: cert-manager
-      path: config/cert-manager/
-    - name: certs
-      namespace: default
-      path: config/certs/
-    - name: nodeport-proxy
-      namespace: nodeport-proxy
-      path: config/nodeport-proxy/
     helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
@@ -223,44 +223,15 @@ pipeline:
       branch: master
   10-deploy-cloud-asia:
     charts:
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
-    - name: nginx
-      namespace: ingress-nginx
-      path: config/nginx-ingress-controller/
-    - name: oauth
-      namespace: oauth
-      path: config/oauth/
     - name: kubermatic
       namespace: kubermatic
       path: config/kubermatic/
-    - name: cert-manager
-      namespace: cert-manager
-      path: config/cert-manager/
-    - name: certs
-      namespace: default
-      path: config/certs/
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -274,6 +245,24 @@ pipeline:
       branch: master
   10-deploy-cloud-europe:
     charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
     - name: prometheus-operator
       namespace: monitoring
       path: config/monitoring/prometheus-operator/
@@ -292,26 +281,9 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
-    - name: nginx
-      namespace: ingress-nginx
-      path: config/nginx-ingress-controller/
-    - name: oauth
-      namespace: oauth
-      path: config/oauth/
-    - name: kubermatic
-      namespace: kubermatic
-      path: config/kubermatic/
-    - name: cert-manager
-      namespace: cert-manager
-      path: config/cert-manager/
-    - name: certs
-      namespace: default
-      path: config/certs/
-    - name: nodeport-proxy
-      namespace: nodeport-proxy
-      path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -325,44 +297,15 @@ pipeline:
       branch: master
   10-deploy-cloud-us:
     charts:
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
-    - name: nginx
-      namespace: ingress-nginx
-      path: config/nginx-ingress-controller/
-    - name: oauth
-      namespace: oauth
-      path: config/oauth/
     - name: kubermatic
       namespace: kubermatic
       path: config/kubermatic/
-    - name: cert-manager
-      namespace: cert-manager
-      path: config/cert-manager/
-    - name: certs
-      namespace: default
-      path: config/certs/
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
     group: deploy-cloud
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:

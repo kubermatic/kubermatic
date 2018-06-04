@@ -20,7 +20,7 @@ groups:
   - alert: HighNumberOfLeaderChanges
     expr: increase(etcd_server_leader_changes_seen_total{job="etcd"}[1h]) > 5
     labels:
-      severity: 1
+      severity: warning
     annotations:
       description: etcd in namespace {{ $labels.namespace }} has seen {{ $value }} leader changes within the last hour
       summary: a high number of leader changes within the etcd cluster are happening
@@ -55,7 +55,7 @@ groups:
     labels:
       severity: warning
     annotations:
-      description: etcd in namespace {{ $labels.namespace }} member communication is slow
+      description: etcd in namespace {{ $labels.namespace }} member communication with {{ $labels.To }} is slow
       summary: etcd member communication is slow
   - alert: HighNumberOfFailedProposals
     expr: increase(etcd_server_proposals_failed_total{job="etcd"}[1h]) > 5
