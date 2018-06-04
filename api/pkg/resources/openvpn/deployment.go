@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -10,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net"
 )
 
 var (
