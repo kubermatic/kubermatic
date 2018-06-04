@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -266,7 +267,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth", "true",
 		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		"--service-cluster-ip-range", "10.10.10.0/24",
+		// There are efforts upstream adding support for multiple cidr's. Until that has landet, we'll take the first entry
+		"--service-cluster-ip-range", data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
 		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
