@@ -25,6 +25,7 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
+	AzureCloudProvider        = "azure"
 	OpenstackCloudProvider    = "openstack"
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
@@ -117,6 +118,9 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	var clouds []string
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
+	}
+	if spec.Azure != nil {
+		clouds = append(clouds, AzureCloudProvider)
 	}
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)
