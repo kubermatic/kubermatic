@@ -174,6 +174,9 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 	if err != nil {
 		return err
 	}
+	if prov == nil {
+		return fmt.Errorf("no valid provider specified")
+	}
 
 	cloud, err := prov.InitializeCloudProvider(cluster.Spec.Cloud, cluster.Name)
 	if err != nil {
