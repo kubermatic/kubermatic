@@ -1,0 +1,5 @@
+prometheus:
+  # admin:loodse123
+  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+  version: 'v2.2.1'
+  host: ""

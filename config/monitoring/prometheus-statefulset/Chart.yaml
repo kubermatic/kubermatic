@@ -1,0 +1,13 @@
+name: prometheus
+version: 0.1.0
+description: Prometheus for Kubermatic
+keywords:
+  - k8s
+  - kubermatic
+  - prometheus
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com
