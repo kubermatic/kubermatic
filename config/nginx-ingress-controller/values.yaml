@@ -9,3 +9,7 @@ nginx:
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
     tag: 0.14.0
+  defaultBackend:
+    image:
+      repository: gcr.io/google_containers/defaultbackend
+      tag: 1.4

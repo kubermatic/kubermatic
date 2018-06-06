@@ -16,7 +16,8 @@ spec:
       serviceAccountName: kubermatic
       initContainers:
       - name: controller-manager-cleanup
-        image: gcr.io/google_containers/hyperkube-amd64:v1.9.6
+        image: '{{ .Values.kubermatic.controller.cleanup.image.repository }}:{{ .Values.kubermatic.controller.cleanup.image.tag }}'
+        imagePullPolicy: '{{ .Values.kubermatic.controller.cleanup.image.pullPolicy }}'
         command:
         - /bin/sh
         - -ec
