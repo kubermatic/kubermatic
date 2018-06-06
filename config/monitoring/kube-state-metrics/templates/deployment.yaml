@@ -15,7 +15,7 @@ spec:
         runAsUser: 65534
       containers:
       - name: kube-rbac-proxy-main
-        image: quay.io/brancz/kube-rbac-proxy:v0.2.0
+        image: {{ .Values.kubeStateMetrics.rbacProxy.image.repository }}:{{ .Values.kubeStateMetrics.rbacProxy.image.tag }}
         args:
         - "--secure-listen-address=:8443"
         - "--upstream=http://127.0.0.1:8081/"
@@ -30,7 +30,7 @@ spec:
             memory: 40Mi
             cpu: 20m
       - name: kube-rbac-proxy-self
-        image: quay.io/brancz/kube-rbac-proxy:v0.2.0
+        image: {{ .Values.kubeStateMetrics.rbacProxy.image.repository }}:{{ .Values.kubeStateMetrics.rbacProxy.image.tag }}
         args:
         - "--secure-listen-address=:9443"
         - "--upstream=http://127.0.0.1:8082/"
