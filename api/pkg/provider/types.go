@@ -87,6 +87,30 @@ type SSHKeyProvider interface {
 	DeleteSSHKey(name string, user apiv1.User) error
 }
 
+// ListOptions allows to set filters that will be applied
+// to filter the result of List method.
+type ListOptions struct {
+	// ClusterName gets the keys that are being used by the given cluster name
+	ClusterName string
+}
+
+// NewSSHKeyProvider declares the set of method for interacting with ssh keys
+// This provider is RBAC compliant
+type NewSSHKeyProvider interface {
+	// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
+	// If you want to filter the result please take a look at ListOptions
+	//
+	// Note:
+	// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
+	List(user *kubermaticv1.User, project *kubermaticv1.Project, options *ListOptions) ([]*kubermaticv1.UserSSHKey, error)
+
+	// Create creates a ssh key that belongs to the given project
+	Create(user *kubermaticv1.User, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+
+	// Delete deletes the given ssh key
+	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, keyName string) error
+}
+
 // UserProvider declares the set of methods for interacting with kubermatic users
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)

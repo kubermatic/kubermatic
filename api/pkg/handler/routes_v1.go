@@ -72,6 +72,19 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}").
 		Handler(r.deleteProject())
+
+	// SSH Keys that belong to a project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/sshkeys").
+		Handler(r.newCreateSSHKey())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/sshkeys/{key_name}").
+		Handler(r.newDeleteSSHKey())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/sshkeys").
+		Handler(r.newListSSHKeys())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -96,7 +109,31 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/ssh-keys ssh-keys createSSHKey
+// swagger:route GET /api/v1/projects/{project_id}/sshkeys listSSHKeys
+//
+// Lists SSH keys that belong to the given project
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: SSHKey
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newListSSHKeys() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(newListSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
+		newDecodeListSSHKeyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/sshkeys sshkeys createSSHKey
 //
 // Creates a SSH keys for the user
 //
@@ -121,6 +158,33 @@ func (r Routing) createSSHKey() http.Handler {
 	)
 }
 
+// swagger:route POST /api/v1/projects/{project_id}/sshkeys createSSHKey
+//
+// Creates a SSH keys for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: SSHKey
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newCreateSSHKey() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(newCreateSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
+		newDecodeCreateSSHKeyReq,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route DELETE /api/v1/ssh-keys/{meta_name} ssh-keys deleteSSHKey
 //
 // Deletes a SSH keys for the user
@@ -138,6 +202,30 @@ func (r Routing) deleteSSHKey() http.Handler {
 			r.userSaverMiddleware(),
 		)(deleteSSHKeyEndpoint(r.sshKeyProvider)),
 		decodeDeleteSSHKeyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_name} sshkeys newDeleteSSHKey
+//
+// Deletes a SSH keys that belongs to the given project
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newDeleteSSHKey() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(newDeleteSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
+		newDecodeDeleteSSHKeyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

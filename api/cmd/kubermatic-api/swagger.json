@@ -254,6 +254,85 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/sshkeys": {
+      "get": {
+        "description": "Lists SSH keys that belong to the given project",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "listSSHKeys",
+        "responses": {
+          "200": {
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/Forbidden"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a SSH keys for the given project",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "createSSHKey",
+        "responses": {
+          "200": {
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/Forbidden"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/sshkeys/{key_name}": {
+      "delete": {
+        "description": "Deletes a SSH keys that belongs to the given project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "sshkeys"
+        ],
+        "operationId": "newDeleteSSHKey",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/Forbidden"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -264,30 +343,6 @@
           "ssh-keys"
         ],
         "operationId": "listSSHKeys",
-        "responses": {
-          "200": {
-            "description": "SSHKey",
-            "schema": {
-              "$ref": "#/definitions/SSHKey"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a SSH keys for the user",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ssh-keys"
-        ],
-        "operationId": "createSSHKey",
         "responses": {
           "200": {
             "description": "SSHKey",
@@ -323,6 +378,32 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/sshkeys": {
+      "post": {
+        "description": "Creates a SSH keys for the user",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "sshkeys"
+        ],
+        "operationId": "createSSHKey",
+        "responses": {
+          "200": {
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
