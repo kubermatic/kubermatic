@@ -1202,6 +1202,17 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AzureDatacenterSpec": {
+      "type": "object",
+      "title": "AzureDatacenterSpec specifies a datacenter of Azure.",
+      "properties": {
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
@@ -1824,6 +1835,9 @@
       "properties": {
         "aws": {
           "$ref": "#/definitions/AWSDatacenterSpec"
+        },
+        "azure": {
+          "$ref": "#/definitions/AzureDatacenterSpec"
         },
         "bringyourown": {
           "$ref": "#/definitions/BringYourOwnDatacenterSpec"

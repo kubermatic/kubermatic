@@ -29,6 +29,11 @@ type OpenstackSpec struct {
 	DNSServers []string `yaml:"dns_servers"`
 }
 
+// AzureSpec describes an Azure cloud datacenter
+type AzureSpec struct {
+	Location string `yaml:"location"`
+}
+
 // VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
 	Endpoint      string `yaml:"endpoint"`
@@ -55,6 +60,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
 	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
 	AWS          *AWSSpec          `yaml:"aws"`
+	Azure        *AzureSpec        `yaml:"azure"`
 	Openstack    *OpenstackSpec    `yaml:"openstack"`
 	Hetzner      *HetznerSpec      `yaml:"hetzner"`
 	VSphere      *VSphereSpec      `yaml:"vsphere"`
