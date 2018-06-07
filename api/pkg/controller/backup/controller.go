@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
 	"github.com/robfig/cron"
 
@@ -39,6 +40,13 @@ const (
 	cronJobName           = "etcd-backup"
 )
 
+// Metrics contains metrics that this controller will collect and expose
+type Metrics struct {
+	Workers                  metrics.Gauge
+	CronJobCreationTimestamp metrics.Gauge
+	CronJobUpdateTimestamp   metrics.Gauge
+}
+
 // Controller stores all components required to create backups
 type Controller struct {
 	storeContainer corev1.Container
@@ -50,6 +58,7 @@ type Controller struct {
 	backupContainerImage string
 	// workerName holds the name of this worker, only clusters with matching `.Spec.WorkerName` will be worked on
 	workerName string
+	metrics    Metrics
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -67,6 +76,7 @@ func New(
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	workerName string,
+	metrics Metrics,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -179,6 +189,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
+	c.metrics.Workers.Set(float64(workerCount))
 	<-stopCh
 }
 
@@ -267,6 +278,7 @@ func (c *Controller) sync(key string) error {
 			return err
 		}
 		_, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Create(cronJob)
+		c.metrics.CronJobCreationTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return err
 	}
 
@@ -275,6 +287,7 @@ func (c *Controller) sync(key string) error {
 	}
 
 	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Update(cronJob); err != nil {
+		c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return fmt.Errorf("failed to update cronJob: %v", err)
 	}
 	return nil

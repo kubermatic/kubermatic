@@ -46,6 +46,7 @@ type controllerRunOptions struct {
 	workerCount          int
 	overwriteRegistry    string
 	nodePortRange        string
+	addons               string
 	backupContainerFile  string
 	backupContainerImage string
 	backupInterval       string

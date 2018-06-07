@@ -139,6 +139,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
+		NewBackupControllerMetrics(),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
