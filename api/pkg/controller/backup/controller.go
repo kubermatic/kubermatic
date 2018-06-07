@@ -268,12 +268,12 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	existing, err := c.cronJobLister.CronJobs("kube-system").Get(cronJobName)
+	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(cronJobName)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
-		_, err := c.kubernetesClient.BatchV1beta1().CronJobs("kube-system").Create(cronJob)
+		_, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob)
 		c.metrics.CronJobCreationTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return err
 	}
@@ -282,7 +282,7 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs("kube-system").Update(cronJob); err != nil {
+	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(cronJob); err != nil {
 		c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return fmt.Errorf("failed to update cronJob: %v", err)
 	}
@@ -292,7 +292,7 @@ func (c *Controller) sync(key string) error {
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
 	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: cronJobName,
-		Namespace: "kube-system"}}
+		Namespace: metav1.NamespaceSystem}}
 
 	// OwnerRef
 	gv := kubermaticv1.SchemeGroupVersion
