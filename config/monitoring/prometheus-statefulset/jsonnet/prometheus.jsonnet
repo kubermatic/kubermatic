@@ -10,6 +10,14 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       external: 'https://prometheus.example.kubermatic.io',
       portName: 'web',
       storageSize: '10Gi',
+
+      config+: std.manifestYamlDoc(
+        (import 'config.jsonnet') {
+          _config+:: {
+            namespace: $._config.namespace,
+          },
+        },
+      ),
     },
   },
 
@@ -60,7 +68,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       clusterRole.mixin.metadata.withName(prometheusName) +
       clusterRole.withRules(rules),
 
-    role:
+    role+:
       local role = k.rbac.v1.role;
       local policyRule = role.rulesType;
 
@@ -76,15 +84,21 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       role.mixin.metadata.withName(prometheusName + '-config') +
       role.mixin.metadata.withNamespace($._config.namespace) +
       role.withRules(configmapRule),
+
+    config+:
+      local cm = k.core.v1.configMap;
+      cm.new(prometheusName + '-config', { 'prometheus.yml': $._config.prometheus.config }),
+
     statefulset+:
       local sts = k.apps.v1beta2.statefulSet;
       local container = sts.mixin.spec.template.spec.containersType;
       local containerPort = container.portsType;
       local containerVolumeMount = container.volumeMountsType;
+      local volume = sts.mixin.spec.template.spec.volumesType;
       local volumeClaim = k.core.v1.persistentVolumeClaim;
 
       local prometheusArgs = [
-        '--config.file=/etc/prometheus/prometheus.yml',
+        '--config.file=/etc/prometheus/config/prometheus.yml',
         '--storage.tsdb.no-lockfile',
         '--storage.tsdb.path=/prometheus',
         '--storage.tsdb.retention=360h',
@@ -100,6 +114,10 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         successThreshold: 1,
         timeouts: 5,
       };
+
+      local volumeMounts = [
+        containerVolumeMount.new(prometheusName + '-config', '/etc/prometheus/config/'),
+      ];
 
       local c =
         container.new('prometheus', 'quay.io/prometheus/prometheus:v2.2.1')
@@ -121,10 +139,23 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         container.mixin.readinessProbe.withPeriodSeconds(probes.periodSeconds) +
         container.mixin.readinessProbe.withSuccessThreshold(probes.successThreshold) +
         container.mixin.readinessProbe.withTimeoutSeconds(probes.timeouts) +
-        container.withVolumeMounts([
-          containerVolumeMount.new(prometheusName + '-db', '/prometheus') +
-          containerVolumeMount.withSubPath('prometheus-db'),
-        ]);
+        container.withVolumeMounts(
+          volumeMounts + [
+            containerVolumeMount.new(prometheusName + '-db', '/prometheus') +
+            containerVolumeMount.withSubPath('prometheus-db'),
+          ]
+        );
+
+      local cReloader =
+        container.new('reloader', 'jimmidyson/configmap-reload')
+        .withArgs([
+          '--volume-dir=/etc/prometheus/config',
+          // '--volume-dir=/etc/prometheus/rules',
+          '--webhook-url=http://localhost:9090/-/reload',
+        ]) +
+        container.mixin.resources.withRequests({ cpu: '25m', memory: '16Mi' }) +
+        container.mixin.resources.withLimits({ cpu: '100m', memory: '64Mi' }) +
+        container.withVolumeMounts(volumeMounts);
 
       local v =
         volumeClaim.new() +
@@ -133,13 +164,16 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         volumeClaim.mixin.spec.resources.withRequests({ storage: $._config.prometheus.storageSize }) +
         volumeClaim.mixin.spec.withStorageClassName('kubermatic-fast');
 
-      sts.new('prometheus-' + $._config.prometheus.name, $._config.prometheus.replicas, [c], [v]) +
+      sts.new('prometheus-' + $._config.prometheus.name, $._config.prometheus.replicas, [c, cReloader], [v]) +
       sts.mixin.metadata.withNamespace($._config.namespace) +
       sts.mixin.spec.selector.withMatchLabels(prometheusLabels) +
       sts.mixin.spec.withServiceName(prometheusName) +
       sts.mixin.spec.withRevisionHistoryLimit(10) +
       sts.mixin.spec.template.spec.securityContext.withRunAsNonRoot(true) +
       sts.mixin.spec.template.spec.securityContext.withRunAsUser(1000) +
-      sts.mixin.spec.template.spec.securityContext.withFsGroup(2000),
+      sts.mixin.spec.template.spec.securityContext.withFsGroup(2000) +
+      sts.mixin.spec.template.spec.withVolumes([
+        volume.fromConfigMap(prometheusName + '-config', prometheusName + '-config', []),
+      ]),
   },
 }.prometheus
