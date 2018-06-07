@@ -33,9 +33,8 @@ func main() {
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.Parse()
 
-	ctx := cleanupContext{}
-
 	var err error
+	ctx := cleanupContext{}
 	ctx.config, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
@@ -83,7 +82,11 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 	for _, task := range tasks {
 		go func(t Task) {
 			defer w.Done()
-			t(cluster, ctx)
+			err := t(cluster, ctx)
+
+			if err != nil {
+				glog.Error(err)
+			}
 		}(task)
 	}
 
