@@ -5,7 +5,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     namespace: 'monitoring-statefulset',
 
     prometheus+:: {
-      name: 'kubermatic',
+      name: 'testing',
       replicas: 3,
       external: 'https://prometheus.example.kubermatic.io',
       portName: 'web',
@@ -24,10 +24,11 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
   prometheus+: {
     local prometheusName = 'prometheus-' + $._config.prometheus.name,
     local prometheusLabels = { app: prometheusName },
+    local serviceAccountName = prometheusName,
 
     serviceaccount+:
       local serviceAccount = k.core.v1.serviceAccount;
-      serviceAccount.new(prometheusName) +
+      serviceAccount.new(serviceAccountName) +
       serviceAccount.mixin.metadata.withNamespace($._config.namespace),
 
     service+:
@@ -39,16 +40,6 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       service.mixin.metadata.withNamespace($._config.namespace) +
       service.mixin.metadata.withLabels(prometheusLabels),
 
-    rolebindingdefault+:
-      local roleBinding = k.rbac.v1.roleBinding;
-
-      roleBinding.new() +
-      roleBinding.mixin.metadata.withName(prometheusName) +
-      roleBinding.mixin.metadata.withNamespace('default') +
-      roleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-      roleBinding.mixin.roleRef.withName(prometheusName) +
-      roleBinding.mixin.roleRef.mixinInstance({ kind: 'Role' }) +
-      roleBinding.withSubjects([{ kind: 'ServiceAccount', name: prometheusName, namespace: $._config.namespace }]),
     clusterrole+:
       local clusterRole = k.rbac.v1.clusterRole;
       local policyRule = clusterRole.rulesType;
@@ -56,7 +47,12 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       local rules = [
         policyRule.new() +
         policyRule.withApiGroups(['']) +
-        policyRule.withResources(['nodes/metrics']) +
+        policyRule.withResources(['nodes', 'services', 'endpoints', 'pods']) +
+        policyRule.withVerbs(['get', 'list', 'watch']),
+
+        policyRule.new() +
+        policyRule.withApiGroups(['']) +
+        policyRule.withResources(['configmaps']) +
         policyRule.withVerbs(['get']),
 
         policyRule.new() +
@@ -68,22 +64,20 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       clusterRole.mixin.metadata.withName(prometheusName) +
       clusterRole.withRules(rules),
 
-    role+:
-      local role = k.rbac.v1.role;
-      local policyRule = role.rulesType;
+    clusterrolebinding+:
+      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
 
-      local configmapRule =
-        policyRule.new() +
-        policyRule.withApiGroups(['']) +
-        policyRule.withResources([
-          'configmaps',
-        ]) +
-        policyRule.withVerbs(['get']);
-
-      role.new() +
-      role.mixin.metadata.withName(prometheusName + '-config') +
-      role.mixin.metadata.withNamespace($._config.namespace) +
-      role.withRules(configmapRule),
+      clusterRoleBinding.new() +
+      clusterRoleBinding.mixin.metadata.withName(prometheusName) +
+      clusterRoleBinding.mixin.metadata.withNamespace($._config.namespace) +
+      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
+      clusterRoleBinding.mixin.roleRef.withName(prometheusName) +
+      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+      clusterRoleBinding.withSubjects([{
+        kind: 'ServiceAccount',
+        name: serviceAccountName,
+        namespace: $._config.namespace,
+      }]),
 
     config+:
       local cm = k.core.v1.configMap;
