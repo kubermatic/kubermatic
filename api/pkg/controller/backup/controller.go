@@ -32,12 +32,11 @@ const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
-	// CronJobName is the name of the generated backup cronjob
-	CronJobName = "etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
 	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
 	// DefaultBackupInterval defines the default interval used to create backups
 	DefaultBackupInterval = "20m"
+	cronJobName           = "etcd-backup"
 )
 
 var (
@@ -270,7 +269,7 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	existing, err := c.cronJobLister.CronJobs(cluster.Status.NamespaceName).Get(CronJobName)
+	existing, err := c.cronJobLister.CronJobs(cluster.Status.NamespaceName).Get(cronJobName)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
@@ -291,7 +290,7 @@ func (c *Controller) sync(key string) error {
 
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
-	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: CronJobName,
+	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: cronJobName,
 		Namespace: cluster.Status.NamespaceName}}
 
 	// OwnerRef
