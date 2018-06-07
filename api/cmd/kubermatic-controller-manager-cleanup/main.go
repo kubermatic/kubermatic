@@ -2,13 +2,15 @@ package main
 
 import (
 	"flag"
+	"strings"
 	"sync"
 
 	"github.com/golang/glog"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -16,120 +18,137 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-type runOptions struct {
-	kubeconfig string
-	masterURL  string
-}
-
 type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
 }
 
-type resource struct {
-	kind string
-	name string
-}
+type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 func main() {
-	runOps := runOptions{}
+	var kubeconfig, masterURL string
 
-	flag.StringVar(&runOps.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&runOps.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.Parse()
 
 	ctx := cleanupContext{}
 
 	var err error
-	ctx.config, err = clientcmd.BuildConfigFromFlags(runOps.masterURL, runOps.kubeconfig)
-
+	ctx.config, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
 	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	ctx.config.APIPath = "/apis"
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
-	namespaces, err := getClusterNamespaces(&ctx)
-
+	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 	if err != nil {
 		glog.Fatal(err)
 	}
 
 	w := sync.WaitGroup{}
-	w.Add(len(namespaces))
+	w.Add(len(clusters.Items))
 
-	for _, n := range namespaces {
-		go func(ns string) {
-			cleanupNamespace(ns, &ctx)
-			w.Done()
-		}(n)
+	for _, cluster := range clusters.Items {
+		go func(c *kubermaticv1.Cluster) {
+			defer w.Done()
+			cleanupCluster(c, &ctx)
+		}(&cluster)
 	}
 
 	w.Wait()
 }
 
-func cleanupNamespace(namespace string, ctx *cleanupContext) {
-	glog.Infof("Cleaning up namespace %s", namespace)
+func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
+	glog.Infof("Cleaning up cluster %s", cluster.Name)
 
-	todos := [...]resource{
-		resource{kind: "prometheus", name: "prometheus"},
-		resource{kind: "servicemonitor", name: "apiserver"},
-		resource{kind: "servicemonitor", name: "controller-manager"},
-		resource{kind: "servicemonitor", name: "etcd"},
-		resource{kind: "servicemonitor", name: "kube-state-metrics"},
-		resource{kind: "servicemonitor", name: "machine-controller"},
-		resource{kind: "servicemonitor", name: "scheduler"},
+	tasks := []Task{
+		cleanupPrometheus,
+		cleanupAPIServer,
+		cleanupControllerManager,
+		cleanupETCD,
+		cleanupKubeStateMetrics,
+		cleanupMachineController,
+		cleanupScheduler,
 	}
 
 	w := sync.WaitGroup{}
-	w.Add(len(todos))
+	w.Add(len(tasks))
 
-	for _, todo := range todos {
-		go func(t resource) {
-			client, err := rest.UnversionedRESTClientFor(ctx.config)
-
-			if err != nil {
-				glog.Fatal(err)
-			}
-
-			err = client.
-				Delete().
-				Namespace(namespace).
-				Resource(t.kind).
-				Name(t.name).
-				Do().
-				Error()
-
-			if err != nil && k8serrors.IsNotFound(err) {
-				glog.Infof("Skipping %s of kind %s in %s because it doesn't exist", t.name, t.kind, namespace)
-			} else if err != nil {
-				glog.Error(err)
-			} else {
-				glog.Infof("Deleted %s of kind %s in %s", t.name, t.kind, namespace)
-			}
-
-			w.Done()
-		}(todo)
+	for _, task := range tasks {
+		go func(t Task) {
+			defer w.Done()
+			t(cluster, ctx)
+		}(task)
 	}
 
 	w.Wait()
 }
 
-func getClusterNamespaces(ctx *cleanupContext) ([]string, error) {
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
-
+func deleteResourceIgnoreNonExistent(namespace string, group string, version string, kind string, name string, ctx *cleanupContext) error {
+	client, err := rest.UnversionedRESTClientFor(ctx.config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	namespaces := make([]string, len(clusters.Items), len(clusters.Items))
+	url := []string{"apis", group, version, "namespaces", namespace, strings.ToLower(kind), name}
 
-	for i, cluster := range clusters.Items {
-		namespaces[i] = "cluster-" + cluster.Name
+	err = client.
+		Delete().
+		AbsPath(url...).
+		Do().
+		Error()
+
+	if err != nil && k8serrors.IsNotFound(err) {
+		glog.Infof("Skipping %s of kind %s in %s because it doesn't exist.", name, kind, namespace)
+		return nil
+	} else if err == nil {
+		glog.Infof("Deleted %s of kind %s in %s.", name, kind, namespace)
 	}
 
-	return namespaces, nil
+	return err
+}
+
+func getNamespaceForCluster(cluster *kubermaticv1.Cluster) string {
+	return "cluster-" + cluster.Name
+}
+
+func cleanupPrometheus(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "prometheus", "prometheus", ctx)
+}
+
+func cleanupAPIServer(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "apiserver", ctx)
+}
+
+func cleanupControllerManager(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "controller-manager", ctx)
+}
+
+func cleanupETCD(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "etcd", ctx)
+}
+
+func cleanupKubeStateMetrics(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "kube-state-metrics", ctx)
+}
+
+func cleanupMachineController(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "machine-controller", ctx)
+}
+
+func cleanupScheduler(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := getNamespaceForCluster(cluster)
+	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "scheduler", ctx)
 }
