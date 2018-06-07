@@ -262,22 +262,18 @@ func (c *Controller) sync(key string) error {
 	}
 
 	cluster := clusterFromCache.DeepCopy()
-	// We need the namespace
-	if cluster.Status.NamespaceName == "" {
-		return nil
-	}
 
 	cronJob, err := c.cronJob(cluster)
 	if err != nil {
 		return err
 	}
 
-	existing, err := c.cronJobLister.CronJobs(cluster.Status.NamespaceName).Get(cronJobName)
+	existing, err := c.cronJobLister.CronJobs("kube-system").Get(cronJobName)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
-		_, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Create(cronJob)
+		_, err := c.kubernetesClient.BatchV1beta1().CronJobs("kube-system").Create(cronJob)
 		c.metrics.CronJobCreationTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return err
 	}
@@ -286,7 +282,7 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(cluster.Status.NamespaceName).Update(cronJob); err != nil {
+	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs("kube-system").Update(cronJob); err != nil {
 		c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return fmt.Errorf("failed to update cronJob: %v", err)
 	}
