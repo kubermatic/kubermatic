@@ -56,6 +56,12 @@ func main() {
 	ctx.config, err = clientcmd.BuildConfigFromFlags(
 		runOps.masterURL, runOps.kubeconfig)
 
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	// ctx.config.APIPath = "/apis"
+
 	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{
 		CodecFactory: scheme.Codecs,
 	}
@@ -64,10 +70,6 @@ func main() {
 		Group:   "monitoring.coreos.com",
 		Version: "v1",
 	}*/
-
-	if err != nil {
-		glog.Fatal(err)
-	}
 
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
