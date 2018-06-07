@@ -35,42 +35,20 @@ type resource struct {
 func main() {
 	runOps := runOptions{}
 
-	flag.StringVar(
-		&runOps.kubeconfig,
-		"kubeconfig",
-		"",
-		"Path to a kubeconfig. Only required if out-of-cluster.")
-
-	flag.StringVar(
-		&runOps.masterURL,
-		"master",
-		"",
-		"The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-
+	flag.StringVar(&runOps.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&runOps.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.Parse()
 
 	ctx := cleanupContext{}
 
 	var err error
-
-	ctx.config, err = clientcmd.BuildConfigFromFlags(
-		runOps.masterURL, runOps.kubeconfig)
+	ctx.config, err = clientcmd.BuildConfigFromFlags(runOps.masterURL, runOps.kubeconfig)
 
 	if err != nil {
 		glog.Fatal(err)
 	}
 
-	// ctx.config.APIPath = "/apis"
-
-	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{
-		CodecFactory: scheme.Codecs,
-	}
-
-	/*ctx.config.ContentConfig.GroupVersion = &schema.GroupVersion{
-		Group:   "monitoring.coreos.com",
-		Version: "v1",
-	}*/
-
+	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
@@ -126,19 +104,11 @@ func cleanupNamespace(namespace string, ctx *cleanupContext) {
 				Error()
 
 			if err != nil && k8serrors.IsNotFound(err) {
-				glog.Infof(
-					"Skipping %s of kind %s in %s because it doesn't exist",
-					t.name,
-					t.kind,
-					namespace)
+				glog.Infof("Skipping %s of kind %s in %s because it doesn't exist", t.name, t.kind, namespace)
 			} else if err != nil {
 				glog.Error(err)
 			} else {
-				glog.Infof(
-					"Deleted %s of kind %s in %s",
-					t.name,
-					t.kind,
-					namespace)
+				glog.Infof("Deleted %s of kind %s in %s", t.name, t.kind, namespace)
 			}
 
 			w.Done()
@@ -149,8 +119,7 @@ func cleanupNamespace(namespace string, ctx *cleanupContext) {
 }
 
 func getClusterNamespaces(ctx *cleanupContext) ([]string, error) {
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(
-		metav1.ListOptions{})
+	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 
 	if err != nil {
 		return nil, err
