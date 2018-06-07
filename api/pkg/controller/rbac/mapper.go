@@ -9,37 +9,51 @@ import (
 )
 
 const (
-	ownerGroupName = "owners"
-	adminGroupName = "admins"
+	ownerGroupNamePrefix = "owners"
+	adminGroupNamePrefix = "admins"
 
-	rbacPrefix = "kubermatic"
+	rbacResourcesNamePrefix = "kubermatic"
 )
 
-// allGroups holds a list of groups that we will generate RBAC Roles/Binding for.
+// allGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
 //
 // Note:
 // adding a new group also requires updating generateVerbs method.
-var allGroups = []string{
-	ownerGroupName,
-	adminGroupName,
+// the actual names of groups are different see generateActualGroupNameFor function
+var allGroupsPrefixes = []string{
+	ownerGroupNamePrefix,
+	adminGroupNamePrefix,
 }
 
-func generateGroupNameFor(projectName, groupName string) string {
+func generateActualGroupNameFor(projectName, groupName string) string {
 	return fmt.Sprintf("%s-%s", groupName, projectName)
 }
 
-func generateRBACRoleName(kind, resourceName, groupName string) string {
-	return fmt.Sprintf("%s:%s-%s:%s", rbacPrefix, strings.ToLower(kind), resourceName, groupName)
+func extractGroupPrefix(groupName string) string {
+	ret := strings.Split(groupName, "-")
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	return groupName
 }
 
-func generateRBACRole(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
+func generateRBACRoleNameForNamedResource(kind, resourceName, groupName string) string {
+	return fmt.Sprintf("%s:%s-%s:%s", rbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
+}
+
+func generateRBACRoleNameForResources(resourceName, groupName string) string {
+	groupPrefix := extractGroupPrefix(groupName)
+	return fmt.Sprintf("%s:%s:%s", rbacResourcesNamePrefix, resourceName, groupPrefix)
+}
+
+func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
 	verbs, err := generateVerbs(groupName, kind)
 	if err != nil {
 		return nil, err
 	}
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            generateRBACRoleName(kind, policyResourceName, groupName),
+			Name:            generateRBACRoleNameForNamedResource(kind, policyResourceName, groupName),
 			OwnerReferences: []metav1.OwnerReference{oRef},
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -54,10 +68,10 @@ func generateRBACRole(kind, groupName, policyResource, policyAPIGroups, policyRe
 	return role, nil
 }
 
-func generateRBACRoleBinding(kind, resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
+func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            generateRBACRoleName(kind, resourceName, groupName),
+			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
 			OwnerReferences: []metav1.OwnerReference{oRef},
 		},
 		Subjects: []rbacv1.Subject{
@@ -70,7 +84,48 @@ func generateRBACRoleBinding(kind, resourceName, groupName string, oRef metav1.O
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
-			Name:     generateRBACRoleName(kind, resourceName, groupName),
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+		},
+	}
+	return binding
+}
+
+func generateClusterRBACRoleForResource(kind, groupName, policyResource, policyAPIGroups string) (*rbacv1.ClusterRole, error) {
+	verbs, err := generateVerbs(groupName, kind)
+	if err != nil {
+		return nil, err
+	}
+	role := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: generateRBACRoleNameForResources(policyResource, groupName),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{policyAPIGroups},
+				Resources: []string{policyResource},
+				Verbs:     verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
+func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *rbacv1.ClusterRoleBinding {
+	binding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: generateRBACRoleNameForResources(resourceName, groupName),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Group",
+				Name:     groupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     generateRBACRoleNameForResources(resourceName, groupName),
 		},
 	}
 	return binding
@@ -80,21 +135,21 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	// verbs for owners
 	//
 	// owners of a resource
-	if strings.HasPrefix(groupName, ownerGroupName) {
-		return []string{"get", "update", "delete"}, nil
+	if strings.HasPrefix(groupName, ownerGroupNamePrefix) {
+		return []string{"create", "get", "update", "delete"}, nil
 	}
 
 	// verbs for admins
 	//
 	// admins of a project
 	// special case - admins are not allowed to delete a project
-	if strings.HasPrefix(groupName, adminGroupName) && resourceKind == "Project" {
-		return []string{"get", "update"}, nil
+	if strings.HasPrefix(groupName, adminGroupNamePrefix) && resourceKind == "Project" {
+		return []string{"create", "get", "update"}, nil
 	}
 
 	// admins of a resource
-	if strings.HasPrefix(groupName, adminGroupName) {
-		return []string{"get", "update", "delete"}, nil
+	if strings.HasPrefix(groupName, adminGroupNamePrefix) {
+		return []string{"create", "get", "update", "delete"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
