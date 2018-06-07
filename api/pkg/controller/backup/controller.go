@@ -37,7 +37,7 @@ const (
 	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
 	// DefaultBackupInterval defines the default interval used to create backups
 	DefaultBackupInterval = "20m"
-	cronJobName           = "etcd-backup"
+	cronJobPrefix         = "etcd-backup"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -275,14 +275,16 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(cronJobName)
+	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name))
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
-		_, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob)
+		if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob); err != nil {
+			return fmt.Errorf("failed to create cronjob: %v", err)
+		}
 		c.metrics.CronJobCreationTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
-		return err
+		return nil
 	}
 
 	if equal := apiequality.Semantic.DeepEqual(existing.Spec, cronJob.Spec); equal {
@@ -290,15 +292,15 @@ func (c *Controller) sync(key string) error {
 	}
 
 	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(cronJob); err != nil {
-		c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 		return fmt.Errorf("failed to update cronJob: %v", err)
 	}
+	c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
 	return nil
 }
 
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
-	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-%s", cronJobName, cluster.Name),
+	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name),
 		Namespace: metav1.NamespaceSystem}}
 
 	// OwnerRef

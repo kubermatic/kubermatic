@@ -87,4 +87,31 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if len(cronJobs.Items) != 1 {
 		t.Fatalf("Expected exactly one cronjob, got %v", len(cronJobs.Items))
 	}
+
+	cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{}
+	cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{}
+	_, err = fakeKubeClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(&cronJobs.Items[0])
+	if err != nil {
+		t.Fatalf("Failed to update cronjob")
+	}
+	kubermaticInformers.WaitForCacheSync(stopChannel)
+	if err := controller.sync(cluster.Name); err != nil {
+		t.Fatalf("Error syncing controller after updating cronJob: %v", err)
+	}
+
+	cronJobs, err = fakeKubeClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	if err != nil {
+		t.Fatalf("Error listing cronjobs after updating cronJob: %v", err)
+	}
+
+	if len(cronJobs.Items) != 1 {
+		t.Fatalf("Expected exactly one cronjob after updating cronJob, got %v", len(cronJobs.Items))
+	}
+
+	if len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.Containers) != 1 {
+		t.Errorf("Expected exactly one container after manipulating cronjob, got %v", len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.Containers))
+	}
+	if len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers) != 1 {
+		t.Errorf("Expected exactly one initcontainer after manipulating cronjob, got %v", len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers))
+	}
 }
