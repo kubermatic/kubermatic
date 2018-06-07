@@ -170,7 +170,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Infof("Starting Backup controller with %d workers", workerCount)
 	defer glog.Info("Shutting down Backup  controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) || !cache.WaitForCacheSync(stopCh, c.cronJobSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.cronJobSynced) {
 		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
 		return
 	}
