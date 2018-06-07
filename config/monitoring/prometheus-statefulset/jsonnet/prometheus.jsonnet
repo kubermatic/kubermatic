@@ -1,8 +1,8 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 
-{
+local prometheus = {
   _config+:: {
-    namespace: 'monitoring-statefulset',
+    namespace: 'monitoring',
 
     prometheus+:: {
       name: 'testing',
@@ -10,6 +10,8 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       external: 'https://prometheus.example.kubermatic.io',
       portName: 'web',
       storageSize: '10Gi',
+
+      rules: $.prometheusRules + $.prometheusAlerts,
 
       config+: std.manifestYamlDoc(
         (import 'config.jsonnet') {
@@ -21,7 +23,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     },
   },
 
-  prometheus+: {
+  prometheus+:: {
     local prometheusName = 'prometheus-' + $._config.prometheus.name,
     local prometheusLabels = { app: prometheusName },
     local serviceAccountName = prometheusName,
@@ -79,9 +81,13 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         namespace: $._config.namespace,
       }]),
 
-    config+:
+    configmapconfig+:
       local cm = k.core.v1.configMap;
       cm.new(prometheusName + '-config', { 'prometheus.yml': $._config.prometheus.config }),
+
+    configmaprules+:
+      local cm = k.core.v1.configMap;
+      cm.new(prometheusName + '-config', { 'rules.yml': $._config.prometheus.rules }),
 
     statefulset+:
       local sts = k.apps.v1beta2.statefulSet;
@@ -170,4 +176,25 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         volume.fromConfigMap(prometheusName + '-config', prometheusName + '-config', []),
       ]),
   },
-}.prometheus
+};
+
+(import 'kubernetes-mixin/mixin.libsonnet') +
+(prometheus) + {
+  _config+:: {
+    namespace: 'monitoring-statefulset',
+
+    prometheus+:: {
+      name: 'testing',
+      external: 'https://prometheus.example.kubermatic.io',
+      storageSize: '10Gi',
+
+      config+: std.manifestYamlDoc(
+        (import 'config.jsonnet') {
+          _config+:: {
+            namespace: $._config.namespace,
+          },
+        },
+      ),
+    },
+  },
+}
