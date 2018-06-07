@@ -298,8 +298,8 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 		corev1.Container{Name: "backup-creator",
 			Image:        c.backupContainerImage,
 			Env:          []corev1.EnvVar{corev1.EnvVar{Name: "ETCDCTL_API", Value: "3"}},
-			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", "etcd:2379", "snapshot", "save", "/bu/snap.db"},
-			VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/bu"}}},
+			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", "etcd:2379", "snapshot", "save", "/backup/snap.db"},
+			VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/backup"}}},
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{{Name: SharedVolumeName,
