@@ -5,6 +5,7 @@ import (
 
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
@@ -67,6 +68,16 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			VolumeType:   config.DiskType.Value,
 			InstanceType: config.InstanceType.Value,
 			AMI:          config.AMI.Value,
+		}
+	case providerconfig.CloudProviderAzure:
+		config := &azure.RawConfig{}
+		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse Azure config: %v", err)
+		}
+		cloudSpec.Azure = &apiv2.AzureNodeSpec{
+			Size:           config.VMSize.Value,
+			AssignPublicIP: config.AssignPublicIP.Value,
+			Tags:           config.Tags,
 		}
 	case providerconfig.CloudProviderDigitalocean:
 		config := &digitalocean.RawConfig{}
