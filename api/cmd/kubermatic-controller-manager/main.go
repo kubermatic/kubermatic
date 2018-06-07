@@ -80,8 +80,8 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", "Filepath of a backupContainer yaml")
-	flag.StringVar(&runOp.backupContainerImage, "backup-container-image", "", "Custom docker image to use for the backkup container")
+	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backupContainer yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
+	flag.StringVar(&runOp.backupContainerImage, "backup-container-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the backkup container")
 	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.Parse()
 
@@ -95,6 +95,10 @@ func main() {
 
 	if runOp.dc == "" {
 		glog.Fatal("datacenter-name is undefined")
+	}
+
+	if runOp.backupContainerFile == "" {
+		glog.Fatal("backup-container is undefined")
 	}
 
 	// Validate node-port range

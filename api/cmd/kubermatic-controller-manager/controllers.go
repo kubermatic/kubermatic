@@ -126,15 +126,9 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 }
 
 func startBackupController(ctrlCtx controllerContext) error {
-	var storeContainer *corev1.Container
-	var err error
-	if ctrlCtx.runOptions.backupContainerFile != "" {
-		storeContainer, err = getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
-		if err != nil {
-			return err
-		}
-	} else {
-		storeContainer = &backupcontroller.DefaultStoreContainer
+	storeContainer, err := getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
+	if err != nil {
+		return err
 	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {

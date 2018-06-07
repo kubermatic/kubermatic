@@ -39,14 +39,6 @@ const (
 	cronJobName           = "etcd-backup"
 )
 
-var (
-	// DefaultStoreContainer is the default container for uploading backups
-	DefaultStoreContainer = corev1.Container{Name: "kubermatic-store",
-		Image:        "busybox",
-		Command:      []string{"/bin/sh", "-c", "sleep 99d"},
-		VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
-)
-
 // Controller stores all components required to create backups
 type Controller struct {
 	storeContainer corev1.Container
