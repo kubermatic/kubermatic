@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-container
+data:
+  'backup-container.yaml': |
+    {{ .Values.kubermatic.backupContainer |indent 4}}
