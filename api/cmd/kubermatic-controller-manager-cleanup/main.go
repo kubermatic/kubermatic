@@ -114,41 +114,37 @@ func deleteResourceIgnoreNonExistent(namespace string, group string, version str
 	return err
 }
 
-func getNamespaceForCluster(cluster *kubermaticv1.Cluster) string {
-	return "cluster-" + cluster.Name
-}
-
 func cleanupPrometheus(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "prometheus", "prometheus", ctx)
 }
 
 func cleanupAPIServer(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "apiserver", ctx)
 }
 
 func cleanupControllerManager(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "controller-manager", ctx)
 }
 
 func cleanupETCD(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "etcd", ctx)
 }
 
 func cleanupKubeStateMetrics(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "kube-state-metrics", ctx)
 }
 
 func cleanupMachineController(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "machine-controller", ctx)
 }
 
 func cleanupScheduler(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	ns := getNamespaceForCluster(cluster)
+	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "scheduler", ctx)
 }
