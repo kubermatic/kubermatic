@@ -99,6 +99,7 @@ func New(
 		storeContainer:       storeContainer,
 		backupContainerImage: backupContainerImage,
 		workerName:           workerName,
+		metrics:              metrics,
 	}
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -160,6 +161,11 @@ func (c *Controller) handleObject(obj interface{}) {
 	object, ok := obj.(metav1.Object)
 	if !ok {
 		utilruntime.HandleError(fmt.Errorf("error decoding object, invalid type"))
+		return
+	}
+
+	// We only care about CronJobs that are in the kube-system namespace
+	if object.GetNamespace() != metav1.NamespaceSystem {
 		return
 	}
 
@@ -256,6 +262,7 @@ func (c *Controller) sync(key string) error {
 		}
 		return err
 	}
+	glog.V(2).Infof("Processing cluster %s", clusterFromCache.Name)
 
 	if clusterFromCache.Spec.WorkerName != c.workerName {
 		return nil
@@ -291,7 +298,7 @@ func (c *Controller) sync(key string) error {
 
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
-	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: cronJobName,
+	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-%s", cronJobName, cluster.Name),
 		Namespace: metav1.NamespaceSystem}}
 
 	// OwnerRef

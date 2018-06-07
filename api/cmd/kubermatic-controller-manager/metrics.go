@@ -143,13 +143,13 @@ func NewBackupControllerMetrics() backupcontroller.Metrics {
 			Subsystem: subsystem,
 			Name:      "cronjob_creation_timestamp_seconds",
 			Help:      "The timestamp at which a cronjob for a given cluster was created",
-		}, nil),
+		}, []string{"cluster"}),
 		CronJobUpdateTimestamp: prometheus.NewGaugeFrom(prom.GaugeOpts{
 			Namespace: metricNamespace,
 			Subsystem: subsystem,
 			Name:      "cronjob_update_timestamp_seconds",
 			Help:      "The timestamp at which a cronjob for a given cluster was last updated",
-		}, nil),
+		}, []string{"cluster"}),
 	}
 
 	cm.Workers.Set(0)
