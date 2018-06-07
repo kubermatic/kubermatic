@@ -283,7 +283,7 @@ func (c *Controller) sync(key string) error {
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
 	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: cronJobName,
-		Namespace: cluster.Status.NamespaceName}}
+		Namespace: "kube-system"}}
 
 	// OwnerRef
 	gv := kubermaticv1.SchemeGroupVersion
