@@ -24,6 +24,8 @@ type cleanupContext struct {
 	config           *rest.Config
 }
 
+// Task represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
+// In case of an error, the correspondent error will be returned, else nil.
 type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 func main() {
