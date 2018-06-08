@@ -92,18 +92,11 @@ local drone = import 'drone/drone.libsonnet';
       'apk add --no-cache -U git',
       'git config --global user.email "dev@loodse.com"',
       'git config --global user.name "drone"',
-      'export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"',
-      'git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR && mkdir -p $INSTALLER_DIR/charts',
-      'cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller config/nodeport-proxy config/oauth $INSTALLER_DIR/charts',
-      'cd $INSTALLER_DIR',
-      'git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"',
-      'git tag ${DRONE_TAG}',
-      'git push origin master --tags',
+      'cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config',
     ]) + {
       when: {
-        event: [ 'tag' ],
         branch: {
-          include: [ 'master', 'release/*' ],
+          include: [ 'release/*' ],
           exclude: [ 'release/v1.*' ],
         },
       },
