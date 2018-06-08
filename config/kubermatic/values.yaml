@@ -27,11 +27,6 @@ kubermatic:
         repository: "quay.io/kubermatic/addons"
         tag: "v0.0.1"
         pullPolicy: "IfNotPresent"
-    cleanup:
-      image:
-        repository: gcr.io/google_containers/hyperkube-amd64
-        tag: "v1.9.6"
-        pullPolicy: "IfNotPresent"
   api:
     replicas: 2
     image:
