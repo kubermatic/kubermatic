@@ -996,10 +996,6 @@
           "type": "string",
           "x-go-name": "SecretAccessKey"
         },
-        "securityGroup": {
-          "type": "string",
-          "x-go-name": "SecurityGroup"
-        },
         "securityGroupID": {
           "type": "string",
           "x-go-name": "SecurityGroupID"
@@ -3046,10 +3042,6 @@
           "type": "string",
           "x-go-name": "Network"
         },
-        "networkCreated": {
-          "type": "boolean",
-          "x-go-name": "NetworkCreated"
-        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
@@ -3057,10 +3049,6 @@
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
-        },
-        "securityGroupCreated": {
-          "type": "boolean",
-          "x-go-name": "SecurityGroupCreated"
         },
         "securityGroups": {
           "type": "string",

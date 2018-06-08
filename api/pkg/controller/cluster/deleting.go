@@ -28,10 +28,6 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	if err := cc.deletingNamespaceCleanup(c); err != nil {
-		return err
-	}
-
 	return cc.deletingClusterResource(c)
 }
 
@@ -81,40 +77,13 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (bool, error)
 }
 
 func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(c, cloudProviderCleanupFinalizer) {
-		return nil
-	}
-
 	_, cp, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
 		return err
 	}
 
-	if err = cp.CleanUpCloudProvider(c.Spec.Cloud); err != nil {
+	if c, err = cp.CleanUpCloudProvider(c); err != nil {
 		return err
-	}
-
-	c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, cloudProviderCleanupFinalizer)
-	return nil
-}
-
-func (cc *Controller) deletingNamespaceCleanup(c *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
-		return nil
-	}
-
-	ns, err := cc.namespaceLister.Get(c.Status.NamespaceName)
-	// Only delete finalizer if namespace is really gone
-	if err != nil {
-		if errors.IsNotFound(err) {
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, namespaceDeletionFinalizer)
-			return nil
-		}
-		return err
-	}
-
-	if ns.DeletionTimestamp == nil {
-		return cc.kubeClient.CoreV1().Namespaces().Delete(c.Status.NamespaceName, &metav1.DeleteOptions{})
 	}
 
 	return nil
