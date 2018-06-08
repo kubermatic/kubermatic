@@ -1,6 +1,6 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager client image-loader
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup client image-loader
 GOBUILDFLAGS += -i -v
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
