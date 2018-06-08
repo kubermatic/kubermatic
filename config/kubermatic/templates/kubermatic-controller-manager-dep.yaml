@@ -16,22 +16,13 @@ spec:
       serviceAccountName: kubermatic
       initContainers:
       - name: controller-manager-cleanup
-        image: '{{ .Values.kubermatic.controller.cleanup.image.repository }}:{{ .Values.kubermatic.controller.cleanup.image.tag }}'
-        imagePullPolicy: '{{ .Values.kubermatic.controller.cleanup.image.pullPolicy }}'
+        image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
         command:
-        - /bin/sh
-        - -ec
-        - |-
-            CLUSTERS=$(kubectl get ns -o=custom-columns=:.metadata.name | egrep '^cluster-[a-z0-9]+$' || true)
-            for CLUSTER in $CLUSTERS; do
-                kubectl -n $CLUSTER delete prometheus prometheus || true;
-                kubectl -n $CLUSTER delete servicemonitor apiserver || true;
-                kubectl -n $CLUSTER delete servicemonitor controller-manager || true;
-                kubectl -n $CLUSTER delete servicemonitor etcd || true;
-                kubectl -n $CLUSTER delete servicemonitor kube-state-metrics || true;
-                kubectl -n $CLUSTER delete servicemonitor machine-controller || true;
-                kubectl -n $CLUSTER delete servicemonitor scheduler || true;
-            done
+        - /kubermatic-controller-manager
+        args:
+        - -v=4
+        - -logtostderr
       - name: copy-addons
         image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
