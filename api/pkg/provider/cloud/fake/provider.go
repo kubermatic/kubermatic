@@ -17,18 +17,14 @@ func NewCloudProvider() provider.CloudProvider {
 	}
 }
 
-func (p *fakeCloudProvider) ValidateCloudSpec(*kubermaticv1.CloudSpec) error {
+func (p *fakeCloudProvider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	return nil, nil
+func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (p *fakeCloudProvider) CleanUpCloudProvider(*kubermaticv1.CloudSpec) error {
-	return nil
-}
-
-func (p *fakeCloudProvider) ValidateNodeSpec(cloudSpec *kubermaticv1.CloudSpec, nodeSpec *apiv1.NodeSpec) error {
-	return nil
+func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }

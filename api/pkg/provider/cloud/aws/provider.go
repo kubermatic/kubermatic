@@ -12,11 +12,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+
+	securityGroupCleanupFinalizer   = "kubermatic.io/cleanup-aws-security-group"
+	instanceProfileCleanupFinalizer = "kubermatic.io/cleanup-aws-instance-profile"
 )
 
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
@@ -25,54 +30,54 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-func (a *amazonEc2) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
-	client, err := a.getEC2client(cloud)
+func (a *amazonEc2) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	client, err := a.getEC2client(spec)
 	if err != nil {
 		return err
 	}
 
-	if _, err = a.getIAMClient(cloud); err != nil {
+	if _, err = a.getIAMClient(spec); err != nil {
 		return err
 	}
 
 	// Some settings require the vpc to be set
-	if cloud.AWS.VPCID == "" {
-		if cloud.AWS.SecurityGroup != "" {
+	if spec.AWS.VPCID == "" {
+		if spec.AWS.SecurityGroupID != "" {
 			return fmt.Errorf("vpc must be set when specifying a security group")
 		}
-		if cloud.AWS.SubnetID != "" {
+		if spec.AWS.SubnetID != "" {
 			return fmt.Errorf("vpc must be set when specifying a subnet")
 		}
 	}
 
-	if cloud.AWS.VPCID != "" {
-		vpc, err := getVPCByID(cloud.AWS.VPCID, client)
+	if spec.AWS.VPCID != "" {
+		vpc, err := getVPCByID(spec.AWS.VPCID, client)
 		if err != nil {
 			return err
 		}
 
-		if cloud.AWS.SubnetID != "" {
-			if _, err = getSubnetByID(cloud.AWS.SubnetID, client); err != nil {
+		if spec.AWS.SubnetID != "" {
+			if _, err = getSubnetByID(spec.AWS.SubnetID, client); err != nil {
 				return err
 			}
 		}
 
-		if cloud.AWS.SecurityGroup != "" {
-			if _, err = getSecurityGroup(client, vpc, cloud.AWS.SecurityGroup); err != nil {
+		if spec.AWS.SecurityGroupID != "" {
+			if _, err = getSecurityGroupByID(client, vpc, spec.AWS.SecurityGroupID); err != nil {
 				return err
 			}
 		}
 	}
 
-	if cloud.AWS.VPCID == "" && cloud.AWS.SubnetID == "" {
+	if spec.AWS.VPCID == "" && spec.AWS.SubnetID == "" {
 		vpc, err := getDefaultVpc(client)
 		if err != nil {
 			return fmt.Errorf("failed to get default vpc: %v", err)
 		}
 
-		dc, ok := a.dcs[cloud.DatacenterName]
+		dc, ok := a.dcs[spec.DatacenterName]
 		if !ok {
-			return fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+			return fmt.Errorf("could not find datacenter %s", spec.DatacenterName)
 		}
 
 		_, err = getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
@@ -190,13 +195,10 @@ func getSubnetByID(subnetID string, client *ec2.EC2) (*ec2.Subnet, error) {
 	return sOut.Subnets[0], nil
 }
 
-func getSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.SecurityGroup, error) {
+func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
 	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupIds: aws.StringSlice([]string{id}),
 		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("group-name"),
-				Values: []*string{aws.String(name)},
-			},
 			{
 				Name:   aws.String("vpc-id"),
 				Values: []*string{vpc.VpcId},
@@ -207,7 +209,7 @@ func getSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.Security
 		return nil, fmt.Errorf("failed to get security group: %v", err)
 	}
 	if len(dsgOut.SecurityGroups) == 0 {
-		return nil, fmt.Errorf("security group %s not found in vpc %s", name, *vpc.VpcId)
+		return nil, fmt.Errorf("security group with id '%s' not found in vpc %s", id, *vpc.VpcId)
 	}
 
 	return dsgOut.SecurityGroups[0], nil
@@ -282,7 +284,7 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error
 		return "", fmt.Errorf("failed to authorize security group ingress for icmp: %v", err)
 	}
 
-	return newSecurityGroupName, nil
+	return *csgOut.GroupId, nil
 }
 
 func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.InstanceProfile, error) {
@@ -338,101 +340,79 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 	return rOut.Role, cipOut.InstanceProfile, nil
 }
 
-func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
-	return cloud.AWS.SubnetID != "" &&
-		cloud.AWS.VPCID != "" &&
-		cloud.AWS.AvailabilityZone != "" &&
-		cloud.AWS.InstanceProfileName != "" &&
-		cloud.AWS.RoleName != "" &&
-		cloud.AWS.SecurityGroup != "" &&
-		cloud.AWS.RouteTableID != "" &&
-		cloud.AWS.SecurityGroupID != ""
-}
-
-func (a *amazonEc2) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	if isInitialized(cloud) {
-		return nil, nil
-	}
-
-	client, err := a.getEC2client(cloud)
+func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
 	}
 
-	var vpc *ec2.Vpc
-	if cloud.AWS.VPCID == "" {
-		vpc, err = getDefaultVpc(client)
+	if cluster.Spec.Cloud.AWS.VPCID == "" {
+		vpc, err := getDefaultVpc(client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default vpc: %v", err)
 		}
-		cloud.AWS.VPCID = *vpc.VpcId
-	} else {
-		vpc, err = getVPCByID(cloud.AWS.VPCID, client)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get vpc: %v", err)
-		}
+		cluster.Spec.Cloud.AWS.VPCID = *vpc.VpcId
 	}
 
-	dc, ok := a.dcs[cloud.DatacenterName]
+	vpc, err := getVPCByID(cluster.Spec.Cloud.AWS.VPCID, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vpc: %v", err)
+	}
+
+	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	if cloud.AWS.SubnetID == "" {
+	if cluster.Spec.Cloud.AWS.SubnetID == "" {
 		subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default subnet: %v", err)
 		}
-		cloud.AWS.SubnetID = *subnet.SubnetId
+		cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
 	}
 
-	if cloud.AWS.AvailabilityZone == "" {
-		subnet, err := getSubnetByID(cloud.AWS.SubnetID, client)
+	if cluster.Spec.Cloud.AWS.AvailabilityZone == "" {
+		subnet, err := getSubnetByID(cluster.Spec.Cloud.AWS.SubnetID, client)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get subnet %s: %v", cloud.AWS.SubnetID, err)
+			return nil, fmt.Errorf("failed to get subnet %s: %v", cluster.Spec.Cloud.AWS.SubnetID, err)
 		}
-		cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
+		cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
 	}
 
-	if cloud.AWS.SecurityGroup == "" {
-		securityGroup, err := addSecurityGroup(client, vpc, name)
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		securityGroup, err := addSecurityGroup(client, vpc, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group: %v", err)
 		}
-		cloud.AWS.SecurityGroup = securityGroup
+		cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
+		cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroup
 	}
 
-	if cloud.AWS.SecurityGroupID == "" {
-		securityGroup, err := getSecurityGroup(client, vpc, cloud.AWS.SecurityGroup)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get security group %s: %v", cloud.AWS.SecurityGroup, err)
-		}
-		cloud.AWS.SecurityGroupID = *securityGroup.GroupId
-	}
-
-	if cloud.AWS.RoleName == "" && cloud.AWS.InstanceProfileName == "" {
-		svcIAM, err := a.getIAMClient(cloud)
+	if cluster.Spec.Cloud.AWS.RoleName == "" && cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+		svcIAM, err := a.getIAMClient(cluster.Spec.Cloud)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get IAM client: %v", err)
 		}
 
-		role, instanceProfile, err := createInstanceProfile(svcIAM, name)
+		role, instanceProfile, err := createInstanceProfile(svcIAM, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create instance profile: %v", err)
 		}
-		cloud.AWS.RoleName = *role.RoleName
-		cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+		cluster.Finalizers = append(cluster.Finalizers, instanceProfileCleanupFinalizer)
+		cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+		cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 	}
 
-	if cloud.AWS.RouteTableID == "" {
+	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
 		routeTable, err := getRouteTable(vpc, client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default RouteTable: %v", err)
 		}
-		cloud.AWS.RouteTableID = *routeTable.RouteTableId
+		cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
 	}
 
-	return cloud, nil
+	return cluster, nil
 }
 
 func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
@@ -463,68 +443,68 @@ func (a *amazonEc2) getIAMClient(cloud *kubermaticv1.CloudSpec) (*iam.IAM, error
 	return iam.New(sess), nil
 }
 
-func (a *amazonEc2) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
-	ec2client, err := a.getEC2client(cloud)
+func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	finalizers := sets.NewString(cluster.Finalizers...)
+	ec2client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get ec2 client: %v", err)
+		return nil, fmt.Errorf("failed to get ec2 client: %v", err)
 	}
 
-	if cloud.AWS.SecurityGroup != "" {
+	if finalizers.Has(securityGroupCleanupFinalizer) {
 		_, err = ec2client.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
-			GroupName: aws.String(cloud.AWS.SecurityGroup),
+			GroupId: aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
 		})
 
 		if err != nil {
 			if err.(awserr.Error).Code() != "InvalidGroup.NotFound" {
-				return fmt.Errorf("failed to delete security group %s: %s", cloud.AWS.SecurityGroup, err.(awserr.Error).Message())
+				return nil, fmt.Errorf("failed to delete security group %s: %s", cluster.Spec.Cloud.AWS.SecurityGroupID, err.(awserr.Error).Message())
 			}
 		}
+		finalizers.Delete(securityGroupCleanupFinalizer)
 	}
 
-	iamClient, err := a.getIAMClient(cloud)
-	if err != nil {
-		return fmt.Errorf("failed to get iam ec2client: %v", err)
-	}
+	if finalizers.Has(instanceProfileCleanupFinalizer) {
+		iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get iam ec2client: %v", err)
+		}
 
-	if cloud.AWS.RoleName != "" && cloud.AWS.InstanceProfileName != "" {
-		_, err := iamClient.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
-			RoleName:            aws.String(cloud.AWS.RoleName),
-			InstanceProfileName: aws.String(cloud.AWS.InstanceProfileName),
+		_, err = iamClient.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+			RoleName:            aws.String(cluster.Spec.Cloud.AWS.RoleName),
+			InstanceProfileName: aws.String(cluster.Spec.Cloud.AWS.InstanceProfileName),
 		})
 		if err != nil {
-			if err.(awserr.Error).Code() != "NoSuchEntity" {
-				return fmt.Errorf("failed to remove role %s from instance profile %s: %s", cloud.AWS.RoleName, cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
+			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
+				return nil, fmt.Errorf("failed to remove role %s from instance profile %s: %s", cluster.Spec.Cloud.AWS.RoleName, cluster.Spec.Cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
 			}
 		}
-	}
 
-	if cloud.AWS.InstanceProfileName != "" {
-		_, err := iamClient.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: &cloud.AWS.InstanceProfileName})
+		_, err = iamClient.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: &cluster.Spec.Cloud.AWS.InstanceProfileName})
 		if err != nil {
-			if err.(awserr.Error).Code() != "NoSuchEntity" {
-				return fmt.Errorf("failed to delete InstanceProfile %s: %s", cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
+			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
+				return nil, fmt.Errorf("failed to delete InstanceProfile %s: %s", cluster.Spec.Cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
 			}
 		}
-	}
 
-	if cloud.AWS.RoleName != "" {
-		rpout, err := iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(cloud.AWS.RoleName)})
+		rpout, err := iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)})
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, policy := range rpout.AttachedPolicies {
-			if _, err = iamClient.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.PolicyArn, RoleName: aws.String(cloud.AWS.RoleName)}); err != nil {
-				return fmt.Errorf("failed to detach policy %s", *policy.PolicyName)
+			if _, err = iamClient.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.PolicyArn, RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}); err != nil {
+				return nil, fmt.Errorf("failed to detach policy %s", *policy.PolicyName)
 			}
 		}
 
-		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cloud.AWS.RoleName}); err != nil {
+		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cluster.Spec.Cloud.AWS.RoleName}); err != nil {
 			if err.(awserr.Error).Code() != "NoSuchEntity" {
-				return fmt.Errorf("failed to delete Role %s: %s", cloud.AWS.RoleName, err.(awserr.Error).Message())
+				return nil, fmt.Errorf("failed to delete Role %s: %s", cluster.Spec.Cloud.AWS.RoleName, err.(awserr.Error).Message())
 			}
 		}
+		finalizers.Delete(instanceProfileCleanupFinalizer)
 	}
 
-	return nil
+	cluster.Finalizers = finalizers.List()
+	return cluster, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
@@ -49,29 +48,24 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
-// InitializeCloudProvider
-func (v *vsphere) InitializeCloudProvider(spec *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
+// ValidateCloudSpec
+func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
 	defer func() {
 		if err := client.Logout(context.TODO()); err != nil {
-			glog.V(0).Infof("failed to logout from vsphere for %s: %v", name, err)
+			glog.V(0).Infof("failed to logout from vSphere for %s: %v", spec, err)
 		}
 	}()
 
-	return nil, err
+	return err
 }
 
-// ValidateCloudSpec
-func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	return nil
+// InitializeCloudProvider
+func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
 // CleanUpCloudProvider
-func (v *vsphere) CleanUpCloudProvider(spec *kubermaticv1.CloudSpec) error {
-	return nil
-}
-
-// ValidateNodeSpec
-func (v *vsphere) ValidateNodeSpec(spec *kubermaticv1.CloudSpec, nSpec *apiv1.NodeSpec) error {
-	return nil
+func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
