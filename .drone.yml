@@ -151,15 +151,7 @@ pipeline:
     - apk add --no-cache -U git
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
-    - export INSTALLER_DIR="/go/src/github.com/kubermatic/kubermatic-installer"
-    - git clone https://github.com/kubermatic/kubermatic-installer.git $INSTALLER_DIR
-      && mkdir -p $INSTALLER_DIR/charts
-    - cp -r config/cert-manager config/certs config/kubermatic config/monitoring config/nginx-ingress-controller
-      config/nodeport-proxy config/oauth $INSTALLER_DIR/charts
-    - cd $INSTALLER_DIR
-    - git add . && git commit -m "Synchronising helm charts from commit ${DRONE_COMMIT}"
-    - git tag ${DRONE_TAG}
-    - git push origin master --tags
+    - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
     image: alpine:3.7
     pull: true
     when:
@@ -167,10 +159,7 @@ pipeline:
         exclude:
         - release/v1.*
         include:
-        - master
         - release/*
-      event:
-      - tag
   9-deploy-dev:
     charts:
     - name: kubermatic
