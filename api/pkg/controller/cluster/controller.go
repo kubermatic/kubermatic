@@ -65,6 +65,7 @@ type Controller struct {
 
 	overwriteRegistry string
 	nodePortRange     string
+	nodeAccessNetwork string
 	etcdDiskSize      resource.Quantity
 
 	metrics *Metrics
@@ -110,6 +111,7 @@ func NewController(
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
+	nodeAccessNetwork string,
 	etcdDiskSize string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -134,6 +136,7 @@ func NewController(
 
 		overwriteRegistry: overwriteRegistry,
 		nodePortRange:     nodePortRange,
+		nodeAccessNetwork: nodeAccessNetwork,
 		etcdDiskSize:      resource.MustParse(etcdDiskSize),
 
 		externalURL: externalURL,
