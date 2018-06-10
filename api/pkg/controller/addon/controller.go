@@ -249,6 +249,10 @@ func (c *Controller) sync(key string) error {
 	addon := addonFromCache.DeepCopy()
 	clusterFromCache, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			//Cluster got deleted
+			return c.cleanupManifests(addon, nil)
+		}
 		return fmt.Errorf("failed to get cluster %s: %v", addon.Spec.Cluster.Name, err)
 	}
 	cluster := clusterFromCache.DeepCopy()
@@ -522,7 +526,7 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 }
 
 func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	if cluster.DeletionTimestamp == nil {
+	if cluster != nil && cluster.DeletionTimestamp == nil {
 		kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
 		if err != nil {
 			return err

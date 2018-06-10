@@ -14,6 +14,7 @@ RUN chmod +x /usr/local/bin/kubectl
 
 ADD ./_build/kubermatic-api /
 ADD ./_build/kubermatic-controller-manager /
+ADD ./_build/kubermatic-controller-manager-cleanup /
 ADD ./_build/client /
 
 WORKDIR /opt/
