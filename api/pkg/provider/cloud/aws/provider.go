@@ -488,7 +488,9 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 
 		rpout, err := iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)})
 		if err != nil {
-			return nil, err
+			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
+				return nil, fmt.Errorf("failed to list attached role policies: %v", err)
+			}
 		}
 
 		for _, policy := range rpout.AttachedPolicies {
@@ -498,7 +500,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 		}
 
 		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cluster.Spec.Cloud.AWS.RoleName}); err != nil {
-			if err.(awserr.Error).Code() != "NoSuchEntity" {
+			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
 				return nil, fmt.Errorf("failed to delete Role %s: %s", cluster.Spec.Cloud.AWS.RoleName, err.(awserr.Error).Message())
 			}
 		}
