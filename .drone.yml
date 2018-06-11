@@ -161,7 +161,7 @@ pipeline:
 
   sync-charts:
     commands:
-    - apk add --no-cache -U git
+    - apk add --no-cache -U git bash
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
