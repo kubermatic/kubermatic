@@ -89,7 +89,7 @@ local drone = import 'drone/drone.libsonnet';
       ) + whenEventTag,
 
     '8-sync-charts': drone.step.new('alpine:3.7', commands=[
-      'apk add --no-cache -U git',
+      'apk add --no-cache -U git bash',
       'git config --global user.email "dev@loodse.com"',
       'git config --global user.name "drone"',
       'cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config',
