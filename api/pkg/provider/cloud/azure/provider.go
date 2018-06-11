@@ -100,8 +100,28 @@ func deleteRouteTable(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
+	securityGroupsClient, err := getSecurityGroupsClient(cloud)
+	if err != nil {
+		return err
+	}
+
+	future, err := securityGroupsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
+	if err != nil {
+		return fmt.Errorf("failed to delete security group %q: %v", cloud.Azure.SecurityGroup, err)
+	}
+
+	if err = future.WaitForCompletion(context.TODO(), securityGroupsClient.Client); err != nil {
+		return fmt.Errorf("failed to delete security group %q: %v", cloud.Azure.SecurityGroup, err)
+	}
+
+	return nil
+}
+
 func (a *azure) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
-	// TODO delete security group
+	if err := deleteSecurityGroup(cloud); err != nil {
+		return err
+	}
 
 	if err := deleteRouteTable(cloud); err != nil {
 		return err
@@ -137,6 +157,116 @@ func createResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 		},
 	}
 	if _, err = groupsClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, parameters); err != nil {
+		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
+	}
+
+	return nil
+}
+
+// createSecurityGroup will create or update an Azure security group. The call is idempotent.
+func createSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+	sgClient, err := getSecurityGroupsClient(cloud)
+	if err != nil {
+		return err
+	}
+
+	parameters := network.SecurityGroup{
+		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
+		Location: to.StringPtr(location),
+		Tags: map[string]*string{
+			clusterTagKey: to.StringPtr(clusterName),
+		},
+		SecurityGroupPropertiesFormat: &network.SecurityGroupPropertiesFormat{
+			Subnets: &[]network.Subnet{
+				network.Subnet{
+					Name: to.StringPtr(cloud.Azure.SubnetName),
+				},
+			},
+			// inbound
+			SecurityRules: &[]network.SecurityRule{
+				network.SecurityRule{
+					Name: to.StringPtr("ssh_ingress"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 network.SecurityRuleProtocolTCP,
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("22"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(100),
+					},
+				},
+				network.SecurityRule{
+					Name: to.StringPtr("kubelet"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 network.SecurityRuleProtocolTCP,
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("10250"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(101),
+					},
+				},
+				network.SecurityRule{
+					Name: to.StringPtr("inter_node_comm"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 "*",
+						SourceAddressPrefix:      to.StringPtr("VirtualNetwork"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("VirtualNetwork"),
+						DestinationPortRange:     to.StringPtr("*"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(200),
+					},
+				},
+				network.SecurityRule{
+					Name: to.StringPtr("azure_load_balancer"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 "*",
+						SourceAddressPrefix:      to.StringPtr("AzureLoadBalancer"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("*"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(300),
+					},
+				},
+				network.SecurityRule{
+					Name: to.StringPtr("deny_all"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 "*",
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						Access:   network.SecurityRuleAccessDeny,
+						Priority: to.Int32Ptr(800),
+					},
+				},
+				// outbound
+				network.SecurityRule{
+					Name: to.StringPtr("outbound_allow_all"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionOutbound,
+						Protocol:                 "*",
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("*"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(100),
+					},
+				},
+			},
+		},
+	}
+	if _, err = sgClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
 	}
 
@@ -252,6 +382,10 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		cloud.Azure.RouteTableName = "cluster-" + clusterName
 	}
 
+	if cloud.Azure.SecurityGroup == "" {
+		cloud.Azure.SecurityGroup = "cluster-" + clusterName
+	}
+
 	if err := createResourceGroup(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
@@ -268,7 +402,9 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		return nil, err
 	}
 
-	// TODO create security group
+	if err := createSecurityGroup(cloud, location, clusterName); err != nil {
+		return nil, err
+	}
 
 	return cloud, nil
 }
@@ -318,7 +454,16 @@ func (a *azure) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 		}
 	}
 
-	// TODO verify security group
+	if cloud.Azure.SecurityGroup != "" {
+		sgClient, err := getSecurityGroupsClient(cloud)
+		if err != nil {
+			return err
+		}
+
+		if _, err = sgClient.Get(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, ""); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -365,4 +510,15 @@ func getRouteTablesClient(cloud *kubermaticv1.CloudSpec) (*network.RouteTablesCl
 	}
 
 	return &routeTablesClient, nil
+}
+
+func getSecurityGroupsClient(cloud *kubermaticv1.CloudSpec) (*network.SecurityGroupsClient, error) {
+	var err error
+	securityGroupsClient := network.NewSecurityGroupsClient(cloud.Azure.SubscriptionID)
+	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+	}
+
+	return &securityGroupsClient, nil
 }

@@ -206,6 +206,7 @@ type AzureCloudSpec struct {
 	VNetName       string `json:"vnet"`
 	SubnetName     string `json:"subnet"`
 	RouteTableName string `json:"routeTable"`
+	SecurityGroup  string `json:"securityGroup"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
