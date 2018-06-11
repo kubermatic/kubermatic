@@ -144,14 +144,15 @@ func createResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 }
 
 // createVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func createVNet(cloud *kubermaticv1.CloudSpec, clusterName string) error {
+func createVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
 	}
 
 	parameters := network.VirtualNetwork{
-		Name: to.StringPtr(cloud.Azure.VNetName),
+		Name:     to.StringPtr(cloud.Azure.VNetName),
+		Location: to.StringPtr(location),
 		Tags: map[string]*string{
 			clusterTagKey: to.StringPtr(clusterName),
 		},
@@ -193,7 +194,7 @@ func createSubnet(cloud *kubermaticv1.CloudSpec) error {
 }
 
 // createRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func createRouteTable(cloud *kubermaticv1.CloudSpec) error {
+func createRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -201,7 +202,7 @@ func createRouteTable(cloud *kubermaticv1.CloudSpec) error {
 
 	parameters := network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
-		Location: to.StringPtr(cloud.Azure.ResourceGroup),
+		Location: to.StringPtr(location),
 		RouteTablePropertiesFormat: &network.RouteTablePropertiesFormat{
 			Subnets: &[]network.Subnet{
 				network.Subnet{
@@ -233,6 +234,8 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cloud.DatacenterName)
 	}
 
+	location := dc.Spec.Azure.Location
+
 	if cloud.Azure.ResourceGroup == "" {
 		cloud.Azure.ResourceGroup = "cluster-" + clusterName
 	}
@@ -249,11 +252,11 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		cloud.Azure.RouteTableName = "cluster-" + clusterName
 	}
 
-	if err := createResourceGroup(cloud, dc.Spec.Azure.Location, clusterName); err != nil {
+	if err := createResourceGroup(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
 
-	if err := createVNet(cloud, clusterName); err != nil {
+	if err := createVNet(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
 
@@ -261,7 +264,7 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		return nil, err
 	}
 
-	if err := createRouteTable(cloud); err != nil {
+	if err := createRouteTable(cloud, location); err != nil {
 		return nil, err
 	}
 
