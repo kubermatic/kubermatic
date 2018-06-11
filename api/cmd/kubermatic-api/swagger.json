@@ -1218,6 +1218,10 @@
           "type": "string",
           "x-go-name": "RouteTableName"
         },
+        "securityGroup": {
+          "type": "string",
+          "x-go-name": "SecurityGroup"
+        },
         "subnet": {
           "type": "string",
           "x-go-name": "SubnetName"
