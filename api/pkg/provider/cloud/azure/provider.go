@@ -118,28 +118,28 @@ func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *azure) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
-	if err := deleteSecurityGroup(cloud); err != nil {
-		return err
+func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
+		return nil, err
 	}
 
-	if err := deleteRouteTable(cloud); err != nil {
-		return err
+	if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
+		return nil, err
 	}
 
-	if err := deleteSubnet(cloud); err != nil {
-		return err
+	if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
+		return nil, err
 	}
 
-	if err := deleteVNet(cloud); err != nil {
-		return err
+	if err := deleteVNet(cluster.Spec.Cloud); err != nil {
+		return nil, err
 	}
 
-	if err := deleteResourceGroup(cloud); err != nil {
-		return err
+	if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return cluster, nil
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
@@ -362,59 +362,59 @@ func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 	return nil
 }
 
-func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterName string) (*kubermaticv1.CloudSpec, error) {
-	dc, ok := a.dcs[cloud.DatacenterName]
+func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cloud.DatacenterName)
+		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if dc.Spec.Azure == nil {
-		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cloud.DatacenterName)
+		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	location := dc.Spec.Azure.Location
 
-	if cloud.Azure.ResourceGroup == "" {
-		cloud.Azure.ResourceGroup = "cluster-" + clusterName
+	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
+		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
 	}
 
-	if cloud.Azure.VNetName == "" {
-		cloud.Azure.VNetName = "cluster-" + clusterName
+	if cluster.Spec.Cloud.Azure.VNetName == "" {
+		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
 	}
 
-	if cloud.Azure.SubnetName == "" {
-		cloud.Azure.SubnetName = "cluster-" + clusterName
+	if cluster.Spec.Cloud.Azure.SubnetName == "" {
+		cluster.Spec.Cloud.Azure.SubnetName = "cluster-" + cluster.Name
 	}
 
-	if cloud.Azure.RouteTableName == "" {
-		cloud.Azure.RouteTableName = "cluster-" + clusterName
+	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
+		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
 	}
 
-	if cloud.Azure.SecurityGroup == "" {
-		cloud.Azure.SecurityGroup = "cluster-" + clusterName
+	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
+		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
 	}
 
-	if err := ensureResourceGroup(cloud, location, clusterName); err != nil {
+	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
-	if err := ensureVNet(cloud, location, clusterName); err != nil {
+	if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
-	if err := ensureSubnet(cloud); err != nil {
+	if err := ensureSubnet(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
-	if err := ensureRouteTable(cloud, location); err != nil {
+	if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
 		return nil, err
 	}
 
-	if err := ensureSecurityGroup(cloud, location, clusterName); err != nil {
+	if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
-	return cloud, nil
+	return cluster, nil
 }
 
 func (a *azure) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
