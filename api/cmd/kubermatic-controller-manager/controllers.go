@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
@@ -15,6 +18,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	kuberinformers "k8s.io/client-go/informers"
 )
 
@@ -26,6 +31,7 @@ var allControllers = map[string]func(controllerContext) error{
 	"RBACGenerator": startRBACGeneratorController,
 	"update":        startUpdateController,
 	"addon":         startAddonController,
+	"backup":        startBackupController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -117,6 +123,56 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	}
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 	return nil
+}
+
+func startBackupController(ctrlCtx controllerContext) error {
+	storeContainer, err := getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
+	if err != nil {
+		return err
+	}
+	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s as duratation: %v", ctrlCtx.runOptions.backupInterval, err)
+	}
+	ctrl, err := backupcontroller.New(
+		*storeContainer,
+		backupInterval,
+		ctrlCtx.runOptions.backupContainerImage,
+		ctrlCtx.runOptions.workerName,
+		NewBackupControllerMetrics(),
+		ctrlCtx.kubermaticClient,
+		ctrlCtx.kubeClient,
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs())
+	if err != nil {
+		return err
+	}
+	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+	return nil
+}
+
+func getBackupContainer(path string) (*corev1.Container, error) {
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	container := &corev1.Container{}
+	manifestReader := bytes.NewReader(fileContents)
+	manifestDecoder := yaml.NewYAMLToJSONDecoder(manifestReader)
+	if err := manifestDecoder.Decode(container); err != nil {
+		return nil, err
+	}
+
+	// Just because its a valid corev1.Container does not mean
+	// the APIServer will accept it, thus we do some additional
+	// checks
+	if container.Name == "" {
+		return nil, fmt.Errorf("container must have a name")
+	}
+	if container.Image == "" {
+		return nil, fmt.Errorf("container must have an image")
+	}
+	return container, nil
 }
 
 func startUpdateController(ctrlCtx controllerContext) error {
