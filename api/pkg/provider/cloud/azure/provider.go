@@ -120,29 +120,36 @@ func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
 }
 
 func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	// TODO: Currently a failure in cluster removal might cause an inconsistent state,
+	// where some resources are already deleted, but the subsequent cleanup runs are
+	// trying to remove them again. Therefore failures to delete the resoures are soft errors
+	// - logged but not acted upon. Eventually we want to switch to finalizers for
+	// each of these resources, which not only will ensure consistency, but also
+	// prevent us from deleting pre-existing resources.
+
 	glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 	if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
-		return nil, err
+		glog.Error(err)
 	}
 
 	glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 	if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
-		return nil, err
+		glog.Error(err)
 	}
 
 	glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 	if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
-		return nil, err
+		glog.Error(err)
 	}
 
 	glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 	if err := deleteVNet(cluster.Spec.Cloud); err != nil {
-		return nil, err
+		glog.Error(err)
 	}
 
 	glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
-		return nil, err
+		glog.Error(err)
 	}
 
 	return cluster, nil
