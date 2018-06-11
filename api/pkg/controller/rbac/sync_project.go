@@ -249,12 +249,57 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 		}
 	}
 
-	// TODO (p0lyn0mial): add CRDs clean up
+	// remove subjects from RBAC Bindings for project's resources
+	for _, projectResource := range c.projectResources {
+		for _, groupPrefix := range allGroupsPrefixes {
+			groupName := generateActualGroupNameFor(project.Name, groupPrefix)
+			err := rename(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
+			if err != nil {
+				return err
+			}
+
+			if projectResource.destination == destinationSeed {
+				for _, seedClusterRESTClient := range c.seedClustersRESTClient {
+					err := rename(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
 
 	finalizers := sets.NewString(project.Finalizers...)
 	finalizers.Delete(cleanupFinalizerName)
 	project.Finalizers = finalizers.List()
 	_, err = c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
+	return err
+}
+
+func rename(kubeClient kubernetes.Interface, groupName, resource string) error {
+	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
+	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	updatedListOfSubjectes := []rbacv1.Subject{}
+	for _, existingRoleBindingSubject := range sharedExistingClusterRoleBinding.Subjects {
+		shouldRemove := false
+		for _, generatedRoleBindingSubject := range generatedClusterRoleBinding.Subjects {
+			if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
+				shouldRemove = true
+				break
+			}
+		}
+		if !shouldRemove {
+			updatedListOfSubjectes = append(updatedListOfSubjectes, existingRoleBindingSubject)
+		}
+	}
+
+	existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
+	existingClusterRoleBinding.Subjects = updatedListOfSubjectes
+	_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
 	return err
 }
 
