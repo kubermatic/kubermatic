@@ -21,7 +21,7 @@ spec:
         - /bin/sh
         - -ec
         - |-
-            CLUSTERS=$(kubectl get ns -o=custom-columns=:.metadata.name | egrep '^cluster-[a-z0-9]+$')
+            CLUSTERS=$(kubectl get ns -o=custom-columns=:.metadata.name | egrep '^cluster-[a-z0-9]+$' || true)
             for CLUSTER in $CLUSTERS; do
                 kubectl -n $CLUSTER delete prometheus prometheus || true;
                 kubectl -n $CLUSTER delete servicemonitor apiserver || true;
