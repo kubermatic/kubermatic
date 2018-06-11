@@ -39,3 +39,11 @@ kubermatic:
       repository: "kubermatic/ui-v2"
       tag: "latest"
       pullPolicy: "IfNotPresent"
+  backupContainer: |
+    command:
+      - /bin/true
+    image: docker.io/busybox
+    name: store-container
+    volumeMounts:
+      - name: etcd-backup
+        mountPath: /backup
