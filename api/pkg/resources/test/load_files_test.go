@@ -28,6 +28,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -241,7 +242,16 @@ func TestLoadFiles(t *testing.T) {
 				}()
 
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
-				data := resources.NewTemplateData(cluster, &dc, kubeInformerFactory.Core().V1().Secrets().Lister(), kubeInformerFactory.Core().V1().ConfigMaps().Lister(), kubeInformerFactory.Core().V1().Services().Lister(), "", "")
+				data := resources.NewTemplateData(
+					cluster,
+					&dc,
+					kubeInformerFactory.Core().V1().Secrets().Lister(),
+					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
+					kubeInformerFactory.Core().V1().Services().Lister(),
+					"",
+					"",
+					resource.MustParse("5Gi"),
+				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 

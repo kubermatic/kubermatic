@@ -16,6 +16,7 @@ import (
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,6 +66,7 @@ type Controller struct {
 
 	overwriteRegistry string
 	nodePortRange     string
+	etcdDiskSize      resource.Quantity
 
 	metrics ControllerMetrics
 
@@ -117,6 +119,7 @@ func NewController(
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
+	etcdDiskSize string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -140,6 +143,7 @@ func NewController(
 
 		overwriteRegistry: overwriteRegistry,
 		nodePortRange:     nodePortRange,
+		etcdDiskSize:      resource.MustParse(etcdDiskSize),
 
 		externalURL: externalURL,
 		workerName:  workerName,

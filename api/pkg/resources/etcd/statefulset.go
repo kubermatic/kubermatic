@@ -17,8 +17,6 @@ import (
 )
 
 var (
-	etcdDiskSize = resource.MustParse("5Gi")
-
 	defaultEtcdMemoryRequest = resource.MustParse("256Mi")
 	defaultEtcdCPURequest    = resource.MustParse("50m")
 	defaultEtcdMemoryLimit   = resource.MustParse("1Gi")
@@ -132,16 +130,27 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	if len(set.Spec.VolumeClaimTemplates) == 0 {
-		set.Spec.VolumeClaimTemplates = make([]corev1.PersistentVolumeClaim, 1)
+	// Make sure, we don't change size of existing pvc's
+	diskSize := data.EtcdDiskSize
+	if len(set.Spec.VolumeClaimTemplates) > 0 {
+		if size, exists := set.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage]; exists {
+			diskSize = size
+		}
 	}
-	set.Spec.VolumeClaimTemplates[0].ObjectMeta.Name = "data"
-	set.Spec.VolumeClaimTemplates[0].ObjectMeta.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	set.Spec.VolumeClaimTemplates[0].Spec = corev1.PersistentVolumeClaimSpec{
-		StorageClassName: resources.String("kubermatic-fast"),
-		AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-		Resources: corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{corev1.ResourceStorage: etcdDiskSize},
+
+	set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "data",
+				OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				StorageClassName: resources.String("kubermatic-fast"),
+				AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+				},
+			},
 		},
 	}
 

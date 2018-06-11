@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -50,6 +51,7 @@ type controllerRunOptions struct {
 	backupContainerFile  string
 	backupContainerImage string
 	backupInterval       string
+	etcdDiskSize         string
 }
 
 type controllerContext struct {
@@ -85,6 +87,7 @@ func main() {
 	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backupContainer yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&runOp.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
@@ -102,6 +105,9 @@ func main() {
 	if runOp.backupContainerFile == "" {
 		glog.Fatal("backup-container is undefined")
 	}
+
+	// Validate etcd disk size
+	resource.MustParse(runOp.etcdDiskSize)
 
 	// Validate node-port range
 	net.ParsePortRangeOrDie(runOp.nodePortRange)
