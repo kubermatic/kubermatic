@@ -317,7 +317,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.Schedule = c.backupScheduleString
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
-	etcdServiceAddr := fmt.Sprintf("etcd.%s.cluster.local.:2379", cluster.Status.NamespaceName)
+	etcdServiceAddr := fmt.Sprintf("etcd.%s.svc.cluster.local.:2379", cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 		corev1.Container{Name: "backup-creator",
 			Image:        c.backupContainerImage,
