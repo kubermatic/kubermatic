@@ -84,7 +84,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{kubermaticv1.ClusterResourceName},
 							ResourceNames: []string{"abcd"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -106,7 +106,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{kubermaticv1.ClusterResourceName},
 							ResourceNames: []string{"abcd"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -235,10 +235,10 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			// act
 			target := Controller{}
 			target.projectLister = projectLister
-			target.kubermaticClient = kubermaticFakeClient
+			target.kubermaticMasterClient = kubermaticFakeClient
 			target.rbacClusterRoleLister = clusterRoleLister
 			target.rbacClusterRoleBindingLister = clusterRoleBindingLister
-			target.kubeClient = fakeKubeClient
+			target.kubeMasterClient = fakeKubeClient
 			err := target.syncDependant(test.dependantToSync)
 
 			// validate

@@ -12,8 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	clienttesting "k8s.io/client-go/testing"
@@ -46,7 +48,7 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubermaticClient = kubermaticFakeClient
+			target.kubermaticMasterClient = kubermaticFakeClient
 			err := target.ensureProjectIsInActivePhase(test.projectToSync)
 
 			// validate
@@ -104,7 +106,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubermaticClient = kubermaticFakeClient
+			target.kubermaticMasterClient = kubermaticFakeClient
 			err := target.ensureProjectInitialized(test.projectToSync)
 
 			// validate
@@ -136,7 +138,445 @@ func TestEnsureProjectInitialized(t *testing.T) {
 	}
 }
 
-func TestEnsureProjectRBACRoleBinding(t *testing.T) {
+func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
+	tests := []struct {
+		name                                 string
+		projectResourcesToSync               []projectResource
+		projectToSync                        string
+		expectedClusterRoleBindingsForMaster []*rbacv1.ClusterRoleBinding
+		existingClusterRoleBindingsForMaster []*rbacv1.ClusterRoleBinding
+		expectedActionsForMaster             []string
+		seedClusters                         int
+		expectedActionsForSeeds              []string
+		expectedClusterRoleBindingsForSeeds  []*rbacv1.ClusterRoleBinding
+		existingClusterRoleBindingsForSeeds  []*rbacv1.ClusterRoleBinding
+	}{
+		// scenario 1
+		{
+			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on \"master\" and seed clusters",
+			projectToSync:            "thunderball",
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.ClusterResourceName,
+					},
+					kind:        kubermaticv1.ClusterKindName,
+					destination: destinationSeed,
+				},
+
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.SSHKeyResourceName,
+					},
+					kind: kubermaticv1.SSHKeyKind,
+				},
+			},
+			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:usersshkeies:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:usersshkeies:admins",
+					},
+				},
+			},
+			seedClusters:            2,
+			expectedActionsForSeeds: []string{"get", "create", "get", "create"},
+			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+			},
+		},
+
+		// scenario 2
+		{
+			name:                     "Scenario 2: Existing RBAC Bindings are properly updated when a new project is added",
+			projectToSync:            "thunderball",
+			expectedActionsForMaster: []string{"get", "update", "get", "update"},
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.ClusterResourceName,
+					},
+					kind:        kubermaticv1.ClusterKindName,
+					destination: destinationSeed,
+				},
+			},
+			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+			},
+			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+						{
+
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-existing-project-1",
+						},
+						{
+
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+			},
+			seedClusters:            2,
+			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
+			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+			},
+			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:owners",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "admins-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:admins",
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForMaster {
+				objs = append(objs, existingClusterRoleBinding)
+			}
+			fakeKubeClient := fake.NewSimpleClientset(objs...)
+
+			seedClusterRESTClients := make([]kubernetes.Interface, test.seedClusters)
+			for i := 0; i < test.seedClusters; i++ {
+				objs := []runtime.Object{}
+				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
+					objs = append(objs, existingClusterRoleBinding)
+				}
+				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
+				seedClusterRESTClients[i] = fakeSeedKubeClient
+			}
+
+			// act
+			target := Controller{}
+			target.kubeMasterClient = fakeKubeClient
+			target.projectResources = test.projectResourcesToSync
+			target.seedClustersRESTClient = seedClusterRESTClients
+			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
+
+			// validate master cluster
+			{
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectedClusterRoleBindingsForMaster) == 0 {
+					if len(fakeKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
+					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range fakeKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForMaster[index], "clusterrolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForMaster[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+
+			// validate seed clusters
+			for i := 0; i < test.seedClusters; i++ {
+
+				seedKubeClient, ok := seedClusterRESTClients[i].(*fake.Clientset)
+				if !ok {
+					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
+				}
+				if len(test.expectedClusterRoleBindingsForSeeds) == 0 {
+					if len(seedKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
+					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range seedKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForSeeds[index], "clusterrolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForSeeds[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 	tests := []struct {
 		name                        string
 		projectToSync               *kubermaticv1.Project
@@ -365,8 +805,8 @@ func TestEnsureProjectRBACRoleBinding(t *testing.T) {
 			// act
 			target := Controller{}
 			target.rbacClusterRoleBindingLister = clusterRoleBindingLister
-			target.kubeClient = fakeKubeClient
-			err := target.ensureRBACRoleBindingFor(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			target.kubeMasterClient = fakeKubeClient
+			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 
 			// validate
 			if err != nil {
@@ -399,8 +839,228 @@ func TestEnsureProjectRBACRoleBinding(t *testing.T) {
 		})
 	}
 }
+func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
+	tests := []struct {
+		name                          string
+		projectResourcesToSync        []projectResource
+		expectedClusterRolesForMaster []*rbacv1.ClusterRole
+		expectedActionsForMaster      []string
+		seedClusters                  int
+		expectedActionsForSeeds       []string
+		expectedClusterRolesForSeeds  []*rbacv1.ClusterRole
+	}{
+		// scenario 1
+		{
+			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActionsForSeeds:  []string{"get", "create", "get", "create"},
+			seedClusters:             2,
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.ClusterResourceName,
+					},
+					kind:        kubermaticv1.ClusterKindName,
+					destination: destinationSeed,
+				},
 
-func TestEnsureProjectRBACRole(t *testing.T) {
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.SSHKeyResourceName,
+					},
+					kind: kubermaticv1.SSHKeyKind,
+				},
+			},
+
+			expectedClusterRolesForSeeds: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:owners",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:admins",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:owners",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"usersshkeies"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:admins",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"usersshkeies"},
+							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+			},
+		},
+
+		// scenario 2
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			fakeKubeClient := fake.NewSimpleClientset(objs...)
+
+			seedClusterRESTClients := make([]kubernetes.Interface, test.seedClusters)
+			for i := 0; i < test.seedClusters; i++ {
+				objs := []runtime.Object{}
+				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
+				seedClusterRESTClients[i] = fakeSeedKubeClient
+			}
+
+			// act
+			target := Controller{}
+			//target.rbacClusterRoleLister = clusterRoleLister
+			target.kubeMasterClient = fakeKubeClient
+			target.projectResources = test.projectResourcesToSync
+			target.seedClustersRESTClient = seedClusterRESTClients
+			err := target.ensureClusterRBACRoleForResources()
+
+			// validate master cluster
+			{
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectedClusterRolesForMaster) == 0 {
+					if len(fakeKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
+					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range fakeKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForMaster[index], "clusterroles") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForMaster[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+
+			// validate seed clusters
+			for i := 0; i < test.seedClusters; i++ {
+
+				seedKubeClient, ok := seedClusterRESTClients[i].(*fake.Clientset)
+				if !ok {
+					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
+				}
+				if len(test.expectedClusterRolesForSeeds) == 0 {
+					if len(seedKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
+					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range seedKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForSeeds[index], "clusterroles") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForSeeds[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 	tests := []struct {
 		name                 string
 		projectToSync        *kubermaticv1.Project
@@ -431,7 +1091,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -453,7 +1113,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update"},
+							Verbs:         []string{"create", "get", "update"},
 						},
 					},
 				},
@@ -482,7 +1142,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -504,7 +1164,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update"},
+							Verbs:         []string{"create", "get", "update"},
 						},
 					},
 				},
@@ -534,7 +1194,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -556,7 +1216,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update", "delete"},
+							Verbs:         []string{"create", "get", "update", "delete"},
 						},
 					},
 				},
@@ -579,7 +1239,7 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
-							Verbs:         []string{"get", "update"},
+							Verbs:         []string{"create", "get", "update"},
 						},
 					},
 				},
@@ -604,8 +1264,8 @@ func TestEnsureProjectRBACRole(t *testing.T) {
 			// act
 			target := Controller{}
 			target.rbacClusterRoleLister = clusterRoleLister
-			target.kubeClient = fakeKubeClient
-			err := target.ensureRBACRoleFor(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			target.kubeMasterClient = fakeKubeClient
+			err := target.ensureClusterRBACRoleForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 
 			// validate
 			if err != nil {
@@ -674,7 +1334,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubermaticClient = kubermaticFakeClient
+			target.kubermaticMasterClient = kubermaticFakeClient
 			target.userLister = userLister
 			err = target.ensureProjectOwner(test.projectToSync)
 

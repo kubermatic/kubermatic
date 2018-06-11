@@ -59,6 +59,7 @@ type controllerContext struct {
 	kubermaticClient          kubermaticclientset.Interface
 	kubermaticInformerFactory externalversions.SharedInformerFactory
 	kubeInformerFactory       kuberinformers.SharedInformerFactory
+	seedClustersRESTClient    []kubernetes.Interface
 }
 
 const (
@@ -126,6 +127,38 @@ func main() {
 		glog.Fatalf("failed to get event recorder: %v", err)
 	}
 
+	// create a REST Client for each seed cluster we find in kubeconfig
+	seedClustersRESTClient := []kubernetes.Interface{}
+	{
+		clientcmdConfig, err := clientcmd.LoadFromFile(runOp.kubeconfig)
+		if err != nil {
+			glog.Fatal(err)
+		}
+
+		for ctx := range clientcmdConfig.Contexts {
+			clientConfig := clientcmd.NewNonInteractiveClientConfig(
+				*clientcmdConfig,
+				ctx,
+				&clientcmd.ConfigOverrides{CurrentContext: ctx},
+				nil,
+			)
+			cfg, err := clientConfig.ClientConfig()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			kubeClient, err := kubernetes.NewForConfig(cfg)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			if cfg.Host == config.Host && cfg.Username == config.Username && cfg.Password == config.Password {
+				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubeClient", ctx)
+				continue
+			}
+			glog.V(2).Infof("Adding %s as seed cluster", ctx)
+			seedClustersRESTClient = append(seedClustersRESTClient, kubeClient)
+		}
+	}
+
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 
@@ -183,7 +216,7 @@ func main() {
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient}
+					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient, seedClustersRESTClient: seedClustersRESTClient}
 					err := runAllControllers(ctrlCtx)
 					if err != nil {
 						glog.Error(err)
