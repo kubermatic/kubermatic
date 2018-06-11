@@ -1,8 +1,6 @@
 package rbac
 
 import (
-	"fmt"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -27,7 +25,14 @@ func (c *Controller) syncDependant(item *dependantQueueItem) error {
 		}
 	}
 	if len(projectName) == 0 {
-		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
+		return nil
+		//
+		// TODO: uncomment this when existing object are migrated to projects
+		//
+		//return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
+		//
+		//  END of TODO
+		//
 	}
 
 	if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject); err != nil {
