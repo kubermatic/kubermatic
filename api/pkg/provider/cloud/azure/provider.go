@@ -11,6 +11,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/golang/glog"
 )
 
 const (
@@ -119,22 +120,27 @@ func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
 }
 
 func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 	if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 	if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 	if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 	if err := deleteVNet(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
@@ -394,22 +400,27 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
 	}
 
+	glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 	if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: ensuring subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 	if err := ensureSubnet(cluster.Spec.Cloud); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 	if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
 		return nil, err
 	}
 
+	glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 	if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
