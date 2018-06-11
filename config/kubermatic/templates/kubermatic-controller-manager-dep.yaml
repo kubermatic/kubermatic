@@ -16,21 +16,13 @@ spec:
       serviceAccountName: kubermatic
       initContainers:
       - name: controller-manager-cleanup
-        image: gcr.io/google_containers/hyperkube-amd64:v1.9.6
+        image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
         command:
-        - /bin/sh
-        - -ec
-        - |-
-            CLUSTERS=$(kubectl get ns -o=custom-columns=:.metadata.name | egrep '^cluster-[a-z0-9]+$')
-            for CLUSTER in $CLUSTERS; do
-                kubectl -n $CLUSTER delete prometheus prometheus || true;
-                kubectl -n $CLUSTER delete servicemonitor apiserver || true;
-                kubectl -n $CLUSTER delete servicemonitor controller-manager || true;
-                kubectl -n $CLUSTER delete servicemonitor etcd || true;
-                kubectl -n $CLUSTER delete servicemonitor kube-state-metrics || true;
-                kubectl -n $CLUSTER delete servicemonitor machine-controller || true;
-                kubectl -n $CLUSTER delete servicemonitor scheduler || true;
-            done
+        - /kubermatic-controller-manager-cleanup
+        args:
+        - -v=4
+        - -logtostderr
       - name: copy-addons
         image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
@@ -56,6 +48,7 @@ spec:
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
           - -addons=/opt/addons
+          - -backup-container=/opt/backup-container.yaml
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
@@ -71,6 +64,10 @@ spec:
               readOnly: true
             - name: addons
               mountPath: "/opt/addons/"
+              readOnly: true
+            - name: backup-container
+              mountPath: "/opt/backup-container.yaml"
+              subPath: "backup-container.yaml"
               readOnly: true
           resources:
             requests:
@@ -90,3 +87,6 @@ spec:
             secretName: datacenters
         - name: addons
           emptyDir: {}
+        - name: backup-container
+          configMap:
+            name: backup-container

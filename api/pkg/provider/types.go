@@ -41,9 +41,9 @@ type CloudProvider interface {
 // CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudSpecProvider interface {
-	InitializeCloudProvider(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
-	ValidateCloudSpec(*kubermaticv1.CloudSpec) error
-	CleanUpCloudProvider(*kubermaticv1.CloudSpec) error
+	InitializeCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error
 }
 
 // ClusterProvider declares the set of methods for storing and loading clusters.

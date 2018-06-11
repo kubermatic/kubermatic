@@ -212,7 +212,6 @@ type AWSCloudSpec struct {
 	RoleName            string `json:"roleName"`
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroup       string `json:"securityGroup"`
 	SecurityGroupID     string `json:"securityGroupID"`
 
 	AvailabilityZone string `json:"availabilityZone"`
@@ -229,9 +228,6 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
-
-	NetworkCreated       bool `json:"networkCreated"`
-	SecurityGroupCreated bool `json:"securityGroupCreated"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.

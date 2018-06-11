@@ -13,7 +13,9 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -master-resources=../config/kubermatic/static/master \
-  -worker-name="$(uname -n | tr -cd '[:alnum:]')" \
+  -addons=../addons
+  -worker-name="$(hostname)" \
   -external-url=dev.kubermatic.io \
+  -backup-container=../config/kubermatic/static/backup-container.yaml
   -logtostderr=1 \
   -v=6

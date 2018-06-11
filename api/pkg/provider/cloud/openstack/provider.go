@@ -7,9 +7,14 @@ import (
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	securityGroupCleanupFinalizer = "kubermatic.io/cleanup-openstack-security-group"
+	networkCleanupFinalizer       = "kubermatic.io/cleanup-openstack-network"
 )
 
 // Provider is a struct that implements CloudProvider interface
@@ -17,39 +22,37 @@ type Provider struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-var _ provider.CloudProvider = &Provider{}
-
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
 	return &Provider{
 		dcs: dcs,
 	}
 }
 
 // ValidateCloudSpec validates the given CloudSpec
-func (os *Provider) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
-	netClient, err := os.getNetClient(cloud)
+func (os *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	netClient, err := os.getNetClient(spec)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
-	if cloud.Openstack.SecurityGroups != "" {
-		if err := validateSecurityGroupsExist(netClient, strings.Split(cloud.Openstack.SecurityGroups, ",")); err != nil {
+	if spec.Openstack.SecurityGroups != "" {
+		if err := validateSecurityGroupsExist(netClient, strings.Split(spec.Openstack.SecurityGroups, ",")); err != nil {
 			return err
 		}
 	}
 
-	if cloud.Openstack.Network != "" {
-		_, err := getNetworkByName(netClient, cloud.Openstack.Network, false)
+	if spec.Openstack.Network != "" {
+		_, err := getNetworkByName(netClient, spec.Openstack.Network, false)
 		if err != nil {
-			return fmt.Errorf("failed to get network %q: %v", cloud.Openstack.Network, err)
+			return fmt.Errorf("failed to get network %q: %v", spec.Openstack.Network, err)
 		}
 	}
 
-	if cloud.Openstack.FloatingIPPool != "" {
-		_, err := getNetworkByName(netClient, cloud.Openstack.FloatingIPPool, true)
+	if spec.Openstack.FloatingIPPool != "" {
+		_, err := getNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
 		if err != nil {
-			return fmt.Errorf("failed to get floating ip pool %q: %v", cloud.Openstack.FloatingIPPool, err)
+			return fmt.Errorf("failed to get floating ip pool %q: %v", spec.Openstack.FloatingIPPool, err)
 		}
 	}
 
@@ -58,103 +61,103 @@ func (os *Provider) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
-func (os *Provider) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
-	if isInitialized(cloud) {
-		return nil, nil
-	}
-
-	dc, found := os.dcs[cloud.DatacenterName]
+func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	dc, found := os.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+		return nil, fmt.Errorf("invalid datacenter %q", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	netClient, err := os.getNetClient(cloud)
+	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
-	if cloud.Openstack.FloatingIPPool == "" {
+	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
 		extNetwork, err := getExternalNetwork(netClient)
 		if err != nil {
 			return nil, err
 		}
-		cloud.Openstack.FloatingIPPool = extNetwork.Name
+		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 	}
 
-	if cloud.Openstack.SecurityGroups == "" {
-		g, err := createKubermaticSecurityGroup(netClient, name)
+	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
+		g, err := createKubermaticSecurityGroup(netClient, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}
-		cloud.Openstack.SecurityGroups = g.Name
-		cloud.Openstack.SecurityGroupCreated = true
+		cluster.Spec.Cloud.Openstack.SecurityGroups = g.Name
+		cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
 	}
 
-	if cloud.Openstack.Network == "" {
-		network, err := createKubermaticNetwork(netClient, name)
+	if cluster.Spec.Cloud.Openstack.Network == "" {
+		network, err := createKubermaticNetwork(netClient, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic network: %v", err)
 		}
-		cloud.Openstack.Network = network.Name
-		cloud.Openstack.NetworkCreated = true
+		cluster.Spec.Cloud.Openstack.Network = network.Name
 
-		subnet, err := createKubermaticSubnet(netClient, name, network.ID, dc.Spec.Openstack.DNSServers)
+		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, dc.Spec.Openstack.DNSServers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %v", err)
 		}
-		cloud.Openstack.SubnetID = subnet.ID
+		cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 
-		router, err := createKubermaticRouter(netClient, name, cloud.Openstack.FloatingIPPool)
+		router, err := createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
 		}
-		cloud.Openstack.RouterID = router.ID
+		cluster.Spec.Cloud.Openstack.RouterID = router.ID
 
 		if _, err = attachSubnetToRouter(netClient, subnet.ID, router.ID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)
 		}
+		cluster.Finalizers = append(cluster.Finalizers, networkCleanupFinalizer)
 	}
 
-	return cloud, nil
+	return cluster, nil
 }
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration
-func (os *Provider) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
-	netClient, err := os.getNetClient(cloud)
+func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	finalizers := sets.NewString(cluster.Finalizers...)
+	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
+		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
-	if cloud.Openstack.SecurityGroupCreated {
-		for _, g := range strings.Split(cloud.Openstack.SecurityGroups, ",") {
+	if finalizers.Has(securityGroupCleanupFinalizer) {
+		for _, g := range strings.Split(cluster.Spec.Cloud.Openstack.SecurityGroups, ",") {
 			if err := deleteSecurityGroup(netClient, strings.TrimSpace(g)); err != nil {
-				return fmt.Errorf("failed to delete security group %q: %v", g, err)
+				return nil, fmt.Errorf("failed to delete security group %q: %v", g, err)
 			}
 		}
+		finalizers.Delete(securityGroupCleanupFinalizer)
 	}
 
-	if cloud.Openstack.NetworkCreated {
-		if _, err = detachSubnetFromRouter(netClient, cloud.Openstack.SubnetID, cloud.Openstack.RouterID); err != nil {
+	if finalizers.Has(networkCleanupFinalizer) {
+		if _, err = detachSubnetFromRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
 			if _, ok := err.(gophercloud.ErrDefault404); !ok {
-				return fmt.Errorf("failed to detach subnet from router: %v", err)
+				return nil, fmt.Errorf("failed to detach subnet from router: %v", err)
 			}
 		}
 
-		if err = deleteNetworkByName(netClient, cloud.Openstack.Network); err != nil {
+		if err = deleteNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network); err != nil {
 			if _, ok := err.(gophercloud.ErrDefault404); !ok {
-				return fmt.Errorf("failed delete network %q: %v", cloud.Openstack.Network, err)
+				return nil, fmt.Errorf("failed delete network %q: %v", cluster.Spec.Cloud.Openstack.Network, err)
 			}
 		}
 
-		if err = deleteRouter(netClient, cloud.Openstack.RouterID); err != nil {
+		if err = deleteRouter(netClient, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
 			if _, ok := err.(gophercloud.ErrDefault404); !ok {
-				return fmt.Errorf("failed delete router %q: %v", cloud.Openstack.RouterID, err)
+				return nil, fmt.Errorf("failed delete router %q: %v", cluster.Spec.Cloud.Openstack.RouterID, err)
 			}
 		}
+		finalizers.Delete(networkCleanupFinalizer)
 	}
 
-	return nil
+	cluster.Finalizers = finalizers.List()
+	return cluster, nil
 }
 
 // GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
@@ -221,10 +224,4 @@ func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Se
 	}
 
 	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
-}
-
-func isInitialized(cloud *kubermaticv1.CloudSpec) bool {
-	return cloud.Openstack.SecurityGroups != "" &&
-		cloud.Openstack.Network != "" &&
-		cloud.Openstack.FloatingIPPool != ""
 }
