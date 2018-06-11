@@ -180,6 +180,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 			Subnets: &[]network.Subnet{
 				network.Subnet{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
+					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
 			},
 			// inbound
@@ -286,6 +287,9 @@ func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName stri
 		Tags: map[string]*string{
 			clusterTagKey: to.StringPtr(clusterName),
 		},
+		VirtualNetworkPropertiesFormat: &network.VirtualNetworkPropertiesFormat{
+			AddressSpace: &network.AddressSpace{AddressPrefixes: &[]string{"10.0.0.0/16"}},
+		},
 	}
 
 	future, err := networksClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, parameters)
@@ -309,6 +313,9 @@ func ensureSubnet(cloud *kubermaticv1.CloudSpec) error {
 
 	parameters := network.Subnet{
 		Name: to.StringPtr(cloud.Azure.SubnetName),
+		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
+			AddressPrefix: to.StringPtr("10.0.0.0/16"),
+		},
 	}
 
 	future, err := subnetsClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
@@ -337,6 +344,7 @@ func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 			Subnets: &[]network.Subnet{
 				network.Subnet{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
+					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
 			},
 		},
