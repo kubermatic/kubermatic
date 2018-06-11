@@ -117,7 +117,8 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubermaticInformerFactory,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings())
+		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
+		ctrlCtx.seedClustersRESTClient)
 	if err != nil {
 		return err
 	}
