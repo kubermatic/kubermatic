@@ -168,7 +168,11 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		},
 
 		// scenario 2
-		{
+		//
+		// TODO: uncomment this when existing object are migrated to projects
+		//
+		//
+		/*{
 			name:            "scenario 2 no-op for a cluster that doesn't belong to a project",
 			expectError:     true,
 			existingProject: createProject("thunderball", createUser("James Bond")),
@@ -191,7 +195,10 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 			},
-		},
+		},*/
+		//
+		//  END of TODO
+		//
 	}
 
 	for _, test := range tests {
