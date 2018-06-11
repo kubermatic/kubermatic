@@ -82,6 +82,7 @@ func startClusterController(ctrlCtx controllerContext) error {
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
+		ctrlCtx.runOptions.etcdDiskSize,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),

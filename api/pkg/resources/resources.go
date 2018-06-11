@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 )
@@ -150,6 +151,7 @@ type TemplateData struct {
 	ServiceLister     corev1lister.ServiceLister
 	OverwriteRegistry string
 	NodePortRange     string
+	EtcdDiskSize      resource.Quantity
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
@@ -186,7 +188,8 @@ func NewTemplateData(
 	configMapLister corev1lister.ConfigMapLister,
 	serviceLister corev1lister.ServiceLister,
 	overwriteRegistry string,
-	nodePortRange string) *TemplateData {
+	nodePortRange string,
+	etcdDiskSize resource.Quantity) *TemplateData {
 	return &TemplateData{
 		Cluster:           cluster,
 		DC:                dc,
@@ -195,6 +198,7 @@ func NewTemplateData(
 		ServiceLister:     serviceLister,
 		OverwriteRegistry: overwriteRegistry,
 		NodePortRange:     nodePortRange,
+		EtcdDiskSize:      etcdDiskSize,
 	}
 }
 
