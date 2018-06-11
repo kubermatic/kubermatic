@@ -4,4 +4,4 @@ metadata:
   name: backup-container
 data:
   'backup-container.yaml': |
-    {{ .Values.kubermatic.backupContainer |indent 4}}
+{{ .Values.kubermatic.backupContainer |indent 4}}
