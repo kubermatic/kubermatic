@@ -142,8 +142,8 @@ func (a *azure) CleanUpCloudProvider(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// createResourceGroup will create or update an Azure resource group. The call is idempotent.
-func createResourceGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+// ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
+func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -163,8 +163,8 @@ func createResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 	return nil
 }
 
-// createSecurityGroup will create or update an Azure security group. The call is idempotent.
-func createSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+// ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
+func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
 	sgClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -273,8 +273,8 @@ func createSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 	return nil
 }
 
-// createVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func createVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+// ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
+func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
@@ -300,8 +300,8 @@ func createVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName stri
 	return nil
 }
 
-// createSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func createSubnet(cloud *kubermaticv1.CloudSpec) error {
+// ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
+func ensureSubnet(cloud *kubermaticv1.CloudSpec) error {
 	subnetsClient, err := getSubnetsClient(cloud)
 	if err != nil {
 		return err
@@ -323,8 +323,8 @@ func createSubnet(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// createRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func createRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
+// ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
+func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -386,23 +386,23 @@ func (a *azure) InitializeCloudProvider(cloud *kubermaticv1.CloudSpec, clusterNa
 		cloud.Azure.SecurityGroup = "cluster-" + clusterName
 	}
 
-	if err := createResourceGroup(cloud, location, clusterName); err != nil {
+	if err := ensureResourceGroup(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
 
-	if err := createVNet(cloud, location, clusterName); err != nil {
+	if err := ensureVNet(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
 
-	if err := createSubnet(cloud); err != nil {
+	if err := ensureSubnet(cloud); err != nil {
 		return nil, err
 	}
 
-	if err := createRouteTable(cloud, location); err != nil {
+	if err := ensureRouteTable(cloud, location); err != nil {
 		return nil, err
 	}
 
-	if err := createSecurityGroup(cloud, location, clusterName); err != nil {
+	if err := ensureSecurityGroup(cloud, location, clusterName); err != nil {
 		return nil, err
 	}
 
