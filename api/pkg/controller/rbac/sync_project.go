@@ -226,6 +226,7 @@ func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, gr
 //
 // In particular:
 // - removes project/group reference from users object
+// - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cleanupFinalizer
 func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	sharedUsers, err := c.userLister.List(labels.Everything())
@@ -253,14 +254,14 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range allGroupsPrefixes {
 			groupName := generateActualGroupNameFor(project.Name, groupPrefix)
-			err := rename(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
+			err := cleanUpRBACRoleBindingFor(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
 			if err != nil {
 				return err
 			}
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClustersRESTClient {
-					err := rename(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
+					err := cleanUpRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
 					if err != nil {
 						return err
 					}
@@ -276,7 +277,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	return err
 }
 
-func rename(kubeClient kubernetes.Interface, groupName, resource string) error {
+func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
 	if err != nil {

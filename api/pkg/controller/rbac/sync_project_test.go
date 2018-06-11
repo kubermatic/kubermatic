@@ -581,14 +581,14 @@ func TestEnsureProjectCleanup(t *testing.T) {
 		name                                 string
 		projectResourcesToSync               []projectResource
 		projectToSync                        *kubermaticv1.Project
-		existingUser  *kubermaticv1.User
+		existingUser                         *kubermaticv1.User
 		expectedClusterRoleBindingsForMaster []*rbacv1.ClusterRoleBinding
 		existingClusterRoleBindingsForMaster []*rbacv1.ClusterRoleBinding
 		expectedActionsForMaster             []string
 		seedClusters                         int
 		expectedActionsForSeeds              []string
 		expectedClusterRoleBindingsForSeeds  []*rbacv1.ClusterRoleBinding
-		existingClusterRoleBindingsForSeeds []*rbacv1.ClusterRoleBinding
+		existingClusterRoleBindingsForSeeds  []*rbacv1.ClusterRoleBinding
 	}{
 		// scenario 1
 		{
@@ -733,7 +733,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-					// setup the test scenario
+			// setup the test scenario
 			objs := []runtime.Object{}
 			kubermaticObjs := []runtime.Object{}
 			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
