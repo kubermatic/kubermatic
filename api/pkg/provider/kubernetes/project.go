@@ -4,7 +4,6 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,16 +24,16 @@ func NewProjectProvider(createImpersonatedClient kubermaticImpersonationClient, 
 	}
 
 	return &ProjectProvider{
-		createImpersonatedClient: createImpersonatedClient,
-		clientPrivileged:         kubermaticClient.Projects(),
-		projectLister:            projectLister,
+		createMasterImpersonatedClient: createImpersonatedClient,
+		clientPrivileged:               kubermaticClient.Projects(),
+		projectLister:                  projectLister,
 	}, nil
 }
 
 // ProjectProvider represents a data structure that knows how to manage projects
 type ProjectProvider struct {
-	// createImpersonatedClient is used as a ground for impersonation
-	createImpersonatedClient kubermaticImpersonationClient
+	// createMasterImpersonatedClient is used as a ground for impersonation
+	createMasterImpersonatedClient kubermaticImpersonationClient
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged kubermaticclientv1.ProjectInterface
@@ -59,7 +58,7 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		owners := project.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.UID == user.UID && project.Spec.Name == projectName {
-				return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: project.GroupVersionKind().Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
+				return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
 			}
 		}
 	}
@@ -68,8 +67,8 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserKindName,
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.UserKindName,
 					UID:        user.GetUID(),
 					Name:       user.Name,
 				},
@@ -87,6 +86,24 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 	return p.clientPrivileged.Create(project)
 }
 
+// Get returns the project with the given name
+func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName string) (*kubermaticapiv1.Project, error) {
+	groupName, err := user.GroupForProject(projectInternalName)
+	if err != nil {
+		return nil, kerrors.NewForbidden(schema.GroupResource{}, projectInternalName, err)
+	}
+	impersonationCfg := restclient.ImpersonationConfig{
+		UserName: user.Spec.Email,
+		Groups:   []string{groupName},
+	}
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	if err != nil {
+		return nil, err
+	}
+	return masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
+}
+
 // Delete deletes the given project as the given user
 //
 // Note:
@@ -101,7 +118,7 @@ func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName
 		Groups:   []string{groupName},
 	}
 
-	impersonatedClient, err := p.createImpersonatedClient(impersonationCfg)
+	impersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
 	if err != nil {
 		return err
 	}
