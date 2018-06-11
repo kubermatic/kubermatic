@@ -56,11 +56,11 @@ func main() {
 	w := sync.WaitGroup{}
 	w.Add(len(clusters.Items))
 
-	for _, cluster := range clusters.Items {
+	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
 			cleanupCluster(c, &ctx)
-		}(&cluster)
+		}(&clusters.Items[i])
 	}
 
 	w.Wait()
