@@ -49,7 +49,14 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		return nil, err
 	}
 
-	clusterProvider := kubernetes.NewClusterProvider(kubermaticClient, client.New(kubeInformerFactory.Core().V1().Secrets().Lister()), kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(), "", IsAdmin)
+	clusterProvider := kubernetes.NewClusterProvider(
+		kubermaticClient,
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
+		"",
+		IsAdmin,
+		[]string{},
+	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
 	kubeInformerFactory.Start(wait.NeverStop)

@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -42,11 +43,10 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-
-	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -63,6 +63,7 @@ var (
 	updatesFile        string
 	tokenIssuer        string
 	clientID           string
+	saddons            string
 
 	tokenIssuerSkipTLSVerify bool
 )
@@ -85,6 +86,7 @@ func main() {
 	flag.StringVar(&tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
+	flag.StringVar(&saddons, "addons", "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac", "Comma separated list of Addons to install into every user-cluster")
 	flag.Parse()
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
@@ -101,6 +103,11 @@ func main() {
 	extclient := apiextclient.NewForConfigOrDie(config)
 	if err = crd.EnsureCustomResourceDefinitions(extclient); err != nil {
 		glog.Fatal(err)
+	}
+
+	addons := strings.Split(saddons, ",")
+	for i, addon := range addons {
+		addons[i] = strings.TrimSpace(addon)
 	}
 
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
@@ -140,11 +147,18 @@ func main() {
 
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
-		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(kubermaticSeedClient, client.New(kubeInformerFactory.Core().V1().Secrets().Lister()), kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(), workerName, handler.IsAdmin)
+
+		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
+			kubermaticSeedClient,
+			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
+			workerName,
+			handler.IsAdmin,
+			addons,
+		)
 
 		kubeInformerFactory.Start(wait.NeverStop)
 		kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-
 		kubermaticSeedInformerFactory.Start(wait.NeverStop)
 		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
