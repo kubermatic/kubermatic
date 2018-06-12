@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -40,12 +42,22 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		key, err := keyProvider.Create(user, project, req.Spec.Name, req.Spec.PublicKey)
+		key, err := keyProvider.Create(user, project, req.Metadata.DisplayName, req.Spec.PublicKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		// TODO: Do we want to return the whole kubermaticv1.UserSSHKey obj ?
-		return key, nil
+
+		apiKey := v2.SSHKey{
+			Metadata: v2.ObjectMeta{
+				Name:              key.Name,
+				CreationTimestamp: key.CreationTimestamp.Time,
+			},
+			Spec: v2.SSHKeySpec{
+				Fingerprint: key.Spec.Fingerprint,
+				PublicKey:   key.Spec.PublicKey,
+			},
+		}
+		return apiKey, nil
 	}
 }
 
@@ -109,7 +121,22 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return keys, nil
+
+		apiKeys := make([]v2.SSHKey, len(keys))
+		for index, key := range keys {
+			apiKey := v2.SSHKey{
+				Metadata: v2.ObjectMeta{
+					Name:              key.Name,
+					CreationTimestamp: key.CreationTimestamp.Time,
+				},
+				Spec: v2.SSHKeySpec{
+					Fingerprint: key.Spec.Fingerprint,
+					PublicKey:   key.Spec.PublicKey,
+				},
+			}
+			apiKeys[index] = apiKey
+		}
+		return apiKeys, nil
 	}
 }
 
@@ -149,7 +176,7 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 
 // newCreateSSHKeyReq represent a request for specific data to create a new SSH key
 type newCreateSSHKeyReq struct {
-	apiv1.SSHKey
+	apiv2.SSHKey
 	projectName string
 }
 
@@ -163,9 +190,19 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.projectName = projectName
 
-	req.SSHKey = apiv1.SSHKey{}
+	req.SSHKey = apiv2.SSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.SSHKey); err != nil {
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
+	}
+
+	if len(req.Metadata.Name) != 0 {
+		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead.")
+	}
+	if len(req.Spec.PublicKey) == 0 {
+		return nil, fmt.Errorf("'spec.publicKey' field cannot be empty")
+	}
+	if len(req.Metadata.DisplayName) == 0 {
+		return nil, fmt.Errorf("'metadata.displayName' field cannot be empty")
 	}
 
 	return req, nil
