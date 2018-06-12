@@ -17,6 +17,29 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
+    "/api/v1/azure/sizes": {
+      "get": {
+        "description": "Lists available VM sizes in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureSizes",
+        "responses": {
+          "200": {
+            "description": "AzureSizeList",
+            "schema": {
+              "$ref": "#/definitions/AzureSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -1280,6 +1303,50 @@
       },
       "x-go-name": "AzureNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "AzureSize": {
+      "type": "object",
+      "title": "AzureSize is the object representing Azure VM sizes.",
+      "properties": {
+        "maxDataDiskCount": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxDataDiskCount"
+        },
+        "memoryInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MemoryInMB"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "numberOfCores": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumberOfCores"
+        },
+        "osDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OsDiskSizeInMB"
+        },
+        "resourceDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ResourceDiskSizeInMB"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AzureSizeList": {
+      "type": "array",
+      "title": "AzureSizeList represents an array of Azure VM sizes.",
+      "items": {
+        "$ref": "#/definitions/AzureSize"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "BringYourOwnCloudSpec": {
       "type": "object",
