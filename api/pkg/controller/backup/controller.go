@@ -317,6 +317,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.Schedule = c.backupScheduleString
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
+	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
 	etcdServiceAddr := fmt.Sprintf("etcd.%s.svc.cluster.local.:2379", cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 		corev1.Container{Name: "backup-creator",
@@ -335,6 +336,10 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
 }
 
 func parseDuration(interval time.Duration) (string, error) {

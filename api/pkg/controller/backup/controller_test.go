@@ -89,6 +89,11 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Fatalf("Expected exactly one cronjob, got %v", len(cronJobs.Items))
 	}
 
+	if *cronJobs.Items[0].Spec.SuccessfulJobsHistoryLimit != 0 {
+		t.Errorf("Expected spec.SuccessfulJobsHistoryLimit to be 0 but was %v",
+			*cronJobs.Items[0].Spec.SuccessfulJobsHistoryLimit)
+	}
+
 	cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{}
 	cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{}
 	_, err = fakeKubeClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(&cronJobs.Items[0])
