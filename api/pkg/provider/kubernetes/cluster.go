@@ -36,13 +36,15 @@ func NewClusterProvider(
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
-	isAdmin func(apiv1.User) bool) *ClusterProvider {
+	isAdmin func(apiv1.User) bool,
+	addons []string) *ClusterProvider {
 	return &ClusterProvider{
 		client:                  client,
 		userClusterConnProvider: userClusterConnProvider,
 		clusterLister:           clusterLister,
 		workerName:              workerName,
 		isAdmin:                 isAdmin,
+		addons:                  addons,
 	}
 }
 
@@ -52,6 +54,7 @@ type ClusterProvider struct {
 	userClusterConnProvider UserClusterConnectionProvider
 	clusterLister           kubermaticv1lister.ClusterLister
 	isAdmin                 func(apiv1.User) bool
+	addons                  []string
 
 	workerName string
 }
@@ -106,38 +109,40 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		return nil, err
 	}
 
-	addons := []string{
-		"canal",
-		"dashboard",
-		"dns",
-		"heapster",
-		"kube-proxy",
-		"openvpn",
-		"rbac",
-	}
 	gv := kubermaticv1.SchemeGroupVersion
 	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
-	for _, addon := range addons {
-		_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            addon,
-				Namespace:       cluster.Status.NamespaceName,
-				OwnerReferences: []metav1.OwnerReference{ownerRef},
-			},
-			Spec: kubermaticv1.AddonSpec{
-				Name: addon,
-				Cluster: corev1.ObjectReference{
-					Name:       cluster.Name,
-					Namespace:  "",
-					UID:        cluster.UID,
-					APIVersion: cluster.APIVersion,
-					Kind:       "Cluster",
+
+	err = wait.Poll(50*time.Millisecond, 10*time.Second, func() (done bool, err error) {
+		for _, addon := range p.addons {
+			_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            addon,
+					Namespace:       cluster.Status.NamespaceName,
+					OwnerReferences: []metav1.OwnerReference{ownerRef},
 				},
-			},
-		})
-		if err != nil {
-			return nil, err
+				Spec: kubermaticv1.AddonSpec{
+					Name: addon,
+					Cluster: corev1.ObjectReference{
+						Name:       cluster.Name,
+						Namespace:  "",
+						UID:        cluster.UID,
+						APIVersion: cluster.APIVersion,
+						Kind:       "Cluster",
+					},
+				},
+			})
+			if err != nil {
+				if kuberrrors.IsAlreadyExists(err) {
+					continue
+				}
+				return false, nil
+			}
 		}
+
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	//We wait until the cluster exists in the lister so we can use this instead of doing api calls

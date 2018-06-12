@@ -267,6 +267,11 @@ func (c *Controller) sync(key string) error {
 	if clusterFromCache.Spec.WorkerName != c.workerName {
 		return nil
 	}
+	// We need to know the namespace otherwise we do not know
+	// the address of the etcd
+	if clusterFromCache.Status.NamespaceName == "" {
+		return nil
+	}
 
 	cluster := clusterFromCache.DeepCopy()
 
@@ -312,11 +317,13 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.Schedule = c.backupScheduleString
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
+	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
+	etcdServiceAddr := fmt.Sprintf("etcd.%s.svc.cluster.local.:2379", cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 		corev1.Container{Name: "backup-creator",
 			Image:        c.backupContainerImage,
 			Env:          []corev1.EnvVar{corev1.EnvVar{Name: "ETCDCTL_API", Value: "3"}},
-			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", "etcd:2379", "snapshot", "save", "/backup/snap.db"},
+			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snap.db"},
 			VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/backup"}}},
 	}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
@@ -329,6 +336,10 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
 }
 
 func parseDuration(interval time.Duration) (string, error) {

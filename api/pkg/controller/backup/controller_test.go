@@ -27,6 +27,7 @@ var (
 func TestEnsureBackupCronJob(t *testing.T) {
 	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset()
 	cluster := &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}
+	cluster.Status.NamespaceName = "testnamespace"
 	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
@@ -86,6 +87,11 @@ func TestEnsureBackupCronJob(t *testing.T) {
 
 	if len(cronJobs.Items) != 1 {
 		t.Fatalf("Expected exactly one cronjob, got %v", len(cronJobs.Items))
+	}
+
+	if *cronJobs.Items[0].Spec.SuccessfulJobsHistoryLimit != 0 {
+		t.Errorf("Expected spec.SuccessfulJobsHistoryLimit to be 0 but was %v",
+			*cronJobs.Items[0].Spec.SuccessfulJobsHistoryLimit)
 	}
 
 	cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{}

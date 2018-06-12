@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -28,12 +29,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
+
+var update = flag.Bool("update", false, "Update test fixtures")
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	path := filepath.Join("./fixtures", resFile+".yaml")
@@ -44,6 +48,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res, err := yaml.JSONToYAML(jsonRes)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if *update {
+		if err := ioutil.WriteFile(path, res, 0644); err != nil {
+			t.Fatalf("failed to update fixtures: %v", err)
+		}
 	}
 
 	exp, err := ioutil.ReadFile(path)
@@ -241,7 +251,16 @@ func TestLoadFiles(t *testing.T) {
 				}()
 
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
-				data := resources.NewTemplateData(cluster, &dc, kubeInformerFactory.Core().V1().Secrets().Lister(), kubeInformerFactory.Core().V1().ConfigMaps().Lister(), kubeInformerFactory.Core().V1().Services().Lister(), "", "")
+				data := resources.NewTemplateData(
+					cluster,
+					&dc,
+					kubeInformerFactory.Core().V1().Secrets().Lister(),
+					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
+					kubeInformerFactory.Core().V1().Services().Lister(),
+					"",
+					"",
+					resource.MustParse("5Gi"),
+				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
