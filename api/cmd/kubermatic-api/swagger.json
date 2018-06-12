@@ -3448,43 +3448,28 @@
       "type": "object",
       "properties": {
         "metadata": {
-          "$ref": "#/definitions/ObjectMeta"
+          "$ref": "#/definitions/ObjectMetaV2"
         },
         "spec": {
           "$ref": "#/definitions/SSHKeySpec"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "SSHKeySpec": {
       "description": "SSHKeySpec represents the details of a ssh key",
       "type": "object",
       "properties": {
-        "clusters": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Clusters"
-        },
         "fingerprint": {
           "type": "string",
           "x-go-name": "Fingerprint"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "owner": {
-          "type": "string",
-          "x-go-name": "Owner"
         },
         "publicKey": {
           "type": "string",
           "x-go-name": "PublicKey"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "Status": {
       "type": "object",

@@ -196,7 +196,7 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 
 	if len(req.Metadata.Name) != 0 {
-		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead.")
+		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead")
 	}
 	if len(req.Spec.PublicKey) == 0 {
 		return nil, fmt.Errorf("'spec.publicKey' field cannot be empty")
