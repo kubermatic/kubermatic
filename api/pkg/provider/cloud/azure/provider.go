@@ -21,6 +21,7 @@ const (
 	finalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
 	finalizerRouteTable    = "kubermatic.io/cleanup-azure-route-table"
 	finalizerSubnet        = "kubermatic.io/cleanup-azure-subnet"
+	finalizerVNet          = "kubermatic.io/cleanup-azure-vnet"
 )
 
 type azure struct {
@@ -164,9 +165,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 		cluster.Finalizers = finalizers.List()
 	}
 
-	glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
-	if err := deleteVNet(cluster.Spec.Cloud); err != nil {
-		glog.Error(err)
+	if finalizers.Has(finalizerVNet) {
+		glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
+		if err := deleteVNet(cluster.Spec.Cloud); err != nil {
+			return cluster, err
+		}
+
+		finalizers.Delete(finalizerVNet)
+		cluster.Finalizers = finalizers.List()
 	}
 
 	glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
@@ -413,18 +419,20 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
 	}
 
-	if cluster.Spec.Cloud.Azure.VNetName == "" {
-		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
-	}
-
 	glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
 	}
 
-	glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
-	if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
-		return nil, err
+	if cluster.Spec.Cloud.Azure.VNetName == "" {
+		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
+
+		glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
+		if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+			return cluster, err
+		}
+
+		cluster.Finalizers = append(cluster.Finalizers, finalizerVNet)
 	}
 
 	if cluster.Spec.Cloud.Azure.SubnetName == "" {
