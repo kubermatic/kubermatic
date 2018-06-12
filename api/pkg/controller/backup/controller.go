@@ -262,7 +262,6 @@ func (c *Controller) sync(key string) error {
 		}
 		return err
 	}
-	glog.V(2).Infof("Processing cluster %s", clusterFromCache.Name)
 
 	if clusterFromCache.Spec.WorkerName != c.workerName {
 		return nil
@@ -272,6 +271,8 @@ func (c *Controller) sync(key string) error {
 	if clusterFromCache.Status.NamespaceName == "" {
 		return nil
 	}
+
+	glog.Infof("Backup controller: Processing cluster %s", clusterFromCache.Name)
 
 	cluster := clusterFromCache.DeepCopy()
 
