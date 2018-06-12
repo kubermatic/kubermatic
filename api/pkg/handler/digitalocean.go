@@ -35,32 +35,22 @@ func digitaloceanSizeEndpoint() endpoint.Endpoint {
 		// type 3 isn't listed in the pricing anymore and only will be available for legacy issues until July 1st, 2018
 		// therefor we might not want to log all cases that aren't starting with s or c
 		for k := range sizes {
-			if reStandard.MatchString(sizes[k].Slug) {
-				sizeList.Standard = append(sizeList.Standard, apiv1.DigitaloceanSize{
-					Slug:         sizes[k].Slug,
-					Available:    sizes[k].Available,
-					Transfer:     sizes[k].Transfer,
-					PriceMonthly: sizes[k].PriceMonthly,
-					PriceHourly:  sizes[k].PriceHourly,
-					Memory:       sizes[k].Memory,
-					VCPUs:        sizes[k].Vcpus,
-					Disk:         sizes[k].Disk,
-					Regions:      sizes[k].Regions,
-				})
-				continue
-			} else if reOptimized.MatchString(sizes[k].Slug) {
-				sizeList.Optimized = append(sizeList.Optimized, apiv1.DigitaloceanSize{
-					Slug:         sizes[k].Slug,
-					Available:    sizes[k].Available,
-					Transfer:     sizes[k].Transfer,
-					PriceMonthly: sizes[k].PriceMonthly,
-					PriceHourly:  sizes[k].PriceHourly,
-					Memory:       sizes[k].Memory,
-					VCPUs:        sizes[k].Vcpus,
-					Disk:         sizes[k].Disk,
-					Regions:      sizes[k].Regions,
-				})
-				continue
+			s := apiv1.DigitaloceanSize{
+				Slug:         sizes[k].Slug,
+				Available:    sizes[k].Available,
+				Transfer:     sizes[k].Transfer,
+				PriceMonthly: sizes[k].PriceMonthly,
+				PriceHourly:  sizes[k].PriceHourly,
+				Memory:       sizes[k].Memory,
+				VCPUs:        sizes[k].Vcpus,
+				Disk:         sizes[k].Disk,
+				Regions:      sizes[k].Regions,
+			}
+			switch {
+			case reStandard.MatchString(sizes[k].Slug):
+				sizeList.Standard = append(sizeList.Standard, s)
+			case reOptimized.MatchString(sizes[k].Slug):
+				sizeList.Optimized = append(sizeList.Optimized, s)
 			}
 		}
 

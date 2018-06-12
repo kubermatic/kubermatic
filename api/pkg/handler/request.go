@@ -177,6 +177,26 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// AzureSizeReq represent a request for Azure VM sizes
+type AzureSizeReq struct {
+	SubscriptionID string
+	TenantID       string
+	ClientID       string
+	ClientSecret   string
+	Location       string
+}
+
+func decodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AzureSizeReq
+
+	req.SubscriptionID = r.Header.Get("SubscriptionID")
+	req.TenantID = r.Header.Get("TenantID")
+	req.ClientID = r.Header.Get("ClientID")
+	req.ClientSecret = r.Header.Get("ClientSecret")
+	req.Location = r.Header.Get("Location")
+	return req, nil
+}
+
 // OpenstackSizeReq represent a request for openstack sizes
 type OpenstackSizeReq struct {
 	Username       string
