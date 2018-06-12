@@ -19,6 +19,7 @@ const (
 	clusterTagKey = "cluster"
 
 	finalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
+	finalizerRouteTable    = "kubermatic.io/cleanup-azure-route-table"
 )
 
 type azure struct {
@@ -142,9 +143,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 		cluster.Finalizers = finalizers.List()
 	}
 
-	glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
-	if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
-		glog.Error(err)
+	if finalizers.Has(finalizerRouteTable) {
+		glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
+		if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
+			return cluster, err
+		}
+
+		finalizers.Delete(finalizerRouteTable)
+		cluster.Finalizers = finalizers.List()
 	}
 
 	glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
@@ -409,10 +415,6 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		cluster.Spec.Cloud.Azure.SubnetName = "cluster-" + cluster.Name
 	}
 
-	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
-		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
-	}
-
 	glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
@@ -428,9 +430,15 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		return nil, err
 	}
 
-	glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
-	if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
-		return nil, err
+	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
+		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
+
+		glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
+		if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
+			return cluster, err
+		}
+
+		cluster.Finalizers = append(cluster.Finalizers, finalizerRouteTable)
 	}
 
 	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
