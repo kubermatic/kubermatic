@@ -461,6 +461,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 			}
 		}
 		finalizers.Delete(securityGroupCleanupFinalizer)
+		cluster.Finalizers = finalizers.List()
 	}
 
 	if finalizers.Has(instanceProfileCleanupFinalizer) {
@@ -505,8 +506,8 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 			}
 		}
 		finalizers.Delete(instanceProfileCleanupFinalizer)
+		cluster.Finalizers = finalizers.List()
 	}
 
-	cluster.Finalizers = finalizers.List()
 	return cluster, nil
 }
