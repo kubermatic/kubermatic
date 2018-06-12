@@ -28,6 +28,7 @@ func (c *Controller) syncDependant(item *dependantQueueItem) error {
 		return nil
 		//
 		// TODO: uncomment this when existing object are migrated to projects
+		//       see: https://github.com/kubermatic/kubermatic/issues/1219
 		//
 		//return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 		//
