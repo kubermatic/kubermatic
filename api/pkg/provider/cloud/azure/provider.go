@@ -22,6 +22,7 @@ const (
 	finalizerRouteTable    = "kubermatic.io/cleanup-azure-route-table"
 	finalizerSubnet        = "kubermatic.io/cleanup-azure-subnet"
 	finalizerVNet          = "kubermatic.io/cleanup-azure-vnet"
+	finalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
 )
 
 type azure struct {
@@ -126,13 +127,6 @@ func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
 }
 
 func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	// TODO: Currently a failure in cluster removal might cause an inconsistent state,
-	// where some resources are already deleted, but the subsequent cleanup runs are
-	// trying to remove them again. Therefore failures to delete the resoures are soft errors
-	// - logged but not acted upon. Eventually we want to switch to finalizers for
-	// each of these resources, which not only will ensure consistency, but also
-	// prevent us from deleting pre-existing resources.
-
 	finalizers := sets.NewString(cluster.Finalizers...)
 
 	if finalizers.Has(finalizerSecurityGroup) {
@@ -175,9 +169,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 		cluster.Finalizers = finalizers.List()
 	}
 
-	glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
-	if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
-		glog.Error(err)
+	if finalizers.Has(finalizerResourceGroup) {
+		glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
+		if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
+			return cluster, err
+		}
+
+		finalizers.Delete(finalizerResourceGroup)
+		cluster.Finalizers = finalizers.List()
 	}
 
 	return cluster, nil
@@ -417,11 +416,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
-	}
 
-	glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
-	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
-		return nil, err
+		glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
+		if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+			return cluster, err
+		}
+
+		cluster.Finalizers = append(cluster.Finalizers, finalizerResourceGroup)
 	}
 
 	if cluster.Spec.Cloud.Azure.VNetName == "" {
