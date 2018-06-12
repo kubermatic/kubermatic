@@ -2,6 +2,31 @@
 
 
 [[projects]]
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = [
+    "services/compute/mgmt/2018-04-01/compute",
+    "services/network/mgmt/2018-04-01/network",
+    "services/resources/mgmt/2018-02-01/resources",
+    "version"
+  ]
+  revision = "4650843026a7fdec254a8d9cf893693a254edd0b"
+  version = "v16.2.1"
+
+[[projects]]
+  name = "github.com/Azure/go-autorest"
+  packages = [
+    "autorest",
+    "autorest/adal",
+    "autorest/azure",
+    "autorest/azure/auth",
+    "autorest/date",
+    "autorest/to",
+    "autorest/validation"
+  ]
+  revision = "4de44cd533576f3c7b44dcb08dc03754d217144d"
+  version = "v10.9.2"
+
+[[projects]]
   name = "github.com/Masterminds/semver"
   packages = ["."]
   revision = "15d8430ab86497c5c0da827b748823945e1cf1e1"
@@ -136,6 +161,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/digitalocean/godo"
   packages = [
     ".",
@@ -143,6 +174,12 @@
   ]
   revision = "77ea48de76a7b31b234d854f15d003c68bb2fb90"
   version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dimchansky/utfbom"
+  packages = ["."]
+  revision = "6c6132ff69f0f6c088739067407b5d32c52e1d0f"
 
 [[projects]]
   branch = "master"
@@ -491,6 +528,7 @@
     "pkg/cloudprovider/errors",
     "pkg/cloudprovider/instance",
     "pkg/cloudprovider/provider/aws",
+    "pkg/cloudprovider/provider/azure",
     "pkg/cloudprovider/provider/digitalocean",
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
@@ -504,8 +542,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "dce5d23524bf20a8c1352b8fcbb485a41f879ffa"
-  version = "v0.6.2"
+  revision = "b9a4dfcd245157a7cdc483d75355448e4160fe2b"
+  version = "v0.7.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -605,6 +643,12 @@
     "xfs"
   ]
   revision = "282c8707aa210456a825798969cc27edda34992a"
+
+[[projects]]
+  name = "github.com/robfig/cron"
+  packages = ["."]
+  revision = "b41be1df696709bb6395fe435af20370037c0b4c"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -707,6 +751,8 @@
     "ed25519/internal/edwards25519",
     "internal/chacha20",
     "pbkdf2",
+    "pkcs12",
+    "pkcs12/internal/rc2",
     "poly1305",
     "scrypt",
     "ssh",
@@ -1130,6 +1176,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2ab34b16290a19423a6a01fbe476990c7b030042b87359b87948ab0bdbe5f1d9"
+  inputs-digest = "5b9b2f7169abaa6b906839fdf4a123fec90d2dc27c538a47dfeb889018a3a9db"
   solver-name = "gps-cdcl"
   solver-version = 1

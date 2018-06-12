@@ -44,6 +44,11 @@ type AWSDatacenterSpec struct {
 	Region string `json:"region"`
 }
 
+// AzureDatacenterSpec specifies a datacenter of Azure.
+type AzureDatacenterSpec struct {
+	Location string `json:"location"`
+}
+
 // OpenstackDatacenterSpec specifies a generic bare metal datacenter.
 type OpenstackDatacenterSpec struct {
 	AvailabilityZone string `json:"availability_zone"`
@@ -60,6 +65,7 @@ type DatacenterSpec struct {
 	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
+	Azure        *AzureDatacenterSpec         `json:"azure,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`

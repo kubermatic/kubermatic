@@ -19,6 +19,7 @@ type Node struct {
 type NodeCloudSpec struct {
 	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
+	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
@@ -92,6 +93,20 @@ type HetznerNodeSpec struct {
 	// server type
 	// required: true
 	Type string `json:"type"`
+}
+
+// AzureNodeSpec describes settings for an Azure node
+// swagger:model AzureNodeSpecV1
+type AzureNodeSpec struct {
+	// VM size
+	// required: true
+	Size string `json:"size"`
+	// should the machine have a publicly accessible IP address
+	// required: false
+	AssignPublicIP bool `json:"assignPublicIP"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 // VSphereNodeSpec VSphere node settings

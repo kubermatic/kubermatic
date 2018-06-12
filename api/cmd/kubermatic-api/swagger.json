@@ -996,10 +996,6 @@
           "type": "string",
           "x-go-name": "SecretAccessKey"
         },
-        "securityGroup": {
-          "type": "string",
-          "x-go-name": "SecurityGroup"
-        },
         "securityGroupID": {
           "type": "string",
           "x-go-name": "SecurityGroupID"
@@ -1202,6 +1198,89 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AzureCloudSpec": {
+      "type": "object",
+      "title": "AzureCloudSpec specifies acceess credentials to Azure cloud.",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
+        },
+        "routeTable": {
+          "type": "string",
+          "x-go-name": "RouteTableName"
+        },
+        "securityGroup": {
+          "type": "string",
+          "x-go-name": "SecurityGroup"
+        },
+        "subnet": {
+          "type": "string",
+          "x-go-name": "SubnetName"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        },
+        "vnet": {
+          "type": "string",
+          "x-go-name": "VNetName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "AzureDatacenterSpec": {
+      "type": "object",
+      "title": "AzureDatacenterSpec specifies a datacenter of Azure.",
+      "properties": {
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AzureNodeSpecV1": {
+      "description": "AzureNodeSpec describes settings for an Azure node",
+      "type": "object",
+      "required": [
+        "size"
+      ],
+      "properties": {
+        "assignPublicIP": {
+          "description": "should the machine have a publicly accessible IP address",
+          "type": "boolean",
+          "x-go-name": "AssignPublicIP"
+        },
+        "size": {
+          "description": "VM size",
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "tags": {
+          "description": "Additional metadata to set",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-name": "AzureNodeSpec",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
@@ -1231,6 +1310,9 @@
       "properties": {
         "aws": {
           "$ref": "#/definitions/AWSCloudSpec"
+        },
+        "azure": {
+          "$ref": "#/definitions/AzureCloudSpec"
         },
         "bringyourown": {
           "$ref": "#/definitions/BringYourOwnCloudSpec"
@@ -1825,6 +1907,9 @@
         "aws": {
           "$ref": "#/definitions/AWSDatacenterSpec"
         },
+        "azure": {
+          "$ref": "#/definitions/AzureDatacenterSpec"
+        },
         "bringyourown": {
           "$ref": "#/definitions/BringYourOwnDatacenterSpec"
         },
@@ -2368,6 +2453,9 @@
       "properties": {
         "aws": {
           "$ref": "#/definitions/AWSNodeSpecV2"
+        },
+        "azure": {
+          "$ref": "#/definitions/AzureNodeSpecV1"
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpecV2"
@@ -3032,10 +3120,6 @@
           "type": "string",
           "x-go-name": "Network"
         },
-        "networkCreated": {
-          "type": "boolean",
-          "x-go-name": "NetworkCreated"
-        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
@@ -3043,10 +3127,6 @@
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
-        },
-        "securityGroupCreated": {
-          "type": "boolean",
-          "x-go-name": "SecurityGroupCreated"
         },
         "securityGroups": {
           "type": "string",

@@ -38,7 +38,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: a user has a project with the given name, thus creating one fails",
 			Body:             `{"name":"my-first-project"}`,
-			ExpectedResponse: `{"error":{"code":409,"message":"projects \"my-first-project\" already exists"}}`,
+			ExpectedResponse: `{"error":{"code":409,"message":"projects.kubermatic.k8s.io \"my-first-project\" already exists"}}`,
 			HTTPStatus:       http.StatusConflict,
 			ExistingProject: &kubermaticapiv1.Project{
 				ObjectMeta: metav1.ObjectMeta{

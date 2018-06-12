@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -17,9 +18,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/apimachinery/pkg/util/net"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/net"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -35,17 +37,21 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	masterResources   string
-	externalURL       string
-	dc                string
-	dcFile            string
-	workerName        string
-	versionsFile      string
-	updatesFile       string
-	workerCount       int
-	overwriteRegistry string
-	nodePortRange     string
-	addons            string
+	masterResources      string
+	externalURL          string
+	dc                   string
+	dcFile               string
+	workerName           string
+	versionsFile         string
+	updatesFile          string
+	workerCount          int
+	overwriteRegistry    string
+	nodePortRange        string
+	addons               string
+	backupContainerFile  string
+	backupContainerImage string
+	backupInterval       string
+	etcdDiskSize         string
 }
 
 type controllerContext struct {
@@ -55,6 +61,7 @@ type controllerContext struct {
 	kubermaticClient          kubermaticclientset.Interface
 	kubermaticInformerFactory externalversions.SharedInformerFactory
 	kubeInformerFactory       kuberinformers.SharedInformerFactory
+	seedClustersRESTClient    []kubernetes.Interface
 }
 
 const (
@@ -77,6 +84,10 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backupContainer yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
+	flag.StringVar(&runOp.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
+	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
@@ -90,6 +101,13 @@ func main() {
 	if runOp.dc == "" {
 		glog.Fatal("datacenter-name is undefined")
 	}
+
+	if runOp.backupContainerFile == "" {
+		glog.Fatal("backup-container is undefined")
+	}
+
+	// Validate etcd disk size
+	resource.MustParse(runOp.etcdDiskSize)
 
 	// Validate node-port range
 	net.ParsePortRangeOrDie(runOp.nodePortRange)
@@ -113,6 +131,38 @@ func main() {
 	recorder, err := getEventRecorder(kubeClient)
 	if err != nil {
 		glog.Fatalf("failed to get event recorder: %v", err)
+	}
+
+	// create a REST Client for each seed cluster we find in kubeconfig
+	seedClustersRESTClient := []kubernetes.Interface{}
+	{
+		clientcmdConfig, err := clientcmd.LoadFromFile(runOp.kubeconfig)
+		if err != nil {
+			glog.Fatal(err)
+		}
+
+		for ctx := range clientcmdConfig.Contexts {
+			clientConfig := clientcmd.NewNonInteractiveClientConfig(
+				*clientcmdConfig,
+				ctx,
+				&clientcmd.ConfigOverrides{CurrentContext: ctx},
+				nil,
+			)
+			cfg, err := clientConfig.ClientConfig()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			kubeClient, err := kubernetes.NewForConfig(cfg)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			if cfg.Host == config.Host && cfg.Username == config.Username && cfg.Password == config.Password {
+				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubeClient", ctx)
+				continue
+			}
+			glog.V(2).Infof("Adding %s as seed cluster", ctx)
+			seedClustersRESTClient = append(seedClustersRESTClient, kubeClient)
+		}
 	}
 
 	stopCh := signals.SetupSignalHandler()
@@ -172,7 +222,7 @@ func main() {
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient}
+					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient, seedClustersRESTClient: seedClustersRESTClient}
 					err := runAllControllers(ctrlCtx)
 					if err != nil {
 						glog.Error(err)

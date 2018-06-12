@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
 
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -32,6 +33,9 @@ var (
 	requestedVersion string
 	registryName     string
 	printOnly        bool
+	staticImages     = []string{
+		backupcontroller.DefaultBackupContainerImage,
+	}
 )
 
 func main() {
@@ -68,6 +72,7 @@ func main() {
 			glog.Fatalf(err.Error())
 		}
 	}
+	imagesUnfiltered = append(imagesUnfiltered, staticImages...)
 
 	var images []string
 	for _, image := range imagesUnfiltered {

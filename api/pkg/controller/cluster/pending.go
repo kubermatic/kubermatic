@@ -11,7 +11,6 @@ import (
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -37,9 +36,7 @@ import (
 )
 
 const (
-	nodeDeletionFinalizer         = "kubermatic.io/delete-nodes"
-	cloudProviderCleanupFinalizer = "kubermatic.io/cleanup-cloud-provider"
-	namespaceDeletionFinalizer    = "kubermatic.io/delete-ns"
+	nodeDeletionFinalizer = "kubermatic.io/delete-nodes"
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
@@ -166,6 +163,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.serviceLister,
 		cc.overwriteRegistry,
 		cc.nodePortRange,
+		cc.etcdDiskSize,
 	), nil
 }
 
@@ -174,17 +172,12 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 	if err != nil {
 		return err
 	}
+	if prov == nil {
+		return fmt.Errorf("no valid provider specified")
+	}
 
-	cloud, err := prov.InitializeCloudProvider(cluster.Spec.Cloud, cluster.Name)
-	if err != nil {
+	if cluster, err = prov.InitializeCloudProvider(cluster); err != nil {
 		return err
-	}
-	if cloud != nil {
-		cluster.Spec.Cloud = cloud
-	}
-
-	if !kuberneteshelper.HasFinalizer(cluster, cloudProviderCleanupFinalizer) {
-		cluster.Finalizers = append(cluster.Finalizers, cloudProviderCleanupFinalizer)
 	}
 
 	return nil
@@ -208,10 +201,6 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 	}
 	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
 		return fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
-	}
-
-	if !kuberneteshelper.HasFinalizer(c, namespaceDeletionFinalizer) {
-		c.Finalizers = append(c.Finalizers, namespaceDeletionFinalizer)
 	}
 
 	return nil

@@ -5,6 +5,7 @@ import (
 
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
@@ -55,7 +56,8 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 
 	cloudSpec := &apiv2.NodeCloudSpec{}
 
-	if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderAWS {
+	switch decodedProviderConfig.CloudProvider {
+	case providerconfig.CloudProviderAWS:
 		config := &aws.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
@@ -67,7 +69,17 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			InstanceType: config.InstanceType.Value,
 			AMI:          config.AMI.Value,
 		}
-	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderDigitalocean {
+	case providerconfig.CloudProviderAzure:
+		config := &azure.RawConfig{}
+		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse Azure config: %v", err)
+		}
+		cloudSpec.Azure = &apiv2.AzureNodeSpec{
+			Size:           config.VMSize.Value,
+			AssignPublicIP: config.AssignPublicIP.Value,
+			Tags:           config.Tags,
+		}
+	case providerconfig.CloudProviderDigitalocean:
 		config := &digitalocean.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse digitalocean config: %v", err)
@@ -81,7 +93,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		for _, v := range config.Tags {
 			cloudSpec.Digitalocean.Tags = append(cloudSpec.Digitalocean.Tags, v.Value)
 		}
-	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderOpenstack {
+	case providerconfig.CloudProviderOpenstack:
 		config := &openstack.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse openstack config: %v", err)
@@ -91,7 +103,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			Image:  config.Image.Value,
 			Tags:   config.Tags,
 		}
-	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderHetzner {
+	case providerconfig.CloudProviderHetzner:
 		config := &hetzner.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
@@ -99,7 +111,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 		cloudSpec.Hetzner = &apiv2.HetznerNodeSpec{
 			Type: config.ServerType.Value,
 		}
-	} else if decodedProviderConfig.CloudProvider == providerconfig.CloudProviderVsphere {
+	case providerconfig.CloudProviderVsphere:
 		config := &vsphere.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
@@ -109,6 +121,8 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 			Memory:   int(config.MemoryMB),
 			Template: config.TemplateVMName.Value,
 		}
+	default:
+		return nil, fmt.Errorf("unknown cloud provider %q", providerconfig.CloudProviderVsphere)
 	}
 
 	return cloudSpec, nil

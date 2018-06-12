@@ -154,6 +154,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
+	Azure        *AzureCloudSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
@@ -194,6 +195,20 @@ type HetznerCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
+// AzureCloudSpec specifies acceess credentials to Azure cloud.
+type AzureCloudSpec struct {
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+
+	ResourceGroup  string `json:"resourceGroup"`
+	VNetName       string `json:"vnet"`
+	SubnetName     string `json:"subnet"`
+	RouteTableName string `json:"routeTable"`
+	SecurityGroup  string `json:"securityGroup"`
+}
+
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
 	Username string `json:"username"`
@@ -212,7 +227,6 @@ type AWSCloudSpec struct {
 	RoleName            string `json:"roleName"`
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroup       string `json:"securityGroup"`
 	SecurityGroupID     string `json:"securityGroupID"`
 
 	AvailabilityZone string `json:"availabilityZone"`
@@ -229,9 +243,6 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
-
-	NetworkCreated       bool `json:"networkCreated"`
-	SecurityGroupCreated bool `json:"securityGroupCreated"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.

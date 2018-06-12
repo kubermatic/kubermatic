@@ -14,10 +14,9 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-	appsv1informer "k8s.io/client-go/informers/apps/v1"
-	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,8 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	appsv1informer "k8s.io/client-go/informers/apps/v1"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
+	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 	"k8s.io/client-go/kubernetes"
 	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
@@ -65,6 +66,7 @@ type Controller struct {
 
 	overwriteRegistry string
 	nodePortRange     string
+	etcdDiskSize      resource.Quantity
 
 	metrics ControllerMetrics
 
@@ -117,6 +119,7 @@ func NewController(
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
+	etcdDiskSize string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -140,6 +143,7 @@ func NewController(
 
 		overwriteRegistry: overwriteRegistry,
 		nodePortRange:     nodePortRange,
+		etcdDiskSize:      resource.MustParse(etcdDiskSize),
 
 		externalURL: externalURL,
 		workerName:  workerName,

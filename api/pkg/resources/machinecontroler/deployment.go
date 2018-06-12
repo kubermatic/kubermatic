@@ -2,6 +2,7 @@ package machinecontroller
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +12,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.6.3"
+	tag = "v0.7.2"
 )
 
 // Deployment returns the machine-controller Deployment

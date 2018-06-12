@@ -37,13 +37,13 @@ type Controller struct {
 	metrics      Metrics
 	workerName   string
 
-	kubermaticClient kubermaticclientset.Interface
-	projectLister    kubermaticv1lister.ProjectLister
-	projectSynced    cache.InformerSynced
-	userLister       kubermaticv1lister.UserLister
-	userSynced       cache.InformerSynced
+	kubermaticMasterClient kubermaticclientset.Interface
+	projectLister          kubermaticv1lister.ProjectLister
+	projectSynced          cache.InformerSynced
+	userLister             kubermaticv1lister.UserLister
+	userSynced             cache.InformerSynced
 
-	kubeClient                      kubernetes.Interface
+	kubeMasterClient                kubernetes.Interface
 	rbacClusterRoleLister           rbaclister.ClusterRoleLister
 	rbacClusterRoleHasSynced        cache.InformerSynced
 	rbacClusterRoleBindingLister    rbaclister.ClusterRoleBindingLister
@@ -52,6 +52,19 @@ type Controller struct {
 	dependantInformers         []cache.Controller
 	dependantInformesHasSynced []cache.InformerSynced
 	dependantsQueue            workqueue.RateLimitingInterface
+
+	seedClustersRESTClient []kubernetes.Interface
+	projectResources       []projectResource
+}
+
+const (
+	destinationSeed = "seed"
+)
+
+type projectResource struct {
+	gvr         schema.GroupVersionResource
+	kind        string
+	destination string
 }
 
 // New creates a new RBACGenerator controller that is responsible for
@@ -65,14 +78,16 @@ func New(
 	kubermaticInformerFactory kubermaticsharedinformer.SharedInformerFactory,
 	kubeClient kubernetes.Interface,
 	rbacClusterRoleInformer rbacinformer.ClusterRoleInformer,
-	rbacClusterRoleBindingInformer rbacinformer.ClusterRoleBindingInformer) (*Controller, error) {
+	rbacClusterRoleBindingInformer rbacinformer.ClusterRoleBindingInformer,
+	seedClustersRESTClient []kubernetes.Interface) (*Controller, error) {
 	c := &Controller{
-		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProject"),
-		dependantsQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorDependants"),
-		metrics:          metrics,
-		workerName:       workerName,
-		kubermaticClient: kubermaticClient,
-		kubeClient:       kubeClient,
+		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProject"),
+		dependantsQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorDependants"),
+		metrics:                metrics,
+		workerName:             workerName,
+		kubermaticMasterClient: kubermaticClient,
+		kubeMasterClient:       kubeClient,
+		seedClustersRESTClient: seedClustersRESTClient,
 	}
 
 	projectInformer := kubermaticInformerFactory.Kubermatic().V1().Projects()
@@ -114,21 +129,29 @@ func New(
 	c.rbacClusterRoleHasSynced = rbacClusterRoleInformer.Informer().HasSynced
 
 	// a list of dependent resources that we would like to watch/monitor
-	resources := []struct {
-		gvr  schema.GroupVersionResource
-		kind string
-	}{
+	c.projectResources = []projectResource{
 		{
 			gvr: schema.GroupVersionResource{
 				Group:    kubermaticv1.GroupName,
 				Version:  kubermaticv1.GroupVersion,
 				Resource: kubermaticv1.ClusterResourceName,
 			},
-			kind: kubermaticv1.ClusterKindName,
+			kind:        kubermaticv1.ClusterKindName,
+			destination: destinationSeed,
+		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.SSHKeyResourceName,
+			},
+			kind: kubermaticv1.SSHKeyKind,
 		},
 	}
 
-	for _, resource := range resources {
+	for _, resource := range c.projectResources {
+		// TODO: perhaps we should take into account destination and e.g don't watch master resources if the controller is being run on a seed cluster.
 		informer, err := c.informerFor(kubermaticInformerFactory, resource.gvr, resource.kind)
 		if err != nil {
 			return nil, err

@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
@@ -44,6 +45,14 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 	if node.Spec.Cloud.AWS != nil {
 		config.CloudProvider = providerconfig.CloudProviderAWS
 		ext, err := getAWSProviderSpec(c, node, dc)
+		if err != nil {
+			return nil, err
+		}
+		config.CloudProviderSpec = *ext
+	}
+	if node.Spec.Cloud.Azure != nil {
+		config.CloudProvider = providerconfig.CloudProviderAzure
+		ext, err := getAzureProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -132,6 +141,38 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.D
 
 	config.Tags = map[string]string{}
 	for key, value := range node.Spec.Cloud.AWS.Tags {
+		config.Tags[key] = value
+	}
+	config.Tags["KubernetesCluster"] = c.Name
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+	config := azure.RawConfig{
+		SubscriptionID: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubscriptionID},
+		TenantID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.TenantID},
+		ClientID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientID},
+		ClientSecret:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientSecret},
+
+		Location:       providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
+		ResourceGroup:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
+		VMSize:         providerconfig.ConfigVarString{Value: node.Spec.Cloud.Azure.Size},
+		VNetName:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
+		SubnetName:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
+		RouteTableName: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
+
+		AssignPublicIP: providerconfig.ConfigVarBool{Value: node.Spec.Cloud.Azure.AssignPublicIP},
+	}
+	config.Tags = map[string]string{}
+	for key, value := range node.Spec.Cloud.Azure.Tags {
 		config.Tags[key] = value
 	}
 	config.Tags["KubernetesCluster"] = c.Name

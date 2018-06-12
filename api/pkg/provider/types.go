@@ -25,6 +25,7 @@ const (
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
 	AWSCloudProvider          = "aws"
+	AzureCloudProvider        = "azure"
 	OpenstackCloudProvider    = "openstack"
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
@@ -41,9 +42,9 @@ type CloudProvider interface {
 // CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
 // on a cloud provider.
 type CloudSpecProvider interface {
-	InitializeCloudProvider(*kubermaticv1.CloudSpec, string) (*kubermaticv1.CloudSpec, error)
-	ValidateCloudSpec(*kubermaticv1.CloudSpec) error
-	CleanUpCloudProvider(*kubermaticv1.CloudSpec) error
+	InitializeCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error
 }
 
 // ClusterProvider declares the set of methods for storing and loading clusters.
@@ -103,6 +104,9 @@ type ProjectProvider interface {
 	// Note:
 	// Before deletion project's status.phase is set to ProjectTerminating
 	Delete(user *kubermaticv1.User, projectInternalName string) error
+
+	// Get returns the project with the given name
+	Get(user *kubermaticv1.User, projectInternalName string) (*kubermaticv1.Project, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
@@ -114,6 +118,9 @@ func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
 	var clouds []string
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)
+	}
+	if spec.Azure != nil {
+		clouds = append(clouds, AzureCloudProvider)
 	}
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, BringYourOwnCloudProvider)

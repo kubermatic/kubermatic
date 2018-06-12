@@ -277,6 +277,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--audit-log-path", "/var/log/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
+		"--proxy-client-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
+		"--proxy-client-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",

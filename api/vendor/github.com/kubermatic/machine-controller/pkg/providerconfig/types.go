@@ -31,6 +31,7 @@ type CloudProvider string
 
 const (
 	CloudProviderAWS          CloudProvider = "aws"
+	CloudProviderAzure        CloudProvider = "azure"
 	CloudProviderDigitalocean CloudProvider = "digitalocean"
 	CloudProviderOpenstack    CloudProvider = "openstack"
 	CloudProviderHetzner      CloudProvider = "hetzner"
