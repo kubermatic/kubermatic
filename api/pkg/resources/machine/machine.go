@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
@@ -103,6 +104,14 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 	if node.Spec.OperatingSystem.Ubuntu != nil {
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
 		ext, err := getUbuntuOperatingSystemSpec(c, node, dc)
+		if err != nil {
+			return nil, err
+		}
+		config.OperatingSystemSpec = *ext
+	}
+	if node.Spec.OperatingSystem.CentOS != nil {
+		config.OperatingSystem = providerconfig.OperatingSystemCentOS
+		ext, err := getCentOSOperatingSystemSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -272,6 +281,21 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc p
 	config.Tags = make([]providerconfig.ConfigVarString, len(tags.List()))
 	for i, tag := range tags.List() {
 		config.Tags[i].Value = tag
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+	config := centos.Config{
+		DistUpgradeOnBoot: node.Spec.OperatingSystem.CentOS.DistUpgradeOnBoot,
 	}
 
 	ext := &runtime.RawExtension{}

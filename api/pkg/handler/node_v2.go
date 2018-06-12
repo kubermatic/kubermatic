@@ -239,11 +239,16 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Spec.Cloud.VSphere == nil {
 			return nil, errors.NewBadRequest("cannot create node without cloud provider")
 		}
-		//Only allow container linux + docker
-		if node.Spec.OperatingSystem.ContainerLinux != nil && node.Spec.Versions.ContainerRuntime.Name != "" && node.Spec.Versions.ContainerRuntime.Name != string(containerruntime.Docker) {
+
+		// Support matrix: Ubuntu (crio + docker), containerlinux (docker), centos (docker)
+		usesDocker := node.Spec.Versions.ContainerRuntime.Name == string(containerruntime.Docker)
+		if node.Spec.OperatingSystem.CentOS != nil && !usesDocker {
+			return nil, fmt.Errorf("only docker is allowd when using centos")
+		}
+		if node.Spec.OperatingSystem.ContainerLinux != nil && !usesDocker {
 			return nil, fmt.Errorf("only docker is allowd when using container linux")
 		}
-		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil {
+		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil && node.Spec.OperatingSystem.CentOS == nil {
 			return nil, fmt.Errorf("no operating system specified")
 		}
 
