@@ -32,6 +32,12 @@ type UbuntuSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
+// CentOSSpec contains CentOS specific settings
+type CentOSSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
 // ContainerLinuxSpec ubuntu linux specific settings
 // swagger:model ContainerLinuxSpecV2
 type ContainerLinuxSpec struct {
@@ -44,6 +50,7 @@ type ContainerLinuxSpec struct {
 type OperatingSystemSpec struct {
 	Ubuntu         *UbuntuSpec         `json:"ubuntu,omitempty"`
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
+	CentOS         *CentOSSpec         `json:"centos,omitempty"`
 }
 
 // NodeVersionInfo node version information
