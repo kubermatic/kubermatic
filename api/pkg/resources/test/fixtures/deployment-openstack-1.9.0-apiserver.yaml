@@ -141,6 +141,10 @@ spec:
         - /etc/kubernetes/tls/apiserver-tls.crt
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
+        - --proxy-client-cert-file
+        - /etc/kubernetes/tls/apiserver-tls.crt
+        - --proxy-client-key-file
+        - /etc/kubernetes/tls/apiserver-tls.key
         - --client-ca-file
         - /etc/kubernetes/ca-cert/ca.crt
         - --kubelet-client-certificate
