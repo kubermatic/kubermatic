@@ -12,6 +12,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -55,11 +56,11 @@ func main() {
 	w := sync.WaitGroup{}
 	w.Add(len(clusters.Items))
 
-	for _, cluster := range clusters.Items {
+	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
 			cleanupCluster(c, &ctx)
-		}(&cluster)
+		}(&clusters.Items[i])
 	}
 
 	w.Wait()
@@ -76,6 +77,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupKubeStateMetrics,
 		cleanupMachineController,
 		cleanupScheduler,
+		removeDeprecatedFinalizers,
 	}
 
 	w := sync.WaitGroup{}
@@ -152,4 +154,19 @@ func cleanupMachineController(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 func cleanupScheduler(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "scheduler", ctx)
+}
+
+// We changed the finalizers in https://github.com/kubermatic/kubermatic/pull/1196
+func removeDeprecatedFinalizers(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	finalizers := sets.NewString(cluster.Finalizers...)
+	if finalizers.Has("kubermatic.io/delete-ns") || finalizers.Has("kubermatic.io/cleanup-cloud-provider") {
+		finalizers.Delete("kubermatic.io/delete-ns")
+		finalizers.Delete("kubermatic.io/cleanup-cloud-provider")
+		cluster.Finalizers = finalizers.List()
+		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
