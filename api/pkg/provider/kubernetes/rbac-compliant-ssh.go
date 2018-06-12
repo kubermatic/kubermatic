@@ -39,6 +39,7 @@ type RBACCompliantSSHKeyProvider struct {
 	keyLister kubermaticv1lister.UserSSHKeyLister
 }
 
+// Create creates a ssh key that will belong to the given project
 func (p *RBACCompliantSSHKeyProvider) Create(keyName, pubKey string, user *kubermaticapiv1.User, project *kubermaticapiv1.Project) (*kubermaticapiv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
@@ -99,7 +100,7 @@ type ListOptions struct {
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
 func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, user *kubermaticapiv1.User, options *ListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
 	if project == nil || user == nil {
-		return nil, errors.New("a project or/and a user is missing but requried")
+		return nil, errors.New("a project or/and a user is missing but required")
 	}
 	allKeys, err := p.keyLister.List(labels.Everything())
 	if err != nil {
