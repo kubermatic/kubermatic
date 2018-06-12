@@ -49,6 +49,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listDigitaloceanSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/azure/sizes").
+		Handler(r.listAzureSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/openstack/sizes").
 		Handler(r.listOpenstackSizes())
 
@@ -160,6 +164,28 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(digitaloceanSizeEndpoint()),
 		decodeDoSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/azure/sizes azure listAzureSizes
+//
+// Lists available VM sizes in an Azure region
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureSizeList
+func (r Routing) listAzureSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(azureSizeEndpoint()),
+		decodeAzureSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
