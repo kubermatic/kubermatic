@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -51,13 +50,15 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 // ValidateCloudSpec
 func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
-	defer func() {
-		if err := client.Logout(context.TODO()); err != nil {
-			glog.V(0).Infof("failed to logout from vSphere for %s: %v", spec, err)
-		}
-	}()
+	if err != nil {
+		return err
+	}
 
-	return err
+	if err := client.Logout(context.TODO()); err != nil {
+		return fmt.Errorf("failed to logout from vSphere: %v", err)
+	}
+
+	return nil
 }
 
 // InitializeCloudProvider
