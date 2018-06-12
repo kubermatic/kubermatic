@@ -56,6 +56,18 @@ metadata:
   name: test1
   namespace: kube-system
 `
+
+	testManifest1WithDeployment = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+	template:
+	  spec:
+	    containers:
+	    - name: nginx
+	      image: {{default "foo.io/" .OverwriteRegistry}}test:1.2.3
+`
 )
 
 var (
@@ -79,8 +91,8 @@ func TestController_combineManifests(t *testing.T) {
 	}
 }
 
-func TestController_getAddonManifests(t *testing.T) {
-	cluster := &kubermaticv1.Cluster{
+func setupTestCluster() *kubermaticv1.Cluster {
+	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
@@ -107,8 +119,10 @@ func TestController_getAddonManifests(t *testing.T) {
 			},
 		},
 	}
+}
 
-	addon := &kubermaticv1.Addon{
+func setupTestAddon() *kubermaticv1.Addon {
+	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-addon",
 		},
@@ -116,7 +130,82 @@ func TestController_getAddonManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
+}
 
+func TestController_getAddonDeploymentManifests(t *testing.T) {
+	cluster := setupTestCluster()
+	addon := setupTestAddon()
+
+	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(addonDir)
+
+	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	controller := &Controller{
+		addonDir:    addonDir,
+		registryURI: parceRegistryURI("bar.io"),
+	}
+	manifests, err := controller.getAddonManifests(addon, cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(manifests) != 1 {
+		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
+	}
+
+	expectedRegURL := "bar.io/test:1.2.3"
+	if !strings.Contains(manifests[0].String(), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
+	}
+}
+
+func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
+	cluster := setupTestCluster()
+	addon := setupTestAddon()
+
+	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(addonDir)
+
+	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	controller := &Controller{
+		addonDir: addonDir,
+	}
+	manifests, err := controller.getAddonManifests(addon, cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(manifests) != 1 {
+		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
+	}
+
+	expectedRegURL := "foo.io/test:1.2.3"
+	if !strings.Contains(manifests[0].String(), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
+	}
+}
+
+func TestController_getAddonManifests(t *testing.T) {
+	cluster := setupTestCluster()
+	addon := setupTestAddon()
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
@@ -174,7 +263,6 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
-
 	labeledManifests, err := controller.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
 		t.Fatal(err)

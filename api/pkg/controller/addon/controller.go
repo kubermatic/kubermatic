@@ -54,10 +54,11 @@ type KubeconfigProvider interface {
 
 // Controller stores necessary components that are required to manage in-cluster Add-On's
 type Controller struct {
-	queue      workqueue.RateLimitingInterface
-	metrics    Metrics
-	workerName string
-	addonDir   string
+	queue       workqueue.RateLimitingInterface
+	metrics     Metrics
+	workerName  string
+	addonDir    string
+	registryURI string
 
 	KubeconfigProvider KubeconfigProvider
 
@@ -75,11 +76,13 @@ func New(
 	metrics Metrics,
 	workerName string,
 	addonDir string,
+	overwriteRegistey string,
 	KubeconfigProvider KubeconfigProvider,
 	client kubermaticclientset.Interface,
 	secretInformer corev1informer.SecretInformer,
 	addonInformer kubermaticv1informers.AddonInformer,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
+
 	c := &Controller{
 		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "Addon"),
 		metrics:            metrics,
@@ -87,6 +90,10 @@ func New(
 		addonDir:           addonDir,
 		KubeconfigProvider: KubeconfigProvider,
 		client:             client,
+	}
+
+	if overwriteRegistey != "" {
+		c.registryURI = parceRegistryURI(overwriteRegistey)
 	}
 
 	addonInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -132,6 +139,10 @@ func New(
 	c.secretsSynced = secretInformer.Informer().HasSynced
 
 	return c, nil
+}
+
+func parceRegistryURI(uri string) string {
+	return path.Clean(uri) + "/"
 }
 
 func (c *Controller) enqueueClusterAddons(i interface{}) {
@@ -282,9 +293,10 @@ func (c *Controller) sync(key string) error {
 }
 
 type templateData struct {
-	Addon     *kubermaticv1.Addon
-	Cluster   *kubermaticv1.Cluster
-	Variables map[string]interface{}
+	Addon             *kubermaticv1.Addon
+	Cluster           *kubermaticv1.Cluster
+	Variables         map[string]interface{}
+	OverwriteRegistry string
 }
 
 func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
@@ -297,9 +309,10 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 	}
 
 	data := &templateData{
-		Variables: make(map[string]interface{}),
-		Cluster:   cluster,
-		Addon:     addon,
+		Variables:         make(map[string]interface{}),
+		Cluster:           cluster,
+		Addon:             addon,
+		OverwriteRegistry: c.registryURI,
 	}
 
 	if len(addon.Spec.Variables.Raw) > 0 {
@@ -322,7 +335,8 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			return nil, err
 		}
 
-		tpl, err := template.New(fmt.Sprintf("%s-%s", addon.Name, info.Name())).Funcs(sprig.TxtFuncMap()).Parse(string(fbytes))
+		tplName := fmt.Sprintf("%s-%s", addon.Name, info.Name())
+		tpl, err := template.New(tplName).Funcs(sprig.TxtFuncMap()).Parse(string(fbytes))
 		if err != nil {
 			return nil, err
 		}
