@@ -12,10 +12,13 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/glog"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	clusterTagKey = "cluster"
+
+	finalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
 )
 
 type azure struct {
@@ -127,9 +130,16 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	// each of these resources, which not only will ensure consistency, but also
 	// prevent us from deleting pre-existing resources.
 
-	glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
-	if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
-		glog.Error(err)
+	finalizers := sets.NewString(cluster.Finalizers...)
+
+	if finalizers.Has(finalizerSecurityGroup) {
+		glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
+		if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
+			return cluster, err
+		}
+
+		finalizers.Delete(finalizerSecurityGroup)
+		cluster.Finalizers = finalizers.List()
 	}
 
 	glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
@@ -403,10 +413,6 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
 	}
 
-	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
-		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
-	}
-
 	glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, err
@@ -427,9 +433,15 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuberma
 		return nil, err
 	}
 
-	glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
-	if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
-		return nil, err
+	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
+		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
+
+		glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
+		if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+			return cluster, err
+		}
+
+		cluster.Finalizers = append(cluster.Finalizers, finalizerSecurityGroup)
 	}
 
 	return cluster, nil
