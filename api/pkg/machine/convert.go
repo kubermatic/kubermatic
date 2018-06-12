@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -40,6 +41,14 @@ func GetAPIV2OperatingSystemSpec(machine *v1alpha1.Machine) (*apiv2.OperatingSys
 			return nil, fmt.Errorf("failed to parse ubuntu config: %v", err)
 		}
 		operatingSystemSpec.Ubuntu = &apiv2.UbuntuSpec{
+			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
+		}
+	} else if decodedProviderConfig.OperatingSystem == providerconfig.OperatingSystemCentOS {
+		config := &centos.Config{}
+		if err := json.Unmarshal(decodedProviderConfig.OperatingSystemSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse centos config: %v", err)
+		}
+		operatingSystemSpec.CentOS = &apiv2.CentOSSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
 		}
 	}

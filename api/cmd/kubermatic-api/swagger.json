@@ -1304,6 +1304,18 @@
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
     },
+    "CentOSSpec": {
+      "description": "CentOSSpec contains CentOS specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "CloudSpec": {
       "type": "object",
       "title": "CloudSpec mutually stores access data to a cloud provider.",
@@ -3246,6 +3258,9 @@
       "type": "object",
       "title": "OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.",
       "properties": {
+        "centos": {
+          "$ref": "#/definitions/CentOSSpec"
+        },
         "containerLinux": {
           "$ref": "#/definitions/ContainerLinuxSpecV2"
         },
