@@ -576,6 +576,83 @@ func TestExecute(t *testing.T) {
 			},
 			ret: nil,
 		},
+		"machine-azure": {
+			name: "get valid machine.yaml for Azure",
+			data: Data{
+				Cluster: &kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "azurecluster-1a2b3c4d5e",
+					},
+					Address: &kubermaticv1.ClusterAddress{},
+					Status:  kubermaticv1.ClusterStatus{},
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: &kubermaticv1.CloudSpec{
+							DatacenterName: "whatever-dc",
+							Azure: &kubermaticv1.AzureCloudSpec{
+								TenantID:       "38w7giefb32fhifw3q",
+								SubscriptionID: "32h9q8r8xqp3h9",
+								ClientID:       "32hrf23oh89f32",
+								ClientSecret:   "rbyughv438oh32f23v2",
+								ResourceGroup:  "cluster-azurecluster-1a2b3c4d5e",
+								VNetName:       "cluster-azurecluster-1a2b3c4d5e",
+								SubnetName:     "cluster-azurecluster-1a2b3c4d5e",
+								RouteTableName: "cluster-azurecluster-1a2b3c4d5e",
+							},
+						},
+					},
+				},
+				Node: &apiv2.Node{
+					Metadata: apiv2.ObjectMeta{
+						Name: "azurecluster-1a2b3c4d5e-te5s7",
+					},
+					Spec: apiv2.NodeSpec{
+						Cloud: apiv2.NodeCloudSpec{
+							Azure: &apiv2.AzureNodeSpec{
+								Size:           "Standard_B1ms",
+								AssignPublicIP: false,
+								Tags: map[string]string{
+									"foo": "bar",
+								},
+							},
+						},
+						OperatingSystem: apiv2.OperatingSystemSpec{
+							ContainerLinux: &apiv2.ContainerLinuxSpec{
+								DisableAutoUpdate: true,
+							},
+						},
+						Versions: apiv2.NodeVersionInfo{
+							Kubelet: "v1.10.3",
+						},
+					},
+					Status: apiv2.NodeStatus{},
+				},
+				Datacenter: provider.DatacenterMeta{
+					Location: "westeurope",
+					Seed:     "europe-west3-c",
+					Country:  "NL",
+					Spec: provider.DatacenterSpec{
+						Azure: &provider.AzureSpec{
+							Location: "westeurope",
+						},
+					},
+					IsSeed: false,
+				},
+				Keys: []*kubermaticv1.UserSSHKey{
+					{
+						Spec: kubermaticv1.SSHKeySpec{
+							Owner:       "John Doe",
+							Name:        "ssh-key-name",
+							Fingerprint: "1234:56789:1234:56789",
+							PublicKey:   "ssh-rsa TEST123test",
+							Clusters: []string{
+								"azurecluster-1a2b3c4d5e",
+							},
+						},
+					},
+				},
+			},
+			ret: nil,
+		},
 		"machine-hetzner": {
 			name: "get valid machine.yaml for Hetzner",
 			data: Data{

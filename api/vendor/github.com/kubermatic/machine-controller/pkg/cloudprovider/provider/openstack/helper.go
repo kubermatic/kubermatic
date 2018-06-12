@@ -3,7 +3,6 @@ package openstack
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
@@ -24,13 +23,10 @@ var (
 	errNotFound = errors.New("not found")
 )
 
-// Protects creation of public key
-var publicKeyCreationLock = &sync.Mutex{}
-
 const openstackFloatingIPErrorStatusName = "ERROR"
 
 func getRegion(client *gophercloud.ProviderClient, name string) (*osregions.Region, error) {
-	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: name})
+	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +35,7 @@ func getRegion(client *gophercloud.ProviderClient, name string) (*osregions.Regi
 }
 
 func getRegions(client *gophercloud.ProviderClient) ([]osregions.Region, error) {
-	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic})
+	idClient, err := goopenstack.NewIdentityV3(client, gophercloud.EndpointOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +55,7 @@ func getRegions(client *gophercloud.ProviderClient) ([]osregions.Region, error) 
 }
 
 func getAvailabilityZones(client *gophercloud.ProviderClient, region string) ([]osavailabilityzones.AvailabilityZone, error) {
-	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +83,7 @@ func getAvailabilityZone(client *gophercloud.ProviderClient, region, name string
 }
 
 func getImageByName(client *gophercloud.ProviderClient, region, name string) (*osimages.Image, error) {
-	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +112,7 @@ func getImageByName(client *gophercloud.ProviderClient, region, name string) (*o
 }
 
 func getFlavor(client *gophercloud.ProviderClient, region, name string) (*osflavors.Flavor, error) {
-	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +142,7 @@ func getFlavor(client *gophercloud.ProviderClient, region, name string) (*osflav
 }
 
 func getSecurityGroup(client *gophercloud.ProviderClient, region, name string) (*ossecuritygroups.SecGroup, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +171,7 @@ func getSecurityGroup(client *gophercloud.ProviderClient, region, name string) (
 }
 
 func getNetworks(client *gophercloud.ProviderClient, region string) ([]osnetworks.Network, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +209,7 @@ func getNetwork(client *gophercloud.ProviderClient, region, nameOrID string) (*o
 }
 
 func getSubnets(client *gophercloud.ProviderClient, region, networkID string) ([]ossubnets.Subnet, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +249,7 @@ func getSubnet(client *gophercloud.ProviderClient, region, nameOrID string) (*os
 }
 
 func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, region, name string) error {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return osErrorToTerminalError(err, "failed to get network client")
 	}
@@ -295,7 +291,7 @@ func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, regi
 }
 
 func getFreeFloatingIPs(client *gophercloud.ProviderClient, region string, floatingIPPool *osnetworks.Network) ([]osfloatingips.FloatingIP, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +317,7 @@ func getFreeFloatingIPs(client *gophercloud.ProviderClient, region string, float
 }
 
 func assignFloatingIP(client *gophercloud.ProviderClient, region, ipID, instanceID, networkID string) error {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return err
 	}
@@ -338,7 +334,7 @@ func assignFloatingIP(client *gophercloud.ProviderClient, region, ipID, instance
 }
 
 func createFloatingIP(client *gophercloud.ProviderClient, region string, floatingIPPool *osnetworks.Network) (*osfloatingips.FloatingIP, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +343,7 @@ func createFloatingIP(client *gophercloud.ProviderClient, region string, floatin
 }
 
 func getInstancePort(client *gophercloud.ProviderClient, region, instanceID, networkID string) (*osports.Port, error) {
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return nil, err
 	}
