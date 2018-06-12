@@ -3,12 +3,14 @@ package azure
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-04-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/glog"
@@ -44,11 +46,11 @@ func deleteSubnet(cloud *kubermaticv1.CloudSpec) error {
 
 	deleteSubnetFuture, err := subnetsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
 	if err != nil {
-		return fmt.Errorf("failed to delete sub-network %q: %v", cloud.Azure.SubnetName, err)
+		return err
 	}
 
 	if err = deleteSubnetFuture.WaitForCompletion(context.TODO(), subnetsClient.Client); err != nil {
-		return fmt.Errorf("failed to delete sub-network %q: %v", cloud.Azure.SubnetName, err)
+		return err
 	}
 
 	return nil
@@ -62,11 +64,11 @@ func deleteVNet(cloud *kubermaticv1.CloudSpec) error {
 
 	deleteVNetFuture, err := networksClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName)
 	if err != nil {
-		return fmt.Errorf("failed to delete virtual network %q: %v", cloud.Azure.VNetName, err)
+		return err
 	}
 
 	if err = deleteVNetFuture.WaitForCompletion(context.TODO(), networksClient.Client); err != nil {
-		return fmt.Errorf("failed to delete virtual network %q: %v", cloud.Azure.VNetName, err)
+		return err
 	}
 
 	return nil
@@ -80,11 +82,11 @@ func deleteResourceGroup(cloud *kubermaticv1.CloudSpec) error {
 
 	future, err := groupsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup)
 	if err != nil {
-		return fmt.Errorf("failed to delete resource group %q: %v", cloud.Azure.ResourceGroup, err)
+		return err
 	}
 
 	if err = future.WaitForCompletion(context.TODO(), groupsClient.Client); err != nil {
-		return fmt.Errorf("failed to delete resource group %q: %v", cloud.Azure.ResourceGroup, err)
+		return err
 	}
 
 	return nil
@@ -98,11 +100,11 @@ func deleteRouteTable(cloud *kubermaticv1.CloudSpec) error {
 
 	future, err := routeTablesClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
 	if err != nil {
-		return fmt.Errorf("failed to delete route table %q: %v", cloud.Azure.RouteTableName, err)
+		return err
 	}
 
 	if err = future.WaitForCompletion(context.TODO(), routeTablesClient.Client); err != nil {
-		return fmt.Errorf("failed to delete route table %q: %v", cloud.Azure.RouteTableName, err)
+		return err
 	}
 
 	return nil
@@ -116,11 +118,11 @@ func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
 
 	future, err := securityGroupsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
 	if err != nil {
-		return fmt.Errorf("failed to delete security group %q: %v", cloud.Azure.SecurityGroup, err)
+		return err
 	}
 
 	if err = future.WaitForCompletion(context.TODO(), securityGroupsClient.Client); err != nil {
-		return fmt.Errorf("failed to delete security group %q: %v", cloud.Azure.SecurityGroup, err)
+		return err
 	}
 
 	return nil
@@ -132,7 +134,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	if finalizers.Has(finalizerSecurityGroup) {
 		glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
-			return cluster, err
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
+			}
 		}
 
 		finalizers.Delete(finalizerSecurityGroup)
@@ -142,7 +146,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	if finalizers.Has(finalizerRouteTable) {
 		glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 		if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
-			return cluster, err
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
+			}
 		}
 
 		finalizers.Delete(finalizerRouteTable)
@@ -152,7 +158,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	if finalizers.Has(finalizerSubnet) {
 		glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
-			return cluster, err
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
+			}
 		}
 
 		finalizers.Delete(finalizerSubnet)
@@ -162,7 +170,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	if finalizers.Has(finalizerVNet) {
 		glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 		if err := deleteVNet(cluster.Spec.Cloud); err != nil {
-			return cluster, err
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete virtual network %q: %v", cluster.Spec.Cloud.Azure.VNetName, err)
+			}
 		}
 
 		finalizers.Delete(finalizerVNet)
@@ -172,7 +182,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermatic
 	if finalizers.Has(finalizerResourceGroup) {
 		glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
-			return cluster, err
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
+			}
 		}
 
 		finalizers.Delete(finalizerResourceGroup)
