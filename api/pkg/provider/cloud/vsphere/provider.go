@@ -52,13 +52,14 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 // InitializeCloudProvider
 func (v *vsphere) InitializeCloudProvider(spec *kubermaticv1.CloudSpec, name string) (*kubermaticv1.CloudSpec, error) {
 	client, err := v.getClient(spec)
-	defer func() {
-		if err := client.Logout(context.TODO()); err != nil {
-			glog.V(0).Infof("failed to logout from vsphere for %s: %v", name, err)
-		}
-	}()
+	if err != nil {
+		return nil, err
+	}
+	if err := client.Logout(context.TODO()); err != nil {
+		glog.V(0).Infof("failed to logout from vSphere for %s: %v", name, err)
+	}
 
-	return nil, err
+	return nil, nil
 }
 
 // ValidateCloudSpec
