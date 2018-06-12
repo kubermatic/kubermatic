@@ -163,11 +163,11 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, kind, gro
 	}
 	sharedExistingClusterRole, err := kubeClient.RbacV1().ClusterRoles().Get(generatedClusterRole.Name, metav1.GetOptions{})
 	if err != nil {
-		if err != nil {
-			if !kerrors.IsNotFound(err) {
-				return err
-			}
+		if !kerrors.IsNotFound(err) {
+			return err
 		}
+		// the resource has not been found but for some reason sharedExistingClusterRoles is not nil
+		sharedExistingClusterRole = nil
 	}
 	if sharedExistingClusterRole != nil {
 		if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) {
@@ -190,6 +190,8 @@ func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, gr
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
+		// the resource has not been found but for some reason sharedExistingClusterRoleBinding is not nil
+		sharedExistingClusterRoleBinding = nil
 	}
 
 	if sharedExistingClusterRoleBinding != nil {
