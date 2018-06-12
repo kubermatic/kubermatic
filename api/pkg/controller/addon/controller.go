@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -297,6 +298,8 @@ type templateData struct {
 	Cluster           *kubermaticv1.Cluster
 	Variables         map[string]interface{}
 	OverwriteRegistry string
+	DNSClusterIP      string
+	ClusterCIDR       string
 }
 
 func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
@@ -308,11 +311,18 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
+	clusterIP, err := getKubeDNSClusterIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &templateData{
 		Variables:         make(map[string]interface{}),
 		Cluster:           cluster,
 		Addon:             addon,
 		OverwriteRegistry: c.registryURI,
+		DNSClusterIP:      clusterIP,
+		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 
 	if len(addon.Spec.Variables.Raw) > 0 {
@@ -367,6 +377,19 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 	}
 
 	return allManifests, nil
+}
+
+func getKubeDNSClusterIP(blocks []string) (string, error) {
+	if len(blocks) == 0 {
+		return "", fmt.Errorf("empty Services.CIDRBlocks")
+	}
+	block := blocks[0]
+	ip, _, err := net.ParseCIDR(block)
+	if err != nil {
+		return "", err
+	}
+	ip[len(ip)-1] = ip[len(ip)-1] + 10
+	return ip.String(), nil
 }
 
 // combineManifests returns all manifests combined into a multi document yaml
