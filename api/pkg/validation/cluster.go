@@ -171,6 +171,22 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 		return nil
 	}
 
+	if spec.Azure != nil {
+		if spec.Azure.TenantID == "" {
+			return errors.New("no tenant ID specified")
+		}
+		if spec.Azure.SubscriptionID == "" {
+			return errors.New("no subscription ID specified")
+		}
+		if spec.Azure.ClientID == "" {
+			return errors.New("no client ID specified")
+		}
+		if spec.Azure.ClientSecret == "" {
+			return errors.New("no client secret specified")
+		}
+		return nil
+	}
+
 	if spec.Openstack != nil {
 		if spec.Openstack.Domain == "" {
 			return errors.New("no domain specified")

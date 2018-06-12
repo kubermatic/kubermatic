@@ -71,5 +71,23 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 {{- end }}
+{{- if .Cluster.Spec.Cloud.Azure}}
+{
+  "cloud": "AZUREPUBLICCLOUD",
+  "tenantId": "{{ .Cluster.Spec.Cloud.Azure.TenantID }}",
+  "subscriptionId": "{{ .Cluster.Spec.Cloud.Azure.SubscriptionID }}",
+  "aadClientId": "{{ .Cluster.Spec.Cloud.Azure.ClientID }}",
+  "aadClientSecret": "{{ .Cluster.Spec.Cloud.Azure.ClientSecret }}",
+
+  "resourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
+  "location": "{{ .DC.Spec.Azure.Location }}",
+  "vnetName": "{{ .Cluster.Spec.Cloud.Azure.VNetName }}",
+  "vnetResourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
+  "subnetName": "{{ .Cluster.Spec.Cloud.Azure.SubnetName }}",
+  "routeTableName": "{{ .Cluster.Spec.Cloud.Azure.RouteTableName }}",
+
+  "useInstanceMetadata": true
+}
+{{- end }}
 `
 )
