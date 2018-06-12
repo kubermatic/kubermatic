@@ -39,14 +39,6 @@ local drone = import 'drone/drone.libsonnet';
         tags=['${DRONE_COMMIT}'],
         context='api',
       ),
-    '5-kubermatic-installer-docker-always': drone.step.docker.new(
-      'kubermatic/installer',
-      group='push-always',
-      secrets=dockerSecrets,
-      dockerfile='config/Dockerfile',
-      tags=['${DRONE_COMMIT}'],
-      context='config',
-      ),
 
     // Push Master
 
@@ -59,14 +51,6 @@ local drone = import 'drone/drone.libsonnet';
         tags=['master'],
         context='api',
       ) + whenBranchMaster,
-    '6-kubermatic-installer-docker-master': drone.step.docker.new(
-      'kubermatic/installer',
-      group='push-master',
-      secrets=dockerSecrets,
-      dockerfile='config/Dockerfile',
-      tags=['master'],
-      context='config',
-      ) + whenBranchMaster,
 
     // Push Release
 
@@ -78,14 +62,6 @@ local drone = import 'drone/drone.libsonnet';
         dockerfile='api/Dockerfile',
         tags=['${DRONE_TAG}', 'latest'],
         context='api',
-      ) + whenEventTag,
-    '7-kubermatic-installer-docker-release': drone.step.docker.new(
-        'kubermatic/installer',
-        group='push-release',
-        secrets=dockerSecrets,
-        dockerfile='config/Dockerfile',
-        tags=['${DRONE_TAG}', 'latest'],
-        context='config',
       ) + whenEventTag,
 
     '8-sync-charts': drone.step.new('alpine:3.7', commands=[
