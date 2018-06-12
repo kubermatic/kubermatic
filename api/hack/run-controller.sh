@@ -18,4 +18,4 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -external-url=dev.kubermatic.io \
   -backup-container=../config/kubermatic/static/backup-container.yaml \
   -logtostderr=1 \
-  -v=6
+  -v=6 $@

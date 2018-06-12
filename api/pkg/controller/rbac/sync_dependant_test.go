@@ -170,6 +170,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		// scenario 2
 		//
 		// TODO: uncomment this when existing object are migrated to projects
+		//       see: https://github.com/kubermatic/kubermatic/issues/1219
 		//
 		//
 		/*{

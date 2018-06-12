@@ -21,4 +21,4 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -address=127.0.0.1:8080 \
   -client-id=kubermatic \
   -logtostderr \
-  -v=8
+  -v=8 $@
