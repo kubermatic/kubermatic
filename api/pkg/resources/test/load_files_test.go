@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -36,6 +37,8 @@ import (
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
+var update = flag.Bool("update", false, "Update test fixtures")
+
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	path := filepath.Join("./fixtures", resFile+".yaml")
 	jsonRes, err := json.Marshal(testObj)
@@ -45,6 +48,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res, err := yaml.JSONToYAML(jsonRes)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if *update {
+		if err := ioutil.WriteFile(path, res, 0644); err != nil {
+			t.Fatalf("failed to update fixtures: %v", err)
+		}
 	}
 
 	exp, err := ioutil.ReadFile(path)
