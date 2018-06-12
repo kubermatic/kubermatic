@@ -537,6 +537,7 @@
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
     "pkg/template",
+    "pkg/userdata/centos",
     "pkg/userdata/cloud",
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
@@ -1176,6 +1177,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5b9b2f7169abaa6b906839fdf4a123fec90d2dc27c538a47dfeb889018a3a9db"
+  inputs-digest = "88e639c3ad6d4aa8b72baf4e1c7924653c6005d44c8ac8e61235f2e22337549f"
   solver-name = "gps-cdcl"
   solver-version = 1
