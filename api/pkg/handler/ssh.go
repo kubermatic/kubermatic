@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
