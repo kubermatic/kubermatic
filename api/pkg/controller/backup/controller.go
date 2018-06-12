@@ -13,14 +13,18 @@ import (
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
 	"k8s.io/client-go/kubernetes"
@@ -33,11 +37,20 @@ const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
+	// SecretVolumeName defines the name for the volume containing the secrets
+	SecretVolumeName = "secrets"
+	// SecretName is the name for the secrets which contains the secrets for the backup store container
+	SecretName = "kubermatic-etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
 	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
 	// DefaultBackupInterval defines the default interval used to create backups
 	DefaultBackupInterval = "20m"
-	cronJobPrefix         = "etcd-backup"
+	// cronJobPrefix defines the prefix used for all backup cronjob names
+	cronJobPrefix = "etcd-backup"
+	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster
+	cleanupFinalizer = "kubermatic.io/cleanup-backups"
+	// backupCleanupJobLabel defines the label we use on all cleanup jobs
+	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -49,7 +62,8 @@ type Metrics struct {
 
 // Controller stores all components required to create backups
 type Controller struct {
-	storeContainer corev1.Container
+	storeContainer   corev1.Container
+	cleanupContainer corev1.Container
 	// backupScheduleString is the cron string representing
 	// the backupSchedule
 	backupScheduleString string
@@ -73,6 +87,7 @@ type Controller struct {
 // for all managed user clusters
 func New(
 	storeContainer corev1.Container,
+	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	workerName string,
@@ -80,7 +95,8 @@ func New(
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
-	cronJobInformer informersbatchv1beta1.CronJobInformer) (*Controller, error) {
+	cronJobInformer informersbatchv1beta1.CronJobInformer,
+) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return nil, err
 	}
@@ -92,11 +108,12 @@ func New(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 	c := &Controller{
-		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
+		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Backup"),
 		kubermaticClient:     kubermaticClient,
 		kubernetesClient:     kubernetesClient,
 		backupScheduleString: backupScheduleString,
 		storeContainer:       storeContainer,
+		cleanupContainer:     cleanupContainer,
 		backupContainerImage: backupContainerImage,
 		workerName:           workerName,
 		metrics:              metrics,
@@ -195,8 +212,30 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
+	// Cleanup cleanup jobs...
+	go wait.Until(c.cleanupJobs, 30*time.Second, stopCh)
+
 	c.metrics.Workers.Set(float64(workerCount))
 	<-stopCh
+}
+
+func (c *Controller) cleanupJobs() {
+	selector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, backupCleanupJobLabel))
+	if err != nil {
+		utilruntime.HandleError(err)
+		return
+	}
+	jobList, err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).List(metav1.ListOptions{LabelSelector: selector.String()})
+
+	for _, job := range jobList.Items {
+		if job.Status.Succeeded >= 1 {
+			propagation := metav1.DeletePropagationForeground
+			if err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+				utilruntime.HandleError(err)
+				return
+			}
+		}
+	}
 }
 
 func (c *Controller) runWorker() {
@@ -263,9 +302,16 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	if clusterFromCache.Spec.WorkerName != c.workerName {
+	if clusterFromCache.Spec.Pause {
+		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
 		return nil
 	}
+
+	if clusterFromCache.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
+		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
+		return nil
+	}
+
 	// We need to know the namespace otherwise we do not know
 	// the address of the etcd
 	if clusterFromCache.Status.NamespaceName == "" {
@@ -275,6 +321,35 @@ func (c *Controller) sync(key string) error {
 	glog.Infof("Backup controller: Processing cluster %s", clusterFromCache.Name)
 
 	cluster := clusterFromCache.DeepCopy()
+
+	// Cluster got deleted
+	if cluster.DeletionTimestamp != nil {
+		// Need to cleanup
+		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
+			job := c.cleanupJob(cluster)
+			if _, err = c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Create(job); err != nil {
+				// Otherwise we end up in a loop when we are able to create the job but not remove the finalizer.
+				if !kerrors.IsAlreadyExists(err) {
+					return err
+				}
+			}
+
+			finalizers := sets.NewString(cluster.Finalizers...)
+			finalizers.Delete(cleanupFinalizer)
+			cluster.Finalizers = finalizers.List()
+			if cluster, err = c.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
+			}
+		}
+	}
+
+	// Always add the finalizer first
+	if !sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
+		cluster.Finalizers = append(cluster.Finalizers, cleanupFinalizer)
+		if cluster, err = c.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
+		}
+	}
 
 	cronJob, err := c.cronJob(cluster)
 	if err != nil {
@@ -304,33 +379,111 @@ func (c *Controller) sync(key string) error {
 	return nil
 }
 
+func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
+	cleanupContainer := c.cleanupContainer.DeepCopy()
+	cleanupContainer.Env = append(cleanupContainer.Env, corev1.EnvVar{
+		Name:  "CLUSTER",
+		Value: cluster.Name,
+	})
+	job := &v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("remove-cluster-backups-%s", cluster.Name),
+			Labels: map[string]string{
+				resources.AppLabelKey: backupCleanupJobLabel,
+			},
+		},
+		Spec: v1.JobSpec{
+			BackoffLimit:          int32Ptr(10),
+			Completions:           int32Ptr(1),
+			Parallelism:           int32Ptr(1),
+			ActiveDeadlineSeconds: resources.Int64(30 * 60 * 60),
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						*cleanupContainer,
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
+					Volumes: []corev1.Volume{
+						{
+							Name: SharedVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: SecretVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: SecretName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return job
+}
+
 func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
 	// Name and Namespace
-	cronJob := batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name),
-		Namespace: metav1.NamespaceSystem}}
+	cronJob := batchv1beta1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name),
+			Namespace: metav1.NamespaceSystem,
+		},
+	}
 
 	// OwnerRef
 	gv := kubermaticv1.SchemeGroupVersion
-	cronJob.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster,
-		gv.WithKind(kubermaticv1.ClusterKindName))}
+	cronJob.OwnerReferences = []metav1.OwnerReference{
+		*metav1.NewControllerRef(cluster, gv.WithKind(kubermaticv1.ClusterKindName)),
+	}
 
 	// Spec
 	cronJob.Spec.Schedule = c.backupScheduleString
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
-	etcdServiceAddr := fmt.Sprintf("etcd.%s.svc.cluster.local.:2379", cluster.Status.NamespaceName)
+	etcdServiceAddr := fmt.Sprintf("%s.%s.svc.cluster.local.:2379", resources.EtcdServiceName, cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
-		corev1.Container{Name: "backup-creator",
-			Image:        c.backupContainerImage,
-			Env:          []corev1.EnvVar{corev1.EnvVar{Name: "ETCDCTL_API", Value: "3"}},
-			Command:      []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snap.db"},
-			VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/backup"}}},
+		{
+			Name:  "backup-creator",
+			Image: c.backupContainerImage,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "ETCDCTL_API",
+					Value: "3",
+				},
+			},
+			Command: []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snap.db"},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      SharedVolumeName,
+					MountPath: "/backup",
+				},
+			},
+		},
 	}
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{{Name: SharedVolumeName,
-		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: SharedVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: SecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: SecretName,
+				},
+			},
+		},
+	}
 
 	return &cronJob, nil
 }

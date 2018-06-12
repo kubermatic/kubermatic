@@ -128,7 +128,11 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 }
 
 func startBackupController(ctrlCtx controllerContext) error {
-	storeContainer, err := getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
+	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
+	if err != nil {
+		return err
+	}
+	cleanupContainer, err := getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
 	if err != nil {
 		return err
 	}
@@ -138,6 +142,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 	}
 	ctrl, err := backupcontroller.New(
 		*storeContainer,
+		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
@@ -153,7 +158,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 	return nil
 }
 
-func getBackupContainer(path string) (*corev1.Container, error) {
+func getContainerFromFile(path string) (*corev1.Container, error) {
 	fileContents, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err

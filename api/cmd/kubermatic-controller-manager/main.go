@@ -49,6 +49,7 @@ type controllerRunOptions struct {
 	nodePortRange        string
 	addons               string
 	backupContainerFile  string
+	cleanupContainerFile string
 	backupContainerImage string
 	backupInterval       string
 	etcdDiskSize         string
@@ -84,7 +85,8 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backupContainer yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
+	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
+	flag.StringVar(&runOp.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&runOp.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")

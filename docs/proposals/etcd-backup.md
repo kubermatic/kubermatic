@@ -55,6 +55,10 @@ The job should consist of 2 containers. Both share a emptyDir volume:
 
 A customer should be able to replace the `store-container` with any custom container.
 
+**Cleanup of backups after cluster deletion**
+The backup controller will register a finalizer on the cluster to be able to cleanup after a cluster has been deleted.
+When a cluster gets deleted a Job will be created from a admin defined template to delete the backups for the given cluster.
+
 ****
 
 ## Task & effort:
