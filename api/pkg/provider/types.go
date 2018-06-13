@@ -216,6 +216,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	if spec.VSphere != nil {
 		clouds = append(clouds, VSphereCloudProvider)
 	}
+	if spec.Azure != nil {
+		clouds = append(clouds, AzureCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
