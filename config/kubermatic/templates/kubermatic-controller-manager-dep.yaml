@@ -49,7 +49,6 @@ spec:
           - -internal-address=0.0.0.0:8085
           - -addons=/opt/addons
           - -backup-container=/opt/backup-container.yaml
-          - -kubeconfig=/opt/.kube/kubeconfig
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
@@ -69,9 +68,6 @@ spec:
             - name: backup-container
               mountPath: "/opt/backup-container.yaml"
               subPath: "backup-container.yaml"
-              readOnly: true
-            - name: kubeconfig
-              mountPath: "/opt/.kube/"
               readOnly: true
           resources:
             requests:
@@ -94,6 +90,3 @@ spec:
         - name: backup-container
           configMap:
             name: backup-container
-        - name: kubeconfig
-          secret:
-            secretName: kubeconfig
