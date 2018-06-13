@@ -3,6 +3,11 @@ package main
 import (
 	"flag"
 
+	"fmt"
+	"os/exec"
+
+	"io/ioutil"
+
 	"github.com/golang/glog"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,5 +123,12 @@ func main() {
 				glog.Fatal(err)
 			}
 		}
+
+		cmd := exec.Command("kubectl", "get", "cluster", cluster.Name, "-o", "yaml")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			glog.Fatal(err, string(out))
+		}
+		ioutil.WriteFile(fmt.Sprintf("cluster-%s.yaml", cluster.Name), out, 0644)
 	}
 }
