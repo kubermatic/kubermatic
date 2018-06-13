@@ -11,6 +11,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,11 +22,8 @@ import (
 
 // NewRBACCompliantSSHKeyProvider returns a new ssh key provider that respects RBAC policies
 // it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
-func NewRBACCompliantSSHKeyProvider(
-	createMasterImpersonatedClient kubermaticImpersonationClient) (*RBACCompliantSSHKeyProvider, error) {
-	return &RBACCompliantSSHKeyProvider{
-		createMasterImpersonatedClient: createMasterImpersonatedClient,
-	}, nil
+func NewRBACCompliantSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient, keyLister kubermaticv1lister.UserSSHKeyLister) *RBACCompliantSSHKeyProvider {
+	return &RBACCompliantSSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, keyLister: keyLister}
 }
 
 // RBACCompliantSSHKeyProvider struct that holds required components in order to provide
@@ -40,7 +38,7 @@ type RBACCompliantSSHKeyProvider struct {
 }
 
 // Create creates a ssh key that will belong to the given project
-func (p *RBACCompliantSSHKeyProvider) Create(keyName, pubKey string, user *kubermaticapiv1.User, project *kubermaticapiv1.Project) (*kubermaticapiv1.UserSSHKey, error) {
+func (p *RBACCompliantSSHKeyProvider) Create(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
 	}
@@ -85,20 +83,13 @@ func (p *RBACCompliantSSHKeyProvider) Create(keyName, pubKey string, user *kuber
 	return masterImpersonatedClient.UserSSHKeies().Create(sshKey)
 }
 
-// ListOptions allows to set filters that will be applied
-// to filter the result of List method.
-type ListOptions struct {
-	// ClusterName gets the keys that are being used by the given cluster name
-	ClusterName string
-}
-
 // List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
 // If you want to filter the result please take a look at ListOptions
 //
 // Note:
 // After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, user *kubermaticapiv1.User, options *ListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
+func (p *RBACCompliantSSHKeyProvider) List(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, options *provider.ListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
 	if project == nil || user == nil {
 		return nil, errors.New("a project or/and a user is missing but required")
 	}
@@ -116,13 +107,15 @@ func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, use
 			}
 		}
 	}
+	if options == nil {
+		return projectKeys, nil
+	}
 	if options != nil && len(options.ClusterName) == 0 {
 		return projectKeys, nil
 	}
 
 	filteredKeys := []*kubermaticapiv1.UserSSHKey{}
 	for _, key := range projectKeys {
-
 		if key.Spec.Clusters == nil {
 			continue
 		}
@@ -138,7 +131,7 @@ func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, use
 }
 
 // Get returns a key with the given name
-func (p *RBACCompliantSSHKeyProvider) Get(project *kubermaticapiv1.Project, user *kubermaticapiv1.User, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
+func (p *RBACCompliantSSHKeyProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, project)
 	if err != nil {
 		return nil, err
@@ -147,7 +140,7 @@ func (p *RBACCompliantSSHKeyProvider) Get(project *kubermaticapiv1.Project, user
 }
 
 // Delete simply deletes the given key
-func (p *RBACCompliantSSHKeyProvider) Delete(project *kubermaticapiv1.Project, user *kubermaticapiv1.User, keyName string) error {
+func (p *RBACCompliantSSHKeyProvider) Delete(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, keyName string) error {
 	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, project)
 	if err != nil {
 		return err
