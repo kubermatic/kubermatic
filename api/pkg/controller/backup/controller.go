@@ -47,6 +47,8 @@ const (
 	cleanupFinalizer = "kubermatic.io/cleanup-backups"
 	// backupCleanupJobLabel defines the label we use on all cleanup jobs
 	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
+	// clusterEnvVarKey defines the environment variable key for the cluster name
+	clusterEnvVarKey = "CLUSTER"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -378,7 +380,7 @@ func (c *Controller) sync(key string) error {
 func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
 	cleanupContainer := c.cleanupContainer.DeepCopy()
 	cleanupContainer.Env = append(cleanupContainer.Env, corev1.EnvVar{
-		Name:  "CLUSTER",
+		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
 	})
 	job := &v1.Job{
@@ -454,8 +456,14 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 			},
 		},
 	}
+
+	storeContainer := c.storeContainer.DeepCopy()
+	storeContainer.Env = append(storeContainer.Env, corev1.EnvVar{
+		Name:  clusterEnvVarKey,
+		Value: cluster.Name,
+	})
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{c.storeContainer}
+	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{*storeContainer}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
 			Name: SharedVolumeName,
