@@ -236,7 +236,8 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Spec.Cloud.Digitalocean == nil &&
 			node.Spec.Cloud.AWS == nil &&
 			node.Spec.Cloud.Hetzner == nil &&
-			node.Spec.Cloud.VSphere == nil {
+			node.Spec.Cloud.VSphere == nil &&
+			node.Spec.Cloud.Azure == nil {
 			return nil, errors.NewBadRequest("cannot create node without cloud provider")
 		}
 
