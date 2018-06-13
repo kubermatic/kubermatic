@@ -47,12 +47,12 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKey := v2.SSHKey{
+		apiKey := v2.NewSSHKey{
 			Metadata: v2.ObjectMeta{
 				Name:              key.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: v2.SSHKeySpec{
+			Spec: v2.NewSSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -122,14 +122,14 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKeys := make([]v2.SSHKey, len(keys))
+		apiKeys := make([]v2.NewSSHKey, len(keys))
 		for index, key := range keys {
-			apiKey := v2.SSHKey{
+			apiKey := v2.NewSSHKey{
 				Metadata: v2.ObjectMeta{
 					Name:              key.Name,
 					CreationTimestamp: key.CreationTimestamp.Time,
 				},
-				Spec: v2.SSHKeySpec{
+				Spec: v2.NewSSHKeySpec{
 					Fingerprint: key.Spec.Fingerprint,
 					PublicKey:   key.Spec.PublicKey,
 				},
@@ -176,7 +176,7 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 
 // newCreateSSHKeyReq represent a request for specific data to create a new SSH key
 type newCreateSSHKeyReq struct {
-	apiv2.SSHKey
+	apiv2.NewSSHKey
 	projectName string
 }
 
@@ -190,8 +190,8 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.projectName = projectName
 
-	req.SSHKey = apiv2.SSHKey{}
-	if err := json.NewDecoder(r.Body).Decode(&req.SSHKey); err != nil {
+	req.NewSSHKey = apiv2.NewSSHKey{}
+	if err := json.NewDecoder(r.Body).Decode(&req.NewSSHKey); err != nil {
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
 	}
 

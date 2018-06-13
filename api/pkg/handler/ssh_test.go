@@ -97,7 +97,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 
 			expectedResponse := tc.ExpectedResponse
 			{
-				actualSSHKey := &apiv2.SSHKey{}
+				actualSSHKey := &apiv2.NewSSHKey{}
 				err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
 				if err != nil {
 					t.Fatal(err)

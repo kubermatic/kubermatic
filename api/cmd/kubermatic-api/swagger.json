@@ -263,9 +263,9 @@
         "operationId": "listSSHKeys",
         "responses": {
           "200": {
-            "description": "SSHKey",
+            "description": "NewSSHKey",
             "schema": {
-              "$ref": "#/definitions/SSHKey"
+              "$ref": "#/definitions/NewSSHKey"
             }
           },
           "401": {
@@ -290,9 +290,9 @@
         "operationId": "createSSHKey",
         "responses": {
           "200": {
-            "description": "SSHKey",
+            "description": "NewSSHKey",
             "schema": {
-              "$ref": "#/definitions/SSHKey"
+              "$ref": "#/definitions/NewSSHKey"
             }
           },
           "401": {
@@ -2491,6 +2491,34 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
+    "NewSSHKey": {
+      "description": "NewSSHKey represents a ssh key",
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ObjectMetaV2"
+        },
+        "spec": {
+          "$ref": "#/definitions/NewSSHKeySpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NewSSHKeySpec": {
+      "description": "NewSSHKeySpec represents the details of a ssh key",
+      "type": "object",
+      "properties": {
+        "fingerprint": {
+          "type": "string",
+          "x-go-name": "Fingerprint"
+        },
+        "publicKey": {
+          "type": "string",
+          "x-go-name": "PublicKey"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "NodeAddress": {
       "type": "object",
       "title": "NodeAddress contains information for the node's address.",
@@ -3448,28 +3476,43 @@
       "type": "object",
       "properties": {
         "metadata": {
-          "$ref": "#/definitions/ObjectMetaV2"
+          "$ref": "#/definitions/ObjectMeta"
         },
         "spec": {
           "$ref": "#/definitions/SSHKeySpec"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "SSHKeySpec": {
       "description": "SSHKeySpec represents the details of a ssh key",
       "type": "object",
       "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Clusters"
+        },
         "fingerprint": {
           "type": "string",
           "x-go-name": "Fingerprint"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "owner": {
+          "type": "string",
+          "x-go-name": "Owner"
         },
         "publicKey": {
           "type": "string",
           "x-go-name": "PublicKey"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Status": {
       "type": "object",

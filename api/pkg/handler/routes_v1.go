@@ -118,7 +118,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: SSHKey
+//       200: NewSSHKey
 //       401: Unauthorized
 //       403: Forbidden
 func (r Routing) newListSSHKeys() http.Handler {
@@ -170,7 +170,7 @@ func (r Routing) createSSHKey() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: SSHKey
+//       200: NewSSHKey
 //       401: Unauthorized
 //       403: Forbidden
 func (r Routing) newCreateSSHKey() http.Handler {
