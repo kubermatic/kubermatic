@@ -1,0 +1,4 @@
+command:
+- /bin/true
+image: docker.io/busybox
+name: cleanup-container
