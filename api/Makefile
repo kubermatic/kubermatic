@@ -1,6 +1,6 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup client image-loader
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup client image-loader rbac-generator
 GOBUILDFLAGS += -i -v
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
@@ -107,4 +107,7 @@ run-controller-manager: kubermatic-controller-manager
 run-api-server: kubermatic-api
 	./hack/run-api.sh
 
-.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push run-controller-manager run-api-server $(CMD)
+run-rbac-generator: rbac-generator
+	./hack/run-rbac-generator.sh
+
+.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)
