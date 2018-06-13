@@ -61,7 +61,6 @@ type controllerContext struct {
 	kubermaticClient          kubermaticclientset.Interface
 	kubermaticInformerFactory externalversions.SharedInformerFactory
 	kubeInformerFactory       kuberinformers.SharedInformerFactory
-	seedClustersRESTClient    []kubernetes.Interface
 }
 
 const (

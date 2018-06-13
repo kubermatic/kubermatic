@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -27,11 +26,10 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]func(controllerContext) error{
-	"cluster":       startClusterController,
-	"RBACGenerator": startRBACGeneratorController,
-	"update":        startUpdateController,
-	"addon":         startAddonController,
-	"backup":        startBackupController,
+	"cluster": startClusterController,
+	"update":  startUpdateController,
+	"addon":   startAddonController,
+	"backup":  startBackupController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -104,25 +102,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 	return nil
-}
-
-func startRBACGeneratorController(ctrlCtx controllerContext) error {
-	metrics := NewRBACGeneratorControllerMetrics()
-	rbacMetrics := rbaccontroller.Metrics{
-		Workers: metrics.Workers,
-	}
-	_, err := rbaccontroller.New(
-		rbacMetrics,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory,
-		ctrlCtx.kubeClient,
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.seedClustersRESTClient)
-	return err
-	//  temporarily disabled - moving the controller to a separate application.
-	//go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 }
 
 func startBackupController(ctrlCtx controllerContext) error {
