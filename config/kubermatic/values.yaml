@@ -39,7 +39,7 @@ kubermatic:
       repository: "kubermatic/ui-v2"
       tag: "latest"
       pullPolicy: "IfNotPresent"
-  backupContainer: |
+  storeContainer: |
     command:
       - /bin/true
     image: docker.io/busybox
@@ -47,3 +47,8 @@ kubermatic:
     volumeMounts:
       - name: etcd-backup
         mountPath: /backup
+  cleanupContainer: |
+    command:
+      - /bin/true
+    image: docker.io/busybox
+    name: cleanup-container
