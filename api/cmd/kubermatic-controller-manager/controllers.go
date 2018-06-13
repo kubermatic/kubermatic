@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -27,11 +26,10 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]func(controllerContext) error{
-	"cluster":       startClusterController,
-	"RBACGenerator": startRBACGeneratorController,
-	"update":        startUpdateController,
-	"addon":         startAddonController,
-	"backup":        startBackupController,
+	"cluster": startClusterController,
+	"update":  startUpdateController,
+	"addon":   startAddonController,
+	"backup":  startBackupController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -106,27 +104,12 @@ func startClusterController(ctrlCtx controllerContext) error {
 	return nil
 }
 
-func startRBACGeneratorController(ctrlCtx controllerContext) error {
-	metrics := NewRBACGeneratorControllerMetrics()
-	rbacMetrics := rbaccontroller.Metrics{
-		Workers: metrics.Workers,
-	}
-	_, err := rbaccontroller.New(
-		rbacMetrics,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory,
-		ctrlCtx.kubeClient,
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.seedClustersRESTClient)
-	return err
-	//  temporarily disabled - moving the controller to a separate application.
-	//go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-}
-
 func startBackupController(ctrlCtx controllerContext) error {
-	storeContainer, err := getBackupContainer(ctrlCtx.runOptions.backupContainerFile)
+	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
+	if err != nil {
+		return err
+	}
+	cleanupContainer, err := getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
 	if err != nil {
 		return err
 	}
@@ -136,6 +119,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 	}
 	ctrl, err := backupcontroller.New(
 		*storeContainer,
+		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
@@ -151,7 +135,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 	return nil
 }
 
-func getBackupContainer(path string) (*corev1.Container, error) {
+func getContainerFromFile(path string) (*corev1.Container, error) {
 	fileContents, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err

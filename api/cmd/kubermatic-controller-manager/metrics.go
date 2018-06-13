@@ -60,29 +60,6 @@ func NewClusterControllerMetrics() *ClusterControllerMetrics {
 	return cm
 }
 
-// RBACGeneratorControllerMetrics holds metrics used by
-// RBACGenerator controller
-type RBACGeneratorControllerMetrics struct {
-	Workers metrics.Gauge
-}
-
-// NewRBACGeneratorControllerMetrics creates RBACGeneratorControllerMetrics
-// with default values initialized, so metrics always show up.
-func NewRBACGeneratorControllerMetrics() *RBACGeneratorControllerMetrics {
-	subsystem := "rbac_generator_controller"
-	cm := &RBACGeneratorControllerMetrics{
-		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "workers",
-			Help:      "The number of running RBACGenerator controller workers",
-		}, nil),
-	}
-
-	cm.Workers.Set(0)
-	return cm
-}
-
 // UpdateControllerMetrics holds metrics used by Update controller
 type UpdateControllerMetrics struct {
 	Workers metrics.Gauge

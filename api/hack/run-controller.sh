@@ -17,5 +17,6 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -worker-name="$(uname -n | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
   -backup-container=../config/kubermatic/static/backup-container.yaml \
+  -cleanup-container=../config/kubermatic/static/cleanup-container.yaml \
   -logtostderr=1 \
   -v=6 $@
