@@ -111,7 +111,7 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	rbacMetrics := rbaccontroller.Metrics{
 		Workers: metrics.Workers,
 	}
-	ctrl, err := rbaccontroller.New(
+	_, err := rbaccontroller.New(
 		rbacMetrics,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
@@ -120,11 +120,9 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.seedClustersRESTClient)
-	if err != nil {
-		return err
-	}
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
+	return err
+	//  temporarily disabled - moving the controller to a separate application.
+	//go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 }
 
 func startBackupController(ctrlCtx controllerContext) error {
