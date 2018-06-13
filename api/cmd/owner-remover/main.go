@@ -107,5 +107,16 @@ func main() {
 				glog.Fatal(err)
 			}
 		}
+
+		addonList, err := kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).List(metav1.ListOptions{})
+		if err != nil {
+			glog.Fatal(err)
+		}
+		for _, addon := range addonList.Items {
+			addon.OwnerReferences = []metav1.OwnerReference{}
+			if _, err := kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Update(&addon); err != nil {
+				glog.Fatal(err)
+			}
+		}
 	}
 }
