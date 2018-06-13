@@ -121,7 +121,7 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.seedClustersRESTClient)
 	return err
-	//  temporarily disabled - moving the controller to a seperate application.
+	//  temporarily disabled - moving the controller to a separate application.
 	//go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 }
 
