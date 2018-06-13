@@ -1,7 +1,7 @@
 command:
-  - /bin/true
+- /bin/true
 image: docker.io/busybox
 name: store-container
 volumeMounts:
-  - name: etcd-backup
-    mountPath: /backup
+- name: etcd-backup
+  mountPath: /backup

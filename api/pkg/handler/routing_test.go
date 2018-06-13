@@ -39,11 +39,13 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
-	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 		return kubermaticClient.KubermaticV1(), nil
 	}
+
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
+	newSSHKeyProvider := kubernetes.NewRBACCompliantSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, err
@@ -75,6 +77,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 		clusterProviders,
 		cloudProviders,
 		sshKeyProvider,
+		newSSHKeyProvider,
 		userProvider,
 		projectProvider,
 		authenticator,

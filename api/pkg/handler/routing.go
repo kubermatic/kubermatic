@@ -36,16 +36,17 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters      map[string]provider.DatacenterMeta
-	cloudProviders   provider.CloudRegistry
-	sshKeyProvider   provider.SSHKeyProvider
-	userProvider     provider.UserProvider
-	projectProvider  provider.ProjectProvider
-	logger           log.Logger
-	authenticator    Authenticator
-	clusterProviders map[string]provider.ClusterProvider
-	updateManager    UpdateManager
-	promURL          *string
+	datacenters       map[string]provider.DatacenterMeta
+	cloudProviders    provider.CloudRegistry
+	sshKeyProvider    provider.SSHKeyProvider
+	newSSHKeyProvider provider.NewSSHKeyProvider
+	userProvider      provider.UserProvider
+	projectProvider   provider.ProjectProvider
+	logger            log.Logger
+	authenticator     Authenticator
+	clusterProviders  map[string]provider.ClusterProvider
+	updateManager     UpdateManager
+	promURL           *string
 }
 
 // NewRouting creates a new Routing.
@@ -54,6 +55,7 @@ func NewRouting(
 	clusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	sshKeyProvider provider.SSHKeyProvider,
+	newSSHKeyProvider provider.NewSSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
 	authenticator Authenticator,
@@ -61,16 +63,17 @@ func NewRouting(
 	promURL *string,
 ) Routing {
 	return Routing{
-		datacenters:      datacenters,
-		clusterProviders: clusterProviders,
-		sshKeyProvider:   sshKeyProvider,
-		userProvider:     userProvider,
-		projectProvider:  projectProvider,
-		cloudProviders:   cloudProviders,
-		logger:           log.NewLogfmtLogger(os.Stderr),
-		authenticator:    authenticator,
-		updateManager:    updateManager,
-		promURL:          promURL,
+		datacenters:       datacenters,
+		clusterProviders:  clusterProviders,
+		sshKeyProvider:    sshKeyProvider,
+		newSSHKeyProvider: newSSHKeyProvider,
+		userProvider:      userProvider,
+		projectProvider:   projectProvider,
+		cloudProviders:    cloudProviders,
+		logger:            log.NewLogfmtLogger(os.Stderr),
+		authenticator:     authenticator,
+		updateManager:     updateManager,
+		promURL:           promURL,
 	}
 }
 

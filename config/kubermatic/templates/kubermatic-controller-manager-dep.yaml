@@ -48,7 +48,8 @@ spec:
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
           - -addons=/opt/addons
-          - -backup-container=/opt/backup-container.yaml
+          - -backup-container=/opt/backup/store-container.yaml
+          - -cleanup-container=/opt/backup/cleanup-container.yaml
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
@@ -66,8 +67,7 @@ spec:
               mountPath: "/opt/addons/"
               readOnly: true
             - name: backup-container
-              mountPath: "/opt/backup-container.yaml"
-              subPath: "backup-container.yaml"
+              mountPath: "/opt/backup/"
               readOnly: true
           resources:
             requests:
