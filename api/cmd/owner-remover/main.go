@@ -129,6 +129,8 @@ func main() {
 		if err != nil {
 			glog.Fatal(err, string(out))
 		}
-		ioutil.WriteFile(fmt.Sprintf("cluster-%s.yaml", cluster.Name), out, 0644)
+		if err := ioutil.WriteFile(fmt.Sprintf("cluster-%s.yaml", cluster.Name), out, 0644); err != nil {
+			glog.Fatal(err)
+		}
 	}
 }
