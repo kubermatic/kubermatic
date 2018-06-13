@@ -42,6 +42,7 @@ type VSphereSpec struct {
 	Datastore  string `yaml:"datastore"`
 	Datacenter string `yaml:"datacenter"`
 	Cluster    string `yaml:"cluster"`
+	RootPath   string `yaml:"root_path"`
 }
 
 // AWSSpec describes a aws datacenter
