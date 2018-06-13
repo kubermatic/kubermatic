@@ -115,6 +115,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -166,6 +169,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
       --values config/versions-values.yaml
@@ -188,6 +194,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -240,6 +249,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
       --values config/versions-values.yaml

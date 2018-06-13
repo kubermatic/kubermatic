@@ -71,6 +71,7 @@ local drone = import 'drone/drone.libsonnet';
     local charts = [
       {namespace: 'kubermatic', name: 'kubermatic', path: 'config/kubermatic/'},
       {namespace: 'nodeport-proxy', name: 'nodeport-proxy', path: 'config/nodeport-proxy/'},
+      {namespace: 'minio', name: 'minio', path: 'config/minio/'},
     ],
 
     local chartsEU = [
