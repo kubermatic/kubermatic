@@ -1,0 +1,13 @@
+name: minio
+version: 1.0.0
+description: minio
+keywords:
+  - k8s
+  - kubermatic
+  - minio
+home: https://www.minio.io/kubernetes.html
+sources:
+  - https://www.minio.io/kubernetes.html
+maintainers:
+  - name: Henrik Schmidt
+    email: henrik@loodse.com
