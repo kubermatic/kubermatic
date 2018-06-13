@@ -276,11 +276,13 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Metadata.Name = "kubermatic-" + c.Name + "-" + rand.String(5)
 		}
 
+		// Create machine resource
 		machine, err := machineresource.Machine(c, &node.Node, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine from template: %v", err)
 		}
 
+		// Send machine resource to k8s
 		machine, err = client.MachineV1alpha1().Machines().Create(machine)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine: %v", err)
