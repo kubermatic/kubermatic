@@ -4,5 +4,5 @@ minio:
     tag: "RELEASE.2018-06-09T03-43-35Z"
   storeSize: "100Gi"
   credentials:
-    accessKey: ""
-    secretKey: ""
+    accessKey: "wtupllWfpMg414ZM5YkzZiUmgjh1vZdk"
+    secretKey: "r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym"
