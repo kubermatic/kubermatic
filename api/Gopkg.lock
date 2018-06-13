@@ -913,18 +913,6 @@
 
 [[projects]]
   branch = "release-1.10"
-  name = "k8s.io/apiextensions-apiserver"
-  packages = [
-    "pkg/apis/apiextensions",
-    "pkg/apis/apiextensions/v1beta1",
-    "pkg/client/clientset/clientset",
-    "pkg/client/clientset/clientset/scheme",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
-  ]
-  revision = "e8ab413e0ae1e19df66d60088a1e11c97b73fdd9"
-
-[[projects]]
-  branch = "release-1.10"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1177,6 +1165,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9786d301f57756b8e3701c6a63c15dd8d9f027198179de918911c77fc6a4cd09"
+  inputs-digest = "ebfacaba57f361ed7927710fb2b6644c4978d9d7b00ab1fbacc160369d5ebcb5"
   solver-name = "gps-cdcl"
   solver-version = 1
