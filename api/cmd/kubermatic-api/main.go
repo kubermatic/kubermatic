@@ -33,7 +33,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/crd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
@@ -43,7 +42,6 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -96,12 +94,6 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		glog.Fatal(err)
-	}
-
-	// Create crd's
-	extclient := apiextclient.NewForConfigOrDie(config)
-	if err = crd.EnsureCustomResourceDefinitions(extclient); err != nil {
 		glog.Fatal(err)
 	}
 
