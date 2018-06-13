@@ -92,7 +92,7 @@ local drone = import 'drone/drone.libsonnet';
     // dev
 
     '8-deploy-dev': drone.step.new('kubeciio/helm') + {
-        helm: 'upgrade --install' + tillerNamespace + versionsValues,
+        helm: 'upgrade --install --wait --timeout 300' + tillerNamespace + versionsValues,
         secrets: [
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
           {source: 'values_dev', target: 'values'},
@@ -104,7 +104,7 @@ local drone = import 'drone/drone.libsonnet';
     // cloud
 
     '9-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install --kube-context=europe-west3-c-1' + tillerNamespace + versionsValues,
+        helm: 'upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1' + tillerNamespace + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
@@ -114,7 +114,7 @@ local drone = import 'drone/drone.libsonnet';
       } + {when: {branch: 'master'}},
 
     '9-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install --kube-context=us-central1-c-1' + tillerNamespace + versionsValues,
+        helm: 'upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1' + tillerNamespace + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_us', target: 'values'},
@@ -124,7 +124,7 @@ local drone = import 'drone/drone.libsonnet';
       } + {when: {branch: 'master'}},
 
     '9-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-        helm: 'upgrade --install --kube-context=asia-east1-a-1' + tillerNamespace + versionsValues,
+        helm: 'upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1' + tillerNamespace + versionsValues,
         secrets: [
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_as', target: 'values'},
