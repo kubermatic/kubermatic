@@ -37,10 +37,6 @@ const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
-	// SecretVolumeName defines the name for the volume containing the secrets
-	SecretVolumeName = "secrets"
-	// SecretName is the name for the secrets which contains the secrets for the backup store container
-	SecretName = "kubermatic-etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
 	DefaultBackupContainerImage = "quay.io/coreos/etcd:v3.3"
 	// DefaultBackupInterval defines the default interval used to create backups
@@ -410,14 +406,6 @@ func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
-						{
-							Name: SecretVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: SecretName,
-								},
-							},
-						},
 					},
 				},
 			},
@@ -473,14 +461,6 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 			Name: SharedVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: SecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: SecretName,
-				},
 			},
 		},
 	}
