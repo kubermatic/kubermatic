@@ -39,7 +39,7 @@ spec: bar`,
 		if err := ioutil.WriteFile(filepath, []byte(testCase.containerYaml), 0644); err != nil {
 			t.Errorf("Failed to write container yaml: %v", err)
 		}
-		container, err := getBackupContainer(filepath)
+		container, err := getContainerFromFile(filepath)
 		if err != nil && !testCase.errExpected {
 			t.Errorf("Got unexpected error: %v", err)
 		}

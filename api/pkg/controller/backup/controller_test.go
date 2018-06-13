@@ -22,6 +22,9 @@ var (
 	testStoreContainer = corev1.Container{Name: "kubermatic-store",
 		Image:        "busybox",
 		VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
+	testCleanupContainer = corev1.Container{Name: "kubermatic-cleanup",
+		Image: "busybox",
+	}
 )
 
 func TestEnsureBackupCronJob(t *testing.T) {
@@ -57,6 +60,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	}
 
 	controller, err := New(testStoreContainer,
+		testCleanupContainer,
 		20*time.Minute,
 		DefaultBackupContainerImage,
 		"",
