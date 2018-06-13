@@ -59,6 +59,32 @@ A customer should be able to replace the `store-container` with any custom conta
 The backup controller will register a finalizer on the cluster to be able to cleanup after a cluster has been deleted.
 When a cluster gets deleted a Job will be created from a admin defined template to delete the backups for the given cluster.
 
+
+**Store & Cleanup template**
+Both, the store & cleanup container can be specified by the customer.
+To inject secrets into the containers the customer can use Environment variables:
+```yaml
+command:
+- /bin/true
+image: docker.io/busybox
+name: store-container
+env:
+- name: SECRET_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: mysecret
+      key: username
+- name: SECRET_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: mysecret
+      key: password
+
+volumeMounts:
+- name: etcd-backup
+  mountPath: /backup
+```
+
 ****
 
 ## Task & effort:
