@@ -209,6 +209,7 @@ func startAddonController(ctrlCtx controllerContext) error {
 		addonMetrics,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addons,
+		ctrlCtx.runOptions.overwriteRegistry,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),

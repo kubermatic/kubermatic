@@ -17,6 +17,29 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
+    "/api/v1/azure/sizes": {
+      "get": {
+        "description": "Lists available VM sizes in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureSizes",
+        "responses": {
+          "200": {
+            "description": "AzureSizeList",
+            "schema": {
+              "$ref": "#/definitions/AzureSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -1362,6 +1385,50 @@
       "x-go-name": "AzureNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
+    "AzureSize": {
+      "type": "object",
+      "title": "AzureSize is the object representing Azure VM sizes.",
+      "properties": {
+        "maxDataDiskCount": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxDataDiskCount"
+        },
+        "memoryInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MemoryInMB"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "numberOfCores": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumberOfCores"
+        },
+        "osDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OsDiskSizeInMB"
+        },
+        "resourceDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ResourceDiskSizeInMB"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AzureSizeList": {
+      "type": "array",
+      "title": "AzureSizeList represents an array of Azure VM sizes.",
+      "items": {
+        "$ref": "#/definitions/AzureSize"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
@@ -1384,6 +1451,18 @@
       "description": "CauseType is a machine readable value providing more detail about what\noccurred in a status response. An operation may have multiple causes for a\nstatus (whether Failure or Success).",
       "type": "string",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "CentOSSpec": {
+      "description": "CentOSSpec contains CentOS specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "CloudSpec": {
       "type": "object",
@@ -3355,6 +3434,9 @@
       "type": "object",
       "title": "OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.",
       "properties": {
+        "centos": {
+          "$ref": "#/definitions/CentOSSpec"
+        },
         "containerLinux": {
           "$ref": "#/definitions/ContainerLinuxSpecV2"
         },
