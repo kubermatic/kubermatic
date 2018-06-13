@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-container
+data:
+  store-container.yaml: |
+{{ .Values.kubermatic.storeContainer |indent 4}}
+  cleanup-container.yaml: |
+{{ .Values.kubermatic.cleanupContainer |indent 4}}
