@@ -17,7 +17,7 @@ spec:
       containers:
         - name: api
           command:
-          - /kubermatic-api
+          - kubermatic-api
           args:
           - -address=0.0.0.0:8080
           - -v=4

@@ -36,7 +36,7 @@ spec:
       containers:
         - name: controller-manager
           command:
-          - /kubermatic-controller-manager
+          - kubermatic-controller-manager
           args:
           - -v=4
           - -logtostderr
