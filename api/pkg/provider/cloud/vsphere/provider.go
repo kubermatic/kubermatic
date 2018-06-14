@@ -69,7 +69,6 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 	if err != nil {
 		return err
 	}
-	defer client.Logout(ctx)
 
 	finder := find.NewFinder(client.Client, true)
 	rootFolder, err := finder.Folder(ctx, dc.Spec.VSphere.RootPath)
@@ -80,11 +79,15 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 	_, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name)
 	if err != nil && soap.IsSoapFault(err) {
 		soapFault := soap.ToSoapFault(err)
-		if _, ok := soapFault.VimFault().(types.FileAlreadyExists); ok {
-			return nil
+		if _, ok := soapFault.VimFault().(types.FileAlreadyExists); !ok {
+			return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
+	}
+
+	if err := client.Logout(ctx); err != nil {
+		return fmt.Errorf("failed to logout from vSphere: %v", err)
 	}
 
 	return nil
