@@ -118,6 +118,9 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
+    - name: kubermatic-master
+      namespace: kubermatic
+      path: config/kubermatic/master
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -197,6 +200,9 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
+    - name: kubermatic-master
+      namespace: kubermatic
+      path: config/kubermatic/master
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/

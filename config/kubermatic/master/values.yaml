@@ -1,0 +1,12 @@
+kubermatic:
+  docker:
+    # the base64 encoded docker authentication token
+    secret: ""
+  # base64 encoded kubeconfig
+  kubeconfig: ""
+  rbac:
+    replicas: 1
+    image:
+      repository: "kubermatic/api"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
