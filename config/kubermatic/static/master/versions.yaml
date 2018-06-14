@@ -20,7 +20,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.8.5
   id: 1.8.5
@@ -42,7 +42,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.8.6
   id: 1.8.6
@@ -64,7 +64,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.8.7
   id: 1.8.7
@@ -86,7 +86,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.0
   id: 1.9.0
@@ -108,7 +108,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.1
   id: 1.9.1
@@ -130,7 +130,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.2
   id: 1.9.2
@@ -152,7 +152,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.3
   id: 1.9.3
@@ -174,7 +174,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.4
   id: 1.9.4
@@ -196,7 +196,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.5
   id: 1.9.5
@@ -218,7 +218,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.9.6
   id: 1.9.6
@@ -240,7 +240,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.10.1
   id: 1.10.1
@@ -262,7 +262,7 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
 - name: 1.10.2
   id: 1.10.2
@@ -284,5 +284,5 @@ versions:
     kube-machine-version: v0.2.3
     addon-manager-version: v1.9.5
     pod-network-bridge: v0.4
-    machine-controller-version: v0.7.1
+    machine-controller-version: v0.7.2
     kube-state-metrics-version: latest
