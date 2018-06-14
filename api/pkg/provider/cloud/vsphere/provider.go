@@ -79,8 +79,8 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 	_, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name)
 	if err != nil && soap.IsSoapFault(err) {
 		soapFault := soap.ToSoapFault(err)
-		if _, ok := soapFault.VimFault().(types.FileAlreadyExists); !ok {
-			return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
+		if _, ok := soapFault.VimFault().(types.DuplicateName); !ok {
+			return fmt.Errorf("couldn't create cluster vm folder, see: %s (error type: %T)", err, soapFault.VimFault())
 		}
 	} else if err != nil {
 		return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
