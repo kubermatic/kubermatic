@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-testing-rules
+  labels:
+    role: prometheus-rulefiles
+data:
+{{ (.Files.Glob "rules/*").AsConfig | indent 2 }}
