@@ -339,6 +339,7 @@ func (c *Controller) sync(key string) error {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
+		return nil
 	}
 
 	// Always add the finalizer first
