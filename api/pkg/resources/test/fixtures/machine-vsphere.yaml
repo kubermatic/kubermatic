@@ -13,7 +13,7 @@ spec:
       cpus: 2
       datacenter: vsphere-datacenter
       datastore: vsphere-datastore
-      folder: ""
+      folder: vsphere-1a2b3c4d5e
       memoryMB: 2048
       password: vsphere-password
       templateVMName: ""
