@@ -75,6 +75,7 @@ local drone = import 'drone/drone.libsonnet';
     ],
 
     local chartsEU = [
+      {namespace: 'kubermatic', name: 'kubermatic-master', path: 'config/kubermatic/master'},
       {namespace: 'ingress-nginx', name: 'nginx', path: 'config/nginx-ingress-controller/'},
       {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
       {namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/'},

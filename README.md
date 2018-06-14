@@ -13,6 +13,6 @@ If you want to change the `.drone.yml` please follow these steps:
 
 Compiling .drone.jsonnet to .drone.yml:
 
-`jsonnet -J $GOPATH/github.com/metalmatze/drone-jsonnet .drone.jsonnet | gojsontoyaml > .drone.yml`
+`jsonnet -J $GOPATH/src/github.com/metalmatze/drone-jsonnet .drone.jsonnet | gojsontoyaml > .drone.yml`
 
 For now we use jsonnet as the YAML parser doesn't suppor YAML anchors. https://github.com/go-yaml/yaml/issues/184

@@ -1,0 +1,7 @@
+kubermatic:
+  rbac:
+    replicas: 1
+    image:
+      repository: "kubermatic/api"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
