@@ -1,7 +1,7 @@
 REPO=kubermatic/api
 GO?=go
 CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup client image-loader rbac-generator
-GOBUILDFLAGS += -i -v
+GOBUILDFLAGS += -v
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
@@ -18,7 +18,7 @@ all: check test build
 build: $(CMD)
 
 $(CMD): vendor
-	$(GO) build $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)' -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
+	CGO_ENABLED=0 $(GO) build $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)' -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
 
 check: gofmt lint
 test: vendor

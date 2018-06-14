@@ -19,7 +19,7 @@ spec:
         image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
         imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
         command:
-        - /kubermatic-controller-manager-cleanup
+        - kubermatic-controller-manager-cleanup
         args:
         - -v=4
         - -logtostderr
@@ -36,7 +36,7 @@ spec:
       containers:
         - name: controller-manager
           command:
-          - /kubermatic-controller-manager
+          - kubermatic-controller-manager
           args:
           - -v=4
           - -logtostderr

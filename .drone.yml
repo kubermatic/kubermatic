@@ -41,7 +41,7 @@ pipeline:
   4-build:
     commands:
     - cd api
-    - CGO_ENABLED=0 make build
+    - make build
     group: build
     image: golang:1.9
     pull: true
@@ -115,6 +115,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -145,7 +148,8 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
-    helm: upgrade --install --tiller-namespace=kubermatic-installer --values config/versions-values.yaml
+    helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
@@ -165,8 +169,11 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     group: deploy-cloud
-    helm: upgrade --install --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
+    helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
       --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
@@ -187,6 +194,9 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -218,7 +228,7 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     group: deploy-cloud
-    helm: upgrade --install --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
+    helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
       --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
@@ -239,8 +249,11 @@ pipeline:
     - name: nodeport-proxy
       namespace: nodeport-proxy
       path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
     group: deploy-cloud
-    helm: upgrade --install --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
+    helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
       --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
