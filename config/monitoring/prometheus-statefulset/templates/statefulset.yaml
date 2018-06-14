@@ -85,6 +85,7 @@ spec:
         - mountPath: /etc/prometheus/rules/
           name: prometheus-testing-rules
           readOnly: false
+      serviceAccountName: prometheus-testing
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true
