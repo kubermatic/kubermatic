@@ -41,7 +41,7 @@ pipeline:
   4-build:
     commands:
     - cd api
-    - CGO_ENABLED=0 make build
+    - make build
     group: build
     image: golang:1.9
     pull: true
