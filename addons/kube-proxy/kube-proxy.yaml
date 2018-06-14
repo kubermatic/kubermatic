@@ -48,7 +48,7 @@ spec:
           "proxy",
           "--v=4",
           "--kubeconfig=/etc/kubernetes/kubeconfig",
-          "--cluster-cidr=172.25.0.0/16"
+          "--cluster-cidr={{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}"
         ]
         securityContext:
           privileged: true
