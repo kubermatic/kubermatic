@@ -2,87 +2,78 @@ package storeuploader
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
+	"path"
 	"sort"
+	"time"
 
 	"github.com/minio/minio-go"
 )
 
-// Prefix separator separates the prefix
+// prefix separator separates the prefix
 // from the file name. This is required to not have
-// the storeuploader manage all files when Prefix
+// the storeuploader manage all files when prefix
 // is an empty string
 const prefixSeparator = "storeuploader"
 
 // StoreUploader is the configuration
 // for the StoreUploader
 type StoreUploader struct {
-	// RevisionsToKeep is the amount of revisions to keep
-	RevisionsToKeep int
-	// Bucket is the name of the Bucket to use
-	Bucket string
-	// Prefix allows to optionally set a prefix for all uploaded files
-	Prefix string
-	// BackupSourceDir specifies the backup dir to read the files from
-	BackupSourceDir string
-	// Client is a pointer to an initialized Client
-	Client *minio.Client
+	// revisionsToKeep is the amount of revisions to keep
+	revisionsToKeep int
+	// bucket is the name of the bucket to use
+	bucket string
+	// prefix allows to optionally set a prefix for all uploaded files
+	prefix string
+	// client is a pointer to an initialized client
+	client *minio.Client
+	// file defines the file to upload to S3
+	file string
 }
 
-func New(endpoint, accessKeyID, secretAccessKey string, secure bool, revisionsToKeep int, bucket, prefix, backupSourceDir string) (*StoreUploader, error) {
+// New returns a new instance of the StoreUploader
+func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, revisionsToKeep int, bucket, prefix, file string) (*StoreUploader, error) {
 	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, secure)
 	if err != nil {
 		return nil, err
 	}
 	client.SetAppInfo("kubermatic-store-uploader", "v0.1")
 	return &StoreUploader{
-		RevisionsToKeep: revisionsToKeep,
-		Bucket:          bucket,
-		Prefix:          prefix,
-		BackupSourceDir: backupSourceDir,
-		Client:          client,
+		revisionsToKeep: revisionsToKeep,
+		bucket:          bucket,
+		prefix:          prefix,
+		client:          client,
+		file:            file,
 	}, nil
 }
 
-func (uploader *StoreUploader) Run() error {
-	fileInfos, err := ioutil.ReadDir(uploader.BackupSourceDir)
-	if err != nil {
-		return fmt.Errorf("failed to read backup source dir: %v", err)
+// Store uploads the given file to S3
+func (u *StoreUploader) Store() error {
+	if _, err := os.Stat(u.file); os.IsNotExist(err) {
+		return fmt.Errorf("%s not found", u.file)
 	}
 
-	var fileNames []string
-	for _, file := range fileInfos {
-		if !file.IsDir() {
-			fileNames = append(fileNames, file.Name())
-		}
-	}
-
-	for _, fileName := range fileNames {
-		objectName := fmt.Sprintf("%s-%s-%s", uploader.Prefix, prefixSeparator, fileName)
-		filePath := fmt.Sprintf("%s/%s", uploader.BackupSourceDir, fileName)
-
-		if _, err := uploader.Client.FPutObject(uploader.Bucket, objectName, filePath, minio.PutObjectOptions{}); err != nil {
-			return err
-		}
-	}
-
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-
-	return uploader.deleteOldBackups()
+	objectName := fmt.Sprintf("%s-%s-%s", u.getObjectPrefix(), time.Now().Format("2006-01-02T15:04:05"), path.Base(u.file))
+	_, err := u.client.FPutObject(u.bucket, objectName, u.file, minio.PutObjectOptions{})
+	return err
 }
 
-func (uploader *StoreUploader) deleteOldBackups() error {
+func (u *StoreUploader) getObjectPrefix() string {
+	return fmt.Sprintf("%s-%s", u.prefix, prefixSeparator)
+}
+
+// DeleteOldBackups deletes revisions of the given file which are older than max-revisions
+func (u *StoreUploader) DeleteOldBackups() error {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
 	var existingObjects []minio.ObjectInfo
-	for object := range uploader.Client.ListObjects(uploader.Bucket, fmt.Sprintf("%s-%s", uploader.Prefix, prefixSeparator), true, doneCh) {
+	for object := range u.client.ListObjects(u.bucket, u.getObjectPrefix(), true, doneCh) {
 		existingObjects = append(existingObjects, object)
 	}
 
-	for _, object := range uploader.getObjectsToDelete(existingObjects) {
-		if err := uploader.Client.RemoveObject(uploader.Bucket, object.Key); err != nil {
+	for _, object := range u.getObjectsToDelete(existingObjects) {
+		if err := u.client.RemoveObject(u.bucket, object.Key); err != nil {
 			return err
 		}
 	}
@@ -90,8 +81,27 @@ func (uploader *StoreUploader) deleteOldBackups() error {
 	return nil
 }
 
-func (uploader *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo) []minio.ObjectInfo {
-	if len(objects) <= uploader.RevisionsToKeep {
+// DeleteAll deletes all revisions of the given file
+func (u *StoreUploader) DeleteAll() error {
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+
+	var existingObjects []minio.ObjectInfo
+	for object := range u.client.ListObjects(u.bucket, u.getObjectPrefix(), true, doneCh) {
+		existingObjects = append(existingObjects, object)
+	}
+
+	for _, object := range existingObjects {
+		if err := u.client.RemoveObject(u.bucket, object.Key); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (u *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo) []minio.ObjectInfo {
+	if len(objects) <= u.revisionsToKeep {
 		return nil
 	}
 
@@ -100,7 +110,7 @@ func (uploader *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo) []
 			return objects[i].LastModified.After(objects[j].LastModified)
 		})
 
-	numRevisionsToDelete := len(objects) - uploader.RevisionsToKeep
+	numRevisionsToDelete := len(objects) - u.revisionsToKeep
 
 	var objectsToDelete []minio.ObjectInfo
 	for idx, object := range objects {

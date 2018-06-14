@@ -13,16 +13,29 @@ func TestGetObjectsToDelete(t *testing.T) {
 		expected        []string
 	}{
 		{
-			existingObjects: []minio.ObjectInfo{minio.ObjectInfo{Key: "foo", LastModified: time.Unix(1, 0)}},
+			existingObjects: []minio.ObjectInfo{
+				{
+					Key:          "foo",
+					LastModified: time.Unix(1, 0),
+				},
+			},
 		},
 		{
-			existingObjects: []minio.ObjectInfo{minio.ObjectInfo{Key: "foo", LastModified: time.Unix(1, 0)},
-				minio.ObjectInfo{Key: "bar", LastModified: time.Unix(10, 0)}},
+			existingObjects: []minio.ObjectInfo{
+				{
+					Key:          "foo",
+					LastModified: time.Unix(1, 0),
+				},
+				{
+					Key:          "bar",
+					LastModified: time.Unix(10, 0),
+				},
+			},
 			expected: []string{"bar"},
 		},
 	}
 
-	uploader := StoreUploader{RevisionsToKeep: 1}
+	uploader := StoreUploader{revisionsToKeep: 1}
 	for _, test := range tests {
 		objectsToDelete := uploader.getObjectsToDelete(test.existingObjects)
 		if len(objectsToDelete) != len(test.expected) {
