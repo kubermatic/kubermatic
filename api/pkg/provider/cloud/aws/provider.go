@@ -262,28 +262,6 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error
 		return "", fmt.Errorf("failed to authorize security group ingress for kubelet port 10250: %v", err)
 	}
 
-	// Allow UDP within the security group
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		FromPort:   aws.Int64(0),
-		ToPort:     aws.Int64(65535),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("udp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for udp: %v", err)
-	}
-
-	// Allow ICMP within the security group
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    csgOut.GroupId,
-		FromPort:   aws.Int64(-1),
-		ToPort:     aws.Int64(-1),
-		IpProtocol: aws.String("icmp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for icmp: %v", err)
-	}
-
 	return *csgOut.GroupId, nil
 }
 
