@@ -68,6 +68,23 @@ spec:
 	    - name: nginx
 	      image: {{default "foo.io/" .OverwriteRegistry}}test:1.2.3
 `
+
+	testManifestKubeDNS = `apiVersion: v1
+kind: Service
+metadata:
+  name: kube-dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/name: "KubeDNS"
+spec:
+  selector:
+    k8s-app: kube-dns
+  clusterIP: {{.DNSClusterIP}}
+	clusterCIDR: "{{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}"
+`
 )
 
 var (
@@ -91,7 +108,7 @@ func TestController_combineManifests(t *testing.T) {
 	}
 }
 
-func setupTestCluster() *kubermaticv1.Cluster {
+func setupTestCluster(CIDRBlock string) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
@@ -101,7 +118,7 @@ func setupTestCluster() *kubermaticv1.Cluster {
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
-						"10.10.10.0/24",
+						CIDRBlock,
 					},
 				},
 				Pods: kubermaticv1.NetworkRanges{
@@ -121,20 +138,71 @@ func setupTestCluster() *kubermaticv1.Cluster {
 	}
 }
 
-func setupTestAddon() *kubermaticv1.Addon {
+func setupTestAddon(name string) *kubermaticv1.Addon {
 	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-addon",
+			Name: name,
 		},
 		Spec: kubermaticv1.AddonSpec{
-			Name: "test",
+			Name: name,
 		},
 	}
 }
 
+func TestController_getAddonKubeDNStManifests(t *testing.T) {
+	cluster := setupTestCluster("10.10.10.0/24")
+	addon := setupTestAddon("kube-dns")
+
+	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(addonDir)
+
+	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	controller := &Controller{
+		addonDir: addonDir,
+	}
+	manifests, err := controller.getAddonManifests(addon, cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifests) != 1 {
+		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
+	}
+	fmt.Println(manifests)
+	expectedIP := "10.10.10.10"
+	if !strings.Contains(manifests[0].String(), expectedIP) {
+		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
+	}
+	expectedCIDR := "172.25.0.0/16"
+	if !strings.Contains(manifests[0].String(), expectedCIDR) {
+		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].String())
+	}
+
+	cluster = setupTestCluster("172.25.0.0/16")
+	manifests, err = controller.getAddonManifests(addon, cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifests) != 1 {
+		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
+	}
+	expectedIP = "172.25.0.10"
+	if !strings.Contains(manifests[0].String(), expectedIP) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
+	}
+}
+
 func TestController_getAddonDeploymentManifests(t *testing.T) {
-	cluster := setupTestCluster()
-	addon := setupTestAddon()
+	cluster := setupTestCluster("10.10.10.0/24")
+	addon := setupTestAddon("test")
 
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
 	if err != nil {
@@ -169,8 +237,8 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 }
 
 func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
-	cluster := setupTestCluster()
-	addon := setupTestAddon()
+	cluster := setupTestCluster("10.10.10.0/24")
+	addon := setupTestAddon("test")
 
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
 	if err != nil {
@@ -204,8 +272,8 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 }
 
 func TestController_getAddonManifests(t *testing.T) {
-	cluster := setupTestCluster()
-	addon := setupTestAddon()
+	cluster := setupTestCluster("10.10.10.0/24")
+	addon := setupTestAddon("test")
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)

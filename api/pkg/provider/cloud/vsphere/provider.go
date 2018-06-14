@@ -6,6 +6,9 @@ import (
 	"net/url"
 
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/vim25/soap"
+	"github.com/vmware/govmomi/vim25/types"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -47,6 +50,49 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
+// createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
+func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error {
+	cloud := cluster.Spec.Cloud
+	dc, found := v.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	if dc.Spec.VSphere.RootPath == "" {
+		return fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := v.getClient(cloud)
+	if err != nil {
+		return err
+	}
+
+	finder := find.NewFinder(client.Client, true)
+	rootFolder, err := finder.Folder(ctx, dc.Spec.VSphere.RootPath)
+	if err != nil {
+		return fmt.Errorf("couldn't find rootpath, see: %s", err)
+	}
+
+	_, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name)
+	if err != nil && soap.IsSoapFault(err) {
+		soapFault := soap.ToSoapFault(err)
+		if _, ok := soapFault.VimFault().(types.FileAlreadyExists); !ok {
+			return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
+	}
+
+	if err := client.Logout(ctx); err != nil {
+		return fmt.Errorf("failed to logout from vSphere: %v", err)
+	}
+
+	return nil
+}
+
 // ValidateCloudSpec
 func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
@@ -63,10 +109,16 @@ func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 // InitializeCloudProvider
 func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	err := v.createVMFolderForCluster(cluster)
+	if err != nil {
+		return nil, err
+	}
+
 	return cluster, nil
 }
 
 // CleanUpCloudProvider
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	// TODO: Implement cleanUpVMFolderForCluster, atm there is no DeleteFolder function in govmomi...
 	return cluster, nil
 }
