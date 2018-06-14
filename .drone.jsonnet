@@ -74,7 +74,7 @@ local drone = import 'drone/drone.libsonnet';
       {namespace: 'minio', name: 'minio', path: 'config/minio/'},
     ],
 
-    local chartsEU = [
+    local chartsMaster = [
       {namespace: 'kubermatic', name: 'kubermatic-master', path: 'config/kubermatic/master'},
       {namespace: 'ingress-nginx', name: 'nginx', path: 'config/nginx-ingress-controller/'},
       {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
@@ -99,7 +99,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_dev', target: 'kubeconfig'},
           {source: 'values_dev', target: 'values'},
         ],
-        charts: charts + chartsEU,
+        charts: charts + chartsMaster,
         values: [ 'values' ],
       } + {when: {branch: 'master'}},
 
@@ -111,7 +111,7 @@ local drone = import 'drone/drone.libsonnet';
           {source: 'kubeconfig_cloud', target: 'kubeconfig'},
           {source: 'values_cloud_eu', target: 'values'},
         ],
-        charts: charts + chartsEU,
+        charts: charts + chartsMaster,
         values: [ 'values' ],
       } + {when: {branch: 'master'}},
 

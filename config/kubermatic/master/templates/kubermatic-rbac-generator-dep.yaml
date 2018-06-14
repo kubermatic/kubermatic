@@ -21,7 +21,7 @@ spec:
         args:
         - -v=4
         - -logtostderr
-        - -kubeconfig=/opt/.kube/kubeconfig
+        - -kubeconfig=/opt/.kube/kubeconfigwithseeds
         image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
         imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
         volumeMounts:
@@ -36,8 +36,8 @@ spec:
             memory: "256Mi"
             cpu: "200m"
       imagePullSecrets:
-        - name: dockercfg
+        - name: dockerregistry
       volumes:
-        - name: kubeconfig
+        - name: kubeconfigwithseeds
           secret:
-            secretName: kubeconfig
+            secretName: kubeconfigwithseeds
