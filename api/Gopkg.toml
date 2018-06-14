@@ -108,10 +108,6 @@ required = [
   branch = "release-1.10"
 
 [[constraint]]
-  name = "k8s.io/apiextensions-apiserver"
-  branch = "release-1.10"
-
-[[constraint]]
   name = "github.com/kubermatic/machine-controller"
   version = "v0.7.1"
 
