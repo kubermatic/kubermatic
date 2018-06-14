@@ -2473,6 +2473,10 @@
           },
           "x-go-name": "AllowedNodeVersions"
         },
+        "default": {
+          "type": "boolean",
+          "x-go-name": "Default"
+        },
         "version": {
           "$ref": "#/definitions/Version"
         }

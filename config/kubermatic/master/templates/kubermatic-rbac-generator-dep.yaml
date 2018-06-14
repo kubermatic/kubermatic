@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rbac-generator-v1
+  labels:
+    app: rbac-generator
+spec:
+  replicas: {{.Values.kubermatic.rbac.replicas}}
+  selector:
+    matchLabels:
+      app: rbac-generator
+  template:
+    metadata:
+      labels:
+        app: rbac-generator
+    spec:
+      containers:
+      - name: rbac-generator
+        command:
+        - rbac-generator
+        args:
+        - -v=4
+        - -logtostderr
+        - -kubeconfig=/opt/.kube/kubeconfigwithseeds
+        image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
+        volumeMounts:
+          - name: kubeconfigwithseeds
+            mountPath: "/opt/.kube/"
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      imagePullSecrets:
+        - name: dockerregistry
+      volumes:
+        - name: kubeconfigwithseeds
+          secret:
+            secretName: kubeconfigwithseeds
