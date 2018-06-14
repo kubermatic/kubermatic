@@ -176,6 +176,10 @@ func getFlags(data *resources.TemplateData) []string {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		flags = append(flags, "--cloud-provider", "vsphere")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
 	return flags
 }
 
