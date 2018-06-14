@@ -226,7 +226,7 @@ func (c *Controller) cleanupJobs() {
 	jobList, err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).List(metav1.ListOptions{LabelSelector: selector.String()})
 
 	for _, job := range jobList.Items {
-		if job.Status.Succeeded >= 1 {
+		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Now().Sub(job.Status.CompletionTime.Time).Minutes() > 5) {
 			propagation := metav1.DeletePropagationForeground
 			if err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 				utilruntime.HandleError(err)
@@ -448,7 +448,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 					Value: "3",
 				},
 			},
-			Command: []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snap.db"},
+			Command: []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snapshot.db"},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      SharedVolumeName,
