@@ -12,3 +12,5 @@ RUN chmod +x /usr/local/bin/kubectl
 
 COPY ./_build/* /usr/local/bin/
 
+USER nobody
+
