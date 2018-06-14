@@ -35,9 +35,9 @@ func TestGetObjectsToDelete(t *testing.T) {
 		},
 	}
 
-	uploader := StoreUploader{revisionsToKeep: 1}
+	uploader := StoreUploader{}
 	for _, test := range tests {
-		objectsToDelete := uploader.getObjectsToDelete(test.existingObjects)
+		objectsToDelete := uploader.getObjectsToDelete(test.existingObjects, 1)
 		if len(objectsToDelete) != len(test.expected) {
 			t.Errorf("Expected objectsToDelete to be of size %v but was %v", len(test.expected), len(objectsToDelete))
 		}

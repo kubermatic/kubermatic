@@ -19,61 +19,57 @@ const prefixSeparator = "storeuploader"
 // StoreUploader is the configuration
 // for the StoreUploader
 type StoreUploader struct {
-	// revisionsToKeep is the amount of revisions to keep
-	revisionsToKeep int
-	// bucket is the name of the bucket to use
-	bucket string
-	// prefix allows to optionally set a prefix for all uploaded files
-	prefix string
 	// client is a pointer to an initialized client
 	client *minio.Client
-	// file defines the file to upload to S3
-	file string
 }
 
 // New returns a new instance of the StoreUploader
-func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, revisionsToKeep int, bucket, prefix, file string) (*StoreUploader, error) {
+func New(endpoint string, secure bool, accessKeyID, secretAccessKey string) (*StoreUploader, error) {
 	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, secure)
 	if err != nil {
 		return nil, err
 	}
 	client.SetAppInfo("kubermatic-store-uploader", "v0.1")
 	return &StoreUploader{
-		revisionsToKeep: revisionsToKeep,
-		bucket:          bucket,
-		prefix:          prefix,
-		client:          client,
-		file:            file,
+		client: client,
 	}, nil
 }
 
 // Store uploads the given file to S3
-func (u *StoreUploader) Store() error {
-	if _, err := os.Stat(u.file); os.IsNotExist(err) {
-		return fmt.Errorf("%s not found", u.file)
+func (u *StoreUploader) Store(file, bucket, prefix string, createBucket bool) error {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return fmt.Errorf("%s not found", file)
 	}
 
-	objectName := fmt.Sprintf("%s-%s-%s", u.getObjectPrefix(), time.Now().Format("2006-01-02T15:04:05"), path.Base(u.file))
-	_, err := u.client.FPutObject(u.bucket, objectName, u.file, minio.PutObjectOptions{})
+	if createBucket {
+		exists, err := u.client.BucketExists(bucket)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err := u.client.MakeBucket(bucket, ""); err != nil {
+				return err
+			}
+		}
+	}
+
+	objectName := fmt.Sprintf("%s-%s-%s-%s", prefix, prefixSeparator, time.Now().Format("2006-01-02T15:04:05"), path.Base(file))
+	_, err := u.client.FPutObject(bucket, objectName, file, minio.PutObjectOptions{})
 	return err
 }
 
-func (u *StoreUploader) getObjectPrefix() string {
-	return fmt.Sprintf("%s-%s", u.prefix, prefixSeparator)
-}
-
 // DeleteOldBackups deletes revisions of the given file which are older than max-revisions
-func (u *StoreUploader) DeleteOldBackups() error {
+func (u *StoreUploader) DeleteOldBackups(file, bucket, prefix string, revisionsToKeep int) error {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
 	var existingObjects []minio.ObjectInfo
-	for object := range u.client.ListObjects(u.bucket, u.getObjectPrefix(), true, doneCh) {
+	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
 		existingObjects = append(existingObjects, object)
 	}
 
-	for _, object := range u.getObjectsToDelete(existingObjects) {
-		if err := u.client.RemoveObject(u.bucket, object.Key); err != nil {
+	for _, object := range u.getObjectsToDelete(existingObjects, revisionsToKeep) {
+		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
 	}
@@ -82,17 +78,17 @@ func (u *StoreUploader) DeleteOldBackups() error {
 }
 
 // DeleteAll deletes all revisions of the given file
-func (u *StoreUploader) DeleteAll() error {
+func (u *StoreUploader) DeleteAll(file, bucket, prefix string) error {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
 	var existingObjects []minio.ObjectInfo
-	for object := range u.client.ListObjects(u.bucket, u.getObjectPrefix(), true, doneCh) {
+	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
 		existingObjects = append(existingObjects, object)
 	}
 
 	for _, object := range existingObjects {
-		if err := u.client.RemoveObject(u.bucket, object.Key); err != nil {
+		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
 	}
@@ -100,8 +96,8 @@ func (u *StoreUploader) DeleteAll() error {
 	return nil
 }
 
-func (u *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo) []minio.ObjectInfo {
-	if len(objects) <= u.revisionsToKeep {
+func (u *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo, revisionsToKeep int) []minio.ObjectInfo {
+	if len(objects) <= revisionsToKeep {
 		return nil
 	}
 
@@ -110,7 +106,7 @@ func (u *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo) []minio.O
 			return objects[i].LastModified.After(objects[j].LastModified)
 		})
 
-	numRevisionsToDelete := len(objects) - u.revisionsToKeep
+	numRevisionsToDelete := len(objects) - revisionsToKeep
 
 	var objectsToDelete []minio.ObjectInfo
 	for idx, object := range objects {

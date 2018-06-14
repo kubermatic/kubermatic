@@ -52,6 +52,10 @@ func main() {
 		Name:  "secure",
 		Usage: "Enable tls validation",
 	}
+	createBucketFlag := cli.BoolFlag{
+		Name:  "create-bucket",
+		Usage: "creates the bucket if it does not exist yet",
+	}
 	maxRevisionsFlag := cli.IntFlag{
 		Name:  "max-revisions",
 		Value: 20,
@@ -71,6 +75,7 @@ func main() {
 				bucketFlag,
 				prefixFlag,
 				fileFlag,
+				createBucketFlag,
 			},
 		},
 		{
@@ -115,10 +120,6 @@ func getUploaderFromCtx(c *cli.Context) *storeuploader.StoreUploader {
 		c.Bool("secure"),
 		c.String("access-key-id"),
 		c.String("secret-access-key"),
-		c.Int("max-revisions"),
-		c.String("bucket"),
-		c.String("prefix"),
-		c.String("file"),
 	)
 	if err != nil {
 		glog.Fatal(err)
@@ -128,13 +129,27 @@ func getUploaderFromCtx(c *cli.Context) *storeuploader.StoreUploader {
 
 func store(c *cli.Context) error {
 	uploader := getUploaderFromCtx(c)
-	return uploader.Store()
+	return uploader.Store(
+		c.String("file"),
+		c.String("bucket"),
+		c.String("prefix"),
+		c.Bool("create-bucket"),
+	)
 }
 func deleteOldRevisions(c *cli.Context) error {
 	uploader := getUploaderFromCtx(c)
-	return uploader.DeleteOldBackups()
+	return uploader.DeleteOldBackups(
+		c.String("file"),
+		c.String("bucket"),
+		c.String("prefix"),
+		c.Int("max-revisions"),
+	)
 }
 func deleteAll(c *cli.Context) error {
 	uploader := getUploaderFromCtx(c)
-	return uploader.DeleteAll()
+	return uploader.DeleteAll(
+		c.String("file"),
+		c.String("bucket"),
+		c.String("prefix"),
+	)
 }
