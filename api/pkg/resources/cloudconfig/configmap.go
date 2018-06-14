@@ -81,7 +81,7 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
         insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
         datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
         datastore = "{{ .DC.Spec.VSphere.Datastore }}"
-        working-dir = ""
+        working-dir = "{{ .Cluster.Name }}"
         vm-uuid = "vm-uuid"
 [Disk]
     scsicontrollertype = pvscsi
