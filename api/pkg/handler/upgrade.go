@@ -57,6 +57,7 @@ func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
 			sv[v] = &apiv1.MasterVersion{
 				Version:             versions[v].Version,
 				AllowedNodeVersions: versions[v].AllowedNodeVersions,
+				Default:             versions[v].Default,
 			}
 		}
 
