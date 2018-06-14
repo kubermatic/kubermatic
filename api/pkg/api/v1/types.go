@@ -205,4 +205,5 @@ type AvailableMasterVersions []MasterVersion
 type MasterVersion struct {
 	Version             *semver.Version `json:"version"`
 	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
+	Default             bool            `json:"default,omitempty"`
 }
