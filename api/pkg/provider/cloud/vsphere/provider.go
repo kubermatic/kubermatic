@@ -59,7 +59,7 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 	}
 
 	if dc.Spec.VSphere.RootPath == "" {
-		return fmt.Errorf("missing rootpth for datacenter %s", cloud.DatacenterName)
+		return fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
