@@ -2,11 +2,14 @@ package rbac
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	"time"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -15,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/client-go/kubernetes"
+	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	clienttesting "k8s.io/client-go/testing"
@@ -481,21 +484,23 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 
-			seedClusterRESTClients := make([]kubernetes.Interface, test.seedClusters)
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				seedClusterRESTClients[i] = fakeSeedKubeClient
+				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				seedClusterProviders[i] = fakeProvider
 			}
 
 			// act
 			target := Controller{}
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
-			target.seedClustersRESTClient = seedClusterRESTClients
+			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
 
 			// validate master cluster
@@ -538,7 +543,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			// validate seed clusters
 			for i := 0; i < test.seedClusters; i++ {
 
-				seedKubeClient, ok := seedClusterRESTClients[i].(*fake.Clientset)
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
 				if !ok {
 					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
 				}
@@ -762,14 +767,16 @@ func TestEnsureProjectCleanup(t *testing.T) {
 
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
-			seedClusterRESTClients := make([]kubernetes.Interface, test.seedClusters)
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				seedClusterRESTClients[i] = fakeSeedKubeClient
+				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				seedClusterProviders[i] = fakeProvider
 			}
 
 			// act
@@ -777,7 +784,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			target.kubeMasterClient = fakeKubeClient
 			target.kubermaticMasterClient = fakeKubermaticClient
 			target.projectResources = test.projectResourcesToSync
-			target.seedClustersRESTClient = seedClusterRESTClients
+			target.seedClusterProviders = seedClusterProviders
 			target.projectLister = projectLister
 			target.userLister = userLister
 			err := target.ensureProjectCleanup(test.projectToSync)
@@ -822,7 +829,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			// validate seed clusters
 			for i := 0; i < test.seedClusters; i++ {
 
-				seedKubeClient, ok := seedClusterRESTClients[i].(*fake.Clientset)
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
 				if !ok {
 					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
 				}
@@ -1088,9 +1095,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.rbacClusterRoleBindingLister = clusterRoleBindingLister
-			target.kubeMasterClient = fakeKubeClient
-			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
 
 			// validate
 			if err != nil {
@@ -1251,19 +1256,21 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			objs := []runtime.Object{}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 
-			seedClusterRESTClients := make([]kubernetes.Interface, test.seedClusters)
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				seedClusterRESTClients[i] = fakeSeedKubeClient
+				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				seedClusterProviders[i] = fakeProvider
 			}
 
 			// act
 			target := Controller{}
-			//target.rbacClusterRoleLister = clusterRoleLister
+			//target.rbacClusterRoleMasterLister = clusterRoleLister
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
-			target.seedClustersRESTClient = seedClusterRESTClients
+			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleForResources()
 
 			// validate master cluster
@@ -1306,7 +1313,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			// validate seed clusters
 			for i := 0; i < test.seedClusters; i++ {
 
-				seedKubeClient, ok := seedClusterRESTClients[i].(*fake.Clientset)
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
 				if !ok {
 					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
 				}
@@ -1547,9 +1554,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.rbacClusterRoleLister = clusterRoleLister
-			target.kubeMasterClient = fakeKubeClient
-			err := target.ensureClusterRBACRoleForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := target.ensureClusterRBACRoleForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleLister)
 
 			// validate
 			if err != nil {

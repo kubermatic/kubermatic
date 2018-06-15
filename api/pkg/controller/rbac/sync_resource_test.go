@@ -3,8 +3,6 @@ package rbac
 import (
 	"testing"
 
-	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -23,7 +21,7 @@ import (
 func TestEnsureDependantsRBACRole(t *testing.T) {
 	tests := []struct {
 		name                        string
-		dependantToSync             *dependantQueueItem
+		dependantToSync             *projectResourceQueueItem
 		existingProject             *kubermaticv1.Project
 		expectedClusterRoles        []*rbacv1.ClusterRole
 		existingClusterRoles        []*rbacv1.ClusterRole
@@ -38,7 +36,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			expectedActions: []string{"create", "create", "create", "create"},
 			existingProject: createProject("thunderball", createUser("James Bond")),
 
-			dependantToSync: &dependantQueueItem{
+			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
 					Group:    kubermaticv1.SchemeGroupVersion.Group,
 					Version:  kubermaticv1.SchemeGroupVersion.Version,
@@ -177,7 +175,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			name:            "scenario 2 no-op for a cluster that doesn't belong to a project",
 			expectError:     true,
 			existingProject: createProject("thunderball", createUser("James Bond")),
-			dependantToSync: &dependantQueueItem{
+			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
 					Group:    kubermaticv1.SchemeGroupVersion.Group,
 					Version:  kubermaticv1.SchemeGroupVersion.Version,
@@ -214,7 +212,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 				}
 				kubermaticObjs = append(kubermaticObjs, test.existingProject)
 			}
-			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
+			//projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
 
 			objs := []runtime.Object{}
 			clusterRoleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
@@ -237,17 +235,17 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			}
 			clusterRoleBindingLister := rbaclister.NewClusterRoleBindingLister(clusterRoleBindingIndexer)
 
-			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			fakeClusterProvider := &ClusterProvider{
+				kubeClient:                   fakeKubeClient,
+				rbacClusterRoleBindingLister: clusterRoleBindingLister,
+				rbacClusterRoleLister:        clusterRoleLister,
+			}
 
 			// act
 			target := Controller{}
-			target.projectLister = projectLister
-			target.kubermaticMasterClient = kubermaticFakeClient
-			target.rbacClusterRoleLister = clusterRoleLister
-			target.rbacClusterRoleBindingLister = clusterRoleBindingLister
-			target.kubeMasterClient = fakeKubeClient
-			err := target.syncDependant(test.dependantToSync)
+			test.dependantToSync.clusterProvider = fakeClusterProvider
+			err := target.syncProjectResource(test.dependantToSync)
 
 			// validate
 			if err != nil && !test.expectError {
