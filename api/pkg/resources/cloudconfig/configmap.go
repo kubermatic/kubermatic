@@ -94,12 +94,12 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 [Global]
         user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
         password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
-        server = "{{ .DC.Spec.VSphereSpec.Endpoint }}"
+        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
         port = "443"
-        insecure-flag = "{{ if .DC.Spec.VSphereSpec.AllowInsecure }}1{{ else }}0{{ end }}"
-        datacenter = "{{ .DC.Spec.VSphereSpec.Datacenter }}"
-        datastore = "{{ .DC.Spec.VSphereSpec.Datastore }}"
-        working-dir = ""
+        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
+        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
+        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
+        working-dir = "{{ .Cluster.Name }}"
         vm-uuid = "vm-uuid"
 [Disk]
     scsicontrollertype = pvscsi
