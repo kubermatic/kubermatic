@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         app: prometheus-testing
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '9090'
     spec:
       containers:
       - args:

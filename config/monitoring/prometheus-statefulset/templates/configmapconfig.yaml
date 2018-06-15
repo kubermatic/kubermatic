@@ -3,10 +3,4 @@ kind: ConfigMap
 metadata:
   name: prometheus-testing-config
 data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 30s
-      scrape_timeout: 10s
-      evaluation_interval: 30s
-    rule_files:
-    - '/etc/prometheus/rules/*'
+{{ (.Files.Glob "config/*").AsConfig | indent 2 }}

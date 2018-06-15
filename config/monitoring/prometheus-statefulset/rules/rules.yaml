@@ -242,7 +242,7 @@ groups:
     annotations:
       message: KubeAPI has disappeared from Prometheus target discovery.
     expr: |
-      absent(up{job="kube-apiserver"} == 1)
+      absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
       severity: critical
