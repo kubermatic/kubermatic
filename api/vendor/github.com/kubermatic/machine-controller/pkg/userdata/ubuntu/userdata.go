@@ -187,8 +187,8 @@ write_files:
           exit 0
          fi
       done
+      exit 1
     fi
-    exit 1
 
 - path: "/usr/local/bin/download-kubeadm"
   permissions: "0777"
@@ -203,8 +203,8 @@ write_files:
           exit 0
         fi
       done
+      exit 1
     fi
-    exit 1
 
 - path: "/usr/local/bin/download-cni"
   permissions: "0777"
@@ -219,8 +219,8 @@ write_files:
           exit 0
         fi
       done
+      exit 1
     fi
-    exit 1
 
 - path: "/usr/local/bin/download-kubelet-kubeadm-unitfile"
   permissions: "0777"
@@ -235,8 +235,8 @@ write_files:
         exit 0
        fi
       done
+      exit 1
     fi
-    exit 1
 
 {{- if eq .MachineSpec.Versions.ContainerRuntime.Name "cri-o" }}
 - path: "/usr/local/bin/download-crictl"

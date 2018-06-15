@@ -119,9 +119,10 @@ type AzureNodeSpec struct {
 // VSphereNodeSpec VSphere node settings
 // swagger:model VSphereNodeSpecV2
 type VSphereNodeSpec struct {
-	CPUs     int    `json:"cpus"`
-	Memory   int    `json:"memory"`
-	Template string `json:"template"`
+	CPUs            int    `json:"cpus"`
+	Memory          int    `json:"memory"`
+	Template        string `json:"template"`
+	TemplateNetName string `json:"templateNetName"`
 }
 
 // OpenstackNodeSpec openstack node settings
