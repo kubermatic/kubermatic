@@ -42,6 +42,7 @@ spec:
           - -logtostderr
           - -external-url={{ .Values.kubermatic.domain }}
           - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
+          - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
           - -master-resources=/opt/master-files
           - -datacenters=/opt/datacenter/datacenters.yaml
           - -versions=/opt/master-files/versions.yaml
