@@ -14,7 +14,7 @@ EOF
   exit 0
 fi
 
-export CHARTS='cert-manager certs kubermatic nginx-ingress-controller nodeport-proxy oauth'
+export CHARTS='cert-manager certs kubermatic nginx-ingress-controller nodeport-proxy oauth minio'
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'
