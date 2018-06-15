@@ -89,5 +89,20 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
   "useInstanceMetadata": true
 }
 {{- end }}
+{{- if .Cluster.Spec.Cloud.VSphere }}
+{{/* Source: https://docs.openshift.com/container-platform/3.7/install_config/configuring_vsphere.html#vsphere-enabling */}}
+[Global]
+        user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
+        password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
+        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
+        port = "443"
+        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
+        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
+        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
+        working-dir = "{{ .Cluster.Name }}"
+        vm-uuid = "vm-uuid"
+[Disk]
+    scsicontrollertype = pvscsi
+{{- end }}
 `
 )
