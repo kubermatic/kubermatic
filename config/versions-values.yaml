@@ -8,7 +8,7 @@ kubermatic:
       tag: "{API_IMAGE_TAG}"
   ui:
     image:
-      tag: "v0.31"
+      tag: "v0.32"
   rbac:
     image:
       tag: "{API_IMAGE_TAG}"
