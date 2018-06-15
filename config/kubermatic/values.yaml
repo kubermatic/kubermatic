@@ -19,7 +19,7 @@ kubermatic:
   # base64 encoded kubeconfig which gives admin access to all seed clusters
   kubeconfig: ""
   addons:
-    # Comma separated list of Addons to install into every user-cluster. All need to exist in the addons image
+    # list of Addons to install into every user-cluster. All need to exist in the addons image
     defaultAddons: 
     - canal
     - dashboard
