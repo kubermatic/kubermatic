@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,7 +113,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 	gv := kubermaticv1.SchemeGroupVersion
 	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 
-	err = wait.Poll(50*time.Millisecond, 10*time.Second, func() (done bool, err error) {
+	err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
 		for _, addon := range p.addons {
 			_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
 				ObjectMeta: metav1.ObjectMeta{
@@ -135,6 +136,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 				if kuberrrors.IsAlreadyExists(err) {
 					continue
 				}
+				glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
 				return false, nil
 			}
 		}
