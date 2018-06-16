@@ -110,43 +110,6 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		return nil, err
 	}
 
-	gv := kubermaticv1.SchemeGroupVersion
-	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
-
-	err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
-		for _, addon := range p.addons {
-			_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            addon,
-					Namespace:       cluster.Status.NamespaceName,
-					OwnerReferences: []metav1.OwnerReference{ownerRef},
-				},
-				Spec: kubermaticv1.AddonSpec{
-					Name: addon,
-					Cluster: corev1.ObjectReference{
-						Name:       cluster.Name,
-						Namespace:  "",
-						UID:        cluster.UID,
-						APIVersion: cluster.APIVersion,
-						Kind:       "Cluster",
-					},
-				},
-			})
-			if err != nil {
-				if kuberrrors.IsAlreadyExists(err) {
-					continue
-				}
-				glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	//We wait until the cluster exists in the lister so we can use this instead of doing api calls
 	existsInLister := func() (bool, error) {
 		_, err := p.clusterLister.Get(cluster.Name)
@@ -155,6 +118,44 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		}
 		return true, nil
 	}
+
+	go func() {
+		gv := kubermaticv1.SchemeGroupVersion
+		ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+		err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
+			for _, addon := range p.addons {
+				_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            addon,
+						Namespace:       cluster.Status.NamespaceName,
+						OwnerReferences: []metav1.OwnerReference{ownerRef},
+					},
+					Spec: kubermaticv1.AddonSpec{
+						Name: addon,
+						Cluster: corev1.ObjectReference{
+							Name:       cluster.Name,
+							Namespace:  "",
+							UID:        cluster.UID,
+							APIVersion: cluster.APIVersion,
+							Kind:       "Cluster",
+						},
+					},
+				})
+				if err != nil {
+					if kuberrrors.IsAlreadyExists(err) {
+						continue
+					}
+					glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
+					return false, nil
+				}
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			glog.V(0).Infof("failed to create initial addons in cluster %s: %v", cluster.Name, err)
+		}
+	}()
 
 	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
 }
