@@ -138,47 +138,56 @@ func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuber
 }
 
 // CleanUpCloudProvider
+// We always check if the folder is there and remove it if yes because we know its absolute path
+// This covers cases where the finalizer was not added
+// We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	vsphereRootPath, err := v.getVsphereRootPath(cluster)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := v.getClient(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := client.Logout(context.Background()); err != nil {
+			glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
+		}
+	}()
+
+	finder := find.NewFinder(client.Client, true)
+	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); !ok {
+			return nil, fmt.Errorf("failed to get folder: %v", err)
+		}
+		// Folder is not there anymore, maybe someone deleted it manually
+		cluster = removeFinalizerIfPresent(cluster)
+		return cluster, nil
+	}
+	task, err := folder.Destroy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete folder: %v", err)
+	}
+	if err := task.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
+	}
+	cluster = removeFinalizerIfPresent(cluster)
+	glog.V(4).Infof("Successfully deleted vsphere folder %s/%s for cluster %s",
+		vsphereRootPath, cluster.Name, cluster.Name)
+	return cluster, nil
+}
+
+func removeFinalizerIfPresent(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	finalizers := sets.NewString(cluster.Finalizers...)
 	if finalizers.Has(folderCleanupFinalizer) {
-		vsphereRootPath, err := v.getVsphereRootPath(cluster)
-		if err != nil {
-			return nil, err
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		client, err := v.getClient(cluster.Spec.Cloud)
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			if err := client.Logout(context.Background()); err != nil {
-				glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
-			}
-		}()
-
-		finder := find.NewFinder(client.Client, true)
-		folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
-		if err != nil {
-			if _, ok := err.(*find.NotFoundError); !ok {
-				return nil, fmt.Errorf("failed to get folder: %v", err)
-			}
-			// Folder is not there anymore, maybe someone deleted it manually
-			finalizers.Delete(folderCleanupFinalizer)
-			cluster.Finalizers = finalizers.List()
-			return cluster, nil
-		}
-		task, err := folder.Destroy(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete folder: %v", err)
-		}
-		if err := task.Wait(ctx); err != nil {
-			return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
-		}
+		finalizers.Delete(folderCleanupFinalizer)
 		cluster.Finalizers = finalizers.List()
-		glog.V(4).Infof("Successfully deleted vsphere folder %s/%s for cluster %s",
-			vsphereRootPath, cluster.Name, cluster.Name)
+		return cluster
 	}
-	return cluster, nil
+	return cluster
 }
