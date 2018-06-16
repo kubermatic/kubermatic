@@ -259,7 +259,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Status.NamespaceName = mockNamespaceName
-	fakeCluster.Address = &clusterv1.ClusterAddress{}
 
 	stopChannel := make(chan struct{})
 	kubeInformerFactory.Start(stopChannel)

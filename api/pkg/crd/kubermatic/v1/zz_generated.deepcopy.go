@@ -230,15 +230,7 @@ func (in *Cluster) DeepCopyInto(out *Cluster) {
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
-	if in.Address != nil {
-		in, out := &in.Address, &out.Address
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterAddress)
-			**out = **in
-		}
-	}
+	out.Address = in.Address
 	in.Status.DeepCopyInto(&out.Status)
 	return
 }
@@ -394,15 +386,7 @@ func (in *ClusterSpec) DeepCopy() *ClusterSpec {
 func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	*out = *in
 	in.LastUpdated.DeepCopyInto(&out.LastUpdated)
-	if in.Health != nil {
-		in, out := &in.Health, &out.Health
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterHealth)
-			(*in).DeepCopyInto(*out)
-		}
-	}
+	in.Health.DeepCopyInto(&out.Health)
 	in.RootCA.DeepCopyInto(&out.RootCA)
 	in.ApiserverCert.DeepCopyInto(&out.ApiserverCert)
 	in.KubeletCert.DeepCopyInto(&out.KubeletCert)

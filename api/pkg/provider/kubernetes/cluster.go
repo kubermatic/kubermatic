@@ -99,7 +99,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 			UserName:      user.Name,
 			NamespaceName: NamespaceName(name),
 		},
-		Address: &kubermaticv1.ClusterAddress{},
+		Address: kubermaticv1.ClusterAddress{},
 	}
 
 	cluster, err = p.client.KubermaticV1().Clusters().Create(cluster)
