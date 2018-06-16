@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+)
+
+const (
+	folderCleanupFinalizer = "kubermatic.io/cleanup-vsphere-folder"
 )
 
 type vsphere struct {
@@ -48,16 +53,34 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
-// createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
-func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error {
+func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, error) {
 	cloud := cluster.Spec.Cloud
 	dc, found := v.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
-		return fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+		return "", fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 
 	if dc.Spec.VSphere.RootPath == "" {
-		return fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+		return "", fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+	}
+
+	return dc.Spec.VSphere.RootPath, nil
+}
+
+// createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
+func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	cloud := cluster.Spec.Cloud
+	dc, found := v.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	if dc.Spec.VSphere.RootPath == "" {
+		return nil, fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+	}
+	dcRootPath, err := v.getVsphereRootPath(cluster)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -65,30 +88,33 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 
 	client, err := v.getClient(cloud)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer func() {
+		if err := client.Logout(context.Background()); err != nil {
+			glog.V(4).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
+		}
+	}()
 
 	finder := find.NewFinder(client.Client, true)
-	rootFolder, err := finder.Folder(ctx, dc.Spec.VSphere.RootPath)
+	rootFolder, err := finder.Folder(ctx, dcRootPath)
 	if err != nil {
-		return fmt.Errorf("couldn't find rootpath, see: %v", err)
+		return nil, fmt.Errorf("couldn't find rootpath, see: %v", err)
 	}
 	_, err = finder.Folder(ctx, cluster.ObjectMeta.Name)
 	if err != nil {
 		if _, ok := err.(*find.NotFoundError); ok {
 			if _, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name); err != nil {
-				return fmt.Errorf("failed to create cluster folder: %v", err)
+				return nil, fmt.Errorf("failed to create cluster folder: %v", err)
 			}
+			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+			return cluster, nil
 
 		}
-		return fmt.Errorf("Failed to get cluster folder: %v", err)
+		return cluster, fmt.Errorf("Failed to get cluster folder: %v", err)
 	}
 
-	if err := client.Logout(ctx); err != nil {
-		return fmt.Errorf("failed to logout from vSphere: %v", err)
-	}
-
-	return nil
+	return cluster, nil
 }
 
 // ValidateCloudSpec
@@ -107,16 +133,14 @@ func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 // InitializeCloudProvider
 func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	err := v.createVMFolderForCluster(cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	return cluster, nil
+	return v.createVMFolderForCluster(cluster)
 }
 
 // CleanUpCloudProvider
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	// TODO: Implement cleanUpVMFolderForCluster, atm there is no DeleteFolder function in govmomi...
+	//	finalizers := sets.NewString(cluster.Finalizers...)
+	//	if finalizers.Has(folderCleanupFinalizer) {
+	//
+	//	}
 	return cluster, nil
 }
