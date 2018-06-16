@@ -7,8 +7,6 @@ import (
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
-	"github.com/vmware/govmomi/vim25/soap"
-	"github.com/vmware/govmomi/vim25/types"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -73,17 +71,17 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) error 
 	finder := find.NewFinder(client.Client, true)
 	rootFolder, err := finder.Folder(ctx, dc.Spec.VSphere.RootPath)
 	if err != nil {
-		return fmt.Errorf("couldn't find rootpath, see: %s", err)
+		return fmt.Errorf("couldn't find rootpath, see: %v", err)
 	}
+	_, err = finder.Folder(ctx, cluster.ObjectMeta.Name)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			if _, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name); err != nil {
+				return fmt.Errorf("failed to create cluster folder: %v", err)
+			}
 
-	_, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name)
-	if err != nil && soap.IsSoapFault(err) {
-		soapFault := soap.ToSoapFault(err)
-		if _, ok := soapFault.VimFault().(types.DuplicateName); !ok {
-			return fmt.Errorf("couldn't create cluster vm folder, see: %s (error type: %T)", err, soapFault.VimFault())
 		}
-	} else if err != nil {
-		return fmt.Errorf("couldn't create cluster vm folder, see: %s", err)
+		return fmt.Errorf("Failed to get cluster folder: %v", err)
 	}
 
 	if err := client.Logout(ctx); err != nil {
