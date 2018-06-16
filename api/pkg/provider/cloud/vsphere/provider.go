@@ -111,11 +111,22 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 		if _, err = rootFolder.CreateFolder(ctx, cluster.Name); err != nil {
 			return nil, fmt.Errorf("failed to create cluster folder %s/%s: %v", rootFolder, cluster.Name, err)
 		}
-		cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+		// We successfully created the folder, so ensure finalizer is there
+		cluster = ensureFolderDeleteFinalizer(cluster)
 		return cluster, nil
 	}
 
+	// Folder exists so ensure finalizer is there
+	cluster = ensureFolderDeleteFinalizer(cluster)
 	return cluster, nil
+}
+
+func ensureFolderDeleteFinalizer(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+	finalizers := sets.NewString(cluster.Finalizers...)
+	if !finalizers.Has(folderCleanupFinalizer) {
+		cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+	}
+	return cluster
 }
 
 // ValidateCloudSpec
