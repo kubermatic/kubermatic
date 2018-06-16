@@ -178,7 +178,7 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	if cluster.Status.Health == nil || !cluster.Status.Health.AllHealthy() {
+	if !cluster.Status.Health.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
 		// If it gets healthy we'll get notified by the event. No need to requeue
 		return nil

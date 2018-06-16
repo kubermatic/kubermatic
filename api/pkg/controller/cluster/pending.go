@@ -117,7 +117,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 	if err != nil {
 		return err
 	}
-	cluster.Status.Health = health
+	cluster.Status.Health = *health
 
 	if cluster.Status.Health.Apiserver {
 		if err := cc.ensureClusterReachable(cluster); err != nil {
@@ -208,9 +208,6 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 
 // ensureAddress will set the cluster hostname and the url under which the apiserver will be reachable
 func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
-	if c.Address == nil {
-		c.Address = &kubermaticv1.ClusterAddress{}
-	}
 	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 
 	//Always update the ip

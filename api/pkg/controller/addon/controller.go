@@ -280,7 +280,7 @@ func (c *Controller) sync(key string) error {
 	}
 
 	//Reconciling
-	if cluster.Status.Health == nil || !cluster.Status.Health.Apiserver {
+	if !cluster.Status.Health.Apiserver {
 		return nil
 	}
 	if err := c.ensureIsInstalled(addon, cluster); err != nil {
