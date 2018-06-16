@@ -94,7 +94,7 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 	}
 	defer func() {
 		if err := client.Logout(context.Background()); err != nil {
-			glog.V(4).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
+			glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
 		}
 	}()
 
@@ -105,15 +105,14 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 	}
 	_, err = finder.Folder(ctx, cluster.ObjectMeta.Name)
 	if err != nil {
-		if _, ok := err.(*find.NotFoundError); ok {
-			if _, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name); err != nil {
-				return nil, fmt.Errorf("failed to create cluster folder: %v", err)
-			}
-			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
-			return cluster, nil
-
+		if _, ok := err.(*find.NotFoundError); !ok {
+			return nil, fmt.Errorf("Failed to get cluster folder: %v", err)
 		}
-		return cluster, fmt.Errorf("Failed to get cluster folder: %v", err)
+		if _, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name); err != nil {
+			return nil, fmt.Errorf("failed to create cluster folder: %v", err)
+		}
+		cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+		return cluster, nil
 	}
 
 	return cluster, nil
@@ -151,7 +150,7 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 		}
 		defer func() {
 			if err := client.Logout(context.Background()); err != nil {
-				glog.V(4).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
+				glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
 			}
 		}()
 
