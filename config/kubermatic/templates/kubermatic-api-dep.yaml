@@ -30,7 +30,7 @@ spec:
           - -internal-address=0.0.0.0:8085
           - -kubeconfig=/opt/.kube/kubeconfig
           - -master-resources=/opt/master-files
-          - -addons={{ .Values.kubermatic.addons.defaultAddons }}
+          - -addons={{ join "," .Values.kubermatic.addons.defaultAddons | quote }}
           - -token-issuer-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}

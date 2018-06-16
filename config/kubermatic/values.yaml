@@ -2,6 +2,9 @@ kubermatic:
   docker:
     # the base64 encoded docker authentication token
     secret: ""
+  quay:
+    # the base64 encoded quay.io authentication token
+    secret: ""
   auth:
     # the full path to the openid connect token issuer. For example 'https://dev.kubermatic.io/dex'
     tokenIssuer: ""
@@ -16,8 +19,15 @@ kubermatic:
   # base64 encoded kubeconfig which gives admin access to all seed clusters
   kubeconfig: ""
   addons:
-    # Comma separated list of Addons to install into every user-cluster. All need to exist in the addons image
-    defaultAddons: "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac"
+    # list of Addons to install into every user-cluster. All need to exist in the addons image
+    defaultAddons: 
+    - canal
+    - dashboard
+    - dns
+    - heapster
+    - kube-proxy
+    - openvpn
+    - rbac
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
