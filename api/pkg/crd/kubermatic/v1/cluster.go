@@ -57,9 +57,9 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec     `json:"spec"`
-	Address *ClusterAddress `json:"address,omitempty"`
-	Status  ClusterStatus   `json:"status,omitempty"`
+	Spec    ClusterSpec    `json:"spec"`
+	Address ClusterAddress `json:"address,omitempty"`
+	Status  ClusterStatus  `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -118,10 +118,10 @@ type ClusterAddress struct {
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastUpdated               metav1.Time    `json:"lastUpdated,omitempty"`
-	Phase                     ClusterPhase   `json:"phase,omitempty"`
-	Health                    *ClusterHealth `json:"health,omitempty"`
-	LastDeployedMasterVersion string         `json:"lastDeployedMasterVersion"`
+	LastUpdated               metav1.Time   `json:"lastUpdated,omitempty"`
+	Phase                     ClusterPhase  `json:"phase,omitempty"`
+	Health                    ClusterHealth `json:"health,omitempty"`
+	LastDeployedMasterVersion string        `json:"lastDeployedMasterVersion"`
 
 	RootCA            KeyCert `json:"rootCA"`
 	ApiserverCert     KeyCert `json:"apiserverCert"`

@@ -97,7 +97,7 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 			UserName:      user.Name,
 			NamespaceName: NamespaceName(name),
 		},
-		Address: &kubermaticapiv1.ClusterAddress{},
+		Address: kubermaticapiv1.ClusterAddress{},
 	}
 
 	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)

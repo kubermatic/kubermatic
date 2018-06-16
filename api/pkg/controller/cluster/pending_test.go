@@ -18,7 +18,7 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 			Name: TestClusterName,
 		},
 		Spec:    kubermaticv1.ClusterSpec{},
-		Address: &kubermaticv1.ClusterAddress{},
+		Address: kubermaticv1.ClusterAddress{},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-" + TestClusterName,
 		},
@@ -68,7 +68,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 					Name: "henrik1",
 				},
 				Spec:    kubermaticv1.ClusterSpec{},
-				Address: &kubermaticv1.ClusterAddress{},
+				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
 				},
@@ -82,7 +82,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 					Name: "henrik1",
 				},
 				Spec:    kubermaticv1.ClusterSpec{},
-				Address: &kubermaticv1.ClusterAddress{},
+				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-henrik1",
 				},
