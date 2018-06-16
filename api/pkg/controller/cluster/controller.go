@@ -364,9 +364,6 @@ func (cc *Controller) syncCluster(key string) error {
 
 	glog.V(4).Infof("syncing cluster %s", key)
 
-	// In case we change fields
-	cc.migrateCluster(cluster)
-
 	for _, phase := range kubermaticv1.ClusterPhases {
 		value := 0.0
 		if phase == cluster.Status.Phase {
@@ -402,13 +399,6 @@ func (cc *Controller) syncCluster(key string) error {
 	}
 
 	return cc.updateCluster(originalData, cluster)
-}
-
-func (cc *Controller) migrateCluster(cluster *kubermaticv1.Cluster) {
-	if cluster.Spec.Version == "" {
-		cluster.Spec.Version = cluster.Spec.MasterVersion
-	}
-	cluster.Spec.MasterVersion = cluster.Spec.Version
 }
 
 func (cc *Controller) runWorker() {
