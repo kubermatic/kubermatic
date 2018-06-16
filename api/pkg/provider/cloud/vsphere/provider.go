@@ -108,8 +108,8 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 		if _, ok := err.(*find.NotFoundError); !ok {
 			return nil, fmt.Errorf("Failed to get cluster folder: %v", err)
 		}
-		if _, err = rootFolder.CreateFolder(ctx, cluster.ObjectMeta.Name); err != nil {
-			return nil, fmt.Errorf("failed to create cluster folder: %v", err)
+		if _, err = rootFolder.CreateFolder(ctx, cluster.Name); err != nil {
+			return nil, fmt.Errorf("failed to create cluster folder %s/%s: %v", rootFolder, cluster.Name, err)
 		}
 		cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
 		return cluster, nil
@@ -141,6 +141,10 @@ func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuber
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	finalizers := sets.NewString(cluster.Finalizers...)
 	if finalizers.Has(folderCleanupFinalizer) {
+		vsphereRootPath, err := v.getVsphereRootPath(cluster)
+		if err != nil {
+			return nil, err
+		}
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -155,10 +159,10 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 		}()
 
 		finder := find.NewFinder(client.Client, true)
-		folder, err := finder.Folder(ctx, cluster.Name)
+		folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
 		if err != nil {
 			if _, ok := err.(*find.NotFoundError); !ok {
-				return nil, fmt.Errorf("failed to get folder for cluster %s: %v", cluster.Name, err)
+				return nil, fmt.Errorf("failed to get folder: %v", err)
 			}
 			// Folder is not there anymore, maybe someone deleted it manually
 			finalizers.Delete(folderCleanupFinalizer)
@@ -167,13 +171,14 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 		}
 		task, err := folder.Destroy(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to delete folder for cluster: %s: %v", cluster.Name, err)
+			return nil, fmt.Errorf("failed to delete folder: %v", err)
 		}
 		if err := task.Wait(ctx); err != nil {
-			return nil, fmt.Errorf("failed to wait for deletion of folder for cluster %s: %v", cluster.Name, err)
+			return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
 		}
 		cluster.Finalizers = finalizers.List()
-		glog.V(4).Infof("Successfully deleted vsphere folder for cluster %s", cluster.Name)
+		glog.V(4).Infof("Successfully deleted vsphere folder %s/%s for cluster %s",
+			vsphereRootPath, cluster.Name, cluster.Name)
 	}
 	return cluster, nil
 }
