@@ -11,6 +11,8 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -138,9 +140,41 @@ func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kuber
 
 // CleanUpCloudProvider
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	//	finalizers := sets.NewString(cluster.Finalizers...)
-	//	if finalizers.Has(folderCleanupFinalizer) {
-	//
-	//	}
+	finalizers := sets.NewString(cluster.Finalizers...)
+	if finalizers.Has(folderCleanupFinalizer) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, err := v.getClient(cluster.Spec.Cloud)
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			if err := client.Logout(context.Background()); err != nil {
+				glog.V(4).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
+			}
+		}()
+
+		finder := find.NewFinder(client.Client, true)
+		folder, err := finder.Folder(ctx, cluster.Name)
+		if err != nil {
+			if _, ok := err.(*find.NotFoundError); !ok {
+				return nil, fmt.Errorf("failed to get folder for cluster %s: %v", cluster.Name, err)
+			}
+			// Folder is not there anymore, maybe someone deleted it manually
+			finalizers.Delete(folderCleanupFinalizer)
+			cluster.Finalizers = finalizers.List()
+			return cluster, nil
+		}
+		task, err := folder.Destroy(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete folder for cluster: %s: %v", cluster.Name, err)
+		}
+		if err := task.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("failed to wait for deletion of folder for cluster %s: %v", cluster.Name, err)
+		}
+		cluster.Finalizers = finalizers.List()
+		glog.V(4).Infof("Successfully deleted vsphere folder for cluster %s", cluster.Name)
+	}
 	return cluster, nil
 }
