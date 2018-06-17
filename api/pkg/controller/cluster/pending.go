@@ -11,7 +11,7 @@ import (
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var err error
 	// Create the namespace
-	if err := cc.ensureNamespaceExists(cluster); err != nil {
+	if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
 		return nil, err
 	}
 
@@ -26,62 +26,22 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Set default network configuration
-	if err := cc.ensureClusterNetworkDefaults(cluster); err != nil {
+	if cluster, err = cc.ensureClusterNetworkDefaults(cluster); err != nil {
 		return nil, err
 	}
 
-	// check that all service accounts are created
-	if err := cc.ensureCheckServiceAccounts(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all roles are created
-	if err := cc.ensureRoles(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all role bindings are created
-	if err := cc.ensureRoleBindings(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all role bindings are created
-	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all services are available
-	if err := cc.ensureServices(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all secrets are available
-	if err := cc.ensureSecrets(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all ConfigMap's are available
-	if err := cc.ensureConfigMaps(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all deployments are available
-	if err := cc.ensureDeployments(cluster); err != nil {
-		return nil, err
-	}
-
-	// check that all StatefulSet's are created
-	if err := cc.ensureStatefulSets(cluster); err != nil {
+	// Deploy & Update master components
+	if err := cc.ensureResourcesAreDeployed(cluster); err != nil {
 		return nil, err
 	}
 
 	// synchronize cluster.status.health
-	if err := cc.syncHealth(cluster); err != nil {
+	if cluster, err = cc.syncHealth(cluster); err != nil {
 		return nil, err
 	}
 
 	if cluster.Status.Health.Apiserver {
-		if err := cc.ensureClusterReachable(cluster); err != nil {
+		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
 			return nil, err
 		}
 
@@ -104,7 +64,12 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
-		cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cluster, nil
@@ -119,7 +84,7 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 		return fmt.Errorf("no valid provider specified")
 	}
 
-	if cluster, err = prov.InitializeCloudProvider(cluster); err != nil {
+	if cluster, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
 		return err
 	}
 
@@ -127,15 +92,34 @@ func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Clus
 }
 
 // ensureClusterNetworkDefaults will apply default cluster network configuration
-func (cc *Controller) ensureClusterNetworkDefaults(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterNetworkDefaults(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var err error
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if c.Spec.ClusterNetwork.DNSDomain == "" {
-		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
-	return nil
+
+	return c, nil
 }

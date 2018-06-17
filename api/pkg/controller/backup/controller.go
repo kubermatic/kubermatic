@@ -390,13 +390,15 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name))
+	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(cronJob.Name)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
 		if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob); err != nil {
-			return fmt.Errorf("failed to create cronjob: %v", err)
+			if !kerrors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create cronjob: %v", err)
+			}
 		}
 		c.metrics.CronJobCreationTimestamp.With(
 			prometheus.Labels{"cluster": cluster.Name}).Set(float64(time.Now().UnixNano()))

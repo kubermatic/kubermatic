@@ -20,24 +20,30 @@ import (
 )
 
 // ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
-		return nil
+		return c, nil
 	}
 
 	// Only add the node deletion finalizer when the cluster is actually running
 	// Otherwise we fail to delete the nodes and are stuck in a loop
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
-	return nil
+	return c, nil
 }
 
 // Creates cluster-info ConfigMap in customer cluster
