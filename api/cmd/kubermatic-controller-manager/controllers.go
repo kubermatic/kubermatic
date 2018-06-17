@@ -157,12 +157,8 @@ func startUpdateController(ctrlCtx controllerContext) error {
 		return fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	metrics := NewUpdateControllerMetrics()
-	updateMetrics := updatecontroller.Metrics{
-		Workers: metrics.Workers,
-	}
 	ctrl, err := updatecontroller.New(
-		updateMetrics,
+		updatecontroller.NewMetrics(),
 		updateManager,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
