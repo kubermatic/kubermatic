@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -34,6 +34,7 @@ import (
 )
 
 const (
+	metricNamespace = "kubermatic"
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
@@ -53,9 +54,38 @@ const (
 
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
-	Workers                  metrics.Gauge
-	CronJobCreationTimestamp metrics.Gauge
-	CronJobUpdateTimestamp   metrics.Gauge
+	Workers                  prometheus.Gauge
+	CronJobCreationTimestamp *prometheus.GaugeVec
+	CronJobUpdateTimestamp   *prometheus.GaugeVec
+}
+
+// NewMetrics creates a new Metrics
+// with default values initialized, so metrics always show up.
+func NewMetrics() *Metrics {
+	subsystem := "backup_controller"
+	cm := &Metrics{
+		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "workers",
+			Help:      "The number of running backup controller workers",
+		}),
+		CronJobCreationTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "cronjob_creation_timestamp_seconds",
+			Help:      "The timestamp at which a cronjob for a given cluster was created",
+		}, []string{"cluster"}),
+		CronJobUpdateTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "cronjob_update_timestamp_seconds",
+			Help:      "The timestamp at which a cronjob for a given cluster was last updated",
+		}, []string{"cluster"}),
+	}
+
+	cm.Workers.Set(0)
+	return cm
 }
 
 // Controller stores all components required to create backups
@@ -70,7 +100,7 @@ type Controller struct {
 	backupContainerImage string
 	// workerName holds the name of this worker, only clusters with matching `.Spec.WorkerName` will be worked on
 	workerName string
-	metrics    Metrics
+	metrics    *Metrics
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -89,7 +119,7 @@ func New(
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	workerName string,
-	metrics Metrics,
+	metrics *Metrics,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -116,6 +146,11 @@ func New(
 		workerName:           workerName,
 		metrics:              metrics,
 	}
+
+	prometheus.MustRegister(metrics.Workers)
+	prometheus.MustRegister(metrics.CronJobCreationTimestamp)
+	prometheus.MustRegister(metrics.CronJobUpdateTimestamp)
+
 	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.handleObject(obj.(*batchv1beta1.CronJob))
@@ -363,7 +398,8 @@ func (c *Controller) sync(key string) error {
 		if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob); err != nil {
 			return fmt.Errorf("failed to create cronjob: %v", err)
 		}
-		c.metrics.CronJobCreationTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
+		c.metrics.CronJobCreationTimestamp.With(
+			prometheus.Labels{"cluster": cluster.Name}).Set(float64(time.Now().UnixNano()))
 		return nil
 	}
 
@@ -374,7 +410,8 @@ func (c *Controller) sync(key string) error {
 	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(cronJob); err != nil {
 		return fmt.Errorf("failed to update cronJob: %v", err)
 	}
-	c.metrics.CronJobUpdateTimestamp.With("cluster", cluster.Name).Set(float64(time.Now().UnixNano()))
+	c.metrics.CronJobUpdateTimestamp.With(
+		prometheus.Labels{"cluster": cluster.Name}).Set(float64(time.Now().UnixNano()))
 	return nil
 }
 

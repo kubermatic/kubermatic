@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -69,7 +70,7 @@ type Controller struct {
 	nodePortRange     string
 	etcdDiskSize      resource.Quantity
 
-	metrics ControllerMetrics
+	metrics *Metrics
 
 	clusterLister            kubermaticv1lister.ClusterLister
 	clusterSynced            cache.InformerSynced
@@ -99,14 +100,6 @@ type Controller struct {
 	clusterRoleBindingSynced cache.InformerSynced
 }
 
-// ControllerMetrics contains metrics about the clusters & workers
-type ControllerMetrics struct {
-	Clusters        metrics.Gauge
-	ClusterPhases   metrics.Gauge
-	Workers         metrics.Gauge
-	UnhandledErrors metrics.Counter
-}
-
 // NewController creates a cluster controller.
 func NewController(
 	kubeClient kubernetes.Interface,
@@ -116,7 +109,7 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	metrics ControllerMetrics,
+	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -389,9 +382,9 @@ func (cc *Controller) syncCluster(key string) error {
 		if phase == cluster.Status.Phase {
 			value = 1.0
 		}
-		cc.metrics.ClusterPhases.With(
-			"cluster", cluster.Name,
-			"phase", strings.ToLower(string(phase)),
+		cc.metrics.ClusterPhases.With(prometheus.Labels{
+			"cluster": cluster.Name,
+			"phase":   strings.ToLower(string(phase))},
 		).Set(value)
 	}
 

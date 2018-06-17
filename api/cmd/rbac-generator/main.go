@@ -94,12 +94,8 @@ func main() {
 }
 
 func startRBACGeneratorController(ctrlCtx controllerContext) error {
-	metrics := NewRBACGeneratorControllerMetrics()
-	rbacMetrics := rbaccontroller.Metrics{
-		Workers: metrics.Workers,
-	}
 	ctrl, err := rbaccontroller.New(
-		rbacMetrics,
+		rbaccontroller.NewMetrics(),
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticMasterClient,
 		ctrlCtx.kubermaticMasterInformerFactory,
