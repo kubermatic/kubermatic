@@ -51,19 +51,20 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 			},
 		},
 	}
-	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{c})
 
-	if err := controller.syncAddress(c); err != nil {
+	updatedCluster, err := controller.syncAddress(c)
+	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expectedExternalName := fmt.Sprintf("%s.%s.%s", c.Name, TestDC, TestExternalURL)
-	if c.Address.ExternalName != fmt.Sprintf("%s.%s.%s", c.Name, TestDC, TestExternalURL) {
-		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, c.Address.ExternalName)
+	expectedExternalName := fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL)
+	if updatedCluster.Address.ExternalName != fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL) {
+		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, updatedCluster.Address.ExternalName)
 	}
 
-	expectedURL := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, TestExternalPort)
-	if c.Address.URL != expectedURL {
-		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, c.Address.URL)
+	expectedURL := fmt.Sprintf("https://%s:%d", updatedCluster.Address.ExternalName, TestExternalPort)
+	if updatedCluster.Address.URL != expectedURL {
+		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, updatedCluster.Address.URL)
 	}
 }
