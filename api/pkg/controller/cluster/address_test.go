@@ -51,7 +51,7 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 			},
 		},
 	}
-	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{})
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{c})
 
 	if err := controller.syncAddress(c); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
