@@ -11,7 +11,7 @@ import (
 	"github.com/vmware/govmomi/find"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -102,7 +102,7 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update
 		}
 	}
 
-	if !kubernetes.HasFinalizer(cluster, folderCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
 		})
@@ -130,10 +130,6 @@ func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update 
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if !kubernetes.HasFinalizer(cluster, folderCleanupFinalizer) {
-		return cluster, nil
-	}
-
 	vsphereRootPath, err := v.getVsphereRootPath(cluster)
 	if err != nil {
 		return nil, err
@@ -154,7 +150,7 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 		}
 		// Folder is not there anymore, maybe someone deleted it manually
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -171,7 +167,7 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+		cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
 	})
 	if err != nil {
 		return nil, err
