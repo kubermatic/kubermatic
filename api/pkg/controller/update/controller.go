@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/go-kit/kit/metrics"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -22,13 +23,29 @@ import (
 
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
-	Workers metrics.Gauge
+	Workers prometheus.Gauge
+}
+
+// NewMetrics creates a new Metrics
+// with default values initialized, so metrics always show up
+func NewMetrics() *Metrics {
+	cm := &Metrics{
+		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: "kubermatic",
+			Subsystem: "update_controller",
+			Name:      "workers",
+			Help:      "The number of running Update controller workers",
+		}),
+	}
+
+	cm.Workers.Set(0)
+	return cm
 }
 
 // Controller stores necessary components that are required to implement Update
 type Controller struct {
 	queue         workqueue.RateLimitingInterface
-	metrics       Metrics
+	metrics       *Metrics
 	updateManager Manager
 	workerName    string
 
@@ -45,7 +62,7 @@ type Manager interface {
 // New creates a new Update controller that is responsible for
 // managing automatic updates to clusters while following a pre defined update path
 func New(
-	metrics Metrics,
+	metrics *Metrics,
 	updateManager Manager,
 	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
@@ -57,6 +74,8 @@ func New(
 		kubermaticClient: kubermaticClient,
 		updateManager:    updateManager,
 	}
+
+	prometheus.MustRegister(metrics.Workers)
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
