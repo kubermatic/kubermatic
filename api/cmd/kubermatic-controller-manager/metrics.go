@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
 	prom "github.com/prometheus/client_golang/prometheus"
 
@@ -11,28 +10,6 @@ import (
 const (
 	metricNamespace = "kubermatic"
 )
-
-// AddonControllerMetrics holds metrics used by Addon controller
-type AddonControllerMetrics struct {
-	Workers metrics.Gauge
-}
-
-// NewAddonControllerMetrics creates AddonControllerMetrics
-// with default values initialized, so metrics always show up.
-func NewAddonControllerMetrics() *AddonControllerMetrics {
-	subsystem := "addon_controller"
-	cm := &AddonControllerMetrics{
-		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "workers",
-			Help:      "The number of running addon controller workers",
-		}, nil),
-	}
-
-	cm.Workers.Set(0)
-	return cm
-}
 
 // NewBackupControllerMetrics creates BackupControllerMetrics
 // with default values initialized, so metrics always show up.

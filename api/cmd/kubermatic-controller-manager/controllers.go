@@ -171,12 +171,8 @@ func startUpdateController(ctrlCtx controllerContext) error {
 }
 
 func startAddonController(ctrlCtx controllerContext) error {
-	metrics := NewAddonControllerMetrics()
-	addonMetrics := addon.Metrics{
-		Workers: metrics.Workers,
-	}
 	ctrl, err := addon.New(
-		addonMetrics,
+		addon.NewMetrics(),
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addons,
 		ctrlCtx.runOptions.overwriteRegistry,
