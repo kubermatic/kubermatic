@@ -71,15 +71,6 @@ func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, err
 
 // createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
 func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	cloud := cluster.Spec.Cloud
-	dc, found := v.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.VSphere == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
-	}
-
-	if dc.Spec.VSphere.RootPath == "" {
-		return nil, fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
-	}
 	dcRootPath, err := v.getVsphereRootPath(cluster)
 	if err != nil {
 		return nil, err
@@ -88,7 +79,7 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := v.getClient(cloud)
+	client, err := v.getClient(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
