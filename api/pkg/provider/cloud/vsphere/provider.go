@@ -13,6 +13,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -177,6 +178,6 @@ func removeFinalizerIfPresent(cluster *kubermaticv1.Cluster) *kubermaticv1.Clust
 
 func logout(client *govmomi.Client) {
 	if err := client.Logout(context.Background()); err != nil {
-		glog.V(0).Infof("Failed to logout from vsphere: %v", err)
+		kruntime.HandleError(fmt.Errorf("Failed to logout from vsphere: %v", err))
 	}
 }
