@@ -305,6 +305,12 @@ func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kuberm
 		return err
 	}
 
+	// Some fields should not be patched.
+	modifiedCluster.Kind = kubermaticv1.ClusterKindName
+	modifiedCluster.APIVersion = kubermaticv1.SchemeGroupVersion.String()
+	modifiedCluster.ResourceVersion = currentCluster.ResourceVersion
+	modifiedCluster.Generation = currentCluster.Generation
+
 	modifiedData, err := json.Marshal(modifiedCluster)
 	if err != nil {
 		return err
