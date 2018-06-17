@@ -42,7 +42,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 	//TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
 	if c.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 		})
 		if err != nil {
@@ -53,7 +53,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 
 	if c.Address.KubeletToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 		})
 		if err != nil {
@@ -64,7 +64,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 
 	externalName := fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 	if c.Address.ExternalName != externalName {
-		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
 		})
 		if err != nil {
@@ -79,7 +79,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 		return nil, err
 	}
 	if c.Address.IP != ip {
-		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
 		})
 		if err != nil {
@@ -101,7 +101,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 
 	url := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, int(s.Spec.Ports[0].NodePort))
 	if c.Address.URL != url {
-		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url
 		})
 		if err != nil {

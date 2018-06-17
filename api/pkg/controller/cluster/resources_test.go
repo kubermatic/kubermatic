@@ -55,7 +55,7 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 			}
 			controller := newTestController(objects, []runtime.Object{test.cluster})
 			beforeActionCount := len(controller.kubeClient.(*fake.Clientset).Actions())
-			err := controller.ensureNamespaceExists(test.cluster)
+			_, err := controller.ensureNamespaceExists(test.cluster)
 			if err != nil {
 				t.Errorf("failed to create namespace: %v", err)
 			}

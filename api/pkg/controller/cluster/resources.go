@@ -38,6 +38,55 @@ const (
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
 )
 
+func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
+	// check that all service accounts are created
+	if err := cc.ensureCheckServiceAccounts(cluster); err != nil {
+		return err
+	}
+
+	// check that all roles are created
+	if err := cc.ensureRoles(cluster); err != nil {
+		return err
+	}
+
+	// check that all role bindings are created
+	if err := cc.ensureRoleBindings(cluster); err != nil {
+		return err
+	}
+
+	// check that all role bindings are created
+	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
+		return err
+	}
+
+	// check that all services are available
+	if err := cc.ensureServices(cluster); err != nil {
+		return err
+	}
+
+	// check that all secrets are available
+	if err := cc.ensureSecrets(cluster); err != nil {
+		return err
+	}
+
+	// check that all ConfigMap's are available
+	if err := cc.ensureConfigMaps(cluster); err != nil {
+		return err
+	}
+
+	// check that all deployments are available
+	if err := cc.ensureDeployments(cluster); err != nil {
+		return err
+	}
+
+	// check that all StatefulSet's are created
+	if err := cc.ensureStatefulSets(cluster); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resources.TemplateData, error) {
 	dc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
 	if !found {
@@ -57,13 +106,19 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 }
 
 // ensureNamespaceExists will create the cluster namespace
-func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var err error
 	if c.Status.NamespaceName == "" {
-		c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if _, err := cc.namespaceLister.Get(c.Status.NamespaceName); !errors.IsNotFound(err) {
-		return err
+		return c, err
 	}
 
 	ns := &corev1.Namespace{
@@ -73,10 +128,10 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 		},
 	}
 	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
-		return fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
+		return nil, fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
 
-	return nil
+	return c, nil
 }
 
 func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
