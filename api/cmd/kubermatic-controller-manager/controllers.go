@@ -58,14 +58,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		return err
 	}
 
-	metrics := NewClusterControllerMetrics()
-	clusterMetrics := cluster.ControllerMetrics{
-		Clusters:        metrics.Clusters,
-		ClusterPhases:   metrics.ClusterPhases,
-		Workers:         metrics.Workers,
-		UnhandledErrors: metrics.UnhandledErrors,
-	}
-
 	cps := cloud.Providers(dcs)
 
 	ctrl, err := cluster.NewController(
@@ -76,7 +68,7 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.runOptions.dc,
 		dcs,
 		cps,
-		clusterMetrics,
+		cluster.NewControllerMetrics(true),
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,

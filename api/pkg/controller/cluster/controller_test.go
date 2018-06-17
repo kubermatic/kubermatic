@@ -39,7 +39,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		TestDC,
 		dcs,
 		cps,
-		ControllerMetrics{},
+		NewControllerMetrics(false),
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 		"",
 		"",
