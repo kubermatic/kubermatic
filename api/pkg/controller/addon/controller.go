@@ -16,8 +16,9 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
-	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -45,7 +46,23 @@ const (
 
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
-	Workers metrics.Gauge
+	Workers prometheus.Gauge
+}
+
+// NewMetrics creates a new Metrics
+// with default values initialized, so metrics always show up.
+func NewMetrics() *Metrics {
+	cm := &Metrics{
+		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: "kubermatic",
+			Subsystem: "update_controller",
+			Name:      "workers",
+			Help:      "The number of running Update controller workers",
+		}),
+	}
+
+	cm.Workers.Set(0)
+	return cm
 }
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
@@ -56,7 +73,7 @@ type KubeconfigProvider interface {
 // Controller stores necessary components that are required to manage in-cluster Add-On's
 type Controller struct {
 	queue       workqueue.RateLimitingInterface
-	metrics     Metrics
+	metrics     *Metrics
 	workerName  string
 	addonDir    string
 	registryURI string
@@ -74,7 +91,7 @@ type Controller struct {
 // New creates a new Addon controller that is responsible for
 // managing in-cluster addons
 func New(
-	metrics Metrics,
+	metrics *Metrics,
 	workerName string,
 	addonDir string,
 	overwriteRegistey string,
@@ -92,6 +109,8 @@ func New(
 		KubeconfigProvider: KubeconfigProvider,
 		client:             client,
 	}
+
+	prometheus.MustRegister(metrics.Workers)
 
 	if overwriteRegistey != "" {
 		c.registryURI = parceRegistryURI(overwriteRegistey)

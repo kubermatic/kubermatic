@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticsharedinformer "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -26,15 +26,38 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+const (
+	metricNamespace                   = "kubermatic"
+	destinationSeed                   = "seed"
+	dependantResyncTime time.Duration = 5 * time.Minute
+)
+
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
-	Workers metrics.Gauge
+	Workers prometheus.Gauge
+}
+
+// NewMetrics creates RBACGeneratorControllerMetrics
+// with default values initialized, so metrics always show up.
+func NewMetrics() *Metrics {
+	subsystem := "rbac_generator_controller"
+	cm := &Metrics{
+		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: subsystem,
+			Name:      "workers",
+			Help:      "The number of running RBACGenerator controller workers",
+		}),
+	}
+
+	cm.Workers.Set(0)
+	return cm
 }
 
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
-	metrics      Metrics
+	metrics      *Metrics
 	workerName   string
 
 	kubermaticMasterClient kubermaticclientset.Interface
@@ -57,10 +80,6 @@ type Controller struct {
 	projectResources       []projectResource
 }
 
-const (
-	destinationSeed = "seed"
-)
-
 type projectResource struct {
 	gvr         schema.GroupVersionResource
 	kind        string
@@ -72,7 +91,7 @@ type projectResource struct {
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
 func New(
-	metrics Metrics,
+	metrics *Metrics,
 	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
 	kubermaticInformerFactory kubermaticsharedinformer.SharedInformerFactory,
@@ -89,6 +108,8 @@ func New(
 		kubeMasterClient:       kubeClient,
 		seedClustersRESTClient: seedClustersRESTClient,
 	}
+
+	prometheus.MustRegister(metrics.Workers)
 
 	projectInformer := kubermaticInformerFactory.Kubermatic().V1().Projects()
 	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -298,8 +319,6 @@ func (c *Controller) enqueueDependant(obj interface{}, gvr schema.GroupVersionRe
 	}
 	c.dependantsQueue.Add(item)
 }
-
-const dependantResyncTime time.Duration = 5 * time.Minute
 
 type dependantQueueItem struct {
 	gvr        schema.GroupVersionResource
