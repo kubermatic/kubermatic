@@ -169,7 +169,7 @@ func TestLoadFiles(t *testing.T) {
 							DNSDomain: "cluster.local",
 						},
 					},
-					Address: &kubermaticv1.ClusterAddress{
+					Address: kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 						IP:           "35.198.93.90",
 						AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
@@ -334,7 +334,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "docluster-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{
@@ -407,7 +407,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "awscluster-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{
@@ -501,7 +501,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "openstackcluster-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{
@@ -583,7 +583,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "azurecluster-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{
@@ -660,7 +660,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "hetznercluster-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{
@@ -727,7 +727,7 @@ func TestExecute(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "vsphere-1a2b3c4d5e",
 					},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: &kubermaticv1.CloudSpec{

@@ -2,10 +2,8 @@ package cluster
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"reflect"
-	"sort"
 	"time"
 
 	"github.com/go-test/deep"
@@ -31,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -54,17 +51,12 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 	}
 
 	// Set the hostname & url
-	if err := cc.ensureAddress(cluster); err != nil {
+	if err := cc.syncAddress(cluster); err != nil {
 		return err
 	}
 
 	// Set default network configuration
 	if err := cc.ensureClusterNetworkDefaults(cluster); err != nil {
-		return err
-	}
-
-	// Generate the kubelet and admin token
-	if err := cc.ensureTokens(cluster); err != nil {
 		return err
 	}
 
@@ -113,11 +105,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	allHealthy, health, err := cc.clusterHealth(cluster)
-	if err != nil {
+	// synchronize cluster.status.health
+	if err := cc.syncHealth(cluster); err != nil {
 		return err
 	}
-	cluster.Status.Health = health
 
 	if cluster.Status.Health.Apiserver {
 		if err := cc.ensureClusterReachable(cluster); err != nil {
@@ -137,7 +128,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		}
 	}
 
-	if !allHealthy {
+	if !cluster.Status.Health.AllHealthy() {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
 		return nil
 	}
@@ -202,43 +193,6 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) error {
 	if _, err := cc.kubeClient.CoreV1().Namespaces().Create(ns); err != nil {
 		return fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
-
-	return nil
-}
-
-// ensureAddress will set the cluster hostname and the url under which the apiserver will be reachable
-func (cc *Controller) ensureAddress(c *kubermaticv1.Cluster) error {
-	if c.Address == nil {
-		c.Address = &kubermaticv1.ClusterAddress{}
-	}
-	c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
-
-	//Always update the ip
-	resolvedIPs, err := net.LookupIP(c.Address.ExternalName)
-	if err != nil {
-		return fmt.Errorf("failed to lookup ip address for %s: %v", c.Address.ExternalName, err)
-	}
-	if len(resolvedIPs) == 0 {
-		return fmt.Errorf("no ip addresses found for %s: %v", c.Address.ExternalName, err)
-	}
-	ipList := sets.NewString()
-	for _, ip := range resolvedIPs {
-		if ip.To4() != nil {
-			ipList.Insert(ip.String())
-		}
-	}
-	ips := ipList.List()
-	sort.Strings(ips)
-	c.Address.IP = ips[0]
-
-	s, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		return nil
-	}
-	c.Address.URL = fmt.Sprintf("https://%s:%d", c.Address.ExternalName, int(s.Spec.Ports[0].NodePort))
 
 	return nil
 }

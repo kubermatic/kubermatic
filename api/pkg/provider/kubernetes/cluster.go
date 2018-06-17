@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -98,7 +99,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 			UserName:      user.Name,
 			NamespaceName: NamespaceName(name),
 		},
-		Address: &kubermaticv1.ClusterAddress{},
+		Address: kubermaticv1.ClusterAddress{},
 	}
 
 	cluster, err = p.client.KubermaticV1().Clusters().Create(cluster)
@@ -106,42 +107,6 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		if kuberrrors.IsAlreadyExists(err) {
 			return nil, provider.ErrAlreadyExists
 		}
-		return nil, err
-	}
-
-	gv := kubermaticv1.SchemeGroupVersion
-	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
-
-	err = wait.Poll(50*time.Millisecond, 10*time.Second, func() (done bool, err error) {
-		for _, addon := range p.addons {
-			_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            addon,
-					Namespace:       cluster.Status.NamespaceName,
-					OwnerReferences: []metav1.OwnerReference{ownerRef},
-				},
-				Spec: kubermaticv1.AddonSpec{
-					Name: addon,
-					Cluster: corev1.ObjectReference{
-						Name:       cluster.Name,
-						Namespace:  "",
-						UID:        cluster.UID,
-						APIVersion: cluster.APIVersion,
-						Kind:       "Cluster",
-					},
-				},
-			})
-			if err != nil {
-				if kuberrrors.IsAlreadyExists(err) {
-					continue
-				}
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-	if err != nil {
 		return nil, err
 	}
 
@@ -153,6 +118,44 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		}
 		return true, nil
 	}
+
+	go func() {
+		gv := kubermaticv1.SchemeGroupVersion
+		ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+		err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
+			for _, addon := range p.addons {
+				_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            addon,
+						Namespace:       cluster.Status.NamespaceName,
+						OwnerReferences: []metav1.OwnerReference{ownerRef},
+					},
+					Spec: kubermaticv1.AddonSpec{
+						Name: addon,
+						Cluster: corev1.ObjectReference{
+							Name:       cluster.Name,
+							Namespace:  "",
+							UID:        cluster.UID,
+							APIVersion: cluster.APIVersion,
+							Kind:       "Cluster",
+						},
+					},
+				})
+				if err != nil {
+					if kuberrrors.IsAlreadyExists(err) {
+						continue
+					}
+					glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
+					return false, nil
+				}
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			glog.V(0).Infof("failed to create initial addons in cluster %s: %v", cluster.Name, err)
+		}
+	}()
 
 	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
 }
