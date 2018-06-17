@@ -68,14 +68,16 @@ func (cc *Controller) healthyStatefulSet(ns, name string) (bool, error) {
 	return set.Status.ReadyReplicas == *set.Spec.Replicas && set.Status.CurrentReplicas == *set.Spec.Replicas, nil
 }
 
-func (cc *Controller) syncHealth(c *kubermaticv1.Cluster) error {
+func (cc *Controller) syncHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	health, err := cc.clusterHealth(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if c.Status.Health != *health {
-		c.Status.Health = *health
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Status.Health = *health
+		})
 	}
 
-	return nil
+	return c, err
 }

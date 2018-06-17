@@ -11,10 +11,10 @@ import (
 	"github.com/vmware/govmomi/find"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -73,7 +73,7 @@ func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, err
 }
 
 // createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
-func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	dcRootPath, err := v.getVsphereRootPath(cluster)
 	if err != nil {
 		return nil, err
@@ -102,17 +102,16 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 		}
 	}
 
-	// Folder exists so ensure finalizer is there
-	cluster = ensureFolderDeleteFinalizer(cluster)
-	return cluster, nil
-}
-
-func ensureFolderDeleteFinalizer(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
-	finalizers := sets.NewString(cluster.Finalizers...)
-	if !finalizers.Has(folderCleanupFinalizer) {
-		cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+	if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
-	return cluster
+
+	return cluster, nil
 }
 
 // ValidateCloudSpec
@@ -122,15 +121,15 @@ func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 // InitializeCloudProvider
-func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	return v.createVMFolderForCluster(cluster)
+func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return v.createVMFolderForCluster(cluster, update)
 }
 
 // CleanUpCloudProvider
 // We always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
-func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vsphereRootPath, err := v.getVsphereRootPath(cluster)
 	if err != nil {
 		return nil, err
@@ -150,7 +149,13 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, fmt.Errorf("failed to get folder: %v", err)
 		}
 		// Folder is not there anymore, maybe someone deleted it manually
-		cluster = removeFinalizerIfPresent(cluster)
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+
 		return cluster, nil
 	}
 	task, err := folder.Destroy(ctx)
@@ -160,20 +165,16 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 	if err := task.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
 	}
-	cluster = removeFinalizerIfPresent(cluster)
-	glog.V(4).Infof("Successfully deleted vsphere folder %s/%s for cluster %s",
-		vsphereRootPath, cluster.Name, cluster.Name)
-	return cluster, nil
-}
 
-func removeFinalizerIfPresent(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
-	finalizers := sets.NewString(cluster.Finalizers...)
-	if finalizers.Has(folderCleanupFinalizer) {
-		finalizers.Delete(folderCleanupFinalizer)
-		cluster.Finalizers = finalizers.List()
-		return cluster
+	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+	})
+	if err != nil {
+		return nil, err
 	}
-	return cluster
+
+	glog.V(4).Infof("Successfully deleted vsphere folder %s/%s for cluster %s", vsphereRootPath, cluster.Name, cluster.Name)
+	return cluster, nil
 }
 
 func logout(client *govmomi.Client) {
