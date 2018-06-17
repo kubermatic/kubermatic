@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"runtime"
 
 	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
@@ -52,6 +53,7 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 		return nil, err
 	}
 
+	runtime.SetFinalizer(c, logout)
 	return c, nil
 }
 
@@ -83,11 +85,6 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster) (*kube
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := client.Logout(context.Background()); err != nil {
-			glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
-		}
-	}()
 
 	finder := find.NewFinder(client.Client, true)
 	rootFolder, err := finder.Folder(ctx, dcRootPath)
@@ -119,16 +116,8 @@ func ensureFolderDeleteFinalizer(cluster *kubermaticv1.Cluster) *kubermaticv1.Cl
 
 // ValidateCloudSpec
 func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	client, err := v.getClient(spec)
-	if err != nil {
-		return err
-	}
-
-	if err := client.Logout(context.TODO()); err != nil {
-		return fmt.Errorf("failed to logout from vSphere: %v", err)
-	}
-
-	return nil
+	_, err := v.getClient(spec)
+	return err
 }
 
 // InitializeCloudProvider
@@ -152,11 +141,6 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermat
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := client.Logout(context.Background()); err != nil {
-			glog.V(0).Infof("Failed to logout after creating vsphere cluster folder: %v", err)
-		}
-	}()
 
 	finder := find.NewFinder(client.Client, true)
 	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
@@ -189,4 +173,10 @@ func removeFinalizerIfPresent(cluster *kubermaticv1.Cluster) *kubermaticv1.Clust
 		return cluster
 	}
 	return cluster
+}
+
+func logout(client *govmomi.Client) {
+	if err := client.Logout(context.Background()); err != nil {
+		glog.V(0).Infof("Failed to logout from vsphere: %v", err)
+	}
 }
