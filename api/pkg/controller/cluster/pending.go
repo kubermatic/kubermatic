@@ -105,11 +105,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	allHealthy, health, err := cc.clusterHealth(cluster)
-	if err != nil {
+	// synchronize cluster.status.health
+	if err := cc.syncHealth(cluster); err != nil {
 		return err
 	}
-	cluster.Status.Health = *health
 
 	if cluster.Status.Health.Apiserver {
 		if err := cc.ensureClusterReachable(cluster); err != nil {
@@ -129,7 +128,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
 		}
 	}
 
-	if !allHealthy {
+	if !cluster.Status.Health.AllHealthy() {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
 		return nil
 	}
