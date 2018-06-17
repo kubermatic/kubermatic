@@ -284,24 +284,21 @@ func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 
 type clusterModifier func(*kubermaticv1.Cluster)
 
-func (cc *Controller) updateClusterUsingRetry(in *kubermaticv1.Cluster, modify clusterModifier) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+func (cc *Controller) updateClusterUsingRetry(name string, modify clusterModifier) (updatedCluster *kubermaticv1.Cluster, err error) {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		//Get latest version from cache
-		cacheCluster, err := cc.clusterLister.Get(in.Name)
+		cacheCluster, err := cc.clusterLister.Get(name)
 		if err != nil {
 			return err
 		}
-		updatedCluster := cacheCluster.DeepCopy()
+		currentCluster := cacheCluster.DeepCopy()
 		// Apply modifications
-		modify(updatedCluster)
+		modify(currentCluster)
 		// Update the cluster
-		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(updatedCluster)
-		if err != nil {
-			return err
-		}
-		*in = *updatedCluster
-		return nil
+		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		return err
 	})
+	return updatedCluster, err
 }
 
 func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
@@ -413,7 +410,8 @@ func (cc *Controller) syncCluster(key string) error {
 	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 	}
-	if err := cc.reconcileCluster(cluster); err != nil {
+
+	if _, err = cc.reconcileCluster(cluster); err != nil {
 		updateErr := cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
 		if updateErr != nil {
 			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
