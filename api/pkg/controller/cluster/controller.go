@@ -34,6 +34,7 @@ import (
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
 	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -279,6 +280,31 @@ func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 	}
 
 	cc.queue.Add(key)
+}
+
+type clusterModifier func(*kubermaticv1.Cluster)
+
+func (cc *Controller) updateClusterUsingRetry(name string, modify clusterModifier) (*kubermaticv1.Cluster, error) {
+	var updatedCluster *kubermaticv1.Cluster
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version from cache
+		cacheCluster, err := cc.clusterLister.Get(name)
+		if err != nil {
+			return err
+		}
+		updatedCluster = cacheCluster.DeepCopy()
+		// Apply modifications
+		modify(updatedCluster)
+		// Update the cluster
+		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(updatedCluster)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Return updated cluster
+	return updatedCluster, nil
 }
 
 func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
