@@ -8,105 +8,106 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) error {
+func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var err error
 	// Create the namespace
 	if err := cc.ensureNamespaceExists(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Setup required infrastructure at cloud provider
 	if err := cc.ensureCloudProviderIsInitialize(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set the hostname & url
-	if err := cc.syncAddress(cluster); err != nil {
-		return err
+	if cluster, err = cc.syncAddress(cluster); err != nil {
+		return nil, err
 	}
 
 	// Set default network configuration
 	if err := cc.ensureClusterNetworkDefaults(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all service accounts are created
 	if err := cc.ensureCheckServiceAccounts(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all roles are created
 	if err := cc.ensureRoles(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all role bindings are created
 	if err := cc.ensureRoleBindings(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all services are available
 	if err := cc.ensureServices(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all secrets are available
 	if err := cc.ensureSecrets(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all ConfigMap's are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all deployments are available
 	if err := cc.ensureDeployments(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all StatefulSet's are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// synchronize cluster.status.health
 	if err := cc.syncHealth(cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	if cluster.Status.Health.Apiserver {
 		if err := cc.ensureClusterReachable(cluster); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := cc.launchingCreateOpenVPNConfigMap(cluster); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if !cluster.Status.Health.AllHealthy() {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
-		return nil
+		return cluster, nil
 	}
 
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
 		cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
 	}
 
-	return nil
+	return cluster, nil
 }
 
 func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {

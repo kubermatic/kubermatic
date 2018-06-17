@@ -37,33 +37,54 @@ func getExternalIPv4(hostname string) (string, error) {
 }
 
 // syncAddress will set the all address relevant fields on the cluster
-func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) error {
+func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var err error
 	//TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
 	if c.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+		})
+		if err != nil {
+			return nil, err
+		}
 		glog.V(4).Infof("Created admin token for cluster %s", c.Name)
 	}
 
 	if c.Address.KubeletToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+		})
+		if err != nil {
+			return nil, err
+		}
 		glog.V(4).Infof("Created kubelet token for cluster %s", c.Name)
 	}
 
 	externalName := fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 	if c.Address.ExternalName != externalName {
-		c.Address.ExternalName = externalName
+		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Address.ExternalName = externalName
+		})
+		if err != nil {
+			return nil, err
+		}
 		glog.V(4).Infof("Set external name for cluster %s to '%s'", c.Name, c.Address.ExternalName)
 	}
 
-	// Always lookup IP address, in case it changes (IP's on AWS LB's change)
+	// Always lookup IP address, c case it changes (IP's on AWS LB's change)
 	ip, err := getExternalIPv4(c.Address.ExternalName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if c.Address.IP != ip {
-		c.Address.IP = ip
+		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Address.IP = ip
+		})
+		if err != nil {
+			return nil, err
+		}
 		glog.V(4).Infof("Set IP for cluster %s to '%s'", c.Name, c.Address.IP)
 	}
 
@@ -73,16 +94,21 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) error {
 		// A not found is fine. This happens on the first sync of a cluster, as this function gets called before the service gets created.
 		if errors.IsNotFound(err) {
 			glog.V(6).Infof("Skipping URL setting for cluster %s as no external apiserver service exists yet. Will retry later", c.Name)
-			return nil
+			return c, nil
 		}
-		return err
+		return nil, err
 	}
 
 	url := fmt.Sprintf("https://%s:%d", c.Address.ExternalName, int(s.Spec.Ports[0].NodePort))
 	if c.Address.URL != url {
-		c.Address.URL = url
+		c, err = cc.updateClusterUsingRetry(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Address.URL = url
+		})
+		if err != nil {
+			return nil, err
+		}
 		glog.V(4).Infof("Set URL for cluster %s to '%s'", c.Name, c.Address.URL)
 	}
 
-	return nil
+	return c, nil
 }
