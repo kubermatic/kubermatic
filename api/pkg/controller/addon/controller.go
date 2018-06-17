@@ -49,6 +49,8 @@ type Metrics struct {
 	Workers prometheus.Gauge
 }
 
+// NewMetrics creates a new Metrics
+// with default values initialized, so metrics always show up.
 func NewMetrics() *Metrics {
 	cm := &Metrics{
 		Workers: prometheus.NewGauge(prometheus.GaugeOpts{

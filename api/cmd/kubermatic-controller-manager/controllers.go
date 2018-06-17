@@ -68,7 +68,7 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.runOptions.dc,
 		dcs,
 		cps,
-		cluster.NewControllerMetrics(true),
+		cluster.NewMetrics(true),
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,

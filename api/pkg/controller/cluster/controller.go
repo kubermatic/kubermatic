@@ -70,7 +70,7 @@ type Controller struct {
 	nodePortRange     string
 	etcdDiskSize      resource.Quantity
 
-	metrics *ControllerMetrics
+	metrics *Metrics
 
 	clusterLister            kubermaticv1lister.ClusterLister
 	clusterSynced            cache.InformerSynced
@@ -109,7 +109,7 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	metrics *ControllerMetrics,
+	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,

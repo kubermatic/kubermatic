@@ -59,6 +59,8 @@ type Metrics struct {
 	CronJobUpdateTimestamp   *prometheus.GaugeVec
 }
 
+// NewMetrics creates a new Metrics
+// with default values initialized, so metrics always show up.
 func NewMetrics() *Metrics {
 	subsystem := "backup_controller"
 	cm := &Metrics{

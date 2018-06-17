@@ -8,18 +8,20 @@ const (
 	metricNamespace = "kubermatic"
 )
 
-// ControllerMetrics contains metrics about the clusters & workers
-type ControllerMetrics struct {
+// Metrics contains metrics about the clusters & workers
+type Metrics struct {
 	Clusters        prometheus.Gauge
 	ClusterPhases   *prometheus.GaugeVec
 	Workers         prometheus.Gauge
 	UnhandledErrors prometheus.Counter
 }
 
-func NewControllerMetrics(registerMetrics bool) *ControllerMetrics {
+// NewMetrics creates a new ControllerMetrics
+// with default values initialized, so metrics always show up.
+func NewMetrics(registerMetrics bool) *Metrics {
 	subsystem := "cluster_controller"
 
-	cm := &ControllerMetrics{
+	cm := &Metrics{
 		Clusters: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: metricNamespace,
 			Subsystem: subsystem,
