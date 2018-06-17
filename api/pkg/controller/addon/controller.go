@@ -55,9 +55,9 @@ func NewMetrics() *Metrics {
 	cm := &Metrics{
 		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "kubermatic",
-			Subsystem: "update_controller",
+			Subsystem: "addon_controller",
 			Name:      "workers",
-			Help:      "The number of running Update controller workers",
+			Help:      "The number of running addon controller workers",
 		}),
 	}
 
