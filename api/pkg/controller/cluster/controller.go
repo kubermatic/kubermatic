@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/metrics"
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -19,9 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsv1informer "k8s.io/client-go/informers/apps/v1"
@@ -34,6 +32,7 @@ import (
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
 	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -68,7 +67,7 @@ type Controller struct {
 	nodePortRange     string
 	etcdDiskSize      resource.Quantity
 
-	metrics ControllerMetrics
+	metrics *Metrics
 
 	clusterLister            kubermaticv1lister.ClusterLister
 	clusterSynced            cache.InformerSynced
@@ -98,14 +97,6 @@ type Controller struct {
 	clusterRoleBindingSynced cache.InformerSynced
 }
 
-// ControllerMetrics contains metrics about the clusters & workers
-type ControllerMetrics struct {
-	Clusters        metrics.Gauge
-	ClusterPhases   metrics.Gauge
-	Workers         metrics.Gauge
-	UnhandledErrors metrics.Counter
-}
-
 // NewController creates a cluster controller.
 func NewController(
 	kubeClient kubernetes.Interface,
@@ -115,7 +106,7 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	metrics ControllerMetrics,
+	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -281,60 +272,52 @@ func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 	cc.queue.Add(key)
 }
 
-func (cc *Controller) updateCluster(originalData []byte, modifiedCluster *kubermaticv1.Cluster) error {
-	currentCluster, err := cc.clusterLister.Get(modifiedCluster.Name)
-	if err != nil {
-		return err
-	}
-
-	currentData, err := json.Marshal(currentCluster)
-	if err != nil {
-		return err
-	}
-
-	modifiedData, err := json.Marshal(modifiedCluster)
-	if err != nil {
-		return err
-	}
-
-	patchData, err := jsonmergepatch.CreateThreeWayJSONMergePatch(originalData, modifiedData, currentData)
-	if err != nil {
-		return err
-	}
-	//Avoid empty patch calls
-	if string(patchData) == "{}" {
-		return nil
-	}
-
-	updatedCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Patch(modifiedCluster.Name, types.MergePatchType, patchData)
-	if err != nil {
-		return fmt.Errorf("failed to patch cluster: %v", err)
-	}
-
-	return wait.Poll(10*time.Millisecond, 30*time.Second, func() (bool, error) {
-		listerCluster, err := cc.clusterLister.Get(updatedCluster.Name)
+func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version from cache
+		cacheCluster, err := cc.clusterLister.Get(name)
 		if err != nil {
-			// In case we remove the last finalizer, the object will be gone after the patch
-			if kubeapierrors.IsNotFound(err) {
-				return true, nil
-			}
-			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister during cache-update check: %v", updatedCluster.Name, err))
-			return false, nil
+			return err
 		}
-		if listerCluster.ResourceVersion == updatedCluster.ResourceVersion {
-			return true, nil
-		}
-		return false, nil
+		currentCluster := cacheCluster.DeepCopy()
+		// Apply modifications
+		modify(currentCluster)
+		// Update the cluster
+		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		return err
 	})
+
+	return updatedCluster, err
 }
 
-func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string, originalData []byte) error {
+func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) (*kubermaticv1.Cluster, error) {
+	var err error
 	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
-		cluster.Status.ErrorMessage = &message
-		cluster.Status.ErrorReason = &reason
-		return cc.updateCluster(originalData, cluster)
+		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster.Status.ErrorMessage = &message
+			cluster.Status.ErrorReason = &reason
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
-	return nil
+
+	return cluster, nil
+}
+
+func (cc *Controller) clearClusterError(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	var err error
+	if cluster.Status.ErrorReason != nil || cluster.Status.ErrorMessage != nil {
+		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster.Status.ErrorMessage = nil
+			cluster.Status.ErrorReason = nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cluster, nil
 }
 
 func (cc *Controller) syncCluster(key string) error {
@@ -347,10 +330,6 @@ func (cc *Controller) syncCluster(key string) error {
 	}
 
 	cluster := listerCluster.DeepCopy()
-	originalData, err := json.Marshal(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to marshal cluster %s: %v", key, err)
-	}
 
 	if cluster.Spec.Pause {
 		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
@@ -364,51 +343,63 @@ func (cc *Controller) syncCluster(key string) error {
 
 	glog.V(4).Infof("syncing cluster %s", key)
 
-	// In case we change fields
-	cc.migrateCluster(cluster)
-
 	for _, phase := range kubermaticv1.ClusterPhases {
 		value := 0.0
 		if phase == cluster.Status.Phase {
 			value = 1.0
 		}
-		cc.metrics.ClusterPhases.With(
-			"cluster", cluster.Name,
-			"phase", strings.ToLower(string(phase)),
+		cc.metrics.ClusterPhases.With(prometheus.Labels{
+			"cluster": cluster.Name,
+			"phase":   strings.ToLower(string(phase))},
 		).Set(value)
 	}
 
 	if cluster.DeletionTimestamp != nil {
-		cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
-		if err := cc.cleanupCluster(cluster); err != nil {
+		if cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
+			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+				cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		if cluster, err = cc.cleanupCluster(cluster); err != nil {
 			return err
 		}
-		return cc.updateCluster(originalData, cluster)
 	}
 
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
-		cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
+		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
-		cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+		})
+		if err != nil {
+			return err
+		}
 	}
-	if err := cc.reconcileCluster(cluster); err != nil {
-		updateErr := cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error(), originalData)
+
+	if _, err = cc.reconcileCluster(cluster); err != nil {
+		_, updateErr := cc.updateClusterError(cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {
 			return fmt.Errorf("failed to set the cluster error: %v", updateErr)
 		}
 		return err
 	}
 
-	return cc.updateCluster(originalData, cluster)
-}
-
-func (cc *Controller) migrateCluster(cluster *kubermaticv1.Cluster) {
-	if cluster.Spec.Version == "" {
-		cluster.Spec.Version = cluster.Spec.MasterVersion
+	if _, err = cc.clearClusterError(cluster); err != nil {
+		return fmt.Errorf("failed to clear error on cluster: %v", err)
 	}
-	cluster.Spec.MasterVersion = cluster.Spec.Version
+
+	return nil
 }
 
 func (cc *Controller) runWorker() {
@@ -531,6 +522,10 @@ func (cc *Controller) handleChildObject(i interface{}) {
 		c, err := cc.clusterLister.Get(controllerRef.Name)
 		if err != nil {
 			if kubeapierrors.IsNotFound(err) {
+				// No need to log something when the object gets deleted - happens when the gc cleans up after cluster deletion
+				if obj.GetDeletionTimestamp() != nil {
+					return
+				}
 				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
 				return
 			}

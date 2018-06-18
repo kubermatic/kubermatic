@@ -34,14 +34,22 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.GetLabels("cloud-config")
 	cm.Data = map[string]string{
-		"config": configBuffer.String(),
+		"config":              configBuffer.String(),
+		FakeVMWareUUIDKeyName: fakeVMWareUUID,
 	}
 
 	return cm, nil
 }
 
 const (
-	config = `
+	// FakeVMWareUUIDKeyName is the name of the cloud-config configmap key
+	// that holds the fake vmware uuid
+	// It is required when activating the vsphere cloud-provider in the controller
+	// manager on a non-ESXi host
+	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
+	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
+	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
+	config                = `
 {{- if .Cluster.Spec.Cloud.AWS }}
 [global]
 zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}

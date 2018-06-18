@@ -11,14 +11,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -290,22 +287,6 @@ func (cc *Controller) createServiceAccountKey(c *kubermaticv1.Cluster) (map[stri
 	return map[string][]byte{
 		resources.ServiceAccountKeySecretKey: pem.EncodeToMemory(&block),
 	}, nil
-}
-
-func (cc *Controller) ensureTokens(c *kubermaticv1.Cluster) error {
-	if c.Address.AdminToken == "" {
-		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
-		glog.V(4).Infof("Created admin token for %s", kubernetesprovider.NamespaceName(c.Name))
-	}
-
-	if c.Address.KubeletToken == "" {
-		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
-		glog.V(4).Infof("Created kubelet token for %s", kubernetesprovider.NamespaceName(c.Name))
-	}
-
-	return nil
 }
 
 func (cc *Controller) createAdminKubeconfigSecret(c *kubermaticv1.Cluster) (map[string][]byte, error) {

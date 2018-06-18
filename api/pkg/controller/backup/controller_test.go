@@ -4,9 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/metrics/prometheus"
-	prom "github.com/prometheus/client_golang/prometheus"
-
 	fakekubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -36,35 +33,12 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
 	kubermaticInformers := externalversions.NewSharedInformerFactory(fakeKubermaticClient, 10*time.Millisecond)
 
-	metricNamespace := "ms"
-	subsystem := "subsys"
-	metrics := Metrics{
-		Workers: prometheus.NewGaugeFrom(prom.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "workers",
-			Help:      "The number of running backup controller workers",
-		}, nil),
-		CronJobCreationTimestamp: prometheus.NewGaugeFrom(prom.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "cronjob_creation_timestamp_seconds",
-			Help:      "The timestamp at which a cronjob for a given cluster was created",
-		}, []string{"cluster"}),
-		CronJobUpdateTimestamp: prometheus.NewGaugeFrom(prom.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "cronjob_update_timestamp_seconds",
-			Help:      "The timestamp at which a cronjob for a given cluster was last updated",
-		}, []string{"cluster"}),
-	}
-
 	controller, err := New(testStoreContainer,
 		testCleanupContainer,
 		20*time.Minute,
 		DefaultBackupContainerImage,
 		"",
-		metrics,
+		NewMetrics(),
 		fakeKubermaticClient,
 		fakeKubeClient,
 		kubermaticInformers.Kubermatic().V1().Clusters(),

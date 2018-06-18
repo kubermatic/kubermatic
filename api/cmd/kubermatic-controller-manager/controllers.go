@@ -58,14 +58,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		return err
 	}
 
-	metrics := NewClusterControllerMetrics()
-	clusterMetrics := cluster.ControllerMetrics{
-		Clusters:        metrics.Clusters,
-		ClusterPhases:   metrics.ClusterPhases,
-		Workers:         metrics.Workers,
-		UnhandledErrors: metrics.UnhandledErrors,
-	}
-
 	cps := cloud.Providers(dcs)
 
 	ctrl, err := cluster.NewController(
@@ -76,7 +68,7 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.runOptions.dc,
 		dcs,
 		cps,
-		clusterMetrics,
+		cluster.NewMetrics(true),
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
@@ -123,7 +115,7 @@ func startBackupController(ctrlCtx controllerContext) error {
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.runOptions.workerName,
-		NewBackupControllerMetrics(),
+		backupcontroller.NewMetrics(),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
@@ -165,12 +157,8 @@ func startUpdateController(ctrlCtx controllerContext) error {
 		return fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	metrics := NewUpdateControllerMetrics()
-	updateMetrics := updatecontroller.Metrics{
-		Workers: metrics.Workers,
-	}
 	ctrl, err := updatecontroller.New(
-		updateMetrics,
+		updatecontroller.NewMetrics(),
 		updateManager,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
@@ -183,12 +171,8 @@ func startUpdateController(ctrlCtx controllerContext) error {
 }
 
 func startAddonController(ctrlCtx controllerContext) error {
-	metrics := NewAddonControllerMetrics()
-	addonMetrics := addon.Metrics{
-		Workers: metrics.Workers,
-	}
 	ctrl, err := addon.New(
-		addonMetrics,
+		addon.NewMetrics(),
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addons,
 		ctrlCtx.runOptions.overwriteRegistry,

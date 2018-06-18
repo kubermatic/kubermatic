@@ -40,8 +40,10 @@ done
 
 cd ${TARGET_DIR}
 git add .
-git commit -m "Syncing charts from commit ${COMMIT}"
-git push origin ${INSTALLER_BRANCH}
+if ! git status|grep 'nothing to commit'; then
+  git commit -m "Syncing charts from commit ${COMMIT}"
+  git push origin ${INSTALLER_BRANCH}
+fi
 
 cd ..
 rm -rf ${TARGET_DIR}

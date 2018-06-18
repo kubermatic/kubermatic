@@ -217,9 +217,6 @@
   packages = [
     "endpoint",
     "log",
-    "metrics",
-    "metrics/internal/lv",
-    "metrics/prometheus",
     "transport/http"
   ]
   revision = "286fe7a0709da897bcafd638ca80289af53d40af"
@@ -1204,6 +1201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8622a789f0709a49ed9f1d6958161d4c44ee82765e527eabf74c148ac907c3a1"
+  inputs-digest = "b2ca9d018a1b0bdf2e22c68d90f8f70b8191450888cfb75759e7b581e1dee8e4"
   solver-name = "gps-cdcl"
   solver-version = 1

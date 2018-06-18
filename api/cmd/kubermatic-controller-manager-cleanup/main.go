@@ -78,6 +78,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupMachineController,
 		cleanupScheduler,
 		removeDeprecatedFinalizers,
+		migrateVersion,
 	}
 
 	w := sync.WaitGroup{}
@@ -168,5 +169,16 @@ func removeDeprecatedFinalizers(cluster *kubermaticv1.Cluster, ctx *cleanupConte
 		}
 	}
 
+	return nil
+}
+
+// We moved MasterVersion to Version
+func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.Version == "" {
+		cluster.Spec.Version = cluster.Spec.MasterVersion
+		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return err
+		}
+	}
 	return nil
 }

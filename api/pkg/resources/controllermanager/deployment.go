@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -150,6 +151,18 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				},
 			},
 		},
+	}
+
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		fakeVMWareUUIDMount := corev1.VolumeMount{
+			Name:      resources.CloudConfigConfigMapName,
+			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
+			MountPath: "/sys/class/dmi/id/product_serial",
+			ReadOnly:  true,
+		}
+		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
+		dep.Spec.Template.Spec.Containers[0].VolumeMounts = append(dep.Spec.Template.Spec.Containers[0].VolumeMounts,
+			fakeVMWareUUIDMount)
 	}
 
 	return dep, nil

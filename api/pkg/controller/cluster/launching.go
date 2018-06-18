@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/api/core/v1"
@@ -20,59 +19,31 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (bool, *kubermaticv1.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Name)
-	health := kubermaticv1.ClusterHealth{
-		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
-	}
-
-	type depInfo struct {
-		healthy *bool
-	}
-
-	healthMapping := map[string]*depInfo{
-		resources.ApiserverDeploymenName:          {healthy: &health.Apiserver},
-		resources.ControllerManagerDeploymentName: {healthy: &health.Controller},
-		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler},
-		resources.MachineControllerDeploymentName: {healthy: &health.MachineController},
-	}
-
-	for name := range healthMapping {
-		healthy, err := cc.healthyDeployment(ns, name)
-		if err != nil {
-			return false, nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
-		}
-		*healthMapping[name].healthy = healthy
-	}
-
-	var err error
-	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName)
-	if err != nil {
-		return false, nil, fmt.Errorf("failed to get etcd health: %v", err)
-	}
-
-	return health.AllHealthy(), &health, nil
-}
-
 // ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
-		return nil
+		return c, nil
 	}
 
 	// Only add the node deletion finalizer when the cluster is actually running
 	// Otherwise we fail to delete the nodes and are stuck in a loop
 	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
-	return nil
+	return c, nil
 }
 
 // Creates cluster-info ConfigMap in customer cluster

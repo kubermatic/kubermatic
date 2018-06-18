@@ -4,16 +4,16 @@ import (
 	"errors"
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -340,7 +340,7 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 	return rOut.Role, cipOut.InstanceProfile, nil
 }
 
-func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
@@ -351,7 +351,12 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default vpc: %v", err)
 		}
-		cluster.Spec.Cloud.AWS.VPCID = *vpc.VpcId
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.AWS.VPCID = *vpc.VpcId
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	vpc, err := getVPCByID(cluster.Spec.Cloud.AWS.VPCID, client)
@@ -369,7 +374,12 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default subnet: %v", err)
 		}
-		cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.AWS.AvailabilityZone == "" {
@@ -377,7 +387,12 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to get subnet %s: %v", cluster.Spec.Cloud.AWS.SubnetID, err)
 		}
-		cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
@@ -385,8 +400,13 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group: %v", err)
 		}
-		cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
-		cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroup
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
+			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroup
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.AWS.RoleName == "" && cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
@@ -399,9 +419,14 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to create instance profile: %v", err)
 		}
-		cluster.Finalizers = append(cluster.Finalizers, instanceProfileCleanupFinalizer)
-		cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
-		cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = append(cluster.Finalizers, instanceProfileCleanupFinalizer)
+			cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+			cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
@@ -409,7 +434,12 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster) (*kub
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default RouteTable: %v", err)
 		}
-		cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cluster, nil
@@ -443,14 +473,13 @@ func (a *amazonEc2) getIAMClient(cloud *kubermaticv1.CloudSpec) (*iam.IAM, error
 	return iam.New(sess), nil
 }
 
-func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	finalizers := sets.NewString(cluster.Finalizers...)
+func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	ec2client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ec2 client: %v", err)
 	}
 
-	if finalizers.Has(securityGroupCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(cluster, securityGroupCleanupFinalizer) {
 		_, err = ec2client.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
 			GroupId: aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
 		})
@@ -460,11 +489,15 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 				return nil, fmt.Errorf("failed to delete security group %s: %s", cluster.Spec.Cloud.AWS.SecurityGroupID, err.(awserr.Error).Message())
 			}
 		}
-		finalizers.Delete(securityGroupCleanupFinalizer)
-		cluster.Finalizers = finalizers.List()
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, securityGroupCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if finalizers.Has(instanceProfileCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(cluster, instanceProfileCleanupFinalizer) {
 		iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get iam ec2client: %v", err)
@@ -505,8 +538,12 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kuberm
 				return nil, fmt.Errorf("failed to delete Role %s: %s", cluster.Spec.Cloud.AWS.RoleName, err.(awserr.Error).Message())
 			}
 		}
-		finalizers.Delete(instanceProfileCleanupFinalizer)
-		cluster.Finalizers = finalizers.List()
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, instanceProfileCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cluster, nil
