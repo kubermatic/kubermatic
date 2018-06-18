@@ -5,7 +5,7 @@ local drone = import 'drone/drone.libsonnet';
 {
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
   pipeline: {
-    local goImage = 'golang:1.9',
+    local goImage = 'golang:1.10.3',
 
     '0-dep': drone.step.new('metalmatze/dep:0.4.1', commands=['cd api', 'dep status -v']),
     '1-gofmt': drone.step.new(goImage, commands=['cd api', 'make gofmt']),
@@ -18,7 +18,7 @@ local drone = import 'drone/drone.libsonnet';
 
     // Building
     '4-test': drone.step.new(goImage, group='build', commands=['cd api', 'make test']),
-    '4-build': drone.step.new(goImage, group='build', commands=['cd api', 'CGO_ENABLED=0 make build']),
+    '4-build': drone.step.new(goImage, group='build', commands=['cd api', 'make build']),
     '4-write-version': drone.step.new('ubuntu', group='build', commands= [
       'cd config',
       'sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml',
@@ -53,7 +53,7 @@ local drone = import 'drone/drone.libsonnet';
       ) + whenEventTag,
 
     '7-sync-charts': drone.step.new('alpine:3.7', commands=[
-      'apk add --no-cache -U git bash',
+      'apk add --no-cache -U git bash openssh',
       'git config --global user.email "dev@loodse.com"',
       'git config --global user.name "drone"',
       'cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config',
