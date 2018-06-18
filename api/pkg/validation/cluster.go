@@ -219,10 +219,6 @@ func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 			return errors.New("no password provided")
 		}
 
-		if spec.VSphere.VMNetName == "" {
-			return errors.New("no network name provided")
-		}
-
 		return nil
 	}
 
