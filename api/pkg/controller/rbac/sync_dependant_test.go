@@ -59,7 +59,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						},
 					},
 					Spec:    kubermaticv1.ClusterSpec{},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "cluster-abcd",
 					},

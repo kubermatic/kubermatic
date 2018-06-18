@@ -34,14 +34,22 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.GetLabels("cloud-config")
 	cm.Data = map[string]string{
-		"config": configBuffer.String(),
+		"config":              configBuffer.String(),
+		FakeVMWareUUIDKeyName: fakeVMWareUUID,
 	}
 
 	return cm, nil
 }
 
 const (
-	config = `
+	// FakeVMWareUUIDKeyName is the name of the cloud-config configmap key
+	// that holds the fake vmware uuid
+	// It is required when activating the vsphere cloud-provider in the controller
+	// manager on a non-ESXi host
+	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
+	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
+	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
+	config                = `
 {{- if .Cluster.Spec.Cloud.AWS }}
 [global]
 zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
@@ -88,6 +96,21 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 
   "useInstanceMetadata": true
 }
+{{- end }}
+{{- if .Cluster.Spec.Cloud.VSphere }}
+{{/* Source: https://docs.openshift.com/container-platform/3.7/install_config/configuring_vsphere.html#vsphere-enabling */}}
+[Global]
+        user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
+        password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
+        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
+        port = "443"
+        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
+        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
+        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
+        working-dir = "{{ .Cluster.Name }}"
+        vm-uuid = "vm-uuid"
+[Disk]
+    scsicontrollertype = pvscsi
 {{- end }}
 `
 )

@@ -292,6 +292,10 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		flags = append(flags, "--cloud-provider", "vsphere")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
 
 	if data.Cluster.Spec.Cloud.BringYourOwn != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "Hostname,InternalIP,ExternalIP")

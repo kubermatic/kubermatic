@@ -183,6 +183,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
+
+[[projects]]
+  branch = "master"
   name = "github.com/evanphx/json-patch"
   packages = ["."]
   revision = "944e07253867aacae43c04b2e6a239005443f33a"
@@ -211,9 +217,6 @@
   packages = [
     "endpoint",
     "log",
-    "metrics",
-    "metrics/internal/lv",
-    "metrics/prometheus",
     "transport/http"
   ]
   revision = "286fe7a0709da897bcafd638ca80289af53d40af"
@@ -544,7 +547,7 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "c303db67a0e48da8b92b9994d98515beadc63b34"
+  revision = "b9a4dfcd245157a7cdc483d75355448e4160fe2b"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -567,6 +570,25 @@
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/minio/minio-go"
+  packages = [
+    ".",
+    "pkg/credentials",
+    "pkg/encrypt",
+    "pkg/s3signer",
+    "pkg/s3utils",
+    "pkg/set"
+  ]
+  revision = "c6108c47ba5d86548404ebf9e51c5ca18769fe79"
+  version = "6.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
 
 [[projects]]
   branch = "master"
@@ -658,6 +680,12 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -715,6 +743,12 @@
   version = "v1.1"
 
 [[projects]]
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/vincent-petithory/dataurl"
   packages = ["."]
@@ -747,6 +781,8 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
+    "argon2",
+    "blake2b",
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
@@ -1165,6 +1201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "48524203065a2048fa4d6fb1caeff436ccfe5810bf2114c64f87c13f4008835e"
+  inputs-digest = "bef89ded821c834e52515e80c214d3752914f8e7471613cd721d9efd6c9d0133"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -49,7 +49,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-foo",
 		},
-		Address: &kubermaticv1.ClusterAddress{
+		Address: kubermaticv1.ClusterAddress{
 			AdminToken: "admintoken",
 			URL:        "https://foo.bar:8443",
 		},
