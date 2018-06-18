@@ -1,7 +1,6 @@
 package etcd
 
 import (
-	"io/ioutil"
 	"testing"
 )
 
@@ -42,7 +41,6 @@ func TestGetEtcdCommand(t *testing.T) {
 			}
 			cmd := args[2]
 			if cmd != test.expected {
-				ioutil.WriteFile("cmd.sh", []byte(cmd), 0644)
 				t.Errorf("expected \n%s \n\nGot:\n\n%s", test.expected, cmd)
 			}
 		})
