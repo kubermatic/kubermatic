@@ -59,7 +59,7 @@ INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:
 echo ${INITIAL_STATE}
 echo ${INITIAL_CLUSTER}
 
-/usr/local/bin/etcd \
+exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
     --heartbeat-interval=500 \
@@ -114,7 +114,7 @@ fi
 echo ${INITIAL_STATE}
 echo ${INITIAL_CLUSTER}
 
-/usr/local/bin/etcd \
+exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
     --heartbeat-interval=500 \

@@ -249,7 +249,7 @@ INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cl
 echo ${INITIAL_STATE}
 echo ${INITIAL_CLUSTER}
 
-/usr/local/bin/etcd \
+exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="{{ .DataDir }}" \
     --heartbeat-interval=500 \
