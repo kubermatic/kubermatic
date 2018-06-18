@@ -95,7 +95,7 @@ pipeline:
       - tag
   7-sync-charts:
     commands:
-    - apk add --no-cache -U git bash
+    - apk add --no-cache -U git bash openssh
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
