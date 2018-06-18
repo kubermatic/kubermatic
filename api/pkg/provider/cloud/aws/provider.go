@@ -380,16 +380,16 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		securityGroupId, err := createSecurityGroup(client, vpc, cluster.Name)
+		securityGroupID, err := createSecurityGroup(client, vpc, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group for cluster %s: %v", cluster.Name, err)
 		}
-		if len(securityGroupId) == 0 {
-			return nil, fmt.Errorf("createSecurityGroup for cluster %s did not return sg id.", cluster.Name)
+		if len(securityGroupID) == 0 {
+			return nil, fmt.Errorf("createSecurityGroup for cluster %s did not return sg id", cluster.Name)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
-			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroupId
+			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroupID
 		})
 		if err != nil {
 			return nil, err
