@@ -48,16 +48,15 @@ func TestGetEtcdCommand(t *testing.T) {
 }
 
 var (
-	noMigration = `ETCDCTL_API=3
-MASTER_ENDPOINT="http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
+	noMigration = `export MASTER_ENDPOINT="http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
 
 
-INITIAL_STATE="new"
-INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380"
+export INITIAL_STATE="new"
+export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380"
 
 
-echo ${INITIAL_STATE}
-echo ${INITIAL_CLUSTER}
+echo "initial-state: ${INITIAL_STATE}"
+echo "initial-cluster: ${INITIAL_CLUSTER}"
 
 exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
@@ -72,47 +71,61 @@ exec /usr/local/bin/etcd \
     --listen-peer-urls http://0.0.0.0:2380
 `
 
-	migration = `ETCDCTL_API=3
-MASTER_ENDPOINT="http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
+	migration = `export MASTER_ENDPOINT="http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
 
 
 # If we're already initialized
 if [ -d "/var/run/etcd/pod_${POD_NAME}/" ]; then
-    INITIAL_STATE="existing"
-    INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+    echo "we're already initialized"
+    if [ "${POD_NAME}" = "etcd-0" ]; then
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        export INITIAL_STATE="existing"
+    fi
+    if [ "${POD_NAME}" = "etcd-1" ]; then
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        export INITIAL_STATE="existing"
+    fi
+    if [ "${POD_NAME}" = "etcd-2" ]; then
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        export INITIAL_STATE="existing"
+    fi
 else
     if [ "${POD_NAME}" = "etcd-0" ]; then
         echo "i'm etcd-0. I do the restore"
-        etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
-        etcdctl snapshot restore snapshot.db \
+        ETCDCTL_API=3 etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
+        ETCDCTL_API=3 etcdctl snapshot restore snapshot.db \
             --name etcd-0 \
             --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
             --initial-cluster="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
             --initial-cluster-token="62m9k9tqlm" \
             --initial-advertise-peer-urls http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
-        INITIAL_STATE="new"
-        INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        echo "restored from snapshot"
+        export INITIAL_STATE="new"
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
     fi
 
     if [ "${POD_NAME}" = "etcd-1" ]; then
         echo "i'm etcd-1. I join as new member as soon as etcd-0 comes up"
-        etcdctl --endpoints ${MASTER_ENDPOINT} member add etcd-1 --peer-urls=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379
-        INITIAL_STATE="existing"
-        INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        ETCDCTL_API=3 etcdctl --endpoints ${MASTER_ENDPOINT} member add etcd-1 --peer-urls=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
+        echo "added etcd-1 to members"
+        export INITIAL_STATE="existing"
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
     fi
 
     if [ "${POD_NAME}" = "etcd-2" ]; then
         echo "i'm etcd-2. I join as new member as soon as we have 2 existing & healthy members"
-        until etcdctl --endpoints ${MASTER_ENDPOINT} member list | grep -q etcd-1; do sleep 1; echo "Waiting for etcd-1"; done
-        INITIAL_STATE="existing"
-        INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
+        until ETCDCTL_API=3 etcdctl --endpoints ${MASTER_ENDPOINT} member list | grep -q etcd-1; do sleep 1; echo "Waiting for etcd-1"; done
+        ETCDCTL_API=3 etcdctl --endpoints ${MASTER_ENDPOINT} member add etcd-2 --peer-urls=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
+        echo "added etcd-2 to members"
+        export INITIAL_STATE="existing"
+        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
     fi
 fi
 
 
 
-echo ${INITIAL_STATE}
-echo ${INITIAL_CLUSTER}
+echo "initial-state: ${INITIAL_STATE}"
+echo "initial-cluster: ${INITIAL_CLUSTER}"
 
 exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
