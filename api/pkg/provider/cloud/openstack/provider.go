@@ -77,7 +77,12 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		if err != nil {
 			return nil, err
 		}
-		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
