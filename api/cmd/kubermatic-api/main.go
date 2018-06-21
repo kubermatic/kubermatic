@@ -186,7 +186,7 @@ func main() {
 		glog.Fatal(fmt.Sprintf("failed to create update manager: %v", err))
 	}
 
-	cloudProviders := cloud.Providers(datacenters)
+	cloudProviders := cloud.Providers()
 
 	// Only enable the metrics endpoint when prometheusEndpoint is true
 	var promURL *string

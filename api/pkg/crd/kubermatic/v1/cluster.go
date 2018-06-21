@@ -190,7 +190,7 @@ type DigitaloceanCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
 }
 
-// HetznerCloudSpec specifies access data to hetzner cloud.
+// HetznerCloudSpec specifies access data to Hetzner cloud.
 type HetznerCloudSpec struct {
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
@@ -207,6 +207,7 @@ type AzureCloudSpec struct {
 	SubnetName     string `json:"subnet"`
 	RouteTableName string `json:"routeTable"`
 	SecurityGroup  string `json:"securityGroup"`
+	Location       string `json:"location"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
@@ -214,6 +215,13 @@ type VSphereCloudSpec struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	VMNetName string `json:"vmNetName"`
+
+	Endpoint      string `json:"endpoint"`
+	AllowInsecure bool   `json:"allowInsecure"`
+	VMFolder      string `json:"vmFolder"`
+	Datastore     string `yaml:"datastore"`
+	Datacenter    string `yaml:"datacenter"`
+	Cluster       string `yaml:"cluster"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -229,21 +237,27 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
+	Region              string `json:"region"`
+	Zone                string `json:"zone"`
 
 	AvailabilityZone string `json:"availabilityZone"`
 }
 
 // OpenstackCloudSpec specifies access data to an openstack cloud.
 type OpenstackCloudSpec struct {
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Tenant         string `json:"tenant"`
-	Domain         string `json:"domain"`
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
-	FloatingIPPool string `json:"floatingIpPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
+	AuthURL        string   `json:"authURL"`
+	Username       string   `json:"username"`
+	Password       string   `json:"password"`
+	Tenant         string   `json:"tenant"`
+	Domain         string   `json:"domain"`
+	Network        string   `json:"network"`
+	SecurityGroups string   `json:"securityGroups"`
+	FloatingIPPool string   `json:"floatingIpPool"`
+	RouterID       string   `json:"routerID"`
+	SubnetID       string   `json:"subnetID"`
+	DNSServers     []string `json:"dnsServers"`
+	Region         string   `json:"region"`
+	IgnoreVolumeAZ bool     `json:"ignoreVolumeAZ"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.

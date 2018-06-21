@@ -13,15 +13,15 @@ import (
 )
 
 // Providers returns a map from cloud provider id to the actual provider.
-func Providers(dcs map[string]provider.DatacenterMeta) provider.CloudRegistry {
+func Providers() provider.CloudRegistry {
 	return map[string]provider.CloudProvider{
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(dcs),
+		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
 		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
-		provider.AzureCloudProvider:        azure.New(dcs),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dcs),
-		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(dcs),
-		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dcs),
+		provider.AWSCloudProvider:          aws.NewCloudProvider(),
+		provider.AzureCloudProvider:        azure.New(),
+		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(),
+		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(),
+		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(),
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
 	}
 }

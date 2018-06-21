@@ -323,7 +323,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackSizeEndpoint(r.cloudProviders)),
+		)(openstackSizeEndpoint(r.cloudProviders, r.datacenters)),
 		decodeOpenstackSizeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -345,7 +345,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackTenantEndpoint(r.cloudProviders)),
+		)(openstackTenantEndpoint(r.cloudProviders, r.datacenters)),
 		decodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -564,7 +564,7 @@ func (r Routing) newCreateCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
-		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider)),
+		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters)),
 		newDecodeCreateClusterReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

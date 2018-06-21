@@ -7,7 +7,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,8 +21,7 @@ const TestExternalURL = "dev.kubermatic.io"
 const TestExternalPort = 30000
 
 func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Controller {
-	dcs := buildDatacenterMeta()
-	cps := cloud.Providers(dcs)
+	cps := cloud.Providers()
 
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
 	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjects...)
@@ -37,7 +35,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		TestExternalURL,
 		"",
 		TestDC,
-		dcs,
 		cps,
 		NewMetrics(false),
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
@@ -71,50 +68,4 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	return controller
-}
-
-func buildDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		"us-central1": {
-			Location: "us-central",
-			Country:  "US",
-			Private:  false,
-			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-		"us-central1-byo": {
-			Location: "us-central",
-			Country:  "US",
-			Private:  false,
-			Seed:     "us-central1",
-			Spec: provider.DatacenterSpec{
-				BringYourOwn: &provider.BringYourOwnSpec{},
-			},
-		},
-		"private-do1": {
-			Location: "US ",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Private:  true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-		"regular-do1": {
-			Location: "Amsterdam",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-	}
 }

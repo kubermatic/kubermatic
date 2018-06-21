@@ -106,12 +106,17 @@ func TestLoadFiles(t *testing.T) {
 				SubnetName:     "az-subnet-name",
 				RouteTableName: "az-route-table-name",
 				SecurityGroup:  "az-sec-group",
+				Location:       "az-location",
 			},
 		},
 		"vsphere": {
 			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Username: "vs-username",
-				Password: "vs-password",
+				Username:      "vs-username",
+				Password:      "vs-password",
+				Datastore:     "vs-datastore",
+				Datacenter:    "vs-datacenter",
+				Endpoint:      "vs-endpoint.io",
+				AllowInsecure: false,
 			},
 		},
 		"digitalocean": {
@@ -130,6 +135,8 @@ func TestLoadFiles(t *testing.T) {
 				SecurityGroupID:     "aws-security-group",
 				SubnetID:            "aws-subnet-id",
 				VPCID:               "aws-vpn-id",
+				Region:              "eu-central-1",
+				Zone:                "a",
 			},
 		},
 		"openstack": {
@@ -143,41 +150,17 @@ func TestLoadFiles(t *testing.T) {
 				Password:       "openstack-password",
 				RouterID:       "openstack-router-id",
 				SecurityGroups: "openstack-security-group1,openstack-security-group2",
+				AuthURL:        "https://example.com:8000/v3",
+				Region:         "cbk",
+				IgnoreVolumeAZ: true,
+				DNSServers: []string{
+					"8.8.8.8",
+					"8.8.4.4",
+				},
 			},
 		},
 		"bringyourown": {
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
-		},
-	}
-
-	dc := provider.DatacenterMeta{
-		Spec: provider.DatacenterSpec{
-			Azure: &provider.AzureSpec{
-				Location: "az-location",
-			},
-			VSphere: &provider.VSphereSpec{
-				Endpoint:      "https://vs-endpoint.io",
-				AllowInsecure: false,
-				Datastore:     "vs-datastore",
-				Datacenter:    "vs-datacenter",
-				Cluster:       "vs-cluster",
-				RootPath:      "vs-cluster",
-			},
-			AWS: &provider.AWSSpec{
-				AMI:           "ami-aujakj",
-				Region:        "us-central1",
-				ZoneCharacter: "a",
-			},
-			Digitalocean: &provider.DigitaloceanSpec{
-				Region: "fra1",
-			},
-			Openstack: &provider.OpenstackSpec{
-				AuthURL:          "https://example.com:8000/v3",
-				AvailabilityZone: "zone1",
-				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
-				IgnoreVolumeAZ:   true,
-				Region:           "cbk",
-			},
 		},
 	}
 
@@ -329,7 +312,6 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
 				data := resources.NewTemplateData(
 					cluster,
-					&dc,
 					kubeInformerFactory.Core().V1().Secrets().Lister(),
 					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
 					kubeInformerFactory.Core().V1().Services().Lister(),

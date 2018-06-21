@@ -14,7 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -114,13 +113,6 @@ func main() {
 
 	// Validate node-port range
 	net.ParsePortRangeOrDie(runOp.nodePortRange)
-
-	// dcFile, versionFile, updatesFile are required by cluster controller
-	// the following code ensures that the files are available and fails fast if not.
-	_, err := provider.LoadDatacentersMeta(runOp.dcFile)
-	if err != nil {
-		glog.Fatalf("failed to load datacenter yaml %q: %v", runOp.dcFile, err)
-	}
 
 	config, err := clientcmd.BuildConfigFromFlags(runOp.masterURL, runOp.kubeconfig)
 	if err != nil {

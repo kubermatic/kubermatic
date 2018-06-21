@@ -29,7 +29,7 @@ import (
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
 
 	datacenters := buildDatacenterMeta()
-	cloudProviders := cloud.Providers(datacenters)
+	cloudProviders := cloud.Providers()
 
 	authenticator := NewFakeAuthenticator(user)
 

@@ -19,7 +19,7 @@ type HetznerSpec struct {
 	Location   string `yaml:"location"`
 }
 
-// OpenstackSpec describes a open stack datacenter
+// OpenstackSpec describes a OpenStack datacenter
 type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`

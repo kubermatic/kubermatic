@@ -9,15 +9,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type digitalocean struct {
-	dcs map[string]provider.DatacenterMeta
-}
+type digitalocean struct{}
 
 // NewCloudProvider creates a new digitalocean provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &digitalocean{
-		dcs: dcs,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &digitalocean{}
 }
 
 func (do *digitalocean) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {

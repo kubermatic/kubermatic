@@ -77,7 +77,7 @@ func (r Routing) newClusterHandlerV3() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(newClusterEndpoint(r.sshKeyProvider, r.cloudProviders, r.updateManager)),
+		)(newClusterEndpoint(r.sshKeyProvider, r.cloudProviders, r.updateManager, r.datacenters)),
 		decodeNewClusterReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

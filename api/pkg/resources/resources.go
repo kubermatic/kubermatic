@@ -148,7 +148,6 @@ type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	Cluster           *kubermaticv1.Cluster
-	DC                *provider.DatacenterMeta
 	SecretLister      corev1lister.SecretLister
 	ConfigMapLister   corev1lister.ConfigMapLister
 	ServiceLister     corev1lister.ServiceLister
@@ -187,7 +186,6 @@ func String(v string) *string {
 // NewTemplateData returns an instance of TemplateData
 func NewTemplateData(
 	cluster *kubermaticv1.Cluster,
-	dc *provider.DatacenterMeta,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
 	serviceLister corev1lister.ServiceLister,
@@ -197,7 +195,6 @@ func NewTemplateData(
 	etcdDiskSize resource.Quantity) *TemplateData {
 	return &TemplateData{
 		Cluster:           cluster,
-		DC:                dc,
 		ConfigMapLister:   configMapLister,
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,

@@ -23,6 +23,10 @@ spec:
         args:
         - -v=4
         - -logtostderr
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        volumeMounts:
+        - name: datacenters
+          mountPath: "/opt/datacenter/"
       - name: copy-addons
         image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
@@ -34,60 +38,56 @@ spec:
         - name: addons
           mountPath: /opt/addons
       containers:
-        - name: controller-manager
-          command:
-          - kubermatic-controller-manager
-          args:
-          - -v=4
-          - -logtostderr
-          - -external-url={{ .Values.kubermatic.domain }}
-          - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
-          - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
-          - -master-resources=/opt/master-files
-          - -datacenters=/opt/datacenter/datacenters.yaml
-          - -versions=/opt/master-files/versions.yaml
-          - -updates=/opt/master-files/updates.yaml
-          - -internal-address=0.0.0.0:8085
-          - -addons=/opt/addons
-          - -backup-container=/opt/backup/store-container.yaml
-          - -cleanup-container=/opt/backup/cleanup-container.yaml
-          image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
-          imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
-          ports:
-            - name: metrics
-              containerPort: 8085
-              protocol: TCP
-          volumeMounts:
-            - name: master-files
-              mountPath: "/opt/master-files/"
-              readOnly: true
-            - name: datacenters
-              mountPath: "/opt/datacenter/"
-              readOnly: true
-            - name: addons
-              mountPath: "/opt/addons/"
-              readOnly: true
-            - name: backup-container
-              mountPath: "/opt/backup/"
-              readOnly: true
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "100m"
-            limits:
-              memory: "256Mi"
-              cpu: "200m"
-      imagePullSecrets:
-        - name: dockercfg
-      volumes:
+      - name: controller-manager
+        command:
+        - kubermatic-controller-manager
+        args:
+        - -v=4
+        - -logtostderr
+        - -external-url={{ .Values.kubermatic.domain }}
+        - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
+        - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
+        - -master-resources=/opt/master-files
+        - -versions=/opt/master-files/versions.yaml
+        - -updates=/opt/master-files/updates.yaml
+        - -internal-address=0.0.0.0:8085
+        - -addons=/opt/addons
+        - -backup-container=/opt/backup/store-container.yaml
+        - -cleanup-container=/opt/backup/cleanup-container.yaml
+        image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
+        ports:
+        - name: metrics
+          containerPort: 8085
+          protocol: TCP
+        volumeMounts:
         - name: master-files
-          secret:
-            secretName: master-files
-        - name: datacenters
-          secret:
-            secretName: datacenters
+          mountPath: "/opt/master-files/"
+          readOnly: true
         - name: addons
-          emptyDir: {}
+          mountPath: "/opt/addons/"
+          readOnly: true
         - name: backup-container
-          configMap:
-            name: backup-container
+          mountPath: "/opt/backup/"
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - name: master-files
+        secret:
+          secretName: master-files
+      - name: datacenters
+        secret:
+          secretName: datacenters
+      - name: addons
+        emptyDir: {}
+      - name: backup-container
+        configMap:
+          name: backup-container

@@ -4,14 +4,12 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Name)
 	health := kubermaticv1.ClusterHealth{
 		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
 	}
@@ -28,7 +26,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDeployment(ns, name)
+		healthy, err := cc.healthyDeployment(c.Status.NamespaceName, name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -36,7 +34,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName)
+	health.Etcd, err = cc.healthyStatefulSet(c.Status.NamespaceName, resources.EtcdStatefulSetName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}

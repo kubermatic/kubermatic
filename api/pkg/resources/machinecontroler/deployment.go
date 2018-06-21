@@ -134,7 +134,7 @@ func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster.Spec.Cloud.AWS.SecretAccessKey})
 	}
 	if data.Cluster.Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC.Spec.Openstack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.Cluster.Spec.Cloud.Openstack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Username})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster.Spec.Cloud.Openstack.Password})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Domain})

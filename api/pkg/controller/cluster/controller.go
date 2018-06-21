@@ -56,7 +56,6 @@ type Controller struct {
 	userClusterConnProvider UserClusterConnectionProvider
 
 	externalURL string
-	dcs         map[string]provider.DatacenterMeta
 	dc          string
 	cps         map[string]provider.CloudProvider
 
@@ -105,7 +104,6 @@ func NewController(
 	externalURL string,
 	workerName string,
 	dc string,
-	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
 	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
@@ -142,7 +140,6 @@ func NewController(
 		externalURL: externalURL,
 		workerName:  workerName,
 		dc:          dc,
-		dcs:         dcs,
 		cps:         cps,
 		metrics:     metrics,
 	}
