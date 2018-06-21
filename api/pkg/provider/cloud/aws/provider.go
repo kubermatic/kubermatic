@@ -8,6 +8,8 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	"github.com/golang/glog"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -195,6 +197,8 @@ func getSubnetByID(subnetID string, client *ec2.EC2) (*ec2.Subnet, error) {
 	return sOut.Subnets[0], nil
 }
 
+// Get security group by aws generated id string (sg-xxxxx).
+// Error is returned in case no such group exists.
 func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
 	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{id}),
@@ -215,7 +219,10 @@ func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.Securi
 	return dsgOut.SecurityGroups[0], nil
 }
 
-func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error) {
+// Create security group ("sg") with name `name` in `vpc`. The name
+// in a sg must be unique within the vpc (no pre-existing sg with
+// that name is allowed).
+func createSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error) {
 	newSecurityGroupName := fmt.Sprintf("kubermatic-%s", name)
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       vpc.VpcId,
@@ -223,68 +230,45 @@ func addSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error
 		Description: aws.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create security group: %v", err)
+		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
 	}
+	sgid := aws.StringValue(csgOut.GroupId)
+	glog.V(6).Infof("Security group %s created with id %s.", newSecurityGroupName, sgid)
 
-	// Allow node-to-node communication
+	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		CidrIp:     vpc.CidrBlock,
-		FromPort:   aws.Int64(0),
-		ToPort:     aws.Int64(65535),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("-1"),
+		GroupId: aws.String(sgid),
+		IpPermissions: []*ec2.IpPermission{
+			(&ec2.IpPermission{}).
+				// all protocols from within the sg
+				SetIpProtocol("-1").
+				SetUserIdGroupPairs([]*ec2.UserIdGroupPair{
+					(&ec2.UserIdGroupPair{}).
+						SetGroupId(sgid),
+				}),
+			(&ec2.IpPermission{}).
+				// tcp:22 from everywhere
+				SetIpProtocol("tcp").
+				SetFromPort(provider.DefaultSSHPort).
+				SetToPort(provider.DefaultSSHPort).
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}),
+			(&ec2.IpPermission{}).
+				// tcp:10250 from everywhere
+				SetIpProtocol("tcp").
+				SetFromPort(provider.DefaultKubeletPort).
+				SetToPort(provider.DefaultKubeletPort).
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}),
+		},
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for node-to-node communication: %v", err)
+		return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, sgid, err)
 	}
 
-	// Allow SSH from everywhere
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		CidrIp:     aws.String("0.0.0.0/0"),
-		FromPort:   aws.Int64(provider.DefaultSSHPort),
-		ToPort:     aws.Int64(provider.DefaultSSHPort),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("tcp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for ssh: %v", err)
-	}
-
-	// Allow kubelet 10250 from everywhere
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		CidrIp:     aws.String("0.0.0.0/0"),
-		FromPort:   aws.Int64(provider.DefaultKubeletPort),
-		ToPort:     aws.Int64(provider.DefaultKubeletPort),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("tcp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for kubelet port 10250: %v", err)
-	}
-
-	// Allow UDP within the security group
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		FromPort:   aws.Int64(0),
-		ToPort:     aws.Int64(65535),
-		GroupId:    csgOut.GroupId,
-		IpProtocol: aws.String("udp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for udp: %v", err)
-	}
-
-	// Allow ICMP within the security group
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    csgOut.GroupId,
-		FromPort:   aws.Int64(-1),
-		ToPort:     aws.Int64(-1),
-		IpProtocol: aws.String("icmp"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group ingress for icmp: %v", err)
-	}
-
-	return *csgOut.GroupId, nil
+	return sgid, nil
 }
 
 func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.InstanceProfile, error) {
@@ -396,13 +380,16 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		securityGroup, err := addSecurityGroup(client, vpc, cluster.Name)
+		securityGroupID, err := createSecurityGroup(client, vpc, cluster.Name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to add security group: %v", err)
+			return nil, fmt.Errorf("failed to add security group for cluster %s: %v", cluster.Name, err)
+		}
+		if len(securityGroupID) == 0 {
+			return nil, fmt.Errorf("createSecurityGroup for cluster %s did not return sg id", cluster.Name)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
-			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroup
+			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroupID
 		})
 		if err != nil {
 			return nil, err
