@@ -24,10 +24,10 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse prometheus config template: %v", err)
+		return nil, fmt.Errorf("failed to parse cloud config template: %v", err)
 	}
 	if err := configTpl.Execute(&configBuffer, data); err != nil {
-		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
+		return nil, fmt.Errorf("failed to render cloud config template: %v", err)
 	}
 
 	cm.Name = resources.CloudConfigConfigMapName
