@@ -101,6 +101,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.serviceLister,
 		cc.overwriteRegistry,
 		cc.nodePortRange,
+		cc.nodeAccessNetwork,
 		cc.etcdDiskSize,
 	), nil
 }

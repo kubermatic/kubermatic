@@ -151,6 +151,7 @@ type TemplateData struct {
 	ServiceLister     corev1lister.ServiceLister
 	OverwriteRegistry string
 	NodePortRange     string
+	NodeAccessNetwork string
 	EtcdDiskSize      resource.Quantity
 }
 
@@ -189,6 +190,7 @@ func NewTemplateData(
 	serviceLister corev1lister.ServiceLister,
 	overwriteRegistry string,
 	nodePortRange string,
+	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity) *TemplateData {
 	return &TemplateData{
 		Cluster:           cluster,
@@ -198,6 +200,7 @@ func NewTemplateData(
 		ServiceLister:     serviceLister,
 		OverwriteRegistry: overwriteRegistry,
 		NodePortRange:     nodePortRange,
+		NodeAccessNetwork: nodeAccessNetwork,
 		EtcdDiskSize:      etcdDiskSize,
 	}
 }

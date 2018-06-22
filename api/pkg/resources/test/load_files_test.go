@@ -259,6 +259,7 @@ func TestLoadFiles(t *testing.T) {
 					kubeInformerFactory.Core().V1().Services().Lister(),
 					"",
 					"",
+					"192.0.2.0/24",
 					resource.MustParse("5Gi"),
 				)
 				kubeInformerFactory.Start(wait.NeverStop)
