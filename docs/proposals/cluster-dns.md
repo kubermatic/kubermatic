@@ -34,7 +34,7 @@ As we want to switch to another DNS, we can not use the seed cluster's DNS anymo
 kube-state-metrics: `--apiserver=http://apiserver:8080`  
 [done] machine-controller: `-master=http://apiserver:8080`  
 node-controller: `--master=http://apiserver:8080`  
-scheduler: `--master=http://apiserver:8080`  
+[done] scheduler: `--master=http://apiserver:8080`  
 [done] openvpn sidecar in apiserver deployment
 
 Instead of relying on the seed clusters DNS, we use the cluster-ips to circumvent the usage of DNS. This works due to the fact, that we have CIDRs in the seed and user clusters that don’t overlap.

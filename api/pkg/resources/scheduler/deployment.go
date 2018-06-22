@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +64,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	// get clusterIP of apiserver
+	apiserverService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("apiserver")
+	if err != nil {
+		return nil, fmt.Errorf("apiserver service in namespace %s not found: %v",
+			data.Cluster.Status.NamespaceName, err)
+	}
+
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -70,7 +79,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				"until wget -T 1 http://" + apiserverService.Spec.ClusterIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -83,7 +92,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
-				"--master", "http://apiserver:8080",
+				"--master", fmt.Sprintf("http://%s:8080", apiserverService.Spec.ClusterIP),
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
