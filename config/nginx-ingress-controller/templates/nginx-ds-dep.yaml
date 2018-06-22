@@ -9,6 +9,11 @@ metadata:
 spec:
 {{ if not .Values.nginx.asDaemonSet }}
   replicas: {{ .Values.nginx.replicas }}
+{{ else }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 35%
 {{ end }}
   template:
     metadata:
