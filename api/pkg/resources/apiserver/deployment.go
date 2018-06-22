@@ -2,7 +2,10 @@ package apiserver
 
 import (
 	"fmt"
+	"net"
 	"strings"
+
+	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -10,7 +13,9 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -79,9 +84,17 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	var etcds []string
-	for i := 0; i < resources.EtcdClusterSize; i++ {
-		etcds = append(etcds, fmt.Sprintf("http://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName))
+	etcdService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("etcd-clusterip")
+	if err != nil {
+		return nil, fmt.Errorf("etcd-clusterip service in namespace %s not found: %v",
+			data.Cluster.Status.NamespaceName, err)
 	}
+	if net.ParseIP(etcdService.Spec.ClusterIP) == nil { // might be headless ("None")
+		glog.V(2).Infof("etcd-clusterip service ClusterIP not available: %#v", etcdService)
+		return nil, fmt.Errorf("etcd-clusterip service in namespace %s has no usable ClusterIP",
+			data.Cluster.Status.NamespaceName)
+	}
+	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdService.Spec.ClusterIP)) // could be changed to single string
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
@@ -103,10 +116,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+
+	openvpnService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			glog.V(4).Infof("DEVDEBUG service listing did not find anything %v", err)
+		} else {
+			glog.V(4).Infof("DEVDEBUG service listing failed: %v", err)
+		}
+		return nil, fmt.Errorf("openvpn-server service in namespace %s not found: %v",
+			data.Cluster.Status.NamespaceName, err)
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            "openvpn-client",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.2",
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
 			Args: []string{
@@ -114,7 +138,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--proto", "tcp",
 				"--dev", "tun",
 				"--auth-nocache",
-				"--remote", "openvpn-server", "1194",
+				"--remote", openvpnService.Spec.ClusterIP, "1194",
 				"--nobind",
 				"--connect-timeout", "5",
 				"--connect-retry", "1",
@@ -128,6 +152,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--keysize", "256",
 				"--script-security", "2",
 				"--up", "/bin/touch /tmp/running",
+				"--status", "/run/openvpn-status",
 				"--log", "/dev/stdout",
 			},
 			SecurityContext: &corev1.SecurityContext{

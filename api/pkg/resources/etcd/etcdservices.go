@@ -8,8 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DiscoveryService returns a service for the etcd peers to find each other?
-func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+func getEtcdService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service
 	if existing != nil {
 		se = existing
@@ -22,7 +21,6 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	se.Annotations = map[string]string{
 		"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
 	}
-	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
 		"cluster":             data.Cluster.Name,
@@ -43,4 +41,18 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	}
 
 	return se, nil
+}
+
+// DiscoveryService returns a service for the etcd peers to find each other?
+func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+	se, err := getEtcdService(data, existing)
+	se.Spec.ClusterIP = "None"
+	return se, err
+}
+
+// ClusterIPService returns a service for the etcd accessible by clusterIP
+func ClusterIPService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+	se, err := getEtcdService(data, existing)
+	se.Name = resources.EtcdServiceName + "-clusterip"
+	return se, err
 }
