@@ -27,9 +27,8 @@ import (
 )
 
 const (
-	metricNamespace                   = "kubermatic"
-	destinationSeed                   = "seed"
-	dependantResyncTime time.Duration = 5 * time.Minute
+	metricNamespace = "kubermatic"
+	destinationSeed = "seed"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -338,6 +337,7 @@ func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVer
 }
 
 const projectResourcesResyncTime time.Duration = 5 * time.Minute
+
 type projectResourceQueueItem struct {
 	gvr             schema.GroupVersionResource
 	kind            string
