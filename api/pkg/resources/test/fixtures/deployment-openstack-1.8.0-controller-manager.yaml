@@ -48,10 +48,8 @@ spec:
         - /etc/kubernetes/ca-key/ca.key
         - --cluster-cidr
         - 172.25.0.0/16
-        - --configure-cloud-routes
-        - "false"
-        - --allocate-node-cidrs
-        - "true"
+        - --configure-cloud-routes=false
+        - --allocate-node-cidrs=true
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
         - --v
