@@ -274,7 +274,50 @@ func TestLoadFiles(t *testing.T) {
 								},
 							},
 						},
-					})
+					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      resources.ApiserverInternalServiceName,
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30001,
+								},
+							},
+							ClusterIP: "192.0.2.11",
+						},
+					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      resources.EtcdServiceName + "-clusterip",
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30002,
+								},
+							},
+							ClusterIP: "192.0.2.12",
+						},
+					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      resources.OpenVPNServerServiceName,
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30003,
+								},
+							},
+							ClusterIP: "192.0.2.13",
+						},
+					},
+				)
 
 				var group wait.Group
 				defer group.Wait()

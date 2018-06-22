@@ -233,8 +233,43 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			Ports: []corev1.ServicePort{{NodePort: 99}},
 		},
 	}
+	apiserverService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apiserver",
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 98}},
+			ClusterIP: "192.0.2.11",
+		},
+	}
+	etcdclusteripService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "etcd-clusterip",
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 97}},
+			ClusterIP: "192.0.2.1",
+		},
+	}
+	openvpnserverService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "openvpn-server",
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 96}},
+			ClusterIP: "192.0.2.2",
+		},
+	}
 	serviceList := &corev1.ServiceList{
-		Items: []corev1.Service{apiServerExternalService},
+		Items: []corev1.Service{
+			apiServerExternalService,
+			apiserverService,
+			etcdclusteripService,
+			openvpnserverService,
+		},
 	}
 	secretList := createNamedSecrets([]string{"ca-cert",
 		"ca-key",
