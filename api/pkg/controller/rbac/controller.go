@@ -176,7 +176,7 @@ func New(
 	for _, clusterProvider := range allClusterProviders {
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 && clusterProvider.providerName != masterProviderName {
-				glog.V(4).Infof("skipping adding a shared informer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				glog.V(6).Infof("skipping adding a shared informer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			informer, err := c.informerFor(clusterProvider.kubermaticInformerFactory, resource.gvr, resource.kind, clusterProvider)
