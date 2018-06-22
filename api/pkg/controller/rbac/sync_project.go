@@ -45,10 +45,10 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureProjectOwner(project); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleMasterLister); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleBindingMasterLister); err != nil {
 		return err
 	}
 	if err = c.ensureClusterRBACRoleForResources(); err != nil {
@@ -122,7 +122,8 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterRESTClient := range c.seedClustersRESTClient {
+				for _, seedClusterProvider := range c.seedClusterProviders {
+					seedClusterRESTClient := seedClusterProvider.kubeClient
 					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, projectResource.kind, groupPrefix, projectResource.gvr.Resource)
 					if err != nil {
 						return err
@@ -144,7 +145,8 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterRESTClient := range c.seedClustersRESTClient {
+				for _, seedClusterProvider := range c.seedClusterProviders {
+					seedClusterRESTClient := seedClusterProvider.kubeClient
 					err := ensureClusterRBACRoleBindingForResource(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
 					if err != nil {
 						return err
@@ -156,6 +158,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 	return nil
 }
 
+// TODO (p0lyn0mial) pass a lister for cluster roles
 func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, kind, groupName, resource string) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(kind, groupName, resource, kubermaticv1.SchemeGroupVersion.Group)
 	if err != nil {
@@ -183,6 +186,7 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, kind, gro
 	return err
 }
 
+// TODO (p0lyn0mial) pass a lister for cluster role bindings
 func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
@@ -262,7 +266,8 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterRESTClient := range c.seedClustersRESTClient {
+				for _, seedClusterProvider := range c.seedClusterProviders {
+					seedClusterRESTClient := seedClusterProvider.kubeClient
 					err := cleanUpRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
 					if err != nil {
 						return err

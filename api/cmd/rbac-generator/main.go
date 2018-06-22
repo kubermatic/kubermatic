@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -30,7 +31,7 @@ type controllerContext struct {
 	kubermaticMasterClient          kubermaticclientset.Interface
 	kubermaticMasterInformerFactory externalversions.SharedInformerFactory
 	kubeMasterInformerFactory       kuberinformers.SharedInformerFactory
-	seedClustersRESTClient          []kubernetes.Interface
+	seedClusterProviders            []*rbaccontroller.ClusterProvider
 }
 
 func main() {
@@ -51,34 +52,38 @@ func main() {
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticMasterClient, time.Minute*5)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, time.Minute*5)
-	ctrlCtx.seedClustersRESTClient = []kubernetes.Interface{}
+	ctrlCtx.seedClusterProviders = []*rbaccontroller.ClusterProvider{}
 	{
 		clientcmdConfig, err := clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
 		if err != nil {
 			glog.Fatal(err)
 		}
 
-		for ctx := range clientcmdConfig.Contexts {
+		for ctxName := range clientcmdConfig.Contexts {
 			clientConfig := clientcmd.NewNonInteractiveClientConfig(
 				*clientcmdConfig,
-				ctx,
-				&clientcmd.ConfigOverrides{CurrentContext: ctx},
+				ctxName,
+				&clientcmd.ConfigOverrides{CurrentContext: ctxName},
 				nil,
 			)
 			cfg, err := clientConfig.ClientConfig()
 			if err != nil {
 				glog.Fatal(err)
 			}
+			if cfg.Host == config.Host && cfg.Username == config.Username && cfg.Password == config.Password {
+				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubernetes master client", ctxName)
+				continue
+			}
+
+			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient, err := kubernetes.NewForConfig(cfg)
 			if err != nil {
 				glog.Fatal(err)
 			}
-			if cfg.Host == config.Host && cfg.Username == config.Username && cfg.Password == config.Password {
-				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubeMasterClient", ctx)
-				continue
-			}
-			glog.V(2).Infof("Adding %s as seed cluster", ctx)
-			ctrlCtx.seedClustersRESTClient = append(ctrlCtx.seedClustersRESTClient, kubeClient)
+			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
+			kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+			kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+			ctrlCtx.seedClusterProviders = append(ctrlCtx.seedClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("seed/%s", ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 		}
 	}
 
@@ -89,6 +94,9 @@ func main() {
 
 	ctrlCtx.kubermaticMasterInformerFactory.Start(ctrlCtx.stopCh)
 	ctrlCtx.kubeMasterInformerFactory.Start(ctrlCtx.stopCh)
+	for _, seedClusterProvider := range ctrlCtx.seedClusterProviders {
+		seedClusterProvider.StartInformers((ctrlCtx.stopCh))
+	}
 
 	<-ctrlCtx.stopCh
 }
@@ -102,7 +110,7 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeMasterClient,
 		ctrlCtx.kubeMasterInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeMasterInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.seedClustersRESTClient)
+		ctrlCtx.seedClusterProviders)
 	if err != nil {
 		return err
 	}
