@@ -4,3 +4,7 @@ metadata:
   name: nginx-configuration
   labels:
     app: ingress-nginx
+data:
+  {{- range $key, $val := .Values.nginx.config }}
+  {{ $key }}: {{ $val }}
+  {{- end }}
