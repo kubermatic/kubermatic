@@ -67,21 +67,81 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		Labels: podLabels,
 	}
 
-	podNetIP, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+	_, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
 
-	serviceNetIP, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
+	_, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
+
+	pushRoutes := []string{
+		// pod and service routes
+		"--push", fmt.Sprintf("route %s %s", podNet.IP.String(), net.IP(podNet.Mask).String()),
+		"--route", podNet.IP.String(), net.IP(podNet.Mask).String(),
+		"--push", fmt.Sprintf("route %s %s", serviceNet.IP.String(), net.IP(serviceNet.Mask).String()),
+		"--route", serviceNet.IP.String(), net.IP(serviceNet.Mask).String(),
+	}
+
+	// node access network route
+	_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork, err)
+	}
+	pushRoutes = append(pushRoutes, []string{
+		"--push", fmt.Sprintf("route %s %s", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String()),
+		"--route", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String(),
+	}...)
 
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
+			Name:            "iptables-init",
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"/bin/bash"},
+			Args: []string{
+				"-c",
+				`
+				# do not give a 10.20.0.0/24 route to clients (nodes) but
+				# masquerade to openvpn-server's IP instead:
+				iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
+
+				# Only allow outbound traffic to services, pods, nodes
+				iptables -P FORWARD DROP
+				iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + podNet.String() + ` -j ACCEPT
+				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + serviceNet.String() + ` -j ACCEPT
+				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + nodeAccessNetwork.String() + ` -j ACCEPT
+
+				iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+				iptables -A INPUT -i tun0 -p icmp -j ACCEPT
+				iptables -A INPUT -i tun0 -j DROP
+				`,
+			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{"NET_ADMIN"},
+				},
+			},
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: defaultInitMemoryRequest,
+					corev1.ResourceCPU:    defaultInitCPURequest,
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: defaultInitMemoryLimit,
+					corev1.ResourceCPU:    defaultInitCPULimit,
+				},
+			},
+		},
+		{
 			Name:            "openssl-dhparam",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.2",
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/bin/openssl"},
 			Args: []string{
@@ -109,39 +169,39 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 	}
+
+	vpnArgs := []string{
+		"--proto", "tcp",
+		"--dev", "tun",
+		"--mode", "server",
+		"--lport", "1194",
+		"--server", "10.20.0.0", "255.255.255.0",
+		"--ca", "/etc/kubernetes/ca-cert/ca.crt",
+		"--cert", "/etc/openvpn/certs/server.crt",
+		"--key", "/etc/openvpn/certs/server.key",
+		"--dh", "/etc/openvpn/dh/dh2048.pem",
+		"--duplicate-cn",
+		"--client-config-dir", "/etc/openvpn/clients",
+		"--status", "/run/openvpn-status",
+		"--link-mtu", "1432",
+		"--cipher", "AES-256-GCM",
+		"--auth", "SHA1",
+		"--keysize", "256",
+		"--script-security", "2",
+		"--up", "/bin/touch /tmp/running",
+		"--ping", "5",
+		"--verb", "3",
+		"--log", "/dev/stdout",
+	}
+	vpnArgs = append(vpnArgs, pushRoutes...)
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.2",
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
-			Args: []string{
-				"--proto", "tcp",
-				"--dev", "tun",
-				"--mode", "server",
-				"--lport", "1194",
-				"--server", "10.20.0.0", "255.255.255.0",
-				"--ca", "/etc/kubernetes/ca-cert/ca.crt",
-				"--cert", "/etc/openvpn/certs/server.crt",
-				"--key", "/etc/openvpn/certs/server.key",
-				"--dh", "/etc/openvpn/dh/dh2048.pem",
-				"--duplicate-cn",
-				"--route", podNetIP.String(), net.IP(podNet.Mask).String(),
-				"--route", serviceNetIP.String(), net.IP(serviceNet.Mask).String(),
-				"--push", fmt.Sprintf("route %s %s", podNetIP.String(), net.IP(podNet.Mask).String()),
-				"--push", fmt.Sprintf("route %s %s", serviceNetIP.String(), net.IP(serviceNet.Mask).String()),
-				"--client-to-client",
-				"--client-config-dir", "/etc/openvpn/clients",
-				"--link-mtu", "1432",
-				"--cipher", "AES-256-GCM",
-				"--auth", "SHA1",
-				"--keysize", "256",
-				"--script-security", "2",
-				"--up", "/bin/touch /tmp/running",
-				"--ping", "5",
-				"--verb", "3",
-				"--log", "/dev/stdout",
-			},
+			Args:            vpnArgs,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Ports: []corev1.ContainerPort{
