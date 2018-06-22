@@ -72,6 +72,7 @@ func startClusterController(ctrlCtx controllerContext) error {
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
+		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
@@ -173,6 +174,11 @@ func startUpdateController(ctrlCtx controllerContext) error {
 func startAddonController(ctrlCtx controllerContext) error {
 	ctrl, err := addon.New(
 		addon.NewMetrics(),
+		map[string]interface{}{ // addonVariables
+			"openvpn": map[string]interface{}{
+				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
+			},
+		},
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addons,
 		ctrlCtx.runOptions.overwriteRegistry,

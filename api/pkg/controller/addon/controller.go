@@ -72,11 +72,12 @@ type KubeconfigProvider interface {
 
 // Controller stores necessary components that are required to manage in-cluster Add-On's
 type Controller struct {
-	queue       workqueue.RateLimitingInterface
-	metrics     *Metrics
-	workerName  string
-	addonDir    string
-	registryURI string
+	queue          workqueue.RateLimitingInterface
+	metrics        *Metrics
+	addonVariables map[string]interface{}
+	workerName     string
+	addonDir       string
+	registryURI    string
 
 	KubeconfigProvider KubeconfigProvider
 
@@ -92,6 +93,7 @@ type Controller struct {
 // managing in-cluster addons
 func New(
 	metrics *Metrics,
+	addonCtxVariables map[string]interface{},
 	workerName string,
 	addonDir string,
 	overwriteRegistey string,
@@ -104,6 +106,7 @@ func New(
 	c := &Controller{
 		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "Addon"),
 		metrics:            metrics,
+		addonVariables:     addonCtxVariables,
 		workerName:         workerName,
 		addonDir:           addonDir,
 		KubeconfigProvider: KubeconfigProvider,
@@ -342,6 +345,11 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		OverwriteRegistry: c.registryURI,
 		DNSClusterIP:      clusterIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+	}
+
+	// Add addon variables if available.
+	if sub := c.addonVariables[addon.Spec.Name]; sub != nil {
+		data.Variables = sub.(map[string]interface{})
 	}
 
 	if len(addon.Spec.Variables.Raw) > 0 {

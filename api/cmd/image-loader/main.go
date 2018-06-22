@@ -265,11 +265,12 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	kubeInformerFactory.WaitForCacheSync(stopChannel)
 
 	return &resources.TemplateData{
-		DC:              &provider.DatacenterMeta{},
-		SecretLister:    secretLister,
-		ServiceLister:   serviceLister,
-		ConfigMapLister: configMapLister,
-		Cluster:         fakeCluster}, nil
+		DC:                &provider.DatacenterMeta{},
+		SecretLister:      secretLister,
+		ServiceLister:     serviceLister,
+		ConfigMapLister:   configMapLister,
+		NodeAccessNetwork: "192.0.2.0/24",
+		Cluster:           fakeCluster}, nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
