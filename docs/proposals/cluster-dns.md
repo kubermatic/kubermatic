@@ -32,7 +32,7 @@ As we want to switch to another DNS, we can not use the seed cluster's DNS anymo
 [done] apiserver deployment: `--etcd-servers=http://etcd-cluster-client:2379`  
 [done] controller-manager deployment: `--master=http://apiserver:8080`  
 kube-state-metrics: `--apiserver=http://apiserver:8080`  
-machine-controller: `-master=http://apiserver:8080`  
+[done] machine-controller: `-master=http://apiserver:8080`  
 node-controller: `--master=http://apiserver:8080`  
 scheduler: `--master=http://apiserver:8080`  
 [done] openvpn sidecar in apiserver deployment
