@@ -521,7 +521,6 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  branch = "feature/239_VSphereNetworkChange"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -547,7 +546,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "b9a4dfcd245157a7cdc483d75355448e4160fe2b"
+  revision = "54f95e7301ae56b331478f9ac9a9395a19cf6dc9"
+  version = "v0.7.4"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1201,6 +1201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bef89ded821c834e52515e80c214d3752914f8e7471613cd721d9efd6c9d0133"
+  inputs-digest = "b2ea5a4ba4b3e7064f629123fbf1e22bfeea5825f113e61c1c4ee77e8ee8fade"
   solver-name = "gps-cdcl"
   solver-version = 1
