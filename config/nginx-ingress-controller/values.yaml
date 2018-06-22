@@ -13,5 +13,5 @@ nginx:
     image:
       repository: gcr.io/google_containers/defaultbackend
       tag: 1.4
-  config:
-    load-balance: "least_conn"
+  config: {}
+#    load-balance: "least_conn"
