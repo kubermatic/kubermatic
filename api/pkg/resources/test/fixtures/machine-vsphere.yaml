@@ -16,8 +16,10 @@ spec:
       folder: vsphere-1a2b3c4d5e
       memoryMB: 2048
       password: vsphere-password
+      templateNetName: ""
       templateVMName: ""
       username: vsphere-username
+      vmNetName: ""
       vsphereURL: http://vsphere.local
     operatingSystem: ubuntu
     operatingSystemSpec:
