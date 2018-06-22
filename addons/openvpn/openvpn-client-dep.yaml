@@ -15,9 +15,10 @@ spec:
       labels:
         role: openvpn-client
     spec:
+      serviceAccountName: vpn-client-kubermatic
       containers:
       - name: openvpn-client
-        image: kubermatic/openvpn:v0.2
+        image: kubermatic/openvpn:v0.4
         command: ["/usr/sbin/openvpn"]
         args: ["--config", "/etc/openvpn/config/config"]
         readinessProbe:
@@ -36,6 +37,44 @@ spec:
         - mountPath: /etc/openvpn/certs
           name: openvpn-client-certificates
           readOnly: true
+      - name: dnat-controller
+        image: kubermatic/openvpn:v0.4
+        command:
+        - bash
+        - -ec
+        - |
+          # make sure we have two chains:
+          iptables -t nat -N host_dnat || true
+          iptables -t nat -N host_dnat_inactive || true
+          iptables -t nat -D PREROUTING -j host_dnat || true
+          iptables -t nat -D PREROUTING -j host_dnat_inactive || true
+
+          virtualnodenet='{{.Variables.NodeAccessNetwork}}'
+
+          # access node list via kubectl and generate iptables rules
+          # for DNAT from it.
+          while sleep 5; do
+            iptables -t nat -F host_dnat_inactive
+            # query nodes and create DNAT rules in inactive chain
+            kubectl get nodes -o json \
+                | jq -r '.items[]|  (.metadata|.name+" "+.uid) + " " + (.status.addresses[]|select(.type=="InternalIP")|.address)' \
+                | while read name uid ip; do
+                    left=$( echo $virtualnodenet | cut -d. -f1-2 )
+                    right=$( echo $ip | cut -d. -f3-4 )
+                    iptables -t nat -A host_dnat_inactive -d $left.$right -j DNAT --to $ip
+                done
+                # swap the chains (inactive / active):
+                iptables -t nat -I PREROUTING -j host_dnat_inactive
+                iptables -t nat -D PREROUTING -j host_dnat || true
+                iptables -t nat -E host_dnat host_dnat_old
+                iptables -t nat -E host_dnat_inactive host_dnat
+                iptables -t nat -E host_dnat_old host_dnat_inactive
+          done
+          echo "Terminating."
+
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
       restartPolicy: Always
       terminationGracePeriodSeconds: 5
       volumes:
