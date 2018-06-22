@@ -3,19 +3,23 @@ package rbac
 import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	rbaclister "k8s.io/client-go/listers/rbac/v1"
 )
 
-// syncDependant generates RBAC Role and Binding for a resource that belongs to a project.
+// syncProjectResource generates RBAC Role and Binding for a resource that belongs to a project.
 // in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
 // instead it assumes that all required information is stored in OwnerReferences
 //
 // note:
 // the project resources live only on master cluster and there are times
 // that this code will be run on a seed cluster
-func (c *Controller) syncDependant(item *dependantQueueItem) error {
+func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 	projectName := ""
 	for _, owner := range item.metaObject.GetOwnerReferences() {
 		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
@@ -36,13 +40,18 @@ func (c *Controller) syncDependant(item *dependantQueueItem) error {
 		//
 	}
 
-	if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject); err != nil {
+	if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.rbacClusterRoleLister); err != nil {
+		err = fmt.Errorf("failed to sync cluster RBAC Role for %s resource for %s cluster provider", item.gvr.String(), item.clusterProvider.providerName)
 		return err
 	}
-	return c.ensureClusterRBACRoleBindingForNamedResource(projectName, item.kind, item.metaObject)
+	err := c.ensureClusterRBACRoleBindingForNamedResource(projectName, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.rbacClusterRoleBindingLister)
+	if err != nil {
+		err = fmt.Errorf("failed to sync cluster RBAC Role Binding for %s resource for %s cluster provider", item.gvr.String(), item.clusterProvider.providerName)
+	}
+	return err
 }
 
-func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object) error {
+func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
 	for _, groupPrefix := range allGroupsPrefixes {
 		generatedRole, err := generateClusterRBACRoleNamedResource(
 			objectKind,
@@ -60,7 +69,7 @@ func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, o
 		if err != nil {
 			return err
 		}
-		sharedExistingRole, err := c.rbacClusterRoleLister.Get(generatedRole.Name)
+		sharedExistingRole, err := rbacClusterRoleLister.Get(generatedRole.Name)
 		if err != nil {
 			if !kerrors.IsNotFound(err) {
 				return err
@@ -74,20 +83,20 @@ func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, o
 			}
 			existingRole := sharedExistingRole.DeepCopy()
 			existingRole.Rules = generatedRole.Rules
-			if _, err = c.kubeMasterClient.RbacV1().ClusterRoles().Update(existingRole); err != nil {
+			if _, err = kubeClient.RbacV1().ClusterRoles().Update(existingRole); err != nil {
 				return err
 			}
 			continue
 		}
 
-		if _, err = c.kubeMasterClient.RbacV1().ClusterRoles().Create(generatedRole); err != nil {
+		if _, err = kubeClient.RbacV1().ClusterRoles().Create(generatedRole); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName string, objectKind string, object metav1.Object) error {
+func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
 	for _, groupPrefix := range allGroupsPrefixes {
 		generatedRoleBinding := generateClusterRBACRoleBindingNamedResource(
 			objectKind,
@@ -100,7 +109,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName st
 				Name:       object.GetName(),
 			},
 		)
-		sharedExistingRoleBinding, err := c.rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
+		sharedExistingRoleBinding, err := rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
 		if err != nil {
 			if !kerrors.IsNotFound(err) {
 				return err
@@ -112,12 +121,12 @@ func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName st
 			}
 			existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 			existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-			if _, err = c.kubeMasterClient.RbacV1().ClusterRoleBindings().Update(existingRoleBinding); err != nil {
+			if _, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingRoleBinding); err != nil {
 				return err
 			}
 			continue
 		}
-		if _, err = c.kubeMasterClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
+		if _, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
 			return err
 		}
 	}
