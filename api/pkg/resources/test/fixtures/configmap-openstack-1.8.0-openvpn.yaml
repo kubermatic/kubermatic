@@ -2,6 +2,7 @@ data:
   user-cluster-client: |
     iroute 172.25.0.0 255.255.0.0
     iroute 10.10.10.0 255.255.255.0
+    iroute 192.0.2.0 255.255.255.0
 metadata:
   creationTimestamp: null
   labels:
