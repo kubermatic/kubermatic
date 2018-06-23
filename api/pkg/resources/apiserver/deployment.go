@@ -254,21 +254,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
 	}
-	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
 
-	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
-	if err == nil && clusterVersionSemVer.Minor() >= 9 {
-		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
-	}
-
-	admissionControlFlagName := "--admission-control"
-	if err == nil && clusterVersionSemVer.Minor() >= 10 {
-		admissionControlFlagName = "--enable-admission-plugins"
-	}
-
-	// Order of these flags matter pre 1.10 and MutatingAdmissionWebhook may manipulate the object, so "ResourceQuota
-	// must come last
-	admissionControlFlagValue += ",ResourceQuota"
+	admissionControlFlags := getAdmissionControlFlags(data)
 
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
@@ -278,7 +265,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-port", "8080",
 		"--etcd-servers", strings.Join(etcds, ","),
 		"--storage-backend", "etcd3",
-		admissionControlFlagName, admissionControlFlagValue,
+		admissionControlFlags[0], admissionControlFlags[1],
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -320,6 +307,33 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 	return flags
+}
+
+func getAdmissionControlFlags(data *resources.TemplateData) [2]string {
+	// We use these as default in case semver parsing fails
+	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
+	admissionControlFlagName := "--admission-control"
+
+	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err != nil {
+		return [2]string{admissionControlFlagName, admissionControlFlagValue}
+	}
+
+	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
+	if clusterVersionSemVer.Minor() >= 9 {
+		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+	}
+
+	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
+	if clusterVersionSemVer.Minor() >= 10 {
+		admissionControlFlagName = "--enable-admission-plugins"
+	}
+
+	// Order of these flags matter pre 1.10 and MutatingAdmissionWebhook may manipulate the object, so "ResourceQuota
+	// must come last
+	admissionControlFlagValue += ",ResourceQuota"
+
+	return [2]string{admissionControlFlagName, admissionControlFlagValue}
 }
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
