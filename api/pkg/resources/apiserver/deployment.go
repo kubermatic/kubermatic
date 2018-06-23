@@ -6,6 +6,8 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"github.com/Masterminds/semver"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -252,6 +254,12 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
 	}
+	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction"
+
+	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err == nil && clusterVersionSemVer.Minor() >= 9 {
+		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+	}
 
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
@@ -261,7 +269,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-port", "8080",
 		"--etcd-servers", strings.Join(etcds, ","),
 		"--storage-backend", "etcd3",
-		"--admission-control", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
+		"--admission-control", admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
