@@ -265,14 +265,18 @@ func NewController(
 	return cc, nil
 }
 
-func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
+func (cc *Controller) enqueueAfter(cluster *kubermaticv1.Cluster, duration time.Duration) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
 		return
 	}
 
-	cc.queue.Add(key)
+	cc.queue.AddAfter(key, duration)
+}
+
+func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
+	cc.enqueueAfter(cluster, 0)
 }
 
 func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {

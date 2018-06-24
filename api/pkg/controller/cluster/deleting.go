@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -21,6 +22,8 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
+		// We need to requeue, otherwise the next sync will be triggered from the informer-resync(currently every 5min).
+		cc.enqueueAfter(c, 10*time.Second)
 		return c, nil
 	}
 
