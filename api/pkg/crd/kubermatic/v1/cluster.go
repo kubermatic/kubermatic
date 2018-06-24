@@ -211,8 +211,9 @@ type AzureCloudSpec struct {
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	VMNetName string `json:"vmNetName"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

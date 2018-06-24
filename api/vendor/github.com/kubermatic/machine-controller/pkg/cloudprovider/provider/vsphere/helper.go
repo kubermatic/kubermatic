@@ -179,6 +179,82 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 	_, err = clonedVmTask.WaitForResult(ctx, nil)
 	return err
 }
+
+func updateNetworkForVM(ctx context.Context, vm *object.VirtualMachine, currentNetName string, newNetName string) error {
+	newNet, err := getNetworkFromVM(ctx, vm, newNetName)
+	if err != nil {
+		return err
+	}
+
+	availableData, err := getNetworkDevicesAndBackingsFromVM(ctx, vm, currentNetName)
+	if err != nil {
+		return err
+	}
+	if len(availableData) == 0 {
+		return errors.New("found no matching network adapter")
+	}
+
+	netDev := availableData[0].device
+	currentBacking := availableData[0].backingInfo
+
+	glog.V(6).Infof("changing network `%s` to `%s` for vm `%s`", currentBacking.DeviceName, newNetName, vm.Name())
+	currentBacking.DeviceName = newNetName
+	currentBacking.Network = newNet
+
+	err = vm.EditDevice(ctx, *netDev)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getNetworkDevicesAndBackingsFromVM(ctx context.Context, vm *object.VirtualMachine, netNameFilter string) ([]netDeviceAndBackingInfo, error) {
+	devices, err := vm.Device(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get devices for vm, see: %s", err)
+	}
+
+	var availableBackings []string
+	var availableData []netDeviceAndBackingInfo
+
+	for i, device := range devices {
+		ethDevice, ok := device.(types.BaseVirtualEthernetCard)
+		if !ok {
+			continue
+		}
+
+		ethCard := ethDevice.GetVirtualEthernetCard()
+		ethBacking := ethCard.Backing.(*types.VirtualEthernetCardNetworkBackingInfo)
+
+		if netNameFilter == "" || ethBacking.DeviceName == netNameFilter {
+			data := netDeviceAndBackingInfo{device: &devices[i], backingInfo: ethBacking}
+			availableData = append(availableData, data)
+		}
+
+		availableBackings = append(availableBackings, ethBacking.DeviceName)
+	}
+
+	return availableData, nil
+}
+
+func getNetworkFromVM(ctx context.Context, vm *object.VirtualMachine, netName string) (*types.ManagedObjectReference, error) {
+	cfg, err := vm.QueryConfigTarget(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get query config for vm, see: %v", err)
+	}
+
+	for _, net := range cfg.Network {
+		summary := net.Network.GetNetworkSummary()
+
+		if summary.Accessible && summary.Name == netName {
+			return summary.Network, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no accessible network with the name %s found", netName)
+}
+
 func createSnapshot(ctx context.Context, vm *object.VirtualMachine, snapshotName string, snapshotDesc string) (object.Reference, error) {
 	task, err := vm.CreateSnapshot(ctx, snapshotName, snapshotDesc, false, false)
 	if err != nil {
@@ -319,8 +395,19 @@ func generateLocalUserdataIso(userdata, name string) (string, error) {
 		return "", fmt.Errorf("failed to locally write metadata file to %s: %v", userdataFilePath, err)
 	}
 
-	command := "genisoimage"
-	args := []string{"-o", isoFilePath, "-volid", "cidata", "-joliet", "-rock", userdataDir}
+	var command string
+	var args []string
+
+	if _, err := exec.LookPath("genisoimage"); err == nil {
+		command = "genisoimage"
+		args = []string{"-o", isoFilePath, "-volid", "cidata", "-joliet", "-rock", userdataDir}
+	} else if _, err := exec.LookPath("mkisofs"); err == nil {
+		command = "mkisofs"
+		args = []string{"-o", isoFilePath, "-V", "cidata", "-J", "-R", userdataDir}
+	} else {
+		return "", errors.New("system is missing genisoimage or mkisofs, can't generate userdata iso without it.")
+	}
+
 	cmd := exec.Command(command, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
