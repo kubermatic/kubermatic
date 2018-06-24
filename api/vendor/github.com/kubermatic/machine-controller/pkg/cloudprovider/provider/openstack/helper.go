@@ -3,6 +3,7 @@ package openstack
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
@@ -20,7 +21,8 @@ import (
 )
 
 var (
-	errNotFound = errors.New("not found")
+	errNotFound               = errors.New("not found")
+	securityGroupCreationLock = sync.Mutex{}
 )
 
 const openstackFloatingIPErrorStatusName = "ERROR"
@@ -249,6 +251,12 @@ func getSubnet(client *gophercloud.ProviderClient, region, nameOrID string) (*os
 }
 
 func ensureKubernetesSecurityGroupExist(client *gophercloud.ProviderClient, region, name string) error {
+	// We need a mutex here because otherwise if more than one machine gets created at roughly the same time
+	// we will create two security groups and subsequently not be able anymore to identify our security group
+	// by name
+	securityGroupCreationLock.Lock()
+	defer securityGroupCreationLock.Unlock()
+
 	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		return osErrorToTerminalError(err, "failed to get network client")
