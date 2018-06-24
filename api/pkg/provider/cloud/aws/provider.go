@@ -24,6 +24,9 @@ const (
 
 	securityGroupCleanupFinalizer   = "kubermatic.io/cleanup-aws-security-group"
 	instanceProfileCleanupFinalizer = "kubermatic.io/cleanup-aws-instance-profile"
+	tagCleanupFinalizer             = "kubermatic.io/cleanup-aws-tags"
+
+	tagNameKubernetesClusterLegacy = "KubernetesCluster"
 )
 
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
@@ -150,6 +153,64 @@ func getVPCByID(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
 	}
 
 	return vpcOut.Vpcs[0], nil
+}
+
+func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
+	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("vpc-id"), Values: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.VPCID}),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list subnets: %v", err)
+	}
+
+	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID, &cluster.Spec.Cloud.AWS.SecurityGroupID}
+	for _, subnet := range sOut.Subnets {
+		resourceIDs = append(resourceIDs, subnet.SubnetId)
+	}
+
+	_, err = client.CreateTags(&ec2.CreateTagsInput{
+		Resources: resourceIDs,
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String(tagNameKubernetesClusterLegacy),
+				Value: aws.String(cluster.Name),
+			},
+		},
+	})
+	return err
+}
+
+func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
+	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("vpc-id"), Values: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.VPCID}),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list subnets: %v", err)
+	}
+
+	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID, &cluster.Spec.Cloud.AWS.SecurityGroupID}
+	for _, subnet := range sOut.Subnets {
+		resourceIDs = append(resourceIDs, subnet.SubnetId)
+	}
+
+	_, err = client.DeleteTags(&ec2.DeleteTagsInput{
+		Resources: resourceIDs,
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String(tagNameKubernetesClusterLegacy),
+				Value: aws.String(cluster.Name),
+			},
+		},
+	})
+	return err
 }
 
 func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
@@ -429,6 +490,18 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
+	if err := tagResources(cluster, client); err != nil {
+		return nil, err
+	}
+	if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = append(cluster.Finalizers, tagCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return cluster, nil
 }
 
@@ -527,6 +600,18 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, instanceProfileCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
+		if err := removeTags(cluster, ec2client); err != nil {
+			return nil, err
+		}
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, tagCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
