@@ -255,7 +255,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		nodePortRange = defaultNodePortRange
 	}
 
-	admissionControlFlags := getAdmissionControlFlags(data)
+	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
 
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
@@ -265,7 +265,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-port", "8080",
 		"--etcd-servers", strings.Join(etcds, ","),
 		"--storage-backend", "etcd3",
-		admissionControlFlags[0], admissionControlFlags[1],
+		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -309,14 +309,14 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 	return flags
 }
 
-func getAdmissionControlFlags(data *resources.TemplateData) [2]string {
+func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	// We use these as default in case semver parsing fails
 	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
 	admissionControlFlagName := "--admission-control"
 
 	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
 	if err != nil {
-		return [2]string{admissionControlFlagName, admissionControlFlagValue}
+		return admissionControlFlagName, admissionControlFlagValue
 	}
 
 	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
@@ -333,7 +333,7 @@ func getAdmissionControlFlags(data *resources.TemplateData) [2]string {
 	// must come last
 	admissionControlFlagValue += ",ResourceQuota"
 
-	return [2]string{admissionControlFlagName, admissionControlFlagValue}
+	return admissionControlFlagName, admissionControlFlagValue
 }
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
