@@ -211,13 +211,13 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cloud-config",
+			Name:      resources.CloudConfigConfigMapName,
 			Namespace: mockNamespaceName,
 		},
 	}
 	prometheusConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus",
+			Name:      resources.PrometheusConfigConfigMapName,
 			Namespace: mockNamespaceName,
 		},
 	}
@@ -226,15 +226,50 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	}
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apiserver-external",
+			Name:      resources.ApiserverExternalServiceName,
 			Namespace: mockNamespaceName,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{{NodePort: 99}},
 		},
 	}
+	apiserverService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ApiserverInternalServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 98}},
+			ClusterIP: "192.0.2.11",
+		},
+	}
+	etcdclientService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.EtcdClientServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 97}},
+			ClusterIP: "192.0.2.1",
+		},
+	}
+	openvpnserverService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.OpenVPNServerServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 96}},
+			ClusterIP: "192.0.2.2",
+		},
+	}
 	serviceList := &corev1.ServiceList{
-		Items: []corev1.Service{apiServerExternalService},
+		Items: []corev1.Service{
+			apiServerExternalService,
+			apiserverService,
+			etcdclientService,
+			openvpnserverService,
+		},
 	}
 	secretList := createNamedSecrets([]string{"ca-cert",
 		"ca-key",
