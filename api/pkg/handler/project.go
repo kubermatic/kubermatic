@@ -3,11 +3,9 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -45,7 +43,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 
 func getProjectsEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return []apiv1.Project{}, nil
+		return []apiv1.Project{}, errors.NewNotImplemented()
 	}
 }
 
@@ -72,15 +70,6 @@ type projectReq struct {
 	Name string `json:"name"`
 }
 
-func decodeProjectPathReq(c context.Context, r *http.Request) (interface{}, error) {
-	// project_id is actually an internal name of the object
-	projectName, ok := mux.Vars(r)["project_id"]
-	if !ok {
-		return nil, fmt.Errorf("'project_id' parameter is required in order to delete the project")
-	}
-	return projectName, nil
-}
-
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
 	return nil, errors.NewNotImplemented()
 }
@@ -93,6 +82,10 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	}
 
 	return req, nil
+}
+
+func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error) {
+	return decodeProjectPathReq(c, r)
 }
 
 // kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.

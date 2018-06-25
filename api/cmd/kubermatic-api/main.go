@@ -122,6 +122,7 @@ func main() {
 	}
 
 	clusterProviders := map[string]provider.ClusterProvider{}
+	newClusterProviders := map[string]provider.NewClusterProvider{}
 	for ctx := range clientcmdConfig.Contexts {
 		clientConfig := clientcmd.NewNonInteractiveClientConfig(
 			*clientcmdConfig,
@@ -149,6 +150,14 @@ func main() {
 			workerName,
 			handler.IsAdmin,
 			addons,
+		)
+		newClusterProviders[ctx] = kubernetesprovider.NewRBACCompliantClusterProvider(
+			defaultImpersonationClient.CreateImpersonatedClientSet,
+			kubermaticSeedClient,
+			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
+			addons,
+			workerName,
 		)
 
 		kubeInformerFactory.Start(wait.NeverStop)
@@ -188,6 +197,7 @@ func main() {
 	r := handler.NewRouting(
 		datacenters,
 		clusterProviders,
+		newClusterProviders,
 		cloudProviders,
 		sshKeyProvider,
 		newSSHKeyProvider,
