@@ -226,8 +226,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
-							"cat",
-							"/tmp/running",
+							"test",
+							"-s",
+							"/run/openvpn-status",
 						},
 					},
 				},

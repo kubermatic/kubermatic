@@ -225,7 +225,7 @@ cipher AES-256-GCM
 auth SHA1
 keysize 256
 status /run/openvpn-status
-up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE && /bin/touch /tmp/running"'
+up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
 log /dev/stdout
 `, c.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
 			cm := v1.ConfigMap{
