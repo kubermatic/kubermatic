@@ -3,6 +3,7 @@ nginx:
   hostNetwork: false
   asDaemonSet: false
   replicas: 3
+  ignoreMasterTaint: false
   prometheus:
     port: "10254"
     scrape: "true"
