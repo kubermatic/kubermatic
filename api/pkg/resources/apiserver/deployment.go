@@ -151,7 +151,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--auth", "SHA1",
 				"--keysize", "256",
 				"--script-security", "2",
-				"--up", "/bin/touch /tmp/running",
 				"--status", "/run/openvpn-status",
 				"--log", "/dev/stdout",
 			},

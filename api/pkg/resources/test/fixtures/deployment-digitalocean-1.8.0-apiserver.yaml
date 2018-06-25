@@ -70,8 +70,6 @@ spec:
         - "256"
         - --script-security
         - "2"
-        - --up
-        - /bin/touch /tmp/running
         - --status
         - /run/openvpn-status
         - --log
