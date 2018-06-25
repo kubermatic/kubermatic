@@ -1,0 +1,43 @@
+FROM alpine:3.7 AS builder
+
+LABEL maintainer "artiom@loodse.com"
+
+ENV KUBE_VERSION=v1.10.3
+ENV KUBE_TEST_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/kubernetes-test.tar.gz
+ENV KUBE_TEST_CHECKSUM=b075744e98972d9734d34b954a07428e2248ea2f
+ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_CHECKSUM=94f996d645e74634a4be67bbb5417f892774230b
+
+RUN apk add --no-cache curl
+RUN mkdir -p /_cache
+
+RUN curl -SsL ${KUBE_TEST_URL} -o /_cache/kubernetes-test.tar.gz
+RUN curl -SsL ${KUBECTL_URL} -o /_cache/kubectl
+RUN chmod +x /_cache/kubectl
+
+RUN echo "${KUBE_TEST_CHECKSUM}  kubernetes-test.tar.gz" > /_cache/checksum.txt
+RUN echo "${KUBECTL_CHECKSUM}  kubectl" >> /_cache/checksum.txt
+
+WORKDIR /_cache
+
+RUN sha1sum -c checksum.txt
+RUN tar xzf kubernetes-test.tar.gz
+
+####
+FROM ubuntu:16.04
+
+ENV E2E_FOCUS="\[Conformance\]"
+ENV E2E_SKIP="Alpha|Kubectl|\[(Disruptive|Feature:[^\]]+|Flaky)\]"
+ENV E2E_PROVIDER="local"
+ENV E2E_PARALLEL="1"
+ENV E2E_REPORTS_DIR="/tmp/results"
+ENV E2E_GINKGO=/usr/local/bin/ginkgo
+ENV E2E_TEST=/usr/local/bin/e2e.test
+
+COPY ./_build/kubermatic-e2e /
+COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/ginkgo /usr/local/bin/
+COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/e2e.test /usr/local/bin/
+COPY --from=builder /_cache/kubectl /usr/local/bin/
+
+USER nobody
+ENTRYPOINT [ "/kubermatic-e2e" ]
