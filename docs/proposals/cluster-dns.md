@@ -31,12 +31,12 @@ As we want to switch to another DNS, we can not use the seed cluster's DNS anymo
 
 apiserver deployment: `--etcd-servers=http://etcd-cluster-client:2379`  
 controller-manager deployment: `--master=http://apiserver:8080`  
-kube-state-metrics: `--apiserver=http://apiserver:8080`  
 machine-controller: `-master=http://apiserver:8080`  
-node-controller: `--master=http://apiserver:8080`  
 scheduler: `--master=http://apiserver:8080`  
+openvpn sidecar in apiserver deployment
 
 Instead of relying on the seed clusters DNS, we use the cluster-ips to circumvent the usage of DNS. This works due to the fact, that we have CIDRs in the seed and user clusters that don’t overlap.
+For accessing etcd without dns and without using pod IPs a new service `etcd-client` is created which is non-headless (as opposed to existing service `etcd`).
 
 From the places mentioned above, only the kubernetes master components (apiserver, controller-manager, scheduler) need to be changed. Others could be changed as well to have streamlined manifests.
 

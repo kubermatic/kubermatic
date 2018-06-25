@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -41,6 +42,8 @@ const (
 	PrometheusServiceName = "prometheus"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
+	//EtcdClientServiceName is the name for the etcd service for clients (ClusterIP)
+	EtcdClientServiceName = "etcd-client"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -203,6 +206,21 @@ func NewTemplateData(
 		NodeAccessNetwork: nodeAccessNetwork,
 		EtcdDiskSize:      etcdDiskSize,
 	}
+}
+
+// ClusterIPByServiceName returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	if net.ParseIP(service.Spec.ClusterIP) == nil {
+		return "", fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return service.Spec.ClusterIP, nil
 }
 
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error

@@ -68,6 +68,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	// get clusterIP of apiserver
+	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -77,7 +83,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -89,7 +95,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data),
+			Args:            getFlags(data, apiserverServiceIP),
 			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -168,9 +174,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData) []string {
+func getFlags(data *resources.TemplateData, apiserverIP string) []string {
 	flags := []string{
-		"--master", "http://apiserver:8080",
+		"--master", "http://" + apiserverIP + ":8080",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
