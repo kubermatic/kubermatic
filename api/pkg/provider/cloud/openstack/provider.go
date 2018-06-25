@@ -252,10 +252,8 @@ func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.Openstack
 	apiTenants := []apiv1.OpenstackTenant{}
 	for _, tenant := range tenants {
 		apiTenant := apiv1.OpenstackTenant{
-			Name:        tenant.Name,
-			Id:          tenant.ID,
-			Enabled:     tenant.Enabled,
-			Description: tenant.Description,
+			Name: tenant.Name,
+			Id:   tenant.ID,
 		}
 
 		apiTenants = append(apiTenants, apiTenant)

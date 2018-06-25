@@ -399,6 +399,7 @@
     "openstack/compute/v2/servers",
     "openstack/identity/v2/tenants",
     "openstack/identity/v2/tokens",
+    "openstack/identity/v3/projects",
     "openstack/identity/v3/regions",
     "openstack/identity/v3/tokens",
     "openstack/networking/v2/extensions/external",
@@ -1201,6 +1202,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b2ea5a4ba4b3e7064f629123fbf1e22bfeea5825f113e61c1c4ee77e8ee8fade"
+  inputs-digest = "7bff22e7b91a95b8d2c122bef1894c8e9dcc52a12cea9fc4b3ead0885747c9b7"
   solver-name = "gps-cdcl"
   solver-version = 1
