@@ -69,10 +69,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("apiserver")
+	apiserverServiceIP, err := data.ClusterIPByServiceName("apiserver")
 	if err != nil {
-		return nil, fmt.Errorf("apiserver service in namespace %s not found: %v",
-			data.Cluster.Status.NamespaceName, err)
+		return nil, err
 	}
 
 	dep.Spec.Template.Spec.Volumes = getVolumes()
@@ -84,7 +83,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverService.Spec.ClusterIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -96,7 +95,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data, apiserverService.Spec.ClusterIP),
+			Args:            getFlags(data, apiserverServiceIP),
 			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -203,6 +204,23 @@ func NewTemplateData(
 		NodeAccessNetwork: nodeAccessNetwork,
 		EtcdDiskSize:      etcdDiskSize,
 	}
+}
+
+// For the Service specified by `name`, this function returns the
+// ClusterIP as string. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return "", fmt.Errorf("service %s not found in %s: %v",
+			name, d.Cluster.Status.NamespaceName, err)
+	}
+	if net.ParseIP(service.Spec.ClusterIP) == nil {
+		return "", fmt.Errorf("service %s in %s has no valid cluster ip (\"%s\"): %v",
+			name, d.Cluster.Status.NamespaceName, service.Spec.ClusterIP, err)
+	}
+	return service.Spec.ClusterIP, nil
 }
 
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error

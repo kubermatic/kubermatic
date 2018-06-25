@@ -2,10 +2,7 @@ package apiserver
 
 import (
 	"fmt"
-	"net"
 	"strings"
-
-	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -13,7 +10,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,17 +80,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	var etcds []string
-	etcdService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("etcd-clusterip")
+	etcdServiceIP, err := data.ClusterIPByServiceName("etcd-clusterip")
 	if err != nil {
-		return nil, fmt.Errorf("etcd-clusterip service in namespace %s not found: %v",
-			data.Cluster.Status.NamespaceName, err)
+		return nil, err
 	}
-	if net.ParseIP(etcdService.Spec.ClusterIP) == nil { // might be headless ("None")
-		glog.V(2).Infof("etcd-clusterip service ClusterIP not available: %#v", etcdService)
-		return nil, fmt.Errorf("etcd-clusterip service in namespace %s has no usable ClusterIP",
-			data.Cluster.Status.NamespaceName)
-	}
-	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdService.Spec.ClusterIP)) // could be changed to single string
+	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdServiceIP))
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
@@ -117,15 +107,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	openvpnService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	openvpnServiceIP, err := data.ClusterIPByServiceName(resources.OpenVPNServerServiceName)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			glog.V(4).Infof("DEVDEBUG service listing did not find anything %v", err)
-		} else {
-			glog.V(4).Infof("DEVDEBUG service listing failed: %v", err)
-		}
-		return nil, fmt.Errorf("openvpn-server service in namespace %s not found: %v",
-			data.Cluster.Status.NamespaceName, err)
+		return nil, err
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
@@ -138,7 +122,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--proto", "tcp",
 				"--dev", "tun",
 				"--auth-nocache",
-				"--remote", openvpnService.Spec.ClusterIP, "1194",
+				"--remote", openvpnServiceIP, "1194",
 				"--nobind",
 				"--connect-timeout", "5",
 				"--connect-retry", "1",

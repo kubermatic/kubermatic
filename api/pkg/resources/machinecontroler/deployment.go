@@ -61,10 +61,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverService, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("apiserver")
+	apiserverServiceIP, err := data.ClusterIPByServiceName("apiserver")
 	if err != nil {
-		return nil, fmt.Errorf("apiserver service in namespace %s not found: %v",
-			data.Cluster.Status.NamespaceName, err)
+		return nil, err
 	}
 
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
@@ -75,7 +74,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverService.Spec.ClusterIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -88,7 +87,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-master", fmt.Sprintf("http://%s:8080", apiserverService.Spec.ClusterIP),
+				"-master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", "10.10.10.10",
