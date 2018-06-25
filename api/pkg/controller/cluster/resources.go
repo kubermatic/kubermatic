@@ -235,7 +235,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		prometheus.Service,
 		openvpn.Service,
 		etcd.DiscoveryService,
-		etcd.ClusterIPService,
+		etcd.ClientService,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

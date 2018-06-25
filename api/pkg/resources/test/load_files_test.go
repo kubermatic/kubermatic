@@ -291,7 +291,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 					&v1.Service{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      resources.EtcdServiceName + "-clusterip",
+							Name:      resources.EtcdClientServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
 						Spec: v1.ServiceSpec{

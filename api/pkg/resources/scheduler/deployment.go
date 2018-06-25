@@ -65,7 +65,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverServiceIP, err := data.ClusterIPByServiceName("apiserver")
+	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
 	if err != nil {
 		return nil, err
 	}

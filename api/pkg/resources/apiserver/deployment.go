@@ -80,11 +80,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	var etcds []string
-	etcdServiceIP, err := data.ClusterIPByServiceName("etcd-clusterip")
+	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
 	if err != nil {
 		return nil, err
 	}
-	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdServiceIP))
+	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdClientServiceIP))
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
