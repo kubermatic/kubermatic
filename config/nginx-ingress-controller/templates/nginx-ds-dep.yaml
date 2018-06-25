@@ -24,6 +24,15 @@ spec:
       hostNetwork: true
     {{ end }}
       serviceAccountName: nginx-ingress-serviceaccount
+      {{ if .Values.nginx.ignoreMasterTaint }}
+      tolerations:
+      - key: dedicated
+        operator: Equal
+        value: master
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      {{ end }}
       containers:
         - name: nginx-ingress-controller
           image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
