@@ -206,8 +206,8 @@ func NewTemplateData(
 	}
 }
 
-// For the Service specified by `name`, this function returns the
-// ClusterIP as string. Service lookup happens within
+// ClusterIPByServiceName returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
 // `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
 // as valid IP address, an error is returned.
 func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
