@@ -24,8 +24,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - cat
-            - /tmp/running
+            - test
+            - -s
+            - /run/openvpn-status
           initialDelaySeconds: 5
           periodSeconds: 5
         securityContext:

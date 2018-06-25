@@ -45,7 +45,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server
+        - 192.0.2.13
         - "1194"
         - --nobind
         - --connect-timeout
@@ -70,13 +70,13 @@ spec:
         - "256"
         - --script-security
         - "2"
-        - --up
-        - /bin/touch /tmp/running
+        - --status
+        - /run/openvpn-status
         - --log
         - /dev/stdout
         command:
         - /usr/sbin/openvpn
-        image: docker.io/kubermatic/openvpn:v0.2
+        image: docker.io/kubermatic/openvpn:v0.4
         imagePullPolicy: IfNotPresent
         name: openvpn-client
         resources:
@@ -109,7 +109,7 @@ spec:
         - --insecure-port
         - "8080"
         - --etcd-servers
-        - http://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379,http://etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379,http://etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379
+        - http://192.0.2.12:2379
         - --storage-backend
         - etcd3
         - --admission-control
@@ -228,7 +228,7 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379,http://etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379,http://etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379]
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://192.0.2.12:2379]
           get foo; do echo waiting for etcd; sleep 2; done;
         image: quay.io/coreos/etcd:v3.2.7
         imagePullPolicy: IfNotPresent

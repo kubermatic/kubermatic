@@ -33,7 +33,7 @@ spec:
       containers:
       - args:
         - -master
-        - http://apiserver:8080
+        - http://192.0.2.11:8080
         - -logtostderr
         - -v
         - "4"
@@ -70,7 +70,7 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until wget -T 1 http://apiserver:8080/healthz; do echo waiting for apiserver;
+        - until wget -T 1 http://192.0.2.11:8080/healthz; do echo waiting for apiserver;
           sleep 2; done;
         image: docker.io/busybox
         imagePullPolicy: IfNotPresent

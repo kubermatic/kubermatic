@@ -44,3 +44,30 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 
 	return se, nil
 }
+
+// ClientService returns a service for access by clients (ClusterIP)
+func ClientService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+	var se *corev1.Service
+	if existing != nil {
+		se = existing
+	} else {
+		se = &corev1.Service{}
+	}
+
+	se.Name = resources.EtcdClientServiceName
+	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	se.Spec.Selector = map[string]string{
+		resources.AppLabelKey: name,
+		"cluster":             data.Cluster.Name,
+	}
+	se.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "client",
+			Port:       2379,
+			TargetPort: intstr.FromInt(2379),
+			Protocol:   corev1.ProtocolTCP,
+		},
+	}
+
+	return se, nil
+}
