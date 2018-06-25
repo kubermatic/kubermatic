@@ -44,3 +44,36 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 		return flavors, nil
 	}
 }
+
+func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(OpenstackTenantReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
+		}
+
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
+
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+		}
+
+		tenants, err := osProvider.GetTenants(&kubermaticv1.CloudSpec{
+			DatacenterName: req.DatacenterName,
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Username: req.Username,
+				Password: req.Password,
+				Domain:   req.Domain,
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("couldn't get tenants: %v", err)
+		}
+
+		return tenants, nil
+	}
+}

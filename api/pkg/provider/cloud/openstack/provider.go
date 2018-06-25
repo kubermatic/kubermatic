@@ -231,6 +231,39 @@ func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]apiv1.Openstack
 	return apiSizes, nil
 }
 
+// GetTenants lists all available tenents for the given CloudSpec.DatacenterName
+func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackTenant, error) {
+	authClient, err := os.getAuthClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	region := dc.Spec.Openstack.Region
+	tenants, err := getTenants(authClient, region)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get tenants for region %s: %v", region, err)
+	}
+
+	apiTenants := []apiv1.OpenstackTenant{}
+	for _, tenant := range tenants {
+		apiTenant := apiv1.OpenstackTenant{
+			Name:        tenant.Name,
+			Id:          tenant.ID,
+			Enabled:     tenant.Enabled,
+			Description: tenant.Description,
+		}
+
+		apiTenants = append(apiTenants, apiTenant)
+	}
+
+	return apiTenants, nil
+}
+
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {

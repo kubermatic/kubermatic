@@ -7,6 +7,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	ostenants "github.com/gophercloud/gophercloud/openstack/identity/v2/tenants"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
@@ -321,4 +322,28 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 		return nil, err
 	}
 	return allFlavors, nil
+}
+
+func getTenants(authClient *gophercloud.ProviderClient, region string) ([]ostenants.Tenant, error) {
+	sc, err := goopenstack.NewIdentityV2(authClient, gophercloud.EndpointOpts{Region: region})
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+	}
+
+	var allTenants []ostenants.Tenant
+	pager := ostenants.List(sc, &ostenants.ListOpts{})
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		tenants, err := ostenants.ExtractTenants(page)
+		if err != nil {
+			return false, fmt.Errorf("couldn't extract tenant: %v", err)
+		}
+		allTenants = append(allTenants, tenants...)
+		return true, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("couldn't list tenants: %v", err)
+	}
+
+	return allTenants, nil
 }
