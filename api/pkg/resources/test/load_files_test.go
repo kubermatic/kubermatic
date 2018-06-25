@@ -89,9 +89,31 @@ func TestLoadFiles(t *testing.T) {
 		{
 			Version: semver.MustParse("1.9.0"),
 		},
+		{
+			Version: semver.MustParse("1.10.0"),
+		},
 	}
 
 	clouds := map[string]*kubermaticv1.CloudSpec{
+		"azure": {
+			Azure: &kubermaticv1.AzureCloudSpec{
+				TenantID:       "az-tenant-id",
+				SubscriptionID: "az-subscription-id",
+				ClientID:       "az-client-id",
+				ClientSecret:   "az-client-secret",
+				ResourceGroup:  "az-res-group",
+				VNetName:       "az-vnet-name",
+				SubnetName:     "az-subnet-name",
+				RouteTableName: "az-route-table-name",
+				SecurityGroup:  "az-sec-group",
+			},
+		},
+		"vsphere": {
+			VSphere: &kubermaticv1.VSphereCloudSpec{
+				Username: "vs-username",
+				Password: "vs-password",
+			},
+		},
 		"digitalocean": {
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: "do-token",
@@ -130,6 +152,17 @@ func TestLoadFiles(t *testing.T) {
 
 	dc := provider.DatacenterMeta{
 		Spec: provider.DatacenterSpec{
+			Azure: &provider.AzureSpec{
+				Location: "az-location",
+			},
+			VSphere: &provider.VSphereSpec{
+				Endpoint:      "https://vs-endpoint.io",
+				AllowInsecure: false,
+				Datastore:     "vs-datastore",
+				Datacenter:    "vs-datacenter",
+				Cluster:       "vs-cluster",
+				RootPath:      "vs-cluster",
+			},
 			AWS: &provider.AWSSpec{
 				AMI:           "ami-aujakj",
 				Region:        "us-central1",
