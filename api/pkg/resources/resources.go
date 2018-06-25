@@ -10,6 +10,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
@@ -213,7 +214,11 @@ func NewTemplateData(
 func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		return "", fmt.Errorf("service %s not found in %s: %v",
+		if errors.IsNotFound(err) {
+			return "", fmt.Errorf("service %s not found in %s: %v",
+				name, d.Cluster.Status.NamespaceName, err)
+		}
+		return "", fmt.Errorf("failed to get service %s from %s: %v",
 			name, d.Cluster.Status.NamespaceName, err)
 	}
 	if net.ParseIP(service.Spec.ClusterIP) == nil {
