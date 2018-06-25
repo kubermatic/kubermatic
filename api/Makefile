@@ -1,6 +1,6 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup client image-loader rbac-generator s3-storeuploader
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e
 GOBUILDFLAGS += -v
 LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
@@ -43,24 +43,14 @@ docker-push:
 		docker push $(REPO):$$tag; \
 	done
 
-e2e: client-up
-	docker run -it -v  $(CURDIR)/_artifacts/kubeconfig:/workspace/kubermatickubeconfig kubermatic/e2e-conformance:1.6
-
-vendor:
+vendor: Gopkg.lock Gopkg.toml
 ifndef HAS_GIT
 	$(error You must install git)
 endif
 ifndef HAS_DEP
 	go get -u github.com/golang/dep/cmd/dep
 endif
-	dep ensure
-
-client-up:
-	mkdir -p $(CURDIR)/_artifacts
-	docker run -v $(CURDIR)/_artifacts/:/_artifacts -it $(REPO):latestbuild /client up
-
-client-down:
-	docker run -it $(REPO):latestbuild /client purge
+	dep ensure -v
 
 gittag:
 	@echo $(GITTAG)
@@ -110,4 +100,4 @@ run-api-server: kubermatic-api
 run-rbac-generator: rbac-generator
 	./hack/run-rbac-generator.sh
 
-.PHONY: build test check cover e2e-build client-build client-down client-up e2e docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)
+.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)
