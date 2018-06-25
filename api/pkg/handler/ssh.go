@@ -122,22 +122,27 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKeys := make([]v2.NewSSHKey, len(keys))
-		for index, key := range keys {
-			apiKey := v2.NewSSHKey{
-				Metadata: v2.ObjectMeta{
-					Name:              key.Name,
-					CreationTimestamp: key.CreationTimestamp.Time,
-				},
-				Spec: v2.NewSSHKeySpec{
-					Fingerprint: key.Spec.Fingerprint,
-					PublicKey:   key.Spec.PublicKey,
-				},
-			}
-			apiKeys[index] = apiKey
-		}
+		apiKeys := convertInternalSSHKeysToExternal(keys)
 		return apiKeys, nil
 	}
+}
+
+func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []v2.NewSSHKey {
+	apiKeys := make([]v2.NewSSHKey, len(internalKeys))
+	for index, key := range internalKeys {
+		apiKey := v2.NewSSHKey{
+			Metadata: v2.ObjectMeta{
+				Name:              key.Name,
+				CreationTimestamp: key.CreationTimestamp.Time,
+			},
+			Spec: v2.NewSSHKeySpec{
+				Fingerprint: key.Spec.Fingerprint,
+				PublicKey:   key.Spec.PublicKey,
+			},
+		}
+		apiKeys[index] = apiKey
+	}
+	return apiKeys
 }
 
 func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -181,7 +186,7 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	// project_id is actually an internal name of the object
 	projectName, err := decodeProjectPathReq(c, r)
 	if err != nil {
-		return nil, fmt.Errorf("'project_id' parameter is required in order to list ssh keys that belong to the project")
+		return nil, fmt.Errorf("'project_id' parameter is required in order to list ssh Keys that belong to the project")
 	}
 	req.projectName = projectName
 
