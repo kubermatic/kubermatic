@@ -45,7 +45,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server
+        - 192.0.2.13
         - "1194"
         - --nobind
         - --connect-timeout
