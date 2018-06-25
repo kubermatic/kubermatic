@@ -66,7 +66,9 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 	}
 
 	rawConfig := RawConfig{}
-	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig)
+	if err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig); err != nil {
+		return nil, nil, err
+	}
 
 	c := Config{}
 	c.Token, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, "HZ_TOKEN")

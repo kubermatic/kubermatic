@@ -6,6 +6,8 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"github.com/Masterminds/semver"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -161,6 +163,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
+			Env:             getEnvVars(data),
 			Args:            getApiserverFlags(data, externalNodePort, etcds),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -253,6 +256,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		nodePortRange = defaultNodePortRange
 	}
 
+	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
+
 	flags := []string{
 		"--advertise-address", data.Cluster.Address.IP,
 		"--secure-port", fmt.Sprintf("%d", externalNodePort),
@@ -261,7 +266,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-port", "8080",
 		"--etcd-servers", strings.Join(etcds, ","),
 		"--storage-backend", "etcd3",
-		"--admission-control", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction",
+		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -303,6 +308,33 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 	return flags
+}
+
+func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
+	// We use these as default in case semver parsing fails
+	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
+	admissionControlFlagName := "--admission-control"
+
+	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err != nil {
+		return admissionControlFlagName, admissionControlFlagValue
+	}
+
+	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
+	if clusterVersionSemVer.Minor() >= 9 {
+		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+	}
+
+	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
+	if clusterVersionSemVer.Minor() >= 10 {
+		admissionControlFlagName = "--enable-admission-plugins"
+	}
+
+	// Order of these flags matter pre 1.10 and MutatingAdmissionWebhook may manipulate the object, so "ResourceQuota
+	// must come last
+	admissionControlFlagValue += ",ResourceQuota"
+
+	return admissionControlFlagName, admissionControlFlagValue
 }
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
@@ -402,4 +434,15 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
+	var vars []corev1.EnvVar
+	if data.Cluster.Spec.Cloud.AWS != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster.Spec.Cloud.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: data.Cluster.Spec.Cloud.AWS.VPCID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: data.Cluster.Spec.Cloud.AWS.AvailabilityZone})
+	}
+	return vars
 }

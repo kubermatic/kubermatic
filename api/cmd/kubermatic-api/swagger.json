@@ -3806,6 +3806,10 @@
         "username": {
           "type": "string",
           "x-go-name": "Username"
+        },
+        "vmNetName": {
+          "type": "string",
+          "x-go-name": "VMNetName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -3850,6 +3854,10 @@
         "template": {
           "type": "string",
           "x-go-name": "Template"
+        },
+        "templateNetName": {
+          "type": "string",
+          "x-go-name": "TemplateNetName"
         }
       },
       "x-go-name": "VSphereNodeSpec",

@@ -112,10 +112,8 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get the value of \"password\" field, error = %v", err)
 	}
-	c.DomainName, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, "OS_DOMAIN_NAME")
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get the value of \"domainName\" field, error = %v", err)
-	}
+	// We ignore errors here because the OS domain is only required when using Identity API V3
+	c.DomainName, _ = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, "OS_DOMAIN_NAME")
 	c.TenantName, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantName, "OS_TENANT_NAME")
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantName\" field, error = %v", err)
