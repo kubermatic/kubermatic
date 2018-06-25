@@ -1,0 +1,28 @@
+data:
+  config: |2
+
+    [Global]
+    auth-url = "https://example.com:8000/v3"
+    username = "openstack-username"
+    password = "openstack-password"
+    domain-name= "openstack-domain"
+    tenant-name = "openstack-tenant"
+    region = "cbk"
+
+    [BlockStorage]
+    trust-device-path = false
+    bs-version = "v2"
+    ignore-volume-az = true
+  fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
+metadata:
+  creationTimestamp: null
+  labels:
+    app: cloud-config
+  name: cloud-config
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
