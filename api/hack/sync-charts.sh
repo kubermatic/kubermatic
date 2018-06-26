@@ -27,7 +27,7 @@ fi
 
 rm -rf ${TARGET_DIR}
 mkdir ${TARGET_DIR}
-git clone git@github.com:kubermatic/kubermatic-installer.git ${TARGET_DIR}
+git clone https://github.com/kubermatic/kubermatic-installer.git ${TARGET_DIR}
 cd ${TARGET_DIR}
 git checkout ${INSTALLER_BRANCH}
 cd ..
