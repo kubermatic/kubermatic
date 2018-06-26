@@ -141,12 +141,7 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 }
 
 func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	// project_id is actually an internal name of the object
-	projectName, ok := mux.Vars(r)["project_id"]
-	if !ok {
-		return nil, fmt.Errorf("'project_id' parameter is required in order to list ssh keys that belong to the project")
-	}
-	return projectName, nil
+	return decodeProjectPathReq(c, r)
 }
 
 type newDeleteSSHKeyReq struct {
@@ -158,8 +153,8 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	var req newDeleteSSHKeyReq
 
 	// project_id is actually an internal name of the object
-	projectName, ok := mux.Vars(r)["project_id"]
-	if !ok {
+	projectName, err := decodeProjectPathReq(c, r)
+	if err != nil {
 		return nil, fmt.Errorf("'project_id' parameter is required in order to delete ssh key that belong to the project")
 	}
 	req.projectName = projectName
@@ -184,8 +179,8 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	var req newCreateSSHKeyReq
 
 	// project_id is actually an internal name of the object
-	projectName, ok := mux.Vars(r)["project_id"]
-	if !ok {
+	projectName, err := decodeProjectPathReq(c, r)
+	if err != nil {
 		return nil, fmt.Errorf("'project_id' parameter is required in order to list ssh keys that belong to the project")
 	}
 	req.projectName = projectName

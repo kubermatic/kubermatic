@@ -7,6 +7,9 @@ import (
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
+	ostokens "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
+	osusers "github.com/gophercloud/gophercloud/openstack/identity/v3/users"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
@@ -321,4 +324,30 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 		return nil, err
 	}
 	return allFlavors, nil
+}
+
+func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osprojects.Project, error) {
+	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+	}
+
+	// We need to fetch the token to get more details - here we're just fetching the user object from the token response
+	user, err := ostokens.Get(sc, sc.Token()).ExtractUser()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get user from token: %v", err)
+	}
+
+	// We cannot list all projects - instead we must list projects of a given user
+	allPages, err := osusers.ListProjects(sc, user.ID).AllPages()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't list tenants: %v", err)
+	}
+
+	allProjects, err := osprojects.ExtractProjects(allPages)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't extract tenants: %v", err)
+	}
+
+	return allProjects, nil
 }

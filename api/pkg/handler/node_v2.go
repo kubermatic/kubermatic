@@ -37,7 +37,7 @@ const (
 // CreateNodeReqV2 represent a request for specific data to create a node
 // swagger:parameters createClusterNodeV2 createClusterNodeV3
 type CreateNodeReqV2 struct {
-	ClusterReq
+	NewGetClusterReq
 	// in: body
 	Body CreateNodeReqBodyV2
 }
@@ -50,7 +50,7 @@ type CreateNodeReqBodyV2 struct {
 // NodeReqV2 represent a request for node specific data
 // swagger:parameters getClusterNodeV2 deleteClusterNodeV2 deleteClusterNodeV3 getClusterNodeV3
 type NodeReqV2 struct {
-	ClusterReq
+	NewGetClusterReq
 	// in: path
 	NodeName string `json:"node"`
 }
@@ -62,7 +62,7 @@ func decodeCreateNodeReqV2(c context.Context, r *http.Request) (interface{}, err
 	if err != nil {
 		return nil, err
 	}
-	req.ClusterReq = cr.(ClusterReq)
+	req.NewGetClusterReq = cr.(NewGetClusterReq)
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err

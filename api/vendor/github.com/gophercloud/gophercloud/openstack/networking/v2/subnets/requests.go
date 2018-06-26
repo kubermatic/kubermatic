@@ -21,6 +21,7 @@ type ListOpts struct {
 	EnableDHCP      *bool  `q:"enable_dhcp"`
 	NetworkID       string `q:"network_id"`
 	TenantID        string `q:"tenant_id"`
+	ProjectID       string `q:"project_id"`
 	IPVersion       int    `q:"ip_version"`
 	GatewayIP       string `q:"gateway_ip"`
 	CIDR            string `q:"cidr"`
@@ -79,14 +80,18 @@ type CreateOpts struct {
 	NetworkID string `json:"network_id" required:"true"`
 
 	// CIDR is the address CIDR of the subnet.
-	CIDR string `json:"cidr" required:"true"`
+	CIDR string `json:"cidr,omitempty"`
 
 	// Name is a human-readable name of the subnet.
 	Name string `json:"name,omitempty"`
 
-	// The UUID of the tenant who owns the Subnet. Only administrative users
-	// can specify a tenant UUID other than their own.
+	// The UUID of the project who owns the Subnet. Only administrative users
+	// can specify a project UUID other than their own.
 	TenantID string `json:"tenant_id,omitempty"`
+
+	// The UUID of the project who owns the Subnet. Only administrative users
+	// can specify a project UUID other than their own.
+	ProjectID string `json:"project_id,omitempty"`
 
 	// AllocationPools are IP Address pools that will be available for DHCP.
 	AllocationPools []AllocationPool `json:"allocation_pools,omitempty"`
@@ -171,7 +176,7 @@ type UpdateOpts struct {
 	DNSNameservers []string `json:"dns_nameservers,omitempty"`
 
 	// HostRoutes are any static host routes to be set via DHCP.
-	HostRoutes []HostRoute `json:"host_routes,omitempty"`
+	HostRoutes *[]HostRoute `json:"host_routes,omitempty"`
 
 	// EnableDHCP will either enable to disable the DHCP service.
 	EnableDHCP *bool `json:"enable_dhcp,omitempty"`

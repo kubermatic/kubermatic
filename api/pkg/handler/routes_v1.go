@@ -57,6 +57,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/tenants").
+		Handler(r.listOpenstackTenants())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -89,6 +93,31 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/sshkeys").
 		Handler(r.newListSSHKeys())
+
+	// Clusters that belong to a project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters").
+		Handler(r.newCreateCluster())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters").
+		Handler(r.newListClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Handler(r.newGetCluster())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Handler(r.newUpdateCluster())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig").
+		Handler(r.newGetClusterKubeconfig())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Handler(r.newDeleteCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -301,6 +330,28 @@ func (r Routing) listOpenstackSizes() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
+//
+// Lists tenants from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackTenants
+func (r Routing) listOpenstackTenants() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackTenantEndpoint(r.cloudProviders)),
+		decodeOpenstackTenantReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/dc datacenter listDatacenters
 //
 //     Produces:
@@ -487,7 +538,154 @@ func (r Routing) deleteProject() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(deleteProjectEndpoint(r.projectProvider)),
-		decodeProjectPathReq,
+		decodeDeleteProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Creates a cluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newCreateCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider)),
+		newDecodeCreateClusterReq,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// List clusters
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterListV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newListClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newListClusters(r.projectProvider)),
+		newDecodeListClustersReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Get the cluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newGetCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newGetCluster(r.projectProvider)),
+		newDecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Update the cluster
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster}
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newUpdateCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newUpdateCluster(r.cloudProviders, r.projectProvider)),
+		newDecodeUpdateClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// newGetClusterKubeconfig returns the kubeconfig for the cluster.
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig
+//
+//     Produces:
+//     - application/yaml
+//
+//     Responses:
+//       default: errorResponse
+//       200: Kubeconfig
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newGetClusterKubeconfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newGetClusterKubeconfig(r.projectProvider)),
+		newDecodeGetClusterKubeconfig,
+		encodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Delete the cluster
+// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) newDeleteCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newDeleteCluster(r.projectProvider)),
+		newDecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

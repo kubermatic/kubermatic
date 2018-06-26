@@ -196,6 +196,15 @@ type OpenstackSize struct {
 	IsPublic bool `json:"isPublic"`
 }
 
+// OpenstackTenant is the object representing a openstack tenant.
+// swagger:model OpenstackTenant
+type OpenstackTenant struct {
+	// Id uniquely identifies the current tenant
+	ID string `json:"id"`
+	// Name is the name of the tenant
+	Name string `json:"name"`
+}
+
 // AvailableMasterVersions describes all possible update versions for a cluster
 // swagger:model AvailableMasterVersions
 type AvailableMasterVersions []MasterVersion

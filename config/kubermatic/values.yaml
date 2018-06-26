@@ -41,7 +41,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.0.1"
+        tag: "v0.1.0"
         pullPolicy: "IfNotPresent"
   api:
     replicas: 2
