@@ -66,7 +66,7 @@ func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, err
 	}
 
 	if dc.Spec.VSphere.RootPath == "" {
-		return "", fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", cloud.DatacenterName)
 	}
 
 	return dc.Spec.VSphere.RootPath, nil
