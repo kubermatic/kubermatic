@@ -399,8 +399,11 @@
     "openstack/compute/v2/servers",
     "openstack/identity/v2/tenants",
     "openstack/identity/v2/tokens",
+    "openstack/identity/v3/groups",
+    "openstack/identity/v3/projects",
     "openstack/identity/v3/regions",
     "openstack/identity/v3/tokens",
+    "openstack/identity/v3/users",
     "openstack/networking/v2/extensions/external",
     "openstack/networking/v2/extensions/layer3/floatingips",
     "openstack/networking/v2/extensions/layer3/routers",
@@ -412,7 +415,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "cf2bbaa52ab69d063466a3c46a5918d05d752625"
+  revision = "19abc56a8cd8d3630ab9735173cb92c0bf635f33"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -1201,6 +1204,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b2ea5a4ba4b3e7064f629123fbf1e22bfeea5825f113e61c1c4ee77e8ee8fade"
+  inputs-digest = "b46b98a61b1c48078dde2e3494f80ffd79c3be138cbfcc1f34cdc429b0eb50e3"
   solver-name = "gps-cdcl"
   solver-version = 1

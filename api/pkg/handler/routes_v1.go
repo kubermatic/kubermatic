@@ -57,6 +57,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/tenants").
+		Handler(r.listOpenstackTenants())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -296,6 +300,28 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
 		decodeOpenstackSizeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
+//
+// Lists tenants from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackTenants
+func (r Routing) listOpenstackTenants() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackTenantEndpoint(r.cloudProviders)),
+		decodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
