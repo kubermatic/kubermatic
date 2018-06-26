@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ui-config
+data:
+  config.json: |
+{{ .Values.kubermatic.ui.config |indent 4}}
