@@ -64,12 +64,34 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get clusterIP of apiserver
+	// get openvpn sidecar container and apiserverServiceIP
 	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
 	if err != nil {
 		return nil, err
 	}
+	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+	}
 
+	// Configure user cluster DNS resolver for this pod.
+	dnsConfigOptionNdots := "5"
+	dep.Spec.Template.Spec.DNSPolicy = corev1.DNSNone
+	dep.Spec.Template.Spec.DNSConfig = &corev1.PodDNSConfig{
+		Nameservers: []string{data.UserClusterDNSResolverIP()},
+		Searches: []string{
+			"kube-system.svc.cluster.local",
+			"svc.cluster.local",
+		},
+		Options: []corev1.PodDNSConfigOption{
+			{
+				Name:  "ndots",
+				Value: &dnsConfigOptionNdots,
+			},
+		},
+	}
+
+	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -85,6 +107,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
+		*openvpnSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
@@ -135,4 +158,27 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	return dep, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.OpenVPNClientCertificatesSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CACertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CACertSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+	}
 }
