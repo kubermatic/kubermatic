@@ -166,12 +166,6 @@ spec:
       dnsConfig:
         nameservers:
         - 10.10.10.10
-        options:
-        - name: ndots
-          value: "5"
-        searches:
-        - kube-system.svc.cluster.local
-        - svc.cluster.local
       dnsPolicy: None
       initContainers:
       - command:
