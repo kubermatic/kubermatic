@@ -6,58 +6,57 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 )
 
 // RegisterV3 declares all router paths for v3
 func (r Routing) RegisterV3(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
 		Path("/dc/{dc}/cluster").
-		Handler(metrics.InstrumentHandler(r.newClusterHandlerV3()))
+		Handler(r.newClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster").
-		Handler(metrics.InstrumentHandler(r.clustersHandlerV3()))
+		Handler(r.clustersHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}").
-		Handler(metrics.InstrumentHandler(r.clusterHandlerV3()))
+		Handler(r.clusterHandlerV3())
 
 	mux.Methods(http.MethodPut).
 		Path("/dc/{dc}/cluster/{cluster}").
-		Handler(metrics.InstrumentHandler(r.updateClusterHandlerV3()))
+		Handler(r.updateClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/kubeconfig").
-		Handler(metrics.InstrumentHandler(r.kubeconfigHandlerV3()))
+		Handler(r.kubeconfigHandlerV3())
 
 	mux.Methods(http.MethodDelete).
 		Path("/dc/{dc}/cluster/{cluster}").
-		Handler(metrics.InstrumentHandler(r.deleteClusterHandlerV3()))
+		Handler(r.deleteClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/node").
-		Handler(metrics.InstrumentHandler(r.nodesHandlerV3()))
+		Handler(r.nodesHandlerV3())
 
 	mux.Methods(http.MethodPost).
 		Path("/dc/{dc}/cluster/{cluster}/node").
-		Handler(metrics.InstrumentHandler(r.createNodesHandlerV3()))
+		Handler(r.createNodesHandlerV3())
 
 	mux.Methods(http.MethodDelete).
 		Path("/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(metrics.InstrumentHandler(r.deleteNodeHandlerV3()))
+		Handler(r.deleteNodeHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/node/{node}").
-		Handler(metrics.InstrumentHandler(r.getNodeHandlerV3()))
+		Handler(r.getNodeHandlerV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/upgrades").
-		Handler(metrics.InstrumentHandler(r.getPossibleClusterUpgradesV3()))
+		Handler(r.getPossibleClusterUpgradesV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/metrics").
-		Handler(metrics.InstrumentHandler(r.clusterMetricsHandlerV3()))
+		Handler(r.clusterMetricsHandlerV3())
 }
 
 // Creates a cluster

@@ -206,7 +206,9 @@ func main() {
 	r.RegisterV2(v2Router)
 	r.RegisterV3(v3Router)
 
+	metricHandler := metrics.InstrumentHandler(mainRouter)
+
 	go metrics.ServeForever(internalAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))
-	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, mainRouter)))
+	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, metricHandler)))
 }
