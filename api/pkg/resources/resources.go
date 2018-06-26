@@ -223,6 +223,23 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	return service.Spec.ClusterIP, nil
 }
 
+// UserClusterDNSResolverIP returns the 9th usable IP address
+// from the first Service CIDR block from ClusterNetwork spec.
+// This is by convention the IP address of the DNS resolver.
+// Returns "" on error.
+func (d *TemplateData) UserClusterDNSResolverIP() string {
+	if len(d.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		return ""
+	}
+	block := d.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
+	ip, _, err := net.ParseCIDR(block)
+	if err != nil {
+		return ""
+	}
+	ip[len(ip)-1] = ip[len(ip)-1] + 10
+	return ip.String()
+}
+
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
 func (d *TemplateData) SecretRevision(name string) (string, error) {
 	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
