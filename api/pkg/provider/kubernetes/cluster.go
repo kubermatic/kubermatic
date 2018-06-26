@@ -56,8 +56,7 @@ type ClusterProvider struct {
 	clusterLister           kubermaticv1lister.ClusterLister
 	isAdmin                 func(apiv1.User) bool
 	addons                  []string
-
-	workerName string
+	workerName              string
 }
 
 // NewCluster creates a new Cluster with the given ClusterSpec for the given user
