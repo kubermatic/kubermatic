@@ -3,6 +3,9 @@ package kubernetes
 import (
 	"errors"
 	"strings"
+	"time"
+
+	"github.com/golang/glog"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
@@ -10,9 +13,6 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
-	"time"
-
-	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

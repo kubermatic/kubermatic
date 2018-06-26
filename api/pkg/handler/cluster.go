@@ -64,7 +64,7 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 	}
 }
 
-func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// decode the request
 		req := request.(NewClusterReq)
@@ -102,13 +102,6 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		}
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-		if spec.Version == "" {
-			v, err := updateManager.GetDefault()
-			if err != nil {
-				return nil, err
-			}
-			spec.Version = v.Version.String()
 		}
 
 		// create the cluster and assign the requested ssh keys to the newly created cluster

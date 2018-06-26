@@ -564,7 +564,7 @@ func (r Routing) newCreateCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
-		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.updateManager, r.projectProvider)),
+		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider)),
 		newDecodeCreateClusterReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
