@@ -79,9 +79,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	var etcds []string
-	for i := 0; i < resources.EtcdClusterSize; i++ {
-		etcds = append(etcds, fmt.Sprintf("http://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName))
+	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
+	if err != nil {
+		return nil, err
 	}
+	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdClientServiceIP))
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
@@ -103,10 +105,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+
+	openvpnServiceIP, err := data.ClusterIPByServiceName(resources.OpenVPNServerServiceName)
+	if err != nil {
+		return nil, err
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            "openvpn-client",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.2",
+			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
 			Args: []string{
@@ -114,7 +121,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--proto", "tcp",
 				"--dev", "tun",
 				"--auth-nocache",
-				"--remote", "openvpn-server", "1194",
+				"--remote", openvpnServiceIP, "1194",
 				"--nobind",
 				"--connect-timeout", "5",
 				"--connect-retry", "1",
@@ -127,7 +134,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"--auth", "SHA1",
 				"--keysize", "256",
 				"--script-security", "2",
-				"--up", "/bin/touch /tmp/running",
+				"--status", "/run/openvpn-status",
 				"--log", "/dev/stdout",
 			},
 			SecurityContext: &corev1.SecurityContext{

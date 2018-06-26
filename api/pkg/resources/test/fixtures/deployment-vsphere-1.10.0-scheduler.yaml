@@ -1,0 +1,83 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: scheduler
+  name: scheduler
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "10251"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - args:
+        - --master
+        - http://192.0.2.11:8080
+        - --v
+        - "4"
+        command:
+        - /hyperkube
+        - scheduler
+        image: gcr.io/google_containers/hyperkube-amd64:v1.10.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: 10251
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: scheduler
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10251
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 64Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until wget -T 1 http://192.0.2.11:8080/healthz; do echo waiting for apiserver;
+          sleep 2; done;
+        image: docker.io/busybox
+        imagePullPolicy: IfNotPresent
+        name: apiserver-running
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+status: {}
