@@ -789,3 +789,34 @@ func GetPassword(client *gophercloud.ServiceClient, serverId string) (r GetPassw
 	_, r.Err = client.Get(passwordURL(client, serverId), &r.Body, nil)
 	return
 }
+
+// ShowConsoleOutputOptsBuilder is the interface types must satisfy in order to be
+// used as ShowConsoleOutput options
+type ShowConsoleOutputOptsBuilder interface {
+	ToServerShowConsoleOutputMap() (map[string]interface{}, error)
+}
+
+// ShowConsoleOutputOpts satisfies the ShowConsoleOutputOptsBuilder
+type ShowConsoleOutputOpts struct {
+	// The number of lines to fetch from the end of console log.
+	// All lines will be returned if this is not specified.
+	Length int `json:"length,omitempty"`
+}
+
+// ToServerShowConsoleOutputMap formats a ShowConsoleOutputOpts structure into a request body.
+func (opts ShowConsoleOutputOpts) ToServerShowConsoleOutputMap() (map[string]interface{}, error) {
+	return gophercloud.BuildRequestBody(opts, "os-getConsoleOutput")
+}
+
+// ShowConsoleOutput makes a request against the nova API to get console log from the server
+func ShowConsoleOutput(client *gophercloud.ServiceClient, id string, opts ShowConsoleOutputOptsBuilder) (r ShowConsoleOutputResult) {
+	b, err := opts.ToServerShowConsoleOutputMap()
+	if err != nil {
+		r.Err = err
+		return
+	}
+	_, r.Err = client.Post(actionURL(client, id), b, &r.Body, &gophercloud.RequestOpts{
+		OkCodes: []int{200},
+	})
+	return
+}
