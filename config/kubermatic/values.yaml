@@ -55,6 +55,10 @@ kubermatic:
       repository: "kubermatic/ui-v2"
       tag: "latest"
       pullPolicy: "IfNotPresent"
+    config: |
+      {
+        "show_demo_info": false
+      }
   storeContainer: |
     command:
     - /bin/sh
