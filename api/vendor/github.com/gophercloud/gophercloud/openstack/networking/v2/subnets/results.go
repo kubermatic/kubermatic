@@ -91,8 +91,11 @@ type Subnet struct {
 	// Specifies whether DHCP is enabled for this subnet or not.
 	EnableDHCP bool `json:"enable_dhcp"`
 
-	// Owner of network.
+	// TenantID is the project owner of the subnet.
 	TenantID string `json:"tenant_id"`
+
+	// ProjectID is the project owner of the subnet.
+	ProjectID string `json:"project_id"`
 
 	// The IPv6 address modes specifies mechanisms for assigning IPv6 IP addresses.
 	IPv6AddressMode string `json:"ipv6_address_mode"`
