@@ -56,7 +56,6 @@ type Controller struct {
 	userClusterConnProvider UserClusterConnectionProvider
 
 	externalURL string
-	dcs         map[string]provider.DatacenterMeta
 	dc          string
 	cps         map[string]provider.CloudProvider
 
@@ -105,7 +104,6 @@ func NewController(
 	externalURL string,
 	workerName string,
 	dc string,
-	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
 	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
@@ -142,7 +140,6 @@ func NewController(
 		externalURL: externalURL,
 		workerName:  workerName,
 		dc:          dc,
-		dcs:         dcs,
 		cps:         cps,
 		metrics:     metrics,
 	}
@@ -529,11 +526,7 @@ func (cc *Controller) handleChildObject(i interface{}) {
 		c, err := cc.clusterLister.Get(controllerRef.Name)
 		if err != nil {
 			if kubeapierrors.IsNotFound(err) {
-				// No need to log something when the object gets deleted - happens when the gc cleans up after cluster deletion
-				if obj.GetDeletionTimestamp() != nil {
-					return
-				}
-				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
+				glog.V(0).Infof("orphaned child obj found '%s/%s'. Probably the cluster %s got deleted", obj.GetNamespace(), obj.GetName(), controllerRef.Name)
 				return
 			}
 			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister: %v", controllerRef.Name, err))

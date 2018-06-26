@@ -31,9 +31,7 @@ const (
 
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
-type amazonEc2 struct {
-	dcs map[string]provider.DatacenterMeta
-}
+type amazonEc2 struct{}
 
 func (a *amazonEc2) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := a.getEC2client(spec)
@@ -80,12 +78,7 @@ func (a *amazonEc2) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 			return fmt.Errorf("failed to get default vpc: %v", err)
 		}
 
-		dc, ok := a.dcs[spec.DatacenterName]
-		if !ok {
-			return fmt.Errorf("could not find datacenter %s", spec.DatacenterName)
-		}
-
-		_, err = getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		_, err = getDefaultSubnet(client, vpc, spec.AWS.Region+spec.AWS.Zone)
 		if err != nil {
 			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -95,10 +88,8 @@ func (a *amazonEc2) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 // NewCloudProvider returns a new amazonEc2 provider.
-func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &amazonEc2{
-		dcs: datacenters,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &amazonEc2{}
 }
 
 func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
@@ -409,13 +400,8 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		return nil, fmt.Errorf("failed to get vpc: %v", err)
 	}
 
-	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
-		subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		subnet, err := getDefaultSubnet(client, vpc, cluster.Spec.Cloud.AWS.Region+cluster.Spec.Cloud.AWS.Zone)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -507,11 +493,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
-	dc, found := a.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.AWS == nil {
-		return nil, fmt.Errorf("can't find datacenter %s", cloud.DatacenterName)
-	}
-	config = config.WithRegion(dc.Spec.AWS.Region)
+	config = config.WithRegion(cloud.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))
 	config = config.WithMaxRetries(3)
 	return session.NewSession(config)

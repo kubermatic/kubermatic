@@ -33,7 +33,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: a users associates a cluster with an ssh key that doesn't belong to the project",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"regular-do1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (myProjectInternalName)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ExistingProject: &kubermaticv1.Project{
@@ -72,7 +72,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"fake":{"token":"dummy_token"},"dc":"regular-do1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `null`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
@@ -124,7 +124,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"regular-do1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user doesn't belong to the given project = myProjectInternalName"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingProject: &kubermaticv1.Project{

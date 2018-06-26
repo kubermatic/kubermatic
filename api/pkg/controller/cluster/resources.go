@@ -88,14 +88,8 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 }
 
 func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resources.TemplateData, error) {
-	dc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("failed to get datacenter %s", c.Spec.Cloud.DatacenterName)
-	}
-
 	return resources.NewTemplateData(
 		c,
-		&dc,
 		cc.secretLister,
 		cc.configMapLister,
 		cc.serviceLister,

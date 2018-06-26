@@ -27,15 +27,11 @@ const (
 	finalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
 )
 
-type azure struct {
-	dcs map[string]provider.DatacenterMeta
-}
+type azure struct{}
 
 // New returns a new Azure provider.
-func New(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &azure{
-		dcs: datacenters,
-	}
+func New() provider.CloudProvider {
+	return &azure{}
 }
 
 func deleteSubnet(cloud *kubermaticv1.CloudSpec) error {
@@ -211,7 +207,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, clusterName string) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -219,7 +215,7 @@ func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 
 	parameters := resources.Group{
 		Name:     to.StringPtr(cloud.Azure.ResourceGroup),
-		Location: to.StringPtr(location),
+		Location: to.StringPtr(cloud.Azure.Location),
 		Tags: map[string]*string{
 			clusterTagKey: to.StringPtr(clusterName),
 		},
@@ -232,7 +228,7 @@ func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, clusterName string) error {
 	sgClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -240,20 +236,20 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 
 	parameters := network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
-		Location: to.StringPtr(location),
+		Location: to.StringPtr(cloud.Azure.Location),
 		Tags: map[string]*string{
 			clusterTagKey: to.StringPtr(clusterName),
 		},
 		SecurityGroupPropertiesFormat: &network.SecurityGroupPropertiesFormat{
 			Subnets: &[]network.Subnet{
-				network.Subnet{
+				{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
 					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
 			},
 			// inbound
 			SecurityRules: &[]network.SecurityRule{
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("ssh_ingress"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -266,7 +262,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 						Priority:                 to.Int32Ptr(100),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("kubelet"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -279,7 +275,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 						Priority:                 to.Int32Ptr(101),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("inter_node_comm"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -292,7 +288,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 						Priority:                 to.Int32Ptr(200),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("azure_load_balancer"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -305,7 +301,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 						Priority:                 to.Int32Ptr(300),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("deny_all"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -319,7 +315,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 					},
 				},
 				// outbound
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("outbound_allow_all"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionOutbound,
@@ -343,7 +339,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 }
 
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureVNet(cloud *kubermaticv1.CloudSpec, clusterName string) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
@@ -351,7 +347,7 @@ func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName stri
 
 	parameters := network.VirtualNetwork{
 		Name:     to.StringPtr(cloud.Azure.VNetName),
-		Location: to.StringPtr(location),
+		Location: to.StringPtr(cloud.Azure.Location),
 		Tags: map[string]*string{
 			clusterTagKey: to.StringPtr(clusterName),
 		},
@@ -399,7 +395,7 @@ func ensureSubnet(cloud *kubermaticv1.CloudSpec) error {
 }
 
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
+func ensureRouteTable(cloud *kubermaticv1.CloudSpec) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -407,10 +403,10 @@ func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 
 	parameters := network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
-		Location: to.StringPtr(location),
+		Location: to.StringPtr(cloud.Azure.Location),
 		RouteTablePropertiesFormat: &network.RouteTablePropertiesFormat{
 			Subnets: &[]network.Subnet{
-				network.Subnet{
+				{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
 					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
@@ -432,22 +428,11 @@ func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
 
 func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
-	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	if dc.Spec.Azure == nil {
-		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	location := dc.Spec.Azure.Location
-
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err := ensureResourceGroup(cluster.Spec.Cloud, cluster.Name); err != nil {
 			return cluster, err
 		}
 
@@ -463,7 +448,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
-		if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err := ensureVNet(cluster.Spec.Cloud, cluster.Name); err != nil {
 			return cluster, err
 		}
 
@@ -495,7 +480,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
-		if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
+		if err := ensureRouteTable(cluster.Spec.Cloud); err != nil {
 			return cluster, err
 		}
 
@@ -511,7 +496,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err := ensureSecurityGroup(cluster.Spec.Cloud, cluster.Name); err != nil {
 			return cluster, err
 		}
 

@@ -9,22 +9,23 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
+	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/datacenter"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
-	"github.com/gorilla/mux"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
-func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager) endpoint.Endpoint {
+func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
@@ -33,6 +34,17 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 		spec := req.Body.Cluster
 		if spec == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
+		}
+
+		dc, found := dcs[spec.Cloud.DatacenterName]
+		if !found {
+			return nil, errors.NewBadRequest(fmt.Sprintf("node datacenter '%s' not found", spec.Cloud.DatacenterName))
+		}
+
+		var err error
+		spec.Cloud, err = datacenter.DefaultFromDatacenter(spec.Cloud, dc)
+		if err != nil {
+			return nil, err
 		}
 
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
@@ -64,7 +76,7 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 	}
 }
 
-func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// decode the request
 		req := request.(NewClusterReq)
@@ -100,6 +112,17 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		if spec == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
 		}
+
+		dc, found := dcs[spec.Cloud.DatacenterName]
+		if !found {
+			return nil, errors.NewBadRequest(fmt.Sprintf("node datacenter '%s' not found", spec.Cloud.DatacenterName))
+		}
+
+		spec.Cloud, err = datacenter.DefaultFromDatacenter(spec.Cloud, dc)
+		if err != nil {
+			return nil, err
+		}
+
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}

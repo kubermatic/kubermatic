@@ -2,12 +2,17 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/datacenter"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,17 +28,23 @@ type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
+	dcs              map[string]provider.DatacenterMeta
 }
 
 // Task represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
 // In case of an error, the correspondent error will be returned, else nil.
 type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
-func main() {
-	var kubeconfig, masterURL string
+var (
+	dcFile     string
+	masterURL  string
+	kubeconfig string
+)
 
+func main() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.Parse()
 
 	var err error
@@ -41,6 +52,11 @@ func main() {
 	ctx.config, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
+	}
+
+	ctx.dcs, err = provider.LoadDatacentersMeta(dcFile)
+	if err != nil {
+		glog.Fatalf("failed to load datacenter yaml %q: %v", dcFile, err)
 	}
 
 	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
@@ -79,6 +95,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupScheduler,
 		removeDeprecatedFinalizers,
 		migrateVersion,
+		migrateDatacenterInfo,
 	}
 
 	w := sync.WaitGroup{}
@@ -176,6 +193,26 @@ func removeDeprecatedFinalizers(cluster *kubermaticv1.Cluster, ctx *cleanupConte
 func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Spec.Version == "" {
 		cluster.Spec.Version = cluster.Spec.MasterVersion
+		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// We moved fields from datacenter into the cluster
+func migrateDatacenterInfo(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	dc, found := ctx.dcs[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return fmt.Errorf("invalid node datacenter '%s'", cluster.Spec.Cloud.DatacenterName)
+	}
+	var err error
+	oldCloudSpec := cluster.Spec.Cloud.DeepCopy()
+	cluster.Spec.Cloud, err = datacenter.DefaultFromDatacenter(cluster.Spec.Cloud, dc)
+	if err != nil {
+		return fmt.Errorf("failed to migrate data from node datacenter '%s': %v", cluster.Spec.Cloud.DatacenterName, err)
+	}
+	if diff := deep.Equal(oldCloudSpec, cluster.Spec.Cloud); diff != nil {
 		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 			return err
 		}

@@ -8,15 +8,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-type hetzner struct {
-	dcs map[string]provider.DatacenterMeta
-}
+type hetzner struct{}
 
 // NewCloudProvider creates a new hetzner provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &hetzner{
-		dcs: dcs,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &hetzner{}
 }
 
 // ValidateCloudSpec

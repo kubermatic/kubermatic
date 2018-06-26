@@ -63,21 +63,21 @@ disablestrictzonecheck=true
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Openstack }}
 [Global]
-auth-url = "{{ .DC.Spec.Openstack.AuthURL }}"
+auth-url = "{{ .Cluster.Spec.Cloud.Openstack.AuthURL }}"
 username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
 password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
 domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
 tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
-region = "{{ .DC.Spec.Openstack.Region }}"
+region = "{{ .Cluster.Spec.Cloud.Openstack.Region }}"
 
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
 {{- if eq (substr 0 3 .Cluster.Spec.Version) "1.9" }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+ignore-volume-az = {{ .Cluster.Spec.Cloud.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 {{- if eq (substr 0 4 .Cluster.Spec.Version) "1.10" }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+ignore-volume-az = {{ .Cluster.Spec.Cloud.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Azure}}
@@ -89,7 +89,7 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
   "aadClientSecret": "{{ .Cluster.Spec.Cloud.Azure.ClientSecret }}",
 
   "resourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
-  "location": "{{ .DC.Spec.Azure.Location }}",
+  "location": "{{ .Cluster.Spec.Cloud.Azure.Location }}",
   "vnetName": "{{ .Cluster.Spec.Cloud.Azure.VNetName }}",
   "vnetResourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
   "subnetName": "{{ .Cluster.Spec.Cloud.Azure.SubnetName }}",
@@ -103,11 +103,11 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 [Global]
         user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
         password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
-        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
+        server = "{{ .Cluster.Spec.Cloud.VSphere.Endpoint|replace "https://" "" }}"
         port = "443"
-        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
-        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
-        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
+        insecure-flag = "{{ if .Cluster.Spec.Cloud.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
+        datacenter = "{{ .Cluster.Spec.Cloud.VSphere.Datacenter }}"
+        datastore = "{{ .Cluster.Spec.Cloud.VSphere.Datastore }}"
         working-dir = "{{ .Cluster.Name }}"
         vm-uuid = "vm-uuid"
 [Disk]

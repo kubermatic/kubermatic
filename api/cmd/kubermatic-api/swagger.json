@@ -1211,6 +1211,10 @@
           "type": "string",
           "x-go-name": "InstanceProfileName"
         },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
         "roleName": {
           "type": "string",
           "x-go-name": "RoleName"
@@ -1234,6 +1238,10 @@
         "vpcId": {
           "type": "string",
           "x-go-name": "VPCID"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -1436,6 +1444,10 @@
         "clientSecret": {
           "type": "string",
           "x-go-name": "ClientSecret"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
         },
         "resourceGroup": {
           "type": "string",
@@ -2445,7 +2457,7 @@
     },
     "HetznerCloudSpec": {
       "type": "object",
-      "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
+      "title": "HetznerCloudSpec specifies access data to Hetzner cloud.",
       "properties": {
         "token": {
           "type": "string",
@@ -3423,6 +3435,17 @@
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an openstack cloud.",
       "properties": {
+        "authURL": {
+          "type": "string",
+          "x-go-name": "AuthURL"
+        },
+        "dnsServers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "DNSServers"
+        },
         "domain": {
           "type": "string",
           "x-go-name": "Domain"
@@ -3431,6 +3454,10 @@
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
+        "ignoreVolumeAZ": {
+          "type": "boolean",
+          "x-go-name": "IgnoreVolumeAZ"
+        },
         "network": {
           "type": "string",
           "x-go-name": "Network"
@@ -3438,6 +3465,10 @@
         "password": {
           "type": "string",
           "x-go-name": "Password"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
         },
         "routerID": {
           "type": "string",
@@ -3939,6 +3970,23 @@
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "Cluster": {
+          "type": "string"
+        },
+        "Datacenter": {
+          "type": "string"
+        },
+        "Datastore": {
+          "type": "string"
+        },
+        "allowInsecure": {
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "endpoint": {
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
@@ -3946,6 +3994,10 @@
         "username": {
           "type": "string",
           "x-go-name": "Username"
+        },
+        "vmFolder": {
+          "type": "string",
+          "x-go-name": "VMFolder"
         },
         "vmNetName": {
           "type": "string",

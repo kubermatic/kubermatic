@@ -13,7 +13,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -53,21 +52,13 @@ func runAllControllers(ctrlCtx controllerContext) error {
 }
 
 func startClusterController(ctrlCtx controllerContext) error {
-	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
-	if err != nil {
-		return err
-	}
-
-	cps := cloud.Providers(dcs)
-
 	ctrl, err := cluster.NewController(
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.dc,
-		dcs,
-		cps,
+		cloud.Providers(),
 		cluster.NewMetrics(true),
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,

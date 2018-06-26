@@ -14,7 +14,6 @@ import (
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -300,7 +299,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	kubeInformerFactory.WaitForCacheSync(stopChannel)
 
 	return &resources.TemplateData{
-		DC:                &provider.DatacenterMeta{},
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,
 		ConfigMapLister:   configMapLister,

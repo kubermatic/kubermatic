@@ -10,7 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 )
 
-func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func openstackSizeEndpoint(providers provider.CloudRegistry, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req, ok := request.(OpenstackSizeReq)
@@ -28,9 +28,16 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
+		dc, found := dcs[req.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("invalid node datacenter '%s'", req.DatacenterName)
+		}
+
 		flavors, err := osProvider.GetFlavors(&kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				AuthURL:  dc.Spec.Openstack.AuthURL,
+				Region:   dc.Spec.Openstack.Region,
 				Username: req.Username,
 				Password: req.Password,
 				Tenant:   req.Tenant,
@@ -45,7 +52,7 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	}
 }
 
-func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func openstackTenantEndpoint(providers provider.CloudRegistry, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
@@ -62,9 +69,16 @@ func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
+		dc, found := dcs[req.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("invalid node datacenter '%s'", req.DatacenterName)
+		}
+
 		tenants, err := osProvider.GetTenants(&kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				AuthURL:  dc.Spec.Openstack.AuthURL,
+				Region:   dc.Spec.Openstack.Region,
 				Username: req.Username,
 				Password: req.Password,
 				Domain:   req.Domain,
