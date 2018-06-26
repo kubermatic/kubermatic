@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"runtime"
 
 	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
@@ -54,7 +53,6 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 		return nil, err
 	}
 
-	runtime.SetFinalizer(c, logout)
 	return c, nil
 }
 
@@ -66,7 +64,7 @@ func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, err
 	}
 
 	if dc.Spec.VSphere.RootPath == "" {
-		return "", fmt.Errorf("missing rootpath for datacenter %s", cloud.DatacenterName)
+		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", cloud.DatacenterName)
 	}
 
 	return dc.Spec.VSphere.RootPath, nil
@@ -86,6 +84,7 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update
 	if err != nil {
 		return nil, err
 	}
+	defer logout(client)
 
 	finder := find.NewFinder(client.Client, true)
 	rootFolder, err := finder.Folder(ctx, dcRootPath)
@@ -116,8 +115,12 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update
 
 // ValidateCloudSpec
 func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	_, err := v.getClient(spec)
-	return err
+	client, err := v.getClient(spec)
+	if err != nil {
+		return err
+	}
+	logout(client)
+	return nil
 }
 
 // InitializeCloudProvider
@@ -141,6 +144,7 @@ func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 	if err != nil {
 		return nil, err
 	}
+	defer logout(client)
 
 	finder := find.NewFinder(client.Client, true)
 	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
