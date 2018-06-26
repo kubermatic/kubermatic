@@ -6,6 +6,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 )
 
 // RegisterV1 declares all router paths for v1
@@ -22,77 +23,77 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	mux.Methods(http.MethodGet).
 		Path("/dc").
-		Handler(r.datacentersHandler())
+		Handler(metrics.InstrumentHandler(r.datacentersHandler()))
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}").
-		Handler(r.datacenterHandler())
+		Handler(metrics.InstrumentHandler(r.datacenterHandler()))
 
 	mux.Methods(http.MethodGet).
 		Path("/ssh-keys").
-		Handler(r.listSSHKeys())
+		Handler(metrics.InstrumentHandler(r.listSSHKeys()))
 
 	mux.Methods(http.MethodGet).
 		Path("/user").
-		Handler(r.getUser())
+		Handler(metrics.InstrumentHandler(r.getUser()))
 
 	mux.Methods(http.MethodPost).
 		Path("/ssh-keys").
-		Handler(r.createSSHKey())
+		Handler(metrics.InstrumentHandler(r.createSSHKey()))
 
 	mux.Methods(http.MethodDelete).
 		Path("/ssh-keys/{meta_name}").
-		Handler(r.deleteSSHKey())
+		Handler(metrics.InstrumentHandler(r.deleteSSHKey()))
 
 	mux.Methods(http.MethodGet).
 		Path("/digitalocean/sizes").
-		Handler(r.listDigitaloceanSizes())
+		Handler(metrics.InstrumentHandler(r.listDigitaloceanSizes()))
 
 	mux.Methods(http.MethodGet).
 		Path("/azure/sizes").
-		Handler(r.listAzureSizes())
+		Handler(metrics.InstrumentHandler(r.listAzureSizes()))
 
 	mux.Methods(http.MethodGet).
 		Path("/openstack/sizes").
-		Handler(r.listOpenstackSizes())
+		Handler(metrics.InstrumentHandler(r.listOpenstackSizes()))
 
 	mux.Methods(http.MethodGet).
 		Path("/openstack/tenants").
-		Handler(r.listOpenstackTenants())
+		Handler(metrics.InstrumentHandler(r.listOpenstackTenants()))
 
 	mux.Methods(http.MethodGet).
 		Path("/versions").
-		Handler(r.getMasterVersions())
+		Handler(metrics.InstrumentHandler(r.getMasterVersions()))
 
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
-		Handler(r.getProjects())
+		Handler(metrics.InstrumentHandler(r.getProjects()))
 
 	mux.Methods(http.MethodPost).
 		Path("/projects").
-		Handler(r.createProject())
+		Handler(metrics.InstrumentHandler(r.createProject()))
 
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}").
-		Handler(r.updateProject())
+		Handler(metrics.InstrumentHandler(r.updateProject()))
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}").
-		Handler(r.deleteProject())
+		Handler(metrics.InstrumentHandler(r.deleteProject()))
 
 	// SSH Keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").
-		Handler(r.newCreateSSHKey())
+		Handler(metrics.InstrumentHandler(r.newCreateSSHKey()))
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/sshkeys/{key_name}").
-		Handler(r.newDeleteSSHKey())
+		Handler(metrics.InstrumentHandler(r.newDeleteSSHKey()))
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/sshkeys").
-		Handler(r.newListSSHKeys())
+		Handler(metrics.InstrumentHandler(r.newListSSHKeys()))
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys

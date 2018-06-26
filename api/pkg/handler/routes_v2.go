@@ -6,25 +6,26 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 )
 
 // RegisterV2 declares all router paths for v2
 func (r Routing) RegisterV2(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
 		Path("/cluster/{cluster}/nodes").
-		Handler(r.createNodeHandlerV2())
+		Handler(metrics.InstrumentHandler(r.createNodeHandlerV2()))
 
 	mux.Methods(http.MethodGet).
 		Path("/cluster/{cluster}/nodes").
-		Handler(r.getNodesHandlerV2())
+		Handler(metrics.InstrumentHandler(r.getNodesHandlerV2()))
 
 	mux.Methods(http.MethodGet).
 		Path("/cluster/{cluster}/nodes/{node}").
-		Handler(r.getNodeHandlerV2())
+		Handler(metrics.InstrumentHandler(r.getNodeHandlerV2()))
 
 	mux.Methods(http.MethodDelete).
 		Path("/cluster/{cluster}/nodes/{node}").
-		Handler(r.deleteNodeHandlerV2())
+		Handler(metrics.InstrumentHandler(r.deleteNodeHandlerV2()))
 }
 
 // Create node

@@ -16,7 +16,7 @@ func ServeForever(addr, path string) {
 	once.Do(func() {
 		glog.Infof("Prometheus metrics exposed on: %s%s", addr, path)
 
-		http.Handle(path, promhttp.Handler())
+		http.Handle(path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 		log.Fatal(http.ListenAndServe(addr, nil))
 	})
 }
