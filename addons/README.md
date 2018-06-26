@@ -7,9 +7,9 @@ The docker image should be freely accessible to let customers extend & modify th
 ### Releasing
 
 ```bash
-export TAG=v1.0
-docker build -t kubermatic/addons:${TAG} .
-docker push kubermatic/addons:${TAG}
+export TAG=v0.0.1
+docker build -t quay.io/kubermatic/addons:${TAG} .
+docker push quay.io/kubermatic/addons:${TAG}
 ```
 
 ### Using in the kubermatic-addon-controller
