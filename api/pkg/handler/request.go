@@ -218,7 +218,7 @@ func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// OpenstackSizeReq represent a request for openstack tenants
+// OpenstackTenantReq represent a request for openstack tenants
 type OpenstackTenantReq struct {
 	Username       string
 	Password       string

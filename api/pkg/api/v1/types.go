@@ -200,7 +200,7 @@ type OpenstackSize struct {
 // swagger:model OpenstackTenant
 type OpenstackTenant struct {
 	// Id uniquely identifies the current tenant
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Name is the name of the tenant
 	Name string `json:"name"`
 }

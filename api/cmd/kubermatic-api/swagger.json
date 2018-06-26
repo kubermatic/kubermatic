@@ -153,6 +153,26 @@
         }
       }
     },
+    "/api/v1/openstack/tenants": {
+      "get": {
+        "description": "Lists tenants from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackTenants",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OpenstackTenants"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "security": [
@@ -3430,6 +3450,23 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackTenant": {
+      "type": "object",
+      "title": "OpenstackTenant is the object representing a openstack tenant.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the current tenant",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name is the name of the tenant",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
