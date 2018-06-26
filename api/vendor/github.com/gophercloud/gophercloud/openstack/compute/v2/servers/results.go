@@ -80,6 +80,21 @@ type CreateImageResult struct {
 	gophercloud.Result
 }
 
+// ShowConsoleOutputResult represents the result of console output from a server
+type ShowConsoleOutputResult struct {
+	gophercloud.Result
+}
+
+// Extract will return the console output from a ShowConsoleOutput request.
+func (r ShowConsoleOutputResult) Extract() (string, error) {
+	var s struct {
+		Output string `json:"output"`
+	}
+
+	err := r.ExtractInto(&s)
+	return s.Output, err
+}
+
 // GetPasswordResult represent the result of a get os-server-password operation.
 // Call its ExtractPassword method to retrieve the password.
 type GetPasswordResult struct {
