@@ -171,7 +171,14 @@ func New(
 	}
 
 	allClusterProviders := seedClusterProviders
-	allClusterProviders = append(allClusterProviders, &ClusterProvider{providerName: masterProviderName, kubeClient: kubeMasterClient, kubermaticClient: kubermaticMasterClient, kubermaticInformerFactory: kubermaticMasterInformerFactory})
+	allClusterProviders = append(allClusterProviders, &ClusterProvider{
+		providerName:                 masterProviderName,
+		kubeClient:                   kubeMasterClient,
+		kubermaticClient:             kubermaticMasterClient,
+		kubermaticInformerFactory:    kubermaticMasterInformerFactory,
+		rbacClusterRoleLister:        c.rbacClusterRoleMasterLister,
+		rbacClusterRoleBindingLister: c.rbacClusterRoleBindingMasterLister,
+	})
 
 	for _, clusterProvider := range allClusterProviders {
 		for _, resource := range c.projectResources {
