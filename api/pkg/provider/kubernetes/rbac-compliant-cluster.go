@@ -3,6 +3,9 @@ package kubernetes
 import (
 	"errors"
 	"strings"
+	"time"
+
+	"github.com/golang/glog"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
@@ -16,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -29,14 +33,16 @@ func NewRBACCompliantClusterProvider(
 	seedPrivilegedClient kubermaticclientset.Interface,
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
-	workerName string) (*RBACCompliantClusterProvider, error) {
+	addons []string,
+	workerName string) *RBACCompliantClusterProvider {
 	return &RBACCompliantClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		seedPrivilegedClient:         seedPrivilegedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
+		addons:                       addons,
 		workerName:                   workerName,
-	}, nil
+	}
 }
 
 // RBACCompliantClusterProvider struct that holds required components in order to provide
@@ -54,6 +60,8 @@ type RBACCompliantClusterProvider struct {
 
 	// seedPrivilegedClient a privileged client connection used for creating addons only
 	seedPrivilegedClient kubermaticclientset.Interface
+
+	addons []string
 
 	workerName string
 }
@@ -109,46 +117,59 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 		return nil, err
 	}
 
-	// TODO: Make Addons to be part of the cluster specification
-	//       For more details see: https://github.com/kubermatic/kubermatic/issues/1211
-	//
-	// TODO: Add RBAC Roles to `Addons` resources
-	//       For more details see: https://github.com/kubermatic/kubermatic/issues/1181
-	addons := []string{
-		"canal",
-		"dashboard",
-		"dns",
-		"heapster",
-		"kube-proxy",
-		"openvpn",
-		"rbac",
-	}
-	gv := kubermaticapiv1.SchemeGroupVersion
-	ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
-	for _, addon := range addons {
-		_, err = p.seedPrivilegedClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticapiv1.Addon{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            addon,
-				Namespace:       cluster.Status.NamespaceName,
-				OwnerReferences: []metav1.OwnerReference{ownerRef},
-			},
-			Spec: kubermaticapiv1.AddonSpec{
-				Name: addon,
-				Cluster: corev1.ObjectReference{
-					Name:       cluster.Name,
-					Namespace:  "",
-					UID:        cluster.UID,
-					APIVersion: cluster.APIVersion,
-					Kind:       "Cluster",
-				},
-			},
-		})
+	//We wait until the cluster exists in the lister so we can use this instead of doing api calls
+	existsInLister := func() (bool, error) {
+		_, err := p.clusterLister.Get(cluster.Name)
 		if err != nil {
-			return nil, err
+			return false, nil
 		}
+		return true, nil
 	}
 
-	return nil, nil
+	// TODO: Make Addons to be part of the cluster specification
+	//       For more details see: https://github.com/kubermatic/kubermatic/issues/1211
+	// TODO: Add RBAC Roles to `Addons` resources
+	//       For more details see: https://github.com/kubermatic/kubermatic/issues/1181
+	// TODO: this code deserves refactoring, primarily because we are creating add-ons in a namespace which in fact is created by controller that listens for new clusters.
+	go func() {
+		gv := kubermaticapiv1.SchemeGroupVersion
+		ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+		err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
+			for _, addon := range p.addons {
+				_, err = p.seedPrivilegedClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticapiv1.Addon{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            addon,
+						Namespace:       cluster.Status.NamespaceName,
+						OwnerReferences: []metav1.OwnerReference{ownerRef},
+					},
+					Spec: kubermaticapiv1.AddonSpec{
+						Name: addon,
+						Cluster: corev1.ObjectReference{
+							Name:       cluster.Name,
+							Namespace:  "",
+							UID:        cluster.UID,
+							APIVersion: cluster.APIVersion,
+							Kind:       "Cluster",
+						},
+					},
+				})
+				if err != nil {
+					if kerrors.IsAlreadyExists(err) {
+						continue
+					}
+					glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
+					return false, nil
+				}
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			glog.V(0).Infof("failed to create initial addons in cluster %s: %v", cluster.Name, err)
+		}
+	}()
+
+	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
 }
 
 // List gets all clusters that belong to the given project

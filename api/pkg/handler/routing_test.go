@@ -61,6 +61,16 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
+	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
+		fakeImpersonationClient,
+		kubermaticClient,
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
+		[]string{},
+		"",
+	)
+	newClusterProviders := map[string]provider.NewClusterProvider{"us-central1": newClusterProvider}
+
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
@@ -75,6 +85,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	r := NewRouting(
 		datacenters,
 		clusterProviders,
+		newClusterProviders,
 		cloudProviders,
 		sshKeyProvider,
 		newSSHKeyProvider,
