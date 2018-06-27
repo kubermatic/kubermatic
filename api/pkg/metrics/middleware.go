@@ -22,14 +22,9 @@ var httpRequestsDuration = prometheus.NewHistogramVec(
 	[]string{"method", "path"},
 )
 
-var registry = initRegistry()
-
-func initRegistry() *prometheus.Registry {
-	r := prometheus.NewRegistry()
-	r.MustRegister(httpRequestsTotal)
-	r.MustRegister(httpRequestsDuration)
-
-	return r
+func init() {
+	prometheus.MustRegister(httpRequestsTotal)
+	prometheus.MustRegister(httpRequestsDuration)
 }
 
 func InstrumentHandler(next http.Handler) http.HandlerFunc {
