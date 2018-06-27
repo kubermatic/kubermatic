@@ -333,7 +333,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
-	clusterIP := resources.UserClusterDNSResolverIP(cluster) //getKubeDNSClusterIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	clusterIP := resources.UserClusterDNSResolverIP(cluster)
 	if clusterIP == "" {
 		return nil, fmt.Errorf("failed to get cluster dns ip")
 	}
