@@ -80,7 +80,7 @@ func main() {
 			rootCancel()
 			log.Print("user requested to stop the application")
 		case <-rootCtx.Done():
-			log.Print("parent context has been closed - propagating the request")
+			log.Print("context has been closed")
 		}
 	}()
 
