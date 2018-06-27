@@ -27,6 +27,7 @@ func init() {
 	prometheus.MustRegister(httpRequestsDuration)
 }
 
+// InstrumentHandler wraps the passed handler with prometheus duration and counter tracking.
 func InstrumentHandler(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
