@@ -53,19 +53,21 @@ type e2eTestsController struct {
 }
 
 func (ctl *e2eTestsController) run(ctx context.Context) error {
-	clusterTemplate := &kubermaticv1.Cluster{}
-	if err := unmarshalObj(ctl.runOpts.ClusterPath, clusterTemplate); err != nil {
+	var (
+		clusterTemplate kubermaticv1.Cluster
+		machineTemplate machinesv1alpha1.Machine
+	)
+
+	if err := unmarshalObj(ctl.runOpts.ClusterPath, &clusterTemplate); err != nil {
 		return err
 	}
-	clusterTemplate.ObjectMeta.GenerateName = e2eGenerateName
-	clusterTemplate.ObjectMeta.Name = ""
 
 	cluster, err := ctl.createCluster(clusterTemplate)
 	if err != nil {
 		return err
 	}
 	defer ctl.deleteCluster(cluster.ObjectMeta.Name)
-	log.Print("created cluster")
+	log.Printf("created cluster named: %s", cluster.ObjectMeta.Name)
 
 	log.Print("waiting for cluster to became healty")
 	err = wait.Poll(
@@ -85,6 +87,7 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("seed cluster namespace: %s", cluster.Status.NamespaceName)
 
 	if err = ctl.installAddons(cluster); err != nil {
 		return err
@@ -105,12 +108,9 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 		return err
 	}
 
-	machineTemplate := &machinesv1alpha1.Machine{}
-	if err = unmarshalObj(ctl.runOpts.MachinePath, machineTemplate); err != nil {
+	if err = unmarshalObj(ctl.runOpts.MachinePath, &machineTemplate); err != nil {
 		return err
 	}
-	machineTemplate.ObjectMeta.GenerateName = e2eGenerateName
-	machineTemplate.ObjectMeta.Name = ""
 
 	if err = ctl.createMachines(clusterAdminRestConfig, machineTemplate); err != nil {
 		return err
@@ -197,19 +197,24 @@ func (ctl *e2eTestsController) nodesReadyCond(ctx context.Context) func() (bool,
 	}
 }
 
-func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template *machinesv1alpha1.Machine) error {
+func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template machinesv1alpha1.Machine) error {
 	machinesClient, err := machineclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
 	}
+	template.ObjectMeta.GenerateName = ""
+	template.ObjectMeta.Name = ""
+
 	machines := machinesClient.MachineV1alpha1().Machines()
-	machineName := template.Spec.ObjectMeta.Name
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
-		template.Spec.ObjectMeta.Name = fmt.Sprintf("%s-%s", machineName, rand.String(5))
-		if _, err := machines.Create(template); err != nil {
+		template.ObjectMeta.Name = fmt.Sprintf("%s%s", e2eGenerateName, rand.String(5))
+		template.Spec.ObjectMeta.Name = template.ObjectMeta.Name
+		m, err := machines.Create(&template)
+		if err != nil {
 			return err
 		}
+		log.Printf("created machine: %s", m.ObjectMeta.Name)
 	}
 
 	return nil
@@ -247,11 +252,14 @@ func (ctl *e2eTestsController) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte
 	return adminKubeConfig, nil
 }
 
-func (ctl *e2eTestsController) createCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	return ctl.kubermaticClient.KubermaticV1().Clusters().Create(cluster)
+func (ctl *e2eTestsController) createCluster(cluster kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	cluster.ObjectMeta.GenerateName = e2eGenerateName
+	cluster.ObjectMeta.Name = ""
+	return ctl.kubermaticClient.KubermaticV1().Clusters().Create(&cluster)
 }
 
 func (ctl *e2eTestsController) deleteCluster(name string) {
+	log.Printf("deleting cluster: %s", name)
 	ctl.kubermaticClient.KubermaticV1().Clusters().Delete(name, nil)
 }
 
@@ -298,6 +306,7 @@ func (ctl *e2eTestsController) installAddons(cluster *kubermaticv1.Cluster) erro
 			}
 			return err
 		}
+		log.Printf("created addon: %s", addon)
 	}
 
 	return nil
