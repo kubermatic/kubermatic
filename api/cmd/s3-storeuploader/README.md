@@ -29,6 +29,6 @@ GLOBAL OPTIONS:
 
 ```bash
 CGO_ENABLED=0 go build -ldflags '-w -extldflags "-static"' -o s3-storeuploader github.com/kubermatic/kubermatic/api/cmd/s3-storeuploader
-sudo docker build -t quay.io/kubermatic/s3-storer:v0.1 .
-sudo docker push quay.io/kubermatic/s3-storer:v0.1
+sudo docker build -t quay.io/kubermatic/s3-storer:v0.1.4 .
+sudo docker push quay.io/kubermatic/s3-storer:v0.1.4
 ```
