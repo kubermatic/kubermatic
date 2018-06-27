@@ -216,7 +216,7 @@ func main() {
 	r.RegisterV2(v2Router)
 	r.RegisterV3(v3Router)
 
-	metrics.RegisterHttpVecs()
+	metrics.RegisterHTTPVecs()
 
 	lookupRoute := func(r *http.Request) string {
 		var match mux.RouteMatch

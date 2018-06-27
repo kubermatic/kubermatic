@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// RouteLookupFunc is a delegate for getting a unique identifier for the route which matches the passed request
 type RouteLookupFunc func(*http.Request) string
 
 var httpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -24,7 +25,8 @@ var httpRequestsDuration = prometheus.NewHistogramVec(
 	[]string{"method", "route"},
 )
 
-func RegisterHttpVecs() {
+// RegisterHTTPVecs registers http_requests_total and http_request_duration_seconds metric vecs.
+func RegisterHTTPVecs() {
 	prometheus.MustRegister(httpRequestsTotal)
 	prometheus.MustRegister(httpRequestsDuration)
 }
