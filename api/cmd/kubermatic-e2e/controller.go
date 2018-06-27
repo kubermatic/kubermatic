@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -63,18 +64,26 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 		return err
 	}
 	defer ctl.deleteCluster(cluster.ObjectMeta.Name)
-
 	log.Print("created cluster")
-	log.Print("waiting for cluster to became healty")
 
+	log.Print("waiting for cluster to became healty")
 	err = wait.Poll(
 		1*time.Second,
 		ctl.runOpts.ClusterTimeout,
-		ctl.healthyClusterCond(cluster.ObjectMeta.Name))
+		ctl.healthyClusterCond(ctx, cluster.ObjectMeta.Name))
 	if err != nil {
 		return err
 	}
 	log.Print("cluster control plain is up")
+
+	// refrash cluster object
+	cluster, err = ctl.kubermaticClient.
+		KubermaticV1().
+		Clusters().
+		Get(cluster.ObjectMeta.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 
 	if err = ctl.installAddons(cluster); err != nil {
 		return err
@@ -107,7 +116,7 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 	}
 	log.Print("waiting for machines to boot")
 
-	err = wait.Poll(1*time.Second, ctl.runOpts.NodesTimeout, ctl.nodesReadyCond)
+	err = wait.Poll(1*time.Second, ctl.runOpts.NodesTimeout, ctl.nodesReadyCond(ctx))
 	if err != nil {
 		return err
 	}
@@ -161,28 +170,30 @@ func (ctl *e2eTestsController) execGinkgo(ctx context.Context, kubeconfig string
 	return cmd.Run()
 }
 
-func (ctl *e2eTestsController) nodesReadyCond() (bool, error) {
-	nodelist, err := ctl.targetClient.CoreV1().Nodes().List(metav1.ListOptions{})
-	if err != nil {
-		return false, err
-	}
+func (ctl *e2eTestsController) nodesReadyCond(ctx context.Context) func() (bool, error) {
+	return func() (bool, error) {
+		nodelist, err := ctl.targetClient.CoreV1().Nodes().List(metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
 
-	if len(nodelist.Items) != ctl.runOpts.Nodes {
-		// nodes still booting probably
-		return false, nil
-	}
+		if len(nodelist.Items) != ctl.runOpts.Nodes {
+			// nodes still booting probably
+			return false, ctx.Err()
+		}
 
-	for _, node := range nodelist.Items {
-		for _, cnd := range node.Status.Conditions {
-			if cnd.Type == corev1.NodeReady &&
-				cnd.Status != corev1.ConditionTrue {
-				// Kubelet didn't reported node status "Ready" yet
-				return false, nil
+		for _, node := range nodelist.Items {
+			for _, cnd := range node.Status.Conditions {
+				if cnd.Type == corev1.NodeReady &&
+					cnd.Status != corev1.ConditionTrue {
+					// Kubelet didn't reported node status "Ready" yet
+					return false, ctx.Err()
+				}
 			}
 		}
-	}
 
-	return true, nil
+		return true, ctx.Err()
+	}
 }
 
 func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template *machinesv1alpha1.Machine) error {
@@ -191,8 +202,10 @@ func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template 
 		return err
 	}
 	machines := machinesClient.MachineV1alpha1().Machines()
+	machineName := template.Spec.ObjectMeta.Name
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
+		template.Spec.ObjectMeta.Name = fmt.Sprintf("%s-%d", machineName, i)
 		if _, err := machines.Create(template); err != nil {
 			return err
 		}
@@ -216,7 +229,9 @@ func (ctl *e2eTestsController) clusterRestConfig(cfg []byte, contextName string)
 }
 
 func (ctl *e2eTestsController) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, error) {
-	secret, err := ctl.seedClient.Core().Secrets(cluster.Status.NamespaceName).
+	secret, err := ctl.seedClient.
+		CoreV1().
+		Secrets(cluster.Status.NamespaceName).
 		Get(resources.AdminKubeconfigSecretName, metav1.GetOptions{})
 
 	if err != nil {
@@ -239,7 +254,7 @@ func (ctl *e2eTestsController) deleteCluster(name string) {
 	ctl.kubermaticClient.KubermaticV1().Clusters().Delete(name, nil)
 }
 
-func (ctl *e2eTestsController) healthyClusterCond(name string) func() (bool, error) {
+func (ctl *e2eTestsController) healthyClusterCond(ctx context.Context, name string) func() (bool, error) {
 	clustersCluent := ctl.kubermaticClient.KubermaticV1().Clusters()
 
 	return func() (bool, error) {
@@ -248,7 +263,7 @@ func (ctl *e2eTestsController) healthyClusterCond(name string) func() (bool, err
 			return false, err
 		}
 
-		return cluster.Status.Health.ClusterHealthStatus.AllHealthy(), nil
+		return cluster.Status.Health.ClusterHealthStatus.AllHealthy(), ctx.Err()
 	}
 }
 
