@@ -294,11 +294,8 @@ func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SS
 }
 
 func getNodeForMachine(machine *v1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
-	if machine.Status.NodeRef == nil {
-		return nil
-	}
 	for _, node := range nodes {
-		if node.UID == machine.Status.NodeRef.UID || node.Name == machine.Name {
+		if (machine.Status.NodeRef != nil && node.UID == machine.Status.NodeRef.UID) || node.Name == machine.Name {
 			return &node
 		}
 	}
