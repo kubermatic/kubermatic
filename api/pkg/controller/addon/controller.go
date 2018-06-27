@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -404,19 +403,6 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 	}
 
 	return allManifests, nil
-}
-
-func getKubeDNSClusterIP(blocks []string) (string, error) {
-	if len(blocks) == 0 {
-		return "", fmt.Errorf("empty Services.CIDRBlocks")
-	}
-	block := blocks[0]
-	ip, _, err := net.ParseCIDR(block)
-	if err != nil {
-		return "", err
-	}
-	ip[len(ip)-1] = ip[len(ip)-1] + 10
-	return ip.String(), nil
 }
 
 // combineManifests returns all manifests combined into a multi document yaml
