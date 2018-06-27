@@ -335,7 +335,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 
 	clusterIP := resources.UserClusterDNSResolverIP(cluster)
 	if clusterIP == "" {
-		return nil, fmt.Errorf("failed to get cluster dns ip")
+		return nil, fmt.Errorf("failed to get cluster dns ip for cluster '%s'", cluster.Name)
 	}
 
 	data := &templateData{
