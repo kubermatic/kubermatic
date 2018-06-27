@@ -80,9 +80,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
-	clusterDNSIP := resources.UserClusterDNSResolverIP(data.Cluster)
-	if clusterDNSIP == "" {
-		return nil, fmt.Errorf("failed to get cluster dns ip for cluster '%s'", data.Cluster.Name)
+	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
+	if err != nil {
+		return nil, err
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
