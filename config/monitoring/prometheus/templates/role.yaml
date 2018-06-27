@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: prometheus-testing
+  name: prometheus-kubermatic
   namespace: default
 rules:
 - apiGroups:
@@ -19,7 +19,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: prometheus-testing
+  name: prometheus-kubermatic
   namespace: kube-system
 rules:
 - apiGroups:
@@ -37,8 +37,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: prometheus-testing
-  namespace: monitoring-statefulset
+  name: prometheus-kubermatic
+  namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
   - ""

@@ -9,7 +9,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     },
 
     prometheus+:: {
-      name: 'testing',
+      name: 'kubermatic',
       rules: $.prometheusRules + $.prometheusAlerts,
     },
   },

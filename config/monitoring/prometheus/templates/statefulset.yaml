@@ -1,19 +1,18 @@
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: prometheus-testing
-  namespace: monitoring-statefulset
+  name: prometheus-kubermatic
 spec:
   replicas: 3
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: prometheus-testing
-  serviceName: prometheus-testing
+      app: prometheus-kubermatic
+  serviceName: prometheus-kubermatic
   template:
     metadata:
       labels:
-        app: prometheus-testing
+        app: prometheus-kubermatic
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
@@ -25,7 +24,7 @@ spec:
         - --storage.tsdb.path=/prometheus
         - --storage.tsdb.retention=360h
         - --web.enable-lifecycle
-        - --web.external-url=https://prometheus.example.kubermatic.io
+        - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
         image: quay.io/prometheus/prometheus:v2.2.1
         livenessProbe:
@@ -59,13 +58,13 @@ spec:
             memory: 512Mi
         volumeMounts:
         - mountPath: /etc/prometheus/config/
-          name: prometheus-testing-config
+          name: prometheus-kubermatic-config
           readOnly: false
         - mountPath: /etc/prometheus/rules/
-          name: prometheus-testing-rules
+          name: prometheus-kubermatic-rules
           readOnly: false
         - mountPath: /prometheus
-          name: prometheus-testing-db
+          name: prometheus-kubermatic-db
           readOnly: false
           subPath: prometheus-db
       - name: reloader
@@ -83,26 +82,26 @@ spec:
             memory: 16Mi
         volumeMounts:
         - mountPath: /etc/prometheus/config/
-          name: prometheus-testing-config
+          name: prometheus-kubermatic-config
           readOnly: false
         - mountPath: /etc/prometheus/rules/
-          name: prometheus-testing-rules
+          name: prometheus-kubermatic-rules
           readOnly: false
-      serviceAccountName: prometheus-testing
+      serviceAccountName: prometheus-kubermatic
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
-      - name: prometheus-testing-config
+      - name: prometheus-kubermatic-config
         configMap:
-          name: prometheus-testing-config
-      - name: prometheus-testing-rules
+          name: prometheus-kubermatic-config
+      - name: prometheus-kubermatic-rules
         configMap:
-          name: prometheus-testing-rules
+          name: prometheus-kubermatic-rules
   volumeClaimTemplates:
   - metadata:
-      name: prometheus-testing-db
+      name: prometheus-kubermatic-db
     spec:
       accessModes:
       - ReadWriteOnce

@@ -2,13 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: prometheus-testing
-  name: prometheus-testing
-  namespace: monitoring-statefulset
+    app: prometheus-kubermatic
+  name: prometheus-kubermatic
 spec:
   ports:
   - name: web
     port: 9090
     targetPort: web
   selector:
-    app: prometheus-testing
+    app: prometheus-kubermatic
