@@ -80,6 +80,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+	clusterDNSIP := resources.UserClusterDNSResolverIP(data.Cluster)
+	if clusterDNSIP == "" {
+		return nil, fmt.Errorf("failed to get cluster dns ip for cluster '%s'", data.Cluster.Name)
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
@@ -90,7 +94,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"-master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
 				"-logtostderr",
 				"-v", "4",
-				"-cluster-dns", "10.10.10.10",
+				"-cluster-dns", clusterDNSIP,
 				"-internal-listen-address", "0.0.0.0:8085",
 			},
 			Env: getEnvVars(data),
