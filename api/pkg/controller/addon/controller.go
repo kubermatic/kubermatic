@@ -23,7 +23,7 @@ import (
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -333,9 +333,9 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
-	clusterIP, err := getKubeDNSClusterIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
-	if err != nil {
-		return nil, err
+	clusterIP := resources.UserClusterDNSResolverIP(cluster) //getKubeDNSClusterIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	if clusterIP == "" {
+		return nil, fmt.Errorf("failed to get cluster dns ip")
 	}
 
 	data := &templateData{
