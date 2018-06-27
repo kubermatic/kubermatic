@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -205,7 +206,7 @@ func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template 
 	machineName := template.Spec.ObjectMeta.Name
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
-		template.Spec.ObjectMeta.Name = fmt.Sprintf("%s-%d", machineName, i)
+		template.Spec.ObjectMeta.Name = fmt.Sprintf("%s-%s", machineName, rand.String(5))
 		if _, err := machines.Create(template); err != nil {
 			return err
 		}
