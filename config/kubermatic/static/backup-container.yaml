@@ -5,7 +5,7 @@ command:
   set -euo pipefail
   s3-storeuploader store --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --create-bucket --prefix $CLUSTER --file /backup/snapshot.db
   s3-storeuploader delete-old-revisions --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --prefix $CLUSTER --file /backup/snapshot.db --max-revisions 20
-image: quay.io/kubermatic/s3-storer:v0.1.3
+image: quay.io/kubermatic/s3-storer:v0.1.4
 name: store-container
 env:
 - name: ACCESS_KEY_ID
