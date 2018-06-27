@@ -135,6 +135,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
 		Handler(r.listSSHKeysAssignedToCluster())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Handler(r.detachSSHKeysFromCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -691,7 +695,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
-		)(newDeleteCluster(r.projectProvider)),
+		)(newDeleteCluster(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -734,7 +738,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: ClusterV1
+//       200: empty
 //       401: empty
 //       403: empty
 func (r Routing) assignSSHKeyToCluster() http.Handler {
@@ -763,7 +767,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: ClusterV1
+//       200: v2.NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
@@ -774,6 +778,33 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(listSSHKeysAssingedToCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeListSSHKeysAssignedToCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Unassing a set of ssh keys from the given cluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) detachSSHKeysFromCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(detachSSHKeysFromCluster(r.newSSHKeyProvider, r.projectProvider)),
+		decodeDetachSSHKeysFromCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
