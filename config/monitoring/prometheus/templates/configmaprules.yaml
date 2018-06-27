@@ -1,9 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-kubermatic-rules
+  name: prometheus-testing-rules
   labels:
     role: prometheus-rulefiles
-    prometheus: kubermatic
 data:
 {{ (.Files.Glob "rules/*").AsConfig | indent 2 }}
