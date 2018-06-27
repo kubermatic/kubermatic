@@ -8,6 +8,9 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10254'
       labels:
         app: default-http-backend
     spec:
