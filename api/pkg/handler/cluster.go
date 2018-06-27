@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
+	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -19,7 +20,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
-	"github.com/gorilla/mux"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -75,27 +75,6 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		// validate the request
-		// note that: the ssh keys are optional when provided make sure that they belong to the given project.
-		if len(req.Body.SSHKeys) > 0 {
-			projectSSHKeys, err := sshKeyProvider.List(user, project, nil)
-			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
-
-			for _, requestSSHKeyName := range req.Body.SSHKeys {
-				found := false
-				for _, projectSSHKey := range projectSSHKeys {
-					if projectSSHKey.Name == requestSSHKeyName {
-						found = true
-						break
-					}
-				}
-				if !found {
-					return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", requestSSHKeyName, project.Spec.Name, project.Name)
-				}
-			}
-		}
 		spec := req.Body.Cluster
 		if spec == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
@@ -104,26 +83,11 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		// create the cluster and assign the requested ssh keys to the newly created cluster
 		newCluster, err := clusterProvider.New(project, user, spec)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		for _, requestSSHKeyName := range req.Body.SSHKeys {
-			sshKey, err := sshKeyProvider.Get(user, project, requestSSHKeyName)
-			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
-			if sshKey.IsUsedByCluster(newCluster.Name) {
-				continue
-			}
-			sshKey.AddToCluster(newCluster.Name)
-			if _, err := sshKeyProvider.Update(user, project, sshKey); err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
-		}
-
-		return nil, nil
+		return newCluster, nil
 	}
 }
 
@@ -287,6 +251,84 @@ func newDeleteCluster(projectProvider provider.ProjectProvider) endpoint.Endpoin
 	}
 }
 
+func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(assignSSHKeysToClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		if len(req.Keys) == 0 {
+			return nil, errors.NewBadRequest("please provide one or more SSH key")
+		}
+
+		project, err := projectProvider.Get(user, req.projectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		_, err = clusterProvider.Get(user, project, req.clusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		projectSSHKeys, err := sshKeyProvider.List(user, project, nil)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		for _, requestSSHKeyName := range req.Keys {
+			found := false
+			for _, projectSSHKey := range projectSSHKeys {
+				if projectSSHKey.Name == requestSSHKeyName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", requestSSHKeyName, project.Spec.Name, project.Name)
+			}
+		}
+
+		for _, requestSSHKeyName := range req.Keys {
+			sshKey, err := sshKeyProvider.Get(user, project, requestSSHKeyName)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			if sshKey.IsUsedByCluster(req.clusterName) {
+				continue
+			}
+			sshKey.AddToCluster(req.clusterName)
+			if _, err := sshKeyProvider.Update(user, project, sshKey); err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+		}
+
+		return nil, nil
+	}
+}
+
+func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listSSHKeysAssignedToClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.projectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		_, err = clusterProvider.Get(user, project, req.clusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		keys, err := sshKeyProvider.List(user, project, &provider.ListOptions{ClusterName: req.clusterName})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		apiKeys := convertInternalSSHKeysToExternal(keys)
+		return apiKeys, nil
+	}
+}
+
 type (
 	metricsResponse struct {
 		Metrics []metricResponse `json:"metrics"`
@@ -395,6 +437,19 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 	return vals, nil
 }
 
+type assignSSHKeysToClusterReq struct {
+	DCReq
+	Keys        []string `json:"keys"`
+	projectName string
+	clusterName string
+}
+
+type listSSHKeysAssignedToClusterReq struct {
+	DCReq
+	projectName string
+	clusterName string
+}
+
 func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewClusterReq
 
@@ -458,29 +513,77 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateClusterReq
+func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, string, error) {
 	clusterName, ok := mux.Vars(r)["cluster_name"]
 	if !ok {
-		return "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
+		return "", "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
 	}
-	req.ClusterName = clusterName
 
-	dcr, err := decodeDcReq(c, r)
-	req.DCReq = dcr.(DCReq)
-
-	if err != nil {
-		return nil, err
-	}
 	projectName, err := decodeProjectPathReq(c, r)
 	if err != nil {
+		return "", "", err
+	}
+	return clusterName, projectName, nil
+}
+
+func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpdateClusterReq
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
 		return nil, err
 	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+	req.ClusterName = clusterName
 	req.ProjectName = projectName
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+func decodeAssignSSHKeysToClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req assignSSHKeysToClusterReq
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.clusterName = clusterName
+	req.projectName = projectName
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req listSSHKeysAssignedToClusterReq
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.clusterName = clusterName
+	req.projectName = projectName
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
 
 	return req, nil
 }

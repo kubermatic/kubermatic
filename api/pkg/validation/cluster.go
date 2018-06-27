@@ -41,12 +41,12 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
 	}
 
-	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
 	if spec.Version == "" {
 		return errors.New("invalid cloud spec \"Version\" is required but was not specified")
+	}
+
+	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
 	return nil
