@@ -230,7 +230,10 @@ func main() {
 			return name
 		}
 
-		name, _ = match.Route.GetPathTemplate()
+		name, err = match.Route.GetPathTemplate()
+		if err != nil {
+			return ""
+		}
 
 		return name
 	}
