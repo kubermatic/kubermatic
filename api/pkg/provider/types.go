@@ -90,6 +90,32 @@ type SSHKeyProvider interface {
 	DeleteSSHKey(name string, user apiv1.User) error
 }
 
+// NewClusterProvider declares the set of methods for interacting with clusters
+// This provider is Project and RBAC compliant
+type NewClusterProvider interface {
+	// New creates a brand new cluster that is bound to the given project
+	New(project *kubermaticv1.Project, user *kubermaticv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+
+	// List gets all clusters that belong to the given project
+	//
+	// Note:
+	// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
+	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
+	List(project *kubermaticv1.Project) ([]*kubermaticv1.Cluster, error)
+
+	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
+	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
+
+	// Update updates a cluster
+	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+
+	// Delete deletes the given cluster
+	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) error
+
+	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
+	GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+}
+
 // ListOptions allows to set filters that will be applied
 // to filter the result of List method.
 type ListOptions struct {
@@ -97,8 +123,8 @@ type ListOptions struct {
 	ClusterName string
 }
 
-// NewSSHKeyProvider declares the set of method for interacting with ssh keys
-// This provider is RBAC compliant
+// NewSSHKeyProvider declares the set of methods for interacting with ssh keys
+// This provider is Project and RBAC compliant
 type NewSSHKeyProvider interface {
 	// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
 	// If you want to filter the result please take a look at ListOptions
@@ -112,6 +138,12 @@ type NewSSHKeyProvider interface {
 
 	// Delete deletes the given ssh key
 	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, keyName string) error
+
+	// Get returns a key with the given name
+	Get(user *kubermaticv1.User, project *kubermaticv1.Project, keyName string) (*kubermaticv1.UserSSHKey, error)
+
+	// Update simply updates the given key
+	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users

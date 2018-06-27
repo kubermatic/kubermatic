@@ -132,6 +132,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	return spec, nil
 }
 
+// Deprecated: datacenterMiddleware is deprecated use newDatacenterMiddleware instead.
 func (r Routing) datacenterMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -147,6 +148,26 @@ func (r Routing) datacenterMiddleware() endpoint.Middleware {
 				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
 			}
 			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func (r Routing) newDatacenterMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			getter := request.(DCGetter)
+			dc, exists := r.datacenters[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("datacenter", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, datacenterContextKey, dc)
+
+			clusterProvider, exists := r.newClusterProviders[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, newClusterProviderContextKey, clusterProvider)
 			return next(ctx, request)
 		}
 	}

@@ -16,9 +16,9 @@ func getClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req, ok := request.(ClusterReq)
+		req, ok := request.(NewGetClusterReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, ClusterReq{})
+			return nil, errors.NewWrongRequest(request, NewGetClusterReq{})
 		}
 
 		c, err := clusterProvider.Cluster(user, req.ClusterName)

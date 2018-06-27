@@ -24,5 +24,13 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: "/dist/config/"
+              readOnly: true
       imagePullSecrets:
         - name: dockercfg
+      volumes:
+        - name: config
+          configMap:
+            name: ui-config

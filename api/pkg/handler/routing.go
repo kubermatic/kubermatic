@@ -18,11 +18,12 @@ import (
 type ContextKey string
 
 const (
-	rawToken                  ContextKey = "raw-auth-token"
-	apiUserContextKey         ContextKey = "api-user"
-	userCRContextKey          ContextKey = "user-cr"
-	datacenterContextKey      ContextKey = "datacenter"
-	clusterProviderContextKey ContextKey = "cluster-provider"
+	rawToken                     ContextKey = "raw-auth-token"
+	apiUserContextKey            ContextKey = "api-user"
+	userCRContextKey             ContextKey = "user-cr"
+	datacenterContextKey         ContextKey = "datacenter"
+	clusterProviderContextKey    ContextKey = "cluster-provider"
+	newClusterProviderContextKey ContextKey = "new-cluster-provider"
 )
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
@@ -36,23 +37,25 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters       map[string]provider.DatacenterMeta
-	cloudProviders    provider.CloudRegistry
-	sshKeyProvider    provider.SSHKeyProvider
-	newSSHKeyProvider provider.NewSSHKeyProvider
-	userProvider      provider.UserProvider
-	projectProvider   provider.ProjectProvider
-	logger            log.Logger
-	authenticator     Authenticator
-	clusterProviders  map[string]provider.ClusterProvider
-	updateManager     UpdateManager
-	promURL           *string
+	datacenters         map[string]provider.DatacenterMeta
+	cloudProviders      provider.CloudRegistry
+	sshKeyProvider      provider.SSHKeyProvider
+	newSSHKeyProvider   provider.NewSSHKeyProvider
+	userProvider        provider.UserProvider
+	projectProvider     provider.ProjectProvider
+	logger              log.Logger
+	authenticator       Authenticator
+	clusterProviders    map[string]provider.ClusterProvider
+	newClusterProviders map[string]provider.NewClusterProvider
+	updateManager       UpdateManager
+	promURL             *string
 }
 
 // NewRouting creates a new Routing.
 func NewRouting(
 	datacenters map[string]provider.DatacenterMeta,
 	clusterProviders map[string]provider.ClusterProvider,
+	newClusterProviders map[string]provider.NewClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	sshKeyProvider provider.SSHKeyProvider,
 	newSSHKeyProvider provider.NewSSHKeyProvider,
@@ -63,17 +66,18 @@ func NewRouting(
 	promURL *string,
 ) Routing {
 	return Routing{
-		datacenters:       datacenters,
-		clusterProviders:  clusterProviders,
-		sshKeyProvider:    sshKeyProvider,
-		newSSHKeyProvider: newSSHKeyProvider,
-		userProvider:      userProvider,
-		projectProvider:   projectProvider,
-		cloudProviders:    cloudProviders,
-		logger:            log.NewLogfmtLogger(os.Stderr),
-		authenticator:     authenticator,
-		updateManager:     updateManager,
-		promURL:           promURL,
+		datacenters:         datacenters,
+		clusterProviders:    clusterProviders,
+		newClusterProviders: newClusterProviders,
+		sshKeyProvider:      sshKeyProvider,
+		newSSHKeyProvider:   newSSHKeyProvider,
+		userProvider:        userProvider,
+		projectProvider:     projectProvider,
+		cloudProviders:      cloudProviders,
+		logger:              log.NewLogfmtLogger(os.Stderr),
+		authenticator:       authenticator,
+		updateManager:       updateManager,
+		promURL:             promURL,
 	}
 }
 
