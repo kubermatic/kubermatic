@@ -227,11 +227,11 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 // from the first Service CIDR block from ClusterNetwork spec.
 // This is by convention the IP address of the DNS resolver.
 // Returns "" on error.
-func (d *TemplateData) UserClusterDNSResolverIP() string {
-	if len(d.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) string {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
 		return ""
 	}
-	block := d.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
+	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
 	ip, _, err := net.ParseCIDR(block)
 	if err != nil {
 		return ""
