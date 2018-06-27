@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: prometheus-kubermatic
 spec:
-  replicas: 3
+  replicas: 2
   revisionHistoryLimit: 10
   selector:
     matchLabels:
