@@ -248,12 +248,12 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(data *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig) {
+func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPolicy, *corev1.PodDNSConfig) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
 	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{data.UserClusterDNSResolverIP()},
+		Nameservers: []string{UserClusterDNSResolverIP(cluster)},
 		Searches:    []string{},
 	}
 }
