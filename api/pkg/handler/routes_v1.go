@@ -64,6 +64,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
+	//
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
@@ -81,7 +82,8 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}").
 		Handler(r.deleteProject())
 
-	// SSH Keys that belong to a project
+	//
+	// SSH keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").
 		Handler(r.newCreateSSHKey())
@@ -94,6 +96,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/sshkeys").
 		Handler(r.newListSSHKeys())
 
+	//
 	// Clusters that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
@@ -118,6 +121,16 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
 		Handler(r.newDeleteCluster())
+
+	//
+	// Defines set of endpoints that manipulate SSH keys of a cluster
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Handler(r.assignSSHKeyToCluster())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Handler(r.listSSHKeysAssignedToCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -686,6 +699,60 @@ func (r Routing) newDeleteCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(newDeleteCluster(r.projectProvider)),
 		newDecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Assign an existing ssh key to a cluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) assignSSHKeyToCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(assignSSHKeyToCluster(r.newSSHKeyProvider, r.projectProvider)),
+		decodeAssignSSHKeysToClusterReq,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// List ssh keys that are assigned to the cluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterV1
+//       401: Unauthorized
+//       403: Forbidden
+func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(listSSHKeysAssingedToCluster(r.newSSHKeyProvider, r.projectProvider)),
+		decodeListSSHKeysAssignedToCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
