@@ -6,9 +6,6 @@ kubermatic:
   api:
     image:
       tag: "{API_IMAGE_TAG}"
-  ui:
-    image:
-      tag: "v0.35"
   rbac:
     image:
       tag: "{API_IMAGE_TAG}"
