@@ -1027,7 +1027,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getClusterNodesV3",
+        "operationId": "nodesHandlerV3",
         "parameters": [
           {
             "type": "string",
@@ -1072,8 +1072,15 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "createClusterNodeV3",
+        "operationId": "createNodesHandlerV3",
         "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateNodeReqBodyV3"
+            }
+          },
           {
             "type": "string",
             "x-go-name": "DC",
@@ -1087,13 +1094,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/CreateNodeReqBodyV3"
-            }
           }
         ],
         "responses": {
@@ -1117,7 +1117,36 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getClusterNodeV3",
+        "operationId": "getNodeHandlerV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "NodeV2",
@@ -1137,7 +1166,36 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "deleteClusterNodeV3",
+        "operationId": "deleteNodeHandlerV3",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeName",
+            "name": "node",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -1156,7 +1214,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getClusterUpdatesV3",
+        "operationId": "getPossibleClusterUpgradesV3",
         "parameters": [
           {
             "type": "string",
