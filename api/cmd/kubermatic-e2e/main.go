@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
-	"log"
+	goflag "flag"
 	"os"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	log "github.com/golang/glog"
 	flag "github.com/spf13/pflag"
 
-	k8csignals "github.com/kubermatic/kubermatic/api/pkg/signals"
+	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 )
 
 // Opts represent combination of flags and ENV options
@@ -39,26 +40,16 @@ func lookupEnv(key, defaultVal string) string {
 }
 
 func main() {
-	log.Print("starting")
-
 	var runOpts Opts
 
-	flag.IntVar(&runOpts.Nodes,
-		"nodes", 1, "number of worker nodes")
-	flag.StringArrayVar(&runOpts.Addons,
-		"addons",
-		[]string{"canal", "dns", "kube-proxy", "openvpn", "rbac"},
-		"coma separated list of addons")
-	flag.StringVar(&runOpts.ClusterPath,
-		"cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
-	flag.StringVar(&runOpts.KubeconfPath,
-		"kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
-	flag.StringVar(&runOpts.MachinePath,
-		"machine", "/manifests/machine.yaml", "path to Machine yaml")
-	flag.DurationVar(&runOpts.ClusterTimeout,
-		"cluster-timeout", 3*time.Minute, "cluster creation timeout")
-	flag.DurationVar(&runOpts.NodesTimeout,
-		"nodes-timeout", 10*time.Minute, "nodes creation timeout")
+	flag.IntVar(&runOpts.Nodes, "nodes", 1, "number of worker nodes")
+	flag.StringArrayVar(&runOpts.Addons, "addons", []string{"canal", "dns", "kube-proxy", "openvpn", "rbac"}, "comma separated list of addons")
+	flag.StringVar(&runOpts.ClusterPath, "cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
+	flag.StringVar(&runOpts.KubeconfPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
+	flag.StringVar(&runOpts.MachinePath, "machine", "/manifests/machine.yaml", "path to Machine yaml")
+	flag.DurationVar(&runOpts.ClusterTimeout, "cluster-timeout", 3*time.Minute, "cluster creation timeout")
+	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
+	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 
 	runOpts.GinkgoBin = lookupEnv("E2E_GINKGO", "/usr/local/bin/ginkgo")
 	runOpts.TestBin = lookupEnv("E2E_TEST", "/usr/local/bin/e2e.test")
@@ -69,22 +60,23 @@ func main() {
 	runOpts.ReportsDir = lookupEnv("E2E_REPORTS_DIR", "/tmp/results")
 	flag.Parse()
 
+	log.Info("starting")
 	spew.Dump(runOpts)
 
-	stopCh := k8csignals.SetupSignalHandler()
+	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 
 	go func() {
 		select {
 		case <-stopCh:
 			rootCancel()
-			log.Print("user requested to stop the application")
+			log.Info("user requested to stop the application")
 		case <-rootCtx.Done():
-			log.Print("context has been closed")
+			log.Info("context has been closed")
 		}
 	}()
 
-	ctl, err := newE2ETestsController(runOpts)
+	ctl, err := newE2ETestRunner(runOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,5 +86,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Print("e2e run done")
+	log.Info("e2e run done")
 }
