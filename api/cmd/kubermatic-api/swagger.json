@@ -671,7 +671,7 @@
           },
           {
             "type": "string",
-            "x-go-name": "SshKeyName",
+            "x-go-name": "SSHKeyName",
             "name": "key_name",
             "in": "path",
             "required": true
