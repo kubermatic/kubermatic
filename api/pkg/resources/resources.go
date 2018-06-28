@@ -252,9 +252,18 @@ func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPol
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
+	dnsConfigOptionNdots := "5"
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{UserClusterDNSResolverIP(cluster)},
-		Searches:    []string{},
+		Searches: []string{
+			"cluster.local",
+		},
+		Options: []corev1.PodDNSConfigOption{
+			{
+				Name:  "ndots",
+				Value: &dnsConfigOptionNdots,
+			},
+		},
 	}
 }
 
