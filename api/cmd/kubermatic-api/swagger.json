@@ -2699,6 +2699,14 @@
       "x-go-name": "HetznerNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
+    "ImageList": {
+      "description": "ImageList defines a map of operating system and the image to use",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Initializer": {
       "type": "object",
       "title": "Initializer is information about an initializer that has not yet completed.",
@@ -3696,6 +3704,9 @@
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
         "region": {
           "type": "string",
           "x-go-name": "Region"
@@ -4203,6 +4214,9 @@
         "endpoint": {
           "type": "string",
           "x-go-name": "Endpoint"
+        },
+        "templates": {
+          "$ref": "#/definitions/ImageList"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
