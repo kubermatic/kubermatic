@@ -69,6 +69,7 @@ func updateProjectEndpoint() endpoint.Endpoint {
 	}
 }
 
+// UpdateProjectRq defines HTTP request for updateProject endpoint
 // swagger:parameters updateProject
 type UpdateProjectRq struct {
 	// in: path
@@ -94,6 +95,7 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+// DeleteProjectRq defines HTTP request for deleteProject endpoint
 // swagger:parameters deleteProject
 type DeleteProjectRq struct {
 	// in: path

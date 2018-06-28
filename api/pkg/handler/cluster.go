@@ -450,6 +450,7 @@ type listSSHKeysAssignedToClusterReq struct {
 	clusterName string
 }
 
+// NewCreateClusterReq defines HTTP request for newCreateCluster endpoint
 // swagger:parameters newCreateCluster
 type NewCreateClusterReq struct {
 	DCReq
@@ -481,6 +482,7 @@ func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
+// NewListClustersReq defines HTTP request for newListClsters endpoint
 // swagger:parameters newListClusters
 type NewListClustersReq struct {
 	DCReq
@@ -506,6 +508,7 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
+// NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
 // swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig
 type NewGetClusterReq struct {
 	DCReq
@@ -551,6 +554,7 @@ func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, st
 	return clusterName, projectName, nil
 }
 
+// NewUpdateClusterReq defines HTTP request for newUpdateCluster endpoint
 // swagger:parameters newUpdateCluster
 type NewUpdateClusterReq struct {
 	NewGetClusterReq

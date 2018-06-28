@@ -73,7 +73,7 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		err = keyProvider.Delete(user, project, req.SshKeyName)
+		err = keyProvider.Delete(user, project, req.SSHKeyName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -149,6 +149,7 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 	return apiKeys
 }
 
+// NewListSSHKeyReq defined HTTP request for newListSHHKeys endpoint
 // swagger:parameters newListSSHKeys
 type NewListSSHKeyReq struct {
 	// in: path
@@ -162,12 +163,13 @@ func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, er
 	return req, err
 }
 
+// NewDeleteSSHKeyReq defines HTTP request for newDeleteSSHKey endpoint
 // swagger:parameters newDeleteSSHKey
 type NewDeleteSSHKeyReq struct {
 	// in: path
 	ProjectName string `json:"project_id"`
 	// in: path
-	SshKeyName string `json:"key_name"`
+	SSHKeyName string `json:"key_name"`
 }
 
 func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -186,7 +188,7 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 
 	req.ProjectName = projectName
-	req.SshKeyName = sshKeyName
+	req.SSHKeyName = sshKeyName
 	return req, nil
 }
 
