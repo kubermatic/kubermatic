@@ -107,5 +107,5 @@ spec:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 100Gi
+          storage: {{ .Values.prometheus.storageSize }}
       storageClassName: kubermatic-fast
