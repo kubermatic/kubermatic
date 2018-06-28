@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"gopkg.in/yaml.v2"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -23,25 +24,13 @@ type HetznerSpec struct {
 	Location   string `yaml:"location"`
 }
 
-// OperatingSystem type definition for the operating system
-type OperatingSystem string
-
-const (
-	// OperatingSystemCoreos name of the operating system coreos
-	OperatingSystemCoreos OperatingSystem = "coreos"
-	// OperatingSystemUbuntu name of the operating system ubuntu
-	OperatingSystemUbuntu OperatingSystem = "ubuntu"
-	// OperatingSystemCentOS name of the operating system centos
-	OperatingSystemCentOS OperatingSystem = "centos"
-)
-
 var (
 	// AllOperatingSystems defines all available operating systems
-	AllOperatingSystems = sets.NewString(string(OperatingSystemCoreos), string(OperatingSystemCentOS), string(OperatingSystemUbuntu))
+	AllOperatingSystems = sets.NewString(string(providerconfig.OperatingSystemCoreos), string(providerconfig.OperatingSystemCentOS), string(providerconfig.OperatingSystemUbuntu))
 )
 
 // ImageList defines a map of operating system and the image to use
-type ImageList map[OperatingSystem]string
+type ImageList map[providerconfig.OperatingSystem]string
 
 // OpenstackSpec describes a open stack datacenter
 type OpenstackSpec struct {
