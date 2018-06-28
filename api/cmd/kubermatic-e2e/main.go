@@ -41,12 +41,12 @@ func main() {
 	flag.DurationVar(&runOpts.ClusterTimeout, "cluster-timeout", 3*time.Minute, "cluster creation timeout")
 	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
 	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
-	flag.StringVar(&runOpts.TestBin, "e2e.test-bin", "/usr/local/bin/e2e.test", "path to e2e.test binary")
-	flag.StringVar(&runOpts.Focus, "focus", "[Conformance]", "tests focus")
-	flag.StringVar(&runOpts.Skip, "skip", "Alpha|Kubectl|[(Disruptive|Feature:[^]]+|Flaky)]", "skip those groups of tests")
-	flag.StringVar(&runOpts.Provider, "provider", "local", "cloud provider to use in tests")
-	flag.StringVar(&runOpts.Parallel, "parallel", "1", "parallelism of tests")
-	flag.StringVar(&runOpts.ReportsDir, "reoprts-dir", "/tmp/results", "directory to save test results")
+	flag.StringVar(&runOpts.Focus, "ginkgo-focus", "[Conformance]", "tests focus")
+	flag.StringVar(&runOpts.Skip, "ginkgo-skip", "Alpha|Kubectl|[(Disruptive|Feature:[^]]+|Flaky)]", "skip those groups of tests")
+	flag.StringVar(&runOpts.Parallel, "ginkgo-parallel", "1", "parallelism of tests")
+	flag.StringVar(&runOpts.TestBin, "e2e-test-bin", "/usr/local/bin/e2e.test", "path to e2e.test binary")
+	flag.StringVar(&runOpts.Provider, "e2e-provider", "local", "cloud provider to use in tests")
+	flag.StringVar(&runOpts.ReportsDir, "e2e-results-dir", "/tmp/results", "directory to save test results")
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.CommandLine.SortFlags = false
