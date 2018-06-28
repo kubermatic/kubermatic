@@ -49,13 +49,16 @@ func getProjectsEndpoint() endpoint.Endpoint {
 
 func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		projectName, ok := request.(string)
+		req, ok := request.(DeleteProjectRq)
 		if !ok {
-			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		if len(req.ProjectName) == 0 {
+			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		err := projectProvider.Delete(user, projectName)
+		err := projectProvider.Delete(user, req.ProjectName)
 		return nil, kubernetesErrorToHTTPError(err)
 	}
 }
@@ -66,12 +69,19 @@ func updateProjectEndpoint() endpoint.Endpoint {
 	}
 }
 
-type projectReq struct {
-	Name string `json:"name"`
+// swagger:parameters updateProject
+type UpdateProjectRq struct {
+	// in: path
+	ProjectName string `json:"project_id"`
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
-	return nil, errors.NewNotImplemented()
+	var req UpdateProjectRq
+	return req, errors.NewNotImplemented()
+}
+
+type projectReq struct {
+	Name string `json:"name"`
 }
 
 func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error) {
@@ -84,8 +94,17 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+// swagger:parameters deleteProject
+type DeleteProjectRq struct {
+	// in: path
+	ProjectName string `json:"project_id"`
+}
+
 func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error) {
-	return decodeProjectPathReq(c, r)
+	var req DeleteProjectRq
+	var err error
+	req.ProjectName, err = decodeProjectPathReq(c, r)
+	return req, err
 }
 
 // kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.

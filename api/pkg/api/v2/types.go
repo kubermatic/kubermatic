@@ -32,3 +32,7 @@ type NewSSHKeySpec struct {
 	Fingerprint string `json:"fingerprint"`
 	PublicKey   string `json:"publicKey"`
 }
+
+// NewSSHKeyList represents a list of NewSSHKey
+// swagger:model NewSSHKeyList
+type NewSSHKeyList []NewSSHKey

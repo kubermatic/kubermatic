@@ -205,6 +205,10 @@ type OpenstackTenant struct {
 	Name string `json:"name"`
 }
 
+// OpenstackTenantList represents a list of OpenstackTenants
+// swagger:model OpenstackTenantList
+type OpenstackTenantList []OpenstackTenant
+
 // AvailableMasterVersions describes all possible update versions for a cluster
 // swagger:model AvailableMasterVersions
 type AvailableMasterVersions []MasterVersion
