@@ -28,12 +28,16 @@ type HetznerDatacenterSpec struct {
 	Location   string `json:"location"`
 }
 
+// ImageList defines a map of operating system and the image to use
+type ImageList map[string]string
+
 // VSphereDatacenterSpec specifies a datacenter of VSphere.
 type VSphereDatacenterSpec struct {
-	Endpoint   string `json:"endpoint"`
-	Datacenter string `json:"datacenter"`
-	Datastore  string `json:"datastore"`
-	Cluster    string `json:"cluster"`
+	Endpoint   string    `json:"endpoint"`
+	Datacenter string    `json:"datacenter"`
+	Datastore  string    `json:"datastore"`
+	Cluster    string    `json:"cluster"`
+	Templates  ImageList `json:"templates"`
 }
 
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
@@ -51,9 +55,10 @@ type AzureDatacenterSpec struct {
 
 // OpenstackDatacenterSpec specifies a generic bare metal datacenter.
 type OpenstackDatacenterSpec struct {
-	AvailabilityZone string `json:"availability_zone"`
-	Region           string `json:"region"`
-	AuthURL          string `json:"auth_url"`
+	AvailabilityZone string    `json:"availability_zone"`
+	Region           string    `json:"region"`
+	AuthURL          string    `json:"auth_url"`
+	Images           ImageList `json:"images"`
 }
 
 // DatacenterSpec specifies the data for a datacenter.
