@@ -26,14 +26,6 @@ RUN tar xzf kubernetes-test.tar.gz
 ####
 FROM ubuntu:16.04
 
-ENV E2E_FOCUS="\[Conformance\]"
-ENV E2E_SKIP="Alpha|Kubectl|\[(Disruptive|Feature:[^\]]+|Flaky)\]"
-ENV E2E_PROVIDER="local"
-ENV E2E_PARALLEL="1"
-ENV E2E_REPORTS_DIR="/tmp/results"
-ENV E2E_GINKGO=/usr/local/bin/ginkgo
-ENV E2E_TEST=/usr/local/bin/e2e.test
-
 COPY ./_build/kubermatic-e2e /
 COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/ginkgo /usr/local/bin/
 COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/e2e.test /usr/local/bin/
