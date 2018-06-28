@@ -14,6 +14,9 @@ spec:
       maxUnavailable: 0
   template:
     metadata:
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '8080'
       labels:
         app: nodeport-proxy
     spec:
