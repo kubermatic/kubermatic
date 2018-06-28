@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"time"
 
+	log "github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,27 +32,27 @@ const (
 	e2eGenerateName = "e2e-test-runner-"
 )
 
-func newE2ETestsController(runOpts Opts) (*e2eTestsController, error) {
+func newE2ETestRunner(runOpts Opts) (*e2eTestRunner, error) {
 	kubeconfig, err := clientcmd.BuildConfigFromFlags("", runOpts.KubeconfPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &e2eTestsController{
+	return &e2eTestRunner{
 		runOpts:          runOpts,
 		seedClient:       kubernetes.NewForConfigOrDie(kubeconfig),
 		kubermaticClient: kubermaticclientset.NewForConfigOrDie(kubeconfig),
 	}, nil
 }
 
-type e2eTestsController struct {
+type e2eTestRunner struct {
 	runOpts          Opts
 	seedClient       *kubernetes.Clientset
 	targetClient     *kubernetes.Clientset
 	kubermaticClient *kubermaticclientset.Clientset
 }
 
-func (ctl *e2eTestsController) run(ctx context.Context) error {
+func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	var (
 		clusterTemplate kubermaticv1.Cluster
 		machineTemplate machinesv1alpha1.Machine
@@ -66,28 +66,28 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ctl.deleteCluster(cluster.ObjectMeta.Name)
-	log.Printf("created cluster named: %s", cluster.ObjectMeta.Name)
+	defer ctl.deleteCluster(cluster.Name)
+	log.Infof("created cluster named: %s", cluster.Name)
 
-	log.Print("waiting for cluster to became healty")
+	log.Info("waiting for cluster to became healty")
 	err = wait.Poll(
 		1*time.Second,
 		ctl.runOpts.ClusterTimeout,
-		ctl.healthyClusterCond(ctx, cluster.ObjectMeta.Name))
+		ctl.healthyClusterCond(ctx, cluster.Name))
 	if err != nil {
 		return err
 	}
-	log.Print("cluster control plain is up")
+	log.Info("cluster control plane is up")
 
-	// refrash cluster object
+	// refresh cluster object
 	cluster, err = ctl.kubermaticClient.
 		KubermaticV1().
 		Clusters().
-		Get(cluster.ObjectMeta.Name, metav1.GetOptions{})
+		Get(cluster.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	log.Printf("seed cluster namespace: %s", cluster.Status.NamespaceName)
+	log.Infof("seed cluster namespace: %s", cluster.Status.NamespaceName)
 
 	if err = ctl.installAddons(cluster); err != nil {
 		return err
@@ -98,7 +98,7 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 		return err
 	}
 
-	clusterAdminRestConfig, err := ctl.clusterRestConfig(clusterKubeConfig, cluster.ObjectMeta.Name)
+	clusterAdminRestConfig, err := ctl.clusterRestConfig(clusterKubeConfig, cluster.Name)
 	if err != nil {
 		return err
 	}
@@ -115,13 +115,13 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 	if err = ctl.createMachines(clusterAdminRestConfig, machineTemplate); err != nil {
 		return err
 	}
-	log.Print("waiting for machines to boot")
+	log.Info("waiting for machines to boot")
 
 	err = wait.Poll(1*time.Second, ctl.runOpts.NodesTimeout, ctl.nodesReadyCond(ctx))
 	if err != nil {
 		return err
 	}
-	log.Print("all nodes are ready")
+	log.Info("all nodes are ready")
 
 	e2eKubeConfig, err := ioutil.TempFile("", "")
 	if err != nil {
@@ -130,10 +130,10 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 
 	defer func() {
 		if err2 := os.Remove(e2eKubeConfig.Name()); err2 != nil {
-			log.Print(err2)
+			log.Error(err2)
 		}
 	}()
-	log.Printf("target cluster adminconfig: %s", e2eKubeConfig.Name())
+	log.Infof("target cluster adminconfig: %s", e2eKubeConfig.Name())
 
 	if _, err = e2eKubeConfig.Write(clusterKubeConfig); err != nil {
 		return err
@@ -146,7 +146,7 @@ func (ctl *e2eTestsController) run(ctx context.Context) error {
 	return ctl.execGinkgo(ctx, e2eKubeConfig.Name())
 }
 
-func (ctl *e2eTestsController) execGinkgo(ctx context.Context, kubeconfig string) error {
+func (ctl *e2eTestRunner) execGinkgo(ctx context.Context, kubeconfig string) error {
 	execCtx, execCancel := context.WithTimeout(ctx, 3600*time.Second)
 	defer execCancel()
 
@@ -166,12 +166,12 @@ func (ctl *e2eTestsController) execGinkgo(ctx context.Context, kubeconfig string
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	log.Printf("running command: %v", cmd.Args)
+	log.Infof("running command: %v", cmd.Args)
 
 	return cmd.Run()
 }
 
-func (ctl *e2eTestsController) nodesReadyCond(ctx context.Context) func() (bool, error) {
+func (ctl *e2eTestRunner) nodesReadyCond(ctx context.Context) func() (bool, error) {
 	return func() (bool, error) {
 		nodelist, err := ctl.targetClient.CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
@@ -197,30 +197,30 @@ func (ctl *e2eTestsController) nodesReadyCond(ctx context.Context) func() (bool,
 	}
 }
 
-func (ctl *e2eTestsController) createMachines(restConfig *rest.Config, template machinesv1alpha1.Machine) error {
+func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, template machinesv1alpha1.Machine) error {
 	machinesClient, err := machineclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
 	}
-	template.ObjectMeta.GenerateName = ""
-	template.ObjectMeta.Name = ""
+	template.GenerateName = ""
+	template.Name = ""
 
 	machines := machinesClient.MachineV1alpha1().Machines()
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
-		template.ObjectMeta.Name = fmt.Sprintf("%s%s", e2eGenerateName, rand.String(5))
-		template.Spec.ObjectMeta.Name = template.ObjectMeta.Name
+		template.Name = fmt.Sprintf("%s%s", e2eGenerateName, rand.String(5))
+		template.Spec.Name = template.Name
 		m, err := machines.Create(&template)
 		if err != nil {
 			return err
 		}
-		log.Printf("created machine: %s", m.ObjectMeta.Name)
+		log.Infof("created machine: %s", m.Name)
 	}
 
 	return nil
 }
 
-func (ctl *e2eTestsController) clusterRestConfig(cfg []byte, contextName string) (*rest.Config, error) {
+func (ctl *e2eTestRunner) clusterRestConfig(cfg []byte, contextName string) (*rest.Config, error) {
 	clusterClientCfg, err := clientcmd.Load(cfg)
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func (ctl *e2eTestsController) clusterRestConfig(cfg []byte, contextName string)
 	).ClientConfig()
 }
 
-func (ctl *e2eTestsController) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, error) {
+func (ctl *e2eTestRunner) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, error) {
 	secret, err := ctl.seedClient.
 		CoreV1().
 		Secrets(cluster.Status.NamespaceName).
@@ -252,21 +252,21 @@ func (ctl *e2eTestsController) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte
 	return adminKubeConfig, nil
 }
 
-func (ctl *e2eTestsController) createCluster(cluster kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	cluster.ObjectMeta.GenerateName = e2eGenerateName
-	cluster.ObjectMeta.Name = ""
+func (ctl *e2eTestRunner) createCluster(cluster kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	cluster.GenerateName = e2eGenerateName
+	cluster.Name = ""
 	return ctl.kubermaticClient.KubermaticV1().Clusters().Create(&cluster)
 }
 
-func (ctl *e2eTestsController) deleteCluster(name string) {
-	log.Printf("deleting cluster: %s", name)
+func (ctl *e2eTestRunner) deleteCluster(name string) {
+	log.Infof("deleting cluster: %s", name)
 	err := ctl.kubermaticClient.KubermaticV1().Clusters().Delete(name, nil)
 	if err != nil {
-		log.Print(err)
+		log.Error(err)
 	}
 }
 
-func (ctl *e2eTestsController) healthyClusterCond(ctx context.Context, name string) func() (bool, error) {
+func (ctl *e2eTestRunner) healthyClusterCond(ctx context.Context, name string) func() (bool, error) {
 	clustersCluent := ctl.kubermaticClient.KubermaticV1().Clusters()
 
 	return func() (bool, error) {
@@ -279,7 +279,7 @@ func (ctl *e2eTestsController) healthyClusterCond(ctx context.Context, name stri
 	}
 }
 
-func (ctl *e2eTestsController) installAddons(cluster *kubermaticv1.Cluster) error {
+func (ctl *e2eTestRunner) installAddons(cluster *kubermaticv1.Cluster) error {
 	k8cgv := kubermaticv1.SchemeGroupVersion
 	ownerRef := *metav1.NewControllerRef(cluster, k8cgv.WithKind("Cluster"))
 	addonsClient := ctl.kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName)
@@ -309,7 +309,7 @@ func (ctl *e2eTestsController) installAddons(cluster *kubermaticv1.Cluster) erro
 			}
 			return err
 		}
-		log.Printf("created addon: %s", addon)
+		log.Infof("created addon: %s", addon)
 	}
 
 	return nil
