@@ -260,7 +260,10 @@ func (ctl *e2eTestsController) createCluster(cluster kubermaticv1.Cluster) (*kub
 
 func (ctl *e2eTestsController) deleteCluster(name string) {
 	log.Printf("deleting cluster: %s", name)
-	ctl.kubermaticClient.KubermaticV1().Clusters().Delete(name, nil)
+	err := ctl.kubermaticClient.KubermaticV1().Clusters().Delete(name, nil)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func (ctl *e2eTestsController) healthyClusterCond(ctx context.Context, name string) func() (bool, error) {
