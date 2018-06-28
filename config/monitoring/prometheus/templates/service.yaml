@@ -5,12 +5,9 @@ metadata:
     app: prometheus-kubermatic
   name: prometheus-kubermatic
 spec:
-  type: ClusterIP
   ports:
   - name: web
-    protocol: TCP
     port: 9090
-    targetPort: 9090
+    targetPort: web
   selector:
-    app: prometheus
-    prometheus: kubermatic
+    app: prometheus-kubermatic
