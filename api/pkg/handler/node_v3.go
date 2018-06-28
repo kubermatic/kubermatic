@@ -38,7 +38,7 @@ const (
 )
 
 // CreateNodeReqV3 represent a request for specific data to create a node
-// swagger:parameters createClusterNodeV3
+// swagger:parameters createNodesHandlerV3
 type CreateNodeReqV3 struct {
 	GetClusterReq
 	// in: body
@@ -492,7 +492,7 @@ func deleteNodeEndpointV3() endpoint.Endpoint {
 }
 
 // NodesV3Req represent a request to fetch all cluster nodes
-// swagger:parameters getClusterNodesV3
+// swagger:parameters nodesHandlerV3
 type NodesV3Req struct {
 	GetClusterReq
 	// in: query

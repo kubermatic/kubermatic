@@ -13,3 +13,5 @@ go install
 cd ${API_DIR}/cmd/kubermatic-api/
 swagger generate spec --scan-models -o ${TMP_SWAGGER}
 diff -Naup ${SWAGGER_FILE} ${TMP_SWAGGER}
+
+swagger validate ${SWAGGER_FILE}
