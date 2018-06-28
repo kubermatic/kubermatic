@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
@@ -20,9 +23,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
-	"strconv"
-
-	"github.com/gorilla/mux"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
