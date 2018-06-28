@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -23,6 +22,7 @@ import (
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -333,7 +333,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
-	clusterIP, err := getKubeDNSClusterIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -404,19 +404,6 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 	}
 
 	return allManifests, nil
-}
-
-func getKubeDNSClusterIP(blocks []string) (string, error) {
-	if len(blocks) == 0 {
-		return "", fmt.Errorf("empty Services.CIDRBlocks")
-	}
-	block := blocks[0]
-	ip, _, err := net.ParseCIDR(block)
-	if err != nil {
-		return "", err
-	}
-	ip[len(ip)-1] = ip[len(ip)-1] + 10
-	return ip.String(), nil
 }
 
 // combineManifests returns all manifests combined into a multi document yaml
