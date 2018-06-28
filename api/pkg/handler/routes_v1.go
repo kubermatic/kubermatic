@@ -155,18 +155,18 @@ func (r Routing) listSSHKeys() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/sshkeys listSSHKeys
+// swagger:route GET /api/v1/projects/{project_id}/sshkeys project newListSSHKeys
 //
-// Lists SSH keys that belong to the given project
+//     Lists SSH Keys that belong to the given project.
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKey
-//       401: Unauthorized
-//       403: Forbidden
+//       200: NewSSHKeyList
+//       401: empty
+//       403: empty
 func (r Routing) newListSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -204,9 +204,9 @@ func (r Routing) createSSHKey() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/sshkeys createSSHKey
+// swagger:route POST /api/v1/projects/{project_id}/sshkeys project newCreateSSHKey
 //
-// Creates a SSH keys for the given project
+//    Adds the given SSH key to the specified project.
 //
 //     Consumes:
 //     - application/json
@@ -217,8 +217,8 @@ func (r Routing) createSSHKey() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: NewSSHKey
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newCreateSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -253,9 +253,9 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_name} sshkeys newDeleteSSHKey
+// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_name} project newDeleteSSHKey
 //
-// Deletes a SSH keys that belongs to the given project
+//     Removes the given SSH Key from the system.
 //
 //     Produces:
 //     - application/json
@@ -263,8 +263,8 @@ func (r Routing) deleteSSHKey() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: empty
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newDeleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -343,7 +343,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
+// swagger:route GET /api/v1/openstack/tenants
 //
 // Lists tenants from openstack
 //
@@ -352,7 +352,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []OpenstackTenants
+//       200: OpenstackTenantList
 func (r Routing) listOpenstackTenants() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -440,22 +440,16 @@ func (r Routing) getMasterVersions() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects projects
+// swagger:route GET /api/v1/projects project getProjects
 //
-//     List projects filtered by user
-//
-//     This endpoint will list all projects that
-//     the authenticated user is a member of
+//     Lists projects that an authenticated user is a member of.
 //
 //     Produces:
 //     - application/json
 //
-//     Security:
-//       openIdConnect: [authenticated]
-//
 //     Responses:
 //       default: errorResponse
-//       200: ProjectList
+//       501: empty
 func (r Routing) getProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -468,12 +462,11 @@ func (r Routing) getProjects() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects project
+// swagger:route POST /api/v1/projects project createProject
 //
-//     Create a project
+//     Creates a brand new project.
 //
-//     Allow to create a brand new project.
-//     This endpoint can be consumed by every authenticated user.
+//     Note that this endpoint can be consumed by every authenticated user.
 //
 //     Consumes:
 //     - application/json
@@ -481,14 +474,11 @@ func (r Routing) getProjects() http.Handler {
 //     Produces:
 //     - application/json
 //
-//     Security:
-//       openIdConnect: [authenticated]
-//
 //     Responses:
 //       default: errorResponse
-//       401: Unauthorized
 //       201: Project
-//       409: AlreadyExists
+//       401: empty
+//       409: empty
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -501,21 +491,16 @@ func (r Routing) createProject() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/projects/project project
+// swagger:route PUT /api/v1/projects/{project_id} project updateProject
 //
 //    Updates the given project
 //
 //     Produces:
 //     - application/json
 //
-//     Security:
-//       openIdConnect: [admin]
-//
 //     Responses:
 //       default: errorResponse
-//       200: Project
-//       401: Unauthorized
-//       403: Forbidden
+//       501: empty
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -528,23 +513,19 @@ func (r Routing) updateProject() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id} project
+// swagger:route DELETE /api/v1/projects/{project_id} project deleteProject
 //
 //    Deletes the project with the given ID.
-//
-//    Note that only the project owner can delete the project.
 //
 //     Produces:
 //     - application/json
 //
-//     Security:
-//       openIdConnect: [owner]
 //
 //     Responses:
 //       default: errorResponse
 //       200: empty
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -557,8 +538,9 @@ func (r Routing) deleteProject() http.Handler {
 	)
 }
 
-// Creates a cluster
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters cluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters project newCreateCluster
+//
+//     Creates a cluster for the given project.
 //
 //     Consumes:
 //     - application/json
@@ -569,8 +551,8 @@ func (r Routing) deleteProject() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       201: ClusterV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newCreateCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -584,8 +566,9 @@ func (r Routing) newCreateCluster() http.Handler {
 	)
 }
 
-// List clusters
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters project newListClusters
+//
+//     Lists clusters for the specified project.
 //
 //     Produces:
 //     - application/json
@@ -593,8 +576,8 @@ func (r Routing) newCreateCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: ClusterListV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newListClusters() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -608,8 +591,9 @@ func (r Routing) newListClusters() http.Handler {
 	)
 }
 
-// Get the cluster
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name} project newGetCluster
+//
+//     Gets the cluster with the given name
 //
 //     Produces:
 //     - application/json
@@ -617,8 +601,8 @@ func (r Routing) newListClusters() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: ClusterV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newGetCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -632,8 +616,9 @@ func (r Routing) newGetCluster() http.Handler {
 	)
 }
 
-// Update the cluster
-// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster}
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name} project newUpdateCluster
+//
+//     Updates the given cluster.
 //
 //     Produces:
 //     - application/json
@@ -641,8 +626,8 @@ func (r Routing) newGetCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: ClusterV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newUpdateCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -657,7 +642,9 @@ func (r Routing) newUpdateCluster() http.Handler {
 }
 
 // newGetClusterKubeconfig returns the kubeconfig for the cluster.
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig project newGetClusterKubeconfig
+//
+//     Gets the kubeconfig for the specified cluster.
 //
 //     Produces:
 //     - application/yaml
@@ -665,8 +652,8 @@ func (r Routing) newUpdateCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: Kubeconfig
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newGetClusterKubeconfig() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -681,7 +668,9 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}
+// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name} project newDeleteCluster
+//
+//     Deletes the specified cluster
 //
 //     Produces:
 //     - application/json
@@ -689,8 +678,8 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: empty
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) newDeleteCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -716,8 +705,8 @@ func (r Routing) newDeleteCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       201: ClusterV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) assignSSHKeyToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -743,8 +732,8 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       201: ClusterV1
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
