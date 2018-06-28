@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	goflag "flag"
-	"os"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -31,33 +30,27 @@ type Opts struct {
 	NodesTimeout   time.Duration
 }
 
-func lookupEnv(key, defaultVal string) string {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		return defaultVal
-	}
-	return val
-}
-
 func main() {
 	var runOpts Opts
 
-	flag.IntVar(&runOpts.Nodes, "nodes", 1, "number of worker nodes")
-	flag.StringArrayVar(&runOpts.Addons, "addons", []string{"canal", "dns", "kube-proxy", "openvpn", "rbac"}, "comma separated list of addons")
-	flag.StringVar(&runOpts.ClusterPath, "cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
 	flag.StringVar(&runOpts.KubeconfPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
+	flag.StringVar(&runOpts.ClusterPath, "cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
 	flag.StringVar(&runOpts.MachinePath, "machine", "/manifests/machine.yaml", "path to Machine yaml")
+	flag.StringArrayVar(&runOpts.Addons, "addons", []string{"canal", "dns", "kube-proxy", "openvpn", "rbac"}, "comma separated list of addons")
+	flag.IntVar(&runOpts.Nodes, "nodes", 1, "number of worker nodes")
 	flag.DurationVar(&runOpts.ClusterTimeout, "cluster-timeout", 3*time.Minute, "cluster creation timeout")
 	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
-	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
+	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
+	flag.StringVar(&runOpts.TestBin, "e2e.test-bin", "/usr/local/bin/e2e.test", "path to e2e.test binary")
+	flag.StringVar(&runOpts.Focus, "focus", "[Conformance]", "tests focus")
+	flag.StringVar(&runOpts.Skip, "skip", "Alpha|Kubectl|[(Disruptive|Feature:[^]]+|Flaky)]", "skip those groups of tests")
+	flag.StringVar(&runOpts.Provider, "provider", "local", "cloud provider to use in tests")
+	flag.StringVar(&runOpts.Parallel, "parallel", "1", "parallelism of tests")
+	flag.StringVar(&runOpts.ReportsDir, "reoprts-dir", "/tmp/results", "directory to save test results")
 
-	runOpts.GinkgoBin = lookupEnv("E2E_GINKGO", "/usr/local/bin/ginkgo")
-	runOpts.TestBin = lookupEnv("E2E_TEST", "/usr/local/bin/e2e.test")
-	runOpts.Focus = lookupEnv("E2E_FOCUS", "[Conformance]")
-	runOpts.Skip = lookupEnv("E2E_SKIP", "Alpha|Kubectl|[(Disruptive|Feature:[^]]+|Flaky)]")
-	runOpts.Provider = lookupEnv("E2E_PROVIDER", "local")
-	runOpts.Parallel = lookupEnv("E2E_PARALLEL", "1")
-	runOpts.ReportsDir = lookupEnv("E2E_REPORTS_DIR", "/tmp/results")
+	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
+	flag.CommandLine.SortFlags = false
+
 	flag.Parse()
 
 	log.Info("starting")
