@@ -214,6 +214,11 @@ spec:
       dnsConfig:
         nameservers:
         - 10.10.10.10
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - cluster.local
       dnsPolicy: None
       initContainers:
       - command:
