@@ -297,6 +297,34 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "cluster",
+        "responses": {
+          "201": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/Forbidden"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/sshkeys": {
       "get": {
         "description": "Lists SSH keys that belong to the given project",
@@ -505,6 +533,11 @@
             "required": true
           },
           {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
+          },
+          {
             "type": "boolean",
             "x-go-name": "HideInitialConditions",
             "name": "hideInitialConditions",
@@ -548,6 +581,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           },
           {
             "name": "Body",
@@ -596,6 +634,11 @@
           },
           {
             "type": "string",
+            "name": "ProjectName",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -639,6 +682,11 @@
           },
           {
             "type": "string",
+            "name": "ProjectName",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -671,6 +719,11 @@
             "name": "dc",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -710,6 +763,11 @@
             "schema": {
               "$ref": "#/definitions/NewClusterReqBody"
             }
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -748,6 +806,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -784,6 +847,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           },
           {
             "name": "Body",
@@ -827,6 +895,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -862,6 +935,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -900,6 +978,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           },
           {
             "type": "boolean",
@@ -945,6 +1028,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           },
           {
             "name": "Body",
@@ -993,6 +1081,11 @@
           },
           {
             "type": "string",
+            "name": "ProjectName",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -1036,6 +1129,11 @@
           },
           {
             "type": "string",
+            "name": "ProjectName",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -1075,6 +1173,11 @@
             "name": "cluster",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "ProjectName",
+            "in": "query"
           }
         ],
         "responses": {
@@ -2382,6 +2485,14 @@
       "x-go-name": "HetznerNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
+    "ImageList": {
+      "description": "ImageList defines a map of operating system and the image to use",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Initializer": {
       "type": "object",
       "title": "Initializer is information about an initializer that has not yet completed.",
@@ -3371,6 +3482,9 @@
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
         "region": {
           "type": "string",
           "x-go-name": "Region"
@@ -3870,6 +3984,9 @@
         "endpoint": {
           "type": "string",
           "x-go-name": "Endpoint"
+        },
+        "templates": {
+          "$ref": "#/definitions/ImageList"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

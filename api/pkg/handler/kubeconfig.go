@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"k8s.io/client-go/tools/clientcmd"
@@ -17,7 +18,7 @@ import (
 
 func kubeconfigEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ClusterReq)
+		req := request.(NewGetClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
@@ -29,6 +30,24 @@ func kubeconfigEndpoint() endpoint.Endpoint {
 			return nil, err
 		}
 		return clusterProvider.GetAdminKubeconfig(c)
+	}
+}
+
+func newGetClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NewGetClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
 	}
 }
 
@@ -50,4 +69,13 @@ func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 	}
 	_, err = w.Write(b)
 	return err
+}
+
+func newDecodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
+	req, err := newDecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }

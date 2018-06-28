@@ -122,6 +122,7 @@ func main() {
 	}
 
 	clusterProviders := map[string]provider.ClusterProvider{}
+	newClusterProviders := map[string]provider.NewClusterProvider{}
 	for ctx := range clientcmdConfig.Contexts {
 		clientConfig := clientcmd.NewNonInteractiveClientConfig(
 			*clientcmdConfig,
@@ -149,6 +150,14 @@ func main() {
 			workerName,
 			handler.IsAdmin,
 			addons,
+		)
+		newClusterProviders[ctx] = kubernetesprovider.NewRBACCompliantClusterProvider(
+			defaultImpersonationClient.CreateImpersonatedClientSet,
+			kubermaticSeedClient,
+			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
+			addons,
+			workerName,
 		)
 
 		kubeInformerFactory.Start(wait.NeverStop)
@@ -188,6 +197,7 @@ func main() {
 	r := handler.NewRouting(
 		datacenters,
 		clusterProviders,
+		newClusterProviders,
 		cloudProviders,
 		sshKeyProvider,
 		newSSHKeyProvider,
@@ -206,7 +216,31 @@ func main() {
 	r.RegisterV2(v2Router)
 	r.RegisterV3(v3Router)
 
+	metrics.RegisterHTTPVecs()
+
+	lookupRoute := func(r *http.Request) string {
+		var match mux.RouteMatch
+		ok := mainRouter.Match(r, &match)
+		if !ok {
+			return ""
+		}
+
+		name := match.Route.GetName()
+		if name != "" {
+			return name
+		}
+
+		name, err = match.Route.GetPathTemplate()
+		if err != nil {
+			return ""
+		}
+
+		return name
+	}
+
+	metricHandler := metrics.InstrumentHandler(mainRouter, lookupRoute)
+
 	go metrics.ServeForever(internalAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", listenAddress))
-	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, mainRouter)))
+	glog.Fatal(http.ListenAndServe(listenAddress, handlers.CombinedLoggingHandler(os.Stdout, metricHandler)))
 }

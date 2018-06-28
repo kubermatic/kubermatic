@@ -82,6 +82,14 @@ func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoin
 	}
 }
 
+func imagesMap(images provider.ImageList) map[string]string {
+	m := map[string]string{}
+	for os, image := range images {
+		m[string(os)] = image
+	}
+	return m
+}
+
 func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	p, err := provider.DatacenterCloudProviderName(&dc.Spec)
 	if err != nil {
@@ -110,6 +118,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			AuthURL:          dc.Spec.Openstack.AuthURL,
 			AvailabilityZone: dc.Spec.Openstack.AvailabilityZone,
 			Region:           dc.Spec.Openstack.Region,
+			Images:           imagesMap(dc.Spec.Openstack.Images),
 		}
 	case dc.Spec.Hetzner != nil:
 		spec.Hetzner = &apiv1.HetznerDatacenterSpec{
@@ -122,6 +131,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 			Datacenter: dc.Spec.VSphere.Datacenter,
 			Datastore:  dc.Spec.VSphere.Datastore,
 			Cluster:    dc.Spec.VSphere.Cluster,
+			Templates:  imagesMap(dc.Spec.VSphere.Templates),
 		}
 	case dc.Spec.Azure != nil:
 		spec.Azure = &apiv1.AzureDatacenterSpec{
@@ -132,6 +142,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	return spec, nil
 }
 
+// Deprecated: datacenterMiddleware is deprecated use newDatacenterMiddleware instead.
 func (r Routing) datacenterMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -147,6 +158,26 @@ func (r Routing) datacenterMiddleware() endpoint.Middleware {
 				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
 			}
 			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func (r Routing) newDatacenterMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			getter := request.(DCGetter)
+			dc, exists := r.datacenters[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("datacenter", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, datacenterContextKey, dc)
+
+			clusterProvider, exists := r.newClusterProviders[getter.GetDC()]
+			if !exists {
+				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
+			}
+			ctx = context.WithValue(ctx, newClusterProviderContextKey, clusterProvider)
 			return next(ctx, request)
 		}
 	}
