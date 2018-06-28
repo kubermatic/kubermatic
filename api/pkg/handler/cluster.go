@@ -26,7 +26,7 @@ import (
 // Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
 func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NewClusterReq)
+		req := request.(ClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
@@ -67,7 +67,7 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// decode the request
-		req := request.(NewClusterReq)
+		req := request.(NewCreateClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 		project, err := projectProvider.Get(user, req.ProjectName)
@@ -96,7 +96,7 @@ func clusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(NewGetClusterReq)
+		req := request.(GetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
@@ -156,7 +156,7 @@ func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) end
 
 func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(UpdateClusterReq)
+		req := request.(NewUpdateClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 		project, err := projectProvider.Get(user, req.ProjectName)
@@ -218,7 +218,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 // Deprecated: deleteClusterEndpoint is deprecated use newDeleteCluster instead.
 func deleteClusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NewGetClusterReq)
+		req := request.(GetClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
@@ -358,7 +358,7 @@ func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(NewGetClusterReq)
+		req := request.(GetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
@@ -450,8 +450,18 @@ type listSSHKeysAssignedToClusterReq struct {
 	clusterName string
 }
 
+// NewCreateClusterReq defines HTTP request for newCreateCluster endpoint
+// swagger:parameters newCreateCluster
+type NewCreateClusterReq struct {
+	DCReq
+	// in: body
+	Body NewClusterReqBody
+	// in: path
+	ProjectName string `json:"project_id"`
+}
+
 func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewClusterReq
+	var req NewCreateClusterReq
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -472,6 +482,14 @@ func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
+// NewListClustersReq defines HTTP request for newListClsters endpoint
+// swagger:parameters newListClusters
+type NewListClustersReq struct {
+	DCReq
+	// in: path
+	ProjectName string `json:"project_id"`
+}
+
 func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewListClustersReq
 
@@ -488,6 +506,16 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 	req.ProjectName = projectName
 
 	return req, nil
+}
+
+// NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
+// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig
+type NewGetClusterReq struct {
+	DCReq
+	// in: path
+	ClusterName string `json:"cluster_name"`
+	// in: path
+	ProjectName string `json:"project_id"`
 }
 
 func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -526,8 +554,16 @@ func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, st
 	return clusterName, projectName, nil
 }
 
+// NewUpdateClusterReq defines HTTP request for newUpdateCluster endpoint
+// swagger:parameters newUpdateCluster
+type NewUpdateClusterReq struct {
+	NewGetClusterReq
+	// in: body
+	Body CreateClusterReqBody
+}
+
 func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateClusterReq
+	var req NewUpdateClusterReq
 	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
 	if err != nil {
 		return nil, err

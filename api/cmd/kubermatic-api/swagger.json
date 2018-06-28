@@ -153,19 +153,48 @@
         }
       }
     },
-    "/api/v1/openstack/tenants": {
-      "get": {
-        "description": "Lists tenants from openstack",
+    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}": {
+      "delete": {
+        "description": "Deletes the specified cluster",
         "produces": [
           "application/json"
         ],
         "tags": [
-          "openstack"
+          "project"
         ],
-        "operationId": "listOpenstackTenants",
+        "operationId": "newDeleteCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
-            "$ref": "#/responses/OpenstackTenants"
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -175,22 +204,17 @@
     },
     "/api/v1/projects": {
       "get": {
-        "security": [
-          {
-            "openIdConnect": [
-              "[authenticated]"
-            ]
-          }
-        ],
-        "description": "This endpoint will list all projects that\nthe authenticated user is a member of",
         "produces": [
           "application/json"
         ],
-        "summary": "List projects filtered by user",
-        "operationId": "projects",
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists projects that an authenticated user is a member of.",
+        "operationId": "getProjects",
         "responses": {
-          "200": {
-            "$ref": "#/responses/ProjectList"
+          "501": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -198,22 +222,18 @@
         }
       },
       "post": {
-        "security": [
-          {
-            "openIdConnect": [
-              "[authenticated]"
-            ]
-          }
-        ],
-        "description": "Allow to create a brand new project.\nThis endpoint can be consumed by every authenticated user.",
+        "description": "Note that this endpoint can be consumed by every authenticated user.",
         "consumes": [
           "application/json"
         ],
         "produces": [
           "application/json"
         ],
-        "summary": "Create a project",
-        "operationId": "project",
+        "tags": [
+          "project"
+        ],
+        "summary": "Creates a brand new project.",
+        "operationId": "createProject",
         "responses": {
           "201": {
             "description": "Project",
@@ -222,43 +242,10 @@
             }
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "409": {
-            "$ref": "#/responses/AlreadyExists"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/projects/project": {
-      "put": {
-        "security": [
-          {
-            "openIdConnect": [
-              "[admin]"
-            ]
-          }
-        ],
-        "description": "Updates the given project",
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "project",
-        "responses": {
-          "200": {
-            "description": "Project",
-            "schema": {
-              "$ref": "#/definitions/Project"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -267,29 +254,60 @@
       }
     },
     "/api/v1/projects/{project_id}": {
-      "delete": {
-        "security": [
-          {
-            "openIdConnect": [
-              "[owner]"
-            ]
-          }
-        ],
-        "description": "Note that only the project owner can delete the project.",
+      "put": {
+        "description": "Updates the given project",
         "produces": [
           "application/json"
         ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "501": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
         "summary": "Deletes the project with the given ID.",
-        "operationId": "project",
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -298,6 +316,49 @@
       }
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists clusters for the specified project.",
+        "operationId": "newListClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterListV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterListV1"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "post": {
         "consumes": [
           "application/json"
@@ -305,7 +366,34 @@
         "produces": [
           "application/json"
         ],
-        "operationId": "cluster",
+        "tags": [
+          "project"
+        ],
+        "summary": "Creates a cluster for the given project.",
+        "operationId": "newCreateCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NewClusterReqBody"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "201": {
             "description": "ClusterV1",
@@ -314,10 +402,171 @@
             }
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}": {
+      "get": {
+        "description": "Gets the cluster with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "newGetCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Updates the given cluster.",
+        "operationId": "newUpdateCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CreateClusterReqBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterV1",
+            "schema": {
+              "$ref": "#/definitions/ClusterV1"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/yaml"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the kubeconfig for the specified cluster.",
+        "operationId": "newGetClusterKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -327,23 +576,35 @@
     },
     "/api/v1/projects/{project_id}/sshkeys": {
       "get": {
-        "description": "Lists SSH keys that belong to the given project",
         "produces": [
           "application/json"
         ],
-        "operationId": "listSSHKeys",
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists SSH Keys that belong to the given project.",
+        "operationId": "newListSSHKeys",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
-            "description": "NewSSHKey",
+            "description": "NewSSHKeyList",
             "schema": {
-              "$ref": "#/definitions/NewSSHKey"
+              "$ref": "#/definitions/NewSSHKeyList"
             }
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -351,14 +612,26 @@
         }
       },
       "post": {
-        "description": "Creates a SSH keys for the given project",
         "consumes": [
           "application/json"
         ],
         "produces": [
           "application/json"
         ],
-        "operationId": "createSSHKey",
+        "tags": [
+          "project"
+        ],
+        "summary": "Adds the given SSH key to the specified project.",
+        "operationId": "newCreateSSHKey",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "NewSSHKey",
@@ -367,10 +640,10 @@
             }
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -380,23 +653,39 @@
     },
     "/api/v1/projects/{project_id}/sshkeys/{key_name}": {
       "delete": {
-        "description": "Deletes a SSH keys that belongs to the given project",
         "produces": [
           "application/json"
         ],
         "tags": [
-          "sshkeys"
+          "project"
         ],
+        "summary": "Removes the given SSH Key from the system.",
         "operationId": "newDeleteSSHKey",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "SSHKeyName",
+            "name": "key_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
           },
           "401": {
-            "$ref": "#/responses/Unauthorized"
+            "$ref": "#/responses/empty"
           },
           "403": {
-            "$ref": "#/responses/Forbidden"
+            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -533,11 +822,6 @@
             "required": true
           },
           {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
-          },
-          {
             "type": "boolean",
             "x-go-name": "HideInitialConditions",
             "name": "hideInitialConditions",
@@ -581,11 +865,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           },
           {
             "name": "Body",
@@ -634,11 +913,6 @@
           },
           {
             "type": "string",
-            "name": "ProjectName",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -682,11 +956,6 @@
           },
           {
             "type": "string",
-            "name": "ProjectName",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -719,11 +988,6 @@
             "name": "dc",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -763,11 +1027,6 @@
             "schema": {
               "$ref": "#/definitions/NewClusterReqBody"
             }
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -806,11 +1065,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -847,11 +1101,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           },
           {
             "name": "Body",
@@ -895,11 +1144,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -935,11 +1179,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -978,11 +1217,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           },
           {
             "type": "boolean",
@@ -1028,11 +1262,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           },
           {
             "name": "Body",
@@ -1081,11 +1310,6 @@
           },
           {
             "type": "string",
-            "name": "ProjectName",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -1129,11 +1353,6 @@
           },
           {
             "type": "string",
-            "name": "ProjectName",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "NodeName",
             "name": "node",
             "in": "path",
@@ -1173,11 +1392,6 @@
             "name": "cluster",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "ProjectName",
-            "in": "query"
           }
         ],
         "responses": {
@@ -2485,6 +2699,14 @@
       "x-go-name": "HetznerNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
+    "ImageList": {
+      "description": "ImageList defines a map of operating system and the image to use",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Initializer": {
       "type": "object",
       "title": "Initializer is information about an initializer that has not yet completed.",
@@ -2707,6 +2929,14 @@
         "spec": {
           "$ref": "#/definitions/NewSSHKeySpec"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "NewSSHKeyList": {
+      "description": "NewSSHKeyList represents a list of NewSSHKey",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NewSSHKey"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
@@ -3474,6 +3704,9 @@
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
         "region": {
           "type": "string",
           "x-go-name": "Region"
@@ -3571,6 +3804,14 @@
           "type": "string",
           "x-go-name": "Name"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackTenantList": {
+      "description": "OpenstackTenantList represents a list of OpenstackTenants",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/OpenstackTenant"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
@@ -3973,6 +4214,9 @@
         "endpoint": {
           "type": "string",
           "x-go-name": "Endpoint"
+        },
+        "templates": {
+          "$ref": "#/definitions/ImageList"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
