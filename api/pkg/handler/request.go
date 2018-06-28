@@ -52,28 +52,6 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// NodesV2Req represent a request to fetch all cluster nodes
-// swagger:parameters getClusterNodesV3 getClusterNodesV2
-type NodesV2Req struct {
-	GetClusterReq
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func decodeNodesV2Req(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodesV2Req
-	req.ClusterName = mux.Vars(r)["cluster"]
-	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
-
-	cr, err := decodeClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.GetClusterReq = cr.(GetClusterReq)
-
-	return req, nil
-}
-
 // CreateClusterReqBody represents the request body for a create cluster request
 type CreateClusterReqBody struct {
 	Cluster *kubermaticv1.Cluster `json:"cluster"`
