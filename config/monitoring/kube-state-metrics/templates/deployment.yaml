@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: kube-state-metrics
 spec:
+  selector:
+    matchLabels:
+      app: kube-state-metrics
   replicas: 1
   template:
     metadata:
@@ -10,47 +13,20 @@ spec:
         app: kube-state-metrics
     spec:
       serviceAccountName: kube-state-metrics
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
       containers:
-      - name: kube-rbac-proxy-main
-        image: {{ .Values.kubeStateMetrics.rbacProxy.image.repository }}:{{ .Values.kubeStateMetrics.rbacProxy.image.tag }}
-        args:
-        - "--secure-listen-address=:8443"
-        - "--upstream=http://127.0.0.1:8081/"
-        ports:
-        - name: https-main
-          containerPort: 8443
-        resources:
-          requests:
-            memory: 20Mi
-            cpu: 10m
-          limits:
-            memory: 40Mi
-            cpu: 20m
-      - name: kube-rbac-proxy-self
-        image: {{ .Values.kubeStateMetrics.rbacProxy.image.repository }}:{{ .Values.kubeStateMetrics.rbacProxy.image.tag }}
-        args:
-        - "--secure-listen-address=:9443"
-        - "--upstream=http://127.0.0.1:8082/"
-        ports:
-        - name: https-self
-          containerPort: 9443
-        resources:
-          requests:
-            memory: 20Mi
-            cpu: 10m
-          limits:
-            memory: 40Mi
-            cpu: 20m
       - name: kube-state-metrics
         image: {{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}
-        args:
-        - "--host=127.0.0.1"
-        - "--port=8081"
-        - "--telemetry-host=127.0.0.1"
-        - "--telemetry-port=8082"
+        ports:
+        - name: http-metrics
+          containerPort: 8080
+        - name: telemetry
+          containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
       - name: addon-resizer
         image: {{ .Values.kubeStateMetrics.resizer.image.repository }}:{{ .Values.kubeStateMetrics.resizer.image.tag }}
         resources:

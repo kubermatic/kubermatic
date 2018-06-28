@@ -10,6 +10,8 @@ spec:
         role: controller-manager
         version: v1
       annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '8085'
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
     spec:
