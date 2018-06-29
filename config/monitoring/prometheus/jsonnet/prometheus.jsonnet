@@ -1,5 +1,6 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 
+(import './alerts/kubermatic.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
 (import 'etcd-mixin/mixin.libsonnet') + {
   _config+:: {
@@ -19,6 +20,8 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     jobs+:: {
       Cadvisor: $._config.cadvisorSelector,
       Kubelet: $._config.kubeletSelector,
+      KubermaticAPI: 'job="pods",namespace="kubermatic",role="kubermatic-api"',
+      KubermaticControllerManager: 'job="pods",namespace="kubermatic",role="controller-manager"',
       KubernetesApiserver: $._config.kubeApiserverSelector,
       KubeStateMetrics: $._config.kubeStateMetricsSelector,
       // KubernetesControllerManager: $._config.kubeControllerManagerSelector,
@@ -36,3 +39,5 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       $._config.prometheus.rules,
   },
 }
+
+
