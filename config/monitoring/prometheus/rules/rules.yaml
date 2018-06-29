@@ -236,6 +236,29 @@ groups:
         node_namespace_pod:kube_pod_info:
       )
     record: node:node_net_saturation:sum_irate
+- name: kubermatic
+  rules:
+  - alert: KubermaticTooManyUnhandledErrors
+    annotations:
+      message: Kubermatic Controller Manager in {{ $labels.namespace }} has too many
+        errors in its loop.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubermatictoomanyunhandlederrors
+    expr: |
+      sum(rate(kubermatic_cluster_controller_unhandled_errors_total[5m])) > 0.01
+    for: 10m
+    labels:
+      severity: warning
+  - alert: KubermaticStuckClusterPhase
+    annotations:
+      message: Kubermatic cluster {{ $labels.cluster }} is stuck in unexpected phase
+        {{ $labels.phase }}.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubermaticstuckclusterphase
+    expr: |
+      kubermatic_cluster_controller_cluster_status_phase{phase="running"} == 0 and
+      kubermatic_cluster_controller_cluster_status_phase{phase="deleting"} == 0
+    for: 10m
+    labels:
+      severity: warning
 - name: kubernetes-absent
   rules:
   - alert: CadvisorDown
@@ -289,6 +312,25 @@ groups:
       runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletdown
     expr: |
       absent(up{job="kubelet"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+  - alert: KubermaticAPIDown
+    annotations:
+      message: KubermaticAPI has disappeared from Prometheus target discovery.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubermaticapidown
+    expr: |
+      absent(up{job="pods",namespace="kubermatic",role="kubermatic-api"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+  - alert: KubermaticControllerManagerDown
+    annotations:
+      message: KubermaticControllerManager has disappeared from Prometheus target
+        discovery.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubermaticcontrollermanagerdown
+    expr: |
+      absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
     for: 15m
     labels:
       severity: critical
