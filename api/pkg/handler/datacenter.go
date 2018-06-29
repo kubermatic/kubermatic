@@ -7,7 +7,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -179,6 +181,55 @@ func (r Routing) newDatacenterMiddleware() endpoint.Middleware {
 			}
 			ctx = context.WithValue(ctx, newClusterProviderContextKey, clusterProvider)
 			return next(ctx, request)
+		}
+	}
+}
+
+// This will convert the request object to match CreateClusterReq.
+// It enables us to use a single RequestObject CreateClusterReq further down in other middlewares.
+// Especially needed by the cluster-defaulting & cluster-validating middleware
+func (r Routing) createClusterConversionMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			legacyReq := request.(LegacyCreateClusterReq)
+
+			cluster := &kubermaticv1.Cluster{
+				Spec: legacyReq.Body.Cluster,
+			}
+
+			req := CreateClusterReqWithSSHKeys{
+				CreateClusterReq: CreateClusterReq{
+					Body:  NewClusterReqBody{Cluster: cluster},
+					DCReq: legacyReq.DCReq,
+				},
+				SSHKeys: legacyReq.Body.SSHKeys,
+			}
+
+			return next(ctx, req)
+		}
+	}
+}
+
+func (r Routing) clusterDefaultingMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			req := request.(CreateClusterReq)
+
+			// Defaulting Logic goes here
+
+			return next(ctx, req)
+		}
+	}
+}
+
+func (r Routing) clusterValidatingMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			req := request.(CreateClusterReq)
+
+			// Validation Logic goes here
+
+			return next(ctx, req)
 		}
 	}
 }

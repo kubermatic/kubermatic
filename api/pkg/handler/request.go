@@ -80,9 +80,15 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// ClusterReq represent a request for clusters specific data
-// swagger:parameters createCluster createClusterV3
-type ClusterReq struct {
+// CreateClusterReq represent a request for clusters specific data
+type CreateClusterReqWithSSHKeys struct {
+	CreateClusterReq
+	SSHKeys []string
+}
+
+// CreateClusterReq represent a request for clusters specific data
+// swagger:parameters createClusterV3
+type CreateClusterReq struct {
 	DCReq
 	// in: body
 	Body NewClusterReqBody
@@ -90,12 +96,25 @@ type ClusterReq struct {
 
 // NewClusterReqBody represents the body of a new cluster request
 type NewClusterReqBody struct {
-	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
-	SSHKeys []string                  `json:"sshKeys"`
+	*kubermaticv1.Cluster
+}
+
+// LegacyCreateClusterReq represent a request for clusters specific data
+// swagger:parameters createCluster
+type LegacyCreateClusterReq struct {
+	DCReq
+	// in: body
+	Body LegacyNewClusterReqBody
+}
+
+// LegacyNewClusterReqBody represents the body of a new cluster request
+type LegacyNewClusterReqBody struct {
+	Cluster kubermaticv1.ClusterSpec `json:"cluster"`
+	SSHKeys []string                 `json:"sshKeys"`
 }
 
 func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ClusterReq
+	var req LegacyCreateClusterReq
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {

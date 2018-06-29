@@ -53,7 +53,7 @@ type CloudSpecProvider interface {
 // ClusterProvider declares the set of methods for storing and loading clusters.
 type ClusterProvider interface {
 	// NewCluster creates a cluster for the provided user using the given ClusterSpec
-	NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	NewCluster(user apiv1.User, spec *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Cluster return a Cluster struct, given the user and cluster.
 	Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error)
