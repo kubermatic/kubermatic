@@ -1,12 +1,13 @@
 {{ define "slack.kubermatic.title.range" }}
 {{range .Alerts }}
-{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}{{ .Annotations.summary }}{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}
+{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}{{ .Labels.alertname }}{{ if eq .Status "firing" }}:fire:{{ else }}:white_check_mark:{{ end }}
 {{ end }}
 {{ end }}
 
 {{ define "slack.kubermatic.text.range" }}
 {{range .Alerts }}
-{{ .Annotations.description }}{{ if .Annotations.dashboard }}https://link-to-dashboard.io/{{ .Annotations.dashboard }}{{ end }}
+{{ .Annotations.message }}
+{{ if .Annotations.runbook_url }}{{ .Annotations.runbook_url }}{{ end }}
 {{ end }}
 {{ end }}
 
