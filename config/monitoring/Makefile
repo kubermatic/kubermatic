@@ -1,5 +1,5 @@
-.PHONY: jsonnet
-jsonnet: prometheus-jsonnet
+.PHONY: prometheus
+prometheus: prometheus-jsonnet prometheus-check
 
 .PHONY: prometheus-jsonnet
 prometheus-jsonnet:
