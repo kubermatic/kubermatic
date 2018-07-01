@@ -99,7 +99,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "iptables-init",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/bin/bash"},
 			Args: []string{
@@ -141,7 +141,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:            "openssl-dhparam",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/bin/openssl"},
 			Args: []string{
@@ -197,7 +197,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
 			Args:            vpnArgs,

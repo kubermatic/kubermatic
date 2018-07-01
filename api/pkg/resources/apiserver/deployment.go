@@ -94,7 +94,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
-			Image:           data.ImageRegistry("quay.io") + "/coreos/etcd:v3.2.7",
+			Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:v3.2.7",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/bin/sh",
@@ -113,7 +113,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            "openvpn-client",
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/sbin/openvpn"},
 			Args: []string{
@@ -167,7 +167,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Env:             getEnvVars(data),
