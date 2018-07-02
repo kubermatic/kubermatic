@@ -69,7 +69,7 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	defer ctl.deleteCluster(cluster.Name)
 	log.Infof("created cluster named: %s", cluster.Name)
 
-	log.Info("waiting for cluster to became healty")
+	log.Info("waiting for cluster to become healthy")
 	err = wait.Poll(
 		1*time.Second,
 		ctl.runOpts.ClusterTimeout,
