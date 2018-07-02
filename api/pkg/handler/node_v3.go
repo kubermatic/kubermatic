@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
@@ -34,35 +37,27 @@ const (
 	initialConditionParsingDelay = 5
 )
 
-// CreateNodeReqV2 represent a request for specific data to create a node
-// swagger:parameters createClusterNodeV2 createClusterNodeV3
-type CreateNodeReqV2 struct {
-	NewGetClusterReq
+// CreateNodeReqV3 represent a request for specific data to create a node
+// swagger:parameters createNodesHandlerV3
+type CreateNodeReqV3 struct {
+	GetClusterReq
 	// in: body
-	Body CreateNodeReqBodyV2
+	Body CreateNodeReqBodyV3
 }
 
-// CreateNodeReqBodyV2 represents the request body of a create nodes request
-type CreateNodeReqBodyV2 struct {
+// CreateNodeReqBodyV3 represents the request body of a create nodes request
+type CreateNodeReqBodyV3 struct {
 	apiv2.Node
 }
 
-// NodeReqV2 represent a request for node specific data
-// swagger:parameters getClusterNodeV2 deleteClusterNodeV2 deleteClusterNodeV3 getClusterNodeV3
-type NodeReqV2 struct {
-	NewGetClusterReq
-	// in: path
-	NodeName string `json:"node"`
-}
-
-func decodeCreateNodeReqV2(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeReqV2
+func decodeCreateNodeReqV3(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateNodeReqV3
 
 	cr, err := decodeClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	req.GetClusterReq = cr.(GetClusterReq)
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -205,12 +200,12 @@ func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	return reason, message
 }
 
-func createNodeEndpointV2(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider) endpoint.Endpoint {
+func createNodeEndpointV3(dcs map[string]provider.DatacenterMeta, dp provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		req := request.(CreateNodeReqV2)
+		req := request.(CreateNodeReqV3)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
@@ -315,12 +310,12 @@ func getMachineForNode(node *corev1.Node, machines []v1alpha1.Machine) *v1alpha1
 	return nil
 }
 
-func getNodesEndpointV2() endpoint.Endpoint {
+func getNodesEndpointV3() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
-		req := request.(NodesV2Req)
+		req := request.(NodesV3Req)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			return nil, err
@@ -421,7 +416,7 @@ func tryToFindMachineAndNode(name string, machineClient machineclientset.Interfa
 	return machine, node, nil
 }
 
-func getNodeEndpointV2() endpoint.Endpoint {
+func getNodeEndpointV3() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
@@ -457,7 +452,7 @@ func getNodeEndpointV2() endpoint.Endpoint {
 	}
 }
 
-func deleteNodeEndpointV2() endpoint.Endpoint {
+func deleteNodeEndpointV3() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
@@ -494,4 +489,26 @@ func deleteNodeEndpointV2() endpoint.Endpoint {
 		}
 		return nil, nil
 	}
+}
+
+// NodesV3Req represent a request to fetch all cluster nodes
+// swagger:parameters nodesHandlerV3
+type NodesV3Req struct {
+	GetClusterReq
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+func decodeNodesV3Req(c context.Context, r *http.Request) (interface{}, error) {
+	var req NodesV3Req
+	req.ClusterName = mux.Vars(r)["cluster"]
+	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
+
+	cr, err := decodeClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = cr.(GetClusterReq)
+
+	return req, nil
 }

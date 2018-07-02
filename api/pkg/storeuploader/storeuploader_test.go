@@ -4,23 +4,31 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-test/deep"
 	"github.com/minio/minio-go"
 )
 
 func TestGetObjectsToDelete(t *testing.T) {
 	tests := []struct {
-		existingObjects []minio.ObjectInfo
-		expected        []string
+		name             string
+		existingObjects  []minio.ObjectInfo
+		expectedToDelete []minio.ObjectInfo
+		revisions        int
 	}{
 		{
+			name:      "nothing gets deleted as revisions==existing-backups",
+			revisions: 1,
 			existingObjects: []minio.ObjectInfo{
 				{
 					Key:          "foo",
 					LastModified: time.Unix(1, 0),
 				},
 			},
+			expectedToDelete: nil,
 		},
 		{
+			name:      "oldest should be deleted as revisions < existing-backups",
+			revisions: 1,
 			existingObjects: []minio.ObjectInfo{
 				{
 					Key:          "foo",
@@ -31,30 +39,32 @@ func TestGetObjectsToDelete(t *testing.T) {
 					LastModified: time.Unix(10, 0),
 				},
 			},
-			expected: []string{"bar"},
+			expectedToDelete: []minio.ObjectInfo{
+				{
+					Key:          "foo",
+					LastModified: time.Unix(1, 0),
+				},
+			},
 		},
 	}
 
 	uploader := StoreUploader{}
 	for _, test := range tests {
-		objectsToDelete := uploader.getObjectsToDelete(test.existingObjects, 1)
-		if len(objectsToDelete) != len(test.expected) {
-			t.Errorf("Expected objectsToDelete to be of size %v but was %v", len(test.expected), len(objectsToDelete))
-		}
-		for _, expectedObject := range test.expected {
-			if !isExpectedObjectInObjectList(objectsToDelete, expectedObject) {
-				t.Errorf("Expected to find object %s in objectsToDelete list!", expectedObject)
+		t.Run(test.name, func(t *testing.T) {
+			t.Log("existing objects:")
+			for _, object := range test.existingObjects {
+				t.Logf("existing object: %s - %s", object.LastModified.Format("2006-01-02T15:04:05"), object.Key)
 			}
-		}
-	}
-}
 
-func isExpectedObjectInObjectList(objects []minio.ObjectInfo, expected string) bool {
-	for _, object := range objects {
-		if object.Key == expected {
-			return true
-		}
-	}
+			gotToDelete := uploader.getObjectsToDelete(test.existingObjects, test.revisions)
+			t.Log("objects to delete:")
+			for _, object := range gotToDelete {
+				t.Logf("existing object: %s - %s", object.LastModified.Format("2006-01-02T15:04:05"), object.Key)
+			}
 
-	return false
+			if diff := deep.Equal(gotToDelete, test.expectedToDelete); diff != nil {
+				t.Errorf("Expected: \n\n%v \n\nGot: \n\n%v", test.expectedToDelete, gotToDelete)
+			}
+		})
+	}
 }

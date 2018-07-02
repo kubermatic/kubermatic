@@ -14,7 +14,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.5"
+	tag = "v0.7.7"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -69,7 +69,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
-			Image:           data.ImageRegistry("docker.io") + "/busybox",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/bin/sh",
@@ -80,17 +80,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
+	if err != nil {
+		return nil, err
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/machine-controller:" + tag,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
 				"-master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
 				"-logtostderr",
 				"-v", "4",
-				"-cluster-dns", "10.10.10.10",
+				"-cluster-dns", clusterDNSIP,
 				"-internal-listen-address", "0.0.0.0:8085",
 			},
 			Env: getEnvVars(data),

@@ -6,3 +6,4 @@
 *.iml*
 api/.cover
 api/_build
+api/_cache

@@ -101,10 +101,9 @@ func (u *StoreUploader) getObjectsToDelete(objects []minio.ObjectInfo, revisions
 		return nil
 	}
 
-	sort.Slice(objects,
-		func(i, j int) bool {
-			return objects[i].LastModified.After(objects[j].LastModified)
-		})
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].LastModified.Before(objects[j].LastModified)
+	})
 
 	numRevisionsToDelete := len(objects) - revisionsToKeep
 

@@ -1,0 +1,111 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: prometheus-kubermatic
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: prometheus-kubermatic
+  serviceName: prometheus-kubermatic
+  template:
+    metadata:
+      labels:
+        app: prometheus-kubermatic
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '9090'
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/config/prometheus.yml
+        - --storage.tsdb.no-lockfile
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention=360h
+        - --web.enable-lifecycle
+        - --web.external-url=https://{{ .Values.prometheus.host | trim }}
+        - --web.route-prefix=/
+        image: quay.io/prometheus/prometheus:v2.2.1
+        livenessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /-/healthy
+            port: web
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: web
+        readinessProbe:
+          failureThreshold: 120
+          httpGet:
+            path: /-/healthy
+            port: web
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /etc/prometheus/config/
+          name: prometheus-kubermatic-config
+          readOnly: false
+        - mountPath: /etc/prometheus/rules/
+          name: prometheus-kubermatic-rules
+          readOnly: false
+        - mountPath: /prometheus
+          name: prometheus-kubermatic-db
+          readOnly: false
+          subPath: prometheus-db
+      - name: reloader
+        image: jimmidyson/configmap-reload
+        args:
+        - --volume-dir=/etc/prometheus/config
+        - --volume-dir=/etc/prometheus/rules
+        - --webhook-url=http://localhost:9090/-/reload
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 25m
+            memory: 16Mi
+        volumeMounts:
+        - mountPath: /etc/prometheus/config/
+          name: prometheus-kubermatic-config
+          readOnly: false
+        - mountPath: /etc/prometheus/rules/
+          name: prometheus-kubermatic-rules
+          readOnly: false
+      serviceAccountName: prometheus-kubermatic
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+      - name: prometheus-kubermatic-config
+        configMap:
+          name: prometheus-kubermatic-config
+      - name: prometheus-kubermatic-rules
+        configMap:
+          name: prometheus-kubermatic-rules
+  volumeClaimTemplates:
+  - metadata:
+      name: prometheus-kubermatic-db
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.prometheus.storageSize }}
+      storageClassName: kubermatic-fast
