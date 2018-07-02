@@ -129,7 +129,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// Defines set of endpoints that manipulate SSH keys of a cluster
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
 		Handler(r.assignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
@@ -137,8 +137,8 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
-		Handler(r.detachSSHKeysFromCluster())
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
+		Handler(r.detachSSHKeyFromCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -748,7 +748,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
 		)(assignSSHKeyToCluster(r.newSSHKeyProvider, r.projectProvider)),
-		decodeAssignSSHKeysToClusterReq,
+		decodeAssignSSHKeyToClusterReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -783,8 +783,8 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// Unassing a set of ssh keys from the given cluster
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+// Unassignes an ssh key from the given cluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}
 //
 //     Consumes:
 //     - application/json
@@ -797,13 +797,13 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //       200: empty
 //       401: Unauthorized
 //       403: Forbidden
-func (r Routing) detachSSHKeysFromCluster() http.Handler {
+func (r Routing) detachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
-		)(detachSSHKeysFromCluster(r.newSSHKeyProvider, r.projectProvider)),
+		)(detachSSHKeyFromCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,

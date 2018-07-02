@@ -16,6 +16,8 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -197,8 +199,13 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			if !ok {
 				t.Fatalf("unexpected action %#v", action)
 			}
-			if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), testcase.ExpectedSSHKeys[validatedActions]) {
-				t.Fatalf("%v", diff.ObjectDiff(testcase.ExpectedSSHKeys[validatedActions], updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
+			for _, expectedSSHKey := range testcase.ExpectedSSHKeys {
+				sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
+				if sshKeyFromAction.Name == expectedSSHKey.Name {
+					if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
+						t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
+					}
+				}
 			}
 			validatedActions = validatedActions + 1
 		}
@@ -216,10 +223,11 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	}
 }
 
-func TestDetachSSHKeysFromClusterEndpoint(t *testing.T) {
+func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                     string
 		Body                     string
+		KeyToDelete              string
 		ExpectedDeleteResponse   string
 		ExpectedDeleteHTTPStatus int
 		ExistingProject          *kubermaticv1.Project
@@ -232,8 +240,9 @@ func TestDetachSSHKeysFromClusterEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name: "scenario 1: detaches one key from the cluster",
-			Body: `{"keys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Name:                     "scenario 1: detaches one key from the cluster",
+			Body:                     ``,
+			KeyToDelete:              "key-c08aa5c7abf34504f18552846485267d-yafn",
 			ExpectedDeleteResponse:   `null`,
 			ExpectedDeleteHTTPStatus: http.StatusOK,
 			ExpectedGetHTTPStatus:    http.StatusOK,
@@ -325,7 +334,7 @@ func TestDetachSSHKeysFromClusterEndpoint(t *testing.T) {
 			var ep http.Handler
 			{
 				var err error
-				req := httptest.NewRequest("DELETE", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys", strings.NewReader(tc.Body))
+				req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys/%s", tc.KeyToDelete), strings.NewReader(tc.Body))
 				res := httptest.NewRecorder()
 				kubermaticObj := []runtime.Object{}
 				if tc.ExistingProject != nil {
@@ -352,6 +361,9 @@ func TestDetachSSHKeysFromClusterEndpoint(t *testing.T) {
 				}
 				compareWithResult(t, res, tc.ExpectedDeleteResponse)
 			}
+
+			// GET request list the keys from the cache, thus we wait 1 s before firing the request . . . I know :)
+			time.Sleep(time.Second)
 
 			{
 				req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys", strings.NewReader(tc.Body))
@@ -508,12 +520,13 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	}
 }
 
-func TestAssignSSHKeysToClusterEndpoint(t *testing.T) {
+func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
 		ExpectedResponse       string
 		HTTPStatus             int
+		KeyToAssign            string
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
@@ -523,8 +536,9 @@ func TestAssignSSHKeysToClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
-			Body:             `{"keys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             ``,
 			ExpectedResponse: `null`,
+			KeyToAssign:      "key-c08aa5c7abf34504f18552846485267d-yafn",
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -588,8 +602,9 @@ func TestAssignSSHKeysToClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: an ssh key that does not belong to the given project cannot be assigned to the cluster",
-			Body:             `{"keys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             ``,
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (myProjectInternalName)"}}`,
+			KeyToAssign:      "key-c08aa5c7abf34504f18552846485267d-yafn",
 			HTTPStatus:       http.StatusInternalServerError,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -654,7 +669,7 @@ func TestAssignSSHKeysToClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys/%s", tc.KeyToAssign), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			if tc.ExistingProject != nil {
