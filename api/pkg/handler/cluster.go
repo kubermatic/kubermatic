@@ -26,7 +26,7 @@ import (
 // Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
 func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ClusterReq)
+		req := request.(LegacyCreateClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
@@ -455,7 +455,7 @@ type listSSHKeysAssignedToClusterReq struct {
 type NewCreateClusterReq struct {
 	DCReq
 	// in: body
-	Body NewClusterReqBody
+	Body LegacyNewClusterReqBody
 	// in: path
 	ProjectName string `json:"project_id"`
 }

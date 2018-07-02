@@ -62,10 +62,9 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 		glog.V(4).Infof("Created kubelet token for cluster %s", c.Name)
 	}
 
-	externalName := fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
-	if c.Address.ExternalName != externalName {
+	if c.Address.ExternalName == "" {
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Address.ExternalName = externalName
+			c.Address.ExternalName = fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 		})
 		if err != nil {
 			return nil, err
