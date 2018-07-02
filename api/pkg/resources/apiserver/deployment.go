@@ -86,7 +86,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// Configure user cluster DNS resolver for this pod.
-	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	if err != nil {
+		return nil, err
+	}
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{

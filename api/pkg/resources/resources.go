@@ -248,13 +248,20 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPolicy, *corev1.PodDNSConfig) {
+func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
 	dnsConfigOptionNdots := "5"
+	dnsConfigResolverIP, err := UserClusterDNSResolverIP(cluster)
+	if err != nil {
+		return corev1.DNSNone, nil, err
+	}
+	if len(cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", cluster.Name)
+	}
 	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{UserClusterDNSResolverIP(cluster)},
+		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
 			"cluster.local",
 		},
@@ -264,7 +271,7 @@ func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPol
 				Value: &dnsConfigOptionNdots,
 			},
 		},
-	}
+	}, nil
 }
 
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
