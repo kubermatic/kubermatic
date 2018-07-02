@@ -23,14 +23,11 @@ type ObjectMeta struct {
 // NewSSHKey represents a ssh key
 // swagger:model NewSSHKey
 type NewSSHKey struct {
-	Metadata ObjectMeta    `json:"metadata"`
-	Spec     NewSSHKeySpec `json:"spec"`
-}
-
-// NewSSHKeySpec represents the details of a ssh key
-type NewSSHKeySpec struct {
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"publicKey"`
+	Name              string    `json:"name"`
+	DisplayName       string    `json:"displayName"`
+	CreationTimestamp time.Time `json:"creationTimestamp,omitempty"`
+	Fingerprint       string    `json:"fingerprint"`
+	PublicKey         string    `json:"publicKey"`
 }
 
 // NewSSHKeyList represents a list of NewSSHKey

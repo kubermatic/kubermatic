@@ -2760,11 +2760,26 @@
       "description": "NewSSHKey represents a ssh key",
       "type": "object",
       "properties": {
-        "metadata": {
-          "$ref": "#/definitions/ObjectMetaV2"
+        "creationTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
         },
-        "spec": {
-          "$ref": "#/definitions/NewSSHKeySpec"
+        "displayName": {
+          "type": "string",
+          "x-go-name": "DisplayName"
+        },
+        "fingerprint": {
+          "type": "string",
+          "x-go-name": "Fingerprint"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "publicKey": {
+          "type": "string",
+          "x-go-name": "PublicKey"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
@@ -2774,21 +2789,6 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/NewSSHKey"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-    },
-    "NewSSHKeySpec": {
-      "description": "NewSSHKeySpec represents the details of a ssh key",
-      "type": "object",
-      "properties": {
-        "fingerprint": {
-          "type": "string",
-          "x-go-name": "Fingerprint"
-        },
-        "publicKey": {
-          "type": "string",
-          "x-go-name": "PublicKey"
-        }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
