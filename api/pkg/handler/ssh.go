@@ -42,20 +42,17 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		key, err := keyProvider.Create(user, project, req.Key.Metadata.DisplayName, req.Key.Spec.PublicKey)
+		key, err := keyProvider.Create(user, project, req.Key.DisplayName, req.Key.PublicKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		apiKey := v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
-			},
-			Spec: v2.NewSSHKeySpec{
-				Fingerprint: key.Spec.Fingerprint,
-				PublicKey:   key.Spec.PublicKey,
-			},
+			Name:              key.Name,
+			DisplayName:       req.Key.DisplayName,
+			CreationTimestamp: key.CreationTimestamp.Time,
+			Fingerprint:       key.Spec.Fingerprint,
+			PublicKey:         key.Spec.PublicKey,
 		}
 		return apiKey, nil
 	}
@@ -135,14 +132,11 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 	apiKeys := make([]v2.NewSSHKey, len(internalKeys))
 	for index, key := range internalKeys {
 		apiKey := v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
-			},
-			Spec: v2.NewSSHKeySpec{
-				Fingerprint: key.Spec.Fingerprint,
-				PublicKey:   key.Spec.PublicKey,
-			},
+			Name:              key.Name,
+			DisplayName:       key.Spec.Name,
+			CreationTimestamp: key.CreationTimestamp.Time,
+			Fingerprint:       key.Spec.Fingerprint,
+			PublicKey:         key.Spec.PublicKey,
 		}
 		apiKeys[index] = apiKey
 	}
@@ -216,14 +210,14 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
 	}
 
-	if len(req.Key.Metadata.Name) != 0 {
-		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead")
+	if len(req.Key.Name) != 0 {
+		return nil, fmt.Errorf("'name' field cannot be set, please set 'displayName' instead")
 	}
-	if len(req.Key.Spec.PublicKey) == 0 {
-		return nil, fmt.Errorf("'spec.publicKey' field cannot be empty")
+	if len(req.Key.PublicKey) == 0 {
+		return nil, fmt.Errorf("'publicKey' field cannot be empty")
 	}
-	if len(req.Key.Metadata.DisplayName) == 0 {
-		return nil, fmt.Errorf("'metadata.displayName' field cannot be empty")
+	if len(req.Key.DisplayName) == 0 {
+		return nil, fmt.Errorf("'displayName' field cannot be empty")
 	}
 
 	return req, nil

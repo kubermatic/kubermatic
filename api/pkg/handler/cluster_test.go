@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,31 +13,31 @@ import (
 	"github.com/go-test/deep"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
-		ExpectedResponse       string
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
+		ExpectedResponse       []v2.NewSSHKey
 	}{
 		// scenario 1
 		{
-			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
-			Body: ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]
-`,
+			Name:       "scenario 1: gets a list of ssh keys assigned to cluster",
+			Body:       ``,
 			HTTPStatus: http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -69,6 +70,14 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
 				Email: "john@acme.com",
+			},
+			ExpectedResponse: []v2.NewSSHKey{
+				v2.NewSSHKey{
+					Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+				},
+				v2.NewSSHKey{
+					Name: "key-abc-yafn",
+				},
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -147,7 +156,46 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+
+			returnedKeys := []v2.NewSSHKey{}
+			rawBody, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = json.Unmarshal(rawBody, &returnedKeys)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(returnedKeys) != len(tc.ExpectedResponse) {
+				t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(returnedKeys))
+			}
+
+			areKeysEqual := func(k1, k2 v2.NewSSHKey) bool {
+				if k1.Name == k2.Name &&
+					k1.DisplayName == k2.DisplayName &&
+					k1.CreationTimestamp == k2.CreationTimestamp &&
+					k1.PublicKey == k2.PublicKey &&
+					k1.Fingerprint == k2.Fingerprint {
+					return true
+				}
+				return false
+			}
+
+			for _, expectedSSHKey := range tc.ExpectedResponse {
+				found := false
+				for _, actualSSHKey := range returnedKeys {
+					if actualSSHKey.Name == expectedSSHKey.Name {
+						found = true
+						if !areKeysEqual(actualSSHKey, expectedSSHKey) {
+							t.Fatalf("%v", diff.ObjectDiff(actualSSHKey, expectedSSHKey))
+						}
+					}
+				}
+				if !found {
+					t.Fatalf("the ssh key with the name = %s was not found in the returned output", expectedSSHKey.Name)
+				}
+			}
 		})
 	}
 }
