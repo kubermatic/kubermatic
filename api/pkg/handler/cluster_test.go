@@ -15,11 +15,20 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
+	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+	if err != nil {
+		t.Fatal(err)
+
+	}
+
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -33,11 +42,10 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
-			Body: ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]
-`,
-			HTTPStatus: http.StatusOK,
+			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
+			Body:             ``,
+			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -82,6 +90,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 								Name:       "myProjectInternalName",
 							},
 						},
+						CreationTimestamp: metav1.NewTime(creationTime),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Clusters: []string{"abcd"},
@@ -98,6 +107,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 								Name:       "myProjectInternalName",
 							},
 						},
+						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Clusters: []string{"abcd"},

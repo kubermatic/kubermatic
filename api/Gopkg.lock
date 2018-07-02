@@ -1139,6 +1139,7 @@
     "rest",
     "rest/watch",
     "testing",
+    "third_party/forked/golang/template",
     "tools/auth",
     "tools/cache",
     "tools/clientcmd",
@@ -1158,6 +1159,7 @@
     "util/flowcontrol",
     "util/homedir",
     "util/integer",
+    "util/jsonpath",
     "util/retry",
     "util/workqueue"
   ]
@@ -1201,9 +1203,21 @@
   packages = ["pkg/util/proto"]
   revision = "275e2ce91dec4c05a4094a7b1daee5560b555ac9"
 
+[[projects]]
+  name = "k8s.io/kubernetes"
+  packages = ["pkg/printers"]
+  revision = "32ac1c9073b132b8ba18aa830f46b77dcceb0723"
+  version = "v1.10.5"
+
+[[projects]]
+  branch = "master"
+  name = "vbom.ml/util"
+  packages = ["sortorder"]
+  revision = "256737ac55c46798123f754ab7d2c784e2c71783"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "28d4c0b22166c35916e05202698c5d8ab2c790a89c7923d21491a925e9a338a3"
+  inputs-digest = "c9159a24bf30de4cf94c6cedcbb3879348fe3070eecb7bf0e8d7cb5cf84b33d8"
   solver-name = "gps-cdcl"
   solver-version = 1

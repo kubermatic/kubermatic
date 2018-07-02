@@ -320,7 +320,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		keys, err := sshKeyProvider.List(user, project, &provider.ListOptions{ClusterName: req.clusterName})
+		keys, err := sshKeyProvider.List(user, project, &provider.ListOptions{ClusterName: req.clusterName, SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
