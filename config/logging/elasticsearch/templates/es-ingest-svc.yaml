@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-ingest
+  labels:
+    component: elasticsearch
+    role: ingest
+spec:
+  selector:
+    component: elasticsearch
+    role: ingest
+  ports:
+  - name: transport
+    port: 9300
+    protocol: TCP

@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kibana-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # type of authentication
+    ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    ingress.kubernetes.io/auth-secret: kibana-auth-secret
+    # message to display with an appropiate context why the authentication is required
+    ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.logging.kibana.host | trim }}
+  backend:
+    serviceName: kibana-logging
+    servicePort: 5601
+  rules:
+  - host: {{ .Values.logging.kibana.host | trim }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kibana-logging
+          servicePort: 5601

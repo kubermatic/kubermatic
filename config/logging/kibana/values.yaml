@@ -1,0 +1,9 @@
+logging:
+  kibana:
+    host: "kibana.dev.kubermatic.io"
+    # admin:loodse123
+    auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+    image:
+      repository: docker.elastic.co/kibana/kibana-oss
+      tag: "6.3.0"
+      pullPolicy: "IfNotPresent"

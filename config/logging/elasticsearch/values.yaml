@@ -1,0 +1,13 @@
+logging:
+  elasticsearch:
+    dataReplicas: 3
+    storageSize: 10Gi
+    image:
+      repository: quay.io/pires/docker-elasticsearch-kubernetes
+      tag: "6.3.0"
+      pullPolicy: IfNotPresent
+    init:
+      image:
+        repository: busybox
+        tag: "1.27.2"
+        pullPolicy: IfNotPresent
