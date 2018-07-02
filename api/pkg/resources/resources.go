@@ -263,7 +263,7 @@ func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPol
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
-			"cluster.local",
+			cluster.Spec.ClusterNetwork.DNSDomain,
 		},
 		Options: []corev1.PodDNSConfigOption{
 			{
