@@ -19,3 +19,9 @@
 
 # RBAC
 /api/pkg/controller/rbac @p0lyn0mial
+
+# Image loader utility
+/api/cmd/image-loader @alvaroaleman
+
+# E2E Runner
+/api/cmd/kubermatic-e2e @kron4eg
