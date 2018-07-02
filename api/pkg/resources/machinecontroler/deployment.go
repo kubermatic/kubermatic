@@ -14,7 +14,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.5"
+	tag = "v0.7.7"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -69,7 +69,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
-			Image:           data.ImageRegistry("docker.io") + "/busybox",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/bin/sh",
@@ -87,7 +87,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry("docker.io") + "/kubermatic/machine-controller:" + tag,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{

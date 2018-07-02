@@ -74,7 +74,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		set.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 	}
 	set.Spec.Template.Spec.Containers[0].Name = name
-	set.Spec.Template.Spec.Containers[0].Image = data.ImageRegistry("quay.io") + "/prometheus/prometheus:v2.2.0"
+	set.Spec.Template.Spec.Containers[0].Image = data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:v2.2.0"
 	set.Spec.Template.Spec.Containers[0].Args = []string{
 		"--config.file=/etc/prometheus/config/prometheus.yaml",
 		"--storage.tsdb.path=/var/prometheus/data",
