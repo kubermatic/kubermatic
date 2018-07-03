@@ -66,7 +66,6 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 
 func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		// decode the request
 		req := request.(NewCreateClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
@@ -75,12 +74,20 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		spec := req.Body.Cluster
-		if spec == nil {
-			return nil, errors.NewBadRequest("no cluster spec given")
-		}
+		spec := &kubermaticapiv1.ClusterSpec{}
+		spec.HumanReadableName = req.Body.Name
+		spec.Cloud = &req.Body.Spec.Cloud
+		spec.Version = req.Body.Spec.Version
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
+
+		existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterName: spec.HumanReadableName})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if len(existingClusters) > 0 {
+			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
 		newCluster, err := clusterProvider.New(project, user, spec)
@@ -207,7 +214,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		clusters, err := clusterProvider.List(project)
+		clusters, err := clusterProvider.List(project, nil)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -320,7 +327,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		keys, err := sshKeyProvider.List(user, project, &provider.ListOptions{ClusterName: req.clusterName, SortBy: "metadata.creationTimestamp"})
+		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.clusterName, SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -455,7 +462,7 @@ type listSSHKeysAssignedToClusterReq struct {
 type NewCreateClusterReq struct {
 	DCReq
 	// in: body
-	Body NewClusterReqBody
+	Body apiv1.NewCluster
 	// in: path
 	ProjectName string `json:"project_id"`
 }

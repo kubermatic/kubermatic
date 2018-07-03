@@ -13,6 +13,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,15 +74,6 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
 	spec.WorkerName = p.workerName
-	clusters, err := p.List(project)
-	if err != nil {
-		return nil, err
-	}
-	for _, c := range clusters {
-		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ClusterResourceName}, spec.HumanReadableName)
-		}
-	}
 
 	name := rand.String(10)
 	cluster := &kubermaticapiv1.Cluster{
@@ -173,11 +165,12 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 }
 
 // List gets all clusters that belong to the given project
+// If you want to filter the result please take a look at ClusterListOptions
 //
 // Note:
 // After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project) ([]*kubermaticapiv1.Cluster, error) {
+func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, options *provider.ClusterListOptions) ([]*kubermaticapiv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -196,7 +189,21 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project) ([
 		}
 	}
 
-	return projectClusters, nil
+	if options == nil {
+		return projectClusters, nil
+	}
+	if len(options.ClusterName) == 0 {
+		return projectClusters, nil
+	}
+
+	filteredProjectClusters := []*kubermaticapiv1.Cluster{}
+	for _, projectCluster := range projectClusters {
+		if projectCluster.Spec.HumanReadableName == options.ClusterName {
+			filteredProjectClusters = append(filteredProjectClusters, projectCluster)
+		}
+	}
+
+	return filteredProjectClusters, nil
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to

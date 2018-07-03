@@ -90,6 +90,12 @@ type SSHKeyProvider interface {
 	DeleteSSHKey(name string, user apiv1.User) error
 }
 
+// ClusterListOptions allows to set filters that will be applied to filter the result.
+type ClusterListOptions struct {
+	// ClusterName (spec.HumanReadableName) gets the clusters with the given name
+	ClusterName string
+}
+
 // NewClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
 type NewClusterProvider interface {
@@ -97,11 +103,12 @@ type NewClusterProvider interface {
 	New(project *kubermaticv1.Project, user *kubermaticv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
+	// If you want to filter the result please take a look at ClusterListOptions
 	//
 	// Note:
 	// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-	List(project *kubermaticv1.Project) ([]*kubermaticv1.Cluster, error)
+	List(project *kubermaticv1.Project, options *ClusterListOptions) ([]*kubermaticv1.Cluster, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
@@ -116,9 +123,8 @@ type NewClusterProvider interface {
 	GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 }
 
-// ListOptions allows to set filters that will be applied
-// to filter the result of List method.
-type ListOptions struct {
+// SSHKeyListOptions allows to set filters that will be applied to filter the result.
+type SSHKeyListOptions struct {
 	// ClusterName gets the keys that are being used by the given cluster name
 	ClusterName string
 
@@ -131,11 +137,11 @@ type ListOptions struct {
 // This provider is Project and RBAC compliant
 type NewSSHKeyProvider interface {
 	// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
-	// If you want to filter the result please take a look at ListOptions
+	// If you want to filter the result please take a look at SSHKeyListOptions
 	//
 	// Note:
 	// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
-	List(user *kubermaticv1.User, project *kubermaticv1.Project, options *ListOptions) ([]*kubermaticv1.UserSSHKey, error)
+	List(user *kubermaticv1.User, project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
 	Create(user *kubermaticv1.User, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)

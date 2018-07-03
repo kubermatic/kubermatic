@@ -353,7 +353,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: a cluster with invalid spec is rejected",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}, "version":""}}`,
 			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingProject: &kubermaticv1.Project{
@@ -392,7 +392,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:                               "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:                               `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:                               `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
 			ExpectedResponse:                   `{"metadata":{"name":"%s","creationTimestamp":null,"labels":{"worker-name":""},"ownerReferences":[{"apiVersion":"kubermatic.k8s.io/v1","kind":"Project","name":"myProjectInternalName","uid":""}]},"spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":""},"version":"1.9.7","masterVersion":"","humanReadableName":"keen-snyder","workerName":"","pause":false},"address":{"url":"","externalName":"","kubeletToken":"","adminToken":"","ip":""},"status":{"lastUpdated":null,"health":{"apiserver":false,"scheduler":false,"controller":false,"machineController":false,"etcd":false,"lastTransitionTime":null},"lastDeployedMasterVersion":"","rootCA":{"key":"","cert":""},"apiserverCert":{"key":"","cert":""},"kubeletCert":{"key":"","cert":""},"apiserverSshKey":{"privateKey":"","publicKey":""},"serviceAccountKey":"","namespaceName":"%s","userName":"","userEmail":""}}`,
 			RewriteClusterNameAndNamespaceName: true,
 			HTTPStatus:                         http.StatusCreated,

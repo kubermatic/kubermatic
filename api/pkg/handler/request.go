@@ -85,11 +85,11 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 type ClusterReq struct {
 	DCReq
 	// in: body
-	Body NewClusterReqBody
+	Body ClusterReqBody
 }
 
-// NewClusterReqBody represents the body of a new cluster request
-type NewClusterReqBody struct {
+// ClusterReqBody represents the body of a new cluster request
+type ClusterReqBody struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
 }

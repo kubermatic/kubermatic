@@ -17,6 +17,13 @@ type ObjectMeta struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 }
 
+// NewObjectMeta defines the set of fields that all object
+// returned from the API must have
+type NewObjectMeta struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.
 type DigitialoceanDatacenterSpec struct {
 	Region string `json:"region"`
@@ -224,4 +231,22 @@ type MasterVersion struct {
 	Version             *semver.Version `json:"version"`
 	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
 	Default             bool            `json:"default,omitempty"`
+}
+
+// NewCluster defines the cluster resource
+type NewCluster struct {
+	NewObjectMeta `json:",inline"`
+	Spec          NewClusterSpec   `json:"spec"`
+	Status        NewClusterStatus `json:"status"`
+}
+
+// NewClusterSpec defines the cluster specification
+type NewClusterSpec struct {
+	Cloud   kubermaticv1.CloudSpec `json:"cloud"`
+	Version string                 `json:"version"`
+}
+
+// NewClusterStatus defines the cluster status
+type NewClusterStatus struct {
+	Version string `json:"version"`
 }
