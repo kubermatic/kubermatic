@@ -10,13 +10,15 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 )
 
@@ -84,7 +86,7 @@ func (p *RBACCompliantSSHKeyProvider) Create(user *kubermaticapiv1.User, project
 }
 
 // List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
-// If you want to filter the result please take a look at ListOptions
+// If you want to filter or sort the result please take a look at ListOptions
 //
 // Note:
 // After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
@@ -107,10 +109,18 @@ func (p *RBACCompliantSSHKeyProvider) List(user *kubermaticapiv1.User, project *
 			}
 		}
 	}
+
 	if options == nil {
 		return projectKeys, nil
 	}
-	if options != nil && len(options.ClusterName) == 0 {
+	if len(options.SortBy) > 0 {
+		var err error
+		projectKeys, err = p.sortBy(projectKeys, options.SortBy)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(options.ClusterName) == 0 {
 		return projectKeys, nil
 	}
 
@@ -171,4 +181,22 @@ func (p *RBACCompliantSSHKeyProvider) createMasterImpersonationClientWrapper(use
 		Groups:   []string{groupName},
 	}
 	return p.createMasterImpersonatedClient(impersonationCfg)
+}
+
+// sortSSHKeysBy sort the given keys by the specified field name (sortBy)
+func (p *RBACCompliantSSHKeyProvider) sortBy(keys []*kubermaticapiv1.UserSSHKey, sortBy string) ([]*kubermaticapiv1.UserSSHKey, error) {
+	rawKeys := []runtime.Object{}
+	for index := range keys {
+		rawKeys = append(rawKeys, keys[index])
+	}
+	sorter, err := sortObjects(scheme.Codecs.UniversalDecoder(), rawKeys, sortBy)
+	if err != nil {
+		return nil, err
+	}
+
+	sortedKeys := make([]*kubermaticapiv1.UserSSHKey, len(keys))
+	for index := range keys {
+		sortedKeys[index] = keys[sorter.originalPosition(index)]
+	}
+	return sortedKeys, nil
 }
