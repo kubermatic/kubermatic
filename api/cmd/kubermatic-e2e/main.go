@@ -28,6 +28,7 @@ type Opts struct {
 	TestBin        string
 	ClusterTimeout time.Duration
 	NodesTimeout   time.Duration
+	GinkgoTimeout  time.Duration
 }
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 	flag.DurationVar(&runOpts.ClusterTimeout, "cluster-timeout", 3*time.Minute, "cluster creation timeout")
 	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
 	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
+	flag.DurationVar(&runOpts.GinkgoTimeout, "ginkgo-timeout", 5400*time.Second, "ginkgo execution timeout")
 	flag.StringVar(&runOpts.Focus, "ginkgo-focus", `\[Conformance\]`, "tests focus")
 	flag.StringVar(&runOpts.Skip, "ginkgo-skip", `Alpha|Kubectl|\[(Disruptive|Feature:[^\]]+|Flaky)\]`, "skip those groups of tests")
 	flag.StringVar(&runOpts.Parallel, "ginkgo-parallel", "1", "parallelism of tests")

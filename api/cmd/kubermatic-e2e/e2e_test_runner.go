@@ -147,7 +147,7 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 }
 
 func (ctl *e2eTestRunner) execGinkgo(ctx context.Context, kubeconfig string) error {
-	execCtx, execCancel := context.WithTimeout(ctx, 3600*time.Second)
+	execCtx, execCancel := context.WithTimeout(ctx, ctl.runOpts.GinkgoTimeout)
 	defer execCancel()
 
 	cmd := exec.CommandContext(execCtx,
