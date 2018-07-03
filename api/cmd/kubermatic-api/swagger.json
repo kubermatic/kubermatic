@@ -576,6 +576,7 @@
     },
     "/api/v1/projects/{project_id}/sshkeys": {
       "get": {
+        "description": "The returned collection of keys is sorted by creation timestamp.",
         "produces": [
           "application/json"
         ],
