@@ -121,7 +121,7 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		keys, err := keyProvider.List(user, project, nil)
+		keys, err := keyProvider.List(user, project, &provider.ListOptions{SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -131,10 +131,10 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 	}
 }
 
-func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []v2.NewSSHKey {
-	apiKeys := make([]v2.NewSSHKey, len(internalKeys))
+func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*v2.NewSSHKey {
+	apiKeys := make([]*v2.NewSSHKey, len(internalKeys))
 	for index, key := range internalKeys {
-		apiKey := v2.NewSSHKey{
+		apiKey := &v2.NewSSHKey{
 			Metadata: v2.ObjectMeta{
 				Name:              key.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,

@@ -158,6 +158,7 @@ func (r Routing) listSSHKeys() http.Handler {
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project newListSSHKeys
 //
 //     Lists SSH Keys that belong to the given project.
+//     The returned collection of keys is sorted by creation timestamp.
 //
 //     Produces:
 //     - application/json
@@ -720,8 +721,10 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 	)
 }
 
-// List ssh keys that are assigned to the cluster
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+//
+//     List ssh keys that are assigned to the cluster
+//     The returned collection is returned by creation timestamp.
 //
 //     Consumes:
 //     - application/json
