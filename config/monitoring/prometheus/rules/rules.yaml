@@ -259,6 +259,18 @@ groups:
     for: 10m
     labels:
       severity: warning
+- name: machine-controller
+  rules:
+  - alert: MachineControllerTooManyErrors
+    annotations:
+      message: Machine Controller in {{ $labels.namespace }} has too many errors in
+        its loop.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-machinecontrollertoomanyerrors
+    expr: |
+      sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
+    for: 10m
+    labels:
+      severity: warning
 - name: kubernetes-absent
   rules:
   - alert: CadvisorDown
@@ -340,6 +352,15 @@ groups:
       runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubernetesapiserverdown
     expr: |
       absent(up{job="apiserver"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+  - alert: MachineControllerDown
+    annotations:
+      message: MachineController has disappeared from Prometheus target discovery.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-machinecontrollerdown
+    expr: |
+      absent(up{job="machine-controller"} == 1)
     for: 15m
     labels:
       severity: critical

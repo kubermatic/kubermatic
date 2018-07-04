@@ -1,6 +1,7 @@
 local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 
 (import './alerts/kubermatic.libsonnet') +
+(import './alerts/machine-controller.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
 (import 'etcd-mixin/mixin.libsonnet') + {
   _config+:: {
@@ -15,6 +16,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     kubeSchedulerSelector: 'job="kube-scheduler"',
     kubeControllerManagerSelector: 'job="kube-controller-manager"',
     kubeApiserverSelector: 'job="apiserver"',
+    machineControllerSelector: 'job="machine-controller"',
 
     // We build alerts for the presence of all these jobs.
     jobs+:: {
@@ -24,6 +26,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       KubermaticControllerManager: 'job="pods",namespace="kubermatic",role="controller-manager"',
       KubernetesApiserver: $._config.kubeApiserverSelector,
       KubeStateMetrics: $._config.kubeStateMetricsSelector,
+      MachineController: $._config.machineControllerSelector,
       // KubernetesControllerManager: $._config.kubeControllerManagerSelector,
       // KubernetesScheduler: $._config.kubeSchedulerSelector,
     },
