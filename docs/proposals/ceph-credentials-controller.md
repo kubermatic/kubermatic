@@ -39,7 +39,7 @@ The controller will:
  * Prepare a Ceph cluster for testing
  * Exdend the datacenter definition with Ceph Credentials
  * Add Ceph test cluster admin credentials to Loodse VSphere datacenter
- * Write the `ceph-credentials-controller`
+ * Write the `ceph-credentials-controller` as a separate new service
  * Add e2e test runner that will:
    * create a cluster on dev in VSphere datacenter
    * check for the StorageClass
