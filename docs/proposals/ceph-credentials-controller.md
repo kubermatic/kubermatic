@@ -21,7 +21,7 @@ granting access to the same pool.
 
 Extend the datacenter definition with Ceph admin access credentials.
 
-Create a new `ceph-credentials-controller` in Go.
+Create a new `ceph-credentials-controller` as a part of `kubermatic-controller-manager`.
 
 The controller will:
 - upon finding a newly created cluster in datacenters with Ceph configurations:
@@ -39,7 +39,7 @@ The controller will:
  * Prepare a Ceph cluster for testing
  * Exdend the datacenter definition with Ceph Credentials
  * Add Ceph test cluster admin credentials to Loodse VSphere datacenter
- * Write the `ceph-credentials-controller` as a separate new service
+ * Write the `ceph-credentials-controller` as a part of `kubermatic-controller-manager`
  * Add e2e test runner that will:
    * create a cluster on dev in VSphere datacenter
    * check for the StorageClass
