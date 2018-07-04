@@ -21,7 +21,7 @@ spec:
       containers:
       - name: kibana-logging
         image: '{{ .Values.logging.kibana.image.repository }}:{{ .Values.logging.kibana.image.tag }}'
-        imagePullPolicy: {{.Values.logging.kibana.image.pullPolicy}}
+        imagePullPolicy: {{ .Values.logging.kibana.image.pullPolicy }}
         resources:
           # need more cpu upon initialization, therefore burstable class
           limits:

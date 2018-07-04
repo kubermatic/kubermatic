@@ -15,20 +15,22 @@ spec:
     spec:
       serviceAccount: elasticsearch
       serviceAccountName: elasticsearch
+      {{ if .Values.logging.elasticsearch.optimizations.maxMapCount }}
       initContainers:
       - name: init-sysctl
         image: '{{ .Values.logging.elasticsearch.init.image.repository }}:{{ .Values.logging.elasticsearch.init.image.tag }}'
-        imagePullPolicy: {{.Values.logging.elasticsearch.init.image.pullPolicy}}
+        imagePullPolicy: {{ .Values.logging.elasticsearch.init.image.pullPolicy }}
         command:
         - sysctl
         - -w
-        - vm.max_map_count=262144
+        - vm.max_map_count={{ .Values.logging.elasticsearch.optimizations.maxMapCount }}
         securityContext:
           privileged: true
+      {{ end }}
       containers:
       - name: es-ingest
         image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
-        imagePullPolicy: {{.Values.logging.elasticsearch.image.pullPolicy}}
+        imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
