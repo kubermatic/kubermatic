@@ -5,6 +5,8 @@ set -o nounset
 set -o pipefail
 set -x
 
+KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
+
 # Please make sure to set -enable-prometheus-endpoint=true if you want to use that endpoint.
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
@@ -14,7 +16,7 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -master-resources=../config/kubermatic/static/master \
-  -worker-name="$(uname -n | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' )" \
+  -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -token-issuer=https://dev.kubermatic.io/dex \
   -internal-address=127.0.0.1:18085 \
   -prometheus-url=http://localhost:9090 \
