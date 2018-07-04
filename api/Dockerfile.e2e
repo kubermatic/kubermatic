@@ -2,11 +2,11 @@ FROM alpine:3.7 AS builder
 
 LABEL maintainer "artiom@loodse.com"
 
-ENV KUBE_VERSION=v1.10.3
+ENV KUBE_VERSION=v1.10.5
 ENV KUBE_TEST_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/kubernetes-test.tar.gz
-ENV KUBE_TEST_CHECKSUM=b075744e98972d9734d34b954a07428e2248ea2f
+ENV KUBE_TEST_CHECKSUM=7b2d0d8bf474c35ed30d89b00f601f2ccfa49ad3
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_CHECKSUM=94f996d645e74634a4be67bbb5417f892774230b
+ENV KUBECTL_CHECKSUM=dbe431b2684f8ff4188335b3b3cea185d5a9ec44
 
 RUN apk add --no-cache curl
 RUN mkdir -p /_cache
