@@ -43,4 +43,6 @@ The controller will:
  * Add e2e test runner that will:
    * create a cluster on dev in VSphere datacenter
    * check for the StorageClass
+   * test creating & mounting a volume
+   * destroy the volume
    * destroy the cluster
