@@ -31,8 +31,7 @@ The controller will:
   1. mark the cluster with a `ceph-credentials` finalizer
 - upon finding a cluster marked for deletion in datacenters with Ceph configurations:
   1. check for `ceph-credentials` finalizer and ignore the cluster if the finalizer is not found
-  1. if the finalizer is found, the `StorageClass` object shall be destroyed
-  1. the associated Ceph credentials shall be deleted from the Ceph cluster
+  1. if the finalizer is found, the associated Ceph credentials shall be deleted from the Ceph cluster
   1. the `ceph-credentials` will be cleared
 
 ## Tasks
