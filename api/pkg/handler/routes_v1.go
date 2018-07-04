@@ -551,7 +551,7 @@ func (r Routing) deleteProject() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: ClusterV1
+//       201: Cluster
 //       401: empty
 //       403: empty
 func (r Routing) newCreateCluster() http.Handler {
