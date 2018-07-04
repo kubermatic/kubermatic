@@ -19,14 +19,8 @@ test suit.
 ## Flags
 All flags have reasonable defaults
 
-    -addons value
-        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac)
     -alsologtostderr
         log to standard error as well as files
-    -cluster string
-        path to Cluster yaml (default "/manifests/cluster.yaml")
-    -cluster-timeout duration
-        cluster creation timeout (default 3m0s)
     -e2e-provider string
         cloud provider to use in tests (default "local")
     -e2e-results-dir string
@@ -37,24 +31,34 @@ All flags have reasonable defaults
         path to ginkgo binary (default "/usr/local/bin/ginkgo")
     -ginkgo-focus string
         tests focus (default "\\[Conformance\\]")
-    -ginkgo-parallel string
-        parallelism of tests (default "1")
+    -ginkgo-nocolor
+        don't show colors
+    -ginkgo-parallel int
+        parallelism of tests (default 3)
     -ginkgo-skip string
-        skip those groups of tests (default "Alpha|Kubectl|\\[(Disruptive|Feature:[^\\]]+|Flaky)\\]")
+        skip those groups of tests (default "Flaky")
+    -ginkgo-timeout duration
+        ginkgo execution timeout (default 1h30m0s)
     -kubeconfig string
         path to kubeconfig file (default "/config/kubeconfig")
+    -kubermatic-addons value
+        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac)
+    -kubermatic-cluster string
+        path to Cluster yaml (default "/manifests/cluster.yaml")
+    -kubermatic-cluster-timeout duration
+        cluster creation timeout (default 3m0s)
+    -kubermatic-machine string
+        path to Machine yaml (default "/manifests/machine.yaml")
+    -kubermatic-nodes int
+        number of worker nodes (default 3)
+    -kubermatic-nodes-timeout duration
+        nodes creation timeout (default 10m0s)
     -log_backtrace_at value
         when logging hits line file:N, emit a stack trace
     -log_dir string
         If non-empty, write log files in this directory
     -logtostderr
         log to standard error instead of files
-    -machine string
-        path to Machine yaml (default "/manifests/machine.yaml")
-    -nodes int
-        number of worker nodes (default 1)
-    -nodes-timeout duration
-        nodes creation timeout (default 10m0s)
     -stderrthreshold value
         logs at or above this threshold go to stderr
     -v value
