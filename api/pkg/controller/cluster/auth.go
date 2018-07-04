@@ -159,11 +159,14 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
+	secureApiSvcIP, _, err := cc.getSecureApiserverIPPort(c)
+
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
-	dnsDomain := "cluster.local"
-	ips := sets.NewString("10.10.10.1", c.Address.IP)
+	dnsDomain := c.Spec.ClusterNetwork.DNSDomain
+	ips := sets.NewString("10.10.10.1", c.Address.IP, secureApiSvcIP)
+	// FIXME the 10.10.10.1 needs to be calculated as well. svc-net might differ
 	hostnames := sets.NewString(c.Address.ExternalName)
 
 	if existingSecret == nil {
@@ -438,4 +441,81 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 		return cc.secretWithJSON(cc.secretWithData(data, c))
 	}
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
+}
+func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-scheduler")
+}
+
+func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-controller-manager")
+}
+
+func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-machine-controller")
+}
+
+func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, role string) (*corev1.Secret, string, error) {
+	caKp, err := cc.getFullCAFromLister(c)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get CA: %v", err)
+	}
+
+	masterIP, masterPort, err := cc.getSecureApiserverIPPort(c)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to resolve apiserver service to master ip: %v", err)
+	}
+
+	if existingSecret == nil {
+		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s:%d", masterIP, masterPort), caKp, role, []string{role})
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create a dedicated kubeconfig for %s: %v", role, err)
+		}
+		return cc.secretWithJSON(cc.secretWithData(map[string][]byte{
+			resources.SchedulerKubeconfigSecretName: kconf,
+		}, c))
+	}
+
+	// FIXME add check for required update
+
+	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
+}
+
+func createLimitedKubeconfig(address string, ca *triple.KeyPair, commonName string, organizations []string) ([]byte, error) {
+	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to create client certificates for kubeconfig: %v", err)
+	}
+	kubeconfig := clientcmdapi.Config{
+		Clusters: map[string]*clientcmdapi.Cluster{
+			"default": {
+				CertificateAuthorityData: certutil.EncodeCertPEM(ca.Cert),
+				Server: address,
+			},
+		},
+		CurrentContext: "default",
+		Contexts: map[string]*clientcmdapi.Context{
+			"default": {
+				Cluster:  "default",
+				AuthInfo: "default",
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			"default": {
+				ClientCertificateData: certutil.EncodeCertPEM(kp.Cert),
+				ClientKeyData:         certutil.EncodePrivateKeyPEM(kp.Key),
+			},
+		},
+	}
+	kb, err := clientcmd.Write(kubeconfig)
+	if err != nil {
+		return []byte{}, err
+	}
+	return kb, nil
+}
+
+func (cc *Controller) getSecureApiserverIPPort(c *kubermaticv1.Cluster) (string, int32, error) {
+	// Create a fake TemplateData for now, as it conveniently holds
+	// a Cluster and a ServiceLister for us.
+	tdata := &resources.TemplateData{Cluster: c, ServiceLister: cc.serviceLister}
+	return tdata.ClusterIPPortByServiceName(resources.ApiserverExternalServiceName)
 }

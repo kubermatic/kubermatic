@@ -56,6 +56,8 @@ const (
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"
 	//CACertSecretName is the name for the secret containing the ca.crt
@@ -93,6 +95,9 @@ const (
 	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
+	//MachineControllerClusterRoleName is the name for the MachineController cluster role
+	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256
 
@@ -122,7 +127,7 @@ const (
 	// KubeletClientKeySecretKey kubelet-client.key
 	KubeletClientKeySecretKey = "kubelet-client.key"
 	// KubeletClientCertSecretKey kubelet-client.crt
-	KubeletClientCertSecretKey = "kubelet-client.crt"
+	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
 	// ServiceAccountKeySecretKey sa.key
 	ServiceAccountKeySecretKey = "sa.key"
 	// AdminKubeconfigSecretKey admin-kubeconfig
@@ -172,6 +177,9 @@ type RoleCreator = func(data *TemplateData, existing *rbacv1.Role) (*rbacv1.Role
 
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
 type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
+
+// ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
+type ClusterRoleCreator = func(data *TemplateData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
 
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
 type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
@@ -245,6 +253,21 @@ func NewTemplateData(
 		NodeAccessNetwork: nodeAccessNetwork,
 		EtcdDiskSize:      etcdDiskSize,
 	}
+}
+
+// ClusterIPPortByServiceName returns the ClusterIP (as string)
+// and port (as int32) for the Service specified by `name`.
+// Service lookup happens within `Cluster.Status.NamespaceName`.
+// TODO merge into ClusterIPByServiceName
+func (d *TemplateData) ClusterIPPortByServiceName(name string) (string, int32, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return "", 0, fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	if net.ParseIP(service.Spec.ClusterIP) == nil {
+		return "", 0, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return service.Spec.ClusterIP, service.Spec.Ports[0].NodePort, nil
 }
 
 // ClusterIPByServiceName returns the ClusterIP as string for the
@@ -336,6 +359,7 @@ func (d *TemplateData) ProviderName() string {
 }
 
 // GetApiserverExternalNodePort returns the nodeport of the external apiserver service
+// TODO rename s/external/secure/ ??
 func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 	s, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {

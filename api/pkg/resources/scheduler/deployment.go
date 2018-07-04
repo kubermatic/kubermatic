@@ -65,7 +65,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get openvpn sidecar container and apiserverServiceIP
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiIP, apiPort, err := data.ClusterIPPortByServiceName(resources.ApiserverExternalServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +80,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/scheduler"
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -89,7 +90,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -O - -T 1 https://%s:%d/healthz; do echo waiting for apiserver; sleep 2; done", apiIP, apiPort),
+				// * unfortunately no curl in busybox image
+				// * "fortunately" busybox wget does not care about TLS verification (neither peername, nor ca)
+				// * might still be enough for only waiting for `apiserver-running`
+				//
+				// curl could do a nice trick with --resolve, which eases handing in the peername
+				// but still connect to a different ip:
+				// curl --resolve kubernetes:31834:10.47.248.241 --cacert /ca.crt --cert /1.crt --key /1.key  -i https://kubernetes:31834/healthz
+				// (but busybox image has no curl by default)
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -103,11 +112,19 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
-				"--master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
+				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.SchedulerKubeconfigSecretName),
+				//"--master", fmt.Sprintf("http://%s:8080", apiserverServiceIP), // url is now in the kubeconf
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.SchedulerKubeconfigSecretName,
+					MountPath: kcDir,
+					ReadOnly:  true,
+				},
+			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceMemory: defaultMemoryRequest,
@@ -164,7 +181,15 @@ func getVolumes() []corev1.Volume {
 			Name: resources.CACertSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName: resources.CACertSecretName,
+				},
+			},
+		},
+		{
+			Name: resources.SchedulerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.SchedulerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
