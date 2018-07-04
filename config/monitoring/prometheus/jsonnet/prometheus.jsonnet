@@ -31,6 +31,8 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       // KubernetesScheduler: $._config.kubeSchedulerSelector,
     },
 
+    runbookURLPattern: 'https://docs.kubermatic.io/monitoring/runbook/#alert-%s',
+
     prometheus+:: {
       name: 'kubermatic',
       rules: $.prometheusRules + $.prometheusAlerts,
@@ -42,5 +44,3 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       $._config.prometheus.rules,
   },
 }
-
-
