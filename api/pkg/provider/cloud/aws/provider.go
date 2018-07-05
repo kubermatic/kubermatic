@@ -26,7 +26,7 @@ const (
 	instanceProfileCleanupFinalizer = "kubermatic.io/cleanup-aws-instance-profile"
 	tagCleanupFinalizer             = "kubermatic.io/cleanup-aws-tags"
 
-	TagNameKubernetesClusterPrefix = "kubernetes.io/cluster/"
+	tagNameKubernetesClusterPrefix = "kubernetes.io/cluster/"
 )
 
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
@@ -176,7 +176,7 @@ func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 		Resources: resourceIDs,
 		Tags: []*ec2.Tag{
 			{
-				Key:   aws.String(TagNameKubernetesClusterPrefix + cluster.Name),
+				Key:   aws.String(tagNameKubernetesClusterPrefix + cluster.Name),
 				Value: aws.String(""),
 			},
 		},
@@ -205,7 +205,7 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 		Resources: resourceIDs,
 		Tags: []*ec2.Tag{
 			{
-				Key:   aws.String(TagNameKubernetesClusterPrefix + cluster.Name),
+				Key:   aws.String(tagNameKubernetesClusterPrefix + cluster.Name),
 				Value: aws.String(""),
 			},
 		},
