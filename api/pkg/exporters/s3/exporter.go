@@ -3,6 +3,7 @@ package s3
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/minio/minio-go"
@@ -34,12 +35,12 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error 
 	}, []string{"prefix"})
 	exporter.ObjectsLastModifiedDate = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
-		Name:      "objects_last_modified_object_date",
+		Name:      "object_last_modified_object_time_seconds",
 		Help:      "The amount of objects",
 	}, []string{"prefix"})
 	exporter.ObjectsEmptyCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
-		Name:      "objects_empty_count",
+		Name:      "empty_object_count",
 		Help:      "The amount of object with a size of zero",
 	}, []string{"prefix"})
 	exporter.QuerySuccess = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -99,6 +100,28 @@ func (e *s3Exporter) refreshMetrics(w http.ResponseWriter, r *http.Request) bool
 		objects = append(objects, listerObject)
 	}
 
-	e.ObjectsCount.With(prometheus.Labels{"prefix": prefix}).Set(float64(len(objects)))
+	labels := prometheus.Labels{"prefix": prefix}
+	e.ObjectsCount.With(labels).Set(float64(len(objects)))
+	e.ObjectsLastModifiedDate.With(labels).Set(float64(getLastModifiedTimestamp(objects).UnixNano()))
+	e.ObjectsEmptyCount.With(labels).Set(float64(getEmptyObjectCount(objects)))
 	return true
+}
+
+func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp time.Time) {
+	for _, object := range objects {
+		if object.LastModified.After(lastmodifiedTimestamp) {
+			lastmodifiedTimestamp = object.LastModified
+		}
+	}
+
+	return lastmodifiedTimestamp
+}
+
+func getEmptyObjectCount(objects []minio.ObjectInfo) (emptyObjects int) {
+	for _, object := range objects {
+		if object.Size == 0 {
+			emptyObjects += 1
+		}
+	}
+	return emptyObjects
 }
