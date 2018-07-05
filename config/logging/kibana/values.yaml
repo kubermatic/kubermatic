@@ -1,0 +1,9 @@
+logging:
+  kibana:
+    host: ""
+    # admin:loodse123 (generate with: `printf "USER:$(openssl passwd -apr1 PASSWORD)" | base64`)
+    auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+    image:
+      repository: docker.elastic.co/kibana/kibana-oss
+      tag: "6.3.0"
+      pullPolicy: "IfNotPresent"
