@@ -263,6 +263,8 @@ func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPol
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
+			fmt.Sprintf("kube-system.svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
 			cluster.Spec.ClusterNetwork.DNSDomain,
 		},
 		Options: []corev1.PodDNSConfigOption{
