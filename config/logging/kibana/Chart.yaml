@@ -1,0 +1,13 @@
+name: kibana
+version: 0.1.0
+description: kibana
+keywords:
+  - k8s
+  - kubermatic
+  - kibana
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com
