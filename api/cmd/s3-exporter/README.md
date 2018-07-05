@@ -14,7 +14,7 @@ s3_object_count{prefix="q8z2hgk94f"} 12
 # HELP s3_object_last_modified_object_time_seconds The amount of objects
 # TYPE s3_object_last_modified_object_time_seconds gauge
 s3_object_last_modified_object_time_seconds{prefix="q8z2hgk94f"} 1.530821994927e+18
-# HELP s3_query_success Whether querying the S3 was successfull
+# HELP s3_query_success Whether querying the S3 was successful
 # TYPE s3_query_success gauge
 s3_query_success 0
 ```

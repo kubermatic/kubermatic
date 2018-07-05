@@ -22,6 +22,7 @@ type s3Exporter struct {
 	minioClient             *minio.Client
 }
 
+// MustRun starts a s3 exporter or panic
 func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error {
 
 	exporter := s3Exporter{}
@@ -46,7 +47,7 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error 
 	exporter.QuerySuccess = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "query_success",
-		Help:      "Whether querying the S3 was successfull",
+		Help:      "Whether querying the S3 was successful",
 	})
 
 	registry := prometheus.NewRegistry()
@@ -72,7 +73,7 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error 
 	})
 	go func() {
 		if err := http.ListenAndServe(fmt.Sprintf(":%v", listenAddress), nil); err != nil {
-			glog.Fatalf("Failed to listen: %v")
+			glog.Fatalf("Failed to listen: %v", err)
 		}
 	}()
 
@@ -83,7 +84,8 @@ func (e *s3Exporter) refreshMetrics(w http.ResponseWriter, r *http.Request) bool
 	prefix := r.URL.Query().Get("prefix")
 	if prefix == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("prefix url arg is required!\n"))
+		_, err := w.Write([]byte("prefix url arg is required!\n"))
+		_ = err
 		return false
 	}
 
@@ -120,7 +122,7 @@ func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp
 func getEmptyObjectCount(objects []minio.ObjectInfo) (emptyObjects int) {
 	for _, object := range objects {
 		if object.Size == 0 {
-			emptyObjects += 1
+			emptyObjects++
 		}
 	}
 	return emptyObjects
