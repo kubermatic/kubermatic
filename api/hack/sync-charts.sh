@@ -15,7 +15,7 @@ EOF
 fi
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio'
-export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus prometheus-operator'
+export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'

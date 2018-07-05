@@ -3,7 +3,7 @@
 /config/monitoring/ @metalmatze
 
 # API
-/api/pkg/handler @p0lyn0mial @kgroschoff
+/api/pkg/handler @p0lyn0mial
 
 /api/pkg/provider/kubernetes @p0lyn0mial
 

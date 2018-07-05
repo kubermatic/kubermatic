@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	log "github.com/golang/glog"
@@ -29,7 +30,9 @@ import (
 )
 
 const (
-	e2eGenerateName = "e2e-test-runner-"
+	e2eGenerateName   = "e2e-test-runner-"
+	ginkgoSerial      = `\[Serial\]`
+	ginkgoConformance = `\[Conformance\]`
 )
 
 func newE2ETestRunner(runOpts Opts) (*e2eTestRunner, error) {
@@ -143,25 +146,54 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 		return err
 	}
 
-	return ctl.execGinkgo(ctx, e2eKubeConfig.Name())
-}
-
-func (ctl *e2eTestRunner) execGinkgo(ctx context.Context, kubeconfig string) error {
-	execCtx, execCancel := context.WithTimeout(ctx, 3600*time.Second)
+	execCtx, execCancel := context.WithTimeout(ctx, ctl.runOpts.GinkgoTimeout)
 	defer execCancel()
 
-	cmd := exec.CommandContext(execCtx,
-		ctl.runOpts.GinkgoBin,
-		"--focus="+ctl.runOpts.Focus,
-		"--skip="+ctl.runOpts.Skip,
-		"--noColor=true",
-		"--nodes="+ctl.runOpts.Parallel,
-		ctl.runOpts.TestBin,
+	if ctl.runOpts.Parallel == 1 {
+		return execGinkgo(execCtx, ctl.runOpts, e2eKubeConfig.Name())
+	}
+
+	// copy options for local edits
+	parallelOpts := ctl.runOpts
+
+	if parallelOpts.Skip != "" {
+		parallelOpts.Skip = fmt.Sprintf("%s|%s", parallelOpts.Skip, ginkgoSerial)
+	} else {
+		parallelOpts.Skip = ginkgoSerial
+	}
+
+	// first run only parallel safe (skip [Serial]) tests
+	if err := execGinkgo(execCtx, parallelOpts, e2eKubeConfig.Name()); err != nil {
+		return err
+	}
+
+	parallelOpts.Parallel = 1
+	// restore original skip
+	parallelOpts.Skip = ctl.runOpts.Skip
+
+	if parallelOpts.Focus == ginkgoConformance {
+		parallelOpts.Focus = fmt.Sprintf("%s.*%s", ginkgoSerial, ginkgoConformance)
+	} else {
+		parallelOpts.Focus = fmt.Sprintf("%s.*%s.*%s", parallelOpts.Focus, ginkgoSerial, ginkgoConformance)
+	}
+
+	// second run only [Serial] conformance tests
+	return execGinkgo(execCtx, parallelOpts, e2eKubeConfig.Name())
+}
+
+func execGinkgo(ctx context.Context, opts Opts, kubeconfig string) error {
+	cmd := exec.CommandContext(ctx,
+		opts.GinkgoBin,
+		`--focus=`+opts.Focus,
+		"--skip="+opts.Skip,
+		"--noColor="+strconv.FormatBool(opts.GinkgoNoColor),
+		"--nodes="+strconv.Itoa(opts.Parallel),
+		opts.TestBin,
 		"--",
 		"--disable-log-dump",
 		"--repo-root=/kubernetes",
-		"--provider="+ctl.runOpts.Provider,
-		"--report-dir="+ctl.runOpts.ReportsDir,
+		"--provider="+opts.Provider,
+		"--report-dir="+opts.ReportsDir,
 		"--kubeconfig="+kubeconfig)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
