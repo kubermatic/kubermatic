@@ -343,9 +343,9 @@
         ],
         "responses": {
           "200": {
-            "description": "ClusterListV1",
+            "description": "ClusterList",
             "schema": {
-              "$ref": "#/definitions/ClusterListV1"
+              "$ref": "#/definitions/ClusterList"
             }
           },
           "401": {
@@ -448,9 +448,9 @@
         ],
         "responses": {
           "200": {
-            "description": "ClusterV1",
+            "description": "Cluster",
             "schema": {
-              "$ref": "#/definitions/ClusterV1"
+              "$ref": "#/definitions/Cluster"
             }
           },
           "401": {
@@ -499,15 +499,15 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/CreateClusterReqBody"
+              "$ref": "#/definitions/Cluster"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "ClusterV1",
+            "description": "Cluster",
             "schema": {
-              "$ref": "#/definitions/ClusterV1"
+              "$ref": "#/definitions/Cluster"
             }
           },
           "401": {
@@ -1767,6 +1767,15 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "ClusterList": {
+      "description": "NewClusterList represents a list of clusters",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Cluster"
+      },
+      "x-go-name": "NewClusterList",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterListV1": {
       "description": "ClusterList represents a list of clusters",

@@ -28,7 +28,7 @@ type NewObjectMeta struct {
 	Name string `json:"name"`
 
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
-	DeletionTimestamp time.Time `json:"deletionTimestamp,omitempty"`
+	DeletionTimestamp *time.Time `json:"deletionTimestamp,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	CreationTimestamp time.Time `json:"creationTimestamp,omitempty"`
@@ -268,3 +268,8 @@ type NewClusterStatus struct {
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
 }
+
+// NewClusterList represents a list of clusters
+// swagger:model ClusterList
+type NewClusterList []NewCluster
+

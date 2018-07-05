@@ -576,7 +576,7 @@ func (r Routing) newCreateCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterListV1
+//       200: ClusterList
 //       401: empty
 //       403: empty
 func (r Routing) newListClusters() http.Handler {
@@ -601,7 +601,7 @@ func (r Routing) newListClusters() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterV1
+//       200: Cluster
 //       401: empty
 //       403: empty
 func (r Routing) newGetCluster() http.Handler {
@@ -626,7 +626,7 @@ func (r Routing) newGetCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterV1
+//       200: Cluster
 //       401: empty
 //       403: empty
 func (r Routing) newUpdateCluster() http.Handler {
