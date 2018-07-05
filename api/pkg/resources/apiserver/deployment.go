@@ -20,11 +20,6 @@ var (
 	defaultApiserverCPURequest    = resource.MustParse("100m")
 	defaultApiserverMemoryLimit   = resource.MustParse("1Gi")
 	defaultApiserverCPULimit      = resource.MustParse("500m")
-
-	defaultOpenVPNMemoryRequest = resource.MustParse("30Mi")
-	defaultOpenVPNCPURequest    = resource.MustParse("10m")
-	defaultOpenVPNMemoryLimit   = resource.MustParse("64Mi")
-	defaultOpenVPNCPULimit      = resource.MustParse("40m")
 )
 
 const (
@@ -90,6 +85,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	// Configure user cluster DNS resolver for this pod.
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	if err != nil {
+		return nil, err
+	}
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -106,65 +106,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	openvpnServiceIP, err := data.ClusterIPByServiceName(resources.OpenVPNServerServiceName)
+	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:            "openvpn-client",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/sbin/openvpn"},
-			Args: []string{
-				"--client",
-				"--proto", "tcp",
-				"--dev", "tun",
-				"--auth-nocache",
-				"--remote", openvpnServiceIP, "1194",
-				"--nobind",
-				"--connect-timeout", "5",
-				"--connect-retry", "1",
-				"--ca", "/etc/kubernetes/ca-cert/ca.crt",
-				"--cert", "/etc/openvpn/certs/client.crt",
-				"--key", "/etc/openvpn/certs/client.key",
-				"--remote-cert-tls", "server",
-				"--link-mtu", "1432",
-				"--cipher", "AES-256-GCM",
-				"--auth", "SHA1",
-				"--keysize", "256",
-				"--script-security", "2",
-				"--status", "/run/openvpn-status",
-				"--log", "/dev/stdout",
-			},
-			SecurityContext: &corev1.SecurityContext{
-				Privileged: resources.Bool(true),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultOpenVPNMemoryRequest,
-					corev1.ResourceCPU:    defaultOpenVPNCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultOpenVPNMemoryLimit,
-					corev1.ResourceCPU:    defaultOpenVPNCPULimit,
-				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					MountPath: "/etc/openvpn/certs",
-					Name:      resources.OpenVPNClientCertificatesSecretName,
-					ReadOnly:  true,
-				},
-				{
-					MountPath: "/etc/kubernetes/ca-cert",
-					Name:      resources.CACertSecretName,
-					ReadOnly:  true,
-				},
-			},
-		},
+		*openvpnSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
