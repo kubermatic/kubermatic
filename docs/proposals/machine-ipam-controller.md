@@ -35,8 +35,7 @@ spec:
     name: node1
   providerConfig:
     network:
-      ip: "192.168.1.129"
-      netmask: "255.255.255.128"
+      cidr: "192.168.1.129/25"
       gateway: "192.168.1.1"
       # Explicitly making it a dedicated object to enable extending the dns settings
       dns:
@@ -69,6 +68,11 @@ It should be possible to add additional CIDR's later. Removing or modifying must
 
 `cluster.Spec.machineNetwork` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#optional-vs-required
 
+### kubermatic-api
+
+The kubermatic api is the responsible component for creating new machine objects inside the user-cluster.
+For better user feedback, the api needs to validate if there are free IP's left for the given cidr's & if not prevent the creation of new machines.
+
 ### machine-ipam-controller
 
 A new controller will be deployed inside the cluster-namespace for each cluster when `cluster.spec.`.
@@ -80,6 +84,9 @@ To prevent concurrency issues, the `machine-ipam-controller` will use leader-ele
 
 The different assigned CIDR's & the network configuration will be passed to the `machine-ipam-controller` via flags.
 `machine-ipam-controller` will exclusively talk to the user-cluster.
+
+#### Validation
+When there are no free IP's left for the specified CIDR's, the `machine-ipam-controller` should set `machine.status.errorReason` & `machine.status.errorMessage` on the machine object.
 
 ## Workflow
 
