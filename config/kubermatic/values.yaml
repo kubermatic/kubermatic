@@ -20,7 +20,7 @@ kubermatic:
   kubeconfig: ""
   addons:
     # list of Addons to install into every user-cluster. All need to exist in the addons image
-    defaultAddons: 
+    defaultAddons:
     - canal
     - dashboard
     - dns
@@ -59,6 +59,11 @@ kubermatic:
       {
         "show_demo_info": false
       }
+  s3_exporter:
+    image:
+      repository: docker.io/kubermatic/s3-exporter
+      tag: v0.1
+    bucket: kubermatic-etcd-backups
   storeContainer: |
     command:
     - /bin/sh
