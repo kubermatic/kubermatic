@@ -202,6 +202,58 @@
         }
       }
     },
+    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}/health": {
+      "get": {
+        "description": "Returns the cluster's component health status",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "newGetClusterHealth",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterHealth",
+            "schema": {
+              "$ref": "#/definitions/ClusterHealth"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "produces": [
@@ -1740,7 +1792,7 @@
     },
     "ClusterHealth": {
       "type": "object",
-      "title": "ClusterHealth stores health information of a cluster and the timestamp of the last change.",
+      "title": "NewClusterHealth stores health information about the cluster's components.",
       "properties": {
         "apiserver": {
           "type": "boolean",
@@ -1754,9 +1806,6 @@
           "type": "boolean",
           "x-go-name": "Etcd"
         },
-        "lastTransitionTime": {
-          "$ref": "#/definitions/Time"
-        },
         "machineController": {
           "type": "boolean",
           "x-go-name": "MachineController"
@@ -1766,7 +1815,8 @@
           "x-go-name": "Scheduler"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+      "x-go-name": "NewClusterHealth",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterList": {
       "description": "NewClusterList represents a list of clusters",

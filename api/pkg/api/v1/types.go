@@ -269,7 +269,16 @@ type NewClusterStatus struct {
 	URL string `json:"url"`
 }
 
+// NewClusterHealth stores health information about the cluster's components.
+// swagger:model ClusterHealth
+type NewClusterHealth struct {
+	Apiserver         bool `json:"apiserver"`
+	Scheduler         bool `json:"scheduler"`
+	Controller        bool `json:"controller"`
+	MachineController bool `json:"machineController"`
+	Etcd              bool `json:"etcd"`
+}
+
 // NewClusterList represents a list of clusters
 // swagger:model ClusterList
 type NewClusterList []NewCluster
-

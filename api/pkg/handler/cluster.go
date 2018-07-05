@@ -271,6 +271,30 @@ func newDeleteCluster(projectProvider provider.ProjectProvider) endpoint.Endpoin
 	}
 }
 
+func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NewGetClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return apiv1.NewClusterHealth{
+			Apiserver:         existingCluster.Status.Health.Apiserver,
+			Scheduler:         existingCluster.Status.Health.Scheduler,
+			Controller:        existingCluster.Status.Health.Controller,
+			MachineController: existingCluster.Status.Health.MachineController,
+			Etcd:              existingCluster.Status.Health.Etcd,
+		}, nil
+	}
+}
+
 func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignSSHKeysToClusterReq)
@@ -557,7 +581,7 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 // NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
-// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig
+// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth
 type NewGetClusterReq struct {
 	DCReq
 	// in: path

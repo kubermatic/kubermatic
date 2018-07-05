@@ -122,6 +122,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
 		Handler(r.newDeleteCluster())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/health").
+		Handler(r.newGetClusterHealth())
+
 	//
 	// Defines set of endpoints that manipulate SSH keys of a cluster
 	mux.Methods(http.MethodPost).
@@ -688,6 +692,31 @@ func (r Routing) newDeleteCluster() http.Handler {
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
 		)(newDeleteCluster(r.projectProvider)),
+		newDecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}/health project newGetClusterHealth
+//
+//     Returns the cluster's component health status
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterHealth
+//       401: empty
+//       403: empty
+func (r Routing) newGetClusterHealth() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterHealth(r.projectProvider)),
 		newDecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
