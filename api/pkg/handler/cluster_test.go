@@ -942,7 +942,7 @@ func TestListClusters(t *testing.T) {
 		{
 			Name:             "scenario 1: list clusters that belong to the given project",
 			Body:             ``,
-			ExpectedResponse: `[{"id":"InternalNameOfTheObject","name":"cluster-abc","deletionTimestamp":"2013-02-03T19:54:00Z","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}},{"id":"InternalNameOfTheObject_Second","name":"cluster-dcf","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"DatacenterInEurope","fake":{"token":"SecretToken"}},"version":"6.6.6"},"status":{"version":"6.6.6","url":""}}]`,
+			ExpectedResponse: `[{"id":"InternalNameOfTheObject","name":"cluster-abc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}},{"id":"InternalNameOfTheObject_Second","name":"cluster-dcf","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"DatacenterInEurope","fake":{"token":"SecretToken"}},"version":"6.6.6"},"status":{"version":"6.6.6","url":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -988,14 +988,14 @@ func TestListClusters(t *testing.T) {
 								Name:       "myProjectInternalName",
 							},
 						},
-						DeletionTimestamp: func() *metav1.Time {
+						CreationTimestamp: func() metav1.Time {
 							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 							deletionTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 							if err != nil {
 								t.Fatal(err)
 							}
 							x := metav1.NewTime(deletionTime)
-							return &x
+							return x
 						}(),
 					},
 					Spec: kubermaticv1.ClusterSpec{
