@@ -524,6 +524,149 @@ func TestCreateClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestGetClusterHealth(t *testing.T) {
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ClusterToGet           string
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingClusters       []*kubermaticv1.Cluster
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: get existing cluster health status",
+			Body:             ``,
+			ExpectedResponse: `{"apiserver":true,"scheduler":false,"controller":true,"machineController":false,"etcd":true}`,
+			HTTPStatus:       http.StatusOK,
+			ClusterToGet:     "keen-snyder",
+			ExistingProject: &kubermaticv1.Project{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "myProjectInternalName",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.io/v1",
+							Kind:       "User",
+							UID:        "",
+							Name:       "john",
+						},
+					},
+				},
+				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+			},
+			ExistingKubermaticUser: &kubermaticv1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
+				},
+				Spec: kubermaticv1.UserSpec{
+					Name: "John",
+					Projects: []kubermaticv1.ProjectGroup{
+						{
+							Group: "owners-myProjectInternalName",
+							Name:  "myProjectInternalName",
+						},
+					},
+				},
+			},
+			ExistingAPIUser: &apiv1.User{
+				ID:    testUsername,
+				Email: "john@acme.com",
+			},
+			ExistingClusters: []*kubermaticv1.Cluster{
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "keen-snyder",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       "myProjectInternalName",
+							},
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: &kubermaticv1.CloudSpec{
+							DatacenterName: "MyPowerfulDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
+						},
+						Version:           "9.9.9",
+						HumanReadableName: "cluster-abc",
+					},
+					Address: kubermaticv1.ClusterAddress{
+						AdminToken:   "drphc2.g4kq82pnlfqjqt65",
+						KubeletToken: "drphc2.g4kq82pnlfqjqt65",
+					},
+					Status: kubermaticv1.ClusterStatus{
+						Health: kubermaticv1.ClusterHealth{
+							ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+								Apiserver:         true,
+								Scheduler:         false,
+								Controller:        true,
+								MachineController: false,
+								Etcd:              true,
+							},
+						},
+					},
+				},
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "InternalNameOfTheObject_Second",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       "myProjectInternalName",
+							},
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: &kubermaticv1.CloudSpec{
+							DatacenterName: "DatacenterInEurope",
+							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
+						},
+						Version:           "6.6.6",
+						HumanReadableName: "cluster-dcf",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/health", tc.ClusterToGet), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			if tc.ExistingProject != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingProject)
+			}
+			for _, existingCluster := range tc.ExistingClusters {
+				kubermaticObj = append(kubermaticObj, existingCluster)
+			}
+			if tc.ExistingKubermaticUser != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticUser)
+			}
+			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func TestUpdateCluster(t *testing.T) {
 	testcases := []struct {
 		Name                   string
