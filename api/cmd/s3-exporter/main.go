@@ -44,9 +44,7 @@ func main() {
 		glog.Fatalf("Failed to get S3 client: %v", err)
 	}
 
-	if err = s3.MustRun(minioClient, *bucket, *listenPort); err != nil {
-		glog.Fatalf(err.Error())
-	}
+	s3.MustRun(minioClient, *bucket, *listenPort)
 
 	glog.Infof("Successfully started, listening on port %v", *listenPort)
 	<-stopChannel

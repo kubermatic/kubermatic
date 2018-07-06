@@ -23,7 +23,7 @@ type s3Exporter struct {
 }
 
 // MustRun starts a s3 exporter or panic
-func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error {
+func MustRun(minioClient *minio.Client, bucket string, listenAddress int) {
 
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient
@@ -52,16 +52,16 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error 
 
 	registry := prometheus.NewRegistry()
 	if err := registry.Register(exporter.ObjectsCount); err != nil {
-		return err
+		glog.Fatal(err)
 	}
 	if err := registry.Register(exporter.ObjectsLastModifiedDate); err != nil {
-		return err
+		glog.Fatal(err)
 	}
 	if err := registry.Register(exporter.ObjectsEmptyCount); err != nil {
-		return err
+		glog.Fatal(err)
 	}
 	if err := registry.Register(exporter.QuerySuccess); err != nil {
-		return err
+		glog.Fatal(err)
 	}
 
 	promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
@@ -76,8 +76,6 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) error 
 			glog.Fatalf("Failed to listen: %v", err)
 		}
 	}()
-
-	return nil
 }
 
 func (e *s3Exporter) refreshMetrics(w http.ResponseWriter, r *http.Request) bool {
