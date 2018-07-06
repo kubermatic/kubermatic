@@ -1,7 +1,6 @@
 package s3
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,7 +22,7 @@ type s3Exporter struct {
 }
 
 // MustRun starts a s3 exporter or panic
-func MustRun(minioClient *minio.Client, bucket string, listenAddress int) {
+func MustRun(minioClient *minio.Client, bucket, listenAddress string) {
 
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient
@@ -72,7 +71,7 @@ func MustRun(minioClient *minio.Client, bucket string, listenAddress int) {
 		promHandler.ServeHTTP(w, r)
 	})
 	go func() {
-		if err := http.ListenAndServe(fmt.Sprintf(":%v", listenAddress), nil); err != nil {
+		if err := http.ListenAndServe(listenAddress, nil); err != nil {
 			glog.Fatalf("Failed to listen: %v", err)
 		}
 	}()

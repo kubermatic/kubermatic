@@ -16,7 +16,7 @@ func main() {
 	accessKeyID := flag.String("access-key-id", "", "S3 Access key")
 	secretAccessKey := flag.String("secret-access-key", "", "S3 Secret Access Key")
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
-	listenPort := flag.Int("listen-port", 9340, "The port to listen on")
+	listenAddress := flag.String("address", ":9340", "The port to listen on")
 	flag.Parse()
 
 	if *accessKeyID == "" {
@@ -44,9 +44,9 @@ func main() {
 		glog.Fatalf("Failed to get S3 client: %v", err)
 	}
 
-	s3.MustRun(minioClient, *bucket, *listenPort)
+	s3.MustRun(minioClient, *bucket, *listenAddress)
 
-	glog.Infof("Successfully started, listening on port %v", *listenPort)
+	glog.Infof("Successfully started, listening on %s", *listenAddress)
 	<-stopChannel
 	glog.Infof("Shutting down..")
 }
