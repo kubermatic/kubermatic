@@ -23,17 +23,19 @@ s3_query_success 0
 Usage:
 
 ```
-s3-exporter:
+Usage of ./_build/s3-exporter:
   -access-key-id string
-    	S3 Access key
+    	S3 Access key, defaults to the ACCESS_KEY_ID environment variable
+  -address string
+    	The port to listen on (default ":9340")
   -alsologtostderr
     	log to standard error as well as files
   -bucket string
     	The bucket to monitor (default "kubermatic-etcd-backups")
   -endpoint string
-    	https://my-s3.com:9000
-  -listen-port int
-    	The port to listen on (default 9340)
+    	The s3 endpoint, e.G. https://my-s3.com:9000
+  -kubeconfig string
+    	Path to a kubeconfig. Only required if out-of-cluster.
   -log_backtrace_at value
     	when logging hits line file:N, emit a stack trace
   -log_dir string
@@ -41,7 +43,7 @@ s3-exporter:
   -logtostderr
     	log to standard error instead of files
   -secret-access-key string
-    	S3 Secret Access Key
+    	S3 Secret Access Key, defaults to the SECRET_ACCESS_KEY evnironment variable
   -stderrthreshold value
     	logs at or above this threshold go to stderr
   -v value

@@ -1,13 +1,19 @@
 package s3
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
+
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 
 	"github.com/golang/glog"
 	"github.com/minio/minio-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const metricsNamespace = "s3"
@@ -17,32 +23,34 @@ type s3Exporter struct {
 	ObjectsLastModifiedDate *prometheus.GaugeVec
 	ObjectsEmptyCount       *prometheus.GaugeVec
 	QuerySuccess            prometheus.Gauge
+	kubermaticClient        kubermaticclientset.Interface
 	bucket                  string
 	minioClient             *minio.Client
 }
 
 // MustRun starts a s3 exporter or panic
-func MustRun(minioClient *minio.Client, bucket, listenAddress string) {
+func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Interface, bucket, listenAddress string) {
 
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient
+	exporter.kubermaticClient = kubermaticClient
 	exporter.bucket = bucket
 
 	exporter.ObjectsCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "object_count",
 		Help:      "The amount of objects",
-	}, []string{"prefix"})
+	}, []string{"cluster"})
 	exporter.ObjectsLastModifiedDate = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "object_last_modified_object_time_seconds",
 		Help:      "The amount of objects",
-	}, []string{"prefix"})
+	}, []string{"cluster"})
 	exporter.ObjectsEmptyCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "empty_object_count",
 		Help:      "The amount of object with a size of zero",
-	}, []string{"prefix"})
+	}, []string{"cluster"})
 	exporter.QuerySuccess = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "query_success",
@@ -65,9 +73,7 @@ func MustRun(minioClient *minio.Client, bucket, listenAddress string) {
 
 	promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if !exporter.refreshMetrics(w, r) {
-			return
-		}
+		exporter.refreshMetrics(r)
 		promHandler.ServeHTTP(w, r)
 	})
 	go func() {
@@ -77,33 +83,47 @@ func MustRun(minioClient *minio.Client, bucket, listenAddress string) {
 	}()
 }
 
-func (e *s3Exporter) refreshMetrics(w http.ResponseWriter, r *http.Request) bool {
-	prefix := r.URL.Query().Get("prefix")
-	if prefix == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		_, err := w.Write([]byte("prefix url arg is required!\n"))
-		_ = err
-		return false
+func (e *s3Exporter) refreshMetrics(r *http.Request) {
+	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
+	if err != nil {
+		glog.Errorf("Failed to list clusters: %v", err)
+		e.QuerySuccess.Set(float64(1))
+		return
 	}
 
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
 	var objects []minio.ObjectInfo
-	for listerObject := range e.minioClient.ListObjects(e.bucket, prefix, true, doneCh) {
+	for listerObject := range e.minioClient.ListObjects(e.bucket, "", true, doneCh) {
 		if listerObject.Err != nil {
 			glog.Errorf("Error on object %s: %v", listerObject.Key, listerObject.Err)
 			e.QuerySuccess.Set(float64(1))
-			return true
+			return
 		}
 		objects = append(objects, listerObject)
 	}
 
-	labels := prometheus.Labels{"prefix": prefix}
-	e.ObjectsCount.With(labels).Set(float64(len(objects)))
-	e.ObjectsLastModifiedDate.With(labels).Set(float64(getLastModifiedTimestamp(objects).UnixNano()))
-	e.ObjectsEmptyCount.With(labels).Set(float64(getEmptyObjectCount(objects)))
-	return true
+	for _, cluster := range clusters.Items {
+		e.setMetricsForCluster(objects, cluster.Name)
+	}
+
+	return
+}
+
+func (e *s3Exporter) setMetricsForCluster(allObjects []minio.ObjectInfo, clusterName string) {
+
+	var clusterObjects []minio.ObjectInfo
+	for _, object := range allObjects {
+		if strings.HasPrefix(object.Key, fmt.Sprintf("%s-", clusterName)) {
+			clusterObjects = append(clusterObjects, object)
+		}
+	}
+
+	labels := prometheus.Labels{"cluster": clusterName}
+	e.ObjectsCount.With(labels).Set(float64(len(clusterObjects)))
+	e.ObjectsLastModifiedDate.With(labels).Set(float64(getLastModifiedTimestamp(clusterObjects).UnixNano()))
+	e.ObjectsEmptyCount.With(labels).Set(float64(getEmptyObjectCount(clusterObjects)))
 }
 
 func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp time.Time) {
