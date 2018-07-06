@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export REGISTRY=quay.io/kubermatic/s3-exporter
-export TAG=v0.1
+export TAG=v0.2
 
 make -C $(dirname $0)/../ s3-exporter
 

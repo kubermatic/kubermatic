@@ -1,6 +1,8 @@
 # S3 exporter
 
-A simple exporter for S3-compatible buckets.
+A simple exporter for S3-compatible buckets that will export metrics partitioned by Kubermatic cluster names.
+
+It assumes all objects belonging to a given cluster have a prefix of `${CLUSTERNAME}-`.
 
 Avaiable metrics:
 
