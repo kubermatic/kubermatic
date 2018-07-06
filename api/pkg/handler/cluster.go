@@ -369,7 +369,7 @@ func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Clust
 				Version: cluster.Spec.Version,
 			},
 			Status: apiv1.NewClusterStatus{
-				Version: "TODO: fill me",
+				Version: cluster.Spec.Version,
 				URL:     cluster.Address.URL,
 			},
 		}

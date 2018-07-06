@@ -540,7 +540,7 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version",
 			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"0.0.1"},"status":{"version":"TODO: fill me","url":""}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"0.0.1"},"status":{"version":"0.0.1","url":""}}`,
 			ClusterToUpdate:  "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
@@ -672,7 +672,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: get cluster that belong to the given project",
 			Body:             ``,
-			ExpectedResponse: `{"id":"InternalNameOfTheObject","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"TODO: fill me","url":""}}`,
+			ExpectedResponse: `{"id":"InternalNameOfTheObject","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}}`,
 			ClusterToGet:     "InternalNameOfTheObject",
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
@@ -799,7 +799,7 @@ func TestListClusters(t *testing.T) {
 		{
 			Name:             "scenario 1: list clusters that belong to the given project",
 			Body:             ``,
-			ExpectedResponse: `[{"id":"InternalNameOfTheObject","name":"cluster-abc","deletionTimestamp":"2013-02-03T19:54:00Z","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"TODO: fill me","url":""}},{"id":"InternalNameOfTheObject_Second","name":"cluster-dcf","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"DatacenterInEurope","fake":{"token":"SecretToken"}},"version":"6.6.6"},"status":{"version":"TODO: fill me","url":""}}]`,
+			ExpectedResponse: `[{"id":"InternalNameOfTheObject","name":"cluster-abc","deletionTimestamp":"2013-02-03T19:54:00Z","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}},{"id":"InternalNameOfTheObject_Second","name":"cluster-dcf","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"DatacenterInEurope","fake":{"token":"SecretToken"}},"version":"6.6.6"},"status":{"version":"6.6.6","url":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
