@@ -38,9 +38,6 @@ spec:
         - mountPath: /etc/grafana/provisioning/dashboards
           name: grafana-dashboards
           readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/etcd
-          name: grafana-dashboard-etcd
-          readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/k8s-cluster-rsrc-use
           name: grafana-dashboard-k8s-cluster-rsrc-use
           readOnly: false
@@ -55,6 +52,12 @@ spec:
           readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/k8s-resources-pod
           name: grafana-dashboard-k8s-resources-pod
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/machine-controller
+          name: grafana-dashboard-machine-controller
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/nginx
+          name: grafana-dashboard-nginx
           readOnly: false
         - mountPath: /grafana-dashboard-definitions/0/nodes
           name: grafana-dashboard-nodes
@@ -82,9 +85,6 @@ spec:
           name: grafana-dashboards
         name: grafana-dashboards
       - configMap:
-          name: grafana-dashboard-etcd
-        name: grafana-dashboard-etcd
-      - configMap:
           name: grafana-dashboard-k8s-cluster-rsrc-use
         name: grafana-dashboard-k8s-cluster-rsrc-use
       - configMap:
@@ -99,6 +99,12 @@ spec:
       - configMap:
           name: grafana-dashboard-k8s-resources-pod
         name: grafana-dashboard-k8s-resources-pod
+      - configMap:
+          name: grafana-dashboard-machine-controller
+        name: grafana-dashboard-machine-controller
+      - configMap:
+          name: grafana-dashboard-nginx
+        name: grafana-dashboard-nginx
       - configMap:
           name: grafana-dashboard-nodes
         name: grafana-dashboard-nodes

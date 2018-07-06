@@ -16,6 +16,7 @@ local datasources = [
 local g =
 (import 'grafana/grafana.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
+(import './dashboards/kubermatic/kubermatic.libsonnet') +
 { _config+:: {
     namespace: 'monitoring',
 
