@@ -12,9 +12,9 @@ import (
 )
 
 func main() {
-	endpointWithProto := flag.String("endpoint", "", "https://my-s3.com:9000")
-	accessKeyID := flag.String("access-key-id", "", "S3 Access key")
-	secretAccessKey := flag.String("secret-access-key", "", "S3 Secret Access Key")
+	endpointWithProto := flag.String("endpoint", "", "The s3 endpoint, e.G. https://my-s3.com:9000")
+	accessKeyID := flag.String("access-key-id", "", "S3 Access key, defaults to the ACCESS_KEY_ID environment variable")
+	secretAccessKey := flag.String("secret-access-key", "", "S3 Secret Access Key, defaults to the SECRET_ACCESS_KEY evnironment variable")
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
 	listenAddress := flag.String("address", ":9340", "The port to listen on")
 	flag.Parse()
