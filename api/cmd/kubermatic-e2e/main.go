@@ -14,22 +14,23 @@ import (
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
-	Addons         flagopts.StringArray
-	ClusterPath    string
-	ClusterTimeout time.Duration
-	Focus          string
-	GinkgoBin      string
-	GinkgoNoColor  bool
-	GinkgoTimeout  time.Duration
-	KubeconfPath   string
-	MachinePath    string
-	Nodes          int
-	NodesTimeout   time.Duration
-	Parallel       int
-	Provider       string
-	ReportsDir     string
-	Skip           string
-	TestBin        string
+	Addons              flagopts.StringArray
+	ClusterPath         string
+	ClusterTimeout      time.Duration
+	Focus               string
+	GinkgoBin           string
+	GinkgoNoColor       bool
+	GinkgoTimeout       time.Duration
+	KubeconfPath        string
+	KubermaticNamespace string
+	NodePath            string
+	Nodes               int
+	NodesTimeout        time.Duration
+	Parallel            int
+	Provider            string
+	ReportsDir          string
+	Skip                string
+	TestBin             string
 }
 
 func main() {
@@ -38,8 +39,9 @@ func main() {
 	}
 
 	flag.StringVar(&runOpts.KubeconfPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
+	flag.StringVar(&runOpts.KubermaticNamespace, "kubermatic-namespace", "kubermatic", "namespace where kubermatic and it's configs deployed")
 	flag.StringVar(&runOpts.ClusterPath, "kubermatic-cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
-	flag.StringVar(&runOpts.MachinePath, "kubermatic-machine", "/manifests/machine.yaml", "path to Machine yaml")
+	flag.StringVar(&runOpts.NodePath, "kubermatic-node", "/manifests/node.yaml", "path to Node yaml")
 	flag.Var(&runOpts.Addons, "kubermatic-addons", "comma separated list of addons")
 	flag.IntVar(&runOpts.Nodes, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.DurationVar(&runOpts.ClusterTimeout, "kubermatic-cluster-timeout", 3*time.Minute, "cluster creation timeout")
@@ -48,8 +50,8 @@ func main() {
 	flag.BoolVar(&runOpts.GinkgoNoColor, "ginkgo-nocolor", false, "don't show colors")
 	flag.DurationVar(&runOpts.GinkgoTimeout, "ginkgo-timeout", 5400*time.Second, "ginkgo execution timeout")
 	flag.StringVar(&runOpts.Focus, "ginkgo-focus", `\[Conformance\]`, "tests focus")
-	flag.StringVar(&runOpts.Skip, "ginkgo-skip", `Flaky`, "skip those groups of tests")
-	flag.IntVar(&runOpts.Parallel, "ginkgo-parallel", 3, "parallelism of tests")
+	flag.StringVar(&runOpts.Skip, "ginkgo-skip", `Alpha|\[(Disruptive|Feature:[^\]]+|Flaky)\]`, "skip those groups of tests")
+	flag.IntVar(&runOpts.Parallel, "ginkgo-parallel", 25, "parallelism of tests")
 	flag.StringVar(&runOpts.TestBin, "e2e-test-bin", "/usr/local/bin/e2e.test", "path to e2e.test binary")
 	flag.StringVar(&runOpts.Provider, "e2e-provider", "local", "cloud provider to use in tests")
 	flag.StringVar(&runOpts.ReportsDir, "e2e-results-dir", "/tmp/results", "directory to save test results")
