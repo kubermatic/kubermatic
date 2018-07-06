@@ -28,7 +28,7 @@ type NewObjectMeta struct {
 	Name string `json:"name"`
 
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
-	DeletionTimestamp time.Time `json:"deletionTimestamp,omitempty"`
+	DeletionTimestamp *time.Time `json:"deletionTimestamp,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	CreationTimestamp time.Time `json:"creationTimestamp,omitempty"`
@@ -268,3 +268,17 @@ type NewClusterStatus struct {
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
 }
+
+// NewClusterHealth stores health information about the cluster's components.
+// swagger:model ClusterHealth
+type NewClusterHealth struct {
+	Apiserver         bool `json:"apiserver"`
+	Scheduler         bool `json:"scheduler"`
+	Controller        bool `json:"controller"`
+	MachineController bool `json:"machineController"`
+	Etcd              bool `json:"etcd"`
+}
+
+// NewClusterList represents a list of clusters
+// swagger:model ClusterList
+type NewClusterList []NewCluster

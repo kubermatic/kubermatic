@@ -129,7 +129,13 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return cluster, nil
+
+		apiClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{cluster})
+		if len(apiClusters) != 1 {
+			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
+
+		}
+		return apiClusters[0], nil
 	}
 }
 
@@ -176,17 +182,22 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		//We don't allow updating the following fields
-		newCluster := req.Body.Cluster
-		newCluster.TypeMeta = existingCluster.TypeMeta
-		newCluster.ObjectMeta = existingCluster.ObjectMeta
-		newCluster.Status = existingCluster.Status
+		existingCluster.Spec.Cloud = &req.Body.Spec.Cloud
+		existingCluster.Spec.Version = req.Body.Spec.Version
 
-		if err := validation.ValidateUpdateCluster(newCluster, existingCluster, cloudProviders); err != nil {
+		if err := validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		return clusterProvider.Update(user, project, newCluster)
+		updatedCluster, err := clusterProvider.Update(user, project, existingCluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		convertedClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{updatedCluster})
+		if len(convertedClusters) != 1 {
+			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
+		}
+		return convertedClusters[0], nil
 	}
 }
 
@@ -218,7 +229,9 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return clusters, nil
+
+		apiClusters := convertInternalClustersToExternal(clusters)
+		return apiClusters, nil
 	}
 }
 
@@ -255,6 +268,30 @@ func newDeleteCluster(projectProvider provider.ProjectProvider) endpoint.Endpoin
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
+	}
+}
+
+func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NewGetClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return apiv1.NewClusterHealth{
+			Apiserver:         existingCluster.Status.Health.Apiserver,
+			Scheduler:         existingCluster.Status.Health.Scheduler,
+			Controller:        existingCluster.Status.Health.Controller,
+			MachineController: existingCluster.Status.Health.MachineController,
+			Etcd:              existingCluster.Status.Health.Etcd,
+		}, nil
 	}
 }
 
@@ -334,6 +371,34 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		apiKeys := convertInternalSSHKeysToExternal(keys)
 		return apiKeys, nil
 	}
+}
+
+func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.NewCluster {
+	apiClusters := make([]*apiv1.NewCluster, len(internalClusters))
+	for index, cluster := range internalClusters {
+		apiClusters[index] = &apiv1.NewCluster{
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                cluster.Name,
+				Name:              cluster.Spec.HumanReadableName,
+				CreationTimestamp: cluster.CreationTimestamp.Time,
+				DeletionTimestamp: func() *time.Time {
+					if cluster.DeletionTimestamp != nil {
+						return &cluster.DeletionTimestamp.Time
+					}
+					return nil
+				}(),
+			},
+			Spec: apiv1.NewClusterSpec{
+				Cloud:   *cluster.Spec.Cloud,
+				Version: cluster.Spec.Version,
+			},
+			Status: apiv1.NewClusterStatus{
+				Version: cluster.Spec.Version,
+				URL:     cluster.Address.URL,
+			},
+		}
+	}
+	return apiClusters
 }
 
 type (
@@ -516,7 +581,7 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 // NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
-// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig
+// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth
 type NewGetClusterReq struct {
 	DCReq
 	// in: path
@@ -566,7 +631,7 @@ func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, st
 type NewUpdateClusterReq struct {
 	NewGetClusterReq
 	// in: body
-	Body CreateClusterReqBody
+	Body apiv1.NewCluster
 }
 
 func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -584,7 +649,7 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 	req.ClusterName = clusterName
 	req.ProjectName = projectName
 
-	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 

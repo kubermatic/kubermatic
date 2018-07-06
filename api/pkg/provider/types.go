@@ -94,6 +94,10 @@ type SSHKeyProvider interface {
 type ClusterListOptions struct {
 	// ClusterName (spec.HumanReadableName) gets the clusters with the given name
 	ClusterName string
+
+	// SortBy sorts the result by the given key name,
+	// for example setting "metadata.creationTimestamp" will sort the result by creation timestamp
+	SortBy string
 }
 
 // NewClusterProvider declares the set of methods for interacting with clusters
