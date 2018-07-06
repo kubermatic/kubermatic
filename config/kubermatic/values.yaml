@@ -62,7 +62,7 @@ kubermatic:
   s3_exporter:
     image:
       repository: docker.io/kubermatic/s3-exporter
-      tag: v0.1
+      tag: v0.2
     bucket: kubermatic-etcd-backups
   storeContainer: |
     command:
