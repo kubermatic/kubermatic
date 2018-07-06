@@ -55,7 +55,6 @@ const (
 zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
 VPC={{ .Cluster.Spec.Cloud.AWS.VPCID }}
 KubernetesClusterID={{ .Cluster.Name }}
-KubernetesClusterTag={{ .Cluster.Name }}
 disablesecuritygroupingress=false
 SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID }}
 RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID }}
