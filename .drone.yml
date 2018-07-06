@@ -133,9 +133,6 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/
@@ -215,9 +212,6 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
-    - name: prometheus-operator
-      namespace: monitoring
-      path: config/monitoring/prometheus-operator/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/

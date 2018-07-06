@@ -1,11 +1,10 @@
-name: prometheus-operator
+name: kibana
 version: 0.1.0
-description: Prometheus Operator for Kubermatic
+description: kibana
 keywords:
   - k8s
   - kubermatic
-  - prometheus
-  - prometheus-operator
+  - kibana
 home: http://www.kubermatic.io/
 sources:
   - https://github.com/kubermatic/kubermatic/config

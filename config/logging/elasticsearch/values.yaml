@@ -1,0 +1,16 @@
+logging:
+  elasticsearch:
+    dataReplicas: 3
+    storageSize: 10Gi
+    optimizations:
+      # Set to 0 to disable setting vm.max_map_count explicitly, useful when multiple es instances run on one node. 
+      maxMapCount: 262144
+    image:
+      repository: quay.io/pires/docker-elasticsearch-kubernetes
+      tag: "6.3.0"
+      pullPolicy: IfNotPresent
+    init:
+      image:
+        repository: busybox
+        tag: "1.27.2"
+        pullPolicy: IfNotPresent

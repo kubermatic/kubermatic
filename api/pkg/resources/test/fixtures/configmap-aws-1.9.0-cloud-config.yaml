@@ -5,7 +5,6 @@ data:
     zone=aws-availability-zone
     VPC=aws-vpn-id
     KubernetesClusterID=de-test-01
-    KubernetesClusterTag=de-test-01
     disablesecuritygroupingress=false
     SubnetID=aws-subnet-id
     RouteTableID=aws-route-table-id

@@ -80,7 +80,6 @@ local drone = import 'drone/drone.libsonnet';
       {namespace: 'oauth', name: 'oauth', path: 'config/oauth/'},
       {namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/'},
       {namespace: 'default', name: 'certs', path: 'config/certs/'},
-      {namespace: 'monitoring', name: 'prometheus-operator', path: 'config/monitoring/prometheus-operator/'},
       {namespace: 'monitoring', name: 'node-exporter', path: 'config/monitoring/node-exporter/'},
       {namespace: 'monitoring', name: 'kube-state-metrics', path: 'config/monitoring/kube-state-metrics/'},
       {namespace: 'monitoring', name: 'grafana', path: 'config/monitoring/grafana/'},

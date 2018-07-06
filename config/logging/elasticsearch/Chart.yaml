@@ -1,0 +1,14 @@
+name: elasticsearch
+version: 0.1.0
+description: ElasticSearch
+keywords:
+  - k8s
+  - kubermatic
+  - elasticsearch
+  - elastic
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com
