@@ -1,26 +1,56 @@
-local k = import "ksonnet.beta.3/k.libsonnet";
-local configMap = k.core.v1.configMap;
+local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 
-local dashboardSources = import "dashboards/sources.jsonnet";
+local datasources = [
+  {
+    name: "prometheus",
+    type: "prometheus",
+    access: "proxy",
+    org_id: 1,
+    url: "http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
+    version: 1,
+    editable: false,
+    default: true,
+  },
+];
 
-local kubermaticDashboards = {
-    "machine-controller.json": import "dashboards/kubermatic/machine-controller.jsonnet",
-    "nginx.json": import "dashboards/kubermatic/nginx.jsonnet",
+local g =
+(import 'grafana/grafana.libsonnet') +
+(import 'kubernetes-mixin/mixin.libsonnet') +
+{ _config+:: {
+    namespace: 'monitoring',
+
+    cadvisorSelector: 'job="cadvisor"',
+    kubeletSelector: 'job="kubelet"',
+    kubeStateMetricsSelector: 'job="kube-state-metrics"',
+    nodeExporterSelector: 'app="node-exporter"',
+    notKubeDnsSelector: 'job!="kube-dns"',
+    kubeSchedulerSelector: 'job="kube-scheduler"',
+    kubeControllerManagerSelector: 'job="kube-controller-manager"',
+    kubeApiserverSelector: 'job="apiserver"',
+    machineControllerSelector: 'job="machine-controller"',
+
+    versions+:: {
+      grafana: '{{ .Values.grafana.image.tag }}',
+    },
+
+    imageRepos+:: {
+      grafana: '{{ .Values.grafana.image.repository }}',
+    },
+
+    grafana+:: {
+      dashboards: $.grafanaDashboards,
+      datasources: datasources,
+      config: {}, // This will add the config reference to the deployment, but we're using our own with helm
+    },
+  },
 };
 
-local kubernetesDashboards = {
-    "capacity-planning.json": import "dashboards/kubernetes/capacity-planning.jsonnet",
-    "cluster-health.json": import "dashboards/kubernetes/cluster-health.jsonnet",
-    "cluster-status.json": import "dashboards/kubernetes/cluster-status.jsonnet",
-    "deployments.json": import "dashboards/kubernetes/deployments.jsonnet",
-    "kubernetes-kubelet.json": import "dashboards/kubernetes/kubelet.jsonnet",
-    "kubernetes-nodes.json": import "dashboards/kubernetes/nodes.jsonnet",
-    "pods.json": import "dashboards/kubernetes/pods.jsonnet",
-};
-
-k.core.v1.list.new([
-    configMap.new("grafana-dashboards", { "dashboards.yaml": std.manifestJsonEx(dashboardSources, "    ") }),
-    configMap.new("grafana-datasources", { "prometheus.yaml": std.manifestJsonEx(import "prometheus.jsonnet", "    ") }),
-    configMap.new("grafana-dashboards-kubermatic", { [name]: std.manifestJsonEx(kubermaticDashboards[name], "    ") for name in std.objectFields(kubermaticDashboards) }),
-    configMap.new("grafana-dashboards-kubernetes", { [name]: std.manifestJsonEx(kubernetesDashboards[name], "    ") for name in std.objectFields(kubernetesDashboards) }),
-])
+// Create a new object to have a list with all dashboards.
+{
+  dashboardDatasources: g.grafana.dashboardDatasources,
+  dashboardDefinitions: k.core.v1.list.new(g.grafana.dashboardDefinitions),
+  dashboardSources: g.grafana.dashboardSources,
+  deployment: g.grafana.deployment,
+  serviceAccount: g.grafana.serviceAccount,
+  service: g.grafana.service,
+}
