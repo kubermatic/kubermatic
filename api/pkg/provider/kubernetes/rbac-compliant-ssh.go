@@ -86,12 +86,12 @@ func (p *RBACCompliantSSHKeyProvider) Create(user *kubermaticapiv1.User, project
 }
 
 // List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
-// If you want to filter or sort the result please take a look at ListOptions
+// If you want to filter the result please take a look at SSHKeyListOptions
 //
 // Note:
 // After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantSSHKeyProvider) List(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, options *provider.ListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
+func (p *RBACCompliantSSHKeyProvider) List(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
 	if project == nil || user == nil {
 		return nil, errors.New("a project or/and a user is missing but required")
 	}
@@ -183,7 +183,7 @@ func (p *RBACCompliantSSHKeyProvider) createMasterImpersonationClientWrapper(use
 	return p.createMasterImpersonatedClient(impersonationCfg)
 }
 
-// sortSSHKeysBy sort the given keys by the specified field name (sortBy)
+// sortBy sort the given keys by the specified field name (sortBy param)
 func (p *RBACCompliantSSHKeyProvider) sortBy(keys []*kubermaticapiv1.UserSSHKey, sortBy string) ([]*kubermaticapiv1.UserSSHKey, error) {
 	rawKeys := []runtime.Object{}
 	for index := range keys {
