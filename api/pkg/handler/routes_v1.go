@@ -129,7 +129,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// Defines set of endpoints that manipulate SSH keys of a cluster
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
 		Handler(r.assignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).

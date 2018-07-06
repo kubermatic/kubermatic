@@ -313,7 +313,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 		req := request.(assignSSHKeysToClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		if len(req.keyName) == 0 {
+		if len(req.KeyName) == 0 {
 			return nil, errors.NewBadRequest("please provide an SSH key")
 		}
 
@@ -337,17 +337,17 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 
 			found := false
 			for _, projectSSHKey := range projectSSHKeys {
-				if projectSSHKey.Name == req.keyName {
+				if projectSSHKey.Name == req.KeyName {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.keyName, project.Spec.Name, project.Name)
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyName, project.Spec.Name, project.Name)
 			}
 		}
 
-		sshKey, err := sshKeyProvider.Get(user, project, req.keyName)
+		sshKey, err := sshKeyProvider.Get(user, project, req.KeyName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -573,9 +573,13 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 
 type assignSSHKeysToClusterReq struct {
 	DCReq
-	keyName     string
+	assignSSHKeysToClusterBodyReq
 	projectName string
 	clusterName string
+}
+
+type assignSSHKeysToClusterBodyReq struct {
+	KeyName     string `json:"keyName"`
 }
 
 type listSSHKeysAssignedToClusterReq struct {
@@ -740,11 +744,9 @@ func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interfa
 	}
 	req.DCReq = dcr.(DCReq)
 
-	sshKeyName, ok := mux.Vars(r)["key_name"]
-	if !ok {
-		return nil, fmt.Errorf("'key_name' parameter is required in order to delete ssh key")
+	if err := json.NewDecoder(r.Body).Decode(&req.assignSSHKeysToClusterBodyReq); err != nil {
+		return nil, err
 	}
-	req.keyName = sshKeyName
 
 	return req, nil
 }

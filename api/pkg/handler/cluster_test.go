@@ -524,7 +524,6 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		Body                   string
 		ExpectedResponse       string
 		HTTPStatus             int
-		KeyToAssign            string
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
@@ -534,9 +533,8 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
-			Body:             ``,
+			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
 			ExpectedResponse: `null`,
-			KeyToAssign:      "key-c08aa5c7abf34504f18552846485267d-yafn",
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -600,9 +598,8 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: an ssh key that does not belong to the given project cannot be assigned to the cluster",
-			Body:             ``,
+			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (myProjectInternalName)"}}`,
-			KeyToAssign:      "key-c08aa5c7abf34504f18552846485267d-yafn",
 			HTTPStatus:       http.StatusInternalServerError,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -667,7 +664,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys/%s", tc.KeyToAssign), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/sshkeys", strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			if tc.ExistingProject != nil {
