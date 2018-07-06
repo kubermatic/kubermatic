@@ -49,3 +49,20 @@ s3-exporter:
   -vmodule value
     	comma-separated list of pattern=N settings for file-filtered logging
 ```
+
+
+Releasing:
+
+```
+# Go to the project dir
+cd $GOPATH/src/github.com/kubermatic/kubermatic/api
+
+# Increment the tag variable in the publish script
+vim hack/publish-s3-exporter.sh
+
+# Publish the new version
+./hack/publish-s3-exporter.sh
+
+# Optional: Set the new version in the chart
+vim ../config/kubermatic/values.yaml
+```
