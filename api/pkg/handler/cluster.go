@@ -268,8 +268,10 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
+		// TODO: I think that in general it would be better if the cluster resource
+		// has the reference to the ssh keys - not the other way around as it is now.
 		// detach ssh keys that are being used by this clusters
-		clusterSSHKeys, err := sshKeyProvider.List(user, project, &provider.ListOptions{ClusterName: req.ClusterName})
+		clusterSSHKeys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -415,6 +417,7 @@ func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Clust
 	return apiClusters
 }
 
+func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(detachSSHKeysFromClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
@@ -579,7 +582,7 @@ type assignSSHKeysToClusterReq struct {
 }
 
 type assignSSHKeysToClusterBodyReq struct {
-	KeyName     string `json:"keyName"`
+	KeyName string `json:"keyName"`
 }
 
 type listSSHKeysAssignedToClusterReq struct {
@@ -600,7 +603,7 @@ type detachSSHKeysFromClusterReq struct {
 type NewCreateClusterReq struct {
 	DCReq
 	// in: body
-	Body NewClusterReqBody
+	Body apiv1.NewCluster
 	// in: path
 	ProjectName string `json:"project_id"`
 }
