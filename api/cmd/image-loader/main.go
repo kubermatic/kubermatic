@@ -293,6 +293,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	fakeCluster.Spec.Version = masterVersion.Version.String()
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
 	stopChannel := make(chan struct{})
