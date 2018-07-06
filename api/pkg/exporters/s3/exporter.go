@@ -16,16 +16,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const metricsNamespace = "s3"
+const (
+	metricsNamespace = "kubermatic"
+	metricsSubsystem = "s3"
+)
 
 type s3Exporter struct {
-	ObjectsCount            *prometheus.GaugeVec
-	ObjectsLastModifiedDate *prometheus.GaugeVec
-	ObjectsEmptyCount       *prometheus.GaugeVec
-	QuerySuccess            prometheus.Gauge
-	kubermaticClient        kubermaticclientset.Interface
-	bucket                  string
-	minioClient             *minio.Client
+	ObjectCount            *prometheus.Desc
+	ObjectLastModifiedDate *prometheus.Desc
+	EmptyObjectCount       *prometheus.Desc
+	QuerySuccess           *prometheus.Desc
+	kubermaticClient       kubermaticclientset.Interface
+	bucket                 string
+	minioClient            *minio.Client
 }
 
 // MustRun starts a s3 exporter or panic
@@ -36,46 +39,26 @@ func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Int
 	exporter.kubermaticClient = kubermaticClient
 	exporter.bucket = bucket
 
-	exporter.ObjectsCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Name:      "object_count",
-		Help:      "The amount of objects",
-	}, []string{"cluster"})
-	exporter.ObjectsLastModifiedDate = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Name:      "object_last_modified_object_time_seconds",
-		Help:      "The amount of objects",
-	}, []string{"cluster"})
-	exporter.ObjectsEmptyCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Name:      "empty_object_count",
-		Help:      "The amount of object with a size of zero",
-	}, []string{"cluster"})
-	exporter.QuerySuccess = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Name:      "query_success",
-		Help:      "Whether querying the S3 was successful",
-	})
+	exporter.ObjectCount = prometheus.NewDesc(
+		"kubermatic_s3_object_count",
+		"The amount of objects partitioned by cluster",
+		[]string{"cluster"}, nil)
+	exporter.ObjectLastModifiedDate = prometheus.NewDesc(
+		"kubermatic_s3_object_last_modified_time_seconds",
+		"Modification time of the last modified object",
+		[]string{"cluster"}, nil)
+	exporter.EmptyObjectCount = prometheus.NewDesc(
+		"kubermatic_s3_empty_object_count",
+		"The amount of empty objects (size=0) partitioned by cluster",
+		[]string{"cluster"}, nil)
+	exporter.QuerySuccess = prometheus.NewDesc(
+		"kubermatic_s3_query_success",
+		"Whether querying the S3 was successful",
+		nil, nil)
 
-	registry := prometheus.NewRegistry()
-	if err := registry.Register(exporter.ObjectsCount); err != nil {
-		glog.Fatal(err)
-	}
-	if err := registry.Register(exporter.ObjectsLastModifiedDate); err != nil {
-		glog.Fatal(err)
-	}
-	if err := registry.Register(exporter.ObjectsEmptyCount); err != nil {
-		glog.Fatal(err)
-	}
-	if err := registry.Register(exporter.QuerySuccess); err != nil {
-		glog.Fatal(err)
-	}
+	prometheus.MustRegister(&exporter)
 
-	promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		exporter.refreshMetrics(r)
-		promHandler.ServeHTTP(w, r)
-	})
+	http.Handle("/", promhttp.Handler())
 	go func() {
 		if err := http.ListenAndServe(listenAddress, nil); err != nil {
 			glog.Fatalf("Failed to listen: %v", err)
@@ -83,11 +66,21 @@ func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Int
 	}()
 }
 
-func (e *s3Exporter) refreshMetrics(r *http.Request) {
+func (e *s3Exporter) Describe(ch chan<- *prometheus.Desc) {
+	ch <- e.ObjectCount
+	ch <- e.ObjectLastModifiedDate
+	ch <- e.EmptyObjectCount
+	ch <- e.QuerySuccess
+}
+
+func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 	if err != nil {
 		glog.Errorf("Failed to list clusters: %v", err)
-		e.QuerySuccess.Set(float64(1))
+		ch <- prometheus.MustNewConstMetric(
+			e.QuerySuccess,
+			prometheus.GaugeValue,
+			float64(1))
 		return
 	}
 
@@ -98,21 +91,21 @@ func (e *s3Exporter) refreshMetrics(r *http.Request) {
 	for listerObject := range e.minioClient.ListObjects(e.bucket, "", true, doneCh) {
 		if listerObject.Err != nil {
 			glog.Errorf("Error on object %s: %v", listerObject.Key, listerObject.Err)
-			e.QuerySuccess.Set(float64(1))
+			ch <- prometheus.MustNewConstMetric(
+				e.QuerySuccess,
+				prometheus.GaugeValue,
+				float64(1))
 			return
 		}
 		objects = append(objects, listerObject)
 	}
 
 	for _, cluster := range clusters.Items {
-		e.setMetricsForCluster(objects, cluster.Name)
+		e.setMetricsForCluster(ch, objects, cluster.Name)
 	}
-
-	return
 }
 
-func (e *s3Exporter) setMetricsForCluster(allObjects []minio.ObjectInfo, clusterName string) {
-
+func (e *s3Exporter) setMetricsForCluster(ch chan<- prometheus.Metric, allObjects []minio.ObjectInfo, clusterName string) {
 	var clusterObjects []minio.ObjectInfo
 	for _, object := range allObjects {
 		if strings.HasPrefix(object.Key, fmt.Sprintf("%s-", clusterName)) {
@@ -120,10 +113,21 @@ func (e *s3Exporter) setMetricsForCluster(allObjects []minio.ObjectInfo, cluster
 		}
 	}
 
-	labels := prometheus.Labels{"cluster": clusterName}
-	e.ObjectsCount.With(labels).Set(float64(len(clusterObjects)))
-	e.ObjectsLastModifiedDate.With(labels).Set(float64(getLastModifiedTimestamp(clusterObjects).UnixNano()))
-	e.ObjectsEmptyCount.With(labels).Set(float64(getEmptyObjectCount(clusterObjects)))
+	ch <- prometheus.MustNewConstMetric(
+		e.ObjectCount,
+		prometheus.GaugeValue,
+		float64(len(clusterObjects)),
+		clusterName)
+	ch <- prometheus.MustNewConstMetric(
+		e.ObjectLastModifiedDate,
+		prometheus.GaugeValue,
+		float64(getLastModifiedTimestamp(clusterObjects).UnixNano()),
+		clusterName)
+	ch <- prometheus.MustNewConstMetric(
+		e.EmptyObjectCount,
+		prometheus.GaugeValue,
+		float64(getEmptyObjectCount(clusterObjects)),
+		clusterName)
 }
 
 func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp time.Time) {
