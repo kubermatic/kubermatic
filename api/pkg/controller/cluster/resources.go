@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubelet"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -510,12 +511,18 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	creators := []resources.ConfigMapCreator{
+// GetConfigMapCreators returns all ConfigMapCreators that are currently in use
+func GetConfigMapCreators() []resources.ConfigMapCreator {
+	return []resources.ConfigMapCreator{
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
+		kubelet.ConfigMap,
 	}
+}
+
+func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
+	creators := GetConfigMapCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
