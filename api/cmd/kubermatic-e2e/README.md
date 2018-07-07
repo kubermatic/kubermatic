@@ -14,7 +14,7 @@ Run docker container
         kubermatic-e2e
 
 Image ships with dependant binaries like `ginkgo` and `e2e.test` from kubernetes
-test suit.
+test suite.
 
 ## Flags
 All flags have reasonable defaults
@@ -42,7 +42,7 @@ All flags have reasonable defaults
     -kubeconfig string
         path to kubeconfig file (default "/config/kubeconfig")
     -kubermatic-addons value
-        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac)
+        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap)
     -kubermatic-cluster string
         path to Cluster yaml (default "/manifests/cluster.yaml")
     -kubermatic-cluster-timeout duration
