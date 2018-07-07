@@ -1,18 +1,24 @@
 package resources
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"net"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
+	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
 
 const (
@@ -65,6 +71,8 @@ const (
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
+	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
+	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -126,6 +134,10 @@ const (
 	OpenVPNInternalClientKeySecretKey = "client.key"
 	// OpenVPNInternalClientCertSecretKey client.crt
 	OpenVPNInternalClientCertSecretKey = "client.crt"
+	// EtcdTLSCertSecretKey etcd-tls.crt
+	EtcdTLSCertSecretKey = "etcd-tls.crt"
+	// EtcdTLSKeySecretKey etcd-tls.key
+	EtcdTLSKeySecretKey = "etcd-tls.key"
 )
 
 // ConfigMapCreator defines an interface to create/update ConfigMap's
@@ -322,7 +334,64 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 	return defaultRegistry
 }
 
+// GetClusterCA returns the root CA of the cluster
+func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
+	caCertSecret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(CACertSecretName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+	}
+
+	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", CACertSecretName, err)
+	}
+
+	//Load the ca key
+	caKeySecret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(CAKeySecretName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
+	}
+
+	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[CAKeySecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", CAKeySecretName, err)
+	}
+
+	return &triple.KeyPair{
+		Cert: certs[0],
+		Key:  key.(*rsa.PrivateKey),
+	}, nil
+}
+
 // GetLabels returns default labels every resource should have
 func GetLabels(app string) map[string]string {
 	return map[string]string{AppLabelKey: app}
+}
+
+// IsCertificateValidForAllOf validates if the given data is present in the given certificate
+func IsCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+	getIPStrings := func(inIps []net.IP) []string {
+		s := make([]string, len(inIps))
+		for i, ip := range inIps {
+			s[i] = ip.String()
+		}
+		return s
+	}
+
+	if cert.Subject.CommonName != commonName {
+		return false
+	}
+
+	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
+	wantIPs := sets.NewString(ips...)
+
+	if !wantIPs.Equal(certIPs) {
+		return false
+	}
+
+	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
+	wantDNSNames.Insert(hostnames...)
+	certDNSNames := sets.NewString(cert.DNSNames...)
+
+	return wantDNSNames.Equal(certDNSNames)
 }

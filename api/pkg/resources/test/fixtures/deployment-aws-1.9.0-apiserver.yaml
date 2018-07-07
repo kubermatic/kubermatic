@@ -109,7 +109,9 @@ spec:
         - --insecure-port
         - "8080"
         - --etcd-servers
-        - http://192.0.2.12:2379
+        - https://192.0.2.12:2379
+        - --etcd-cafile
+        - /etc/kubernetes/ca-cert/ca.crt
         - --storage-backend
         - etcd3
         - --admission-control
@@ -239,14 +241,19 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[http://192.0.2.12:2379]
-          get foo; do echo waiting for etcd; sleep 2; done;
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/kubernetes/ca-cert/ca.crt
+          --dial-timeout=2s --endpoints=[https://192.0.2.12:2379] get foo; do echo
+          waiting for etcd; sleep 2; done;
         image: quay.io/coreos/etcd:v3.2.7
         imagePullPolicy: IfNotPresent
         name: etcd-running
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/ca-cert
+          name: ca-cert
+          readOnly: true
       volumes:
       - name: apiserver-tls
         secret:

@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -73,12 +72,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	var etcds []string
 	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
 	if err != nil {
 		return nil, err
 	}
-	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdClientServiceIP))
+	etcd := fmt.Sprintf("https://%s:2379", etcdClientServiceIP)
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
@@ -99,10 +97,17 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", strings.Join(etcds, ",")),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/kubernetes/ca-cert/ca.crt --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.CACertSecretName,
+					MountPath: "/etc/kubernetes/ca-cert",
+					ReadOnly:  true,
+				},
+			},
 		},
 	}
 
@@ -118,7 +123,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Env:             getEnvVars(data),
-			Args:            getApiserverFlags(data, externalNodePort, etcds),
+			Args:            getApiserverFlags(data, externalNodePort, etcd),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
@@ -204,7 +209,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcds []string) []string {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) []string {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -218,7 +223,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", strings.Join(etcds, ","),
+		"--etcd-servers", etcd,
+		"--etcd-cafile", "/etc/kubernetes/ca-cert/ca.crt",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
