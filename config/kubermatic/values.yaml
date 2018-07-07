@@ -20,7 +20,7 @@ kubermatic:
   kubeconfig: ""
   addons:
     # list of Addons to install into every user-cluster. All need to exist in the addons image
-    defaultAddons: 
+    defaultAddons:
     - canal
     - dashboard
     - dns
@@ -28,6 +28,7 @@ kubermatic:
     - kube-proxy
     - openvpn
     - rbac
+    - kubelet-configmap
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
@@ -41,7 +42,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.0"
+        tag: "v0.1.2"
         pullPolicy: "IfNotPresent"
   api:
     replicas: 2

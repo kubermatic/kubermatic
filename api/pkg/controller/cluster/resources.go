@@ -14,7 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubelet"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -517,7 +516,6 @@ func GetConfigMapCreators() []resources.ConfigMapCreator {
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
-		kubelet.ConfigMap,
 	}
 }
 
