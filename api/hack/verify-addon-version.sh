@@ -2,13 +2,13 @@
 
 set -e
 
-function finish {
+function cleanup {
   OLD_EXIT_CODE=$?
   docker rm -f $CONTAINER_NAME >/dev/null
   rm -rf ./addons-from-container
   exit $OLD_EXIT_CODE
 }
-trap finish EXIT
+trap cleanup EXIT
 
 cd $(dirname $0)/../..
 
@@ -19,8 +19,8 @@ CONTAINER_NAME=$(docker create $IMAGE:$TAG)
 
 docker cp $CONTAINER_NAME:/addons ./addons-from-container
 
-cp addons/.dockerignore ./addons-from-container
-cp addons/Dockerfile ./addons-from-container
-cp addons/README.md ./addons-from-container
+for ignored_file in $(cat addons/.dockerignore); do
+  cp addons/$ignored_file ./addons-from-container/
+done
 
 diff --brief -r ./addons ./addons-from-container
