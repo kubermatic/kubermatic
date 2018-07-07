@@ -84,7 +84,7 @@ func main() {
 	flag.StringVar(&tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
-	flag.StringVar(&saddons, "addons", "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac", "Comma separated list of Addons to install into every user-cluster")
+	flag.StringVar(&saddons, "addons", "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac,kubelet-configmap", "Comma separated list of Addons to install into every user-cluster")
 	flag.Parse()
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
