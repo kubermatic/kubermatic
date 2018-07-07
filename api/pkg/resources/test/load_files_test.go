@@ -15,16 +15,15 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -357,18 +356,13 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixture, res)
 				}
 
-				cmCreators := map[string]resources.ConfigMapCreator{
-					fmt.Sprintf("configmap-%s-%s-cloud-config", prov, ver.Version.String()): cloudconfig.ConfigMap,
-					fmt.Sprintf("configmap-%s-%s-openvpn", prov, ver.Version.String()):      openvpn.ConfigMap,
-					fmt.Sprintf("configmap-%s-%s-prometheus", prov, ver.Version.String()):   prometheus.ConfigMap,
-				}
-				for fixture, create := range cmCreators {
+				for _, create := range clustercontroller.GetConfigMapCreators() {
 					res, err := create(data, nil)
+					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					if err != nil {
-						t.Fatalf("failed to create ConfigMap for %s: %v", fixture, err)
+						t.Fatalf("failed to create ConfigMap for %s: %v", fixturePath, err)
 					}
-
-					checkTestResult(t, fixture, res)
+					checkTestResult(t, fixturePath, res)
 				}
 
 				serviceCreators := map[string]resources.ServiceCreator{
