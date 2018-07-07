@@ -35,7 +35,7 @@ type Opts struct {
 
 func main() {
 	runOpts := Opts{
-		Addons: flagopts.StringArray{"canal", "dns", "kube-proxy", "openvpn", "rbac"},
+		Addons: flagopts.StringArray{"canal", "dns", "kube-proxy", "openvpn", "rbac", "kubelet-configmap"},
 	}
 
 	flag.StringVar(&runOpts.KubeconfPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
