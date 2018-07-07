@@ -48,8 +48,7 @@ func TestGetEtcdCommand(t *testing.T) {
 }
 
 var (
-	noMigration = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
+	noMigration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
 
 
 export INITIAL_STATE="new"
@@ -72,13 +71,12 @@ exec /usr/local/bin/etcd \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380" \
     --trusted-ca-file /etc/etcd/ca/ca.crt \
-    --client-cert-auth=false \
+    --client-cert-auth \
     --cert-file /etc/etcd/tls/etcd-tls.crt \
     --key-file /etc/etcd/tls/etcd-tls.key
 `
 
-	migration = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
+	migration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
 
 
 # If we're already initialized
@@ -145,7 +143,7 @@ exec /usr/local/bin/etcd \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
     --trusted-ca-file /etc/etcd/ca/ca.crt \
-    --client-cert-auth=false \
+    --client-cert-auth \
     --cert-file /etc/etcd/tls/etcd-tls.crt \
     --key-file /etc/etcd/tls/etcd-tls.key
 `

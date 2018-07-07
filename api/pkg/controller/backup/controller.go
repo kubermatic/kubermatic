@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
@@ -14,6 +15,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 
 	"k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -27,9 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
+	corev1informer "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	listersbatchv1beta1 "k8s.io/client-go/listers/batch/v1beta1"
+	corev1lister "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/cert/triple"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -107,6 +112,8 @@ type Controller struct {
 	kubernetesClient kubernetes.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
 	cronJobLister    listersbatchv1beta1.CronJobLister
+	secretLister     corev1lister.SecretLister
+	secretSynced     cache.InformerSynced
 	clusterSynced    cache.InformerSynced
 	cronJobSynced    cache.InformerSynced
 }
@@ -124,6 +131,7 @@ func New(
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	cronJobInformer informersbatchv1beta1.CronJobInformer,
+	secretInformer corev1informer.SecretInformer,
 ) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return nil, err
@@ -204,6 +212,8 @@ func New(
 	c.clusterSynced = clusterInformer.Informer().HasSynced
 	c.cronJobLister = cronJobInformer.Lister()
 	c.cronJobSynced = cronJobInformer.Informer().HasSynced
+	c.secretLister = secretInformer.Lister()
+	c.secretSynced = secretInformer.Informer().HasSynced
 	return c, nil
 }
 
@@ -236,7 +246,7 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	glog.Infof("Starting Backup controller with %d workers", workerCount)
 	defer glog.Info("Shutting down Backup  controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.cronJobSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.cronJobSynced, c.secretSynced) {
 		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
 		return
 	}
@@ -385,6 +395,72 @@ func (c *Controller) sync(key string) error {
 		}
 	}
 
+	if err := c.ensureCronJobSecret(cluster); err != nil {
+		return fmt.Errorf("failed to create backup secret: %v", err)
+	}
+
+	return c.ensureCronJob(cluster)
+}
+
+type secretData struct {
+	cluster      *kubermaticv1.Cluster
+	secretLister corev1lister.SecretLister
+}
+
+func (d *secretData) GetClusterCA() (*triple.KeyPair, error) {
+	return resources.GetClusterCAFromLister(d.cluster, d.secretLister)
+}
+
+func (d *secretData) GetClusterRef() metav1.OwnerReference {
+	return resources.GetClusterRef(d.cluster)
+}
+
+func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
+}
+
+func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
+	name := c.getEtcdSecretName(cluster)
+
+	existing, err := c.secretLister.Secrets(metav1.NamespaceSystem).Get(name)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return err
+	}
+
+	create := certificates.GetClientCertificateCreator(
+		name,
+		"backup",
+		nil,
+		resources.BackupEtcdClientCertificateCertSecretKey,
+		resources.BackupEtcdClientCertificateKeySecretKey,
+	)
+
+	data := secretData{
+		cluster:      cluster,
+		secretLister: c.secretLister,
+	}
+
+	se, err := create(&data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build Secret: %v", err)
+	}
+
+	if diff := deep.Equal(se, existing); diff == nil {
+		return nil
+	}
+
+	if existing == nil {
+		if _, err = c.kubernetesClient.CoreV1().Secrets(metav1.NamespaceSystem).Create(se); err != nil {
+			return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
+		}
+	} else if _, err = c.kubernetesClient.CoreV1().Secrets(metav1.NamespaceSystem).Update(se); err != nil {
+		return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
+	}
+
+	return nil
+}
+
+func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
 	cronJob, err := c.cronJob(cluster)
 	if err != nil {
 		return err
@@ -476,7 +552,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
-	etcdServiceAddr := fmt.Sprintf("https://%s.%s.svc.cluster.local.:2379", resources.EtcdServiceName, cluster.Status.NamespaceName)
+	etcdServiceAddr := fmt.Sprintf("https://%s.%s.svc.cluster.local.:2379", resources.EtcdClientServiceName, cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:  "backup-creator",
@@ -487,11 +563,22 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 					Value: "3",
 				},
 			},
-			Command: []string{"/usr/local/bin/etcdctl", "--endpoints", etcdServiceAddr, "snapshot", "save", "/backup/snapshot.db"},
+			Command: []string{
+				"/usr/local/bin/etcdctl",
+				"--endpoints", etcdServiceAddr,
+				"--cacert", "/etc/etcd/client/ca.crt",
+				"--cert", "/etc/etcd/client/backup-etcd-client.crt",
+				"--key", "/etc/etcd/client/backup-etcd-client.key",
+				"snapshot", "save", "/backup/snapshot.db",
+			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      SharedVolumeName,
 					MountPath: "/backup",
+				},
+				{
+					Name:      c.getEtcdSecretName(cluster),
+					MountPath: "/etc/etcd/client",
 				},
 			},
 		},
@@ -509,6 +596,15 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 			Name: SharedVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: c.getEtcdSecretName(cluster),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  c.getEtcdSecretName(cluster),
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
 			},
 		},
 	}
