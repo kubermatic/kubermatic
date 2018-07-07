@@ -37,6 +37,8 @@ pipeline:
     group: lint
     image: docker:dind
     pull: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
   3-verify-swagger-spec:
     commands:
     - cd api
