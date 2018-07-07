@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// ConfigMap returns the kubelet configmap required for nodes that join via Kubeadm 1.11
 func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
 	if err != nil {
@@ -21,6 +22,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm = &corev1.ConfigMap{}
 		cm.Name = "kubelet-config-1.11"
 		cm.Namespace = "kube-system"
+	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
 	}
 	cm.Data["kubelet"] = getKubeletV111data(clusterDNSIP, data.Cluster.Spec.ClusterNetwork.DNSDomain)
 	return cm, nil

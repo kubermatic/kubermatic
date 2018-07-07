@@ -511,13 +511,18 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	creators := []resources.ConfigMapCreator{
+// GetConfigMapCreators returns all ConfigMapCreators that are currently in use
+func GetConfigMapCreators() []resources.ConfigMapCreator {
+	return []resources.ConfigMapCreator{
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
 		kubelet.ConfigMap,
 	}
+}
+
+func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
+	creators := GetConfigMapCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
