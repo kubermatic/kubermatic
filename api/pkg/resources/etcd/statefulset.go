@@ -7,13 +7,13 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -98,6 +98,15 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 						},
 					},
 				},
+				{
+					Name: "POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
 			},
 			Ports: []corev1.ContainerPort{
 				{
@@ -128,8 +137,9 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				FailureThreshold: 3,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/health",
-						Port: intstr.FromInt(2379),
+						Path:   "/health",
+						Port:   intstr.FromInt(2379),
+						Scheme: corev1.URISchemeHTTPS,
 					},
 				},
 			},
@@ -137,6 +147,35 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				{
 					Name:      "data",
 					MountPath: "/var/run/etcd",
+				},
+				{
+					Name:      resources.EtcdTLSCertificateSecretName,
+					MountPath: "/etc/etcd/tls",
+				},
+				{
+					Name:      resources.CACertSecretName,
+					MountPath: "/etc/etcd/ca",
+				},
+			},
+		},
+	}
+
+	set.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: resources.EtcdTLSCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.EtcdTLSCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CACertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CACertSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
@@ -205,7 +244,7 @@ func getEtcdCommand(name, namespace string, migrate bool) ([]string, error) {
 
 const (
 	etcdStartCommandTpl = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
+export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
 
 {{ if .Migrate }}
 # If we're already initialized
@@ -270,8 +309,13 @@ exec /usr/local/bin/etcd \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="{{ .Token }}" \
     --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379 \
-    --listen-client-urls http://0.0.0.0:2379 \
-    --listen-peer-urls http://0.0.0.0:2380
+    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
+    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
+    --listen-peer-urls "http://${POD_IP}:2380" \
+    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
+    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --client-cert-auth=false \
+    --cert-file /etc/etcd/tls/etcd-tls.crt \
+    --key-file /etc/etcd/tls/etcd-tls.key
 `
 )

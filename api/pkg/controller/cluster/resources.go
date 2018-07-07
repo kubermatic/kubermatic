@@ -69,6 +69,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
+	// check that all secrets are available // New way of handling secrets
+	if err := cc.ensureSecretsV2(cluster); err != nil {
+		return err
+	}
+
 	// check that all ConfigMap's are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
@@ -154,6 +159,7 @@ func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
 	return jsonmergepatch.CreateThreeWayJSONMergePatch([]byte(originalData), modifiedData, currentData)
 }
 
+// Deprecated
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	//We need to follow a specific order here...
 	//And maps in go are not sorted
@@ -504,6 +510,55 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 
 		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
 			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// GetSecretCreators returns all SecretCreators that are currently in use
+func GetSecretCreators() []resources.SecretCreator {
+	return []resources.SecretCreator{
+		etcd.TLSCertificate,
+	}
+}
+
+func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
+	creators := GetSecretCreators()
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *corev1.Secret
+		se, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build Secret: %v", err)
+		}
+		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(se.Name); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
+				return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
+			}
+			continue
+		}
+
+		se, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Secret: %v", err)
+		}
+
+		if diff := deep.Equal(se, existing); diff == nil {
+			continue
+		}
+
+		if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Update(se); err != nil {
+			return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
 		}
 	}
 
