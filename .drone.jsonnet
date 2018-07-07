@@ -15,6 +15,7 @@ local drone = import 'drone/drone.libsonnet';
     '3-license-validation': drone.step.new('metalmatze/wwhrd:1.9', group='lint', commands=['cd api', 'wwhrd check -f ../allowed_licensed.yaml']),
     '3-lint': drone.step.new('metalmatze/gometalinter:1.9', group='lint', commands=['cd api', 'make lint']),
     '3-verify-swagger-spec': drone.step.new(goImage, group='lint', commands=['cd api', './hack/verify-swagger.sh']),
+    '3-verify-addons-up-to-date': drone.step.new('docker:dind', group='lint', commands=['./api/hack/verify-addon-version.sh']),
 
     // Building
     '4-test': drone.step.new(goImage, group='build', commands=['cd api', 'make test']),
