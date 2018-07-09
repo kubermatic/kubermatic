@@ -262,6 +262,41 @@ func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.Openstack
 	return apiTenants, nil
 }
 
+// SubnetID is a struct with subnet id and name
+type SubnetID struct {
+	ID   string
+	Name string
+}
+
+// GetSubnetIDs list all available subnet ids fot a given CloudSpec
+func (os *Provider) GetSubnetIDs(cloud *kubermaticv1.CloudSpec) ([]SubnetID, error) {
+	authClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get net client: %v", err)
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	subnets, err := getAllSubnets(authClient)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetIDs := []SubnetID{}
+	for _, subnet := range subnets {
+		subnetID := SubnetID{
+			Name: subnet.Name,
+			ID:   subnet.ID,
+		}
+		subnetIDs = append(subnetIDs, subnetID)
+	}
+
+	return subnetIDs, nil
+}
+
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {

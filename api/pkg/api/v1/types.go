@@ -231,6 +231,15 @@ type OpenstackTenant struct {
 // swagger:model OpenstackTenantList
 type OpenstackTenantList []OpenstackTenant
 
+// OpenstackSubnetID is the object representing a openstack subnet id.
+// swagger:model OpenstackSubnetID
+type OpenstackSubnetID struct {
+	// Id uniquely identifies the subnet
+	ID string `json:"id"`
+	// Name is human-readable name for the subnet
+	Name string `json:"name"`
+}
+
 // AvailableMasterVersions describes all possible update versions for a cluster
 // swagger:model AvailableMasterVersions
 type AvailableMasterVersions []MasterVersion

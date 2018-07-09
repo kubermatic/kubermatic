@@ -70,6 +70,20 @@ func getAllNetworks(netClient *gophercloud.ServiceClient) ([]networkWithExternal
 	return allNetworks, nil
 }
 
+func getAllSubnets(netClient *gophercloud.ServiceClient) ([]ossubnets.Subnet, error) {
+	var allSubnets []ossubnets.Subnet
+	allPages, err := osnetworks.List(netClient, nil).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	if allSubnets, err = ossubnets.ExtractSubnets(allPages); err != nil {
+		return nil, err
+	}
+
+	return allSubnets, nil
+}
+
 func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*networkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient)
 	if err != nil {
