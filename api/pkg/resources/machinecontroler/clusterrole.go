@@ -22,15 +22,25 @@ func ClusterRole(data *resources.TemplateData, existing *rbacv1.ClusterRole) (*r
 
 	r.Rules = []rbacv1.PolicyRule{
 		{
+			APIGroups: []string{"apiextensions.k8s.io"},
+			Resources: []string{"customresourcedefinitions"},
+			Verbs:     []string{"create"},
+		},
+		{
+			APIGroups:     []string{"apiextensions.k8s.io"},
+			Resources:     []string{"customresourcedefinitions"},
+			ResourceNames: []string{"machines.machine.k8s.io"},
+			Verbs:         []string{"*"},
+		},
+		{
+			APIGroups: []string{"machine.k8s.io"},
+			Resources: []string{"machines"},
+			Verbs:     []string{"*"},
+		},
+		{
 			APIGroups: []string{""},
-			Resources: []string{
-				"machines",
-			},
-			Verbs: []string{
-				"get",
-				"list",
-				"watch",
-			},
+			Resources: []string{"nodes"},
+			Verbs:     []string{"*"},
 		},
 	}
 	return r, nil

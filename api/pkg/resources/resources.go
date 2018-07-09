@@ -100,8 +100,16 @@ const (
 	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
+	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
+	MachineControllerCertUsername = "machine-controller-user"
+	//MachineControllerRoleName is the name for the MachineController roles
+	MachineControllerRoleName = "machine-controller"
+	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
+	MachineControllerRoleBindingName = "machine-controller"
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role
-	MachineControllerClusterRoleName = "system:kubermatic-machinecontroller"
+	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
+	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256

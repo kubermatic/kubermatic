@@ -54,11 +54,6 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all cluster roles are created
-	/*if err := cc.ensureClusterRoles(cluster); err != nil {
-		return err
-	}*/
-
 	// check that all cluster role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
@@ -415,61 +410,6 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 
 		if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Update(rb); err != nil {
 			return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
-	creators := []resources.ClusterRoleCreator{
-		machinecontroller.ClusterRole,
-	}
-	glog.V(2).Infof("userClusterEnsureClusterRoles entry %v", creators[0])
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *rbacv1.ClusterRole
-		cRole, err := create(data, nil)
-		glog.V(4).Infof("user-cluster ensureClusterRoles created %v, %v", cRole, err)
-		if err != nil {
-			return fmt.Errorf("failed to build ClusterRole: %v", err)
-		}
-
-		if existing, err = client.RbacV1().ClusterRoles().Get(cRole.Name, metav1.GetOptions{}); err != nil {
-			glog.V(4).Infof("ensureClusterRoles existing: %v, %v", existing, err)
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = client.RbacV1().ClusterRoles().Create(cRole); err != nil {
-				glog.V(4).Infof("user-cluster ensureClusterRoles Create (did not exist): %v", err)
-				return fmt.Errorf("failed to create ClusterRole %s: %v", cRole.Name, err)
-			}
-			continue
-		}
-
-		cRole, err = create(data, existing.DeepCopy())
-		glog.V(4).Infof("user-cluster ensureClusterRoles Create (did exist): existing:%v; created:%v", existing, cRole, err)
-		if err != nil {
-			return fmt.Errorf("failed to build ClusterRole: %v", err)
-		}
-
-		if diff := deep.Equal(cRole, existing); diff == nil {
-			continue
-		}
-
-		if _, err = client.RbacV1().ClusterRoles().Update(cRole); err != nil {
-			return fmt.Errorf("failed to update ClusterRole %s: %v", cRole.Name, err)
 		}
 	}
 

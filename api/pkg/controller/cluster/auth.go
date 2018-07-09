@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	// "k8s.io/apiserver/pkg/authentication/user" // not vendored yeet
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
@@ -443,18 +444,20 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
 func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-scheduler")
+	user_KubeScheduler := "system:kube-scheduler" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, user_KubeScheduler)
 }
 
 func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-controller-manager")
+	user_KubeControllerManager := "system:kube-controller-manager" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, user_KubeControllerManager)
 }
 
 func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	return cc.getKubeconfigSecret(c, existingSecret, "system:kube-machine-controller")
+	return cc.getKubeconfigSecret(c, existingSecret, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername)
 }
 
-func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, role string) (*corev1.Secret, string, error) {
+func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, secretName, username string) (*corev1.Secret, string, error) {
 	caKp, err := cc.getFullCAFromLister(c)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
@@ -466,13 +469,11 @@ func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecre
 	}
 
 	if existingSecret == nil {
-		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s:%d", masterIP, masterPort), caKp, role, []string{role})
+		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s:%d", masterIP, masterPort), caKp, username, []string{})
 		if err != nil {
-			return nil, "", fmt.Errorf("unable to create a dedicated kubeconfig for %s: %v", role, err)
+			return nil, "", fmt.Errorf("unable to create a dedicated kubeconfig for %s: %v", username, err)
 		}
-		return cc.secretWithJSON(cc.secretWithData(map[string][]byte{
-			resources.SchedulerKubeconfigSecretName: kconf,
-		}, c))
+		return cc.secretWithJSON(cc.secretWithData(map[string][]byte{secretName: kconf}, c))
 	}
 
 	// FIXME add check for required update

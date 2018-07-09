@@ -61,11 +61,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiIP, apiPort, err := data.ClusterIPPortByServiceName(resources.ApiserverExternalServiceName)
 	if err != nil {
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/machinecontroller"
+	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -74,10 +76,34 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -T 1 https://%s:%d/healthz; do echo waiting for apiserver; sleep 2; done", apiIP, apiPort),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+		},
+		{
+			Name:            "get-kubeconfig",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command: []string{
+				"/bin/sh",
+				"-ec",
+				fmt.Sprintf("install -o nobody -m 0400 %s/%s /mnt/kubeconfig/", kcDir, resources.MachineControllerKubeconfigSecretName),
+			},
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.MachineControllerKubeconfigSecretName,
+					MountPath: kcDir,
+					ReadOnly:  true,
+				},
+				{
+					Name:      "machine-controller-kubeconfig-volume",
+					MountPath: "/mnt/kubeconfig",
+					ReadOnly:  false,
+				},
+			},
 		},
 	}
 	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
@@ -91,7 +117,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
+				"-kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.MachineControllerKubeconfigSecretName),
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", clusterDNSIP,
@@ -125,10 +151,37 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				SuccessThreshold:    1,
 				TimeoutSeconds:      15,
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "machine-controller-kubeconfig-volume",
+					MountPath: kcDir,
+					ReadOnly:  false,
+				},
+			},
 		},
 	}
 
 	return dep, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.MachineControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.MachineControllerKubeconfigSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: "machine-controller-kubeconfig-volume",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
 }
 
 func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
