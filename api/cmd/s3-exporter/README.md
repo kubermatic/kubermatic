@@ -8,7 +8,6 @@ Usage:
 
 ```
 Usage of ./_build/s3-exporter:
-Usage of ./_build/s3-exporter:
   -access-key-id string
     	S3 Access key, defaults to the ACCESS_KEY_ID environment variable
   -address string
