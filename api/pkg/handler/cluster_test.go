@@ -1377,7 +1377,7 @@ func TestListClusters(t *testing.T) {
 							},
 						},
 						CreationTimestamp: func() metav1.Time {
-							const longForm= "Jan 2, 2006 at 3:04pm (MST)"
+							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 							creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 							if err != nil {
 								t.Fatal(err)
