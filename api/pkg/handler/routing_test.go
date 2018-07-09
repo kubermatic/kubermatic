@@ -26,7 +26,7 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 )
 
-func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
+func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
 
 	datacenters := buildDatacenterMeta()
 	cloudProviders := cloud.Providers(datacenters)
@@ -48,7 +48,7 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	clusterProvider := kubernetes.NewClusterProvider(
@@ -101,7 +101,12 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	r.RegisterV1(v1Router)
 	r.RegisterV3(v3Router)
 
-	return mainRouter, nil
+	return mainRouter, kubermaticClient, nil
+}
+
+func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
+	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, kubermaticObjects, versions, updates)
+	return router, err
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {

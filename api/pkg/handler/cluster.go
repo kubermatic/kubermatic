@@ -253,7 +253,7 @@ func deleteClusterEndpoint() endpoint.Endpoint {
 	}
 }
 
-func newDeleteCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewGetClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
@@ -266,6 +266,21 @@ func newDeleteCluster(projectProvider provider.ProjectProvider) endpoint.Endpoin
 		err = clusterProvider.Delete(user, project, req.ClusterName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// TODO: I think that in general it would be better if the cluster resource
+		// has the reference to the ssh keys - not the other way around as it is now.
+		// detach ssh keys that are being used by this clusters
+		clusterSSHKeys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		for _, clusterSSHKey := range clusterSSHKeys {
+			clusterSSHKey.RemoveFromCluster(req.ClusterName)
+			if _, err := sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
 		}
 		return nil, nil
 	}
@@ -297,53 +312,54 @@ func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoin
 
 func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(assignSSHKeysToClusterReq)
+		req := request.(AssignSSHKeysToClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		if len(req.Keys) == 0 {
-			return nil, errors.NewBadRequest("please provide one or more SSH key")
+		if len(req.KeyName) == 0 {
+			return nil, errors.NewBadRequest("please provide an SSH key")
 		}
 
-		project, err := projectProvider.Get(user, req.projectName)
+		project, err := projectProvider.Get(user, req.ProjectName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(user, project, req.clusterName)
+		_, err = clusterProvider.Get(user, project, req.ClusterName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		projectSSHKeys, err := sshKeyProvider.List(user, project, nil)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
+		// sanity check, make sure that the key belongs to the project
+		// alternatively we could examine the owner references
+		{
+			projectSSHKeys, err := sshKeyProvider.List(user, project, nil)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
 
-		for _, requestSSHKeyName := range req.Keys {
 			found := false
 			for _, projectSSHKey := range projectSSHKeys {
-				if projectSSHKey.Name == requestSSHKeyName {
+				if projectSSHKey.Name == req.KeyName {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", requestSSHKeyName, project.Spec.Name, project.Name)
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyName, project.Spec.Name, project.Name)
 			}
 		}
 
-		for _, requestSSHKeyName := range req.Keys {
-			sshKey, err := sshKeyProvider.Get(user, project, requestSSHKeyName)
-			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
-			if sshKey.IsUsedByCluster(req.clusterName) {
-				continue
-			}
-			sshKey.AddToCluster(req.clusterName)
-			if _, err := sshKeyProvider.Update(user, project, sshKey); err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
+		sshKey, err := sshKeyProvider.Get(user, project, req.KeyName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if sshKey.IsUsedByCluster(req.ClusterName) {
+			return nil, nil
+		}
+		sshKey.AddToCluster(req.ClusterName)
+		_, err = sshKeyProvider.Update(user, project, sshKey)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		return nil, nil
@@ -352,19 +368,19 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 
 func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(listSSHKeysAssignedToClusterReq)
+		req := request.(ListSSHKeysAssignedToClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.projectName)
+		project, err := projectProvider.Get(user, req.ProjectName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		_, err = clusterProvider.Get(user, project, req.clusterName)
+		_, err = clusterProvider.Get(user, project, req.ClusterName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.clusterName, SortBy: "metadata.creationTimestamp"})
+		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName, SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -399,6 +415,55 @@ func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Clust
 		}
 	}
 	return apiClusters
+}
+
+func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(DetachSSHKeysFromClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		_, err = clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// sanity check, make sure that the key belongs to the project
+		// alternatively we could examine the owner references
+		{
+			projectSSHKeys, err := sshKeyProvider.List(user, project, nil)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+
+			found := false
+			for _, projectSSHKey := range projectSSHKeys {
+				if projectSSHKey.Name == req.KeyName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, errors.NewNotFound("sshkey", req.KeyName)
+			}
+		}
+
+		clusterSSHKey, err := sshKeyProvider.Get(user, project, req.KeyName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		clusterSSHKey.RemoveFromCluster(req.ClusterName)
+		_, err = sshKeyProvider.Update(user, project, clusterSSHKey)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
 }
 
 type (
@@ -509,17 +574,41 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 	return vals, nil
 }
 
-type assignSSHKeysToClusterReq struct {
+// AssignSSHKeysToClusterReq defines HTTP request data for assignSSHKeyToCluster  endpoint
+// swagger:parameters assignSSHKeyToCluster
+type AssignSSHKeysToClusterReq struct {
 	DCReq
-	Keys        []string `json:"keys"`
-	projectName string
-	clusterName string
+	assignSSHKeysToClusterBodyReq
+	// in: path
+	ProjectName string `json:"project_id"`
+	// in: path
+	ClusterName string `json:"cluster_name"`
 }
 
-type listSSHKeysAssignedToClusterReq struct {
+type assignSSHKeysToClusterBodyReq struct {
+	KeyName string `json:"KeyName"`
+}
+
+// ListSSHKeysAssignedToClusterReq defines HTTP request data for listSSHKeysAssignedToCluster endpoint
+// swagger:parameters listSSHKeysAssignedToCluster
+type ListSSHKeysAssignedToClusterReq struct {
 	DCReq
-	projectName string
-	clusterName string
+	// in: path
+	ProjectName string `json:"project_id"`
+	// in: path
+	ClusterName string `json:"cluster_name"`
+}
+
+// DetachSSHKeysFromClusterReq defines HTTP request for detachSSHKeyFromCluster endpoint
+// swagger:parameters detachSSHKeyFromCluster
+type DetachSSHKeysFromClusterReq struct {
+	DCReq
+	// in: path
+	KeyName string `json:"key_name"`
+	// in: path
+	ProjectName string `json:"project_id"`
+	// in: path
+	ClusterName string `json:"cluster_name"`
 }
 
 // NewCreateClusterReq defines HTTP request for newCreateCluster endpoint
@@ -656,18 +745,36 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func decodeAssignSSHKeysToClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req assignSSHKeysToClusterReq
+func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AssignSSHKeysToClusterReq
 	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.clusterName = clusterName
-	req.projectName = projectName
+	req.ClusterName = clusterName
+	req.ProjectName = projectName
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
 		return nil, err
 	}
+	req.DCReq = dcr.(DCReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.assignSSHKeysToClusterBodyReq); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListSSHKeysAssignedToClusterReq
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterName = clusterName
+	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -678,20 +785,27 @@ func decodeAssignSSHKeysToClusterReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req listSSHKeysAssignedToClusterReq
+func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req DetachSSHKeysFromClusterReq
 	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.clusterName = clusterName
-	req.projectName = projectName
+
+	req.ClusterName = clusterName
+	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
+
+	sshKeyName, ok := mux.Vars(r)["key_name"]
+	if !ok {
+		return nil, fmt.Errorf("'key_name' parameter is required in order to delete ssh key")
+	}
+	req.KeyName = sshKeyName
 
 	return req, nil
 }
