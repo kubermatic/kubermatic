@@ -100,6 +100,40 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
+
+	controllerManagerMounts := []corev1.VolumeMount{
+		{
+			Name:      resources.CACertSecretName,
+			MountPath: "/etc/kubernetes/ca-cert",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CAKeySecretName,
+			MountPath: "/etc/kubernetes/ca-key",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.ServiceAccountKeySecretName,
+			MountPath: "/etc/kubernetes/service-account-key",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CloudConfigConfigMapName,
+			MountPath: "/etc/kubernetes/cloud",
+			ReadOnly:  true,
+		},
+	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		fakeVMWareUUIDMount := corev1.VolumeMount{
+			Name:      resources.CloudConfigConfigMapName,
+			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
+			MountPath: "/sys/class/dmi/id/product_serial",
+			ReadOnly:  true,
+		}
+		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
+		controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -146,41 +180,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				SuccessThreshold:    1,
 				TimeoutSeconds:      15,
 			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CAKeySecretName,
-					MountPath: "/etc/kubernetes/ca-key",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.ServiceAccountKeySecretName,
-					MountPath: "/etc/kubernetes/service-account-key",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CloudConfigConfigMapName,
-					MountPath: "/etc/kubernetes/cloud",
-					ReadOnly:  true,
-				},
-			},
+			VolumeMounts: controllerManagerMounts,
 		},
-	}
-
-	if data.Cluster.Spec.Cloud.VSphere != nil {
-		fakeVMWareUUIDMount := corev1.VolumeMount{
-			Name:      resources.CloudConfigConfigMapName,
-			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
-			MountPath: "/sys/class/dmi/id/product_serial",
-			ReadOnly:  true,
-		}
-		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
-		dep.Spec.Template.Spec.Containers[0].VolumeMounts = append(dep.Spec.Template.Spec.Containers[0].VolumeMounts,
-			fakeVMWareUUIDMount)
 	}
 
 	return dep, nil
