@@ -41,6 +41,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	if cluster.Status.Health.Apiserver {
+		// So this is the inofficial starting point of a user-cluster-resource controller?
 		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
 			return nil, err
 		}
@@ -56,6 +57,14 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		if err := cc.launchingCreateOpenVPNConfigMap(cluster); err != nil {
 			return nil, err
 		}
+
+		if err := cc.userClusterEnsureClusterRoles(cluster); err != nil {
+			return nil, err
+		}
+
+		/*if err := cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
+			return nil, err
+		}*/
 	}
 
 	if !cluster.Status.Health.AllHealthy() {

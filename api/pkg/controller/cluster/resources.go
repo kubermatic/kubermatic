@@ -55,9 +55,9 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 	}
 
 	// check that all cluster roles are created
-	if err := cc.ensureClusterRoles(cluster); err != nil {
+	/*if err := cc.ensureClusterRoles(cluster); err != nil {
 		return err
-	}
+	}*/
 
 	// check that all cluster role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
@@ -180,6 +180,8 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
+		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
+		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
@@ -419,11 +421,16 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureClusterRoles(c *kubermaticv1.Cluster) error {
+func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 	}
-	glog.V(2).Infof("ensureClusterRoles entry %v", creators[0])
+	glog.V(2).Infof("userClusterEnsureClusterRoles entry %v", creators[0])
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -433,26 +440,26 @@ func (cc *Controller) ensureClusterRoles(c *kubermaticv1.Cluster) error {
 	for _, create := range creators {
 		var existing *rbacv1.ClusterRole
 		cRole, err := create(data, nil)
-		glog.V(4).Infof("ensureClusterRoles created %v, %v", cRole, err)
+		glog.V(4).Infof("user-cluster ensureClusterRoles created %v, %v", cRole, err)
 		if err != nil {
 			return fmt.Errorf("failed to build ClusterRole: %v", err)
 		}
 
-		if existing, err = cc.clusterRoleLister.Get(cRole.Name); err != nil {
+		if existing, err = client.RbacV1().ClusterRoles().Get(cRole.Name, metav1.GetOptions{}); err != nil {
 			glog.V(4).Infof("ensureClusterRoles existing: %v, %v", existing, err)
 			if !errors.IsNotFound(err) {
 				return err
 			}
 
-			if _, err = cc.kubeClient.RbacV1().ClusterRoles().Create(cRole); err != nil {
-				glog.V(4).Infof("ensureClusterRoles Create (did not exist): %v", err)
+			if _, err = client.RbacV1().ClusterRoles().Create(cRole); err != nil {
+				glog.V(4).Infof("user-cluster ensureClusterRoles Create (did not exist): %v", err)
 				return fmt.Errorf("failed to create ClusterRole %s: %v", cRole.Name, err)
 			}
 			continue
 		}
 
 		cRole, err = create(data, existing.DeepCopy())
-		glog.V(4).Infof("ensureClusterRoles Create (did exist): existing:%v; created:%v", existing, cRole, err)
+		glog.V(4).Infof("user-cluster ensureClusterRoles Create (did exist): existing:%v; created:%v", existing, cRole, err)
 		if err != nil {
 			return fmt.Errorf("failed to build ClusterRole: %v", err)
 		}
@@ -461,7 +468,7 @@ func (cc *Controller) ensureClusterRoles(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		if _, err = cc.kubeClient.RbacV1().ClusterRoles().Update(cRole); err != nil {
+		if _, err = client.RbacV1().ClusterRoles().Update(cRole); err != nil {
 			return fmt.Errorf("failed to update ClusterRole %s: %v", cRole.Name, err)
 		}
 	}

@@ -58,6 +58,11 @@ const (
 	AdminKubeconfigSecretName = "admin-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
+	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
+	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"
 	//CACertSecretName is the name for the secret containing the ca.crt
@@ -96,7 +101,7 @@ const (
 	PrometheusRoleBindingName = "prometheus"
 
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role
-	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+	MachineControllerClusterRoleName = "system:kubermatic-machinecontroller"
 
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256
