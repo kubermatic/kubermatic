@@ -47,6 +47,8 @@ All flags have reasonable defaults
         path to Cluster yaml (default "/manifests/cluster.yaml")
     -kubermatic-cluster-timeout duration
         cluster creation timeout (default 3m0s)
+    -kubermatic-delete-cluster
+        delete test cluster at the exit (default true)
     -kubermatic-namespace string
         namespace where kubermatic and it's configs deployed (default "kubermatic")
     -kubermatic-node string

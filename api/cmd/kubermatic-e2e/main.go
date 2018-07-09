@@ -17,6 +17,7 @@ type Opts struct {
 	Addons              flagopts.StringArray
 	ClusterPath         string
 	ClusterTimeout      time.Duration
+	DeleteCluster       bool
 	Focus               string
 	GinkgoBin           string
 	GinkgoNoColor       bool
@@ -47,6 +48,7 @@ func main() {
 	flag.DurationVar(&runOpts.ClusterTimeout, "kubermatic-cluster-timeout", 3*time.Minute, "cluster creation timeout")
 	flag.DurationVar(&runOpts.NodesTimeout, "kubermatic-nodes-timeout", 10*time.Minute, "nodes creation timeout")
 	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
+	flag.BoolVar(&runOpts.DeleteCluster, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
 	flag.BoolVar(&runOpts.GinkgoNoColor, "ginkgo-nocolor", false, "don't show colors")
 	flag.DurationVar(&runOpts.GinkgoTimeout, "ginkgo-timeout", 5400*time.Second, "ginkgo execution timeout")
 	flag.StringVar(&runOpts.Focus, "ginkgo-focus", `\[Conformance\]`, "tests focus")
