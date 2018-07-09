@@ -166,7 +166,7 @@ func (r Routing) listSSHKeys() http.Handler {
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project newListSSHKeys
 //
 //     Lists SSH Keys that belong to the given project.
-//     The returned collection of keys is sorted by creation timestamp.
+//     The returned collection is sorted by creation timestamp.
 //
 //     Produces:
 //     - application/json
@@ -727,8 +727,9 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// Assign an existing ssh key to a cluster
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project assignSSHKeyToCluster
+//
+//     Assigns an existing ssh key to the given cluster
 //
 //     Consumes:
 //     - application/json
@@ -754,10 +755,10 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project listSSHKeysAssignedToCluster
 //
-//     List ssh keys that are assigned to the cluster
-//     The returned collection is returned by creation timestamp.
+//     Lists ssh keys that are assigned to the cluster
+//     The returned collection is sorted by creation timestamp.
 //
 //     Consumes:
 //     - application/json
@@ -767,7 +768,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: v2.NewSSHKey
+//       200: NewSSHKeyList
 //       401: empty
 //       403: empty
 func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
@@ -783,8 +784,9 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// Unassignes an ssh key from the given cluster
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project detachSSHKeyFromCluster
+//
+//     Unassignes an ssh key from the given cluster
 //
 //     Consumes:
 //     - application/json
@@ -795,8 +797,8 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: empty
-//       401: Unauthorized
-//       403: Forbidden
+//       401: empty
+//       403: empty
 func (r Routing) detachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
