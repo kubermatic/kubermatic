@@ -94,8 +94,6 @@ type Controller struct {
 	roleSynced               cache.InformerSynced
 	roleBindingLister        rbacb1lister.RoleBindingLister
 	roleBindingSynced        cache.InformerSynced
-	clusterRoleLister        rbacb1lister.ClusterRoleLister
-	clusterRoleSynced        cache.InformerSynced
 	clusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	clusterRoleBindingSynced cache.InformerSynced
 }
@@ -128,7 +126,6 @@ func NewController(
 	ingressInformer extensionsv1beta1informers.IngressInformer,
 	roleInformer rbacv1informer.RoleInformer,
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
-	clusterRoleInformer rbacv1informer.ClusterRoleInformer,
 	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
@@ -226,11 +223,6 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
-	clusterRoleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
-		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
-		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
-	})
 	clusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
@@ -261,8 +253,6 @@ func NewController(
 	cc.roleSynced = roleInformer.Informer().HasSynced
 	cc.roleBindingLister = roleBindingInformer.Lister()
 	cc.roleBindingSynced = roleBindingInformer.Informer().HasSynced
-	cc.clusterRoleLister = clusterRoleInformer.Lister()
-	cc.clusterRoleSynced = clusterRoleInformer.Informer().HasSynced
 	cc.clusterRoleBindingLister = clusterRoleBindingInformer.Lister()
 	cc.clusterRoleBindingSynced = clusterRoleBindingInformer.Informer().HasSynced
 
@@ -500,7 +490,6 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 		cc.ingressSynced,
 		cc.roleSynced,
 		cc.roleBindingSynced,
-		cc.clusterRoleSynced,
 		cc.clusterRoleBindingSynced) {
 		runtime.HandleError(errors.New("Unable to sync caches for cluster controller"))
 		return

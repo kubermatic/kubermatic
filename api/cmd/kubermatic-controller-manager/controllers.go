@@ -90,7 +90,6 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 	)
 	if err != nil {
