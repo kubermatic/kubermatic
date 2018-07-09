@@ -225,7 +225,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		clusters, err := clusterProvider.List(project, nil)
+		clusters, err := clusterProvider.List(project, &provider.ClusterListOptions{SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -263,11 +263,6 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		err = clusterProvider.Delete(user, project, req.ClusterName)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
 		// TODO: I think that in general it would be better if the cluster resource
 		// has the reference to the ssh keys - not the other way around as it is now.
 		// detach ssh keys that are being used by this clusters
@@ -281,6 +276,11 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 			if _, err := sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
+		}
+
+		err = clusterProvider.Delete(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
 	}
