@@ -95,10 +95,6 @@ spec:
         - mountPath: /etc/kubernetes/ca-cert
           name: ca-cert
           readOnly: true
-        - mountPath: /sys/class/dmi/id/product_serial
-          name: cloud-config
-          readOnly: true
-          subPath: fakeVmwareUUID
       - args:
         - --master
         - http://192.0.2.11:8080
@@ -167,6 +163,10 @@ spec:
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
+        - mountPath: /sys/class/dmi/id/product_serial
+          name: cloud-config
+          readOnly: true
+          subPath: fakeVmwareUUID
       dnsConfig:
         nameservers:
         - 10.10.10.10
