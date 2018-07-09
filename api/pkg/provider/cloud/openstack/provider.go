@@ -262,6 +262,36 @@ func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.Openstack
 	return apiTenants, nil
 }
 
+// GetNetworks lists all available networks for the given CloudSpec.DatacenterName
+func (os *Provider) GetNetworks(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackNetwork, error) {
+	authClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	networks, err := getAllNetworks(authClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get networks: %v", err)
+	}
+
+	apiNetworks := []apiv1.OpenstackNetwork{}
+	for _, network := range networks {
+		apiNetwork := apiv1.OpenstackNetwork{
+			Name: network.Name,
+			ID:   network.ID,
+		}
+
+		apiNetworks = append(apiNetworks, apiNetwork)
+	}
+
+	return apiNetworks, nil
+}
+
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {

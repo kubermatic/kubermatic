@@ -61,6 +61,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackTenants())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/networks").
+		Handler(r.listOpenstackNetworks())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -352,7 +356,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/tenants
+// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
 //
 // Lists tenants from openstack
 //
@@ -361,14 +365,36 @@ func (r Routing) listOpenstackSizes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: OpenstackTenantList
+//       200: []OpenstackTenant
 func (r Routing) listOpenstackTenants() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackTenantEndpoint(r.cloudProviders)),
-		decodeOpenstackTenantReq,
+		decodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/networks openstack listOpenstackNetworks
+//
+// Lists networks from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackNetwork
+func (r Routing) listOpenstackNetworks() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackNetworkEndpoint(r.cloudProviders)),
+		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
