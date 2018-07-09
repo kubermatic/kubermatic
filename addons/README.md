@@ -6,11 +6,9 @@ The docker image should be freely accessible to let customers extend & modify th
 
 ### Releasing
 
-```bash
-export TAG=v0.1.0
-docker build -t quay.io/kubermatic/addons:${TAG} .
-docker push quay.io/kubermatic/addons:${TAG}
-```
+* Increment the tag in the `release.sh` script
+* Execute `release.sh`
+* Increment the tag in `../config/kubermatic/values.yaml`
 
 ### Using in the kubermatic-addon-controller
 The addons docker image will be used as a init-container to copy all addon-manifests to a shared volume.

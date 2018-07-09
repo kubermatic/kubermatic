@@ -12,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,11 +23,13 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 )
 
 const (
@@ -58,10 +61,15 @@ type e2eTestRunner struct {
 func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	var (
 		clusterTemplate kubermaticv1.Cluster
-		machineTemplate machinesv1alpha1.Machine
+		nodeTemplate    apiv2.Node
 	)
 
 	if err := unmarshalObj(ctl.runOpts.ClusterPath, &clusterTemplate); err != nil {
+		return err
+	}
+
+	dc, err := ctl.getDatacenter(clusterTemplate.Spec.Cloud.DatacenterName)
+	if err != nil {
 		return err
 	}
 
@@ -69,7 +77,9 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ctl.deleteCluster(cluster.Name)
+	if ctl.runOpts.DeleteCluster {
+		defer ctl.deleteCluster(cluster.Name)
+	}
 	log.Infof("created cluster named: %s", cluster.Name)
 
 	log.Info("waiting for cluster to become healthy")
@@ -111,11 +121,11 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 		return err
 	}
 
-	if err = unmarshalObj(ctl.runOpts.MachinePath, &machineTemplate); err != nil {
+	if err = unmarshalObj(ctl.runOpts.NodePath, &nodeTemplate); err != nil {
 		return err
 	}
 
-	if err = ctl.createMachines(clusterAdminRestConfig, machineTemplate); err != nil {
+	if err = ctl.createMachines(clusterAdminRestConfig, dc, cluster, nodeTemplate); err != nil {
 		return err
 	}
 	log.Info("waiting for machines to boot")
@@ -229,20 +239,54 @@ func (ctl *e2eTestRunner) nodesReadyCond(ctx context.Context) func() (bool, erro
 	}
 }
 
-func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, template machinesv1alpha1.Machine) error {
+func (ctl *e2eTestRunner) getDatacenter(name string) (provider.DatacenterMeta, error) {
+	secret, err := ctl.seedClient.
+		CoreV1().
+		Secrets(ctl.runOpts.KubermaticNamespace).
+		Get("datacenters", metav1.GetOptions{})
+
+	if err != nil {
+		return provider.DatacenterMeta{}, err
+	}
+
+	dcsBuf, found := secret.Data["datacenters.yaml"]
+	if !found {
+		return provider.DatacenterMeta{}, errors.New("datacenters.yaml not found")
+	}
+
+	dcs := struct {
+		Datacenters map[string]provider.DatacenterMeta `yaml:"datacenters"`
+	}{}
+
+	if err = yaml.Unmarshal(dcsBuf, &dcs); err != nil {
+		return provider.DatacenterMeta{}, err
+	}
+
+	dc, found := dcs.Datacenters[name]
+	if !found {
+		return provider.DatacenterMeta{}, fmt.Errorf("datacenter %s not found", name)
+	}
+
+	return dc, nil
+}
+
+func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv2.Node) error {
 	machinesClient, err := machineclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
 	}
-	template.GenerateName = ""
-	template.Name = ""
 
 	machines := machinesClient.MachineV1alpha1().Machines()
+	template, err := machineresource.Machine(cluster, &node, dc, nil)
+	if err != nil {
+		return err
+	}
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
 		template.Name = fmt.Sprintf("%s%s", e2eGenerateName, rand.String(5))
 		template.Spec.Name = template.Name
-		m, err := machines.Create(&template)
+
+		m, err := machines.Create(template)
 		if err != nil {
 			return err
 		}
