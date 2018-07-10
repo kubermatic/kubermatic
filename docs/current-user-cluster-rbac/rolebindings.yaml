@@ -1,0 +1,298 @@
+apiVersion: v1
+items:
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    labels:
+      app: machine-controller
+    name: machine-controller-rb-thz
+    namespace: default
+    resourceVersion: "143"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/default/rolebindings/machine-controller-rb-thz
+    uid: 8129ae3f-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: machine-controller-r-thz
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: machine-controller-thz-user
+    namespace: default
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    name: cluster-info
+    namespace: kube-public
+    resourceVersion: "137"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-public/rolebindings/cluster-info
+    uid: 80d5649f-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: cluster-info
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:anonymous
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    labels:
+      app: controller-manager
+    name: kubermatic:controller-manager-rb-thz
+    namespace: kube-public
+    resourceVersion: "147"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-public/rolebindings/kubermatic%3Acontroller-manager-rb-thz
+    uid: 8149e1a2-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:bootstrap-signer
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:kube-controller-manager
+    namespace: kube-public
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    labels:
+      app: machine-controller
+    name: machine-controller-rb-thz
+    namespace: kube-public
+    resourceVersion: "145"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-public/rolebindings/machine-controller-rb-thz
+    uid: 8138acd0-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: machine-controller-r-thz
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: machine-controller-thz-user
+    namespace: kube-public
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system:controller:bootstrap-signer
+    namespace: kube-public
+    resourceVersion: "134"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-public/rolebindings/system%3Acontroller%3Abootstrap-signer
+    uid: 7db5faf4-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:bootstrap-signer
+  subjects:
+  - kind: ServiceAccount
+    name: bootstrap-signer
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    labels:
+      app: controller-manager
+    name: kubermatic:controller-manager-rb-thz
+    namespace: kube-system
+    resourceVersion: "146"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/kubermatic%3Acontroller-manager-rb-thz
+    uid: 81417c94-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:bootstrap-signer
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:kube-controller-manager
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"RoleBinding","metadata":{"annotations":{},"labels":{"addonmanager.kubernetes.io/mode":"Reconcile","k8s-app":"kubernetes-dashboard","kubermatic-addon":"dashboard"},"name":"kubernetes-dashboard-minimal","namespace":"kube-system"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"Role","name":"kubernetes-dashboard-minimal"},"subjects":[{"kind":"ServiceAccount","name":"kubernetes-dashboard","namespace":"kube-system"}]}
+    creationTimestamp: 2018-07-10T21:52:15Z
+    labels:
+      addonmanager.kubernetes.io/mode: Reconcile
+      k8s-app: kubernetes-dashboard
+      kubermatic-addon: dashboard
+    name: kubernetes-dashboard-minimal
+    namespace: kube-system
+    resourceVersion: "197"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/kubernetes-dashboard-minimal
+    uid: 82772eb2-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: kubernetes-dashboard-minimal
+  subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: 2018-07-10T21:52:13Z
+    labels:
+      app: machine-controller
+    name: machine-controller-rb-thz
+    namespace: kube-system
+    resourceVersion: "144"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/machine-controller-rb-thz
+    uid: 81312232-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: machine-controller-r-thz
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: machine-controller-thz-user
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"RoleBinding","metadata":{"annotations":{},"labels":{"kubermatic-addon":"rbac"},"name":"machine-controller:kubelet-config-1.11","namespace":"kube-system"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"Role","name":"machine-controller:kubelet-config-1.11"},"subjects":[{"apiGroup":"rbac.authorization.k8s.io","kind":"Group","name":"system:nodes"},{"apiGroup":"rbac.authorization.k8s.io","kind":"Group","name":"system:bootstrappers:machine-controller:default-node-token"}]}
+    creationTimestamp: 2018-07-10T21:52:16Z
+    labels:
+      kubermatic-addon: rbac
+    name: machine-controller:kubelet-config-1.11
+    namespace: kube-system
+    resourceVersion: "201"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/machine-controller%3Akubelet-config-1.11
+    uid: 82932905-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: machine-controller:kubelet-config-1.11
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:nodes
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:bootstrappers:machine-controller:default-node-token
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system::leader-locking-kube-controller-manager
+    namespace: kube-system
+    resourceVersion: "129"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/system%3A%3Aleader-locking-kube-controller-manager
+    uid: 7d9f3acb-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system::leader-locking-kube-controller-manager
+  subjects:
+  - kind: ServiceAccount
+    name: kube-controller-manager
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system::leader-locking-kube-scheduler
+    namespace: kube-system
+    resourceVersion: "130"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/system%3A%3Aleader-locking-kube-scheduler
+    uid: 7da1b136-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system::leader-locking-kube-scheduler
+  subjects:
+  - kind: ServiceAccount
+    name: kube-scheduler
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system:controller:bootstrap-signer
+    namespace: kube-system
+    resourceVersion: "131"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/system%3Acontroller%3Abootstrap-signer
+    uid: 7da5aa7c-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:bootstrap-signer
+  subjects:
+  - kind: ServiceAccount
+    name: bootstrap-signer
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system:controller:cloud-provider
+    namespace: kube-system
+    resourceVersion: "132"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/system%3Acontroller%3Acloud-provider
+    uid: 7dae10b9-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:cloud-provider
+  subjects:
+  - kind: ServiceAccount
+    name: cloud-provider
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      rbac.authorization.kubernetes.io/autoupdate: "true"
+    creationTimestamp: 2018-07-10T21:52:07Z
+    labels:
+      kubernetes.io/bootstrapping: rbac-defaults
+    name: system:controller:token-cleaner
+    namespace: kube-system
+    resourceVersion: "133"
+    selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/kube-system/rolebindings/system%3Acontroller%3Atoken-cleaner
+    uid: 7db3b1a3-848b-11e8-bd39-ead69ac212c9
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: system:controller:token-cleaner
+  subjects:
+  - kind: ServiceAccount
+    name: token-cleaner
+    namespace: kube-system
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
