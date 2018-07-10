@@ -7,12 +7,11 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,12 +50,14 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
+	podLabels, err := getTemplatePodLabels(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pod labels: %v", err)
+	}
+
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Name: name,
-		Labels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-		},
+		Name:   name,
+		Labels: podLabels,
 		Annotations: map[string]string{
 			"prometheus.io/scrape": "true",
 			"prometheus.io/path":   "/metrics",
@@ -67,8 +68,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	// For migration purpose.
 	// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
 	var migrate bool
-	_, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("etcd-cluster-client")
-	if err != nil {
+	if _, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.EtcdClientServiceName); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, err
 		}
@@ -97,6 +97,19 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 							FieldPath:  "metadata.name",
 						},
 					},
+				},
+				{
+					Name: "POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
+				{
+					Name:  "ETCDCTL_API",
+					Value: "3",
 				},
 			},
 			Ports: []corev1.ContainerPort{
@@ -127,9 +140,14 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				SuccessThreshold: 1,
 				FailureThreshold: 3,
 				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/health",
-						Port: intstr.FromInt(2379),
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"/usr/local/bin/etcdctl",
+							"--cacert", "/etc/etcd/ca/ca.crt",
+							"--cert", "/etc/etcd/client/apiserver-etcd-client.crt",
+							"--key", "/etc/etcd/client/apiserver-etcd-client.key",
+							"--endpoints", "https://localhost:2379", "endpoint", "health",
+						},
 					},
 				},
 			},
@@ -137,6 +155,49 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				{
 					Name:      "data",
 					MountPath: "/var/run/etcd",
+				},
+				{
+					Name:      resources.EtcdTLSCertificateSecretName,
+					MountPath: "/etc/etcd/tls",
+				},
+				{
+					Name:      resources.CACertSecretName,
+					MountPath: "/etc/etcd/ca",
+				},
+				{
+					Name:      resources.ApiserverEtcdClientCertificateSecretName,
+					MountPath: "/etc/etcd/client",
+					ReadOnly:  true,
+				},
+			},
+		},
+	}
+
+	set.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: resources.EtcdTLSCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.EtcdTLSCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CACertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CACertSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
@@ -167,6 +228,27 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	return set, nil
+}
+
+func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
+	podLabels := map[string]string{
+		resources.AppLabelKey: name,
+		"cluster":             data.Cluster.Name,
+	}
+
+	secretDependencies := []string{
+		resources.ApiserverEtcdClientCertificateSecretName,
+		resources.EtcdTLSCertificateSecretName,
+	}
+	for _, name := range secretDependencies {
+		revision, err := data.SecretRevision(name)
+		if err != nil {
+			return nil, err
+		}
+		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
+	}
+
+	return podLabels, nil
 }
 
 type commandTplData struct {
@@ -204,8 +286,7 @@ func getEtcdCommand(name, namespace string, migrate bool) ([]string, error) {
 }
 
 const (
-	etcdStartCommandTpl = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
+	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
 
 {{ if .Migrate }}
 # If we're already initialized
@@ -270,8 +351,13 @@ exec /usr/local/bin/etcd \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="{{ .Token }}" \
     --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379 \
-    --listen-client-urls http://0.0.0.0:2379 \
-    --listen-peer-urls http://0.0.0.0:2380
+    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
+    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
+    --listen-peer-urls "http://${POD_IP}:2380" \
+    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
+    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --client-cert-auth \
+    --cert-file /etc/etcd/tls/etcd-tls.crt \
+    --key-file /etc/etcd/tls/etcd-tls.key
 `
 )

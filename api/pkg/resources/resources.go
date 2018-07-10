@@ -1,18 +1,25 @@
 package resources
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
+	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
 
 const (
@@ -65,6 +72,10 @@ const (
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
+	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
+	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
+	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the etcd client certificate used by the apiserver
+	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -126,6 +137,22 @@ const (
 	OpenVPNInternalClientKeySecretKey = "client.key"
 	// OpenVPNInternalClientCertSecretKey client.crt
 	OpenVPNInternalClientCertSecretKey = "client.crt"
+	// EtcdTLSCertSecretKey etcd-tls.crt
+	EtcdTLSCertSecretKey = "etcd-tls.crt"
+	// EtcdTLSKeySecretKey etcd-tls.key
+	EtcdTLSKeySecretKey = "etcd-tls.key"
+	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
+	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
+	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key
+	ApiserverEtcdClientCertificateKeySecretKey = "apiserver-etcd-client.key"
+	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt
+	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
+	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
+	BackupEtcdClientCertificateKeySecretKey = "backup-etcd-client.key"
+)
+
+const (
+	minimumCertValidity30d = 30 * 24 * time.Hour
 )
 
 // ConfigMapCreator defines an interface to create/update ConfigMap's
@@ -167,8 +194,13 @@ type TemplateData struct {
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
 func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
+	return GetClusterRef(d.Cluster)
+}
+
+// GetClusterRef returns a metav1.OwnerReference for the given Cluster
+func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(d.Cluster, gv.WithKind("Cluster"))
+	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 }
 
 // Int32 returns a pointer to the int32 value passed in.
@@ -322,7 +354,94 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 	return defaultRegistry
 }
 
+// GetClusterCA returns the root CA of the cluster
+func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
+	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
+}
+
 // GetLabels returns default labels every resource should have
 func GetLabels(app string) map[string]string {
 	return map[string]string{AppLabelKey: app}
+}
+
+// CertWillExpireSoon returns if the certificate will expire in the next 30 days
+func CertWillExpireSoon(cert *x509.Certificate) bool {
+	return time.Until(cert.NotAfter) < minimumCertValidity30d
+}
+
+// IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+	if CertWillExpireSoon(cert) {
+		return false
+	}
+
+	getIPStrings := func(inIps []net.IP) []string {
+		s := make([]string, len(inIps))
+		for i, ip := range inIps {
+			s[i] = ip.String()
+		}
+		return s
+	}
+
+	if cert.Subject.CommonName != commonName {
+		return false
+	}
+
+	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
+	wantIPs := sets.NewString(ips...)
+
+	if !wantIPs.Equal(certIPs) {
+		return false
+	}
+
+	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
+	wantDNSNames.Insert(hostnames...)
+	certDNSNames := sets.NewString(cert.DNSNames...)
+
+	return wantDNSNames.Equal(certDNSNames)
+}
+
+// IsClientCertificateValidForAllOf validates if the given data is present in the given client certificate
+func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string) bool {
+	if CertWillExpireSoon(cert) {
+		return false
+	}
+
+	if cert.Subject.CommonName != commonName {
+		return false
+	}
+
+	wantOrganizations := sets.NewString(organizations...)
+	certOrganizations := sets.NewString(cert.Subject.Organization...)
+
+	return wantOrganizations.Equal(certOrganizations)
+}
+
+// GetClusterCAFromLister returns the root CA of the cluster from the lister
+func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CACertSecretName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+	}
+
+	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", CACertSecretName, err)
+	}
+
+	//Load the ca key
+	caKeySecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CAKeySecretName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
+	}
+
+	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[CAKeySecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", CAKeySecretName, err)
+	}
+
+	return &triple.KeyPair{
+		Cert: certs[0],
+		Key:  key.(*rsa.PrivateKey),
+	}, nil
 }

@@ -11,16 +11,19 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -73,15 +76,6 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
 	spec.WorkerName = p.workerName
-	clusters, err := p.List(project)
-	if err != nil {
-		return nil, err
-	}
-	for _, c := range clusters {
-		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ClusterResourceName}, spec.HumanReadableName)
-		}
-	}
 
 	name := rand.String(10)
 	cluster := &kubermaticapiv1.Cluster{
@@ -173,11 +167,12 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 }
 
 // List gets all clusters that belong to the given project
+// If you want to filter the result please take a look at ClusterListOptions
 //
 // Note:
 // After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project) ([]*kubermaticapiv1.Cluster, error) {
+func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, options *provider.ClusterListOptions) ([]*kubermaticapiv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -196,7 +191,28 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project) ([
 		}
 	}
 
-	return projectClusters, nil
+	if options == nil {
+		return projectClusters, nil
+	}
+	if len(options.SortBy) > 0 {
+		var err error
+		projectClusters, err = p.sortBy(projectClusters, options.SortBy)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(options.ClusterName) == 0 {
+		return projectClusters, nil
+	}
+
+	filteredProjectClusters := []*kubermaticapiv1.Cluster{}
+	for _, projectCluster := range projectClusters {
+		if projectCluster.Spec.HumanReadableName == options.ClusterName {
+			filteredProjectClusters = append(filteredProjectClusters, projectCluster)
+		}
+	}
+
+	return filteredProjectClusters, nil
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
@@ -266,4 +282,22 @@ func (p *RBACCompliantClusterProvider) createSeedImpersonationClientWrapper(user
 		Groups:   []string{groupName},
 	}
 	return p.createSeedImpersonatedClient(impersonationCfg)
+}
+
+// sortBy sort the given clusters by the specified field name (sortBy param)
+func (p *RBACCompliantClusterProvider) sortBy(clusters []*kubermaticapiv1.Cluster, sortBy string) ([]*kubermaticapiv1.Cluster, error) {
+	rawKeys := []runtime.Object{}
+	for index := range clusters {
+		rawKeys = append(rawKeys, clusters[index])
+	}
+	sorter, err := sortObjects(scheme.Codecs.UniversalDecoder(), rawKeys, sortBy)
+	if err != nil {
+		return nil, err
+	}
+
+	sortedClusters := make([]*kubermaticapiv1.Cluster, len(clusters))
+	for index := range clusters {
+		sortedClusters[index] = clusters[sorter.originalPosition(index)]
+	}
+	return sortedClusters, nil
 }

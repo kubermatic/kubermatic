@@ -58,9 +58,9 @@ func main() {
 	var imagesUnfiltered []string
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
-		for _, version := range versions {
-			glog.Infof("Collecting images for v%s", version.Version.String())
-			returnedImages, err := getImagesForVersion(versions, version.Version.String())
+		for _, v := range versions {
+			glog.Infof("Collecting images for v%s", v.Version.String())
+			returnedImages, err := getImagesForVersion(versions, v.Version.String())
 			if err != nil {
 				glog.Fatalf(err.Error())
 			}
@@ -121,7 +121,7 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
 		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
 		if out, err := execCommand("docker", "tag", image, retaggedImageName); err != nil {
-			return retaggedImages, fmt.Errorf("Failed to retag image: Error: %v, Output: %s", err, out)
+			return retaggedImages, fmt.Errorf("failed to retag image: Error: %v, Output: %s", err, out)
 		}
 	}
 
@@ -271,12 +271,16 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			openvpnserverService,
 		},
 	}
-	secretList := createNamedSecrets([]string{"ca-cert",
-		"ca-key",
-		"tokens",
-		"apiserver-tls",
-		"kubelet-client-certificates",
-		"service-account-key"})
+	secretList := createNamedSecrets([]string{
+		resources.CACertSecretName,
+		resources.CAKeySecretName,
+		resources.TokensSecretName,
+		resources.ApiserverTLSSecretName,
+		resources.KubeletClientCertificatesSecretName,
+		resources.ServiceAccountKeySecretName,
+		resources.ApiserverEtcdClientCertificateSecretName,
+		resources.EtcdTLSCertificateSecretName,
+	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)
 
