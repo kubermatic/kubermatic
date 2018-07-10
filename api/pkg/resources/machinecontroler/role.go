@@ -40,19 +40,6 @@ func KubeSystemRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 			},
 		},
 		{
-			APIGroups: []string{""},
-			Resources: []string{"secrets"},
-			ResourceNames: []string{
-				"machine-controller-aws",
-				"machine-controller-digitalocean",
-				"machine-controller-hetzner",
-				"machine-controller-openstack",
-				"machine-controller-ssh-key",
-				"machine-controller-vsphere",
-			},
-			Verbs: []string{"get"},
-		},
-		{
 			APIGroups:     []string{""},
 			Resources:     []string{"endpoints"},
 			ResourceNames: []string{"machine-controller"},
