@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -13,7 +12,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
-	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -37,15 +35,13 @@ func NewClusterProvider(
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
-	isAdmin func(apiv1.User) bool,
-	addons []string) *ClusterProvider {
+	isAdmin func(apiv1.User) bool) *ClusterProvider {
 	return &ClusterProvider{
 		client:                  client,
 		userClusterConnProvider: userClusterConnProvider,
 		clusterLister:           clusterLister,
 		workerName:              workerName,
 		isAdmin:                 isAdmin,
-		addons:                  addons,
 	}
 }
 
@@ -55,7 +51,6 @@ type ClusterProvider struct {
 	userClusterConnProvider UserClusterConnectionProvider
 	clusterLister           kubermaticv1lister.ClusterLister
 	isAdmin                 func(apiv1.User) bool
-	addons                  []string
 	workerName              string
 }
 
@@ -117,44 +112,6 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		}
 		return true, nil
 	}
-
-	go func() {
-		gv := kubermaticv1.SchemeGroupVersion
-		ownerRef := *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
-		err = wait.Poll(50*time.Millisecond, 60*time.Second, func() (done bool, err error) {
-			for _, addon := range p.addons {
-				_, err = p.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            addon,
-						Namespace:       cluster.Status.NamespaceName,
-						OwnerReferences: []metav1.OwnerReference{ownerRef},
-					},
-					Spec: kubermaticv1.AddonSpec{
-						Name: addon,
-						Cluster: corev1.ObjectReference{
-							Name:       cluster.Name,
-							Namespace:  "",
-							UID:        cluster.UID,
-							APIVersion: cluster.APIVersion,
-							Kind:       "Cluster",
-						},
-					},
-				})
-				if err != nil {
-					if kuberrrors.IsAlreadyExists(err) {
-						continue
-					}
-					glog.V(0).Infof("failed to create initial adddon %s for cluster %s: %v", addon, cluster.Name, err)
-					return false, nil
-				}
-			}
-
-			return true, nil
-		})
-		if err != nil {
-			glog.V(0).Infof("failed to create initial addons in cluster %s: %v", cluster.Name, err)
-		}
-	}()
 
 	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
 }

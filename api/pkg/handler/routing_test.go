@@ -57,16 +57,13 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		IsAdmin,
-		[]string{},
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
 	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
 		fakeImpersonationClient,
-		kubermaticClient,
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
-		[]string{},
 		"",
 	)
 	newClusterProviders := map[string]provider.NewClusterProvider{"us-central1": newClusterProvider}

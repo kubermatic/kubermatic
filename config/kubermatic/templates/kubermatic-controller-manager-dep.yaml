@@ -50,7 +50,8 @@ spec:
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
-          - -addons=/opt/addons
+          - -addons-list={{ join "," .Values.kubermatic.controller.addons.defaultAddons }}
+          - -addons-path=/opt/addons
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
