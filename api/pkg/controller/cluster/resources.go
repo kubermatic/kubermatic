@@ -520,6 +520,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 func GetSecretCreators() []resources.SecretCreator {
 	return []resources.SecretCreator{
 		etcd.TLSCertificate,
+		apiserver.EtcdClientCertificate,
 	}
 }
 
