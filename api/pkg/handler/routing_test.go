@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,25 +10,30 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
+	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
-
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	//clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
-
+func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
 	datacenters := buildDatacenterMeta()
 	cloudProviders := cloud.Providers(datacenters)
 
@@ -60,11 +66,13 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 		[]string{},
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+	fakeMachineClient := fakemachineclientset.NewSimpleClientset(machineObjects...)
+	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
 
 	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
 		fakeImpersonationClient,
 		kubermaticClient,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		[]string{},
 		"",
@@ -105,7 +113,7 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, kubermaticObjects, versions, updates)
+	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, nil, kubermaticObjects, versions, updates)
 	return router, err
 }
 
@@ -194,4 +202,21 @@ func TestUpRoute(t *testing.T) {
 	}
 	ep.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
+}
+
+type fakeUserClusterConnection struct {
+	fakeMachineClient    machineclientset.Interface
+	fakeKubernetesClient kubernetesclient.Interface
+}
+
+func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
+	return []byte{}, errors.New("not yet implemented")
+}
+
+func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (machineclientset.Interface, error) {
+	return f.fakeMachineClient, nil
+}
+
+func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kubernetesclient.Interface, error) {
+	return f.fakeKubernetesClient, nil
 }

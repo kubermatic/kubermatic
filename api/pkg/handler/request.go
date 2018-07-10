@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -231,20 +232,6 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 	}
 
 	return req, nil
-}
-
-// CreateNodesReq represent a request for specific data to create a node
-// swagger:parameters createClusterNodes
-type CreateNodesReq struct {
-	GetClusterReq
-	// in: body
-	Body CreateNodesReqBody
-}
-
-// CreateNodesReqBody represents the request body of a create nodes request
-type CreateNodesReqBody struct {
-	Instances int            `json:"instances"`
-	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
 // NodeReq represent a request for node specific data
