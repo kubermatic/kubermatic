@@ -127,6 +127,32 @@
         }
       }
     },
+    "/api/v1/openstack/networks": {
+      "get": {
+        "description": "Lists networks from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackNetworks",
+        "responses": {
+          "200": {
+            "description": "OpenstackNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/sizes": {
       "get": {
         "description": "Lists sizes from openstack",
@@ -144,6 +170,32 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/openstack/tenants": {
+      "get": {
+        "description": "Lists tenants from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackTenants",
+        "responses": {
+          "200": {
+            "description": "OpenstackTenant",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackTenant"
               }
             }
           },
@@ -1689,14 +1741,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
-    },
-    "AvailableMasterVersions": {
-      "description": "AvailableMasterVersions describes all possible update versions for a cluster",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/MasterVersion"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "AzureCloudSpec": {
       "type": "object",
@@ -3765,6 +3809,23 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "OpenstackNetwork": {
+      "type": "object",
+      "title": "OpenstackNetwork is the object representing a openstack network.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the current network",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name is the name of the network",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "OpenstackNodeSpecV2": {
       "description": "OpenstackNodeSpec openstack node settings",
       "type": "object",
@@ -3855,14 +3916,6 @@
           "type": "string",
           "x-go-name": "Name"
         }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "OpenstackTenantList": {
-      "description": "OpenstackTenantList represents a list of OpenstackTenants",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/OpenstackTenant"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },

@@ -51,13 +51,14 @@ func getAllSecurityGroups(netClient *gophercloud.ServiceClient) ([]ossecuritygro
 	return allGroups, nil
 }
 
-type networkWithExternalExt struct {
+// NetworkWithExternalExt is a struct that implements all networks
+type NetworkWithExternalExt struct {
 	osnetworks.Network
 	osextnetwork.NetworkExternalExt
 }
 
-func getAllNetworks(netClient *gophercloud.ServiceClient) ([]networkWithExternalExt, error) {
-	var allNetworks []networkWithExternalExt
+func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternalExt, error) {
+	var allNetworks []NetworkWithExternalExt
 	allPages, err := osnetworks.List(netClient, nil).AllPages()
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func getAllNetworks(netClient *gophercloud.ServiceClient) ([]networkWithExternal
 	return allNetworks, nil
 }
 
-func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*networkWithExternalExt, error) {
+func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*NetworkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient)
 	if err != nil {
 		return nil, err
@@ -85,7 +86,7 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isEx
 	return nil, errNotFound
 }
 
-func getExternalNetwork(netClient *gophercloud.ServiceClient) (*networkWithExternalExt, error) {
+func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient)
 	if err != nil {
 		return nil, err

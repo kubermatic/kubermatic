@@ -227,13 +227,14 @@ type OpenstackTenant struct {
 	Name string `json:"name"`
 }
 
-// OpenstackTenantList represents a list of OpenstackTenants
-// swagger:model OpenstackTenantList
-type OpenstackTenantList []OpenstackTenant
-
-// AvailableMasterVersions describes all possible update versions for a cluster
-// swagger:model AvailableMasterVersions
-type AvailableMasterVersions []MasterVersion
+// OpenstackNetwork is the object representing a openstack network.
+// swagger:model OpenstackNetwork
+type OpenstackNetwork struct {
+	// Id uniquely identifies the current network
+	ID string `json:"id"`
+	// Name is the name of the network
+	Name string `json:"name"`
+}
 
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
