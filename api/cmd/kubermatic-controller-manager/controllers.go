@@ -123,7 +123,9 @@ func startBackupController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs())
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+	)
 	if err != nil {
 		return err
 	}
