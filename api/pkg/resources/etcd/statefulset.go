@@ -68,7 +68,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	// For migration purpose.
 	// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
 	var migrate bool
-	if _, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.EtcdClientServiceName); err != nil {
+	if _, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("etcd-cluster-client"); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, err
 		}
