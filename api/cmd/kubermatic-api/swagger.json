@@ -153,6 +153,32 @@
         }
       }
     },
+    "/api/v1/openstack/subnetids": {
+      "get": {
+        "description": "Lists subnet ids from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnetIDs",
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnetID",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnetID"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}": {
       "delete": {
         "description": "Deletes the specified cluster",
@@ -3837,6 +3863,23 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackSubnetID": {
+      "type": "object",
+      "title": "OpenstackSubnetID is the object representing a openstack subnet id.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the subnet",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name is human-readable name for the subnet",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
