@@ -29,7 +29,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	altNames := sets.NewString("127.0.0.1", "localhost")
+	altNames := sets.NewString("127.0.0.1", "localhost", fmt.Sprintf("%s-%s.svc.cluster.local.", resources.EtcdClientServiceName, data.Cluster.Name))
 	for i := 0; i < 3; i++ {
 		// Member name
 		podName := fmt.Sprintf("etcd-%d", i)
@@ -51,7 +51,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 			return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", resources.EtcdTLSCertSecretKey, resources.EtcdTLSCertificateSecretName, err)
 		}
 
-		if resources.IsCertificateValidForAllOf(certs[0], "etcd", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName, "cluster.local", []string{clientIP}, altNames.List()) {
+		if resources.IsServerCertificateValidForAllOf(certs[0], "etcd", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName, "cluster.local", []string{clientIP}, altNames.List()) {
 			return se, nil
 		}
 	}
