@@ -236,6 +236,15 @@ type OpenstackNetwork struct {
 	Name string `json:"name"`
 }
 
+// OpenstackSecurityGroup is the object representing a openstack security group.
+// swagger:model OpenstackSecurityGroup
+type OpenstackSecurityGroup struct {
+	// Id uniquely identifies the current security group
+	ID string `json:"id"`
+	// Name is the name of the security group
+	Name string `json:"name"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

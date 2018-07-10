@@ -146,3 +146,47 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 		return apiNetworks, nil
 	}
 }
+
+func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req, ok := request.(OpenstackReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+		}
+
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
+
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+		}
+
+		securityGroups, err := osProvider.GetSecurityGroups(&kubermaticv1.CloudSpec{
+			DatacenterName: req.DatacenterName,
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Username: req.Username,
+				Password: req.Password,
+				Domain:   req.Domain,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		apiSecurityGroups := []apiv1.OpenstackSecurityGroup{}
+		for _, securityGroup := range securityGroups {
+			apiSecurityGroup := apiv1.OpenstackSecurityGroup{
+				Name: securityGroup.Name,
+				ID:   securityGroup.ID,
+			}
+
+			apiSecurityGroups = append(apiSecurityGroups, apiSecurityGroup)
+		}
+
+		return apiSecurityGroups, nil
+	}
+}
