@@ -48,7 +48,8 @@ type controllerRunOptions struct {
 	overwriteRegistry    string
 	nodePortRange        string
 	nodeAccessNetwork    string
-	addons               string
+	addonsPath           string
+	addonsList           string
 	backupContainerFile  string
 	cleanupContainerFile string
 	backupContainerImage string
@@ -85,7 +86,8 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&runOp.nodeAccessNetwork, "node-access-network", "10.254.0.0/16", "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
-	flag.StringVar(&runOp.addons, "addons", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&runOp.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&runOp.addonsList, "addons-list", "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac,kubelet-configmap", "Comma separated list of Addons to install into every user-cluster")
 	flag.StringVar(&runOp.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&runOp.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&runOp.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
@@ -228,6 +230,7 @@ func main() {
 		glog.Fatal(err)
 	}
 }
+
 func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecorder, error) {
 	// Create event broadcaster
 	// Add kubermatic types to the default Kubernetes Scheme so Events can be

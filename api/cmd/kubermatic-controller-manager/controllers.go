@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/addoninstaller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
@@ -26,10 +28,11 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]func(controllerContext) error{
-	"cluster": startClusterController,
-	"update":  startUpdateController,
-	"addon":   startAddonController,
-	"backup":  startBackupController,
+	"cluster":        startClusterController,
+	"update":         startUpdateController,
+	"addon":          startAddonController,
+	"addoninstaller": startAddonInstallerController,
+	"backup":         startBackupController,
 }
 
 func runAllControllers(ctrlCtx controllerContext) error {
@@ -120,7 +123,9 @@ func startBackupController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs())
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+	)
 	if err != nil {
 		return err
 	}
@@ -180,11 +185,32 @@ func startAddonController(ctrlCtx controllerContext) error {
 			},
 		},
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.addons,
+		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
+	if err != nil {
+		return err
+	}
+	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+	return nil
+}
+
+func startAddonInstallerController(ctrlCtx controllerContext) error {
+
+	defaultAddonsList := strings.Split(ctrlCtx.runOptions.addonsList, ",")
+	for i, addon := range defaultAddonsList {
+		defaultAddonsList[i] = strings.TrimSpace(addon)
+	}
+
+	ctrl, err := addoninstaller.New(
+		addoninstaller.NewMetrics(),
+		ctrlCtx.runOptions.workerName,
+		defaultAddonsList,
+		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
 	if err != nil {

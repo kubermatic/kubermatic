@@ -97,14 +97,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/kubernetes/ca-cert/ca.crt --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/apiserver/ca.crt --cert=/etc/etcd/apiserver/apiserver-etcd-client.crt --key=/etc/etcd/apiserver/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.ApiserverEtcdClientCertificateSecretName,
+					MountPath: "/etc/etcd/apiserver",
 					ReadOnly:  true,
 				},
 			},
@@ -202,6 +202,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					MountPath: "/etc/kubernetes/cloud",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.ApiserverEtcdClientCertificateSecretName,
+					MountPath: "/etc/etcd/apiserver",
+					ReadOnly:  true,
+				},
 			},
 		},
 	}
@@ -224,7 +229,9 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
 		"--etcd-servers", etcd,
-		"--etcd-cafile", "/etc/kubernetes/ca-cert/ca.crt",
+		"--etcd-cafile", "/etc/etcd/apiserver/ca.crt",
+		"--etcd-certfile", "/etc/etcd/apiserver/apiserver-etcd-client.crt",
+		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
@@ -308,6 +315,7 @@ func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, erro
 		resources.KubeletClientCertificatesSecretName,
 		resources.CACertSecretName,
 		resources.ServiceAccountKeySecretName,
+		resources.ApiserverEtcdClientCertificateSecretName,
 	}
 	for _, name := range secretDependencies {
 		revision, err := data.SecretRevision(name)
@@ -390,6 +398,15 @@ func getVolumes() []corev1.Volume {
 						Name: resources.CloudConfigConfigMapName,
 					},
 					DefaultMode: resources.Int32(420),
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

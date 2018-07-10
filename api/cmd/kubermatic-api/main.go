@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -61,7 +60,6 @@ var (
 	updatesFile        string
 	tokenIssuer        string
 	clientID           string
-	saddons            string
 
 	tokenIssuerSkipTLSVerify bool
 )
@@ -84,7 +82,6 @@ func main() {
 	flag.StringVar(&tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&clientID, "client-id", "", "OpenID client ID")
-	flag.StringVar(&saddons, "addons", "canal,dashboard,dns,heapster,kube-proxy,openvpn,rbac,kubelet-configmap", "Comma separated list of Addons to install into every user-cluster")
 	flag.Parse()
 
 	datacenters, err := provider.LoadDatacentersMeta(dcFile)
@@ -95,11 +92,6 @@ func main() {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
-	}
-
-	addons := strings.Split(saddons, ",")
-	for i, addon := range addons {
-		addons[i] = strings.TrimSpace(addon)
 	}
 
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
@@ -149,14 +141,11 @@ func main() {
 			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 			workerName,
 			handler.IsAdmin,
-			addons,
 		)
 		newClusterProviders[ctx] = kubernetesprovider.NewRBACCompliantClusterProvider(
 			defaultImpersonationClient.CreateImpersonatedClientSet,
-			kubermaticSeedClient,
 			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
-			addons,
 			workerName,
 		)
 
