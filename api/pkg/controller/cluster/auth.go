@@ -346,7 +346,7 @@ func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[strin
 	if err := writer.Write([]string{c.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
 		return nil, err
 	}
-	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil {
+	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil { // FIXME remove obsolete code
 		return nil, err
 	}
 	writer.Flush()
