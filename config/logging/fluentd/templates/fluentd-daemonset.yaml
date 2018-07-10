@@ -23,6 +23,8 @@ spec:
       - name: fluentd
         image: '{{ .Values.logging.fluentd.image.repository }}:{{ .Values.logging.fluentd.image.tag }}'
         imagePullPolicy: {{ .Values.logging.fluentd.image.pullPolicy }}
+        securityContext:
+          privileged: true
         env:
           - name: FLUENT_ELASTICSEARCH_HOST
             value: "elasticsearch-data"
@@ -30,6 +32,8 @@ spec:
             value: "9200"
           - name: FLUENT_ELASTICSEARCH_SCHEME
             value: "http"
+          - name: FLUENT_UID
+            value: "0"
         resources:
           limits:
             memory: 200Mi

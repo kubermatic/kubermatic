@@ -71,12 +71,6 @@ spec:
             port: transport
           initialDelaySeconds: 60
           periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /_cluster/health
-            port: http
-          initialDelaySeconds: 60
-          timeoutSeconds: 5
         volumeMounts:
         - name: storage
           mountPath: /data

@@ -9,6 +9,13 @@ logging:
       repository: quay.io/pires/docker-elasticsearch-kubernetes
       tag: "6.3.0"
       pullPolicy: IfNotPresent
+    curator:
+      # Amount of days after which the indicies should be killed
+      interval: 5
+      image:
+        repository: quay.io/pires/docker-elasticsearch-curator
+        tag: "5.5.4"
+        pullPolicy: IfNotPresent
     init:
       image:
         repository: busybox
