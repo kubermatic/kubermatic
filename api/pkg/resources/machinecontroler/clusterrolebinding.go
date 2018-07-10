@@ -12,17 +12,30 @@ import (
 // It has to be put into the user-cluster.
 func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
-	return createClusterRoleBinding(existing, "controller", resources.MachineControllerClusterRoleName)
+	return createClusterRoleBinding(existing, "controller",
+		resources.MachineControllerClusterRoleName, rbacv1.Subject{
+			Kind: "User",
+			Name: resources.MachineControllerCertUsername,
+		})
 }
+
 func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-	return createClusterRoleBinding(existing, "kubelet-bootstrap", "system:node-bootstrapper")
+	return createClusterRoleBinding(existing, "kubelet-bootstrap",
+		"system:node-bootstrapper", rbacv1.Subject{
+			Kind: "Group",
+			Name: "system:bootstrappers:machine-controller:default-node-token",
+		})
 }
 
 func NodeSignerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-	return createClusterRoleBinding(existing, "node-signer", "system:certificates.k8s.io:certificatesigningrequests:nodeclient")
+	return createClusterRoleBinding(existing, "node-signer",
+		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
+			Kind: "Group",
+			Name: "system:bootstrappers:machine-controller:default-node-token",
+		})
 }
 
-func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cRoleRef string) (*rbacv1.ClusterRoleBinding, error) {
+func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cRoleRef string, subj rbacv1.Subject) (*rbacv1.ClusterRoleBinding, error) {
 	var crb *rbacv1.ClusterRoleBinding
 	if existing != nil {
 		crb = existing
@@ -38,11 +51,6 @@ func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cR
 		Kind:     "ClusterRole",
 		APIGroup: "rbac.authorization.k8s.io",
 	}
-	crb.Subjects = []rbacv1.Subject{
-		{
-			Kind: "User",
-			Name: resources.MachineControllerCertUsername,
-		},
-	}
+	crb.Subjects = []rbacv1.Subject{subj}
 	return crb, nil
 }
