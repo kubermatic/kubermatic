@@ -160,13 +160,13 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
-	secureApiSvcIP, _, err := cc.getSecureApiserverIPPort(c)
+	secureAPISvcIP, _, err := cc.getSecureApiserverIPPort(c)
 
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
 	dnsDomain := c.Spec.ClusterNetwork.DNSDomain
-	ips := sets.NewString("10.10.10.1", c.Address.IP, secureApiSvcIP)
+	ips := sets.NewString("10.10.10.1", c.Address.IP, secureAPISvcIP)
 	// FIXME the 10.10.10.1 needs to be calculated as well. svc-net might differ
 	hostnames := sets.NewString(c.Address.ExternalName)
 
@@ -444,13 +444,13 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
 func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	user_KubeScheduler := "system:kube-scheduler" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
-	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, user_KubeScheduler)
+	userKubeScheduler := "system:kube-scheduler" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, userKubeScheduler)
 }
 
 func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	user_KubeControllerManager := "system:kube-controller-manager" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
-	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, user_KubeControllerManager)
+	userKubeControllerManager := "system:kube-controller-manager" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, userKubeControllerManager)
 }
 
 func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
