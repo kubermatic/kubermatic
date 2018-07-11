@@ -10,6 +10,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 # Please make sure to set -enable-prometheus-endpoint=true if you want to use that endpoint.
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+make kubermatic-api
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \

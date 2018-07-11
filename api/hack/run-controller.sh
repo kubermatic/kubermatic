@@ -7,6 +7,7 @@ set -o pipefail
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+make kubermatic-controller-manager
 ./_build/kubermatic-controller-manager \
   -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -datacenter-name=europe-west3-c \
