@@ -4,7 +4,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // KubeSystemRole returns a role for the machine controller. This
@@ -20,7 +19,6 @@ func KubeSystemRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = "kube-system"
-	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Labels = resources.GetLabels(name)
 
 	r.Rules = []rbacv1.PolicyRule{
@@ -63,7 +61,6 @@ func KubePublicRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = "kube-public"
-	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Labels = resources.GetLabels(name)
 
 	r.Rules = []rbacv1.PolicyRule{
@@ -89,7 +86,6 @@ func Role(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, er
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = "default"
-	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Labels = resources.GetLabels(name)
 
 	r.Rules = []rbacv1.PolicyRule{

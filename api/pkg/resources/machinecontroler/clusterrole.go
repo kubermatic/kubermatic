@@ -4,10 +4,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ClusterRole returns a cluster role for the machine controller
+// ClusterRole returns a cluster role for the machine controller (user-cluster)
 func ClusterRole(data *resources.TemplateData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 	var r *rbacv1.ClusterRole
 	if existing != nil {
@@ -17,7 +16,6 @@ func ClusterRole(data *resources.TemplateData, existing *rbacv1.ClusterRole) (*r
 	}
 
 	r.Name = resources.MachineControllerClusterRoleName
-	// r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Labels = resources.GetLabels(name)
 
 	r.Rules = []rbacv1.PolicyRule{
