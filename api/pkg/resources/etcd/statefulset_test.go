@@ -48,8 +48,7 @@ func TestGetEtcdCommand(t *testing.T) {
 }
 
 var (
-	noMigration = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
+	noMigration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
 
 
 export INITIAL_STATE="new"
@@ -67,13 +66,17 @@ exec /usr/local/bin/etcd \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="lg69pmx8wf" \
     --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls http://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379 \
-    --listen-client-urls http://0.0.0.0:2379 \
-    --listen-peer-urls http://0.0.0.0:2380
+    --advertise-client-urls "https://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379,https://${POD_IP}:2379" \
+    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
+    --listen-peer-urls "http://${POD_IP}:2380" \
+    --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380" \
+    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --client-cert-auth \
+    --cert-file /etc/etcd/tls/etcd-tls.crt \
+    --key-file /etc/etcd/tls/etcd-tls.key
 `
 
-	migration = `export ETCDCTL_API=3 
-export MASTER_ENDPOINT="http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
+	migration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
 
 
 # If we're already initialized
@@ -135,8 +138,13 @@ exec /usr/local/bin/etcd \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="62m9k9tqlm" \
     --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls http://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379 \
-    --listen-client-urls http://0.0.0.0:2379 \
-    --listen-peer-urls http://0.0.0.0:2380
+    --advertise-client-urls "https://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379,https://${POD_IP}:2379" \
+    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
+    --listen-peer-urls "http://${POD_IP}:2380" \
+    --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
+    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --client-cert-auth \
+    --cert-file /etc/etcd/tls/etcd-tls.crt \
+    --key-file /etc/etcd/tls/etcd-tls.key
 `
 )

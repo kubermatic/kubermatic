@@ -74,6 +74,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	// Configure user cluster DNS resolver for this pod.
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -89,7 +95,47 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+
+	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+	}
+
+	controllerManagerMounts := []corev1.VolumeMount{
+		{
+			Name:      resources.CACertSecretName,
+			MountPath: "/etc/kubernetes/ca-cert",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CAKeySecretName,
+			MountPath: "/etc/kubernetes/ca-key",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.ServiceAccountKeySecretName,
+			MountPath: "/etc/kubernetes/service-account-key",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CloudConfigConfigMapName,
+			MountPath: "/etc/kubernetes/cloud",
+			ReadOnly:  true,
+		},
+	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		fakeVMWareUUIDMount := corev1.VolumeMount{
+			Name:      resources.CloudConfigConfigMapName,
+			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
+			MountPath: "/sys/class/dmi/id/product_serial",
+			ReadOnly:  true,
+		}
+		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
+		controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
+		*openvpnSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
@@ -134,41 +180,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				SuccessThreshold:    1,
 				TimeoutSeconds:      15,
 			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CAKeySecretName,
-					MountPath: "/etc/kubernetes/ca-key",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.ServiceAccountKeySecretName,
-					MountPath: "/etc/kubernetes/service-account-key",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CloudConfigConfigMapName,
-					MountPath: "/etc/kubernetes/cloud",
-					ReadOnly:  true,
-				},
-			},
+			VolumeMounts: controllerManagerMounts,
 		},
-	}
-
-	if data.Cluster.Spec.Cloud.VSphere != nil {
-		fakeVMWareUUIDMount := corev1.VolumeMount{
-			Name:      resources.CloudConfigConfigMapName,
-			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
-			MountPath: "/sys/class/dmi/id/product_serial",
-			ReadOnly:  true,
-		}
-		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
-		dep.Spec.Template.Spec.Containers[0].VolumeMounts = append(dep.Spec.Template.Spec.Containers[0].VolumeMounts,
-			fakeVMWareUUIDMount)
 	}
 
 	return dep, nil
@@ -266,6 +279,15 @@ func getVolumes() []corev1.Volume {
 						Name: resources.CloudConfigConfigMapName,
 					},
 					DefaultMode: resources.Int32(420),
+				},
+			},
+		},
+		{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.OpenVPNClientCertificatesSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

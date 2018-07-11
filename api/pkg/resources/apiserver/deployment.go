@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -20,11 +19,6 @@ var (
 	defaultApiserverCPURequest    = resource.MustParse("100m")
 	defaultApiserverMemoryLimit   = resource.MustParse("1Gi")
 	defaultApiserverCPULimit      = resource.MustParse("500m")
-
-	defaultOpenVPNMemoryRequest = resource.MustParse("30Mi")
-	defaultOpenVPNCPURequest    = resource.MustParse("10m")
-	defaultOpenVPNMemoryLimit   = resource.MustParse("64Mi")
-	defaultOpenVPNCPULimit      = resource.MustParse("40m")
 )
 
 const (
@@ -78,18 +72,22 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	var etcds []string
 	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
 	if err != nil {
 		return nil, err
 	}
-	etcds = append(etcds, fmt.Sprintf("http://%s:2379", etcdClientServiceIP))
+	etcd := fmt.Sprintf("https://%s:2379", etcdClientServiceIP)
 
 	externalNodePort, err := data.GetApiserverExternalNodePort()
 	if err != nil {
 		return nil, err
 	}
 
+	// Configure user cluster DNS resolver for this pod.
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	if err != nil {
+		return nil, err
+	}
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -99,79 +97,33 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", strings.Join(etcds, ",")),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/apiserver/ca.crt --cert=/etc/etcd/apiserver/apiserver-etcd-client.crt --key=/etc/etcd/apiserver/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.ApiserverEtcdClientCertificateSecretName,
+					MountPath: "/etc/etcd/apiserver",
+					ReadOnly:  true,
+				},
+			},
 		},
 	}
 
-	openvpnServiceIP, err := data.ClusterIPByServiceName(resources.OpenVPNServerServiceName)
+	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:            "openvpn-client",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/sbin/openvpn"},
-			Args: []string{
-				"--client",
-				"--proto", "tcp",
-				"--dev", "tun",
-				"--auth-nocache",
-				"--remote", openvpnServiceIP, "1194",
-				"--nobind",
-				"--connect-timeout", "5",
-				"--connect-retry", "1",
-				"--ca", "/etc/kubernetes/ca-cert/ca.crt",
-				"--cert", "/etc/openvpn/certs/client.crt",
-				"--key", "/etc/openvpn/certs/client.key",
-				"--remote-cert-tls", "server",
-				"--link-mtu", "1432",
-				"--cipher", "AES-256-GCM",
-				"--auth", "SHA1",
-				"--keysize", "256",
-				"--script-security", "2",
-				"--status", "/run/openvpn-status",
-				"--log", "/dev/stdout",
-			},
-			SecurityContext: &corev1.SecurityContext{
-				Privileged: resources.Bool(true),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultOpenVPNMemoryRequest,
-					corev1.ResourceCPU:    defaultOpenVPNCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultOpenVPNMemoryLimit,
-					corev1.ResourceCPU:    defaultOpenVPNCPULimit,
-				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					MountPath: "/etc/openvpn/certs",
-					Name:      resources.OpenVPNClientCertificatesSecretName,
-					ReadOnly:  true,
-				},
-				{
-					MountPath: "/etc/kubernetes/ca-cert",
-					Name:      resources.CACertSecretName,
-					ReadOnly:  true,
-				},
-			},
-		},
+		*openvpnSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Env:             getEnvVars(data),
-			Args:            getApiserverFlags(data, externalNodePort, etcds),
+			Args:            getApiserverFlags(data, externalNodePort, etcd),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
@@ -250,6 +202,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					MountPath: "/etc/kubernetes/cloud",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.ApiserverEtcdClientCertificateSecretName,
+					MountPath: "/etc/etcd/apiserver",
+					ReadOnly:  true,
+				},
 			},
 		},
 	}
@@ -257,7 +214,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcds []string) []string {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) []string {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -271,7 +228,10 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", strings.Join(etcds, ","),
+		"--etcd-servers", etcd,
+		"--etcd-cafile", "/etc/etcd/apiserver/ca.crt",
+		"--etcd-certfile", "/etc/etcd/apiserver/apiserver-etcd-client.crt",
+		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
@@ -355,6 +315,7 @@ func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, erro
 		resources.KubeletClientCertificatesSecretName,
 		resources.CACertSecretName,
 		resources.ServiceAccountKeySecretName,
+		resources.ApiserverEtcdClientCertificateSecretName,
 	}
 	for _, name := range secretDependencies {
 		revision, err := data.SecretRevision(name)
@@ -437,6 +398,15 @@ func getVolumes() []corev1.Volume {
 						Name: resources.CloudConfigConfigMapName,
 					},
 					DefaultMode: resources.Int32(420),
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

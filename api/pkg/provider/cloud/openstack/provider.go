@@ -6,7 +6,8 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -201,38 +202,25 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
-func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackSize, error) {
+func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]osflavors.Flavor, provider.DatacenterMeta, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
-		return nil, err
+		return nil, provider.DatacenterMeta{}, err
 	}
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+		return nil, provider.DatacenterMeta{}, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 	flavors, err := getFlavors(authClient, dc.Spec.Openstack.Region)
 	if err != nil {
-		return nil, err
+		return nil, provider.DatacenterMeta{}, err
 	}
 
-	apiSizes := []apiv1.OpenstackSize{}
-	for _, flavor := range flavors {
-		apiSize := apiv1.OpenstackSize{
-			Slug:     flavor.Name,
-			Memory:   flavor.RAM,
-			VCPUs:    flavor.VCPUs,
-			Disk:     flavor.Disk,
-			Swap:     flavor.Swap,
-			Region:   dc.Spec.Openstack.Region,
-			IsPublic: flavor.IsPublic,
-		}
-		apiSizes = append(apiSizes, apiSize)
-	}
-	return apiSizes, nil
+	return flavors, dc, nil
 }
 
 // GetTenants lists all available tenents for the given CloudSpec.DatacenterName
-func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.OpenstackTenant, error) {
+func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]osprojects.Project, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
@@ -249,17 +237,27 @@ func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]apiv1.Openstack
 		return nil, fmt.Errorf("couldn't get tenants for region %s: %v", region, err)
 	}
 
-	apiTenants := []apiv1.OpenstackTenant{}
-	for _, tenant := range tenants {
-		apiTenant := apiv1.OpenstackTenant{
-			Name: tenant.Name,
-			ID:   tenant.ID,
-		}
+	return tenants, nil
+}
 
-		apiTenants = append(apiTenants, apiTenant)
+// GetNetworks lists all available networks for the given CloudSpec.DatacenterName
+func (os *Provider) GetNetworks(cloud *kubermaticv1.CloudSpec) ([]NetworkWithExternalExt, error) {
+	authClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	return apiTenants, nil
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	networks, err := getAllNetworks(authClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get networks: %v", err)
+	}
+
+	return networks, nil
 }
 
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {

@@ -6,6 +6,7 @@ import (
 
 	fakekubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kuberinformers "k8s.io/client-go/informers"
 	fakekubernetesclientset "k8s.io/client-go/kubernetes/fake"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 var (
@@ -25,11 +27,46 @@ var (
 )
 
 func TestEnsureBackupCronJob(t *testing.T) {
-	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset()
-	cluster := &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}
-	cluster.Status.NamespaceName = "testnamespace"
-	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-cluster",
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: "testnamespace",
+		},
+	}
 
+	caKey, err := certutil.NewPrivateKey()
+	if err != nil {
+		t.Fatalf("unable to create a private key for the CA: %v", err)
+	}
+	caKeySecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Status.NamespaceName,
+			Name:      resources.CAKeySecretName,
+		},
+		Data: map[string][]byte{
+			resources.CAKeySecretKey: certutil.EncodePrivateKeyPEM(caKey),
+		},
+	}
+
+	config := certutil.Config{CommonName: "foo"}
+	caCert, err := certutil.NewSelfSignedCACert(config, caKey)
+	if err != nil {
+		t.Fatalf("unable to create a self-signed certificate for a new CA: %v", err)
+	}
+	caCertSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Status.NamespaceName,
+			Name:      resources.CACertSecretName,
+		},
+		Data: map[string][]byte{
+			resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
+		},
+	}
+
+	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset(caKeySecret, caCertSecret)
+	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
 	kubermaticInformers := externalversions.NewSharedInformerFactory(fakeKubermaticClient, 10*time.Millisecond)
 
@@ -42,7 +79,9 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		fakeKubermaticClient,
 		fakeKubeClient,
 		kubermaticInformers.Kubermatic().V1().Clusters(),
-		kubeInformers.Batch().V1beta1().CronJobs())
+		kubeInformers.Batch().V1beta1().CronJobs(),
+		kubeInformers.Core().V1().Secrets(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to construct backup controller: %v", err)
 	}

@@ -85,11 +85,11 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 type ClusterReq struct {
 	DCReq
 	// in: body
-	Body NewClusterReqBody
+	Body ClusterReqBody
 }
 
-// NewClusterReqBody represents the body of a new cluster request
-type NewClusterReqBody struct {
+// ClusterReqBody represents the body of a new cluster request
+type ClusterReqBody struct {
 	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
 	SSHKeys []string                  `json:"sshKeys"`
 }
@@ -205,16 +205,16 @@ func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// OpenstackTenantReq represent a request for openstack tenants
-type OpenstackTenantReq struct {
+// OpenstackReq represent a request for openstack tenants and networks
+type OpenstackReq struct {
 	Username       string
 	Password       string
 	Domain         string
 	DatacenterName string
 }
 
-func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackTenantReq
+func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackReq
 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")

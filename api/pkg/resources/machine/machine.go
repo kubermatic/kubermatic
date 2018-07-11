@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"errors"
 	"fmt"
 	"path"
 
@@ -43,81 +44,79 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
+	var (
+		err      error
+		cloudExt *runtime.RawExtension
+	)
 	// Cloud specifics
-	if node.Spec.Cloud.AWS != nil {
+	switch {
+	case node.Spec.Cloud.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
-		ext, err := getAWSProviderSpec(c, node, dc)
+		cloudExt, err = getAWSProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
-	}
-	if node.Spec.Cloud.Azure != nil {
+	case node.Spec.Cloud.Azure != nil:
 		config.CloudProvider = providerconfig.CloudProviderAzure
-		ext, err := getAzureProviderSpec(c, node, dc)
+		cloudExt, err = getAzureProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
-	}
-	if node.Spec.Cloud.VSphere != nil {
+	case node.Spec.Cloud.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
-		ext, err := getVSphereProviderSpec(c, node, dc)
+		cloudExt, err = getVSphereProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
-	}
-	if node.Spec.Cloud.Openstack != nil {
+	case node.Spec.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
-		ext, err := getOpenstackProviderSpec(c, node, dc)
+		cloudExt, err = getOpenstackProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
-	}
-	if node.Spec.Cloud.Hetzner != nil {
+	case node.Spec.Cloud.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
-		ext, err := getHetznerProviderSpec(c, node, dc)
+		cloudExt, err = getHetznerProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
-	}
-	if node.Spec.Cloud.Digitalocean != nil {
+	case node.Spec.Cloud.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
-		ext, err := getDigitaloceanProviderSpec(c, node, dc)
+		cloudExt, err = getDigitaloceanProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
 		}
-		config.CloudProviderSpec = *ext
+	default:
+		return nil, errors.New("unknown cloud provider")
 	}
+	config.CloudProviderSpec = *cloudExt
+
+	var osExt *runtime.RawExtension
 
 	// OS specifics
-	if node.Spec.OperatingSystem.ContainerLinux != nil {
+	switch {
+	case node.Spec.OperatingSystem.ContainerLinux != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCoreos
-		ext, err := getCoreosOperatingSystemSpec(c, node, dc)
+		osExt, err = getCoreosOperatingSystemSpec(c, node)
 		if err != nil {
 			return nil, err
 		}
-		config.OperatingSystemSpec = *ext
-	}
-	if node.Spec.OperatingSystem.Ubuntu != nil {
+	case node.Spec.OperatingSystem.Ubuntu != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
-		ext, err := getUbuntuOperatingSystemSpec(c, node, dc)
+		osExt, err = getUbuntuOperatingSystemSpec(c, node)
 		if err != nil {
 			return nil, err
 		}
-		config.OperatingSystemSpec = *ext
-	}
-	if node.Spec.OperatingSystem.CentOS != nil {
+	case node.Spec.OperatingSystem.CentOS != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCentOS
-		ext, err := getCentOSOperatingSystemSpec(c, node, dc)
+		osExt, err = getCentOSOperatingSystemSpec(c, node)
 		if err != nil {
 			return nil, err
 		}
-		config.OperatingSystemSpec = *ext
+	default:
+		return nil, errors.New("unknown OS")
 	}
+	config.OperatingSystemSpec = *osExt
 
 	b, err := json.Marshal(config)
 	if err != nil {
@@ -153,7 +152,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.D
 	for key, value := range node.Spec.Cloud.AWS.Tags {
 		config.Tags[key] = value
 	}
-	config.Tags["KubernetesCluster"] = c.Name
+	config.Tags["kubernetes.io/cluster/"+c.Name] = ""
 
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
@@ -299,7 +298,7 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc p
 	return ext, nil
 }
 
-func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node) (*runtime.RawExtension, error) {
 	config := centos.Config{
 		DistUpgradeOnBoot: node.Spec.OperatingSystem.CentOS.DistUpgradeOnBoot,
 	}
@@ -314,7 +313,7 @@ func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc 
 	return ext, nil
 }
 
-func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node) (*runtime.RawExtension, error) {
 	config := coreos.Config{
 		DisableAutoUpdate: node.Spec.OperatingSystem.ContainerLinux.DisableAutoUpdate,
 	}
@@ -329,7 +328,7 @@ func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc 
 	return ext, nil
 }
 
-func getUbuntuOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getUbuntuOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.Node) (*runtime.RawExtension, error) {
 	config := ubuntu.Config{
 		DistUpgradeOnBoot: node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot,
 	}

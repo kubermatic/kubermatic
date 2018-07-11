@@ -7,3 +7,4 @@
 api/.cover
 api/_build
 api/_cache
+api/cmd/s3-exporter/s3-exporter
