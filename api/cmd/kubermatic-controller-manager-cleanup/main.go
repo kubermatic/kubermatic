@@ -11,6 +11,7 @@ import (
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -79,6 +80,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupScheduler,
 		removeDeprecatedFinalizers,
 		migrateVersion,
+		cleanupAddonManager,
 	}
 
 	w := sync.WaitGroup{}
@@ -155,6 +157,24 @@ func cleanupMachineController(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 func cleanupScheduler(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "scheduler", ctx)
+}
+
+func cleanupAddonManager(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+
+	policy := metav1.DeletePropagationForeground
+	err := ctx.kubeClient.AppsV1().Deployments(ns).Delete("addon-manager", &metav1.DeleteOptions{PropagationPolicy: &policy})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	selector := labels.SelectorFromSet(map[string]string{"app": "addon-manager"})
+	err = ctx.kubeClient.AppsV1().ReplicaSets(ns).DeleteCollection(&metav1.DeleteOptions{PropagationPolicy: &policy}, metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 // We changed the finalizers in https://github.com/kubermatic/kubermatic/pull/1196
