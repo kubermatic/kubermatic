@@ -17,7 +17,7 @@ func ClusterRole(data *resources.TemplateData, existing *rbacv1.ClusterRole) (*r
 	}
 
 	r.Name = resources.MachineControllerClusterRoleName
-	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	// r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Labels = resources.GetLabels(name)
 
 	r.Rules = []rbacv1.PolicyRule{

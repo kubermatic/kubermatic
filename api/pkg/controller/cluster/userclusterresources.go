@@ -181,6 +181,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
+		controllermanager.AdminClusterRoleBinding,
 	}
 
 	for _, create := range creators {

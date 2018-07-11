@@ -119,6 +119,9 @@ const (
 	// ControllerManagerRoleBindingName
 	ControllerManagerRoleBindingName = "kubermatic:controller-manager-rb-thz"
 
+	// ControllerManagerClusterRoleBindingName
+	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager-crb-thz"
+
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256
 
