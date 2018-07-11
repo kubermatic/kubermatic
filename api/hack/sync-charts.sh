@@ -19,6 +19,7 @@ export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter 
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'
+export TARGET_VALUES_FILE=${TARGET_DIR}/values.example.yaml
 COMMIT=${3:-}
 
 if [ ! -z "${COMMIT}" ]; then
@@ -32,8 +33,9 @@ cd ${TARGET_DIR}
 git checkout ${INSTALLER_BRANCH}
 cd ..
 
-rm ${TARGET_DIR}/values.yaml
-touch ${TARGET_DIR}/values.yaml
+rm -f ${TARGET_DIR}/values.yaml
+rm -f ${TARGET_VALUES_FILE}
+touch ${TARGET_VALUES_FILE}
 
 for CHART in ${CHARTS}; do
   echo "syncing ${CHART}..."
@@ -41,25 +43,25 @@ for CHART in ${CHARTS}; do
   rm -rf ${TARGET_DIR}/charts/${CHART}
   cp -r ${CHARTS_DIR}/${CHART} ${TARGET_DIR}/charts/${CHART}
 
-  echo "# ====== ${CHART} ======" >> ${TARGET_DIR}/values.yaml
-  cat "${CHARTS_DIR}/${CHART}/values.yaml" >> ${TARGET_DIR}/values.yaml
-  echo "" >> ${TARGET_DIR}/values.yaml
+  echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
+  cat "${CHARTS_DIR}/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
+  echo "" >> ${TARGET_VALUES_FILE}
 done
 
-echo "" >> ${TARGET_DIR}/values.yaml
-echo "# ========================" >> ${TARGET_DIR}/values.yaml
-echo "# ====== Monitoring ======" >> ${TARGET_DIR}/values.yaml
-echo "# ========================" >> ${TARGET_DIR}/values.yaml
-echo "" >> ${TARGET_DIR}/values.yaml
+echo "" >> ${TARGET_VALUES_FILE}
+echo "# ========================" >> ${TARGET_VALUES_FILE}
+echo "# ====== Monitoring ======" >> ${TARGET_VALUES_FILE}
+echo "# ========================" >> ${TARGET_VALUES_FILE}
+echo "" >> ${TARGET_VALUES_FILE}
 for CHART in ${MONITORING_CHARTS}; do
   echo "syncing ${CHART}..."
   # doing clean copy
   rm -rf ${TARGET_DIR}/charts/monitoring/${CHART}
   cp -r ${CHARTS_DIR}/monitoring/${CHART} ${TARGET_DIR}/charts/monitoring/${CHART}
 
-  echo "# ====== ${CHART} ======" >> ${TARGET_DIR}/values.yaml
-  cat "${CHARTS_DIR}/monitoring/${CHART}/values.yaml" >> ${TARGET_DIR}/values.yaml
-  echo "" >> ${TARGET_DIR}/values.yaml
+  echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
+  cat "${CHARTS_DIR}/monitoring/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
+  echo "" >> ${TARGET_VALUES_FILE}
 done
 
 cd ${TARGET_DIR}
