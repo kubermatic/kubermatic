@@ -8,7 +8,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleBinding returns the ClusterRoleBinding for the machine-controller.
+// ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
 func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
@@ -19,6 +19,8 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 		})
 }
 
+// NodeBootstrapperClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
+// It has to be put into the user-cluster.
 func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
@@ -27,6 +29,8 @@ func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *
 		})
 }
 
+// NodeSignerClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
+// It has to be put into the user-cluster.
 func NodeSignerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{

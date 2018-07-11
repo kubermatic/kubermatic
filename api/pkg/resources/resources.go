@@ -101,26 +101,24 @@ const (
 	PrometheusRoleBindingName = "prometheus"
 
 	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
-	MachineControllerCertUsername = "machine-controller-thz-user"
+	MachineControllerCertUsername = "machine-controller"
 	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
 
 	//MachineControllerRoleName is the name for the MachineController roles
-	MachineControllerRoleName = "machine-controller-r-thz"
+	MachineControllerRoleName = "machine-controller"
 	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
-	MachineControllerRoleBindingName = "machine-controller-rb-thz"
+	MachineControllerRoleBindingName = "machine-controller"
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
-
-	// ControllerManagerRoleBindingName
-	ControllerManagerRoleBindingName = "kubermatic:controller-manager-rb-thz"
-
-	// ControllerManagerClusterRoleBindingName
-	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager-crb-thz"
+	//ControllerManagerRoleBindingName is the name of the controller-manager's rolebindings
+	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
+	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
+	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
 
 	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
 	DefaultOwnerReadOnlyMode = 256

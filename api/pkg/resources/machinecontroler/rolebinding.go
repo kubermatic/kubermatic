@@ -6,16 +6,21 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBinding returns the RoleBinding for the machine-controller.
+// DefaultRoleBinding returns the RoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
 func DefaultRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createRoleBinding(existing, "default")
 }
+
+// KubeSystemRoleBinding returns the RoleBinding for the machine-controller in kube-system ns.
+// It has to be put into the user-cluster.
 func KubeSystemRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, "kube-system")
 }
 
+// KubePublicRoleBinding returns the RoleBinding for the machine-controller in kube-public ns.
+// It has to be put into the user-cluster.
 func KubePublicRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, "kube-public")
 }

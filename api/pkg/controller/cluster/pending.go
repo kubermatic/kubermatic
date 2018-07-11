@@ -41,7 +41,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	if cluster.Status.Health.Apiserver {
-		// So this is the inofficial starting point of a user-cluster-resource controller?
+		// Controlling of user-cluster resources
 		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
 			return nil, err
 		}

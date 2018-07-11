@@ -6,11 +6,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBinding returns the RoleBinding for the controller-manager.
+// SystemBootstrapSignerRoleBinding returns the RoleBinding for the bootstrapping in controller-manager.
 // It has to be put into the user-cluster.
 func SystemBootstrapSignerRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, "kube-system", "system:controller:bootstrap-signer")
 }
+
+// PublicBootstrapSignerRoleBinding returns the RoleBinding for the bootstrapping reader in controller-manager.
+// It has to be put into the user-cluster.
 func PublicBootstrapSignerRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, "kube-public", "system:controller:bootstrap-signer")
 }
