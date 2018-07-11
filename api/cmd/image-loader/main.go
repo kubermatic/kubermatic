@@ -230,7 +230,8 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			Namespace: mockNamespaceName,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{{NodePort: 99}},
+			Ports:     []corev1.ServicePort{{NodePort: 99}},
+			ClusterIP: "192.0.2.10",
 		},
 	}
 	apiserverService := corev1.Service{
