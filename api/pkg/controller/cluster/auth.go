@@ -164,9 +164,8 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
-	dnsDomain := c.Spec.ClusterNetwork.DNSDomain
+	dnsDomain := "cluster.local"
 	ips := sets.NewString("10.10.10.1", c.Address.IP, secureAPISvcIP)
-	// FIXME the 10.10.10.1 needs to be calculated as well. svc-net might differ
 	hostnames := sets.NewString(c.Address.ExternalName)
 
 	if existingSecret == nil {
@@ -345,7 +344,8 @@ func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[strin
 	if err := writer.Write([]string{c.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
 		return nil, err
 	}
-	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil { // FIXME remove obsolete code
+	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil {
+		// Bootstrapping now works with dedicated (per-node) tokens and no longer requires this token.
 		return nil, err
 	}
 	writer.Flush()
