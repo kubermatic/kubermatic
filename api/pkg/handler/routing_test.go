@@ -30,7 +30,6 @@ import (
 	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
-	//clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {

@@ -145,6 +145,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
 		Handler(r.newGetNodeForCluster())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Handler(r.newCreateNodeForCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -842,6 +846,34 @@ func (r Routing) newGetNodeForCluster() http.Handler {
 		)(getNodeForCluster(r.projectProvider)),
 		decodeGetNodeForCluster,
 		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newCreateNodeForCluster
+//
+//     Creates a node that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Node
+//       401: empty
+//       403: empty
+func (r Routing) newCreateNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newCreateNodeForCluster(r.newSSHKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeForCluster,
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
