@@ -65,6 +65,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.getMasterVersions())
 
 	//
+	// VSphere related endpoints
+	mux.Methods(http.MethodGet).
+		Path("/vsphere/networks").
+		Handler(r.listVSphereNetworks())
+
+	//
 	// Project management
 	mux.Methods(http.MethodGet).
 		Path("/projects").
@@ -339,6 +345,28 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
 		decodeOpenstackSizeReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/vsphere/networks vsphere listVSphereNetworks
+//
+// Lists networks from vsphere datacenter
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []VSphereNetwork
+func (r Routing) listVSphereNetworks() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(vsphereNetworksEndpoint(r.cloudProviders)),
+		decodeVSphereNetworksReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

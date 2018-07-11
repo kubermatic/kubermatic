@@ -210,6 +210,13 @@ type OpenstackTenant struct {
 	Name string `json:"name"`
 }
 
+// VSphereNetwork is the object representing a vsphere network.
+// swagger:model VSphereNetwork
+type VSphereNetwork struct {
+	// Name is the name of the network
+	Name string `json:"name"`
+}
+
 // OpenstackTenantList represents a list of OpenstackTenants
 // swagger:model OpenstackTenantList
 type OpenstackTenantList []OpenstackTenant
