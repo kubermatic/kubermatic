@@ -57,6 +57,12 @@ type NetworkWithExternalExt struct {
 	osextnetwork.NetworkExternalExt
 }
 
+// Subnet is a struct with subnet id and name
+type Subnet struct {
+	ID   string
+	Name string
+}
+
 func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternalExt, error) {
 	var allNetworks []NetworkWithExternalExt
 	allPages, err := osnetworks.List(netClient, nil).AllPages()
@@ -351,4 +357,42 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 	}
 
 	return allProjects, nil
+}
+
+func getAllSubnets(netClient *gophercloud.ServiceClient) ([]ossubnets.Subnet, error) {
+	var allSubnets []ossubnets.Subnet
+	allPages, err := ossubnets.List(netClient, nil).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	if allSubnets, err = ossubnets.ExtractSubnets(allPages); err != nil {
+		return nil, err
+	}
+
+	return allSubnets, nil
+}
+
+func getServiceClient(user, pass, domain, tenant, region, authURL string) (*gophercloud.ServiceClient, error) {
+	providerClient, err := getAuthClient(user, pass, domain, tenant, authURL) // ProviderClient
+	if err != nil {
+		return nil, err
+	}
+	return goopenstack.NewNetworkV2(providerClient, gophercloud.EndpointOpts{Region: region})
+}
+
+func getAuthClient(user, pass, domain, tenant, authURL string) (*gophercloud.ProviderClient, error) {
+	opts := gophercloud.AuthOptions{
+		Username:         user,
+		Password:         pass,
+		DomainName:       domain,
+		TenantName:       tenant,
+		IdentityEndpoint: authURL,
+	}
+
+	client, err := goopenstack.AuthenticatedClient(opts)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 )
@@ -29,15 +28,12 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		flavors, dc, err := osProvider.GetFlavors(&kubermaticv1.CloudSpec{
-			DatacenterName: req.DatacenterName,
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Username: req.Username,
-				Password: req.Password,
-				Tenant:   req.Tenant,
-				Domain:   req.Domain,
-			},
-		})
+		serviceClient, err := osProvider.ServiceClient(req.Username, req.Password, req.Domain, req.DatacenterName)
+		if err != nil {
+			return nil, err
+		}
+
+		flavors, dc, err := osProvider.GetFlavors(serviceClient, req.DatacenterName)
 		if err != nil {
 			return nil, err
 		}
@@ -77,14 +73,12 @@ func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		tenants, err := osProvider.GetTenants(&kubermaticv1.CloudSpec{
-			DatacenterName: req.DatacenterName,
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Username: req.Username,
-				Password: req.Password,
-				Domain:   req.Domain,
-			},
-		})
+		serviceClient, err := osProvider.ServiceClient(req.Username, req.Password, req.Domain, req.DatacenterName)
+		if err != nil {
+			return nil, err
+		}
+
+		tenants, err := osProvider.GetTenants(serviceClient, req.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get tenants: %v", err)
 		}
@@ -121,14 +115,12 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		networks, err := osProvider.GetNetworks(&kubermaticv1.CloudSpec{
-			DatacenterName: req.DatacenterName,
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Username: req.Username,
-				Password: req.Password,
-				Domain:   req.Domain,
-			},
-		})
+		serviceClient, err := osProvider.ServiceClient(req.Username, req.Password, req.Domain, req.DatacenterName)
+		if err != nil {
+			return nil, err
+		}
+
+		networks, err := osProvider.GetNetworks(serviceClient)
 		if err != nil {
 			return nil, err
 		}
@@ -144,5 +136,45 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 		}
 
 		return apiNetworks, nil
+	}
+}
+
+func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(OpenstackReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+		}
+
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
+
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
+
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+		}
+
+		serviceClient, err := osProvider.ServiceClient(req.Username, req.Password, req.Domain, req.DatacenterName)
+		if err != nil {
+			return nil, err
+		}
+
+		subnets, err := osProvider.GetSubnetIDs(serviceClient)
+		if err != nil {
+			return nil, err
+		}
+
+		apiSubnetIDs := []apiv1.OpenstackSubnet{}
+		for _, subnet := range subnets {
+			apiSubnetIDs = append(apiSubnetIDs, apiv1.OpenstackSubnet{
+				ID:   subnet.ID,
+				Name: subnet.Name,
+			})
+		}
+
+		return apiSubnetIDs, nil
 	}
 }

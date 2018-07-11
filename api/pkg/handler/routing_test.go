@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
@@ -26,9 +29,12 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
 
-	datacenters := buildDatacenterMeta()
+	datacenters := dc
+	if datacenters == nil {
+		datacenters = buildDatacenterMeta()
+	}
 	cloudProviders := cloud.Providers(datacenters)
 
 	authenticator := NewFakeAuthenticator(user)
@@ -102,7 +108,12 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, kubermaticObjects, versions, updates)
+	router, _, err := createTestEndpointAndGetClients(user, nil, kubeObjects, kubermaticObjects, versions, updates)
+	return router, err
+}
+
+func createTestEndpointForDC(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
+	router, _, err := createTestEndpointAndGetClients(user, dc, kubeObjects, kubermaticObjects, versions, updates)
 	return router, err
 }
 
@@ -169,6 +180,28 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 
 	if r != b {
 		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
+	}
+}
+
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, s2 string) {
+	var o1 interface{}
+	var o2 interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &o1)
+	if err != nil {
+		t.Fatalf("Error marshalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		t.Fatalf("Error marshalling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(o1, o2) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(o1, o2))
 	}
 }
 

@@ -179,6 +179,32 @@
         }
       }
     },
+    "/api/v1/openstack/subnets": {
+      "get": {
+        "description": "Lists subnets from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnets",
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnet",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnet"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/tenants": {
       "get": {
         "description": "Lists tenants from openstack",
@@ -3924,6 +3950,23 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackSubnet": {
+      "type": "object",
+      "title": "OpenstackSubnet is the object representing a openstack subnet id.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the subnet",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name is human-readable name for the subnet",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
