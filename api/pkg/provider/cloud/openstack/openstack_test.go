@@ -38,8 +38,6 @@ func TestGetAllNetworks(t *testing.T) {
 	defer th.TeardownHTTP()
 
 	th.Mux.HandleFunc("/networks", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%v, %v\n", r.Method, r.URL)
-
 		th.TestMethod(t, r, "GET")
 		th.TestHeader(t, r, "X-Auth-Token", fakegopherc.TokenID)
 
@@ -55,7 +53,6 @@ func TestGetAllNetworks(t *testing.T) {
 		t.Fatalf("failed to get a list of all networks: %v", err)
 	}
 	for i, network := range networks {
-		// fmt.Printf("%#v\n\n", network)
 		th.CheckDeepEquals(t, expectedNetworks[i], network.Network)
 	}
 }

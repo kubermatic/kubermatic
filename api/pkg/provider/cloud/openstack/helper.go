@@ -72,7 +72,7 @@ func getAllNetworks(netClient *gophercloud.ServiceClient) ([]networkWithExternal
 
 func getAllSubnets(netClient *gophercloud.ServiceClient) ([]ossubnets.Subnet, error) {
 	var allSubnets []ossubnets.Subnet
-	allPages, err := osnetworks.List(netClient, nil).AllPages()
+	allPages, err := ossubnets.List(netClient, nil).AllPages()
 	if err != nil {
 		return nil, err
 	}

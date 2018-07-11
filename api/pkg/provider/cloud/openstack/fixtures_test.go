@@ -170,9 +170,6 @@ var network1 = networks.Network{
 	AvailabilityZoneHints: []string(nil),
 }
 
-// NetworkExternalExt: external.NetworkExternalExt{External: false},
-// }
-
 var network2 = networks.Network{
 	ID:                    "71c1e68c-171a-4aa2-aca5-50ea153a3718",
 	Name:                  "net2",
