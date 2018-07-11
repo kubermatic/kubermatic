@@ -137,8 +137,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, finalizerSecurityGroup)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SecurityGroup = ""
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerSecurityGroup)
 		})
 		if err != nil {
 			return nil, err
@@ -152,8 +153,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, finalizerRouteTable)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.RouteTableName = ""
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerRouteTable)
 		})
 		if err != nil {
 			return nil, err
@@ -167,8 +169,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, finalizerSubnet)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SubnetName = ""
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerSubnet)
 		})
 		if err != nil {
 			return nil, err
@@ -183,8 +186,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, finalizerVNet)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.VNetName = ""
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerVNet)
 		})
 		if err != nil {
 			return nil, err
@@ -199,8 +203,9 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, finalizerResourceGroup)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.ResourceGroup = ""
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerResourceGroup)
 		})
 		if err != nil {
 			return nil, err
@@ -447,12 +452,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err := ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizerResourceGroup)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerResourceGroup)
 		})
 		if err != nil {
 			return nil, err
@@ -463,12 +469,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
-		if err := ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizerVNet)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerVNet)
 		})
 		if err != nil {
 			return nil, err
@@ -479,12 +486,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.SubnetName = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
-		if err := ensureSubnet(cluster.Spec.Cloud); err != nil {
+		if err = ensureSubnet(cluster.Spec.Cloud); err != nil {
 			return cluster, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizerSubnet)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerSubnet)
 		})
 		if err != nil {
 			return nil, err
@@ -495,12 +503,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
-		if err := ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
+		if err = ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
 			return cluster, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizerRouteTable)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerRouteTable)
 		})
 		if err != nil {
 			return nil, err
@@ -511,12 +520,13 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
 
 		glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err := ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizerSecurityGroup)
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerSecurityGroup)
 		})
 		if err != nil {
 			return nil, err
