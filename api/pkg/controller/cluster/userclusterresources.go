@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -73,9 +74,11 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 	}
 
 	creators := []resources.RoleBindingCreator{
-		machinecontroller.RoleBinding,
+		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
+		controllermanager.SystemBootstrapSignerRoleBinding,
+		controllermanager.PublicBootstrapSignerRoleBinding,
 	}
 
 	for _, create := range creators {

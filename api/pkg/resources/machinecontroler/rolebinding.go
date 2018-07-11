@@ -8,7 +8,7 @@ import (
 
 // RoleBinding returns the RoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
-func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func DefaultRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createRoleBinding(existing, "default")
 }

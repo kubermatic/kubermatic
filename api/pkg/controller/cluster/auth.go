@@ -444,13 +444,11 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
 func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	userKubeScheduler := "system:kube-scheduler" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
-	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, userKubeScheduler)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername)
 }
 
 func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	userKubeControllerManager := "system:kube-controller-manager" // should come from k8s.io/apiserver/pkg/authentication/user (needs vendoring)
-	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, userKubeControllerManager)
+	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername)
 }
 
 func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {

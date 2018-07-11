@@ -194,8 +194,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 }
 
 func getFlags(data *resources.TemplateData, kcDir string) []string {
+	//apiserverServiceIP, _ := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
 	flags := []string{
 		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
+		//"--master", "http://" + apiserverServiceIP + ":8080",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
