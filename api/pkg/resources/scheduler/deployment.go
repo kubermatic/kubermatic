@@ -113,7 +113,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
 				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.SchedulerKubeconfigSecretName),
-				//"--master", fmt.Sprintf("http://%s:8080", apiserverServiceIP), // url is now in the kubeconf
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,

@@ -381,7 +381,6 @@ func (d *TemplateData) ProviderName() string {
 }
 
 // GetApiserverExternalNodePort returns the nodeport of the external apiserver service
-// TODO rename s/external/secure/ ??
 func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 	s, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
