@@ -79,6 +79,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupScheduler,
 		removeDeprecatedFinalizers,
 		migrateVersion,
+		cleanupAddonManager,
 	}
 
 	w := sync.WaitGroup{}
@@ -155,6 +156,11 @@ func cleanupMachineController(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 func cleanupScheduler(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "monitoring.coreos.com", "v1", "servicemonitors", "scheduler", ctx)
+}
+
+func cleanupAddonManager(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+	return deleteResourceIgnoreNonExistent(ns, "extensions", "v1beta1", "deployments", "addon-manager", ctx)
 }
 
 // We changed the finalizers in https://github.com/kubermatic/kubermatic/pull/1196
