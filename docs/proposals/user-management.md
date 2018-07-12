@@ -102,7 +102,7 @@ To hide complexity from developers and to present a more hierarchical view we wi
 reconciliation loop that constantly watches for project's resources. The controller pattern guarantees that required `RBAC` are in place
 even in the event of failure, otherwise enforcing I want to "create a resource AND attach `RBAC`" semantic could be hard.
 
-Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `editors-projectIdentity`, `editors-projectIdentity` etc.
+Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `owners-projectIdentity`, `editors-projectIdentity` etc.
 The names of `Role` and `RoleBindings` are `prefix:resourceKind:groupName` and `prefix:resourceKind:groupName` respectively.
 When the controller detects a new resource it will generate a pair of `Role` and `RoleBindings`. In order to do this it needs to determine
 the list of valid `verbs` for each `Group`. This part could also be hardcoded and implemented as a `mapper` that accepts the `groupName` and spits out the `verbs`.
