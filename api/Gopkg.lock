@@ -375,6 +375,12 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
   name = "github.com/googleapis/gnostic"
   packages = [
     "OpenAPIv2",
@@ -767,6 +773,9 @@
     "object",
     "property",
     "session",
+    "simulator",
+    "simulator/esx",
+    "simulator/vpx",
     "task",
     "vim25",
     "vim25/debug",
@@ -1218,6 +1227,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c9159a24bf30de4cf94c6cedcbb3879348fe3070eecb7bf0e8d7cb5cf84b33d8"
+  inputs-digest = "294dea9a2b747e080342b185fc775792a47c41951f2c785c0cf3a8452dd2ba5e"
   solver-name = "gps-cdcl"
   solver-version = 1

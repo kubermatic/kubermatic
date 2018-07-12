@@ -243,11 +243,6 @@ type VSphereNetwork struct {
 	Name string `json:"name"`
 }
 
-
-// AvailableMasterVersions describes all possible update versions for a cluster
-// swagger:model AvailableMasterVersions
-type AvailableMasterVersions []MasterVersion
-
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

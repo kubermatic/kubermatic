@@ -10,7 +10,6 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/vim25/types"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -22,8 +21,14 @@ const (
 	folderCleanupFinalizer = "kubermatic.io/cleanup-vsphere-folder"
 )
 
+// Provider represents the vsphere provider.
 type Provider struct {
 	dcs map[string]provider.DatacenterMeta
+}
+
+// Network represents a vsphere network backing.
+type Network struct {
+	Name string
 }
 
 // NewCloudProvider creates a new vSphere provider.
@@ -114,7 +119,8 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 	return cluster, nil
 }
 
-func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]apiv1.VSphereNetwork, error) {
+// GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
+func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) {
 	client, err := v.getClient(spec)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
@@ -128,14 +134,14 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]apiv1.VSphereNet
 		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
 	}
 
-	vsphereDC, err := finder.Datacenter(context.TODO(), dc.Spec.VSphere.Datacenter)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	vsphereDC, err := finder.Datacenter(ctx, dc.Spec.VSphere.Datacenter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
 	}
 	finder.SetDatacenter(vsphereDC)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// finder is relative to datacenter, so * is fine for us.
 	netRefs, err := finder.NetworkList(ctx, "*")
@@ -143,7 +149,7 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]apiv1.VSphereNet
 		return nil, fmt.Errorf("couldn't retrieve network list: %v", err)
 	}
 
-	var networks []apiv1.VSphereNetwork
+	var networks []Network
 	for _, netRef := range netRefs {
 		backing, err := netRef.EthernetCardBackingInfo(ctx)
 		if err != nil {
@@ -160,14 +166,14 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]apiv1.VSphereNet
 			continue
 		}
 
-		network := apiv1.VSphereNetwork{Name: netBacking.DeviceName}
+		network := Network{Name: netBacking.DeviceName}
 		networks = append(networks, network)
 	}
 
 	return networks, nil
 }
 
-// ValidateCloudSpec
+// ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
 func (v *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
 	if err != nil {
@@ -177,13 +183,12 @@ func (v *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// InitializeCloudProvider
+// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return v.createVMFolderForCluster(cluster, update)
 }
 
-// CleanUpCloudProvider
-// We always check if the folder is there and remove it if yes because we know its absolute path
+// CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

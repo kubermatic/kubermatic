@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
+
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
@@ -39,6 +41,11 @@ func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 			return nil, err
 		}
 
-		return networks, nil
+		var apiNetworks []apiv1.VSphereNetwork
+		for _, net := range networks {
+			apiNetworks = append(apiNetworks, apiv1.VSphereNetwork{Name: net.Name})
+		}
+
+		return apiNetworks, nil
 	}
 }
