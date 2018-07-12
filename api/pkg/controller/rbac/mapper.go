@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ownerGroupNamePrefix = "owners"
-	adminGroupNamePrefix = "admins"
+	ownerGroupNamePrefix  = "owners"
+	editorGroupNamePrefix = "editors"
 
 	rbacResourcesNamePrefix = "kubermatic"
 )
@@ -22,7 +22,7 @@ const (
 // the actual names of groups are different see generateActualGroupNameFor function
 var allGroupsPrefixes = []string{
 	ownerGroupNamePrefix,
-	adminGroupNamePrefix,
+	editorGroupNamePrefix,
 }
 
 func generateActualGroupNameFor(projectName, groupName string) string {
@@ -143,12 +143,12 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	//
 	// admins of a project
 	// special case - admins are not allowed to delete a project
-	if strings.HasPrefix(groupName, adminGroupNamePrefix) && resourceKind == "Project" {
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == "Project" {
 		return []string{"create", "get", "update"}, nil
 	}
 
 	// admins of a resource
-	if strings.HasPrefix(groupName, adminGroupNamePrefix) {
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) {
 		return []string{"create", "get", "update", "delete"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
