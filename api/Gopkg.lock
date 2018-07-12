@@ -9,8 +9,8 @@
     "services/resources/mgmt/2018-02-01/resources",
     "version"
   ]
-  revision = "4650843026a7fdec254a8d9cf893693a254edd0b"
-  version = "v16.2.1"
+  revision = "fbe7db0e3f9793ba3e5704efbab84f51436c136e"
+  version = "v18.0.0"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -23,8 +23,8 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "4de44cd533576f3c7b44dcb08dc03754d217144d"
-  version = "v10.9.2"
+  revision = "1f7cd6cfe0adea687ad44a512dfe76140f804318"
+  version = "v10.12.0"
 
 [[projects]]
   name = "github.com/Masterminds/semver"
@@ -549,8 +549,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "54f95e7301ae56b331478f9ac9a9395a19cf6dc9"
-  version = "v0.7.4"
+  revision = "b234d9c995e4243d536870ec502af3f624d4e679"
+  version = "v0.7.9"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1218,6 +1218,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c9159a24bf30de4cf94c6cedcbb3879348fe3070eecb7bf0e8d7cb5cf84b33d8"
+  inputs-digest = "dda3bfed3c6938d8c451d853a49faa79130767594ba2625b947ab06c46d077c9"
   solver-name = "gps-cdcl"
   solver-version = 1
