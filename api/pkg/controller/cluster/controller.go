@@ -374,13 +374,9 @@ func (cc *Controller) syncCluster(key string) error {
 		if cluster, err = cc.cleanupCluster(cluster); err != nil {
 			return err
 		}
-
-		// save changes introduced by the cleanup
-		_, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			*c = *cluster
-		})
-		// since the cluster is being deleted, we always return here
-		return err
+		//Always requeue until the cluster is deleted
+		cc.enqueueAfter(cluster, 10*time.Second)
+		return nil
 	}
 
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
