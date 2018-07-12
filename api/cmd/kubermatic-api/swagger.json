@@ -1071,6 +1071,32 @@
         }
       }
     },
+    "/api/v1/vsphere/networks": {
+      "get": {
+        "description": "Lists networks from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereNetworks",
+        "responses": {
+          "200": {
+            "description": "VSphereNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v3/dc/{dc}/cluster": {
       "get": {
         "produces": [
@@ -4321,6 +4347,18 @@
         },
         "templates": {
           "$ref": "#/definitions/ImageList"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "VSphereNetwork": {
+      "type": "object",
+      "title": "VSphereNetwork is the object representing a vsphere network.",
+      "properties": {
+        "name": {
+          "description": "Name is the name of the network",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/vim25/types"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -20,18 +21,24 @@ const (
 	folderCleanupFinalizer = "kubermatic.io/cleanup-vsphere-folder"
 )
 
-type vsphere struct {
+// Provider represents the vsphere provider.
+type Provider struct {
 	dcs map[string]provider.DatacenterMeta
+}
+
+// Network represents a vsphere network backing.
+type Network struct {
+	Name string
 }
 
 // NewCloudProvider creates a new vSphere provider.
 func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &vsphere{
+	return &Provider{
 		dcs: dcs,
 	}
 }
 
-func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, error) {
+func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, error) {
 	dc, found := v.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
@@ -56,23 +63,22 @@ func (v *vsphere) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
-func (v *vsphere) getVsphereRootPath(cluster *kubermaticv1.Cluster) (string, error) {
-	cloud := cluster.Spec.Cloud
-	dc, found := v.dcs[cloud.DatacenterName]
+func (v *Provider) getVsphereRootPath(spec *kubermaticv1.CloudSpec) (string, error) {
+	dc, found := v.dcs[spec.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
-		return "", fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+		return "", fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
 	}
 
 	if dc.Spec.VSphere.RootPath == "" {
-		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", cloud.DatacenterName)
+		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", spec.DatacenterName)
 	}
 
 	return dc.Spec.VSphere.RootPath, nil
 }
 
 // createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
-func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	dcRootPath, err := v.getVsphereRootPath(cluster)
+func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	dcRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +119,62 @@ func (v *vsphere) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update
 	return cluster, nil
 }
 
-// ValidateCloudSpec
-func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+// GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
+func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) {
+	client, err := v.getClient(spec)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
+	}
+	defer logout(client)
+
+	finder := find.NewFinder(client.Client, true)
+
+	dc, found := v.dcs[spec.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	vsphereDC, err := finder.Datacenter(ctx, dc.Spec.VSphere.Datacenter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
+	}
+	finder.SetDatacenter(vsphereDC)
+
+	// finder is relative to datacenter, so * is fine for us.
+	netRefs, err := finder.NetworkList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve network list: %v", err)
+	}
+
+	var networks []Network
+	for _, netRef := range netRefs {
+		backing, err := netRef.EthernetCardBackingInfo(ctx)
+		if err != nil {
+			// So, there are some netRefs (for example VmwareDistributedVirtualSwitch) which don't implement a BackingInfo.
+			// And since the error isn't typed, we can't check for it.
+			// And since the vsphere documentation is glorious, we dont know all netRef-types affected by this.
+			// so instead of checking type for ignoring that special error, we have to ignore all of it.
+			// return nil, fmt.Errorf("couldn't get network backing: %v (%s)", err, netRef.Reference().Type)
+			continue
+		}
+		netBacking, ok := backing.(*types.VirtualEthernetCardNetworkBackingInfo)
+		if !ok {
+			// ignore virtual networks
+			continue
+		}
+
+		network := Network{Name: netBacking.DeviceName}
+		networks = append(networks, network)
+	}
+
+	return networks, nil
+}
+
+// ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
+func (v *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
 	if err != nil {
 		return err
@@ -123,17 +183,16 @@ func (v *vsphere) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// InitializeCloudProvider
-func (v *vsphere) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
+func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return v.createVMFolderForCluster(cluster, update)
 }
 
-// CleanUpCloudProvider
-// We always check if the folder is there and remove it if yes because we know its absolute path
+// CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
-func (v *vsphere) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	vsphereRootPath, err := v.getVsphereRootPath(cluster)
+func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	vsphereRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}
