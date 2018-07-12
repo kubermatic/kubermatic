@@ -442,6 +442,7 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 	}
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
+
 func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername)
 }
