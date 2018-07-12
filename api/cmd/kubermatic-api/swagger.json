@@ -1768,14 +1768,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
-    "AvailableMasterVersions": {
-      "description": "AvailableMasterVersions describes all possible update versions for a cluster",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/MasterVersion"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "AzureCloudSpec": {
       "type": "object",
       "title": "AzureCloudSpec specifies acceess credentials to Azure cloud.",
