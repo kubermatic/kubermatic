@@ -1,4 +1,4 @@
-package compute
+package network
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -24,36 +24,36 @@ import (
 	"net/http"
 )
 
-// ImagesClient is the compute Client
-type ImagesClient struct {
+// VpnSitesClient is the network Client
+type VpnSitesClient struct {
 	BaseClient
 }
 
-// NewImagesClient creates an instance of the ImagesClient client.
-func NewImagesClient(subscriptionID string) ImagesClient {
-	return NewImagesClientWithBaseURI(DefaultBaseURI, subscriptionID)
+// NewVpnSitesClient creates an instance of the VpnSitesClient client.
+func NewVpnSitesClient(subscriptionID string) VpnSitesClient {
+	return NewVpnSitesClientWithBaseURI(DefaultBaseURI, subscriptionID)
 }
 
-// NewImagesClientWithBaseURI creates an instance of the ImagesClient client.
-func NewImagesClientWithBaseURI(baseURI string, subscriptionID string) ImagesClient {
-	return ImagesClient{NewWithBaseURI(baseURI, subscriptionID)}
+// NewVpnSitesClientWithBaseURI creates an instance of the VpnSitesClient client.
+func NewVpnSitesClientWithBaseURI(baseURI string, subscriptionID string) VpnSitesClient {
+	return VpnSitesClient{NewWithBaseURI(baseURI, subscriptionID)}
 }
 
-// CreateOrUpdate create or update an image.
+// CreateOrUpdate creates a VpnSite resource if it doesn't exist else updates the existing VpnSite.
 // Parameters:
-// resourceGroupName - the name of the resource group.
-// imageName - the name of the image.
-// parameters - parameters supplied to the Create Image operation.
-func (client ImagesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, imageName string, parameters Image) (result ImagesCreateOrUpdateFuture, err error) {
-	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, imageName, parameters)
+// resourceGroupName - the resource group name of the VpnSite.
+// vpnSiteName - the name of the VpnSite being created or updated.
+// vpnSiteParameters - parameters supplied to create or update VpnSite.
+func (client VpnSitesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, vpnSiteName string, vpnSiteParameters VpnSite) (result VpnSitesCreateOrUpdateFuture, err error) {
+	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, vpnSiteName, vpnSiteParameters)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "CreateOrUpdate", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "CreateOrUpdate", nil, "Failure preparing request")
 		return
 	}
 
 	result, err = client.CreateOrUpdateSender(req)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "CreateOrUpdate", result.Response(), "Failure sending request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "CreateOrUpdate", result.Response(), "Failure sending request")
 		return
 	}
 
@@ -61,14 +61,14 @@ func (client ImagesClient) CreateOrUpdate(ctx context.Context, resourceGroupName
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client ImagesClient) CreateOrUpdatePreparer(ctx context.Context, resourceGroupName string, imageName string, parameters Image) (*http.Request, error) {
+func (client VpnSitesClient) CreateOrUpdatePreparer(ctx context.Context, resourceGroupName string, vpnSiteName string, vpnSiteParameters VpnSite) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
-		"imageName":         autorest.Encode("path", imageName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
 		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
+		"vpnSiteName":       autorest.Encode("path", vpnSiteName),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -77,15 +77,15 @@ func (client ImagesClient) CreateOrUpdatePreparer(ctx context.Context, resourceG
 		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/images/{imageName}", pathParameters),
-		autorest.WithJSON(parameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/vpnSites/{vpnSiteName}", pathParameters),
+		autorest.WithJSON(vpnSiteParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) CreateOrUpdateSender(req *http.Request) (future ImagesCreateOrUpdateFuture, err error) {
+func (client VpnSitesClient) CreateOrUpdateSender(req *http.Request) (future VpnSitesCreateOrUpdateFuture, err error) {
 	var resp *http.Response
 	resp, err = autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
@@ -102,7 +102,7 @@ func (client ImagesClient) CreateOrUpdateSender(req *http.Request) (future Image
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) CreateOrUpdateResponder(resp *http.Response) (result Image, err error) {
+func (client VpnSitesClient) CreateOrUpdateResponder(resp *http.Response) (result VpnSite, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -113,20 +113,20 @@ func (client ImagesClient) CreateOrUpdateResponder(resp *http.Response) (result 
 	return
 }
 
-// Delete deletes an Image.
+// Delete deletes a VpnSite.
 // Parameters:
-// resourceGroupName - the name of the resource group.
-// imageName - the name of the image.
-func (client ImagesClient) Delete(ctx context.Context, resourceGroupName string, imageName string) (result ImagesDeleteFuture, err error) {
-	req, err := client.DeletePreparer(ctx, resourceGroupName, imageName)
+// resourceGroupName - the resource group name of the VpnSite.
+// vpnSiteName - the name of the VpnSite being deleted.
+func (client VpnSitesClient) Delete(ctx context.Context, resourceGroupName string, vpnSiteName string) (result VpnSitesDeleteFuture, err error) {
+	req, err := client.DeletePreparer(ctx, resourceGroupName, vpnSiteName)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Delete", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "Delete", nil, "Failure preparing request")
 		return
 	}
 
 	result, err = client.DeleteSender(req)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Delete", result.Response(), "Failure sending request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "Delete", result.Response(), "Failure sending request")
 		return
 	}
 
@@ -134,14 +134,14 @@ func (client ImagesClient) Delete(ctx context.Context, resourceGroupName string,
 }
 
 // DeletePreparer prepares the Delete request.
-func (client ImagesClient) DeletePreparer(ctx context.Context, resourceGroupName string, imageName string) (*http.Request, error) {
+func (client VpnSitesClient) DeletePreparer(ctx context.Context, resourceGroupName string, vpnSiteName string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
-		"imageName":         autorest.Encode("path", imageName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
 		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
+		"vpnSiteName":       autorest.Encode("path", vpnSiteName),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -149,14 +149,14 @@ func (client ImagesClient) DeletePreparer(ctx context.Context, resourceGroupName
 	preparer := autorest.CreatePreparer(
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/images/{imageName}", pathParameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/vpnSites/{vpnSiteName}", pathParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) DeleteSender(req *http.Request) (future ImagesDeleteFuture, err error) {
+func (client VpnSitesClient) DeleteSender(req *http.Request) (future VpnSitesDeleteFuture, err error) {
 	var resp *http.Response
 	resp, err = autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
@@ -173,78 +173,73 @@ func (client ImagesClient) DeleteSender(req *http.Request) (future ImagesDeleteF
 
 // DeleteResponder handles the response to the Delete request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) DeleteResponder(resp *http.Response) (result OperationStatusResponse, err error) {
+func (client VpnSitesClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
-		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
+	result.Response = resp
 	return
 }
 
-// Get gets an image.
+// Get retrieves the details of a VPNsite.
 // Parameters:
-// resourceGroupName - the name of the resource group.
-// imageName - the name of the image.
-// expand - the expand expression to apply on the operation.
-func (client ImagesClient) Get(ctx context.Context, resourceGroupName string, imageName string, expand string) (result Image, err error) {
-	req, err := client.GetPreparer(ctx, resourceGroupName, imageName, expand)
+// resourceGroupName - the resource group name of the VpnSite.
+// vpnSiteName - the name of the VpnSite being retrieved.
+func (client VpnSitesClient) Get(ctx context.Context, resourceGroupName string, vpnSiteName string) (result VpnSite, err error) {
+	req, err := client.GetPreparer(ctx, resourceGroupName, vpnSiteName)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Get", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "Get", nil, "Failure preparing request")
 		return
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Get", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "Get", resp, "Failure sending request")
 		return
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // GetPreparer prepares the Get request.
-func (client ImagesClient) GetPreparer(ctx context.Context, resourceGroupName string, imageName string, expand string) (*http.Request, error) {
+func (client VpnSitesClient) GetPreparer(ctx context.Context, resourceGroupName string, vpnSiteName string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
-		"imageName":         autorest.Encode("path", imageName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
 		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
+		"vpnSiteName":       autorest.Encode("path", vpnSiteName),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
-	}
-	if len(expand) > 0 {
-		queryParameters["$expand"] = autorest.Encode("query", expand)
 	}
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/images/{imageName}", pathParameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/vpnSites/{vpnSiteName}", pathParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) GetSender(req *http.Request) (*http.Response, error) {
+func (client VpnSitesClient) GetSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) GetResponder(resp *http.Response) (result Image, err error) {
+func (client VpnSitesClient) GetResponder(resp *http.Response) (result VpnSite, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -255,38 +250,37 @@ func (client ImagesClient) GetResponder(resp *http.Response) (result Image, err 
 	return
 }
 
-// List gets the list of Images in the subscription. Use nextLink property in the response to get the next page of
-// Images. Do this till nextLink is null to fetch all the Images.
-func (client ImagesClient) List(ctx context.Context) (result ImageListResultPage, err error) {
+// List lists all the VpnSites in a subscription.
+func (client VpnSitesClient) List(ctx context.Context) (result ListVpnSitesResultPage, err error) {
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "List", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "List", nil, "Failure preparing request")
 		return
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
-		result.ilr.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "List", resp, "Failure sending request")
+		result.lvsr.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "List", resp, "Failure sending request")
 		return
 	}
 
-	result.ilr, err = client.ListResponder(resp)
+	result.lvsr, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "List", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // ListPreparer prepares the List request.
-func (client ImagesClient) ListPreparer(ctx context.Context) (*http.Request, error) {
+func (client VpnSitesClient) ListPreparer(ctx context.Context) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"subscriptionId": autorest.Encode("path", client.SubscriptionID),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -294,21 +288,21 @@ func (client ImagesClient) ListPreparer(ctx context.Context) (*http.Request, err
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/providers/Microsoft.Compute/images", pathParameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/providers/Microsoft.Network/vpnSites", pathParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) ListSender(req *http.Request) (*http.Response, error) {
+func (client VpnSitesClient) ListSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) ListResponder(resp *http.Response) (result ImageListResult, err error) {
+func (client VpnSitesClient) ListResponder(resp *http.Response) (result ListVpnSitesResult, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -320,10 +314,10 @@ func (client ImagesClient) ListResponder(resp *http.Response) (result ImageListR
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ImagesClient) listNextResults(lastResults ImageListResult) (result ImageListResult, err error) {
-	req, err := lastResults.imageListResultPreparer()
+func (client VpnSitesClient) listNextResults(lastResults ListVpnSitesResult) (result ListVpnSitesResult, err error) {
+	req, err := lastResults.listVpnSitesResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute.ImagesClient", "listNextResults", nil, "Failure preparing next results request")
+		return result, autorest.NewErrorWithError(err, "network.VpnSitesClient", "listNextResults", nil, "Failure preparing next results request")
 	}
 	if req == nil {
 		return
@@ -331,55 +325,55 @@ func (client ImagesClient) listNextResults(lastResults ImageListResult) (result 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute.ImagesClient", "listNextResults", resp, "Failure sending next results request")
+		return result, autorest.NewErrorWithError(err, "network.VpnSitesClient", "listNextResults", resp, "Failure sending next results request")
 	}
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "listNextResults", resp, "Failure responding to next results request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "listNextResults", resp, "Failure responding to next results request")
 	}
 	return
 }
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
-func (client ImagesClient) ListComplete(ctx context.Context) (result ImageListResultIterator, err error) {
+func (client VpnSitesClient) ListComplete(ctx context.Context) (result ListVpnSitesResultIterator, err error) {
 	result.page, err = client.List(ctx)
 	return
 }
 
-// ListByResourceGroup gets the list of images under a resource group.
+// ListByResourceGroup lists all the vpnSites in a resource group.
 // Parameters:
-// resourceGroupName - the name of the resource group.
-func (client ImagesClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result ImageListResultPage, err error) {
+// resourceGroupName - the resource group name of the VpnSite.
+func (client VpnSitesClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result ListVpnSitesResultPage, err error) {
 	result.fn = client.listByResourceGroupNextResults
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "ListByResourceGroup", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "ListByResourceGroup", nil, "Failure preparing request")
 		return
 	}
 
 	resp, err := client.ListByResourceGroupSender(req)
 	if err != nil {
-		result.ilr.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "ListByResourceGroup", resp, "Failure sending request")
+		result.lvsr.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "ListByResourceGroup", resp, "Failure sending request")
 		return
 	}
 
-	result.ilr, err = client.ListByResourceGroupResponder(resp)
+	result.lvsr, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "ListByResourceGroup", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "ListByResourceGroup", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // ListByResourceGroupPreparer prepares the ListByResourceGroup request.
-func (client ImagesClient) ListByResourceGroupPreparer(ctx context.Context, resourceGroupName string) (*http.Request, error) {
+func (client VpnSitesClient) ListByResourceGroupPreparer(ctx context.Context, resourceGroupName string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
 		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -387,21 +381,21 @@ func (client ImagesClient) ListByResourceGroupPreparer(ctx context.Context, reso
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/images", pathParameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/vpnSites", pathParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
+func (client VpnSitesClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) ListByResourceGroupResponder(resp *http.Response) (result ImageListResult, err error) {
+func (client VpnSitesClient) ListByResourceGroupResponder(resp *http.Response) (result ListVpnSitesResult, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -413,10 +407,10 @@ func (client ImagesClient) ListByResourceGroupResponder(resp *http.Response) (re
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client ImagesClient) listByResourceGroupNextResults(lastResults ImageListResult) (result ImageListResult, err error) {
-	req, err := lastResults.imageListResultPreparer()
+func (client VpnSitesClient) listByResourceGroupNextResults(lastResults ListVpnSitesResult) (result ListVpnSitesResult, err error) {
+	req, err := lastResults.listVpnSitesResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute.ImagesClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
+		return result, autorest.NewErrorWithError(err, "network.VpnSitesClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
 	if req == nil {
 		return
@@ -424,51 +418,51 @@ func (client ImagesClient) listByResourceGroupNextResults(lastResults ImageListR
 	resp, err := client.ListByResourceGroupSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute.ImagesClient", "listByResourceGroupNextResults", resp, "Failure sending next results request")
+		return result, autorest.NewErrorWithError(err, "network.VpnSitesClient", "listByResourceGroupNextResults", resp, "Failure sending next results request")
 	}
 	result, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "listByResourceGroupNextResults", resp, "Failure responding to next results request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "listByResourceGroupNextResults", resp, "Failure responding to next results request")
 	}
 	return
 }
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
-func (client ImagesClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string) (result ImageListResultIterator, err error) {
+func (client VpnSitesClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string) (result ListVpnSitesResultIterator, err error) {
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName)
 	return
 }
 
-// Update update an image.
+// UpdateTags updates VpnSite tags.
 // Parameters:
-// resourceGroupName - the name of the resource group.
-// imageName - the name of the image.
-// parameters - parameters supplied to the Update Image operation.
-func (client ImagesClient) Update(ctx context.Context, resourceGroupName string, imageName string, parameters ImageUpdate) (result ImagesUpdateFuture, err error) {
-	req, err := client.UpdatePreparer(ctx, resourceGroupName, imageName, parameters)
+// resourceGroupName - the resource group name of the VpnSite.
+// vpnSiteName - the name of the VpnSite being updated.
+// vpnSiteParameters - parameters supplied to update VpnSite tags.
+func (client VpnSitesClient) UpdateTags(ctx context.Context, resourceGroupName string, vpnSiteName string, vpnSiteParameters TagsObject) (result VpnSitesUpdateTagsFuture, err error) {
+	req, err := client.UpdateTagsPreparer(ctx, resourceGroupName, vpnSiteName, vpnSiteParameters)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Update", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "UpdateTags", nil, "Failure preparing request")
 		return
 	}
 
-	result, err = client.UpdateSender(req)
+	result, err = client.UpdateTagsSender(req)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute.ImagesClient", "Update", result.Response(), "Failure sending request")
+		err = autorest.NewErrorWithError(err, "network.VpnSitesClient", "UpdateTags", result.Response(), "Failure sending request")
 		return
 	}
 
 	return
 }
 
-// UpdatePreparer prepares the Update request.
-func (client ImagesClient) UpdatePreparer(ctx context.Context, resourceGroupName string, imageName string, parameters ImageUpdate) (*http.Request, error) {
+// UpdateTagsPreparer prepares the UpdateTags request.
+func (client VpnSitesClient) UpdateTagsPreparer(ctx context.Context, resourceGroupName string, vpnSiteName string, vpnSiteParameters TagsObject) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
-		"imageName":         autorest.Encode("path", imageName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
 		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
+		"vpnSiteName":       autorest.Encode("path", vpnSiteName),
 	}
 
-	const APIVersion = "2017-12-01"
+	const APIVersion = "2018-04-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -477,15 +471,15 @@ func (client ImagesClient) UpdatePreparer(ctx context.Context, resourceGroupName
 		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/images/{imageName}", pathParameters),
-		autorest.WithJSON(parameters),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/vpnSites/{vpnSiteName}", pathParameters),
+		autorest.WithJSON(vpnSiteParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// UpdateSender sends the Update request. The method will close the
+// UpdateTagsSender sends the UpdateTags request. The method will close the
 // http.Response Body if it receives an error.
-func (client ImagesClient) UpdateSender(req *http.Request) (future ImagesUpdateFuture, err error) {
+func (client VpnSitesClient) UpdateTagsSender(req *http.Request) (future VpnSitesUpdateTagsFuture, err error) {
 	var resp *http.Response
 	resp, err = autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
@@ -500,9 +494,9 @@ func (client ImagesClient) UpdateSender(req *http.Request) (future ImagesUpdateF
 	return
 }
 
-// UpdateResponder handles the response to the Update request. The method always
+// UpdateTagsResponder handles the response to the UpdateTags request. The method always
 // closes the http.Response Body.
-func (client ImagesClient) UpdateResponder(resp *http.Response) (result Image, err error) {
+func (client VpnSitesClient) UpdateTagsResponder(resp *http.Response) (result VpnSite, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),

@@ -110,7 +110,7 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *client
 		Kubeconfig:        kubeconfigString,
 		CloudProvider:     cpName,
 		CloudConfig:       cpConfig,
-		HyperkubeImageTag: fmt.Sprintf("v%s_coreos.0", kubeletVersion.String()),
+		HyperkubeImageTag: fmt.Sprintf("v%s", kubeletVersion.String()),
 		ClusterDNSIPs:     clusterDNSIPs,
 		KubernetesCACert:  kubernetesCACert,
 	}
@@ -173,8 +173,9 @@ systemd:
         After=docker.service
         [Service]
         TimeoutStartSec=5min
-        Environment=KUBELET_IMAGE_TAG={{ .HyperkubeImageTag }}
+        Environment=KUBELET_IMAGE=docker://k8s.gcr.io/hyperkube-amd64:{{ .HyperkubeImageTag }}
         Environment="RKT_RUN_ARGS=--uuid-file-save=/var/cache/kubelet-pod.uuid \
+          --insecure-options=image \
           --volume=resolv,kind=host,source=/etc/resolv.conf \
           --mount volume=resolv,target=/etc/resolv.conf \
           --volume cni-bin,kind=host,source=/opt/cni/bin \
@@ -184,7 +185,10 @@ systemd:
           --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
           --mount volume=etc-kubernetes,target=/etc/kubernetes \
           --volume var-log,kind=host,source=/var/log \
-          --mount volume=var-log,target=/var/log"
+          --mount volume=var-log,target=/var/log \
+          --volume var-lib-calico,kind=host,source=/var/lib/calico \
+          --mount volume=var-lib-calico,target=/var/lib/calico"
+        ExecStartPre=/bin/mkdir -p /var/lib/calico
         ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/bin/mkdir -p /etc/cni/net.d
         ExecStartPre=/bin/mkdir -p /opt/cni/bin
