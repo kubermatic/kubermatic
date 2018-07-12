@@ -473,7 +473,7 @@ func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecre
 		return cc.secretWithJSON(cc.secretWithData(map[string][]byte{secretName: kconf}, c))
 	}
 
-	// FIXME add check for required update
+	// FIXME add better reconcile handling.
 
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
