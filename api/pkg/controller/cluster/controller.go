@@ -301,8 +301,8 @@ func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason k
 	var err error
 	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.ErrorMessage = &message
-			cluster.Status.ErrorReason = &reason
+			c.Status.ErrorMessage = &message
+			c.Status.ErrorReason = &reason
 		})
 		if err != nil {
 			return nil, err
@@ -316,8 +316,8 @@ func (cc *Controller) clearClusterError(cluster *kubermaticv1.Cluster) (*kuberma
 	var err error
 	if cluster.Status.ErrorReason != nil || cluster.Status.ErrorMessage != nil {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.ErrorMessage = nil
-			cluster.Status.ErrorReason = nil
+			c.Status.ErrorMessage = nil
+			c.Status.ErrorReason = nil
 		})
 		if err != nil {
 			return nil, err
@@ -364,7 +364,7 @@ func (cc *Controller) syncCluster(key string) error {
 	if cluster.DeletionTimestamp != nil {
 		if cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
 			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-				cluster.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
+				c.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
 			})
 			if err != nil {
 				return err
@@ -374,11 +374,14 @@ func (cc *Controller) syncCluster(key string) error {
 		if cluster, err = cc.cleanupCluster(cluster); err != nil {
 			return err
 		}
+		//Always requeue until the cluster is deleted
+		cc.enqueueAfter(cluster, 10*time.Second)
+		return nil
 	}
 
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
+			c.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
 		})
 		if err != nil {
 			return err
@@ -387,7 +390,7 @@ func (cc *Controller) syncCluster(key string) error {
 
 	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
+			c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
 		})
 		if err != nil {
 			return err
