@@ -79,7 +79,8 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/machinecontroller
-          name: machine-controller-kubeconfig-volume
+          name: machinecontroller-kubeconfig
+          readOnly: true
       initContainers:
       - command:
         - /bin/sh
@@ -92,28 +93,9 @@ spec:
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
-      - command:
-        - /bin/sh
-        - -ec
-        - install -o nobody -m 0400 /etc/kubernetes/machinecontroller/machinecontroller-kubeconfig
-          /mnt/kubeconfig/
-        image: docker.io/busybox
-        imagePullPolicy: IfNotPresent
-        name: get-kubeconfig
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /etc/kubernetes/machinecontroller
-          name: machinecontroller-kubeconfig
-          readOnly: true
-        - mountPath: /mnt/kubeconfig
-          name: machine-controller-kubeconfig-volume
       volumes:
       - name: machinecontroller-kubeconfig
         secret:
-          defaultMode: 256
+          defaultMode: 292
           secretName: machinecontroller-kubeconfig
-      - emptyDir: {}
-        name: machine-controller-kubeconfig-volume
 status: {}
