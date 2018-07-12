@@ -65,7 +65,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get openvpn sidecar container and apiserverServiceIP
-	apiIP, apiPort, err := data.ClusterIPPortByServiceName(resources.ApiserverExternalServiceName)
+	apiAddress, err := data.InClusterApiserverAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until wget -O - -T 1 https://%s:%d/healthz; do echo waiting for apiserver; sleep 2; done", apiIP, apiPort),
+				fmt.Sprintf("until wget -O - -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
 				// * unfortunately no curl in busybox image
 				// * "fortunately" busybox wget does not care about TLS verification (neither peername, nor ca)
 				// * might still be enough for only waiting for `apiserver-running`

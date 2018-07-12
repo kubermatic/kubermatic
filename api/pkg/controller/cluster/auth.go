@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -159,13 +160,13 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
-	secureAPISvcIP, _, err := cc.getSecureApiserverIPPort(c)
+	secureAPISvcIP, err := cc.getSecureApiserverAddress(c)
 
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
 	dnsDomain := "cluster.local"
-	ips := sets.NewString("10.10.10.1", c.Address.IP, secureAPISvcIP)
+	ips := sets.NewString("10.10.10.1", c.Address.IP, strings.Split(secureAPISvcIP, ":")[0])
 	hostnames := sets.NewString(c.Address.ExternalName)
 
 	if existingSecret == nil {
@@ -461,13 +462,13 @@ func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecre
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
-	masterIP, masterPort, err := cc.getSecureApiserverIPPort(c)
+	masterAddress, err := cc.getSecureApiserverAddress(c)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to resolve apiserver service to master ip: %v", err)
+		return nil, "", fmt.Errorf("failed to resolve apiserver service to master address: %v", err)
 	}
 
 	if existingSecret == nil {
-		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s:%d", masterIP, masterPort), caKp, username, []string{})
+		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s", masterAddress), caKp, username, []string{})
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to create a dedicated kubeconfig for %s: %v", username, err)
 		}
@@ -512,9 +513,9 @@ func createLimitedKubeconfig(address string, ca *triple.KeyPair, commonName stri
 	return kb, nil
 }
 
-func (cc *Controller) getSecureApiserverIPPort(c *kubermaticv1.Cluster) (string, int32, error) {
+func (cc *Controller) getSecureApiserverAddress(c *kubermaticv1.Cluster) (string, error) {
 	// Create a fake TemplateData for now, as it conveniently holds
 	// a Cluster and a ServiceLister for us.
 	tdata := &resources.TemplateData{Cluster: c, ServiceLister: cc.serviceLister}
-	return tdata.ClusterIPPortByServiceName(resources.ApiserverExternalServiceName)
+	return tdata.InClusterApiserverAddress()
 }
