@@ -120,8 +120,11 @@ const (
 	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
 	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
 
-	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
-	DefaultOwnerReadOnlyMode = 256
+	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
+	DefaultOwnerReadOnlyMode = 0400
+
+	// DefaultAllReadOnlyMode represents file mode with read permissions for all
+	DefaultAllReadOnlyMode = 0444
 
 	// AppLabelKey defines the label key app which should be used within resources
 	AppLabelKey = "app"

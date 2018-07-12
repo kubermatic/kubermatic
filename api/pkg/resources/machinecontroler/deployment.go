@@ -81,30 +81,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
-		{
-			Name:            "get-kubeconfig",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("install -o nobody -m 0400 %s/%s /mnt/kubeconfig/", kcDir, resources.MachineControllerKubeconfigSecretName),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: kcDir,
-					ReadOnly:  true,
-				},
-				{
-					Name:      "machine-controller-kubeconfig-volume",
-					MountPath: "/mnt/kubeconfig",
-					ReadOnly:  false,
-				},
-			},
-		},
 	}
 	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
 	if err != nil {
@@ -153,9 +129,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "machine-controller-kubeconfig-volume",
+					Name:      resources.MachineControllerKubeconfigSecretName,
 					MountPath: kcDir,
-					ReadOnly:  false,
+					ReadOnly:  true,
 				},
 			},
 		},
@@ -170,15 +146,11 @@ func getVolumes() []corev1.Volume {
 			Name: resources.MachineControllerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.MachineControllerKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.MachineControllerKubeconfigSecretName,
+					// We have to make the secret readable for all for now because owner/group cannot be changed.
+					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 				},
-			},
-		},
-		{
-			Name: "machine-controller-kubeconfig-volume",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
