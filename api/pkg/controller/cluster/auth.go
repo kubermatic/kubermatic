@@ -160,13 +160,13 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
-	secureAPISvcIP, err := cc.getSecureApiserverAddress(c)
+	apiAddress, err := cc.getSecureApiserverAddress(c)
 
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
 	dnsDomain := "cluster.local"
-	ips := sets.NewString("10.10.10.1", c.Address.IP, strings.Split(secureAPISvcIP, ":")[0])
+	ips := sets.NewString("10.10.10.1", c.Address.IP, strings.Split(apiAddress, ":")[0])
 	hostnames := sets.NewString(c.Address.ExternalName)
 
 	if existingSecret == nil {
