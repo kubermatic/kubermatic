@@ -4,25 +4,26 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DefaultRoleBinding returns the RoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
 func DefaultRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
-	return createRoleBinding(existing, "default")
+	return createRoleBinding(existing, metav1.NamespaceDefault)
 }
 
 // KubeSystemRoleBinding returns the RoleBinding for the machine-controller in kube-system ns.
 // It has to be put into the user-cluster.
 func KubeSystemRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-	return createRoleBinding(existing, "kube-system")
+	return createRoleBinding(existing, metav1.NamespaceSystem)
 }
 
 // KubePublicRoleBinding returns the RoleBinding for the machine-controller in kube-public ns.
 // It has to be put into the user-cluster.
 func KubePublicRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-	return createRoleBinding(existing, "kube-public")
+	return createRoleBinding(existing, metav1.NamespacePublic)
 }
 
 func createRoleBinding(existing *rbacv1.RoleBinding, namespace string) (*rbacv1.RoleBinding, error) {
