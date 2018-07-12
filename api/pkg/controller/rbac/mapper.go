@@ -139,15 +139,15 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 		return []string{"create", "get", "update", "delete"}, nil
 	}
 
-	// verbs for admins
+	// verbs for editors
 	//
-	// admins of a project
-	// special case - admins are not allowed to delete a project
+	// editors of a project
+	// special case - editors are not allowed to delete a project
 	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == "Project" {
 		return []string{"create", "get", "update"}, nil
 	}
 
-	// admins of a resource
+	// editors of a resource
 	if strings.HasPrefix(groupName, editorGroupNamePrefix) {
 		return []string{"create", "get", "update", "delete"}, nil
 	}
