@@ -7,6 +7,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -87,12 +88,31 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
 	}
 
+	requestedMemory, err := resource.ParseQuantity("70Mi")
+	if err != nil {
+		return nil, err
+	}
+	requestedCPU, err := resource.ParseQuantity("100m")
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
 			Name:  resources.DNSResolverDeploymentName,
 			Image: data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
 			Args:  []string{"-conf", "/etc/coredns/Corefile"},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: requestedMemory,
+					corev1.ResourceCPU:    requestedCPU,
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: requestedMemory,
+					corev1.ResourceCPU:    requestedCPU,
+				},
+			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.DNSResolverConfigMapName,
