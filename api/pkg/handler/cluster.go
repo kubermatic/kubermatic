@@ -130,12 +130,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{cluster})
-		if len(apiClusters) != 1 {
-			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
-
-		}
-		return apiClusters[0], nil
+		return convertInternalClusterToExternal(cluster), nil
 	}
 }
 
@@ -193,11 +188,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		convertedClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{updatedCluster})
-		if len(convertedClusters) != 1 {
-			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
-		}
-		return convertedClusters[0], nil
+		return convertInternalClusterToExternal(updatedCluster), nil
 	}
 }
 
