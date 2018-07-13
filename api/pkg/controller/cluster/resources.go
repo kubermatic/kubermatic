@@ -238,8 +238,8 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
-	creators := []resources.ServiceCreator{
+func GetServiceCreators() []resources.ServiceCreator {
+	return []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
 		prometheus.Service,
@@ -248,6 +248,10 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		etcd.ClientService,
 		dns.Service,
 	}
+}
+
+func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
+	creators := GetServiceCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
