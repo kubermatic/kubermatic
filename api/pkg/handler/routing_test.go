@@ -174,6 +174,7 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 
 const (
 	testUsername = "user1"
+	testEmail    = "john@acme.com"
 )
 
 func getUser(name string, admin bool) apiv1.User {
