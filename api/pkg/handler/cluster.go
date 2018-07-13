@@ -389,30 +389,34 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 	}
 }
 
+func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.NewCluster {
+	return &apiv1.NewCluster{
+		NewObjectMeta: apiv1.NewObjectMeta{
+			ID:                internalCluster.Name,
+			Name:              internalCluster.Spec.HumanReadableName,
+			CreationTimestamp: internalCluster.CreationTimestamp.Time,
+			DeletionTimestamp: func() *time.Time {
+				if internalCluster.DeletionTimestamp != nil {
+					return &internalCluster.DeletionTimestamp.Time
+				}
+				return nil
+			}(),
+		},
+		Spec: apiv1.NewClusterSpec{
+			Cloud:   *internalCluster.Spec.Cloud,
+			Version: internalCluster.Spec.Version,
+		},
+		Status: apiv1.NewClusterStatus{
+			Version: internalCluster.Spec.Version,
+			URL:     internalCluster.Address.URL,
+		},
+	}
+}
+
 func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.NewCluster {
 	apiClusters := make([]*apiv1.NewCluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = &apiv1.NewCluster{
-			NewObjectMeta: apiv1.NewObjectMeta{
-				ID:                cluster.Name,
-				Name:              cluster.Spec.HumanReadableName,
-				CreationTimestamp: cluster.CreationTimestamp.Time,
-				DeletionTimestamp: func() *time.Time {
-					if cluster.DeletionTimestamp != nil {
-						return &cluster.DeletionTimestamp.Time
-					}
-					return nil
-				}(),
-			},
-			Spec: apiv1.NewClusterSpec{
-				Cloud:   *cluster.Spec.Cloud,
-				Version: cluster.Spec.Version,
-			},
-			Status: apiv1.NewClusterStatus{
-				Version: cluster.Spec.Version,
-				URL:     cluster.Address.URL,
-			},
-		}
+		apiClusters[index] = convertInternalClusterToExternal(cluster)
 	}
 	return apiClusters
 }
