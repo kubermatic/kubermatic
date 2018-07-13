@@ -29,6 +29,26 @@
                 }
             },
             "version": "master"
+        },
+        {
+            "name": "node_exporter",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/tomwilkie/node_exporter",
+                    "subdir": "node-mixin"
+                }
+            },
+            "version": "mixin"
+        },
+        {
+            "name": "prometheus",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/tomwilkie/prometheus",
+                    "subdir": "prometheus-mixin"
+                }
+            },
+            "version": "mixin"
         }
     ]
 }
