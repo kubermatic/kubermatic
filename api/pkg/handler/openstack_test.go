@@ -34,26 +34,37 @@ type ServerTemplateData struct {
 	Region  string
 }
 
-func SetupOpenstackServer(t *testing.T, url, resp string) {
+func SetupOpenstackServer(t *testing.T) {
 	openstackMux = http.NewServeMux()
 	openstackServer = httptest.NewServer(openstackMux)
 
 	openstackService := []struct {
-		Name         string
-		Path         string
+		OpenstackURL string
 		JSONResponse string
 	}{
 		{
-			Path:         "/",
+			OpenstackURL: "/",
 			JSONResponse: "{}",
 		},
 		{
-			Path:         url,
-			JSONResponse: resp,
+			OpenstackURL: "/v3/auth/tokens",
+			JSONResponse: PostTokens,
 		},
 		{
-			Path:         "/v3/auth/tokens",
-			JSONResponse: PostTokens,
+			OpenstackURL: "/v3/users/" + tokenID + "/projects",
+			JSONResponse: GetUserProjects,
+		},
+		{
+			OpenstackURL: "/v2.0/subnets",
+			JSONResponse: GetSubnets,
+		},
+		{
+			OpenstackURL: "/v2.0/networks",
+			JSONResponse: GetNetworks,
+		},
+		{
+			OpenstackURL: "/flavors/detail",
+			JSONResponse: GetFlaivorsDetail,
 		},
 	}
 
@@ -67,7 +78,7 @@ func SetupOpenstackServer(t *testing.T, url, resp string) {
 	}
 
 	for _, service := range openstackService {
-		path := service.Path
+		path := service.OpenstackURL
 		tmpl, err := template.New("test").Parse(service.JSONResponse)
 		if err != nil {
 			t.Fatal(err)
@@ -77,7 +88,7 @@ func SetupOpenstackServer(t *testing.T, url, resp string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		openstackMux.HandleFunc(service.Path, func(w http.ResponseWriter, r *http.Request) {
+		openstackMux.HandleFunc(service.OpenstackURL, func(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf(" >>> %s %s\n", r.Method, r.URL)
 			if r.URL.String() != path {
 				t.Fatalf("Unexpected call: %s %s", r.Method, r.URL)
@@ -127,38 +138,51 @@ func TestOpenstackEndpoint(t *testing.T) {
 		ExpectedResponse  string
 	}{
 		{
-			Name:              "test tenants endpoint",
-			URL:               "/api/v1/openstack/tenants",
-			OpenstackURL:      "/v3/users/" + tokenID + "/projects",
-			OpenstackResponse: GetUserProjects,
-			ExpectedResponse:  ExpectedTenants,
+			Name: "test tenants endpoint",
+			URL:  "/api/v1/openstack/tenants",
+			ExpectedResponse: `[
+				{"id":"456788", "name": "a project name"},
+				{"id":"456789", "name": "another domain"}
+			]`,
 		},
 		{
-			Name:              "test subnets endpoint",
-			URL:               "/api/v1/openstack/subnets",
-			OpenstackURL:      "/v2.0/subnets",
-			OpenstackResponse: GetSubnets,
-			ExpectedResponse:  ExpectedSubnets,
+			Name: "test subnets endpoint",
+			URL:  "/api/v1/openstack/subnets",
+			ExpectedResponse: `[
+				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
+				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet"}
+			]`,
 		},
 		{
-			Name:              "test networks endpoint",
-			URL:               "/api/v1/openstack/networks",
-			OpenstackURL:      "/v2.0/networks",
-			OpenstackResponse: GetNetworks,
-			ExpectedResponse:  ExpectedNetworks,
+			Name: "test networks endpoint",
+			URL:  "/api/v1/openstack/networks",
+			ExpectedResponse: `[
+				{"id": "396f12f8-521e-4b91-8e21-2e003500433a", "name": "net3"},
+				{"id": "71c1e68c-171a-4aa2-aca5-50ea153a3718", "name": "net2"}
+			]`,
 		},
 		{
-			Name:              "test sizes endpoint",
-			URL:               "/api/v1/openstack/sizes",
-			OpenstackURL:      "/flavors/detail",
-			OpenstackResponse: GetFlaivorsDetail,
-			ExpectedResponse:  ExpectedSizes,
+			Name: "test sizes endpoint",
+			URL:  "/api/v1/openstack/sizes",
+			ExpectedResponse: `[
+				{
+					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
+				},
+				{
+					"disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
+				},
+				{
+					"disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
+				}
+			]`,
 		},
 	}
+
+	SetupOpenstackServer(t)
+	defer TeardownOpenstackServer()
+
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			SetupOpenstackServer(t, tc.OpenstackURL, tc.OpenstackResponse)
-			defer TeardownOpenstackServer()
 
 			req := httptest.NewRequest("GET", tc.URL, strings.NewReader(""))
 			req.Header.Add("DatacenterName", datacenterName)
@@ -167,12 +191,12 @@ func TestOpenstackEndpoint(t *testing.T) {
 			req.Header.Add("Domain", domain)
 
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpointForDC(getUser(testUsername, false), buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, nil, nil)
+			router, _, err := createTestEndpointAndGetClients(getUser(testUsername, false), buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}
 
-			ep.ServeHTTP(res, req)
+			router.ServeHTTP(res, req)
 			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}

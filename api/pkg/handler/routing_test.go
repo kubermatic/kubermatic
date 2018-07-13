@@ -112,11 +112,6 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	return router, err
 }
 
-func createTestEndpointForDC(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	router, _, err := createTestEndpointAndGetClients(user, dc, kubeObjects, kubermaticObjects, versions, updates)
-	return router, err
-}
-
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 	return map[string]provider.DatacenterMeta{
 		"us-central1": {
@@ -183,25 +178,25 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 	}
 }
 
-func compareJSON(t *testing.T, res *httptest.ResponseRecorder, s2 string) {
-	var o1 interface{}
-	var o2 interface{}
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	var actualResponse interface{}
+	var expectedResponse interface{}
 
 	// var err error
 	bBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}
-	err = json.Unmarshal(bBytes, &o1)
+	err = json.Unmarshal(bBytes, &actualResponse)
 	if err != nil {
 		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
 	}
-	err = json.Unmarshal([]byte(s2), &o2)
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
 	if err != nil {
 		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
 	}
-	if !equality.Semantic.DeepEqual(o1, o2) {
-		t.Fatalf("Objects are different: %v", diff.ObjectDiff(o1, o2))
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
 	}
 }
 
