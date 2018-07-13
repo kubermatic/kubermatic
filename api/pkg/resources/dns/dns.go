@@ -25,6 +25,7 @@ func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, erro
 	return podLabels, err
 }
 
+// Service returns the service for the dns resolver
 func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var svc *corev1.Service
 	if existing != nil {
@@ -47,6 +48,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	return svc, nil
 }
 
+// Deployment returns the deployment for the dns resolver
 func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {

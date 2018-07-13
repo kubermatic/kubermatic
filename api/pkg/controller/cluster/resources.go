@@ -238,6 +238,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
+// GetServiceCreators returns all service creators that are currently in use
 func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		apiserver.Service,
