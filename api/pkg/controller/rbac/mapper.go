@@ -9,11 +9,9 @@ import (
 )
 
 const (
-	// OwnerGroupNamePrefix prefix of the owners group
-	OwnerGroupNamePrefix = "owners"
-	// EditorGroupNamePrefix prefix of the editors group
-	EditorGroupNamePrefix = "editors"
-
+	ownerGroupNamePrefix  = "owners"
+	editorGroupNamePrefix = "editors"
+	viewerGroupNamePrefix = "viewers"
 	rbacResourcesNamePrefix = "kubermatic"
 )
 
@@ -21,10 +19,11 @@ const (
 //
 // Note:
 // adding a new group also requires updating generateVerbs method.
-// the actual names of groups are different see GenerateActualGroupNameFor function
-var AllGroupsPrefixes = []string{
-	OwnerGroupNamePrefix,
-	EditorGroupNamePrefix,
+// the actual names of groups are different see generateActualGroupNameFor function
+var allGroupsPrefixes = []string{
+	ownerGroupNamePrefix,
+	editorGroupNamePrefix,
+	viewerGroupNamePrefix,
 }
 
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
@@ -154,6 +153,13 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	// editors of a resource
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		return []string{"create", "get", "update", "delete"}, nil
+	}
+
+	// verbs for editors
+	//
+	// viewers of a resource
+	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
+		return []string{"get"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
