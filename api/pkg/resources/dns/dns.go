@@ -154,10 +154,13 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		"Corefile": fmt.Sprintf(`
 %s {
     forward . %s
+    errors
 }
-errors
-health
-forward . /etc/resolv.conf
+. {
+  forward . /etc/resolv.conf
+  errors
+  health
+}
 `, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)}
 
 	return cm, nil
