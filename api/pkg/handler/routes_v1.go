@@ -65,6 +65,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/securitygroups").
+		Handler(r.listOpenstackSecurityGroups())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -422,6 +426,28 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackNetworkEndpoint(r.cloudProviders)),
+		decodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/securitygroups openstack listOpenstackSecurityGroups
+//
+// Lists security groups from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSecurityGroup
+func (r Routing) listOpenstackSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackSecurityGroupEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
