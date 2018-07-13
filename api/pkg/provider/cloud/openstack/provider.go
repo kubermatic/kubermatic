@@ -32,7 +32,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 
 // ValidateCloudSpec validates the given CloudSpec
 func (os *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	netClient, err := os.ServiceClient(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
+	netClient, err := os.OpenstackProvider(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -69,7 +69,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	spec := cluster.Spec.Cloud
-	netClient, err := os.ServiceClient(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
+	netClient, err := os.OpenstackProvider(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -154,7 +154,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 // removes security group and network configuration
 func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	spec := cluster.Spec.Cloud
-	netClient, err := os.ServiceClient(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
+	netClient, err := os.OpenstackProvider(spec.Openstack.Username, spec.Openstack.Password, spec.Openstack.Domain, spec.DatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -260,8 +260,8 @@ func (os *Provider) GetSubnetIDs(serviceClient *gophercloud.ServiceClient) ([]Su
 	return subnets, nil
 }
 
-// ServiceClient returns gophercloud.ServiceClient
-func (os *Provider) ServiceClient(user, pass, domain, datacenterName string) (*gophercloud.ServiceClient, error) {
+// OpenstackProvider returns gophercloud.ServiceClient
+func (os *Provider) OpenstackProvider(user, pass, domain, datacenterName string) (*gophercloud.ServiceClient, error) {
 	dc, found := os.dcs[datacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", datacenterName)
