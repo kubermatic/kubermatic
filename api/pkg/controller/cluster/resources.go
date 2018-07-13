@@ -520,10 +520,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators() []resources.SecretCreator {
-	return []resources.SecretCreator{
-		etcd.TLSCertificate,
-		apiserver.EtcdClientCertificate,
+func GetSecretCreators() map[string]resources.SecretCreator {
+	return map[string]resources.SecretCreator{
+		resources.EtcdTLSCertificateSecretName:             etcd.TLSCertificate,
+		resources.ApiserverEtcdClientCertificateSecretName: apiserver.EtcdClientCertificate,
 	}
 }
 
@@ -535,15 +535,16 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for _, create := range creators {
+	for name, create := range creators {
 		var existing *corev1.Secret
-		se, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Secret: %v", err)
-		}
-		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(se.Name); err != nil {
+		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
+			}
+
+			se, err := create(data, nil)
+			if err != nil {
+				return fmt.Errorf("failed to build Secret: %v", err)
 			}
 
 			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
@@ -552,7 +553,7 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		se, err = create(data, existing.DeepCopy())
+		se, err := create(data, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}
