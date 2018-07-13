@@ -91,7 +91,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*openvpnSidecar,
 		{
 			Name:  resources.DNSResolverDeploymentName,
-			Image: data.ImageRegistry(resources.RegistryKubernetesGCR) + "/coredns:1.1.3",
+			Image: data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
 			Args:  []string{"-conf", "/etc/coredns/Corefile"},
 			VolumeMounts: []corev1.VolumeMount{
 				{
@@ -110,6 +110,24 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.DNSResolverConfigMapName,
 					},
+				},
+			},
+		},
+		{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.OpenVPNClientCertificatesSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CACertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CACertSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
@@ -134,16 +152,12 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
 		"Corefile": fmt.Sprintf(`
-%s in-addr.arpa ip6.arpa {
-			forward . %s
-			fallthrough in-addr.arpa ip6.arpa
+%s {
+    forward . %s
 }
 errors
 health
-
-. {
-    forward . /etc/resolv.conf
-}
+forward . /etc/resolv.conf
 `, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)}
 
 	return cm, nil
