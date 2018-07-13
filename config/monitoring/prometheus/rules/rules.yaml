@@ -236,6 +236,65 @@ groups:
         node_namespace_pod:kube_pod_info:
       )
     record: node:node_net_saturation:sum_irate
+- name: node.rules
+  rules:
+  - expr: |
+      count by (instance) (
+        sum by (instance, cpu) (
+          node_cpu{app="node-exporter"}
+        )
+      )
+    record: instance:node_num_cpu:sum
+  - expr: |
+      1 - avg by (instance) (
+        rate(node_cpu{app="node-exporter",mode="idle"}[1m])
+      )
+    record: instance:node_cpu_utilisation:avg1m
+  - expr: |
+      sum by (instance) (node_load1{app="node-exporter"})
+      /
+      instance:node_num_cpu:sum
+    record: 'instance:node_cpu_saturation_load1:'
+  - expr: |
+      sum by (instance) (
+        node_memory_MemTotal{app="node-exporter"}
+      )
+    record: instance:node_memory_bytes_total:sum
+  - expr: |
+      1 - (
+          node_memory_MemAvailable{%(nodeExporterSelector)s}
+        /
+          node_memory_MemTotal{%(nodeExporterSelector)s}
+      )
+    record: instance:node_memory_utilisation:ratio
+  - expr: |
+      1e3 * sum by (instance) (
+        (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
+         + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
+      )
+    record: instance:node_memory_swap_io_bytes:sum_rate
+  - expr: |
+      sum by (instance) (
+        irate(node_disk_io_time_ms{app="node-exporter",device=~"(sd|xvd).+"}[1m]) / 1e3
+      )
+    record: instance:node_disk_utilisation:sum_irate
+  - expr: |
+      sum by (instance) (
+        irate(node_disk_io_time_weighted{app="node-exporter",device=~"(sd|xvd).+"}[1m]) / 1e3
+      )
+    record: instance:node_disk_saturation:sum_irate
+  - expr: |
+      sum by (instance) (
+        (irate(node_network_receive_bytes{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
+         irate(node_network_transmit_bytes{app="node-exporter",device=~"eth[0-9]+"}[1m]))
+      )
+    record: instance:node_net_utilisation:sum_irate
+  - expr: |
+      sum by (instance) (
+        (irate(node_network_receive_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
+         irate(node_network_transmit_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]))
+      )
+    record: instance:node_net_saturation:sum_irate
 - name: kubermatic
   rules:
   - alert: KubermaticTooManyUnhandledErrors
@@ -873,5 +932,121 @@ groups:
     expr: |
       rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
     for: 15m
+    labels:
+      severity: critical
+- name: node
+  rules:
+  - alert: NodeFilesystemSpaceFillingUp
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+        to run out of space within the next 24 hours.
+    expr: |
+      predict_linear(node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 24*60*60) < 0
+      and
+      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.4
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: NodeFilesystemSpaceFillingUp
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+        to run out of space within the next 4 hours.
+    expr: |
+      predict_linear(node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 4*60*60) < 0
+      and
+      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.2
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: critical
+  - alert: NodeFilesystemOutOfSpace
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+        {{ $value }}% available space left.
+    expr: |
+      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 5
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: NodeFilesystemOutOfSpace
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+        {{ $value }}% available space left.
+    expr: |
+      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 3
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: critical
+  - alert: NodeFilesystemFilesFillingUp
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+        to run out of files within the next 24 hours.
+    expr: |
+      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 24*60*60) < 0
+      and
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.4
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: NodeFilesystemFilesFillingUp
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+        to run out of files within the next 4 hours.
+    expr: |
+      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 4*60*60) < 0
+      and
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.2
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: NodeFilesystemOutOfFiles
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+        {{ $value }}% available inodes left.
+    expr: |
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 5
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: NodeFilesystemOutOfSpace
+    annotations:
+      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+        {{ $value }}% available space left.
+    expr: |
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 3
+      and
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+    for: 1h
+    labels:
+      severity: critical
+  - alert: NodeNetworkReceiveErrs
+    annotations:
+      message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors
+        while receiving packets ({{ $value }} errors in two minutes).'
+    expr: |
+      increase(node_network_receive_errs[2m]) > 10
+    for: 1h
+    labels:
+      severity: critical
+  - alert: NodeNetworkTransmitErrs
+    annotations:
+      message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors
+        while transmitting packets ({{ $value }} errors in two minutes).'
+    expr: |
+      increase(node_network_transmit_errs[2m]) > 10
+    for: 1h
     labels:
       severity: critical
