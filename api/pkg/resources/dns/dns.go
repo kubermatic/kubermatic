@@ -120,6 +120,19 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 			},
+			ReadinessProbe: &corev1.Probe{
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/health",
+						Port: intstr.FromInt(8080),
+					},
+				},
+				InitialDelaySeconds: 2,
+				FailureThreshold:    3,
+				PeriodSeconds:       10,
+				SuccessThreshold:    1,
+				TimeoutSeconds:      15,
+			},
 		},
 	}
 	dep.Spec.Template.Spec.Volumes = []corev1.Volume{
