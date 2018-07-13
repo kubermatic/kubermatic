@@ -65,6 +65,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/subnets").
+		Handler(r.listOpenstackSubnets())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -422,6 +426,28 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackNetworkEndpoint(r.cloudProviders)),
+		decodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/subnets openstack listOpenstackSubnets
+//
+// Lists subnets from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSubnet
+func (r Routing) listOpenstackSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackSubnetsEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
