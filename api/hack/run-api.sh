@@ -5,6 +5,8 @@ set -o nounset
 set -o pipefail
 set -x
 
+make -C $(dirname $0)/.. kubermatic-api
+
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 # Please make sure to set -enable-prometheus-endpoint=true if you want to use that endpoint.
