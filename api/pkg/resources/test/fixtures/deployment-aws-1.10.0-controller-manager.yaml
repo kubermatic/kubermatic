@@ -96,8 +96,8 @@ spec:
           name: ca-cert
           readOnly: true
       - args:
-        - --master
-        - http://192.0.2.11:8080
+        - --kubeconfig
+        - /etc/kubernetes/controllermanager/controllermanager-kubeconfig
         - --service-account-private-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --root-ca-file
@@ -172,6 +172,9 @@ spec:
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
+        - mountPath: /etc/kubernetes/controllermanager
+          name: controllermanager-kubeconfig
+          readOnly: true
       dnsConfig:
         nameservers:
         - 10.10.10.10
@@ -187,7 +190,7 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until wget -T 1 http://192.0.2.11:8080/healthz; do echo waiting for apiserver;
+        - until wget -T 1 https://192.0.2.10:30000/healthz; do echo waiting for apiserver;
           sleep 2; done;
         image: docker.io/busybox
         imagePullPolicy: IfNotPresent
@@ -216,4 +219,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: openvpn-client-certificates
+      - name: controllermanager-kubeconfig
+        secret:
+          defaultMode: 256
+          secretName: controllermanager-kubeconfig
 status: {}

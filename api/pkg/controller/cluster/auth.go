@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -159,11 +160,13 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
 
+	apiAddress, err := cc.getSecureApiserverAddress(c)
+
 	commonName := c.Address.ExternalName
 	svcName := "kubernetes"
 	svcNamespace := "default"
 	dnsDomain := "cluster.local"
-	ips := sets.NewString("10.10.10.1", c.Address.IP)
+	ips := sets.NewString("10.10.10.1", c.Address.IP, strings.Split(apiAddress, ":")[0])
 	hostnames := sets.NewString(c.Address.ExternalName)
 
 	if existingSecret == nil {
@@ -343,6 +346,7 @@ func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[strin
 		return nil, err
 	}
 	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil {
+		// Bootstrapping now works with dedicated (per-node) tokens and no longer requires this token.
 		return nil, err
 	}
 	writer.Flush()
@@ -438,4 +442,80 @@ func (cc *Controller) getOpenVPNInternalClientCertificates(c *kubermaticv1.Clust
 		return cc.secretWithJSON(cc.secretWithData(data, c))
 	}
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
+}
+
+func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername)
+}
+
+func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername)
+}
+
+func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername)
+}
+
+func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, secretName, username string) (*corev1.Secret, string, error) {
+	caKp, err := cc.getFullCAFromLister(c)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get CA: %v", err)
+	}
+
+	masterAddress, err := cc.getSecureApiserverAddress(c)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to resolve apiserver service to master address: %v", err)
+	}
+
+	if existingSecret == nil {
+		kconf, err := createLimitedKubeconfig(fmt.Sprintf("https://%s", masterAddress), caKp, username, []string{})
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create a dedicated kubeconfig for %s: %v", username, err)
+		}
+		return cc.secretWithJSON(cc.secretWithData(map[string][]byte{secretName: kconf}, c))
+	}
+
+	// FIXME add better reconcile handling.
+
+	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
+}
+
+func createLimitedKubeconfig(address string, ca *triple.KeyPair, commonName string, organizations []string) ([]byte, error) {
+	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to create client certificates for kubeconfig: %v", err)
+	}
+	kubeconfig := clientcmdapi.Config{
+		Clusters: map[string]*clientcmdapi.Cluster{
+			"default": {
+				CertificateAuthorityData: certutil.EncodeCertPEM(ca.Cert),
+				Server: address,
+			},
+		},
+		CurrentContext: "default",
+		Contexts: map[string]*clientcmdapi.Context{
+			"default": {
+				Cluster:  "default",
+				AuthInfo: "default",
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			"default": {
+				ClientCertificateData: certutil.EncodeCertPEM(kp.Cert),
+				ClientKeyData:         certutil.EncodePrivateKeyPEM(kp.Key),
+			},
+		},
+	}
+	kb, err := clientcmd.Write(kubeconfig)
+	if err != nil {
+		return []byte{}, err
+	}
+	return kb, nil
+}
+
+func (cc *Controller) getSecureApiserverAddress(c *kubermaticv1.Cluster) (string, error) {
+	// Create a fake TemplateData for now, as it conveniently holds
+	// a Cluster and a ServiceLister for us.
+	tdata := &resources.TemplateData{Cluster: c, ServiceLister: cc.serviceLister}
+	return tdata.InClusterApiserverAddress()
 }

@@ -69,7 +69,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiAddress, err := data.InClusterApiserverAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +80,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/controllermanager"
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -89,7 +90,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", apiAddress),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -122,6 +123,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
+		{
+			Name:      resources.ControllerManagerKubeconfigSecretName,
+			MountPath: kcDir,
+			ReadOnly:  true,
+		},
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
 		fakeVMWareUUIDMount := corev1.VolumeMount{
@@ -141,7 +147,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data, apiserverServiceIP),
+			Args:            getFlags(data, kcDir),
 			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -187,9 +193,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData, apiserverIP string) []string {
+func getFlags(data *resources.TemplateData, kcDir string) []string {
 	flags := []string{
-		"--master", "http://" + apiserverIP + ":8080",
+		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
@@ -287,6 +293,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.OpenVPNClientCertificatesSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.ControllerManagerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ControllerManagerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
