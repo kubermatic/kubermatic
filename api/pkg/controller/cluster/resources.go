@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -245,6 +246,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		openvpn.Service,
 		etcd.DiscoveryService,
 		etcd.ClientService,
+		dns.Service,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -467,6 +469,7 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 		apiserver.Deployment,
 		scheduler.Deployment,
 		controllermanager.Deployment,
+		dns.Deployment,
 	}
 }
 
@@ -576,6 +579,7 @@ func GetConfigMapCreators() []resources.ConfigMapCreator {
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
+		dns.ConfigMap,
 	}
 }
 

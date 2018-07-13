@@ -35,6 +35,12 @@ const (
 	MachineControllerDeploymentName = "machine-controller"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
+	//DNSResolverDeploymentName is the name of the dns resolver deployment
+	DNSResolverDeploymentName = "dns-resolver"
+	//DNSResolverConfigMapName is the name of the dns resolvers configmap
+	DNSResolverConfigMapName = "dns-resolver"
+	//DNSResolverServiceName is the name of the dns resolvers service
+	DNSResolverServiceName = "dns-resolver"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
