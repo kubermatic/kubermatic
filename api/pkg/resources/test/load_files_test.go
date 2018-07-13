@@ -286,6 +286,7 @@ func TestLoadFiles(t *testing.T) {
 									NodePort: 30000,
 								},
 							},
+							ClusterIP: "192.0.2.10",
 						},
 					},
 					&v1.Service{

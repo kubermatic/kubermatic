@@ -54,7 +54,7 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all role bindings are created
+	// check that all cluster role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
 	}
@@ -174,6 +174,9 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
+		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
+		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
+		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
