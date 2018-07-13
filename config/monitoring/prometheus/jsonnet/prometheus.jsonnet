@@ -5,6 +5,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
 (import 'kubernetes-mixin/mixin.libsonnet') +
 (import 'etcd-mixin/mixin.libsonnet') +
 (import 'prometheus/mixin.libsonnet') +
+(import 'node_exporter/mixin.libsonnet') +
 {
   _config+:: {
     namespace: 'monitoring',

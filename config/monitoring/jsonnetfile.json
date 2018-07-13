@@ -34,7 +34,7 @@
             "name": "node_exporter",
             "source": {
                 "git": {
-                    "remote": "https://github.com/tomwilkie/node_exporter",
+                    "remote": "https://github.com/metalmatze/node_exporter",
                     "subdir": "node-mixin"
                 }
             },
