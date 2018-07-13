@@ -153,6 +153,32 @@
         }
       }
     },
+    "/api/v1/openstack/securitygroups": {
+      "get": {
+        "description": "Lists security groups from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSecurityGroups",
+        "responses": {
+          "200": {
+            "description": "OpenstackSecurityGroup",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSecurityGroup"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/sizes": {
       "get": {
         "description": "Lists sizes from openstack",
@@ -3881,6 +3907,23 @@
       },
       "x-go-name": "OpenstackNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
+    "OpenstackSecurityGroup": {
+      "type": "object",
+      "title": "OpenstackSecurityGroup is the object representing a openstack security group.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the current security group",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name is the name of the security group",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "OpenstackSize": {
       "type": "object",
