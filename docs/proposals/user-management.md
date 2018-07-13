@@ -1,16 +1,16 @@
-# User management 
+# User management
 **Author**: Lukasz Szaszkiewicz(@p0lyn0mial)
 
 **Status**: Draft proposal.
 
 ## Introduction
 
-User management describes how to manage user access to various resources like devices, applications, networks and many more. It plays a core part in any system and it is a basic security essential for any organisation. At this moment `kubermatic-server` doesn’t allow for defining and assigning permissions to resources. In fact, the current situation is simple, users have unlimited access to `Resources` and cannot share them with others. One of the goals of this document is to change the steady state but at the same time we would like to introduce the concept of a `Project`. A `Project` is a new entity that will hold various `Resources`.  All `Resources` in a `Project` are equal in terms of the `Groups` attached to them. The `Groups` can be arbitrary but as a good starting point we will start off with `Owner`, `Admin`, `Editor` and `Reader` types. Affiliation of a `User` to one of the `Groups` give them certain powers they are allowed to use within a `Project`.  For example if Bob belongs to `Editor` he has write access to all `Resources` in a `Project`, in other words Bob can create `clusters` in a `Project` he belongs to. 
+User management describes how to manage user access to various resources like devices, applications, networks and many more. It plays a core part in any system and it is a basic security essential for any organisation. At this moment `kubermatic-server` doesn’t allow for defining and assigning permissions to resources. In fact, the current situation is simple, users have unlimited access to `Resources` and cannot share them with others. One of the goals of this document is to change the steady state but at the same time we would like to introduce the concept of a `Project`. A `Project` is a new entity that will hold various `Resources`.  All `Resources` in a `Project` are equal in terms of the `Groups` attached to them. The `Groups` can be arbitrary but as a good starting point we will start off with `Owner`, `Editor` and `Reader` types. Affiliation of a `User` to one of the `Groups` give them certain powers they are allowed to use within a `Project`.  For example if Bob belongs to `Editor` he has write access to all `Resources` in a `Project`, in other words Bob can create `clusters` in a `Project` he belongs to.
 
 
 ## Goals
-1. Describe how `kubermatic-server` is going to drive authorization decisions. 
-2. Utilise kubernetes `RBAC` mechanism as much as possible. 
+1. Describe how `kubermatic-server` is going to drive authorization decisions.
+2. Utilise kubernetes `RBAC` mechanism as much as possible.
 3. Describe how `RBAC` roles are generated and attached to project’s resources.
 
 ## Non-Goal
@@ -28,7 +28,7 @@ metadata:
   namespace: kubermatic
   name: kubermatic:cluster:editors-htwhln8jnb
 rules:
-- apiGroups: ["kubermatic.k8s.io"] 
+- apiGroups: ["kubermatic.k8s.io"]
   resources: [“clusters”]
   resourceNames: ["my-powerfull-cluster“]
   verbs: ["get", “update”, "create", "delete", "patch"]
@@ -43,7 +43,7 @@ metadata:
   namespace: kubermatic
   name: kubermatic:cluster:readers-htwhln8jnb
 rules:
-- apiGroups: ["kubermatic.k8s.io"] 
+- apiGroups: ["kubermatic.k8s.io"]
   resources: [“clusters”]
   resourceNames: ["my-powerfull-cluster“]
   verbs: ["get"]
@@ -70,9 +70,9 @@ roleRef:
 
 **Possible Optimization**:
 
-It may turn out that the `verb` list for `Admin`, `Owner`, `Editor` is exactly the same in such case we could generate only one `Role` to rule them all. 
-Does it mean we don't need more than two Groups ? Not necessarly. 
-We could say that the `Admin`group is special in a way that allows them to add other users to the `Project`. 
+It may turn out that the `verb` list for `Editor`, `Owner`, `Reader` is exactly the same in such case we could generate only one `Role` to rule them all.
+Does it mean we don't need more than two Groups ? Not necessarly.
+We could say that the `Editor`group is special in a way that allows them to add other users to the `Project`.
 Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`.
 
 This complexity could be enlosed in `ProjectProvider` and since `RBACGenerator` is parameter driven expressing the above statement will be possible.
@@ -82,7 +82,7 @@ One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleB
 
 ## Implementation
 
-Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionallity on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Admin` group and let Kubernetes take care of enforcing authorisation decisions. 
+Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionallity on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Editors` group and let Kubernetes take care of enforcing authorisation decisions.
 
 One way of doing this we would like to propose is to create a new type namely `Project`. For exact type definitions please refer to `Types` section. An instance of `Project` represents a unique project
 and gives us an identity we will attach to project’s `resources`. At the same time we would like to extend existing `apiv1.User` type in a way that would allow us to store a list of `Projects` along with a `Group` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to.
@@ -102,7 +102,7 @@ To hide complexity from developers and to present a more hierarchical view we wi
 reconciliation loop that constantly watches for project's resources. The controller pattern guarantees that required `RBAC` are in place
 even in the event of failure, otherwise enforcing I want to "create a resource AND attach `RBAC`" semantic could be hard.
 
-Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `admins-projectIdentity`, `editors-projectIdentity` etc.
+Initially the component could maintain the hardcoded list of `Groups`. By convention the names of groups are `owners-projectIdentity`, `editors-projectIdentity` etc.
 The names of `Role` and `RoleBindings` are `prefix:resourceKind:groupName` and `prefix:resourceKind:groupName` respectively.
 When the controller detects a new resource it will generate a pair of `Role` and `RoleBindings`. In order to do this it needs to determine
 the list of valid `verbs` for each `Group`. This part could also be hardcoded and implemented as a `mapper` that accepts the `groupName` and spits out the `verbs`.
@@ -112,4 +112,3 @@ needs the name of the `Role` and the subject which in our case is the `groupName
 
 ## Types
 TBD
-
