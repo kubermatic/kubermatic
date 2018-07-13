@@ -89,7 +89,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:cluster-abcd:admins-thunderball",
+						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -139,7 +139,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:cluster-abcd:admins-thunderball",
+						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -153,13 +153,13 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:cluster-abcd:admins-thunderball",
+						Name:     "kubermatic:cluster-abcd:editors-thunderball",
 					},
 				},
 			},
