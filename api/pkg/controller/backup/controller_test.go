@@ -33,6 +33,11 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
+			Health: kubermaticv1.ClusterHealth{
+				ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+					Etcd: true,
+				},
+			},
 		},
 	}
 
