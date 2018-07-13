@@ -194,11 +194,11 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, s2 string) {
 	}
 	err = json.Unmarshal(bBytes, &o1)
 	if err != nil {
-		t.Fatalf("Error marshalling string 1 :: %s", err.Error())
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
 	}
 	err = json.Unmarshal([]byte(s2), &o2)
 	if err != nil {
-		t.Fatalf("Error marshalling string 2 :: %s", err.Error())
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
 	}
 	if !equality.Semantic.DeepEqual(o1, o2) {
 		t.Fatalf("Objects are different: %v", diff.ObjectDiff(o1, o2))
