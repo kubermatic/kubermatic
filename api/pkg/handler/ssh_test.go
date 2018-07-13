@@ -2,22 +2,18 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"strings"
-
-	"fmt"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 )
 
 func TestCreateSSHKeysEndpoint(t *testing.T) {
@@ -31,7 +27,6 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
 	}{
-
 		// scenario 1
 		{
 			Name:             "scenario 1: a user can create ssh key that will be assigned to the given project",
@@ -53,11 +48,10 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -68,7 +62,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 		},
 	}
@@ -113,8 +107,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 	keyList := []runtime.Object{
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user1-1",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user1")},
+				Name: "user1-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user1",
@@ -126,8 +119,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		},
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user1-2",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user1")},
+				Name: "user1-2",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user1",
@@ -139,8 +131,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		},
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user2-1",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user2")},
+				Name: "user2-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user2",
