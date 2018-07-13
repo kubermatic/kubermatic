@@ -127,6 +127,32 @@
         }
       }
     },
+    "/api/v1/openstack/floatingips": {
+      "get": {
+        "description": "Lists floating ips from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackFloatingIPs",
+        "responses": {
+          "200": {
+            "description": "OpenstackFloatingIP",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackFloatingIP"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -3857,6 +3883,23 @@
         "region": {
           "type": "string",
           "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackFloatingIP": {
+      "type": "object",
+      "title": "OpenstackFloatingIP is the object representing a openstack floating IP.",
+      "properties": {
+        "floating_ip_address": {
+          "description": "FloatingIP is the address of the floating IP.",
+          "type": "string",
+          "x-go-name": "FloatingIP"
+        },
+        "id": {
+          "description": "Id uniquely identifies the current floating IP",
+          "type": "string",
+          "x-go-name": "ID"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

@@ -245,6 +245,15 @@ type OpenstackSecurityGroup struct {
 	Name string `json:"name"`
 }
 
+// OpenstackFloatingIP is the object representing a openstack floating IP.
+// swagger:model OpenstackFloatingIP
+type OpenstackFloatingIP struct {
+	// Id uniquely identifies the current floating IP
+	ID string `json:"id"`
+	// FloatingIP is the address of the floating IP.
+	FloatingIP string `json:"floating_ip_address"`
+}
+
 // VSphereNetwork is the object representing a vsphere network.
 // swagger:model VSphereNetwork
 type VSphereNetwork struct {

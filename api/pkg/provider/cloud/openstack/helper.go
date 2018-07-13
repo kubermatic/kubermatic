@@ -11,6 +11,7 @@ import (
 	ostokens "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
 	osusers "github.com/gophercloud/gophercloud/openstack/identity/v3/users"
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
+	osfloatingips "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	osecruritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
@@ -351,4 +352,22 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 	}
 
 	return allProjects, nil
+}
+
+func getAllFloatingIPs(netClient *gophercloud.ServiceClient) ([]osfloatingips.FloatingIP, error) {
+	var allFloatingIPs []osfloatingips.FloatingIP
+
+	pager := osfloatingips.List(netClient, osfloatingips.ListOpts{})
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
+		floatingIPs, err := osfloatingips.ExtractFloatingIPs(page)
+		if err != nil {
+			return false, err
+		}
+		allFloatingIPs = append(allFloatingIPs, floatingIPs...)
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return allFloatingIPs, nil
 }

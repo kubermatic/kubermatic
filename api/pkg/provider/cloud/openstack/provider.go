@@ -8,6 +8,7 @@ import (
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
+	osfloatingips "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -279,6 +280,26 @@ func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuri
 	}
 
 	return securityGroups, nil
+}
+
+// GetFloatingIPs lists all available floating IPs for the given CloudSpec.DatacenterName
+func (os *Provider) GetFloatingIPs(cloud *kubermaticv1.CloudSpec) ([]osfloatingips.FloatingIP, error) {
+	authClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	floatingIPs, err := getAllFloatingIPs(authClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get floatingIPs: %v", err)
+	}
+
+	return floatingIPs, nil
 }
 
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {

@@ -190,3 +190,47 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 		return apiSecurityGroups, nil
 	}
 }
+
+func openstackFloatingIPEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req, ok := request.(OpenstackReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+		}
+
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
+
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+		}
+
+		floatingIPs, err := osProvider.GetFloatingIPs(&kubermaticv1.CloudSpec{
+			DatacenterName: req.DatacenterName,
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Username: req.Username,
+				Password: req.Password,
+				Domain:   req.Domain,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		apiFloatingIPs := []apiv1.OpenstackFloatingIP{}
+		for _, floatingIP := range floatingIPs {
+			apiFloatingIP := apiv1.OpenstackFloatingIP{
+				ID:         floatingIP.ID,
+				FloatingIP: floatingIP.FloatingIP,
+			}
+
+			apiFloatingIPs = append(apiFloatingIPs, apiFloatingIP)
+		}
+
+		return apiFloatingIPs, nil
+	}
+}
