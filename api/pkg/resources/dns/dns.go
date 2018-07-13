@@ -130,7 +130,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	if err != nil {
 		return nil, err
 	}
-	cm.Name = resources.CloudConfigConfigMapName
+	cm.Name = resources.DNSResolverConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Data = map[string]string{
 		"Corefile": fmt.Sprintf(`
