@@ -262,9 +262,9 @@ groups:
     record: instance:node_memory_bytes_total:sum
   - expr: |
       1 - (
-          node_memory_MemAvailable{%(nodeExporterSelector)s}
+          node_memory_MemAvailable{app="node-exporter"}
         /
-          node_memory_MemTotal{%(nodeExporterSelector)s}
+          node_memory_MemTotal{app="node-exporter"}
       )
     record: instance:node_memory_utilisation:ratio
   - expr: |
