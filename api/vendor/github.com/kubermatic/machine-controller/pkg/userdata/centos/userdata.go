@@ -213,6 +213,10 @@ write_files:
     Type=oneshot
     RemainAfterExit=true
     ExecStartPre=/usr/sbin/modprobe br_netfilter
+    # This is required because it contains an empty KUBELET_EXTRA_ARGS= variable which has precedence over the one
+    # defined in /etc/systemd/system/kubelet.service.d/20-extra.conf
+    # We remove it here as /etc/systemd/system/kubelet.service comes from the package
+    ExecStartPre=/usr/bin/rm -f /etc/sysconfig/kubelet
     ExecStart=/usr/bin/kubeadm join \
       --token {{ .BoostrapToken }} \
       --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
@@ -222,7 +226,7 @@ write_files:
   content: |
     [Service]
     Environment="KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
-      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }}"
+      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} --read-only-port 0"
 
 runcmd:
 - setenforce 0 || true
@@ -238,4 +242,9 @@ packages:
 - nfs-utils
 - bash-completion # Have mercy for the poor operators
 - sudo
+{{- if semverCompare "=1.8.X" .KubeletVersion }}
+# There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
+# specified, installation of the kube packages fails
+- kubernetes-cni-0.5.1-1
+{{- end }}
 `

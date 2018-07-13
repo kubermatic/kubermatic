@@ -316,3 +316,20 @@ func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req struct{}
 	return req, nil
 }
+
+// VSphereNetworksReq represent a request for vsphere networks
+type VSphereNetworksReq struct {
+	Username       string
+	Password       string
+	DatacenterName string
+}
+
+func decodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req VSphereNetworksReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
+	return req, nil
+}

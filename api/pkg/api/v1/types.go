@@ -245,6 +245,13 @@ type OpenstackSecurityGroup struct {
 	Name string `json:"name"`
 }
 
+// VSphereNetwork is the object representing a vsphere network.
+// swagger:model VSphereNetwork
+type VSphereNetwork struct {
+	// Name is the name of the network
+	Name string `json:"name"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
