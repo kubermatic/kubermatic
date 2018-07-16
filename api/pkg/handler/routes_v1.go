@@ -171,6 +171,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
 		Handler(r.newCreateNodeForCluster())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Handler(r.newListNodesForCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -979,7 +983,7 @@ func (r Routing) newGetNodeForCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
-		)(getNodeForCluster(r.projectProvider)),
+		)(newGetNodeForCluster(r.projectProvider)),
 		decodeGetNodeForCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1010,6 +1014,32 @@ func (r Routing) newCreateNodeForCluster() http.Handler {
 		)(newCreateNodeForCluster(r.newSSHKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeForCluster,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newListNodesForCluster
+//
+//
+//     Lists nodes that belong to the given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Node
+//       401: empty
+//       403: empty
+func (r Routing) newListNodesForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newListNodesForCluster(r.projectProvider)),
+		decodeListNodesForCluster,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

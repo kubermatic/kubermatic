@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -205,6 +206,23 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
 		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
 	}
+}
+
+// areEqualOrDie checks if binary representation of actual and expected is equal.
+//
+// note that:
+// this function fails when conversion is not possible
+func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
+	actualBytes, err := json.Marshal(actual)
+	if err != nil {
+		t.Fatalf("failed to marshal actual: %v", err)
+	}
+
+	expectedBytes, err := json.Marshal(expected)
+	if err != nil {
+		t.Fatalf("failed to marshal expected: %v", err)
+	}
+	return reflect.DeepEqual(actualBytes, expectedBytes)
 }
 
 const (
