@@ -79,6 +79,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listVSphereNetworks())
 
 	//
+	// Defines a set of HTTP endpoints for project resource
 	mux.Methods(http.MethodGet).
 		Path("/projects").
 		Handler(r.getProjects())

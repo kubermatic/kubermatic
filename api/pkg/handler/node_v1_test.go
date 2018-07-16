@@ -10,7 +10,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -54,11 +53,9 @@ func TestGetNodeForCluster(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -69,7 +66,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingNodes: []*corev1.Node{
 				&corev1.Node{
@@ -177,11 +174,9 @@ func TestCreateNodeForCluster(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -192,7 +187,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{

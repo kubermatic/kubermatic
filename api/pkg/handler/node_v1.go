@@ -43,6 +43,11 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		// how about moving machineClient and kubeClient to their own provider ?
 		kubeClient, err := clusterProvider.GetKubernetesClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -89,6 +94,11 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		// how about moving machineClient and kubeClient to their own provider ?
 		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
