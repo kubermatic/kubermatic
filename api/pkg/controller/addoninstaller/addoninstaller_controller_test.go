@@ -23,6 +23,7 @@ func truePtr() *bool {
 	b := true
 	return &b
 }
+
 func TestCreateAddon(t *testing.T) {
 	name := rand.String(10)
 	tests := []struct {
