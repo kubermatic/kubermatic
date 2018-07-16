@@ -47,21 +47,22 @@ func (p *SSHKeyProvider) SSHKey(user apiv1.User, name string) (*kubermaticv1.Use
 
 // SSHKeys returns the user ssh keys
 func (p *SSHKeyProvider) SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error) {
-	var (
-		selector labels.Selector
-		err      error
-	)
-
+	allKeys, err := p.sshKeyLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
 	if p.isAdmin(user) {
-		selector = labels.Everything()
-	} else {
-		selector, err = ssh.UserListLabelSelector(user.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to build query to fetch keys: %v", err)
+		return allKeys, err
+	}
+
+	userkeys := []*kubermaticv1.UserSSHKey{}
+	for _, key := range allKeys {
+		if key.Spec.Owner == user.ID {
+			userkeys = append(userkeys, key)
 		}
 	}
 
-	return p.sshKeyLister.List(selector)
+	return userkeys, nil
 }
 
 func (p *SSHKeyProvider) assignSSHKeyToCluster(user apiv1.User, name, cluster string) error {

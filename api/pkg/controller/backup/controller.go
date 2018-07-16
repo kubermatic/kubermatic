@@ -355,9 +355,8 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	// We need to know the namespace otherwise we do not know
-	// the address of the etcd
-	if clusterFromCache.Status.NamespaceName == "" {
+	// Wait until the cluster is ready enough
+	if clusterFromCache.Status.NamespaceName == "" || !clusterFromCache.Status.Health.Etcd {
 		return nil
 	}
 

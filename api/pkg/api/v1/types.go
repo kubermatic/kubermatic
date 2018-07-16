@@ -4,12 +4,15 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 // ObjectMeta is an object storing common metadata for persistable objects.
+// Deprecated: ObjectMeta is deprecated use NewObjectMeta instead.
 type ObjectMeta struct {
 	Name            string `json:"name"`
 	ResourceVersion string `json:"resourceVersion,omitempty"`
@@ -189,16 +192,6 @@ type Cluster struct {
 	kubermaticv1.Cluster
 }
 
-// NodeList represents a list of nodes
-// swagger:model NodeListV1
-type NodeList []Node
-
-// Node is the object representing a cluster node.
-// swagger:model NodeV1
-type Node struct {
-	corev1.Node
-}
-
 // OpenstackSize is the object representing openstack's sizes.
 // swagger:model OpenstackSize
 type OpenstackSize struct {
@@ -308,3 +301,19 @@ type NewClusterHealth struct {
 // NewClusterList represents a list of clusters
 // swagger:model ClusterList
 type NewClusterList []NewCluster
+
+// Node represents a worker node that is part of a cluster
+// swagger:model Node
+type Node struct {
+	NewObjectMeta `json:",inline"`
+
+	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
+	// TODO: I did this only because I know that we are working on the user management
+	// TODO: and once we have it then we will remove apiv2.Node struct.
+	Spec apiv2.NodeSpec `json:"spec"`
+
+	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
+	// TODO: I did this only because I know that we are working on the user management
+	// TODO: and once we have it then we will remove apiv2.Node struct.
+	Status apiv2.NodeStatus `json:"status"`
+}

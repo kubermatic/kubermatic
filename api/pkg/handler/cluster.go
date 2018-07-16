@@ -130,12 +130,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{cluster})
-		if len(apiClusters) != 1 {
-			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
-
-		}
-		return apiClusters[0], nil
+		return convertInternalClusterToExternal(cluster), nil
 	}
 }
 
@@ -193,11 +188,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		convertedClusters := convertInternalClustersToExternal([]*kubermaticapiv1.Cluster{updatedCluster})
-		if len(convertedClusters) != 1 {
-			return nil, errors.New(http.StatusInternalServerError, "unable to convert cluster resource")
-		}
-		return convertedClusters[0], nil
+		return convertInternalClusterToExternal(updatedCluster), nil
 	}
 }
 
@@ -389,30 +380,34 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 	}
 }
 
+func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.NewCluster {
+	return &apiv1.NewCluster{
+		NewObjectMeta: apiv1.NewObjectMeta{
+			ID:                internalCluster.Name,
+			Name:              internalCluster.Spec.HumanReadableName,
+			CreationTimestamp: internalCluster.CreationTimestamp.Time,
+			DeletionTimestamp: func() *time.Time {
+				if internalCluster.DeletionTimestamp != nil {
+					return &internalCluster.DeletionTimestamp.Time
+				}
+				return nil
+			}(),
+		},
+		Spec: apiv1.NewClusterSpec{
+			Cloud:   *internalCluster.Spec.Cloud,
+			Version: internalCluster.Spec.Version,
+		},
+		Status: apiv1.NewClusterStatus{
+			Version: internalCluster.Spec.Version,
+			URL:     internalCluster.Address.URL,
+		},
+	}
+}
+
 func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.NewCluster {
 	apiClusters := make([]*apiv1.NewCluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = &apiv1.NewCluster{
-			NewObjectMeta: apiv1.NewObjectMeta{
-				ID:                cluster.Name,
-				Name:              cluster.Spec.HumanReadableName,
-				CreationTimestamp: cluster.CreationTimestamp.Time,
-				DeletionTimestamp: func() *time.Time {
-					if cluster.DeletionTimestamp != nil {
-						return &cluster.DeletionTimestamp.Time
-					}
-					return nil
-				}(),
-			},
-			Spec: apiv1.NewClusterSpec{
-				Cloud:   *cluster.Spec.Cloud,
-				Version: cluster.Spec.Version,
-			},
-			Status: apiv1.NewClusterStatus{
-				Version: cluster.Spec.Version,
-				URL:     cluster.Address.URL,
-			},
-		}
+		apiClusters[index] = convertInternalClusterToExternal(cluster)
 	}
 	return apiClusters
 }
@@ -574,8 +569,8 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 	return vals, nil
 }
 
-// AssignSSHKeysToClusterReq defines HTTP request data for assignSSHKeyToCluster  endpoint
-// swagger:parameters assignSSHKeyToCluster
+// AssignSSHKeysToClusterReq defines HTTP request data for newAssignSSHKeyToCluster  endpoint
+// swagger:parameters newAssignSSHKeyToCluster
 type AssignSSHKeysToClusterReq struct {
 	DCReq
 	assignSSHKeysToClusterBodyReq
@@ -589,8 +584,8 @@ type assignSSHKeysToClusterBodyReq struct {
 	KeyName string `json:"KeyName"`
 }
 
-// ListSSHKeysAssignedToClusterReq defines HTTP request data for listSSHKeysAssignedToCluster endpoint
-// swagger:parameters listSSHKeysAssignedToCluster
+// ListSSHKeysAssignedToClusterReq defines HTTP request data for newListSSHKeysAssignedToCluster endpoint
+// swagger:parameters newListSSHKeysAssignedToCluster
 type ListSSHKeysAssignedToClusterReq struct {
 	DCReq
 	// in: path
@@ -599,8 +594,8 @@ type ListSSHKeysAssignedToClusterReq struct {
 	ClusterName string `json:"cluster_name"`
 }
 
-// DetachSSHKeysFromClusterReq defines HTTP request for detachSSHKeyFromCluster endpoint
-// swagger:parameters detachSSHKeyFromCluster
+// DetachSSHKeysFromClusterReq defines HTTP request for newDetachSSHKeyFromCluster endpoint
+// swagger:parameters newDetachSSHKeyFromCluster
 type DetachSSHKeysFromClusterReq struct {
 	DCReq
 	// in: path
@@ -670,7 +665,7 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 // NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
-// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth
+// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth newGetNodeForCluster
 type NewGetClusterReq struct {
 	DCReq
 	// in: path
@@ -681,10 +676,12 @@ type NewGetClusterReq struct {
 
 func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewGetClusterReq
-	clusterName, ok := mux.Vars(r)["cluster_name"]
-	if !ok {
-		return "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
 	}
+
+	req.ProjectName = projectName
 	req.ClusterName = clusterName
 
 	dcr, err := decodeDcReq(c, r)
@@ -692,12 +689,6 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
-
-	projectName, err := decodeProjectPathReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectName = projectName
 
 	return req, nil
 }

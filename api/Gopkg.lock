@@ -533,8 +533,10 @@
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/fake",
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1",
+    "pkg/client/clientset/versioned/typed/machines/v1alpha1/fake",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -1227,6 +1229,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b67d73c6611a0c31bb1e30cec8d8969ec24c3209f9d9cd006d15b44ace94ec10"
+  inputs-digest = "cebb8ea703c86b5a78cefa431cad4e1fc6731f848bd12df1f51c01e6ff0130f3"
   solver-name = "gps-cdcl"
   solver-version = 1

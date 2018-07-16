@@ -83,7 +83,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listVSphereNetworks())
 
 	//
-	// Project management
+	// Defines a set of HTTP endpoints for project resource
 	mux.Methods(http.MethodGet).
 		Path("/projects").
 		Handler(r.getProjects())
@@ -101,7 +101,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.deleteProject())
 
 	//
-	// SSH keys that belong to a project
+	// Defines a set of HTTP endpoints for SSH Keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").
 		Handler(r.newCreateSSHKey())
@@ -115,7 +115,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListSSHKeys())
 
 	//
-	// Clusters that belong to a project
+	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
 		Handler(r.newCreateCluster())
@@ -145,18 +145,28 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newGetClusterHealth())
 
 	//
-	// Defines set of endpoints that manipulate SSH keys of a cluster
+	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
-		Handler(r.assignSSHKeyToCluster())
+		Handler(r.newAssignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
-		Handler(r.listSSHKeysAssignedToCluster())
+		Handler(r.newListSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
-		Handler(r.detachSSHKeyFromCluster())
+		Handler(r.newDetachSSHKeyFromCluster())
+
+	//
+	// Defines a set of HTTP endpoints for nodes that belong to a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Handler(r.newGetNodeForCluster())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Handler(r.newCreateNodeForCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -833,7 +843,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project assignSSHKeyToCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newAssignSSHKeyToCluster
 //
 //     Assigns an existing ssh key to the given cluster
 //
@@ -848,7 +858,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) assignSSHKeyToCluster() http.Handler {
+func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -861,7 +871,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project listSSHKeysAssignedToCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newListSSHKeysAssignedToCluster
 //
 //     Lists ssh keys that are assigned to the cluster
 //     The returned collection is sorted by creation timestamp.
@@ -877,7 +887,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 //       200: NewSSHKeyList
 //       401: empty
 //       403: empty
-func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
+func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -890,7 +900,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project detachSSHKeyFromCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
 //
 //     Unassignes an ssh key from the given cluster
 //
@@ -905,7 +915,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) detachSSHKeyFromCluster() http.Handler {
+func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -914,6 +924,62 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 		)(detachSSHKeyFromCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
 		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newGetNodeForCluster
+//
+//     Gets a node that is assigned to the given cluster.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Node
+//       401: empty
+//       403: empty
+func (r Routing) newGetNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getNodeForCluster(r.projectProvider)),
+		decodeGetNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newCreateNodeForCluster
+//
+//     Creates a node that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Node
+//       401: empty
+//       403: empty
+func (r Routing) newCreateNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newCreateNodeForCluster(r.newSSHKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeForCluster,
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

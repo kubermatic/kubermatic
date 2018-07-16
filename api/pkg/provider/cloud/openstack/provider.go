@@ -281,7 +281,7 @@ func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuri
 	return securityGroups, nil
 }
 
-// GetFloatingIPPool lists all available Floating IP Pools for the given CloudSpec.DatacenterName
+// GetFloatingIPPool lists the Floating IP Pool for the given CloudSpec.DatacenterName
 func (os *Provider) GetFloatingIPPool(cloud *kubermaticv1.CloudSpec) (*NetworkWithExternalExt, error) {
 	netClient, err := os.getNetClient(cloud)
 	if err != nil {
