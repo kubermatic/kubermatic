@@ -384,6 +384,42 @@
       }
     },
     "/api/v1/projects/{project_id}": {
+      "get": {
+        "description": "Gets the project with the given ID",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Project",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "409": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "put": {
         "description": "Updates the given project",
         "produces": [
@@ -396,7 +432,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "Name",
             "name": "project_id",
             "in": "path",
             "required": true
