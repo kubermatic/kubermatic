@@ -30,7 +30,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			Name:             "scenario 1: a user doesn't have any projects, thus creating one succeeds",
 			Body:             `{"name":"my-first-project"}`,
 			RewriteProjectID: true,
-			ExpectedResponse: `{"id":"%s","name":"my-first-project","status":"Inactive"}`,
+			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive"}`,
 			HTTPStatus:       http.StatusCreated,
 		},
 
