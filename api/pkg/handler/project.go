@@ -34,8 +34,11 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		return apiv1.Project{
-			ID:     kubermaticProject.Name,
-			Name:   kubermaticProject.Spec.Name,
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                kubermaticProject.Name,
+				Name:              kubermaticProject.Spec.Name,
+				CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
+			},
 			Status: kubermaticProject.Status.Phase,
 		}, nil
 	}

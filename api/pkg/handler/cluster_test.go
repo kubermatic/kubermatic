@@ -171,7 +171,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	for _, existingKey := range testcase.ExistingSSHKeys {
 		kubermaticObj = append(kubermaticObj, existingKey)
 	}
-	ep, kubermaticClient, err := createTestEndpointAndGetClients(*testcase.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+	ep, kubermaticClient, err := createTestEndpointAndGetClients(*testcase.ExistingAPIUser, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}

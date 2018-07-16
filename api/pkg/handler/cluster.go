@@ -569,8 +569,8 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 	return vals, nil
 }
 
-// AssignSSHKeysToClusterReq defines HTTP request data for assignSSHKeyToCluster  endpoint
-// swagger:parameters assignSSHKeyToCluster
+// AssignSSHKeysToClusterReq defines HTTP request data for newAssignSSHKeyToCluster  endpoint
+// swagger:parameters newAssignSSHKeyToCluster
 type AssignSSHKeysToClusterReq struct {
 	DCReq
 	assignSSHKeysToClusterBodyReq
@@ -584,8 +584,8 @@ type assignSSHKeysToClusterBodyReq struct {
 	KeyName string `json:"KeyName"`
 }
 
-// ListSSHKeysAssignedToClusterReq defines HTTP request data for listSSHKeysAssignedToCluster endpoint
-// swagger:parameters listSSHKeysAssignedToCluster
+// ListSSHKeysAssignedToClusterReq defines HTTP request data for newListSSHKeysAssignedToCluster endpoint
+// swagger:parameters newListSSHKeysAssignedToCluster
 type ListSSHKeysAssignedToClusterReq struct {
 	DCReq
 	// in: path
@@ -594,8 +594,8 @@ type ListSSHKeysAssignedToClusterReq struct {
 	ClusterName string `json:"cluster_name"`
 }
 
-// DetachSSHKeysFromClusterReq defines HTTP request for detachSSHKeyFromCluster endpoint
-// swagger:parameters detachSSHKeyFromCluster
+// DetachSSHKeysFromClusterReq defines HTTP request for newDetachSSHKeyFromCluster endpoint
+// swagger:parameters newDetachSSHKeyFromCluster
 type DetachSSHKeysFromClusterReq struct {
 	DCReq
 	// in: path
@@ -665,7 +665,7 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 // NewGetClusterReq defines HTTP request for newDeleteCluster and newGetClusterKubeconfig endpoints
-// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth
+// swagger:parameters newGetCluster newDeleteCluster newGetClusterKubeconfig newGetClusterHealth newGetNodeForCluster
 type NewGetClusterReq struct {
 	DCReq
 	// in: path
@@ -676,10 +676,12 @@ type NewGetClusterReq struct {
 
 func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewGetClusterReq
-	clusterName, ok := mux.Vars(r)["cluster_name"]
-	if !ok {
-		return "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
 	}
+
+	req.ProjectName = projectName
 	req.ClusterName = clusterName
 
 	dcr, err := decodeDcReq(c, r)
@@ -687,12 +689,6 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
-
-	projectName, err := decodeProjectPathReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectName = projectName
 
 	return req, nil
 }
