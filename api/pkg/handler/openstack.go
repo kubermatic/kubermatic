@@ -14,9 +14,9 @@ import (
 func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		req, ok := request.(OpenstackSizeReq)
+		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSizeReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
 
 		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
@@ -126,6 +126,7 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
+				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
 		})
@@ -170,6 +171,7 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
+				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
 		})
@@ -191,7 +193,7 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 	}
 }
 
-func openstackFloatingIPEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func openstackFloatingIPPoolEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req, ok := request.(OpenstackReq)
@@ -209,11 +211,12 @@ func openstackFloatingIPEndpoint(providers provider.CloudRegistry) endpoint.Endp
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		floatingIPs, err := osProvider.GetFloatingIPs(&kubermaticv1.CloudSpec{
+		floatingIPPool, err := osProvider.GetFloatingIPPool(&kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
+				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
 		})
@@ -221,16 +224,11 @@ func openstackFloatingIPEndpoint(providers provider.CloudRegistry) endpoint.Endp
 			return nil, err
 		}
 
-		apiFloatingIPs := []apiv1.OpenstackFloatingIP{}
-		for _, floatingIP := range floatingIPs {
-			apiFloatingIP := apiv1.OpenstackFloatingIP{
-				ID:         floatingIP.ID,
-				FloatingIP: floatingIP.FloatingIP,
-			}
-
-			apiFloatingIPs = append(apiFloatingIPs, apiFloatingIP)
+		apiFloatingIPPool := apiv1.OpenstackFloatingIPPool{
+			ID:   floatingIPPool.ID,
+			Name: floatingIPPool.Name,
 		}
 
-		return apiFloatingIPs, nil
+		return apiFloatingIPPool, nil
 	}
 }

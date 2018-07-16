@@ -69,8 +69,8 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackSecurityGroups())
 
 	mux.Methods(http.MethodGet).
-		Path("/openstack/floatingips").
-		Handler(r.listOpenstackFloatingIPs())
+		Path("/openstack/floatingippool").
+		Handler(r.listOpenstackFloatingIPPool())
 
 	mux.Methods(http.MethodGet).
 		Path("/versions").
@@ -364,7 +364,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
-		decodeOpenstackSizeReq,
+		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -408,7 +408,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackTenantEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		decodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -458,22 +458,22 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/floatingips openstack listOpenstackFloatingIPs
+// swagger:route GET /api/v1/openstack/floatingippool openstack listOpenstackFloatingIPPool
 //
-// Lists floating ips from openstack
+// Lists floating ip pool from openstack
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: []OpenstackFloatingIP
-func (r Routing) listOpenstackFloatingIPs() http.Handler {
+//       200: OpenstackFloatingIPPool
+func (r Routing) listOpenstackFloatingIPPool() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackFloatingIPEndpoint(r.cloudProviders)),
+		)(openstackFloatingIPPoolEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

@@ -127,24 +127,21 @@
         }
       }
     },
-    "/api/v1/openstack/floatingips": {
+    "/api/v1/openstack/floatingippool": {
       "get": {
-        "description": "Lists floating ips from openstack",
+        "description": "Lists floating ip pool from openstack",
         "produces": [
           "application/json"
         ],
         "tags": [
           "openstack"
         ],
-        "operationId": "listOpenstackFloatingIPs",
+        "operationId": "listOpenstackFloatingIPPool",
         "responses": {
           "200": {
-            "description": "OpenstackFloatingIP",
+            "description": "OpenstackFloatingIPPool",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackFloatingIP"
-              }
+              "$ref": "#/definitions/OpenstackFloatingIPPool"
             }
           },
           "default": {
@@ -3887,19 +3884,19 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "OpenstackFloatingIP": {
+    "OpenstackFloatingIPPool": {
       "type": "object",
-      "title": "OpenstackFloatingIP is the object representing a openstack floating IP.",
+      "title": "OpenstackFloatingIPPool is the object representing a openstack floating IP.",
       "properties": {
-        "floating_ip_address": {
-          "description": "FloatingIP is the address of the floating IP.",
-          "type": "string",
-          "x-go-name": "FloatingIP"
-        },
         "id": {
           "description": "Id uniquely identifies the current floating IP",
           "type": "string",
           "x-go-name": "ID"
+        },
+        "name": {
+          "description": "FloatingIP is the address of the floating IP.",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
