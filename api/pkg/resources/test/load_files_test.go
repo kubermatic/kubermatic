@@ -23,7 +23,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -331,6 +330,20 @@ func TestLoadFiles(t *testing.T) {
 							ClusterIP: "192.0.2.13",
 						},
 					},
+					&v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      resources.DNSResolverServiceName,
+							Namespace: cluster.Status.NamespaceName,
+						},
+						Spec: v1.ServiceSpec{
+							Ports: []v1.ServicePort{
+								{
+									NodePort: 30003,
+								},
+							},
+							ClusterIP: "192.0.2.14",
+						},
+					},
 				)
 
 				var group wait.Group
@@ -380,19 +393,14 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				serviceCreators := map[string]resources.ServiceCreator{
-					fmt.Sprintf("service-%s-%s-apiserver", prov, ver.Version.String()):          apiserver.Service,
-					fmt.Sprintf("service-%s-%s-apiserver-external", prov, ver.Version.String()): apiserver.ExternalService,
-					fmt.Sprintf("service-%s-%s-openvpn", prov, ver.Version.String()):            openvpn.Service,
-				}
-
-				for fixture, create := range serviceCreators {
+				for _, create := range clustercontroller.GetServiceCreators() {
 					res, err := create(data, nil)
+					fixturePath := fmt.Sprintf("service-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					if err != nil {
-						t.Fatalf("failed to create Service for %s: %v", fixture, err)
+						t.Fatalf("failed to create service for %s: %v", fixturePath, err)
 					}
 
-					checkTestResult(t, fixture, res)
+					checkTestResult(t, fixturePath, res)
 				}
 			})
 		}

@@ -1,0 +1,21 @@
+metadata:
+  creationTimestamp: null
+  name: etcd-client
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  ports:
+  - name: client
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  selector:
+    app: etcd
+    cluster: de-test-01
+status:
+  loadBalancer: {}
