@@ -90,11 +90,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
 	}
 
-	requestedMemory, err := resource.ParseQuantity("70Mi")
+	requestedMemory, err := resource.ParseQuantity("20Mi")
 	if err != nil {
 		return nil, err
 	}
-	requestedCPU, err := resource.ParseQuantity("100m")
+	requestedCPU, err := resource.ParseQuantity("5m")
 	if err != nil {
 		return nil, err
 	}
