@@ -1,8 +1,6 @@
 package ssh
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -10,52 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/uuid"
 	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 )
-
-const (
-	// DefaultUserLabel is the name of the user label on the ssh key cr
-	DefaultUserLabel = "kubermatic-user-hash"
-)
-
-// UserListLabelSelector returns a label selector for the given user id
-func UserListLabelSelector(userID string) (labels.Selector, error) {
-	req, err := labels.NewRequirement(DefaultUserLabel, selection.Equals, []string{UserToLabel(userID)})
-	if err != nil {
-		return nil, err
-	}
-	return labels.NewSelector().Add(*req), nil
-}
-
-// UserToLabel encodes an arbitrary user string into a Kubernetes label value
-// compatible value. This is never decoded again. It shall be without
-// collisions, i.e. no hash. This is a one-way-function!
-// When the user is to long it will be hashed.
-// This is done for backwards compatibility!
-func UserToLabel(user string) string {
-	if user == "" {
-		return user
-	}
-	// This part has to stay for backwards capability.
-	// It we need this for old clusters which use an auth provider with useres, which will encode
-	// in less then 63 chars.
-	b := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(user))
-	if len(b) <= 63 {
-		return b
-	}
-
-	// This is the new way.
-	// We can use a weak hash because we trust the authority, which generates the name.
-	// This will always yield a string which makes the user identifiable and is less than 63 chars
-	// due to the usage of a hash function.
-	// Potentially we could have collisions, but this is not avoidable, due to the fact that the
-	// set of our domain is smaller than our codomain.
-	// It's trivial to see that we can't reverse this due to the fact that our function is not injective. q.e.d
-	sh := sha1.New()
-	fmt.Fprint(sh, user)
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(sh.Sum(nil))
-}
 
 // UserSSHKeyBuilder is builder to create ssh key structs including validation
 type UserSSHKeyBuilder struct {
@@ -115,8 +68,7 @@ func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	keyName := fmt.Sprintf("key-%s-%s", strings.NewReplacer(":", "").Replace(sshKeyHash), uuid.ShortUID(4))
 	userSSHKey := &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyName,
-			Labels: map[string]string{DefaultUserLabel: UserToLabel(sb.owner)},
+			Name: keyName,
 		},
 		Spec: kubermaticv1.SSHKeySpec{
 			Owner:       sb.owner,
