@@ -374,7 +374,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
-		decodeOpenstackSizeReq,
+		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -418,7 +418,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackTenantEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		decodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
