@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -237,15 +238,21 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
-	creators := []resources.ServiceCreator{
+// GetServiceCreators returns all service creators that are currently in use
+func GetServiceCreators() []resources.ServiceCreator {
+	return []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
 		prometheus.Service,
 		openvpn.Service,
 		etcd.DiscoveryService,
 		etcd.ClientService,
+		dns.Service,
 	}
+}
+
+func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
+	creators := GetServiceCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -467,6 +474,7 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 		apiserver.Deployment,
 		scheduler.Deployment,
 		controllermanager.Deployment,
+		dns.Deployment,
 	}
 }
 
@@ -576,6 +584,7 @@ func GetConfigMapCreators() []resources.ConfigMapCreator {
 		cloudconfig.ConfigMap,
 		openvpn.ConfigMap,
 		prometheus.ConfigMap,
+		dns.ConfigMap,
 	}
 }
 

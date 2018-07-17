@@ -35,6 +35,12 @@ const (
 	MachineControllerDeploymentName = "machine-controller"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
+	//DNSResolverDeploymentName is the name of the dns resolver deployment
+	DNSResolverDeploymentName = "dns-resolver"
+	//DNSResolverConfigMapName is the name of the dns resolvers configmap
+	DNSResolverConfigMapName = "dns-resolver"
+	//DNSResolverServiceName is the name of the dns resolvers service
+	DNSResolverServiceName = "dns-resolver"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -313,24 +319,24 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
 	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := UserClusterDNSResolverIP(cluster)
+	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
 	if err != nil {
 		return corev1.DNSNone, nil, err
 	}
-	if len(cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", cluster.Name)
+	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
 	}
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
-			cluster.Spec.ClusterNetwork.DNSDomain,
+			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			d.Cluster.Spec.ClusterNetwork.DNSDomain,
 		},
 		Options: []corev1.PodDNSConfigOption{
 			{

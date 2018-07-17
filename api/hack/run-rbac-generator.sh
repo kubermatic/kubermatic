@@ -4,6 +4,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+make -C $(dirname $0)/.. rbac-generator
+
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api

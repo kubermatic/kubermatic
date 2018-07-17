@@ -15,6 +15,83 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+func TestGetProjectEndpoint(t *testing.T) {
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ProjectToSync          string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ExistingProject        *kubermaticapiv1.Project
+		ExistingKubermaticUser *kubermaticapiv1.User
+		ExistingAPIUser        apiv1.User
+	}{
+		{
+			Name:             "scenario 1: get an existing project assigned to the given user",
+			Body:             `{"name":"my-first-project"}`,
+			ProjectToSync:    `myProjectInternalName`,
+			ExpectedResponse: `{"id":"myProjectInternalName","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":""}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingProject: &kubermaticapiv1.Project{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "myProjectInternalName",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.io/v1",
+							Kind:       "User",
+							UID:        "",
+							Name:       "my-first-project",
+						},
+					},
+				},
+				Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
+			},
+			ExistingKubermaticUser: &kubermaticapiv1.User{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kubermaticapiv1.UserSpec{
+					Name:  "John",
+					Email: testEmail,
+					Projects: []kubermaticapiv1.ProjectGroup{
+						{
+							Group: "owners-myProjectInternalName",
+							Name:  "myProjectInternalName",
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUsername,
+				Email: testEmail,
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			if tc.ExistingProject != nil {
+				kubermaticObj = []runtime.Object{tc.ExistingProject}
+			}
+			kubermaticObj = append(kubermaticObj, runtime.Object(tc.ExistingKubermaticUser))
+			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			compareWithResult(t, res, tc.ExpectedResponse)
+
+		})
+	}
+}
+
 func TestCreateProjectEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
@@ -24,14 +101,18 @@ func TestCreateProjectEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ExistingProject        *kubermaticapiv1.Project
 		ExistingKubermaticUser *kubermaticapiv1.User
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        apiv1.User
 	}{
 		{
 			Name:             "scenario 1: a user doesn't have any projects, thus creating one succeeds",
 			Body:             `{"name":"my-first-project"}`,
 			RewriteProjectID: true,
-			ExpectedResponse: `{"id":"%s","name":"my-first-project","status":"Inactive"}`,
+			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive"}`,
 			HTTPStatus:       http.StatusCreated,
+			ExistingAPIUser: apiv1.User{
+				ID:    testUsername,
+				Email: testEmail,
+			},
 		},
 
 		{
@@ -56,7 +137,8 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -65,7 +147,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 					},
 				},
 			},
-			ExistingAPIUser: &apiv1.User{
+			ExistingAPIUser: apiv1.User{
 				ID:    testUsername,
 				Email: testEmail,
 			},
@@ -80,7 +162,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			if tc.ExistingProject != nil {
 				kubermaticObj = []runtime.Object{tc.ExistingProject}
 			}
-			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, kubermaticObj, nil, nil)
+			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -184,8 +185,8 @@ func decodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// OpenstackSizeReq represent a request for openstack sizes
-type OpenstackSizeReq struct {
+// OpenstackReq represent a request for openstack
+type OpenstackReq struct {
 	Username       string
 	Password       string
 	Tenant         string
@@ -193,8 +194,8 @@ type OpenstackSizeReq struct {
 	DatacenterName string
 }
 
-func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackSizeReq
+func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackReq
 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
@@ -205,16 +206,16 @@ func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// OpenstackReq represent a request for openstack tenants and networks
-type OpenstackReq struct {
+// OpenstackTenantReq represent a request for openstack tenants
+type OpenstackTenantReq struct {
 	Username       string
 	Password       string
 	Domain         string
 	DatacenterName string
 }
 
-func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackReq
+func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackTenantReq
 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
@@ -231,20 +232,6 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 	}
 
 	return req, nil
-}
-
-// CreateNodesReq represent a request for specific data to create a node
-// swagger:parameters createClusterNodes
-type CreateNodesReq struct {
-	GetClusterReq
-	// in: body
-	Body CreateNodesReqBody
-}
-
-// CreateNodesReqBody represents the request body of a create nodes request
-type CreateNodesReqBody struct {
-	Instances int            `json:"instances"`
-	Spec      apiv1.NodeSpec `json:"spec"`
 }
 
 // NodeReq represent a request for node specific data
