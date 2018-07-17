@@ -218,7 +218,11 @@ func (c *Controller) handleErr(err error, key interface{}) {
 func (c *Controller) sync(key string) error {
 	clusterFromCache, err := c.clusterLister.Get(key)
 	if err != nil {
-		return fmt.Errorf("failed to get cluster for the key: %s: %v", key, err)
+		if kerrors.IsNotFound(err) {
+			glog.V(2).Infof("cluster '%s' in work queue no longer exists", key)
+			return nil
+		}
+		return fmt.Errorf("failed to get cluster from lister: %v", err)
 	}
 
 	cluster := clusterFromCache.DeepCopy()
@@ -228,8 +232,8 @@ func (c *Controller) sync(key string) error {
 	}
 
 	// Reconciling
-	if !cluster.Status.Health.Apiserver {
-		glog.V(8).Infof("skipping addon sync for cluster %s as the apiserver is not healty yet", key)
+	if cluster.Status.NamespaceName == "" {
+		glog.V(8).Infof("skipping addon sync for cluster %s as no namespace has been created yet", key)
 		return nil
 	}
 
