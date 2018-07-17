@@ -341,9 +341,21 @@
           "project"
         ],
         "summary": "Lists projects that an authenticated user is a member of.",
-        "operationId": "getProjects",
+        "operationId": "listProjects",
         "responses": {
-          "501": {
+          "200": {
+            "description": "Project",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Project"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "409": {
             "$ref": "#/responses/empty"
           },
           "default": {
@@ -403,7 +415,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "Project",
             "schema": {
               "$ref": "#/definitions/Project"

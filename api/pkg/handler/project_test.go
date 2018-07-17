@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,7 +14,172 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
+
+func TestListProjectEndpoint(t *testing.T) {
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       []apiv1.Project
+		HTTPStatus             int
+		ExistingProjects       []*kubermaticapiv1.Project
+		ExistingKubermaticUser *kubermaticapiv1.User
+		ExistingAPIUser        apiv1.User
+	}{
+		{
+			Name:       "scenario 1: list projects that the user is member of",
+			Body:       ``,
+			HTTPStatus: http.StatusOK,
+			ExistingProjects: []*kubermaticapiv1.Project{
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "myProjectInternalName",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "my-first-project",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
+				},
+
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "mySecondProjectInternalName",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "my-second-project",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
+				},
+
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "myThirdProjectInternalName",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "my-third-project",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
+				},
+			},
+			ExistingKubermaticUser: &kubermaticapiv1.User{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kubermaticapiv1.UserSpec{
+					Name:  "John",
+					Email: testEmail,
+					Projects: []kubermaticapiv1.ProjectGroup{
+						{
+							Group: "owners-myProjectInternalName",
+							Name:  "myProjectInternalName",
+						},
+						{
+							Group: "editors-myThirdProjectInternalName",
+							Name:  "myThirdProjectInternalName",
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUsername,
+				Email: testEmail,
+			},
+			ExpectedResponse: []apiv1.Project{
+				apiv1.Project{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "myProjectInternalName",
+						Name: "my-first-project",
+					},
+				},
+
+				apiv1.Project{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "myThirdProjectInternalName",
+						Name: "my-third-project",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/api/v1/projects", strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			for _, existingProject := range tc.ExistingProjects {
+				kubermaticObj = append(kubermaticObj, existingProject)
+			}
+			kubermaticObj = append(kubermaticObj, runtime.Object(tc.ExistingKubermaticUser))
+			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			// validate the response, we actually need to compare the output against ExpectedResponse
+			// note that the output contains the list which is not stable (sorted)
+			{
+				projectsFromResponse := []apiv1.Project{}
+				rawBody, err := ioutil.ReadAll(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				err = json.Unmarshal(rawBody, &projectsFromResponse)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(projectsFromResponse) != len(tc.ExpectedResponse) {
+					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(projectsFromResponse))
+				}
+
+				areProjectsEqual := func(actual, expected apiv1.Project) bool {
+					return actual.Name == expected.Name &&
+						actual.ID == expected.ID &&
+						actual.DeletionTimestamp == expected.DeletionTimestamp &&
+						actual.CreationTimestamp == expected.CreationTimestamp &&
+						actual.Status == expected.Status
+				}
+
+				for _, expectedProject := range tc.ExpectedResponse {
+					found := false
+					for _, actualProject := range projectsFromResponse {
+						if actualProject.ID == expectedProject.ID {
+							if !areProjectsEqual(actualProject, expectedProject) {
+								t.Fatalf("actual project != expected project, diff = %v", diff.ObjectDiff(actualProject, expectedProject))
+							}
+							found = true
+						}
+					}
+					if !found {
+						t.Fatalf("the project with the name = %s was not found in the returned output", expectedProject.Name)
+					}
+				}
+			}
+		})
+	}
+}
 
 func TestGetProjectEndpoint(t *testing.T) {
 	testcases := []struct {
@@ -28,7 +194,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 	}{
 		{
 			Name:             "scenario 1: get an existing project assigned to the given user",
-			Body:             `{"name":"my-first-project"}`,
+			Body:             ``,
 			ProjectToSync:    `myProjectInternalName`,
 			ExpectedResponse: `{"id":"myProjectInternalName","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":""}`,
 			HTTPStatus:       http.StatusOK,
