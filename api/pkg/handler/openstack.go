@@ -14,9 +14,9 @@ import (
 func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		req, ok := request.(OpenstackSizeReq)
+		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSizeReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
 
 		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
@@ -126,6 +126,7 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
+				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
 		})
@@ -136,8 +137,9 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 		apiNetworks := []apiv1.OpenstackNetwork{}
 		for _, network := range networks {
 			apiNetwork := apiv1.OpenstackNetwork{
-				Name: network.Name,
-				ID:   network.ID,
+				Name:     network.Name,
+				ID:       network.ID,
+				External: network.External,
 			}
 
 			apiNetworks = append(apiNetworks, apiNetwork)
@@ -170,6 +172,7 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
 				Password: req.Password,
+				Tenant:   req.Tenant,
 				Domain:   req.Domain,
 			},
 		})
