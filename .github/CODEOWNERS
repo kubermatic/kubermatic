@@ -13,6 +13,9 @@
 # vSphere
 /api/pkg/provider/cloud/vsphere @alvaroaleman
 
+# Openstack
+/api/pkg/provider/cloud/openstack @alvaroaleman
+
 # etcd Backups
 /api/pkg/storeuploader @alvaroaleman
 /api/pkg/controller/backup @alvaroaleman
