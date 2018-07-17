@@ -125,7 +125,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			for _, existingMachine := range tc.ExistingMachines {
 				machineObj = append(machineObj, existingMachine)
 			}
-			ep, _, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, kubernetesObj, machineObj, kubermaticObj, nil, nil)
+			ep, _, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,9 @@ import (
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubernetesclient "k8s.io/client-go/kubernetes"
@@ -32,8 +35,11 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
-	datacenters := buildDatacenterMeta()
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
+	datacenters := dc
+	if datacenters == nil {
+		datacenters = buildDatacenterMeta()
+	}
 	cloudProviders := cloud.Providers(datacenters)
 
 	authenticator := NewFakeAuthenticator(user)
@@ -109,7 +115,7 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, machineObject
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, nil, kubermaticObjects, versions, updates)
+	router, _, err := createTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates)
 	return router, err
 }
 
@@ -176,6 +182,28 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 
 	if r != b {
 		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
+	}
+}
+
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
 	}
 }
 

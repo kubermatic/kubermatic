@@ -189,8 +189,8 @@ func decodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error
 type OpenstackReq struct {
 	Username       string
 	Password       string
-	Tenant         string
 	Domain         string
+	Tenant         string
 	DatacenterName string
 }
 
@@ -203,6 +203,29 @@ func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 
+	return req, nil
+}
+
+// OpenstackSubnetReq represent a request for openstack subnets
+// swagger:parameters listOpenstackSubnets
+type OpenstackSubnetReq struct {
+	OpenstackReq
+	// in: query
+	NetworkID string
+}
+
+func decodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Domain = r.Header.Get("Domain")
+	req.Tenant = r.Header.Get("Tenant")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
 	return req, nil
 }
 
