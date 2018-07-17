@@ -62,9 +62,9 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 
 func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(OpenstackReq)
+		req, ok := request.(OpenstackTenantReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
 
 		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
@@ -191,5 +191,47 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 		}
 
 		return apiSecurityGroups, nil
+	}
+}
+
+func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(OpenstackSubnetReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
+		}
+
+		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
+		if !ok {
+			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
+		}
+
+		osProvider, ok := osProviderInterface.(*openstack.Provider)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+		}
+
+		subnets, err := osProvider.GetSubnets(&kubermaticv1.CloudSpec{
+			DatacenterName: req.DatacenterName,
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Username: req.Username,
+				Password: req.Password,
+				Domain:   req.Domain,
+				Tenant:   req.Tenant,
+			},
+		}, req.NetworkID)
+		if err != nil {
+			return nil, err
+		}
+
+		apiSubnetIDs := []apiv1.OpenstackSubnet{}
+		for _, subnet := range subnets {
+			apiSubnetIDs = append(apiSubnetIDs, apiv1.OpenstackSubnet{
+				ID:   subnet.ID,
+				Name: subnet.Name,
+			})
+		}
+
+		return apiSubnetIDs, nil
 	}
 }

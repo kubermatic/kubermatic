@@ -210,6 +210,15 @@ type OpenstackSize struct {
 	IsPublic bool `json:"isPublic"`
 }
 
+// OpenstackSubnet is the object representing a openstack subnet.
+// swagger:model OpenstackSubnet
+type OpenstackSubnet struct {
+	// Id uniquely identifies the subnet
+	ID string `json:"id"`
+	// Name is human-readable name for the subnet
+	Name string `json:"name"`
+}
+
 // OpenstackTenant is the object representing a openstack tenant.
 // swagger:model OpenstackTenant
 type OpenstackTenant struct {

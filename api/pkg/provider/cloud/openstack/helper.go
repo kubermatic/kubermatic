@@ -351,3 +351,18 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 
 	return allProjects, nil
 }
+
+func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkID string) ([]ossubnets.Subnet, error) {
+	var allSubnets []ossubnets.Subnet
+
+	allPages, err := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID}).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	if allSubnets, err = ossubnets.ExtractSubnets(allPages); err != nil {
+		return nil, err
+	}
+
+	return allSubnets, nil
+}

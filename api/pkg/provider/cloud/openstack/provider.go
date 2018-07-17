@@ -9,6 +9,7 @@ import (
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
+	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -314,4 +315,19 @@ func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Se
 	}
 
 	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+}
+
+// GetSubnets list all available subnet ids fot a given CloudSpec
+func (os *Provider) GetSubnets(cloud *kubermaticv1.CloudSpec, networkID string) ([]ossubnets.Subnet, error) {
+	serviceClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	subnets, err := getSubnetForNetwork(serviceClient, networkID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subnets, nil
 }
