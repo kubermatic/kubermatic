@@ -47,9 +47,20 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-func getProjectsEndpoint() endpoint.Endpoint {
+func listProjectsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return []apiv1.Project{}, errors.NewNotImplemented()
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+
+		projects := []*apiv1.Project{}
+		for _, pg := range user.Spec.Projects {
+			projectInternal, err := projectProvider.Get(user, pg.Name)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			projects = append(projects, convertInternalProjectToExternal(projectInternal))
+		}
+
+		return projects, nil
 	}
 }
 
