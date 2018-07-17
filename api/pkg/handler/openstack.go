@@ -62,9 +62,9 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 
 func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(OpenstackReq)
+		req, ok := request.(OpenstackTenantReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
 
 		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
@@ -198,7 +198,7 @@ func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
 
 		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
