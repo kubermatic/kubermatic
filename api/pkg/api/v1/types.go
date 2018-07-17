@@ -171,8 +171,7 @@ type User struct {
 // Project is a top-level container for a set of resources
 // swagger:model Project
 type Project struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
+	NewObjectMeta
 	Status string `json:"status"`
 }
 

@@ -84,6 +84,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects").
 		Handler(r.getProjects())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}").
+		Handler(r.getProject())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects").
 		Handler(r.createProject())
@@ -556,6 +560,30 @@ func (r Routing) getProjects() http.Handler {
 			r.userSaverMiddleware(),
 		)(getProjectsEndpoint()),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id} project getProject
+//
+//     Gets the project with the given ID
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Project
+//       401: empty
+//       409: empty
+func (r Routing) getProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getProjectEndpoint(r.projectProvider)),
+		decodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
