@@ -281,27 +281,6 @@ func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuri
 	return securityGroups, nil
 }
 
-// GetFloatingIPPool lists the Floating IP Pool for the given CloudSpec.DatacenterName
-func (os *Provider) GetFloatingIPPool(cloud *kubermaticv1.CloudSpec) (*NetworkWithExternalExt, error) {
-	netClient, err := os.getNetClient(cloud)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %v", err)
-	}
-
-	dc, found := os.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
-	}
-
-	// the external network is the floating ip pool
-	floatingIPPool, err := getExternalNetwork(netClient)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get Floating IP Pool: %v", err)
-	}
-
-	return floatingIPPool, nil
-}
-
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {

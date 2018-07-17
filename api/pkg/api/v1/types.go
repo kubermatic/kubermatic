@@ -227,6 +227,8 @@ type OpenstackNetwork struct {
 	ID string `json:"id"`
 	// Name is the name of the network
 	Name string `json:"name"`
+	// External set if network is the external network
+	External bool `json:"external,omitempty"`
 }
 
 // OpenstackSecurityGroup is the object representing a openstack security group.
@@ -235,15 +237,6 @@ type OpenstackSecurityGroup struct {
 	// Id uniquely identifies the current security group
 	ID string `json:"id"`
 	// Name is the name of the security group
-	Name string `json:"name"`
-}
-
-// OpenstackFloatingIPPool is the object representing a openstack floating IP.
-// swagger:model OpenstackFloatingIPPool
-type OpenstackFloatingIPPool struct {
-	// Id uniquely identifies the current floating IP
-	ID string `json:"id"`
-	// FloatingIP is the address of the floating IP.
 	Name string `json:"name"`
 }
 

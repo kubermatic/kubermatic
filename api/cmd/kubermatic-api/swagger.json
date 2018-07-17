@@ -127,29 +127,6 @@
         }
       }
     },
-    "/api/v1/openstack/floatingippool": {
-      "get": {
-        "description": "Lists floating ip pool from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackFloatingIPPool",
-        "responses": {
-          "200": {
-            "description": "OpenstackFloatingIPPool",
-            "schema": {
-              "$ref": "#/definitions/OpenstackFloatingIPPool"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -3580,27 +3557,15 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "OpenstackFloatingIPPool": {
-      "type": "object",
-      "title": "OpenstackFloatingIPPool is the object representing a openstack floating IP.",
-      "properties": {
-        "id": {
-          "description": "Id uniquely identifies the current floating IP",
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "name": {
-          "description": "FloatingIP is the address of the floating IP.",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "OpenstackNetwork": {
       "type": "object",
       "title": "OpenstackNetwork is the object representing a openstack network.",
       "properties": {
+        "external": {
+          "description": "External set if network is the external network",
+          "type": "boolean",
+          "x-go-name": "External"
+        },
         "id": {
           "description": "Id uniquely identifies the current network",
           "type": "string",

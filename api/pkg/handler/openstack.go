@@ -137,8 +137,9 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 		apiNetworks := []apiv1.OpenstackNetwork{}
 		for _, network := range networks {
 			apiNetwork := apiv1.OpenstackNetwork{
-				Name: network.Name,
-				ID:   network.ID,
+				Name:     network.Name,
+				ID:       network.ID,
+				External: network.External,
 			}
 
 			apiNetworks = append(apiNetworks, apiNetwork)
@@ -190,45 +191,5 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 		}
 
 		return apiSecurityGroups, nil
-	}
-}
-
-func openstackFloatingIPPoolEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
-		req, ok := request.(OpenstackReq)
-		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
-		}
-
-		osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-		if !ok {
-			return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-		}
-
-		osProvider, ok := osProviderInterface.(*openstack.Provider)
-		if !ok {
-			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
-		}
-
-		floatingIPPool, err := osProvider.GetFloatingIPPool(&kubermaticv1.CloudSpec{
-			DatacenterName: req.DatacenterName,
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Username: req.Username,
-				Password: req.Password,
-				Tenant:   req.Tenant,
-				Domain:   req.Domain,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		apiFloatingIPPool := apiv1.OpenstackFloatingIPPool{
-			ID:   floatingIPPool.ID,
-			Name: floatingIPPool.Name,
-		}
-
-		return apiFloatingIPPool, nil
 	}
 }
