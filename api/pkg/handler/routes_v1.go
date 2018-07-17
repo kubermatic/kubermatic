@@ -82,7 +82,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	// Defines a set of HTTP endpoints for project resource
 	mux.Methods(http.MethodGet).
 		Path("/projects").
-		Handler(r.getProjects())
+		Handler(r.listProjects())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}").
@@ -543,7 +543,7 @@ func (r Routing) getMasterVersions() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects project getProjects
+// swagger:route GET /api/v1/projects project listProjects
 //
 //     Lists projects that an authenticated user is a member of.
 //
@@ -552,13 +552,15 @@ func (r Routing) getMasterVersions() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       501: empty
-func (r Routing) getProjects() http.Handler {
+//       200: []Project
+//       401: empty
+//       409: empty
+func (r Routing) listProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(getProjectsEndpoint()),
+		)(listProjectsEndpoint(r.projectProvider)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -574,7 +576,7 @@ func (r Routing) getProjects() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Project
+//       200: Project
 //       401: empty
 //       409: empty
 func (r Routing) getProject() http.Handler {
