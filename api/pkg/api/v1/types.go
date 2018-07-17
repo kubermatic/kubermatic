@@ -226,6 +226,8 @@ type OpenstackNetwork struct {
 	ID string `json:"id"`
 	// Name is the name of the network
 	Name string `json:"name"`
+	// External set if network is the external network
+	External bool `json:"external,omitempty"`
 }
 
 // OpenstackSecurityGroup is the object representing a openstack security group.
