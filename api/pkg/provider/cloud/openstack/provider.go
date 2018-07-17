@@ -324,7 +324,7 @@ func (os *Provider) GetSubnets(cloud *kubermaticv1.CloudSpec, networkID string) 
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	subnets, err := getSubnetByID(serviceClient, networkID)
+	subnets, err := getSubnetForNetwork(serviceClient, networkID)
 	if err != nil {
 		return nil, err
 	}
