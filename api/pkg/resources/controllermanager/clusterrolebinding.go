@@ -23,9 +23,10 @@ func AdminClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.Clus
 		APIGroup: "rbac.authorization.k8s.io",
 	}
 	crb.Subjects = []rbacv1.Subject{
-		rbacv1.Subject{
-			Kind: "User",
-			Name: resources.ControllerManagerCertUsername,
+		{
+			Kind:     "User",
+			Name:     resources.ControllerManagerCertUsername,
+			APIGroup: rbacv1.GroupName,
 		},
 	}
 	return crb, nil

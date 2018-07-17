@@ -14,8 +14,9 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createClusterRoleBinding(existing, "controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
-			Kind: "User",
-			Name: resources.MachineControllerCertUsername,
+			Kind:     "User",
+			Name:     resources.MachineControllerCertUsername,
+			APIGroup: rbacv1.GroupName,
 		})
 }
 
@@ -24,8 +25,9 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
-			Kind: "Group",
-			Name: "system:bootstrappers:machine-controller:default-node-token",
+			Kind:     "Group",
+			Name:     "system:bootstrappers:machine-controller:default-node-token",
+			APIGroup: rbacv1.GroupName,
 		})
 }
 
@@ -34,8 +36,9 @@ func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *
 func NodeSignerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
-			Kind: "Group",
-			Name: "system:bootstrappers:machine-controller:default-node-token",
+			Kind:     "Group",
+			Name:     "system:bootstrappers:machine-controller:default-node-token",
+			APIGroup: rbacv1.GroupName,
 		})
 }
 

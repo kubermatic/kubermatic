@@ -41,13 +41,14 @@ func createRoleBinding(existing *rbacv1.RoleBinding, namespace string) (*rbacv1.
 	rb.RoleRef = rbacv1.RoleRef{
 		Name:     resources.MachineControllerRoleName,
 		Kind:     "Role",
-		APIGroup: "rbac.authorization.k8s.io",
+		APIGroup: rbacv1.GroupName,
 	}
 	rb.Subjects = []rbacv1.Subject{
 		{
 			Kind:      "User",
 			Name:      resources.MachineControllerCertUsername,
 			Namespace: rb.Namespace,
+			APIGroup:  rbacv1.GroupName,
 		},
 	}
 	return rb, nil
