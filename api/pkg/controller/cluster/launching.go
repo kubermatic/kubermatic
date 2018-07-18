@@ -120,11 +120,11 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 				RoleRef: v1beta1.RoleRef{
 					Name:     name,
 					Kind:     "Role",
-					APIGroup: "rbac.authorization.k8s.io",
+					APIGroup: v1beta1.GroupName,
 				},
 				Subjects: []v1beta1.Subject{
 					{
-						APIGroup: "rbac.authorization.k8s.io",
+						APIGroup: v1beta1.GroupName,
 						Kind:     v1beta1.UserKind,
 						Name:     "system:anonymous",
 					},
