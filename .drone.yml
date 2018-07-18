@@ -38,7 +38,7 @@ pipeline:
     image: docker:dind
     pull: true
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - /var/run/docker.sock:/var/run/docker.sock
   3-verify-swagger-spec:
     commands:
     - cd api
@@ -95,6 +95,23 @@ pipeline:
     secrets:
     - docker_username
     - docker_password
+    tags:
+    - ${DRONE_TAG}
+    - latest
+    when:
+      event:
+      - tag
+  6-kubermatic-e2e-docker-push:
+    context: api
+    dockerfile: api/Dockerfile.e2e
+    image: plugins/docker
+    pull: true
+    repo: quay.io/kubermatic/e2e
+    secrets:
+    - source: docker_quay_username
+      target: docker_username
+    - source: docker_quay_password
+      target: docker_password
     tags:
     - ${DRONE_TAG}
     - latest
@@ -274,7 +291,25 @@ pipeline:
     - values
     when:
       branch: master
-  10-slack:
+  10-e2e:
+    commands:
+    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
+    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
+    - echo "$NODE_YAML" > /tmp/node.yaml
+    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
+      -kubermatic-node=/tmp/node.yaml
+    image: quay.io/kubermatic/e2e
+    pull: true
+    secrets:
+    - source: kubeconfig_dev
+      target: kubeconfig
+    - source: aws_1.10.5_cluster_yaml
+      target: cluster_yaml
+    - source: aws_1.10.5_node_yaml
+      target: node_yaml
+    when:
+      branch: master
+  11-slack:
     channel: dev
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -288,7 +323,7 @@ pipeline:
       branch: master
       status:
       - success
-  10-slack-failure:
+  11-slack-failure:
     author_recipient_mapping:
     - alvaroaleman=alvaro
     - guusvw=guus
