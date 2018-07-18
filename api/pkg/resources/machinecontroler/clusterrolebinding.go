@@ -56,7 +56,7 @@ func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cR
 	crb.RoleRef = rbacv1.RoleRef{
 		Name:     cRoleRef,
 		Kind:     "ClusterRole",
-		APIGroup: "rbac.authorization.k8s.io",
+		APIGroup: rbacv1.GroupName,
 	}
 	crb.Subjects = []rbacv1.Subject{subj}
 	return crb, nil

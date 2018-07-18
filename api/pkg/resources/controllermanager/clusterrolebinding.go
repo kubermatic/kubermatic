@@ -20,7 +20,7 @@ func AdminClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.Clus
 	crb.RoleRef = rbacv1.RoleRef{
 		Name:     "cluster-admin",
 		Kind:     "ClusterRole",
-		APIGroup: "rbac.authorization.k8s.io",
+		APIGroup: rbacv1.GroupName,
 	}
 	crb.Subjects = []rbacv1.Subject{
 		{
