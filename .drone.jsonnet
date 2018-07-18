@@ -203,7 +203,7 @@ local drone = import 'drone/drone.libsonnet';
         'echo "$$NODE_YAML" > /manifests/node.yaml',
         '/kubermatic-e2e',
       ],
-    } + whenBranchMaster,
+    } + { when: { event: ['pull_request'] } },
 
     // Slack
     '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {

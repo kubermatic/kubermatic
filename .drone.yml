@@ -308,7 +308,8 @@ pipeline:
     - source: aws_1.10.5_node_yaml
       target: node_yaml
     when:
-      branch: master
+      event:
+      - pull_request
   11-slack:
     channel: dev
     group: slack
