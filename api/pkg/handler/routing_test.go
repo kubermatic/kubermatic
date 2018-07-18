@@ -36,7 +36,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -112,7 +112,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	r.RegisterV1(v1Router)
 	r.RegisterV3(v3Router)
 
-	return mainRouter, kubermaticClient, nil
+	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
@@ -277,4 +277,9 @@ func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster)
 
 func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kubernetesclient.Interface, error) {
 	return f.fakeKubernetesClient, nil
+}
+
+type clientsSets struct {
+	fakeKubermaticClient *kubermaticfakeclentset.Clientset
+	fakeMachineClient    *fakemachineclientset.Clientset
 }

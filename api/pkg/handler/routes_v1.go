@@ -175,6 +175,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
 		Handler(r.newListNodesForCluster())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Handler(r.newDeleteNodeForCluster())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -1039,6 +1043,31 @@ func (r Routing) newListNodesForCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(newListNodesForCluster(r.projectProvider)),
 		decodeListNodesForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newDeleteNodeForCluster
+//
+//    Deletes the given node that belongs to the cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) newDeleteNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newDeleteNodeForCluster(r.projectProvider)),
+		decodeDeleteNodeForCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
