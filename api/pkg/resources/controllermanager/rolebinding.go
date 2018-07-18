@@ -43,6 +43,7 @@ func createRoleBinding(existing *rbacv1.RoleBinding, namespace, roleRef string) 
 			Kind:      "User",
 			Name:      resources.ControllerManagerCertUsername,
 			Namespace: rb.Namespace,
+			APIGroup:  rbacv1.GroupName,
 		},
 	}
 	return rb, nil

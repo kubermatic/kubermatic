@@ -30,6 +30,7 @@ func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*r
 			Kind:      "ServiceAccount",
 			Name:      resources.PrometheusServiceAccountName,
 			Namespace: data.Cluster.Status.NamespaceName,
+			APIGroup:  rbacv1.GroupName,
 		},
 	}
 	return rb, nil
