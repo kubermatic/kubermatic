@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
@@ -16,13 +17,131 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NewDeleteNodeForClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create a machine client: %v", err)
+		}
+
+		kubeClient, err := clusterProvider.GetKubernetesClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
+		}
+
+		machine, node, err := tryToFindMachineAndNode(req.NodeName, machineClient, kubeClient)
+		if err != nil {
+			return nil, err
+		}
+		if machine == nil && node == nil {
+			return nil, k8cerrors.NewNotFound("Node", req.NodeName)
+		}
+
+		if machine != nil {
+			return nil, kubernetesErrorToHTTPError(machineClient.MachineV1alpha1().Machines().Delete(machine.Name, nil))
+		} else if node != nil {
+			return nil, kubernetesErrorToHTTPError(kubeClient.CoreV1().Nodes().Delete(node.Name, nil))
+		}
+		return nil, nil
+	}
+}
+
+func newListNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NewListNodesForClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		// how about moving machineClient and kubeClient to their own provider ?
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		kubeClient, err := clusterProvider.GetKubernetesClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+		}
+
+		nodeList, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		//The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
+		var nodesV2 []*apiv2.Node
+		matchedMachineNodes := sets.NewString()
+
+		//Go over all machines first
+		for i := range machineList.Items {
+			node := getNodeForMachine(&machineList.Items[i], nodeList.Items)
+			if node != nil {
+				matchedMachineNodes.Insert(string(node.UID))
+			}
+			outNode, err := outputMachine(&machineList.Items[i], node, req.HideInitialConditions)
+			if err != nil {
+				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
+			}
+			nodesV2 = append(nodesV2, outNode)
+		}
+
+		// Now all nodes, which do not belong to a machine - Relevant for BYO
+		for i := range nodeList.Items {
+			if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
+				nodesV2 = append(nodesV2, outputNode(&nodeList.Items[i], req.HideInitialConditions))
+			}
+		}
+		return convertNodesV2ToNodesV1(nodesV2), nil
+	}
+}
+
+func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewNodeReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
@@ -201,6 +320,78 @@ func convertNodeV2ToNodeV1(nodeV2 *apiv2.Node) *apiv1.Node {
 	}
 }
 
+func convertNodesV2ToNodesV1(nodesV2 []*apiv2.Node) []*apiv1.Node {
+	nodesV1 := make([]*apiv1.Node, len(nodesV2))
+	for index, nodeV2 := range nodesV2 {
+
+		nodesV1[index] = convertNodeV2ToNodeV1(nodeV2)
+	}
+	return nodesV1
+}
+
+// NewDeleteNodeForClusterReq defines HTTP request for newDeleteNodeForCluster
+// swagger:parameters newDeleteNodeForCluster
+type NewDeleteNodeForClusterReq struct {
+	NewGetClusterReq
+	// in: path
+	NodeName string `json:"node_name"`
+}
+
+func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req NewDeleteNodeForClusterReq
+
+	nodeName := mux.Vars(r)["node_name"]
+	if nodeName == "" {
+		return "", fmt.Errorf("'node_name' parameter is required but was not provided")
+	}
+
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectName = projectName
+	req.ClusterName = clusterName
+	req.NodeName = nodeName
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+// NewListNodesForClusterReq defines HTTP request for newListNodesForCluster
+// swagger:parameters newListNodesForCluster
+type NewListNodesForClusterReq struct {
+	NewGetClusterReq
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req NewListNodesForClusterReq
+
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
+	req.ProjectName = projectName
+	req.ClusterName = clusterName
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
 // NewCreateNodeReq defines HTTP request for newCreateNodeForCluster
 // swagger:parameters newCreateNodeForCluster
 type NewCreateNodeReq struct {
@@ -249,8 +440,8 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	nodeName, ok := mux.Vars(r)["node_name"]
-	if !ok {
+	nodeName := mux.Vars(r)["node_name"]
+	if nodeName == "" {
 		return nil, fmt.Errorf("'node_name' parameter is required but was not provided")
 	}
 

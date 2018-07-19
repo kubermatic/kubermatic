@@ -154,19 +154,11 @@ func TestListProjectEndpoint(t *testing.T) {
 					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(projectsFromResponse))
 				}
 
-				areProjectsEqual := func(actual, expected apiv1.Project) bool {
-					return actual.Name == expected.Name &&
-						actual.ID == expected.ID &&
-						actual.DeletionTimestamp == expected.DeletionTimestamp &&
-						actual.CreationTimestamp == expected.CreationTimestamp &&
-						actual.Status == expected.Status
-				}
-
 				for _, expectedProject := range tc.ExpectedResponse {
 					found := false
 					for _, actualProject := range projectsFromResponse {
 						if actualProject.ID == expectedProject.ID {
-							if !areProjectsEqual(actualProject, expectedProject) {
+							if !areEqualOrDie(t, actualProject, expectedProject) {
 								t.Fatalf("actual project != expected project, diff = %v", diff.ObjectDiff(actualProject, expectedProject))
 							}
 							found = true
