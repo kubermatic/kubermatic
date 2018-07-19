@@ -65,7 +65,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+			c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
 		})
 		if err != nil {
 			return nil, err

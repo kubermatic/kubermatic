@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -22,13 +21,11 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		// We need to requeue, otherwise the next sync will be triggered from the informer-resync(currently every 5min).
-		cc.enqueueAfter(c, 10*time.Second)
 		return c, nil
 	}
 
-	if err := cc.deletingCloudProviderCleanup(c); err != nil {
-		return nil, err
+	if c, err = cc.deletingCloudProviderCleanup(c); err != nil {
+		return c, err
 	}
 
 	return c, nil
@@ -84,15 +81,15 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 	return c, nil
 }
 
-func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) error {
+func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	_, cp, err := provider.ClusterCloudProvider(cc.cps, c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if c, err = cp.CleanUpCloudProvider(c, cc.updateCluster); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return c, nil
 }

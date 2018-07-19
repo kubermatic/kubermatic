@@ -28,6 +28,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset()
 	cluster := &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}
 	cluster.Status.NamespaceName = "testnamespace"
+	cluster.Status.Health.ClusterHealthStatus.Etcd = true
 	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
