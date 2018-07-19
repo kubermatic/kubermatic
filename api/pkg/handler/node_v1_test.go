@@ -136,7 +136,10 @@ func TestDeleteNodeForCluster(t *testing.T) {
 					},
 				},
 			},
-			ExpectedActions:         2,
+			ExpectedActions: 2,
+			//
+			// even though the machine object was deleted the associated node object was not. When the client GETs the previously deleted "node" it will get a valid response.
+			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
 			ExpectedHTTPStatusOnGet: http.StatusOK,
 			ExpectedResponseOnGet:   `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":"","containerRuntime":{"name":"","version":""}}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 		},

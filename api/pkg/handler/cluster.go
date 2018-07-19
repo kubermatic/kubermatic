@@ -694,8 +694,8 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 }
 
 func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, string, error) {
-	clusterName, ok := mux.Vars(r)["cluster_name"]
-	if !ok {
+	clusterName := mux.Vars(r)["cluster_name"]
+	if clusterName == "" {
 		return "", "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
 	}
 

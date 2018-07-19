@@ -340,8 +340,8 @@ type NewDeleteNodeForClusterReq struct {
 func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewDeleteNodeForClusterReq
 
-	nodeName, ok := mux.Vars(r)["node_name"]
-	if !ok {
+	nodeName := mux.Vars(r)["node_name"]
+	if nodeName == "" {
 		return "", fmt.Errorf("'node_name' parameter is required but was not provided")
 	}
 
@@ -440,8 +440,8 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	nodeName, ok := mux.Vars(r)["node_name"]
-	if !ok {
+	nodeName := mux.Vars(r)["node_name"]
+	if nodeName == "" {
 		return nil, fmt.Errorf("'node_name' parameter is required but was not provided")
 	}
 
