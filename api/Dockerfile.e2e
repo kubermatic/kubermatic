@@ -31,5 +31,4 @@ COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/ginkgo /usr/local/b
 COPY --from=builder /_cache/kubernetes/platforms/linux/amd64/e2e.test /usr/local/bin/
 COPY --from=builder /_cache/kubectl /usr/local/bin/
 
-USER nobody
 ENTRYPOINT [ "/kubermatic-e2e" ]
