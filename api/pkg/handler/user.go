@@ -35,13 +35,6 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 	}
 }
 
-func getUserHandler() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		apiUser := ctx.Value(apiUserContextKey)
-		return apiUser, nil
-	}
-}
-
 // IsAdmin tells if the user has the admin role
 func IsAdmin(u apiv1.User) bool {
 	_, ok := u.Roles[AdminRoleKey]
