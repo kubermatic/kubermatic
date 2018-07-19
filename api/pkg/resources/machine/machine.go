@@ -205,14 +205,10 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provid
 		VMNetName:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
 		CPUs:            int32(node.Spec.Cloud.VSphere.CPUs),
 		MemoryMB:        int64(node.Spec.Cloud.VSphere.Memory),
-		Username:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Username},
-		Password:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Password},
-		VSphereURL:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Endpoint},
 		Datacenter:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
 		Datastore:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
 		Cluster:         providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
 		Folder:          providerconfig.ConfigVarString{Value: folderPath},
-		AllowInsecure:   providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
 	}
 
 	ext := &runtime.RawExtension{}

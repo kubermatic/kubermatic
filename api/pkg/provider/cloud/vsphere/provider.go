@@ -54,7 +54,15 @@ func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, er
 		return nil, err
 	}
 
-	user := url.UserPassword(cloud.VSphere.Username, cloud.VSphere.Password)
+	var username, password string
+	if dc.Spec.VSphere.InstanceManagementUser != nil {
+		username = dc.Spec.VSphere.InstanceManagementUser.Username
+		password = dc.Spec.VSphere.InstanceManagementUser.Password
+	} else {
+		username = cloud.VSphere.Username
+		password = cloud.VSphere.Password
+	}
+	user := url.UserPassword(username, password)
 	err = c.Login(context.Background(), user)
 	if err != nil {
 		return nil, err
