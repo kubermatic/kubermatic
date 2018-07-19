@@ -23,7 +23,7 @@ func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*r
 	rb.RoleRef = rbacv1.RoleRef{
 		Name:     resources.PrometheusRoleName,
 		Kind:     "Role",
-		APIGroup: "rbac.authorization.k8s.io",
+		APIGroup: rbacv1.GroupName,
 	}
 	rb.Subjects = []rbacv1.Subject{
 		{
