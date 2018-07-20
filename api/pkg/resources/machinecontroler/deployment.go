@@ -176,18 +176,9 @@ func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster.Spec.Cloud.Digitalocean.Token})
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
-		var username, password string
-		if data.DC.Spec.VSphere.InstanceManagementUser != nil {
-			username = data.DC.Spec.VSphere.InstanceManagementUser.Username
-			password = data.DC.Spec.VSphere.InstanceManagementUser.Password
-		} else {
-			username = data.Cluster.Spec.Cloud.VSphere.Username
-			password = data.Cluster.Spec.Cloud.VSphere.Password
-		}
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ALLOW_INSECURE", Value: fmt.Sprintf("%t", data.DC.Spec.VSphere.AllowInsecure)})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: password})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.DC.Spec.VSphere.InstanceManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.DC.Spec.VSphere.InstanceManagementUser.Password})
 	}
 	return vars
 }
