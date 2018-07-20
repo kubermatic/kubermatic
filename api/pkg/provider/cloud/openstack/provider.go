@@ -32,6 +32,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+// DefaultCloudSpec adds defaults to the cloud spec
 func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }

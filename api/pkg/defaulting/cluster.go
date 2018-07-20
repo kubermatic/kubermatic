@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
+// DefaultCreateClusterSpec defalts the cluster spec when creating a new cluster
 func DefaultCreateClusterSpec(
 	spec *kubermaticv1.ClusterSpec,
 	cloudProviders map[string]provider.CloudProvider) error {
