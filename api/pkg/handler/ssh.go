@@ -50,6 +50,7 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 		apiKey := v2.NewSSHKey{
 			Metadata: v2.ObjectMeta{
 				Name:              key.Name,
+				DisplayName:       key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
 			Spec: v2.NewSSHKeySpec{
@@ -137,6 +138,7 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 		apiKey := &v2.NewSSHKey{
 			Metadata: v2.ObjectMeta{
 				Name:              key.Name,
+				DisplayName:       key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
 			Spec: v2.NewSSHKeySpec{

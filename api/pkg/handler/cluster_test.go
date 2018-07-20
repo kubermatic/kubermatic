@@ -224,28 +224,28 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 	testcases := []struct {
-		Name                     string
-		Body                     string
-		KeyToDelete              string
-		ExpectedDeleteResponse   string
-		ExpectedDeleteHTTPStatus int
-		ExistingProject          *kubermaticv1.Project
-		ExistingKubermaticUser   *kubermaticv1.User
-		ExistingAPIUser          *apiv1.User
-		ExistingCluster          *kubermaticv1.Cluster
-		ExistingSSHKeys          []*kubermaticv1.UserSSHKey
-		ExpectedGetResponse      string
-		ExpectedGetHTTPStatus    int
+		Name                            string
+		Body                            string
+		KeyToDelete                     string
+		ExpectedDeleteResponse          string
+		ExpectedDeleteHTTPStatus        int
+		ExistingProject                 *kubermaticv1.Project
+		ExistingKubermaticUser          *kubermaticv1.User
+		ExistingAPIUser                 *apiv1.User
+		ExistingCluster                 *kubermaticv1.Cluster
+		ExistingSSHKeys                 []*kubermaticv1.UserSSHKey
+		ExpectedResponseOnGetAfterDelte string
+		ExpectedGetHTTPStatus           int
 	}{
 		// scenario 1
 		{
-			Name:                     "scenario 1: detaches one key from the cluster",
-			Body:                     ``,
-			KeyToDelete:              "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:   `null`,
-			ExpectedDeleteHTTPStatus: http.StatusOK,
-			ExpectedGetHTTPStatus:    http.StatusOK,
-			ExpectedGetResponse:      `[{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			Name:                            "scenario 1: detaches one key from the cluster",
+			Body:                            ``,
+			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:          `null`,
+			ExpectedDeleteHTTPStatus:        http.StatusOK,
+			ExpectedGetHTTPStatus:           http.StatusOK,
+			ExpectedResponseOnGetAfterDelte: `[{"metadata":{"name":"key-abc-yafn","displayName":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -307,6 +307,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "key-display-name",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -372,7 +373,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				if res.Code != tc.ExpectedGetHTTPStatus {
 					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedGetHTTPStatus, res.Code, res.Body.String())
 				}
-				compareWithResult(t, res, tc.ExpectedGetResponse)
+				compareWithResult(t, res, tc.ExpectedResponseOnGetAfterDelte)
 			}
 		})
 	}
@@ -400,7 +401,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body:             ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"yafn","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"abcd","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -448,6 +449,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						CreationTimestamp: metav1.NewTime(creationTime),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "yafn",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -465,6 +467,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "abcd",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -694,15 +697,15 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 
 func TestCreateClusterEndpoint(t *testing.T) {
 	testcases := []struct {
-		Name                               string
-		Body                               string
-		ExpectedResponse                   string
-		HTTPStatus                         int
-		ExistingProject                    *kubermaticv1.Project
-		ExistingKubermaticUser             *kubermaticv1.User
-		ExistingAPIUser                    *apiv1.User
-		ExistingSSHKey                     *kubermaticv1.UserSSHKey
-		RewriteClusterNameAndNamespaceName bool
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingSSHKey         *kubermaticv1.UserSSHKey
+		RewriteClusterID       bool
 	}{
 		// scenario 1
 		{
@@ -744,11 +747,11 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:                               "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:                               `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse:                   `{"metadata":{"name":"%s","creationTimestamp":null,"labels":{"worker-name":""},"ownerReferences":[{"apiVersion":"kubermatic.k8s.io/v1","kind":"Project","name":"myProjectInternalName","uid":""}]},"spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":""},"version":"1.9.7","masterVersion":"","humanReadableName":"keen-snyder","workerName":"","pause":false},"address":{"url":"","externalName":"","kubeletToken":"","adminToken":"","ip":""},"status":{"lastUpdated":null,"health":{"apiserver":false,"scheduler":false,"controller":false,"machineController":false,"etcd":false,"lastTransitionTime":null},"lastDeployedMasterVersion":"","rootCA":{"key":"","cert":""},"apiserverCert":{"key":"","cert":""},"kubeletCert":{"key":"","cert":""},"apiserverSshKey":{"privateKey":"","publicKey":""},"serviceAccountKey":"","namespaceName":"%s","userName":"","userEmail":"john@acme.com"}}`,
-			RewriteClusterNameAndNamespaceName: true,
-			HTTPStatus:                         http.StatusCreated,
+			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
+			Body:             `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -861,13 +864,13 @@ func TestCreateClusterEndpoint(t *testing.T) {
 
 			expectedResponse := tc.ExpectedResponse
 			// since Cluster.Name is automatically generated by the system just rewrite it.
-			if tc.RewriteClusterNameAndNamespaceName {
-				actualCluster := &apiv1.Cluster{}
+			if tc.RewriteClusterID {
+				actualCluster := &apiv1.NewCluster{}
 				err = json.Unmarshal(res.Body.Bytes(), actualCluster)
 				if err != nil {
 					t.Fatal(err)
 				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualCluster.Name, actualCluster.Status.NamespaceName)
+				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualCluster.ID)
 			}
 
 			compareWithResult(t, res, expectedResponse)
