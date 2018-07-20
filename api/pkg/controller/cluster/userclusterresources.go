@@ -3,7 +3,6 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -11,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,7 +56,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if diff := deep.Equal(role, existing); diff == nil {
+		if equality.Semantic.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -107,7 +107,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(rb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(rb, existing) {
 			continue
 		}
 
@@ -159,7 +159,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 			return fmt.Errorf("failed to build ClusterRole: %v", err)
 		}
 
-		if diff := deep.Equal(cRole, existing); diff == nil {
+		if equality.Semantic.DeepEqual(cRole, existing) {
 			continue
 		}
 
@@ -209,7 +209,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(crb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(crb, existing) {
 			continue
 		}
 
