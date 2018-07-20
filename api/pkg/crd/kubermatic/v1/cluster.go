@@ -223,7 +223,7 @@ type VSphereCloudSpec struct {
 	VMNetName string             `json:"vmNetName"`
 
 	// This user will be used for everything except cloud provider functionality
-	InstanceManagementUser VSphereCredentials `json:"instanceManagementUser"`
+	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

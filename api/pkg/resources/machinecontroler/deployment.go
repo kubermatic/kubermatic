@@ -177,8 +177,8 @@ func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.DC.Spec.VSphere.InstanceManagementUser.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.DC.Spec.VSphere.InstanceManagementUser.Password})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.DC.Spec.VSphere.InfraManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.DC.Spec.VSphere.InfraManagementUser.Password})
 	}
 	return vars
 }

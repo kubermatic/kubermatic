@@ -55,8 +55,8 @@ func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, er
 	}
 
 	user := url.UserPassword(
-		cloud.VSphere.InstanceManagementUser.Username,
-		cloud.VSphere.InstanceManagementUser.Password)
+		cloud.VSphere.InfraManagementUser.Username,
+		cloud.VSphere.InfraManagementUser.Password)
 	err = c.Login(context.Background(), user)
 	if err != nil {
 		return nil, err
@@ -181,13 +181,13 @@ func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	if !found || dc.Spec.VSphere == nil {
 		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
 	}
-	if dc.Spec.VSphere.InstanceManagementUser != nil {
-		spec.VSphere.InstanceManagementUser = kubermaticv1.VSphereCredentials{
-			Username: dc.Spec.VSphere.InstanceManagementUser.Username,
-			Password: dc.Spec.VSphere.InstanceManagementUser.Password,
+	if dc.Spec.VSphere.InfraManagementUser != nil {
+		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
+			Username: dc.Spec.VSphere.InfraManagementUser.Username,
+			Password: dc.Spec.VSphere.InfraManagementUser.Password,
 		}
 	} else {
-		spec.VSphere.InstanceManagementUser = kubermaticv1.VSphereCredentials{
+		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
 			Username: spec.VSphere.Username,
 			Password: spec.VSphere.Password,
 		}

@@ -64,10 +64,10 @@ type VSphereSpec struct {
 	RootPath   string    `yaml:"root_path"`
 	Templates  ImageList `yaml:"templates"`
 
-	// Instance management user is an optional user that will be used only
-	// for creating/updating/deleting virtual machines but not for the cloud
-	// provider functionality
-	InstanceManagementUser *vsphereCredentials `yaml:"instance_management_user,omitempty"`
+	// Infra management user is an optional user that will be used only
+	// for everything except the cloud provider functionality which will
+	// still use the credentials passed in via the frontend/api
+	InfraManagementUser *vsphereCredentials `yaml:"infra_management_user,omitempty"`
 }
 
 // AWSSpec describes a aws datacenter
