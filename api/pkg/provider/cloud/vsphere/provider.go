@@ -54,15 +54,9 @@ func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, er
 		return nil, err
 	}
 
-	var username, password string
-	if dc.Spec.VSphere.InstanceManagementUser != nil {
-		username = dc.Spec.VSphere.InstanceManagementUser.Username
-		password = dc.Spec.VSphere.InstanceManagementUser.Password
-	} else {
-		username = cloud.VSphere.Username
-		password = cloud.VSphere.Password
-	}
-	user := url.UserPassword(username, password)
+	user := url.UserPassword(
+		cloud.VSphere.InstanceManagementUser.Username,
+		cloud.VSphere.InstanceManagementUser.Password)
 	err = c.Login(context.Background(), user)
 	if err != nil {
 		return nil, err
@@ -179,6 +173,26 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) 
 	}
 
 	return networks, nil
+}
+
+func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	dc, found := v.dcs[spec.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	}
+	if dc.Spec.VSphere.InstanceManagementUser != nil {
+		spec.VSphere.InstanceManagementUser = kubermaticv1.VSphereCredentials{
+			Username: dc.Spec.VSphere.InstanceManagementUser.Username,
+			Password: dc.Spec.VSphere.InstanceManagementUser.Password,
+		}
+	} else {
+		spec.VSphere.InstanceManagementUser = kubermaticv1.VSphereCredentials{
+			Username: spec.VSphere.Username,
+			Password: spec.VSphere.Password,
+		}
+	}
+
+	return nil
 }
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.

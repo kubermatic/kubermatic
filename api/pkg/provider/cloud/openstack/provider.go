@@ -32,6 +32,10 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	return nil
+}
+
 // ValidateCloudSpec validates the given CloudSpec
 func (os *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	netClient, err := os.getNetClient(spec)
