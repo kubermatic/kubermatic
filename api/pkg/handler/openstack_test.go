@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -114,7 +113,10 @@ func SetupOpenstackServer(t *testing.T) {
 				w.WriteHeader(200)
 			}
 
-			fmt.Fprintf(w, buf.String())
+			_, err := w.Write(buf.Bytes())
+			if err != nil {
+				t.Fatalf("failed to write rendered template to HTTP response: %v", err)
+			}
 		})
 	}
 
