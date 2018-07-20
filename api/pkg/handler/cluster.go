@@ -94,7 +94,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return newCluster, nil
+		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
 
