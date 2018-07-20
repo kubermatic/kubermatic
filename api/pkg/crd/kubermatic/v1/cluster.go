@@ -211,16 +211,15 @@ type AzureCloudSpec struct {
 
 // VSphere credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Username  string             `json:"username"`
-	Password  string             `json:"password"`
-	User      VSphereCredentials `json:",inline`
-	VMNetName string             `json:"vmNetName"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	VMNetName string `json:"vmNetName"`
 
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
