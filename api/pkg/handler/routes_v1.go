@@ -32,10 +32,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/ssh-keys").
 		Handler(r.listSSHKeys())
 
-	mux.Methods(http.MethodGet).
-		Path("/user").
-		Handler(r.getUser())
-
 	mux.Methods(http.MethodPost).
 		Path("/ssh-keys").
 		Handler(r.createSSHKey())
@@ -538,18 +534,6 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
 		decodeDcReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) getUser() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(getUserHandler()),
-		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
