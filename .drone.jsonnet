@@ -79,10 +79,6 @@ local drone = import 'drone/drone.libsonnet';
       volumes: ['/var/run/docker.sock:/var/run/docker.sock'],
     },
 
-    '3-verify-forbidden-functions': drone.step.new('ubuntu', group='lint') + {
-      commands: ['./api/hack/verify-forbidden-functions.sh'],
-    },
-
     // Building
     '4-test': drone.step.new(goImage, group='build') + {
       commands: [

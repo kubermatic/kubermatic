@@ -39,12 +39,6 @@ pipeline:
     pull: true
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-  3-verify-forbidden-functions:
-    commands:
-    - ./api/hack/verify-forbidden-functions.sh
-    group: lint
-    image: ubuntu
-    pull: true
   3-verify-swagger-spec:
     commands:
     - cd api
