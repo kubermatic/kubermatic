@@ -208,12 +208,12 @@ func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 // for everything except the cloud provider functionality
 func setVSphereInfraManagementUser(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Spec.Cloud.VSphere != nil {
-		if cluster.Spec.Cloud.VSphere.InfraManagementUser.Username == "" {
+		if cluster.Spec.Cloud.VSphere.InfraManagementUser.Username == "" || cluster.Spec.Cloud.VSphere.InfraManagementUser.Password == "" {
 			cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = cluster.Spec.Cloud.VSphere.Username
-		}
-
-		if cluster.Spec.Cloud.VSphere.InfraManagementUser.Password == "" {
 			cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = cluster.Spec.Cloud.VSphere.Password
+			if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
