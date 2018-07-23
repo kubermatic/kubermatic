@@ -104,18 +104,18 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	owner := sharedOwner.DeepCopy()
 
 	for _, pg := range owner.Spec.Projects {
-		if pg.Name == project.Name && pg.Group == generateActualGroupNameFor(project.Name, ownerGroupNamePrefix) {
+		if pg.Name == project.Name && pg.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 			return nil
 		}
 	}
-	owner.Spec.Projects = append(owner.Spec.Projects, kubermaticv1.ProjectGroup{Name: project.Name, Group: generateActualGroupNameFor(project.Name, ownerGroupNamePrefix)})
+	owner.Spec.Projects = append(owner.Spec.Projects, kubermaticv1.ProjectGroup{Name: project.Name, Group: GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix)})
 	_, err := c.kubermaticMasterClient.KubermaticV1().Users().Update(owner)
 	return err
 }
 
 func (c *Controller) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
-		for _, groupPrefix := range allGroupsPrefixes {
+		for _, groupPrefix := range AllGroupsPrefixes {
 			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, projectResource.kind, groupPrefix, projectResource.gvr.Resource)
 			if err != nil {
 				return err
@@ -137,8 +137,8 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 
 func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string) error {
 	for _, projectResource := range c.projectResources {
-		for _, groupPrefix := range allGroupsPrefixes {
-			groupName := generateActualGroupNameFor(projectName, groupPrefix)
+		for _, groupPrefix := range AllGroupsPrefixes {
+			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 			err := ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
 			if err != nil {
 				return err
@@ -258,8 +258,8 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 
 	// remove subjects from RBAC Bindings for project's resources
 	for _, projectResource := range c.projectResources {
-		for _, groupPrefix := range allGroupsPrefixes {
-			groupName := generateActualGroupNameFor(project.Name, groupPrefix)
+		for _, groupPrefix := range AllGroupsPrefixes {
+			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
 			err := cleanUpRBACRoleBindingFor(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
 			if err != nil {
 				return err
