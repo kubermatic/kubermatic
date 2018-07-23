@@ -255,7 +255,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.OpenVPNClientConfigConfigMapName,
+					Name:      resources.OpenVPNClientConfigsConfigMapName,
 					MountPath: "/etc/openvpn/clients",
 					ReadOnly:  true,
 				},
@@ -313,11 +313,11 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.OpenVPNClientConfigConfigMapName,
+			Name: resources.OpenVPNClientConfigsConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.OpenVPNClientConfigConfigMapName,
+						Name: resources.OpenVPNClientConfigsConfigMapName,
 					},
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
