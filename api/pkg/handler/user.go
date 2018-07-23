@@ -33,7 +33,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 			return nil, k8cerrors.NewBadRequest("both the project name and the group name fields are required")
 		}
 		if projectFromRequest.Name != req.ProjectName {
-			return nil, k8cerrors.New(http.StatusForbidden,fmt.Sprintf("you can only assign the user to %s project", req.ProjectName))
+			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", req.ProjectName))
 		}
 		if apiUserFromRequest.Email == authenticatedUser.Spec.Email {
 			return nil, k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
