@@ -2,8 +2,6 @@ package rbac
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -242,7 +240,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	for _, sharedUser := range sharedUsers {
 		updatedProjectGroup := []kubermaticv1.ProjectGroup{}
 		for _, pg := range sharedUser.Spec.Projects {
-			if strings.HasSuffix(pg.Group, project.Name) {
+			if pg.Name == project.Name {
 				continue
 			}
 			updatedProjectGroup = append(updatedProjectGroup, pg)
