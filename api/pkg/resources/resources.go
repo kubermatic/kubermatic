@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	//AddonManagerDeploymentName is the name for the addon-manager deployment
-	AddonManagerDeploymentName = "addon-manager"
 	//ApiserverDeploymenName is the name for the apiserver deployment
 	ApiserverDeploymenName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
@@ -92,8 +90,10 @@ const (
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
-	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
-	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
+	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
+	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
 
