@@ -3,10 +3,8 @@ package cluster
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -23,6 +21,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -282,7 +281,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if diff := deep.Equal(service, existing); diff == nil {
+		if equality.Semantic.DeepEqual(service, existing) {
 			continue
 		}
 
@@ -322,7 +321,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 
 		// We update the existing SA
 		sa = resources.ServiceAccount(name, &ref, existing.DeepCopy())
-		if diff := deep.Equal(sa, existing); diff == nil {
+		if equality.Semantic.DeepEqual(sa, existing) {
 			continue
 		}
 		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
@@ -366,7 +365,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if diff := deep.Equal(role, existing); diff == nil {
+		if equality.Semantic.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -411,7 +410,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(rb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(rb, existing) {
 			continue
 		}
 
@@ -454,7 +453,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(crb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(crb, existing) {
 			continue
 		}
 
@@ -509,12 +508,12 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
 
-		if diff := deep.Equal(dep, existing); diff == nil {
+		if equality.Semantic.DeepEqual(dep, existing) {
 			continue
 		}
 
 		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !reflect.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+		if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
 			propagation := metav1.DeletePropagationForeground
 			return cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
@@ -566,7 +565,7 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}
 
-		if diff := deep.Equal(se, existing); diff == nil {
+		if equality.Semantic.DeepEqual(se, existing) {
 			continue
 		}
 
@@ -619,7 +618,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
-		if diff := deep.Equal(cm, existing); diff == nil {
+		if equality.Semantic.DeepEqual(cm, existing) {
 			continue
 		}
 
@@ -670,12 +669,12 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if diff := deep.Equal(set, existing); diff == nil {
+		if equality.Semantic.DeepEqual(set, existing) {
 			continue
 		}
 
 		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !reflect.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+		if !equality.Semantic.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
 			propagation := metav1.DeletePropagationForeground
 			return cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Delete(set.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
