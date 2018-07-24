@@ -126,7 +126,7 @@ func TestAddUserToProject(t *testing.T) {
 				ID:    testUsername,
 				Email: testEmail,
 			},
-			ExpectedResponse: "null",
+			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"name":"placeX","group":"editors-placeX"},{"name":"plan9","group":"editors-plan9"}]}`,
 			ExpectedActions:  10,
 			ExpectedUserAfterInvitation: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{

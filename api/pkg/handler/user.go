@@ -89,8 +89,23 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		if _, err = userProvider.Update(userToInvite); err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return nil, nil
+		return convertInternalUserToExternal(userToInvite), nil
 	}
+}
+
+func convertInternalUserToExternal(internalUser *kubermaticapiv1.User) *apiv1.NewUser {
+	apiUser := &apiv1.NewUser{
+		NewObjectMeta: apiv1.NewObjectMeta{
+			ID:                internalUser.Name,
+			Name:              internalUser.Spec.Name,
+			CreationTimestamp: internalUser.CreationTimestamp.Time,
+		},
+		Email: internalUser.Spec.Email,
+	}
+	for _, pg := range internalUser.Spec.Projects {
+		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{Name: pg.Name, GroupPrefix: pg.Group})
+	}
+	return apiUser
 }
 
 func (r Routing) userSaverMiddleware() endpoint.Middleware {
