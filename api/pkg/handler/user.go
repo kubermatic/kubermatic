@@ -33,13 +33,13 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 			return nil, k8cerrors.NewBadRequest("both the project name and the group name fields are required")
 		}
 		if projectFromRequest.Name != req.ProjectName {
-			return nil, k8cerrors.NewBadRequest("you can only assign the user to %s project", req.ProjectName)
+			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", req.ProjectName))
 		}
 		if apiUserFromRequest.Email == authenticatedUser.Spec.Email {
-			return nil, k8cerrors.NewBadRequest("you cannot assign yourself to a different group")
+			return nil, k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
 		}
 		if projectFromRequest.GroupPrefix == rbac.OwnerGroupNamePrefix {
-			return nil, k8cerrors.NewBadRequest("the given user cannot be assigned to % group", projectFromRequest.GroupPrefix)
+			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("the given user cannot be assigned to %s group", projectFromRequest.GroupPrefix))
 		}
 
 		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
@@ -59,7 +59,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		}
 		authUserGroupPrefix := rbac.ExtractGroupPrefix(authUserGroupName)
 		if authUserGroupPrefix != rbac.OwnerGroupNamePrefix {
-			return nil, k8cerrors.New(http.StatusForbidden, "only the owner of the project can invite others")
+			return nil, k8cerrors.New(http.StatusForbidden, "only the owner of the project can invite the other users")
 		}
 		isRequestedGroupPrefixValid := false
 		for _, existingGroupPrefix := range rbac.AllGroupsPrefixes {
@@ -71,10 +71,10 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		if !isRequestedGroupPrefixValid {
 			return nil, k8cerrors.NewBadRequest("invalid group name %s", projectFromRequest.GroupPrefix)
 		}
-		updatedProjectGropus := []kubermaticapiv1.ProjectGroup{}
+		updatedProjectGroups := []kubermaticapiv1.ProjectGroup{}
 		for _, existingProjectGroup := range userToInvite.Spec.Projects {
 			if existingProjectGroup.Name != projectFromRequest.Name {
-				updatedProjectGropus = append(updatedProjectGropus, existingProjectGroup)
+				updatedProjectGroups = append(updatedProjectGroups, existingProjectGroup)
 			}
 		}
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
@@ -85,7 +85,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		// Even if they were part of the project, that might be not practical
 		// since a user might want to invite any user to the project.
 		// Thus we would have to generate and maintain roles for N project and N users.
-		userToInvite.Spec.Projects = append(updatedProjectGropus, kubermaticapiv1.ProjectGroup{Name: project.Name, Group: generatedGroupName})
+		userToInvite.Spec.Projects = append(updatedProjectGroups, kubermaticapiv1.ProjectGroup{Name: project.Name, Group: generatedGroupName})
 		if _, err = userProvider.Update(userToInvite); err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
