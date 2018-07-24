@@ -17,6 +17,10 @@ func NewCloudProvider() provider.CloudProvider {
 	}
 }
 
+func (p *fakeCloudProvider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	return nil
+}
+
 func (p *fakeCloudProvider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
