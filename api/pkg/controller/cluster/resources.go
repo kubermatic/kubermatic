@@ -600,7 +600,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		var existing *corev1.ConfigMap
 		cm, err := create(data, nil)
 		if err != nil {
-			return fmt.Errorf("failed to build ServerClientConfigsConfigMap: %v", err)
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
 		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
@@ -609,14 +609,14 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			}
 
 			if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(cm); err != nil {
-				return fmt.Errorf("failed to create ServerClientConfigsConfigMap %s: %v", cm.Name, err)
+				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
 			}
 			continue
 		}
 
 		cm, err = create(data, existing.DeepCopy())
 		if err != nil {
-			return fmt.Errorf("failed to build ServerClientConfigsConfigMap: %v", err)
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
 		if diff := deep.Equal(cm, existing); diff == nil {
@@ -624,7 +624,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		}
 
 		if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Update(cm); err != nil {
-			return fmt.Errorf("failed to update ServerClientConfigsConfigMap %s: %v", cm.Name, err)
+			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
 	}
 
