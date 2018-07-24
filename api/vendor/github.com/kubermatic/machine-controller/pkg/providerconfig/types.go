@@ -39,6 +39,18 @@ const (
 	CloudProviderFake         CloudProvider = "fake"
 )
 
+// DNSConfig contains a machine's DNS configuration
+type DNSConfig struct {
+	Servers []string `json:"servers"`
+}
+
+// NetworkConfig contains a machine's static network configuration
+type NetworkConfig struct {
+	CIDR    string    `json:"cidr"`
+	Gateway string    `json:"gateway"`
+	DNS     DNSConfig `json:"dns"`
+}
+
 type Config struct {
 	SSHPublicKeys []string `json:"sshPublicKeys"`
 
@@ -47,6 +59,12 @@ type Config struct {
 
 	OperatingSystem     OperatingSystem      `json:"operatingSystem"`
 	OperatingSystemSpec runtime.RawExtension `json:"operatingSystemSpec"`
+
+	// +optional
+	Network *NetworkConfig `json:"network,omitempty"`
+
+	// +optional
+	OverwriteCloudConfig *string `json:"overwriteCloudConfig,omitempty"`
 }
 
 // We can not use v1.SecretKeySelector because it is not cross namespace
@@ -267,6 +285,26 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarBoolValue(configVar Conf
 	stringVal, err := configVarResolver.GetConfigVarStringValue(cvs)
 	if err != nil {
 		return false, err
+	}
+	boolVal, err := strconv.ParseBool(stringVal)
+	if err != nil {
+		return false, err
+	}
+	return boolVal, nil
+}
+
+func (configVarResolver *ConfigVarResolver) GetConfigVarBoolValueOrEnv(configVar ConfigVarBool, envVarName string) (bool, error) {
+	cvs := ConfigVarString{Value: strconv.FormatBool(configVar.Value), SecretKeyRef: configVar.SecretKeyRef}
+	stringVal, err := configVarResolver.GetConfigVarStringValue(cvs)
+	if err != nil {
+		return false, err
+	}
+	if stringVal == "" {
+		envVal, envValFound := os.LookupEnv(envVarName)
+		if !envValFound {
+			return false, fmt.Errorf("all machanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
+		}
+		stringVal = envVal
 	}
 	boolVal, err := strconv.ParseBool(stringVal)
 	if err != nil {
