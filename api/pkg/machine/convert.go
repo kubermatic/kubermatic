@@ -123,7 +123,7 @@ func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, err
 	case providerconfig.CloudProviderVsphere:
 		config := &vsphere.RawConfig{}
 		if err := json.Unmarshal(decodedProviderConfig.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
+			return nil, fmt.Errorf("failed to parse vsphere config: %v", err)
 		}
 		cloudSpec.VSphere = &apiv2.VSphereNodeSpec{
 			CPUs:            int(config.CPUs),

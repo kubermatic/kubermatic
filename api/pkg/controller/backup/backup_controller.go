@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
@@ -20,7 +19,7 @@ import (
 	"k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -444,7 +443,7 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		return fmt.Errorf("failed to build Secret: %v", err)
 	}
 
-	if diff := deep.Equal(se, existing); diff == nil {
+	if equality.Semantic.DeepEqual(se, existing) {
 		return nil
 	}
 
@@ -480,7 +479,7 @@ func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	if equal := apiequality.Semantic.DeepEqual(existing.Spec, cronJob.Spec); equal {
+	if equality.Semantic.DeepEqual(existing.Spec, cronJob.Spec) {
 		return nil
 	}
 

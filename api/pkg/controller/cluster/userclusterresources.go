@@ -3,14 +3,16 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,7 +58,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if diff := deep.Equal(role, existing); diff == nil {
+		if equality.Semantic.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -107,7 +109,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(rb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(rb, existing) {
 			continue
 		}
 
@@ -159,7 +161,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 			return fmt.Errorf("failed to build ClusterRole: %v", err)
 		}
 
-		if diff := deep.Equal(cRole, existing); diff == nil {
+		if equality.Semantic.DeepEqual(cRole, existing) {
 			continue
 		}
 
@@ -185,9 +187,14 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		controllermanager.AdminClusterRoleBinding,
 	}
 
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
 	for _, create := range creators {
 		var existing *rbacv1.ClusterRoleBinding
-		crb, err := create(nil, nil)
+		crb, err := create(data, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
@@ -204,12 +211,12 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			continue
 		}
 
-		crb, err = create(nil, existing.DeepCopy())
+		crb, err = create(data, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(crb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(crb, existing) {
 			continue
 		}
 
@@ -217,6 +224,58 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
 		glog.V(4).Infof("Updated ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
+	}
+
+	return nil
+}
+
+func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := []resources.ConfigMapCreator{
+		openvpn.ClientConfigConfigMap,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *corev1.ConfigMap
+		cm, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
+		}
+
+		if existing, err = client.CoreV1().ConfigMaps(cm.Namespace).Get(cm.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = client.CoreV1().ConfigMaps(cm.Namespace).Create(cm); err != nil {
+				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
+			}
+			glog.V(4).Infof("Created ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
+			continue
+		}
+
+		cm, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build ConfigMap: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(cm, existing) {
+			continue
+		}
+
+		if _, err = client.CoreV1().ConfigMaps(cm.Namespace).Update(cm); err != nil {
+			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
+		}
+		glog.V(4).Infof("Updated ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
 	}
 
 	return nil

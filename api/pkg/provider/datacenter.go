@@ -48,6 +48,11 @@ type AzureSpec struct {
 	Location string `yaml:"location"`
 }
 
+type vsphereCredentials struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 // VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
 	Endpoint      string `yaml:"endpoint"`
@@ -58,6 +63,11 @@ type VSphereSpec struct {
 	Cluster    string    `yaml:"cluster"`
 	RootPath   string    `yaml:"root_path"`
 	Templates  ImageList `yaml:"templates"`
+
+	// Infra management user is an optional user that will be used only
+	// for everything except the cloud provider functionality which will
+	// still use the credentials passed in via the frontend/api
+	InfraManagementUser *vsphereCredentials `yaml:"infra_management_user,omitempty"`
 }
 
 // AWSSpec describes a aws datacenter
