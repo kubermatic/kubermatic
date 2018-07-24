@@ -1,12 +1,17 @@
 .PHONY: prometheus
-prometheus: prometheus-jsonnet prometheus-check
+prometheus: rules check
 
-.PHONY: prometheus-jsonnet
-prometheus-jsonnet:
+.PHONY: rules
+rules:
 	rm -rf prometheus/rules/*
 	jsonnet -J vendor -m prometheus/rules -e '(import "prometheus/jsonnet/prometheus.jsonnet").prometheus' | xargs -I{} sh -c 'cat $$1 | gojsontoyaml > $$1.yaml; rm -f $$1' -- {}
 
-.PHONY: prometheus-check
-prometheus-check:
+.PHONY: check-config check-rules
+check: check-config check-rules
+
+check-config:
 	promtool check config prometheus/config/prometheus.yml
+
+check-rules:
 	promtool check rules prometheus/rules/rules.yaml
+
