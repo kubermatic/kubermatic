@@ -47,6 +47,7 @@ type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Clu
 type CloudSpecProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error
 }
 

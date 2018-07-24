@@ -4269,6 +4269,9 @@
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "infraManagementUser": {
+          "$ref": "#/definitions/VSphereCredentials"
+        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
@@ -4280,6 +4283,21 @@
         "vmNetName": {
           "type": "string",
           "x-go-name": "VMNetName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "VSphereCredentials": {
+      "description": "VSphere credentials represents a credential for accessing vSphere",
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
