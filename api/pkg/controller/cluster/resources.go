@@ -74,7 +74,7 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all ConfigMap's are available
+	// check that all ServerClientConfigsConfigMap's are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
 	}
@@ -581,7 +581,7 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 func GetConfigMapCreators() []resources.ConfigMapCreator {
 	return []resources.ConfigMapCreator{
 		cloudconfig.ConfigMap,
-		openvpn.ConfigMap,
+		openvpn.ServerClientConfigsConfigMap,
 		prometheus.ConfigMap,
 		dns.ConfigMap,
 	}
