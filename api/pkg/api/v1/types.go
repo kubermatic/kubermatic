@@ -178,7 +178,7 @@ type NewUser struct {
 	Email string `json:"email"`
 	// Projects holds the list of project the user belongs to
 	// along with the group names
-	Projects []ProjectGroup `json:"projects, omitempty"`
+	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
 // ProjectGroup is a helper data structure that
