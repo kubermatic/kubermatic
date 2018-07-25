@@ -38,6 +38,7 @@ users:
 `
 
 func TestKubeConfigEndpoint(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster/foo/kubeconfig", nil)
 
 	res := httptest.NewRecorder()
