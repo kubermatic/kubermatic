@@ -244,6 +244,7 @@ func getUser(name string, admin bool) apiv1.User {
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
 	if recorder.Code != wantStatusCode {
 		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
