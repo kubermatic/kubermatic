@@ -19,7 +19,7 @@
           },
           {
             alert: 'MachineControllerMachineDeletionTakesTooLong',
-            expr: 'machine_controller_machine_deleted > (time() - 30*60)',
+            expr: '(time() - machine_controller_machine_deleted) > 30*60',
             'for': '0m',
             labels: {
               severity: 'warning',
