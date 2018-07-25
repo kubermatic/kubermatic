@@ -1489,7 +1489,7 @@ func TestClusterEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
+			req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
 			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
 			if err != nil {
@@ -1596,7 +1596,7 @@ func TestClustersEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
+			req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
 			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
 			if err != nil {
@@ -1775,11 +1775,11 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			updatedCluster := test.cluster.DeepCopy()
 			updatedCluster = test.modifyCluster(updatedCluster)
 			body := &bytes.Buffer{}
-			if err := json.NewEncoder(body).Encode(updatedCluster); err != nil {
+			if err = json.NewEncoder(body).Encode(updatedCluster); err != nil {
 				t.Fatal(err)
 			}
 
-			req := httptest.NewRequest("PUT", "/api/v3/dc/us-central1/cluster/"+test.cluster.Name, body)
+			req := httptest.NewRequest("PUT", "/api/v3/projects/foo_project/dc/us-central1/cluster/"+test.cluster.Name, body)
 			ep.ServeHTTP(res, req)
 			checkStatusCode(test.responseCode, res, t)
 

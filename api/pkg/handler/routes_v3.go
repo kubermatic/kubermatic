@@ -11,51 +11,51 @@ import (
 // RegisterV3 declares all router paths for v3
 func (r Routing) RegisterV3(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
-		Path("/dc/{dc}/cluster").
+		Path("/projects/{project_id}/dc/{dc}/cluster").
 		Handler(r.newClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster").
+		Path("/projects/{project_id}/dc/{dc}/cluster").
 		Handler(r.clustersHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}").
 		Handler(r.clusterHandlerV3())
 
 	mux.Methods(http.MethodPut).
-		Path("/dc/{dc}/cluster/{cluster}").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}").
 		Handler(r.updateClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}/kubeconfig").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/kubeconfig").
 		Handler(r.kubeconfigHandlerV3())
 
 	mux.Methods(http.MethodDelete).
-		Path("/dc/{dc}/cluster/{cluster}").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}").
 		Handler(r.deleteClusterHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}/node").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.nodesHandlerV3())
 
 	mux.Methods(http.MethodPost).
-		Path("/dc/{dc}/cluster/{cluster}/node").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/node").
 		Handler(r.createNodesHandlerV3())
 
 	mux.Methods(http.MethodDelete).
-		Path("/dc/{dc}/cluster/{cluster}/node/{node}").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.deleteNodeHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}/node/{node}").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/node/{node}").
 		Handler(r.getNodeHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}/upgrades").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgradesV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/dc/{dc}/cluster/{cluster}/metrics").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
 		Handler(r.clusterMetricsHandlerV3())
 }
 

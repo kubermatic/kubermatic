@@ -38,7 +38,7 @@ users:
 `
 
 func TestKubeConfigEndpoint(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/foo/kubeconfig", nil)
+	req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster/foo/kubeconfig", nil)
 
 	res := httptest.NewRecorder()
 	cluster := &kubermaticv1.Cluster{

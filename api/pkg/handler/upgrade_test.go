@@ -86,7 +86,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/foo/upgrades", nil)
+			req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster/foo/upgrades", nil)
 			res := httptest.NewRecorder()
 			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
 			if err != nil {
