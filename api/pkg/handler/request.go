@@ -142,8 +142,15 @@ type DCGetter interface {
 	GetDC() string
 }
 
-// DCReq represent a request for datacenter specific data
+// DCReqLegacy represent a request for datacenter specific data,
+// from before implementation of projects
 // swagger:parameters getDatacenter
+type DCReqLegacy struct {
+	// in: path
+	DC string `json:"dc"`
+}
+
+// DCReq represent a request for datacenter specific data
 type DCReq struct {
 	ProjectReq
 	// in: path
@@ -164,6 +171,12 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	return DCReq{
 		DC:         mux.Vars(r)["dc"],
 		ProjectReq: projectReq.(ProjectReq),
+	}, nil
+}
+
+func decodeDcReqLegacy(c context.Context, r *http.Request) (interface{}, error) {
+	return DCReqLegacy{
+		DC: mux.Vars(r)["dc"],
 	}, nil
 }
 
