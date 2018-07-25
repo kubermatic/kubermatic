@@ -19,6 +19,11 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
+// DefaultCloudSpec
+func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	return nil
+}
+
 // ValidateCloudSpec
 func (h *hetzner) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	client := hcloud.NewClient(hcloud.WithToken(spec.Hetzner.Token))

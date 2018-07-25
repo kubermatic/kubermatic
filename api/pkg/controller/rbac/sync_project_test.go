@@ -580,6 +580,200 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 	}
 }
 
+// TestEnsureUserProjectCleanup extends TestEnsureProjectCleanup in a way
+// that also checks if the project being removed is removed from "Spec.Project" array for all users that belong the the project
+func TestEnsureUsersProjectCleanup(t *testing.T) {
+	tests := []struct {
+		name            string
+		projectToSync   *kubermaticv1.Project
+		existingUsers   []*kubermaticv1.User
+		expectedActions []string
+		expectedUsers   []*kubermaticv1.User
+	}{
+		// scenario 1
+		{
+			name:          "Scenario 1: bob's projects entries are updated when the project he belongs to is removed",
+			projectToSync: createProject("plan9", createUser("bob")),
+			existingUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-myFirstProjectName",
+								Name:  "myFirstProjectName",
+							},
+							{
+								Group: "owners-plan9",
+								Name:  "plan9",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+			},
+			expectedActions: []string{"update", "update"},
+			expectedUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-myFirstProjectName",
+								Name:  "myFirstProjectName",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+			},
+		},
+
+		// scenario 2
+		{
+			name:          "Scenario 2: only bob's projects entries are updated when the project he belongs to is removed",
+			projectToSync: createProject("plan9", createUser("bob")),
+			existingUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-plan9",
+								Name:  "plan9",
+							},
+						},
+					},
+				},
+
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "alice",
+						Email: "alice@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-placeX",
+								Name:  "placeX",
+							},
+						},
+					},
+				},
+			},
+			expectedActions: []string{"update", "update"},
+			expectedUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:     "bob",
+						Email:    "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{},
+					},
+				},
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "alice",
+						Email: "alice@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-placeX",
+								Name:  "placeX",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			kubermaticObjs := []runtime.Object{}
+			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			if test.projectToSync != nil {
+				err := projectIndexer.Add(test.projectToSync)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
+			}
+			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
+
+			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingUser := range test.existingUsers {
+				err := userIndexer.Add(existingUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, existingUser)
+			}
+			userLister := kubermaticv1lister.NewUserLister(userIndexer)
+			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+
+			// act
+			target := Controller{}
+			target.kubermaticMasterClient = fakeKubermaticClient
+			target.projectLister = projectLister
+			target.userLister = userLister
+			err := target.ensureProjectCleanup(test.projectToSync)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// validate
+			actualActions := fakeKubermaticClient.Actions()
+			if len(test.expectedActions) != len(actualActions) {
+				t.Fatalf("expected to get exactly %d actions but got %d, actions = %v", len(test.expectedActions), len(actualActions), actualActions)
+			}
+
+			// verifiedActions is equal to one because the last update action is updating the project
+			// not the users and this is something we don't want to validate
+			verifiedActions := 1
+			for index, actualAction := range actualActions {
+				if actualAction.Matches(test.expectedActions[index], "users") {
+					updateAction, ok := actualAction.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("cannot cast actualAction to CreateActon")
+					}
+					updatedUser := updateAction.GetObject().(*kubermaticv1.User)
+					if !equality.Semantic.DeepEqual(updatedUser, test.expectedUsers[index]) {
+						t.Fatalf("%v", diff.ObjectDiff(updatedUser, test.expectedUsers[index]))
+					}
+					verifiedActions = verifiedActions + 1
+				}
+			}
+			if verifiedActions != len(test.expectedActions) {
+				t.Fatalf("expected to verify %d actions but only %d were verified", verifiedActions, len(test.expectedActions))
+			}
+		})
+	}
+}
+
 func TestEnsureProjectCleanup(t *testing.T) {
 	tests := []struct {
 		name                                 string

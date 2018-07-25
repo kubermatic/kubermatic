@@ -21,24 +21,34 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm = &corev1.ConfigMap{}
 	}
 
-	configBuffer := bytes.Buffer{}
-	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
+	cloudConfig, err := CloudConfig(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse cloud config template: %v", err)
-	}
-	if err := configTpl.Execute(&configBuffer, data); err != nil {
-		return nil, fmt.Errorf("failed to render cloud config template: %v", err)
+		return nil, err
 	}
 
 	cm.Name = resources.CloudConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.GetLabels("cloud-config")
 	cm.Data = map[string]string{
-		"config":              configBuffer.String(),
+		"config":              cloudConfig,
 		FakeVMWareUUIDKeyName: fakeVMWareUUID,
 	}
 
 	return cm, nil
+}
+
+// CloudConfig returns the cloud-config for the supplied data
+func CloudConfig(data *resources.TemplateData) (string, error) {
+	configBuffer := bytes.Buffer{}
+	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cloud config template: %v", err)
+	}
+	if err := configTpl.Execute(&configBuffer, data); err != nil {
+		return "", fmt.Errorf("failed to render cloud config template: %v", err)
+	}
+
+	return configBuffer.String(), nil
 }
 
 const (

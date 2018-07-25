@@ -16,6 +16,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/defaulting"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
@@ -33,6 +34,10 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 		spec := req.Body.Cluster
 		if spec == nil {
 			return nil, errors.NewBadRequest("no cluster spec given")
+		}
+
+		if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
@@ -78,6 +83,9 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		spec.HumanReadableName = req.Body.Name
 		spec.Cloud = &req.Body.Spec.Cloud
 		spec.Version = req.Body.Spec.Version
+		if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}

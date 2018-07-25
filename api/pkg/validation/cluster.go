@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/go-test/deep"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 var (
@@ -108,15 +108,15 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return fmt.Errorf("invalid kubelet token. Format needs to match: %s", tokenValidator.String())
 	}
 
-	if diff := deep.Equal(newCluster.Status, oldCluster.Status); diff != nil {
+	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
 		return errors.New("changing the status is not allowed")
 	}
 
-	if diff := deep.Equal(newCluster.ObjectMeta, oldCluster.ObjectMeta); diff != nil {
+	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
 		return errors.New("changing the metadata is not allowed")
 	}
 
-	if diff := deep.Equal(newCluster.TypeMeta, oldCluster.TypeMeta); diff != nil {
+	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		return errors.New("changing the type metadata is not allowed")
 	}
 

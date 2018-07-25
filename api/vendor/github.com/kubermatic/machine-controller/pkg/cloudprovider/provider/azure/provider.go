@@ -456,7 +456,7 @@ func getVMByUID(ctx context.Context, c *config, uid types.UID) (*compute.Virtual
 	}
 
 	for _, vm := range allServers {
-		if vm.Tags != nil && *vm.Tags[machineUIDTag] == string(uid) {
+		if vm.Tags != nil && vm.Tags[machineUIDTag] != nil && *vm.Tags[machineUIDTag] == string(uid) {
 			return &vm, nil
 		}
 	}
