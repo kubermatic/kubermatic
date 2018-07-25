@@ -18,6 +18,7 @@ import (
 )
 
 func TestListProjectEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -174,6 +175,7 @@ func TestListProjectEndpoint(t *testing.T) {
 }
 
 func TestGetProjectEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -251,6 +253,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 }
 
 func TestCreateProjectEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -348,6 +351,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 }
 
 func TestDeleteProjectEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		HTTPStatus             int

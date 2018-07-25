@@ -253,6 +253,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)

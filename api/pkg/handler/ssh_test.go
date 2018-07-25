@@ -18,6 +18,7 @@ import (
 )
 
 func TestListSSHKeys(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -159,6 +160,7 @@ func TestListSSHKeys(t *testing.T) {
 }
 
 func TestCreateSSHKeysEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
