@@ -167,15 +167,6 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	}, nil
 }
 
-func decodeProjectPathReq(c context.Context, r *http.Request) (string, error) {
-	// project_id is actually an internal name of the object
-	projectName := mux.Vars(r)["project_id"]
-	if projectName == "" {
-		return "", fmt.Errorf("'project_id' parameter is required but was not provided")
-	}
-	return projectName, nil
-}
-
 // DoSizesReq represent a request for digitalocean sizes
 type DoSizesReq struct {
 	DoToken string
