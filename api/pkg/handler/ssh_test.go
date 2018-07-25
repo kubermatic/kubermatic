@@ -233,15 +233,13 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			expectedResponse := tc.ExpectedResponse
-			{
-				actualSSHKey := &apiv2.NewSSHKey{}
-				err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
-				if err != nil {
-					t.Fatal(err)
-				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.Metadata.Name)
+			actualSSHKey := &apiv2.NewSSHKey{}
+			err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
+			if err != nil {
+				t.Fatal(err)
 			}
+			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.Metadata.Name)
+
 			compareWithResult(t, res, expectedResponse)
 		})
 	}

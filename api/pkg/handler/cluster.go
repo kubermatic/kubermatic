@@ -83,10 +83,10 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		spec.HumanReadableName = req.Body.Name
 		spec.Cloud = &req.Body.Spec.Cloud
 		spec.Version = req.Body.Spec.Version
-		if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
+		if err = defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
-		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
+		if err = validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
@@ -188,7 +188,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		existingCluster.Spec.Cloud = &req.Body.Spec.Cloud
 		existingCluster.Spec.Version = req.Body.Spec.Version
 
-		if err := validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
+		if err = validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
@@ -272,7 +272,7 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 
 		for _, clusterSSHKey := range clusterSSHKeys {
 			clusterSSHKey.RemoveFromCluster(req.ClusterName)
-			if _, err := sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
+			if _, err = sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
 		}
