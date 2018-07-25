@@ -180,10 +180,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Weight: 100,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								resources.AppLabelKey: name,
-								"cluster":             data.Cluster.Name,
-							},
+							MatchLabels: getBasePodLabels(data),
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},
@@ -249,11 +246,15 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	return set, nil
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
+func getBasePodLabels(data *resources.TemplateData) map[string]string {
+	return map[string]string{
 		resources.AppLabelKey: name,
 		"cluster":             data.Cluster.Name,
 	}
+}
+
+func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
+	podLabels := getBasePodLabels(data)
 
 	secretDependencies := []string{
 		resources.ApiserverEtcdClientCertificateSecretName,

@@ -424,6 +424,20 @@ func TestLoadFiles(t *testing.T) {
 
 					checkTestResult(t, fixturePath, res)
 				}
+
+				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators() {
+					res, err := create(data, nil)
+					if err != nil {
+						t.Fatalf("failed to create PodDisruptionBudget: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("poddisruptionbudget-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					if err != nil {
+						t.Fatalf("failed to create PodDisruptionBudget for %s: %v", fixturePath, err)
+					}
+
+					checkTestResult(t, fixturePath, res)
+				}
 			})
 		}
 	}

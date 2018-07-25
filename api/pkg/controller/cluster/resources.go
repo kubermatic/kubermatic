@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"k8s.io/api/policy/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,6 +87,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// check that all StatefulSet's are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
+		return err
+	}
+
+	// check that all PodDisruptionBudget's are created
+	if err := cc.ensurePodDisruptionBudgets(cluster); err != nil {
 		return err
 	}
 
@@ -681,6 +687,56 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
 			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
+func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
+	return []resources.PodDisruptionBudgetCreator{
+		etcd.PodDisruptionBudget,
+	}
+}
+
+func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error {
+	creators := GetPodDisruptionBudgetCreators()
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *v1beta1.PodDisruptionBudget
+		pdb, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
+		}
+
+		if existing, err = cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName).Get(pdb.Name); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Create(pdb); err != nil {
+				return fmt.Errorf("failed to create PodDisruptionBudget %s: %v", pdb.Name, err)
+			}
+			continue
+		}
+
+		pdb, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(pdb, existing) {
+			continue
+		}
+
+		if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Update(pdb); err != nil {
+			return fmt.Errorf("failed to update PodDisruptionBudget %s: %v", pdb.Name, err)
 		}
 	}
 
