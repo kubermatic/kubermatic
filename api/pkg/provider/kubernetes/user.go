@@ -69,3 +69,8 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 
 	return p.client.KubermaticV1().Users().Create(&user)
 }
+
+// Update updates the given user
+func (p *UserProvider) Update(user *kubermaticv1.User) (*kubermaticv1.User, error) {
+	return p.client.KubermaticV1().Users().Update(user)
+}
