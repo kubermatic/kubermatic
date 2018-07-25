@@ -14,6 +14,23 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+// ProjectReq represents a request for project-specific data
+type ProjectReq struct {
+	// in: path
+	ProjectID string `json:"project_id"`
+}
+
+// GetProjectID returns the ID of a requested project
+func (pr ProjectReq) GetProjectID() string {
+	return pr.ProjectID
+}
+
+func decodeProjectRequest(c context.Context, r *http.Request) (interface{}, error) {
+	return ProjectReq{
+		ProjectID: mux.Vars(r)["project_id"],
+	}, nil
+}
+
 // ListClustersReq represent a request for clusters specific data
 // swagger:parameters listClusters listClustersV3
 type ListClustersReq struct {
@@ -128,6 +145,7 @@ type DCGetter interface {
 // DCReq represent a request for datacenter specific data
 // swagger:parameters getDatacenter
 type DCReq struct {
+	ProjectReq
 	// in: path
 	DC string `json:"dc"`
 }
@@ -138,10 +156,15 @@ func (req DCReq) GetDC() string {
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCReq
+	projectReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
 
-	req.DC = mux.Vars(r)["dc"]
-	return req, nil
+	return DCReq{
+		DC:         mux.Vars(r)["dc"],
+		ProjectReq: projectReq.(ProjectReq),
+	}, nil
 }
 
 func decodeProjectPathReq(c context.Context, r *http.Request) (string, error) {
