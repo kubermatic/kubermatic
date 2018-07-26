@@ -579,3 +579,121 @@ func TestAddUserToProject(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCurrentUser(t *testing.T) {
+	tester := apiv1.User{
+		ID:    testUsername,
+		Email: testEmail,
+	}
+
+	testcases := []struct {
+		Name                    string
+		ExpectedResponse        string
+		ExpectedStatus          int
+		ExistingProjects        []*kubermaticapiv1.Project
+		ExistingKubermaticUsers []*kubermaticapiv1.User
+		ExistingAPIUser         apiv1.User
+	}{
+		{
+			Name: "scenario 1: a user with no projects yet should omit the `projects` key from the response",
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUsername,
+						Email: testEmail,
+					},
+				},
+			},
+			ExistingAPIUser:  tester,
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`,
+		},
+
+		{
+			Name: "scenario 2: a user who is assigned to projects",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "moby",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "Joe",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
+				},
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "plan9",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "John",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
+				},
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUsername,
+						Email: testEmail,
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-plan9",
+								Name:  "plan9",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser:  tester,
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"name":"plan9","group":"owners-plan9"},{"name":"myThirdProjectInternalName","group":"editors-myThirdProjectInternalName"}]}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			kubermaticObj := []runtime.Object{}
+			for _, existingProject := range tc.ExistingProjects {
+				kubermaticObj = append(kubermaticObj, existingProject)
+			}
+			for _, existingUser := range tc.ExistingKubermaticUsers {
+				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
+			}
+
+			ep, _, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			req := httptest.NewRequest("GET", "/api/v1/users/me", nil)
+			res := httptest.NewRecorder()
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedStatus, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}

@@ -1468,6 +1468,26 @@
         }
       }
     },
+    "/api/v1/users/me": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Returns information about the current user.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/NewUser"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/versions": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
