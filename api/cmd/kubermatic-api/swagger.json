@@ -1480,7 +1480,10 @@
         "operationId": "getCurrentUser",
         "responses": {
           "200": {
-            "$ref": "#/responses/NewUser"
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
