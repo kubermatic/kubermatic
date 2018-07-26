@@ -9,9 +9,16 @@ import (
 )
 
 const (
-	OwnerGroupNamePrefix    = "owners"
-	EditorGroupNamePrefix   = "editors"
-	ViewerGroupNamePrefix   = "viewers"
+	// OwnerGroupNamePrefix represents owners group prefix
+	OwnerGroupNamePrefix = "owners"
+
+	// EditorGroupNamePrefix represents editors group prefix
+	EditorGroupNamePrefix = "editors"
+
+	// ViewerGroupNamePrefix represents viewers group prefix
+	ViewerGroupNamePrefix = "viewers"
+
+	// RbacResourcesNamePrefix represents kubermatic group prefix
 	RbacResourcesNamePrefix = "kubermatic"
 )
 
