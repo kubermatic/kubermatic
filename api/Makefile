@@ -12,10 +12,6 @@ HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 
-
-# github.com/kubermatic/kubermatic/api/pkg/resources
-# -X importpath.name=string
-
 default: all
 
 all: check test build
