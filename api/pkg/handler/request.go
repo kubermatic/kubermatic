@@ -14,20 +14,37 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+// ProjectReq represents a request for project-specific data
+type ProjectReq struct {
+	// in: path
+	ProjectID string `json:"project_id"`
+}
+
+// GetProjectID returns the ID of a requested project
+func (pr ProjectReq) GetProjectID() string {
+	return pr.ProjectID
+}
+
+func decodeProjectRequest(c context.Context, r *http.Request) (interface{}, error) {
+	return ProjectReq{
+		ProjectID: mux.Vars(r)["project_id"],
+	}, nil
+}
+
 // ListClustersReq represent a request for clusters specific data
 // swagger:parameters listClusters listClustersV3
 type ListClustersReq struct {
-	DCReq
+	LegacyDCReq
 }
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ListClustersReq
 
-	dcr, err := decodeDcReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.DCReq = dcr.(DCReq)
+	req.LegacyDCReq = dcr.(LegacyDCReq)
 
 	return req, nil
 }
@@ -35,7 +52,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 // GetClusterReq represent a request for cluster specific data
 // swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 getPossibleClusterUpgradesV3
 type GetClusterReq struct {
-	DCReq
+	LegacyDCReq
 	// in: path
 	ClusterName string `json:"cluster"`
 }
@@ -44,11 +61,11 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GetClusterReq
 	req.ClusterName = mux.Vars(r)["cluster"]
 
-	dcr, err := decodeDcReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.DCReq = dcr.(DCReq)
+	req.LegacyDCReq = dcr.(LegacyDCReq)
 
 	return req, nil
 }
@@ -84,7 +101,7 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 // ClusterReq represent a request for clusters specific data
 // swagger:parameters createCluster createClusterV3
 type ClusterReq struct {
-	DCReq
+	LegacyDCReq
 	// in: body
 	Body ClusterReqBody
 }
@@ -98,11 +115,11 @@ type ClusterReqBody struct {
 func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterReq
 
-	dcr, err := decodeDcReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.DCReq = dcr.(DCReq)
+	req.LegacyDCReq = dcr.(LegacyDCReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -125,9 +142,9 @@ type DCGetter interface {
 	GetDC() string
 }
 
-// DCReq represent a request for datacenter specific data
-// swagger:parameters getDatacenter
+// DCReq represent a request for datacenter specific data in a given project
 type DCReq struct {
+	ProjectReq
 	// in: path
 	DC string `json:"dc"`
 }
@@ -137,20 +154,35 @@ func (req DCReq) GetDC() string {
 	return req.DC
 }
 
-func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCReq
+// LegacyDCReq represent a request for datacenter specific data
+// swagger:parameters getDatacenter
+type LegacyDCReq struct {
+	// in: path
+	DC string `json:"dc"`
+}
+
+// GetDC returns the name of the datacenter in the request
+func (req LegacyDCReq) GetDC() string {
+	return req.DC
+}
+
+func decodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyDCReq
 
 	req.DC = mux.Vars(r)["dc"]
 	return req, nil
 }
 
-func decodeProjectPathReq(c context.Context, r *http.Request) (string, error) {
-	// project_id is actually an internal name of the object
-	projectName := mux.Vars(r)["project_id"]
-	if projectName == "" {
-		return "", fmt.Errorf("'project_id' parameter is required but was not provided")
+func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
+	projectReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 	}
-	return projectName, nil
+
+	return DCReq{
+		DC:         mux.Vars(r)["dc"],
+		ProjectReq: projectReq.(ProjectReq),
+	}, nil
 }
 
 // DoSizesReq represent a request for digitalocean sizes
