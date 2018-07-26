@@ -356,7 +356,7 @@ func (c *Controller) sync(key string) error {
 
 	cluster := clusterFromCache.DeepCopy()
 
-	glog.V(4).Infof("syncing cluster %s", cluster)
+	glog.V(4).Infof("syncing cluster %s", cluster.Name)
 
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
