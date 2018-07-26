@@ -378,22 +378,21 @@ type SectionOpts struct {
 
 // GenOpts the options for the generator
 type GenOpts struct {
-	IncludeModel       bool
-	IncludeValidator   bool
-	IncludeHandler     bool
-	IncludeParameters  bool
-	IncludeResponses   bool
-	IncludeURLBuilder  bool
-	IncludeMain        bool
-	IncludeSupport     bool
-	ExcludeSpec        bool
-	DumpData           bool
-	WithContext        bool
-	ValidateSpec       bool
-	FlattenSpec        bool
-	FlattenDefinitions bool
-	IsClient           bool
-	defaultsEnsured    bool
+	IncludeModel      bool
+	IncludeValidator  bool
+	IncludeHandler    bool
+	IncludeParameters bool
+	IncludeResponses  bool
+	IncludeURLBuilder bool
+	IncludeMain       bool
+	IncludeSupport    bool
+	ExcludeSpec       bool
+	DumpData          bool
+	WithContext       bool
+	ValidateSpec      bool
+	FlattenOpts       *analysis.FlattenOpts
+	IsClient          bool
+	defaultsEnsured   bool
 
 	Spec              string
 	APIPackage        string
@@ -482,6 +481,13 @@ func (g *GenOpts) EnsureDefaults() error {
 	DefaultSectionOpts(g)
 	if g.LanguageOpts == nil {
 		g.LanguageOpts = GoLangOpts()
+	}
+	// set defaults for flattening options
+	g.FlattenOpts = &analysis.FlattenOpts{
+		Minimal:      true,
+		Verbose:      true,
+		RemoveUnused: false,
+		Expand:       false,
 	}
 	g.defaultsEnsured = true
 	return nil
@@ -594,9 +600,7 @@ func (g *GenOpts) render(t *TemplateOpts, data interface{}) ([]byte, error) {
 	if err := templ.Execute(&tBuf, data); err != nil {
 		return nil, fmt.Errorf("template execution failed for template %s: %v", t.Name, err)
 	}
-	//if Debug {
 	log.Printf("executed template %s", t.Source)
-	//}
 
 	return tBuf.Bytes(), nil
 }
@@ -612,9 +616,8 @@ func (g *GenOpts) write(t *TemplateOpts, data interface{}) error {
 	}
 
 	if t.SkipExists && fileExists(dir, fname) {
-		if Debug {
-			log.Printf("skipping generation of %s because it already exists and skip_exist directive is set for %s", filepath.Join(dir, fname), t.Name)
-		}
+		debugLog("skipping generation of %s because it already exists and skip_exist directive is set for %s",
+			filepath.Join(dir, fname), t.Name)
 		return nil
 	}
 
@@ -627,9 +630,7 @@ func (g *GenOpts) write(t *TemplateOpts, data interface{}) error {
 	if dir != "" {
 		_, exists := os.Stat(dir)
 		if os.IsNotExist(exists) {
-			if Debug {
-				log.Printf("creating directory %q for \"%s\"", dir, t.Name)
-			}
+			debugLog("creating directory %q for \"%s\"", dir, t.Name)
 			// Directory settings consistent with file privileges.
 			// Environment's umask may alter this setup
 			if e := os.MkdirAll(dir, 0755); e != nil {
@@ -916,8 +917,9 @@ func validateAndFlattenSpec(opts *GenOpts, specDoc *loads.Document) (*loads.Docu
 
 	// Validate if needed
 	if opts.ValidateSpec {
-		if err := validateSpec(opts.Spec, specDoc); err != nil {
-			return specDoc, err
+		log.Printf("validating spec %v", opts.Spec)
+		if erv := validateSpec(opts.Spec, specDoc); erv != nil {
+			return specDoc, erv
 		}
 	}
 
@@ -933,26 +935,137 @@ func validateAndFlattenSpec(opts *GenOpts, specDoc *loads.Document) (*loads.Docu
 		absBasePath = filepath.Join(cwd, absBasePath)
 	}
 
-	/********************************************************************************************/
-	/* Either flatten or expand should be called here before moving on the code generation part */
-	/********************************************************************************************/
-	if opts.FlattenSpec {
-		flattenOpts := analysis.FlattenOpts{
-			Expand: false,
-			// BasePath must be absolute. This is guaranteed because opts.Spec is absolute
-			BasePath: absBasePath,
-			Spec:     analysis.New(specDoc.Spec()),
-		}
-		err = analysis.Flatten(flattenOpts)
+	// Some preprocessing is required before codegen
+	//
+	// This ensures at least that $ref's in the spec document are canonical,
+	// i.e all $ref are local to this file and point to some uniquely named definition.
+	//
+	// Default option is to ensure minimal flattening of $ref, bundling remote $refs and relocating arbitrary JSON
+	// pointers as definitions.
+	// This preprocessing may introduce duplicate names (e.g. remote $ref with same name). In this case, a definition
+	// suffixed with "OAIGen" is produced.
+	//
+	// Full flattening option farther transforms the spec by moving every complex object (e.g. with some properties)
+	// as a standalone definition.
+	//
+	// Eventually, an "expand spec" option is available. It is essentially useful for testing purposes.
+	//
+	// NOTE(fredbi): spec expansion may produce some unsupported constructs and is not yet protected against the
+	// following cases:
+	//  - polymorphic types generation may fail with expansion (expand destructs the reuse intent of the $ref in allOf)
+	//  - name duplicates may occur and result in compilation failures
+	// The right place to fix these shortcomings is go-openapi/analysis.
+
+	opts.FlattenOpts.BasePath = absBasePath // BasePath must be absolute. This is guaranteed as opts.Spec is absolute
+	opts.FlattenOpts.Spec = analysis.New(specDoc.Spec())
+
+	var preprocessingOption string
+	if opts.FlattenOpts.Expand {
+		preprocessingOption = "expand"
+	} else if opts.FlattenOpts.Minimal {
+		preprocessingOption = "minimal flattening"
 	} else {
-		err = spec.ExpandSpec(specDoc.Spec(), &spec.ExpandOptions{
-			RelativeBase: absBasePath,
-			SkipSchemas:  false,
-		})
+		preprocessingOption = "full flattening"
 	}
-	if err != nil {
+	log.Printf("preprocessing spec with option:  %s", preprocessingOption)
+
+	if err = analysis.Flatten(*opts.FlattenOpts); err != nil {
 		return nil, err
 	}
 
+	// yields the preprocessed spec document
 	return specDoc, nil
+}
+
+// gatherSecuritySchemes produces a sorted representation from a map of spec security schemes
+func gatherSecuritySchemes(securitySchemes map[string]spec.SecurityScheme, appName, principal, receiver string) (security GenSecuritySchemes) {
+	for scheme, req := range securitySchemes {
+		isOAuth2 := strings.ToLower(req.Type) == "oauth2"
+		var scopes []string
+		if isOAuth2 {
+			for k := range req.Scopes {
+				scopes = append(scopes, k)
+			}
+		}
+		sort.Strings(scopes)
+
+		security = append(security, GenSecurityScheme{
+			AppName:      appName,
+			ID:           scheme,
+			ReceiverName: receiver,
+			Name:         req.Name,
+			IsBasicAuth:  strings.ToLower(req.Type) == "basic",
+			IsAPIKeyAuth: strings.ToLower(req.Type) == "apikey",
+			IsOAuth2:     isOAuth2,
+			Scopes:       scopes,
+			Principal:    principal,
+			Source:       req.In,
+			// from original spec
+			Description:      req.Description,
+			Type:             strings.ToLower(req.Type),
+			In:               req.In,
+			Flow:             req.Flow,
+			AuthorizationURL: req.AuthorizationURL,
+			TokenURL:         req.TokenURL,
+			Extensions:       req.Extensions,
+		})
+	}
+	sort.Sort(security)
+	return
+}
+
+// gatherExtraSchemas produces a sorted list of extra schemas.
+//
+// ExtraSchemas are inlined types rendered in the same model file.
+func gatherExtraSchemas(extraMap map[string]GenSchema) (extras GenSchemaList) {
+	var extraKeys []string
+	for k := range extraMap {
+		extraKeys = append(extraKeys, k)
+	}
+	sort.Strings(extraKeys)
+	for _, k := range extraKeys {
+		// figure out if top level validations are needed
+		p := extraMap[k]
+		p.HasValidations = shallowValidationLookup(p)
+		extras = append(extras, p)
+	}
+	return
+}
+
+func sharedValidationsFromSimple(v spec.CommonValidations, isRequired bool) (sh sharedValidations) {
+	sh = sharedValidations{
+		Required:         isRequired,
+		Maximum:          v.Maximum,
+		ExclusiveMaximum: v.ExclusiveMaximum,
+		Minimum:          v.Minimum,
+		ExclusiveMinimum: v.ExclusiveMinimum,
+		MaxLength:        v.MaxLength,
+		MinLength:        v.MinLength,
+		Pattern:          v.Pattern,
+		MaxItems:         v.MaxItems,
+		MinItems:         v.MinItems,
+		UniqueItems:      v.UniqueItems,
+		MultipleOf:       v.MultipleOf,
+		Enum:             v.Enum,
+	}
+	return
+}
+
+func sharedValidationsFromSchema(v spec.Schema, isRequired bool) (sh sharedValidations) {
+	sh = sharedValidations{
+		Required:         isRequired,
+		Maximum:          v.Maximum,
+		ExclusiveMaximum: v.ExclusiveMaximum,
+		Minimum:          v.Minimum,
+		ExclusiveMinimum: v.ExclusiveMinimum,
+		MaxLength:        v.MaxLength,
+		MinLength:        v.MinLength,
+		Pattern:          v.Pattern,
+		MaxItems:         v.MaxItems,
+		MinItems:         v.MinItems,
+		UniqueItems:      v.UniqueItems,
+		MultipleOf:       v.MultipleOf,
+		Enum:             v.Enum,
+	}
+	return
 }

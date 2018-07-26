@@ -204,30 +204,20 @@ func (a *appGenerator) Generate() error {
 		return nil
 	}
 
+	// NOTE: relative to previous implem with chan.
 	// IPC removed concurrent execution because of the FuncMap that is being shared
 	// templates are now lazy loaded so there is concurrent map access I can't guard
-
-	// errChan := make(chan error, 100)
-	// wg := nsync.NewControlWaitGroup(20)
-
 	if a.GenOpts.IncludeModel {
 		log.Printf("rendering %d models", len(app.Models))
 		for _, mod := range app.Models {
-			// if len(errChan) > 0 {
-			// 	wg.Wait()
-			// 	return <-errChan
-			// }
 			modCopy := mod
-			// wg.Do(func() {
 			modCopy.IncludeValidator = true // a.GenOpts.IncludeValidator
 			modCopy.IncludeModel = true
 			if err := a.GenOpts.renderDefinition(&modCopy); err != nil {
 				return err
 			}
-			// })
 		}
 	}
-	// wg.Wait()
 
 	if a.GenOpts.IncludeHandler {
 		log.Printf("rendering %d operation groups (tags)", app.OperationGroups.Len())
@@ -252,17 +242,10 @@ func (a *appGenerator) Generate() error {
 
 	if a.GenOpts.IncludeSupport {
 		log.Printf("rendering support")
-		// wg.Do(func() {
 		if err := a.GenerateSupport(&app); err != nil {
-			// errChan <- err
 			return err
 		}
-		// })
 	}
-	// wg.Wait()
-	// if len(errChan) > 0 {
-	// 	return <-errChan
-	// }
 	return nil
 }
 
@@ -352,6 +335,23 @@ func (a *appGenerator) makeConsumes() (consumes GenSerGroups, consumesJSON bool)
 	for _, cons := range a.Analyzed.RequiredConsumes() {
 		cn, ok := mediaTypeName(cons)
 		if !ok {
+			nm := swag.ToJSONName(cons)
+			ser := GenSerializer{
+				AppName:        a.Name,
+				ReceiverName:   a.Receiver,
+				Name:           nm,
+				MediaType:      cons,
+				Implementation: "",
+			}
+
+			consumes = append(consumes, GenSerGroup{
+				AppName:        ser.AppName,
+				ReceiverName:   ser.ReceiverName,
+				Name:           ser.Name,
+				MediaType:      cons,
+				AllSerializers: []GenSerializer{ser},
+				Implementation: ser.Implementation,
+			})
 			continue
 		}
 		nm := swag.ToJSONName(cn)
@@ -394,7 +394,7 @@ func (a *appGenerator) makeConsumes() (consumes GenSerGroups, consumesJSON bool)
 			ReceiverName: a.Receiver,
 			Name:         "json",
 			MediaType:    runtime.JSONMime,
-			AllSerializers: []GenSerializer{GenSerializer{
+			AllSerializers: []GenSerializer{{
 				AppName:        a.Name,
 				ReceiverName:   a.Receiver,
 				Name:           "json",
@@ -413,6 +413,22 @@ func (a *appGenerator) makeProduces() (produces GenSerGroups, producesJSON bool)
 	for _, prod := range a.Analyzed.RequiredProduces() {
 		pn, ok := mediaTypeName(prod)
 		if !ok {
+			nm := swag.ToJSONName(prod)
+			ser := GenSerializer{
+				AppName:        a.Name,
+				ReceiverName:   a.Receiver,
+				Name:           nm,
+				MediaType:      prod,
+				Implementation: "",
+			}
+			produces = append(produces, GenSerGroup{
+				AppName:        ser.AppName,
+				ReceiverName:   ser.ReceiverName,
+				Name:           ser.Name,
+				MediaType:      prod,
+				Implementation: ser.Implementation,
+				AllSerializers: []GenSerializer{ser},
+			})
 			continue
 		}
 		nm := swag.ToJSONName(pn)
@@ -454,7 +470,7 @@ func (a *appGenerator) makeProduces() (produces GenSerGroups, producesJSON bool)
 			ReceiverName: a.Receiver,
 			Name:         "json",
 			MediaType:    runtime.JSONMime,
-			AllSerializers: []GenSerializer{GenSerializer{
+			AllSerializers: []GenSerializer{{
 				AppName:        a.Name,
 				ReceiverName:   a.Receiver,
 				Name:           "json",
@@ -469,38 +485,17 @@ func (a *appGenerator) makeProduces() (produces GenSerGroups, producesJSON bool)
 	return
 }
 
-func (a *appGenerator) makeSecuritySchemes() (security GenSecuritySchemes) {
-
-	prin := a.Principal
-	if prin == "" {
-		prin = "interface{}"
+func (a *appGenerator) makeSecuritySchemes() GenSecuritySchemes {
+	if a.Principal == "" {
+		a.Principal = "interface{}"
 	}
+	requiredSecuritySchemes := make(map[string]spec.SecurityScheme, len(a.Analyzed.RequiredSecuritySchemes()))
 	for _, scheme := range a.Analyzed.RequiredSecuritySchemes() {
-		if req, ok := a.SpecDoc.Spec().SecurityDefinitions[scheme]; ok {
-			isOAuth2 := strings.ToLower(req.Type) == "oauth2"
-			var scopes []string
-			if isOAuth2 {
-				for k := range req.Scopes {
-					scopes = append(scopes, k)
-				}
-			}
-
-			security = append(security, GenSecurityScheme{
-				AppName:      a.Name,
-				ID:           scheme,
-				ReceiverName: a.Receiver,
-				Name:         req.Name,
-				IsBasicAuth:  strings.ToLower(req.Type) == "basic",
-				IsAPIKeyAuth: strings.ToLower(req.Type) == "apikey",
-				IsOAuth2:     isOAuth2,
-				Scopes:       scopes,
-				Principal:    prin,
-				Source:       req.In,
-			})
+		if req, ok := a.SpecDoc.Spec().SecurityDefinitions[scheme]; ok && req != nil {
+			requiredSecuritySchemes[scheme] = *req
 		}
 	}
-	sort.Sort(security)
-	return
+	return gatherSecuritySchemes(requiredSecuritySchemes, a.Name, a.Principal, a.Receiver)
 }
 
 func (a *appGenerator) makeCodegenApp() (GenApp, error) {
@@ -517,10 +512,6 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 	produces, _ := a.makeProduces()
 	sort.Sort(consumes)
 	sort.Sort(produces)
-	prin := a.Principal
-	if prin == "" {
-		prin = "interface{}"
-	}
 	security := a.makeSecuritySchemes()
 	baseImport := a.GenOpts.LanguageOpts.baseImport(a.Target)
 	var imports map[string]string
@@ -532,7 +523,6 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 			imports = make(map[string]string)
 		}
 		imports[a.ModelsPackage] = filepath.ToSlash(filepath.Join(baseImport, manglePackageName(a.GenOpts, a.GenOpts.ModelPackage, "models")))
-		// importPath = filepath.ToSlash(filepath.Join(baseImport, a.ModelsPackage))
 	}
 	if importPath != "" {
 		defaultImports = append(defaultImports, importPath)
@@ -564,9 +554,10 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		o := opp.Op
 		o.Tags = pruneEmpty(o.Tags)
 		o.ID = on
+
 		var bldr codeGenOpBuilder
 		bldr.ModelsPackage = a.ModelsPackage
-		bldr.Principal = prin
+		bldr.Principal = a.Principal
 		bldr.Target = a.Target
 		bldr.DefaultImports = defaultImports
 		bldr.Imports = imports
@@ -586,6 +577,7 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		bldr.SecurityDefinitions = a.Analyzed.SecurityDefinitionsFor(o)
 		bldr.RootAPIPackage = swag.ToFileName(a.APIPackage)
 		bldr.WithContext = a.GenOpts != nil && a.GenOpts.WithContext
+		bldr.IncludeValidator = true
 
 		bldr.APIPackage = bldr.RootAPIPackage
 		st := o.Tags
@@ -631,18 +623,33 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 	var opGroups GenOperationGroups
 	for k, v := range opsGroupedByPackage {
 		sort.Sort(v)
+		// trim duplicate extra schemas within the same package
+		vv := make(GenOperations, 0, len(v))
+		seenExtraSchema := make(map[string]bool)
+		for _, op := range v {
+			uniqueExtraSchemas := make(GenSchemaList, 0, len(op.ExtraSchemas))
+			for _, xs := range op.ExtraSchemas {
+				if _, alreadyThere := seenExtraSchema[xs.Name]; !alreadyThere {
+					seenExtraSchema[xs.Name] = true
+					uniqueExtraSchemas = append(uniqueExtraSchemas, xs)
+				}
+			}
+			op.ExtraSchemas = uniqueExtraSchemas
+			vv = append(vv, op)
+		}
+
 		opGroup := GenOperationGroup{
 			GenCommon: GenCommon{
 				Copyright:        a.GenOpts.Copyright,
 				TargetImportPath: filepath.ToSlash(baseImport),
 			},
-			Name:       k,
-			Operations: v,
-			// DefaultImports: []string{filepath.ToSlash(filepath.Join(baseImport, a.ModelsPackage))},
+			Name:           k,
+			Operations:     vv,
 			DefaultImports: defaultImports,
 			Imports:        imports,
 			RootPackage:    a.APIPackage,
 			WithContext:    a.GenOpts != nil && a.GenOpts.WithContext,
+			GenOpts:        a.GenOpts,
 		}
 		opGroups = append(opGroups, opGroup)
 		var importPath string
@@ -701,7 +708,7 @@ func (a *appGenerator) makeCodegenApp() (GenApp, error) {
 		Models:              genMods,
 		Operations:          genOps,
 		OperationGroups:     opGroups,
-		Principal:           prin,
+		Principal:           a.Principal,
 		SwaggerJSON:         generateReadableSpec(jsonb),
 		FlatSwaggerJSON:     generateReadableSpec(flatjsonb),
 		ExcludeSpec:         a.GenOpts != nil && a.GenOpts.ExcludeSpec,

@@ -29,7 +29,7 @@ const (
 	missingArgMsg  = "The validate command requires the swagger document url to be specified"
 	validSpecMsg   = "\nThe swagger spec at %q is valid against swagger specification %s\n"
 	invalidSpecMsg = "\nThe swagger spec at %q is invalid against swagger specification %s.\nSee errors below:\n"
-	warningSpecMsg = "\nThe swagger spec at %q showed up some valid but possiby unwanted constructs."
+	warningSpecMsg = "\nThe swagger spec at %q showed up some valid but possibly unwanted constructs."
 )
 
 // ValidateSpec is a command that validates a swagger document
@@ -50,7 +50,7 @@ func (c *ValidateSpec) Execute(args []string) error {
 
 	specDoc, err := loads.Spec(swaggerDoc)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	// Attempts to report about all errors

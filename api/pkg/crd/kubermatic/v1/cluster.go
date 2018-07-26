@@ -74,8 +74,9 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud          *CloudSpec              `json:"cloud"`
-	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
+	Cloud          *CloudSpec               `json:"cloud"`
+	ClusterNetwork ClusterNetworkingConfig  `json:"clusterNetwork"`
+	MachineNetwork *MachineNetworkingConfig `json:"machineNetwork"`
 
 	Version       string `json:"version"`       // Cluster version
 	MasterVersion string `json:"masterVersion"` // Deprecated cluster version
@@ -100,6 +101,13 @@ type ClusterNetworkingConfig struct {
 
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
+}
+
+// MachineNetworkingConfig specifies the networking parameters used for IPAM.
+type MachineNetworkingConfig struct {
+	NetworkRanges
+	Gateway    string   `json:"gateway"`
+	DNSServers []string `json:"dnsServers"`
 }
 
 // NetworkRanges represents ranges of network addresses.

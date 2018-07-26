@@ -31,9 +31,10 @@ type cleanupContext struct {
 type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 func main() {
-	var kubeconfig, masterURL string
+	var kubeconfig, masterURL, workerName string
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&workerName, "worker-name", "", "Name of the current worker, only clusters with a matching label will be cleaned up.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.Parse()
 
@@ -60,6 +61,12 @@ func main() {
 	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
+
+			if c.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
+				glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", c.Name)
+				return
+			}
+
 			cleanupCluster(c, &ctx)
 		}(&clusters.Items[i])
 	}

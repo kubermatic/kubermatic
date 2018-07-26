@@ -234,6 +234,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
+		"--feature-gates", "Initializers=true",
+		"--runtime-config", "admissionregistration.k8s.io/v1alpha1",
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -279,7 +281,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 
 func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	// We use these as default in case semver parsing fails
-	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
+	admissionControlFlagValue := "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
 	admissionControlFlagName := "--admission-control"
 
 	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)

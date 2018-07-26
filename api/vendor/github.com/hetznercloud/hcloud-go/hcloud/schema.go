@@ -42,6 +42,9 @@ func FloatingIPFromSchema(s schema.FloatingIP) *FloatingIP {
 		Type:         FloatingIPType(s.Type),
 		HomeLocation: LocationFromSchema(s.HomeLocation),
 		Blocked:      s.Blocked,
+		Protection: FloatingIPProtection{
+			Delete: s.Protection.Delete,
+		},
 	}
 	if s.Description != nil {
 		f.Description = *s.Description
@@ -68,6 +71,7 @@ func ISOFromSchema(s schema.ISO) *ISO {
 		Name:        s.Name,
 		Description: s.Description,
 		Type:        ISOType(s.Type),
+		Deprecated:  s.Deprecated,
 	}
 }
 
@@ -118,6 +122,10 @@ func ServerFromSchema(s schema.Server) *Server {
 		RescueEnabled:   s.RescueEnabled,
 		Datacenter:      DatacenterFromSchema(s.Datacenter),
 		Locked:          s.Locked,
+		Protection: ServerProtection{
+			Delete:  s.Protection.Delete,
+			Rebuild: s.Protection.Rebuild,
+		},
 	}
 	if s.Image != nil {
 		server.Image = ImageFromSchema(*s.Image)
@@ -222,6 +230,10 @@ func ImageFromSchema(s schema.Image) *Image {
 		Created:     s.Created,
 		RapidDeploy: s.RapidDeploy,
 		OSFlavor:    s.OSFlavor,
+		Protection: ImageProtection{
+			Delete: s.Protection.Delete,
+		},
+		Deprecated: s.Deprecated,
 	}
 	if s.Name != nil {
 		i.Name = *s.Name

@@ -77,6 +77,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		spec := &kubermaticapiv1.ClusterSpec{}
 		spec.HumanReadableName = req.Body.Name
 		spec.Cloud = &req.Body.Spec.Cloud
+		spec.MachineNetwork = req.Body.Spec.MachineNetwork
 		spec.Version = req.Body.Spec.Version
 		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
@@ -179,6 +180,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 
 		existingCluster.Spec.Cloud = &req.Body.Spec.Cloud
 		existingCluster.Spec.Version = req.Body.Spec.Version
+		existingCluster.Spec.MachineNetwork = req.Body.Spec.MachineNetwork
 
 		if err := validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
@@ -394,8 +396,9 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 			}(),
 		},
 		Spec: apiv1.NewClusterSpec{
-			Cloud:   *internalCluster.Spec.Cloud,
-			Version: internalCluster.Spec.Version,
+			Cloud:          *internalCluster.Spec.Cloud,
+			Version:        internalCluster.Spec.Version,
+			MachineNetwork: internalCluster.Spec.MachineNetwork,
 		},
 		Status: apiv1.NewClusterStatus{
 			Version: internalCluster.Spec.Version,

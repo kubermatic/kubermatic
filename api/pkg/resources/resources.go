@@ -11,6 +11,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -21,6 +22,9 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
+
+// KUBERMATICTAG is a magic variable containing the git tag of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
+var KUBERMATICTAG string
 
 const (
 	//AddonManagerDeploymentName is the name for the addon-manager deployment
@@ -112,6 +116,13 @@ const (
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
+
+	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
+	MachineIPAMInitializerConfigurationName = "ipam-initializer"
+	// MachineIPAMInitializerName is the name of the initializer used for setting up static ips for machines
+	MachineIPAMInitializerName = "ipam.kubermatic.io"
+	// IPAMControllerDeploymentName is the name of the ipam controller's deployment
+	IPAMControllerDeploymentName = "ipam-controller"
 
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
@@ -217,6 +228,9 @@ type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.Clust
 
 // DeploymentCreator defines an interface to create/update Deployment's
 type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
+
+// InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
+type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {

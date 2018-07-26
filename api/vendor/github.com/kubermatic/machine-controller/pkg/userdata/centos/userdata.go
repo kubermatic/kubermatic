@@ -3,6 +3,7 @@ package centos
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"text/template"
@@ -67,7 +68,11 @@ func getDockerPackageName(version string) (string, error) {
 	return "", fmt.Errorf("no package found for version '%s'", version)
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+func (p Provider) UserData(
+	spec machinesv1alpha1.MachineSpec,
+	kubeconfig *clientcmdapi.Config,
+	ccProvider cloud.ConfigProvider,
+	clusterDNSIPs []net.IP) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -92,6 +97,14 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *client
 	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
+	}
+
+	if pconfig.OverwriteCloudConfig != nil {
+		cpConfig = *pconfig.OverwriteCloudConfig
+	}
+
+	if pconfig.Network != nil {
+		return "", errors.New("static IP config is not supported with CentOS")
 	}
 
 	osConfig, err := getConfig(pconfig.OperatingSystemSpec)
@@ -165,19 +178,10 @@ ssh_authorized_keys:
 {{- end }}
 
 write_files:
-- path: "/etc/kubernetes/cloud-config"
+- path: "/etc/sysctl.d/k8s.conf"
   content: |
-{{ if ne .CloudConfig "" }}{{ .CloudConfig | indent 4 }}{{ end }}
-
-- path: "/etc/udev/rules.d/99-bridge.rules"
-  content: |
-    ACTION=="add", SUBSYSTEM=="module", KERNEL=="br_netfilter", \
-      RUN+="/lib/systemd/systemd-sysctl --prefix=/net/bridge"
-
-- path: "/etc/sysctl.d/bridge.conf"
-  content: |
+    net.bridge.bridge-nf-call-ip6tables = 1
     net.bridge.bridge-nf-call-iptables = 1
-
 
 - path: "/etc/yum.repos.d/kubernetes.repo"
   content: |
@@ -203,48 +207,82 @@ write_files:
     #     mls - Multi Level Security protection.
     SELINUXTYPE=targeted
 
-- path: "/etc/systemd/system/kubeadm-join.service"
-  content: |
-    [Unit]
-    Requires=network-online.target docker.service
-    After=network-online.target docker.service
 
+- path: "/etc/sysconfig/kubelet-overwrite"
+  content: |
+    KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
+      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} --read-only-port 0 \
+      --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} --cluster-domain=cluster.local
+{{ if semverCompare "<1.11.0" .KubeletVersion }}
+- path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
+  content: |
     [Service]
-    Type=oneshot
-    RemainAfterExit=true
-    ExecStartPre=/usr/sbin/modprobe br_netfilter
-    # This is required because it contains an empty KUBELET_EXTRA_ARGS= variable which has precedence over the one
-    # defined in /etc/systemd/system/kubelet.service.d/20-extra.conf
-    # We remove it here as /etc/systemd/system/kubelet.service comes from the package
-    ExecStartPre=/usr/bin/rm -f /etc/sysconfig/kubelet
-    ExecStart=/usr/bin/kubeadm join \
+    EnvironmentFile=/etc/sysconfig/kubelet
+{{ end }}
+
+
+- path: "/etc/kubernetes/cloud-config"
+  content: |
+{{ if ne .CloudConfig "" }}{{ .CloudConfig | indent 4 }}{{ end }}
+
+- path: "/usr/local/bin/setup"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    setenforce 0 || true
+    sysctl --system
+
+    # There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
+    # specified, installation of the kube packages fails
+    export CNI_PKG=''
+    {{- if semverCompare "=1.8.X" .KubeletVersion }}
+    export CNI_PKG='kubernetes-cni-0.5.1-1'
+    {{- end }}
+
+    yum install -y {{ .DockerPackageName }} \
+      kubelet-{{ .KubeletVersion }} \
+      kubeadm-{{ .KubeletVersion }} \
+      ebtables \
+      ethtool \
+      nfs-utils \
+      bash-completion \
+      sudo \
+      ${CNI_PKG}
+
+    cp /etc/sysconfig/kubelet-overwrite /etc/sysconfig/kubelet
+
+    systemctl enable --now docker
+    systemctl enable --now kubelet
+
+    kubeadm join \
       --token {{ .BoostrapToken }} \
       --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
       {{ .ServerAddr }}
 
-- path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
+- path: "/usr/local/bin/supervise.sh"
+  permissions: "0777"
   content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    while ! "$@"; do
+      sleep 1
+    done
+
+- path: "/etc/systemd/system/setup.service"
+  content: |
+    [Install]
+    WantedBy=multi-user.target
+
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+
     [Service]
-    Environment="KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
-      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} --read-only-port 0"
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/supervise.sh /usr/local/bin/setup
 
 runcmd:
-- setenforce 0 || true
-- systemctl enable kubelet
-- systemctl start kubeadm-join
-
-packages:
-- {{ .DockerPackageName }}
-- kubelet-{{ .KubeletVersion }}
-- kubeadm-{{ .KubeletVersion }}
-- ebtables
-- ethtool
-- nfs-utils
-- bash-completion # Have mercy for the poor operators
-- sudo
-{{- if semverCompare "=1.8.X" .KubeletVersion }}
-# There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
-# specified, installation of the kube packages fails
-- kubernetes-cni-0.5.1-1
-{{- end }}
+- systemctl enable --now setup.service
 `

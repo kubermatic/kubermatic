@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -42,6 +41,8 @@ func (s responses) Len() int           { return len(s) }
 func (s responses) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s responses) Less(i, j int) bool { return s[i].Code < s[j].Code }
 
+// sortedResponses produces a sorted list of responses.
+// TODO: this is redundant with the definition given in struct.go
 func sortedResponses(input map[int]spec.Response) responses {
 	var res responses
 	for k, v := range input {
@@ -122,7 +123,7 @@ func GenerateServerOperation(operationNames []string, opts *GenOpts) error {
 			IncludeHandler:       opts.IncludeHandler,
 			IncludeParameters:    opts.IncludeParameters,
 			IncludeResponses:     opts.IncludeResponses,
-			IncludeValidator:     opts.IncludeValidator,
+			IncludeValidator:     true, // we no more support the CLI option to disable validation
 			DumpData:             opts.DumpData,
 			DefaultScheme:        defaultScheme,
 			DefaultProduces:      defaultProduces,
@@ -159,7 +160,7 @@ type operationGenerator struct {
 	ServerPackage        string
 	ClientPackage        string
 	Operation            spec.Operation
-	SecurityRequirements []analysis.SecurityRequirement
+	SecurityRequirements [][]analysis.SecurityRequirement
 	SecurityDefinitions  map[string]spec.SecurityScheme
 	Tags                 []string
 	DefaultScheme        string
@@ -271,12 +272,14 @@ type codeGenOpBuilder struct {
 	DefaultScheme       string
 	DefaultProduces     string
 	DefaultConsumes     string
-	Security            []analysis.SecurityRequirement
+	Security            [][]analysis.SecurityRequirement
 	SecurityDefinitions map[string]spec.SecurityScheme
 	ExtraSchemas        map[string]GenSchema
 	GenOpts             *GenOpts
 }
 
+// renameTimeout renames the variable in use by client template to avoid conflicting
+// with param names.
 func renameTimeout(seenIds map[string][]string, current string) string {
 	var next string
 	switch strings.ToLower(current) {
@@ -300,12 +303,19 @@ func renameTimeout(seenIds map[string][]string, current string) string {
 }
 
 func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
-	if Debug {
-		log.Printf("[%s %s] parsing operation (id: %q)", b.Method, b.Path, b.Operation.ID)
-	}
-	// @eleanorrigby : letting the comment be. Commented in response to issue#890
-	// Post-flattening of spec we no longer need to reset defs for spec or use original spec in any case.
-	resolver := newTypeResolver(b.ModelsPackage, b.Doc /*.ResetDefinitions()*/)
+	debugLog("[%s %s] parsing operation (id: %q)", b.Method, b.Path, b.Operation.ID)
+	// NOTE: we assume flatten is enabled by default (i.e. complex constructs are resolved from the models package),
+	// but do not assume the spec is necessarily fully flattened (i.e. all schemas moved to definitions).
+	//
+	// Fully flattened means that all complex constructs are present as
+	// definitions and models produced accordingly in ModelsPackage,
+	// whereas minimal flatten simply ensures that there are no weird $ref's in the spec.
+	//
+	// When some complex anonymous constructs are specified, extra schemas are produced in the operations package.
+	//
+	// In all cases, resetting definitions to the _original_ (untransformed) spec is not an option:
+	// we take from there the spec possibly already transformed by the GenDefinitions stage.
+	resolver := newTypeResolver(b.ModelsPackage, b.Doc)
 	receiver := "o"
 
 	operation := b.Operation
@@ -383,7 +393,7 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 	var successResponses []GenResponse
 	if operation.Responses != nil {
 		for _, v := range srs {
-			name, ok := v.Response.Extensions.GetString("x-go-name")
+			name, ok := v.Response.Extensions.GetString(xGoName)
 			if !ok {
 				name = runtime.Statuses[v.Code]
 			}
@@ -416,26 +426,17 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 		defaultResponse = &gr
 	}
 
-	prin := b.Principal
-	if prin == "" {
-		prin = iface
+	if b.Principal == "" {
+		b.Principal = iface
 	}
-
-	var extra GenSchemaList
-	for _, sch := range b.ExtraSchemas {
-		if !sch.IsStream {
-			extra = append(extra, sch)
-		}
-	}
-	sort.Sort(extra)
 
 	swsp := resolver.Doc.Spec()
 	var extraSchemes []string
-	if ess, ok := operation.Extensions.GetStringSlice("x-schemes"); ok {
+	if ess, ok := operation.Extensions.GetStringSlice(xSchemes); ok {
 		extraSchemes = append(extraSchemes, ess...)
 	}
 
-	if ess1, ok := swsp.Extensions.GetStringSlice("x-schemes"); ok {
+	if ess1, ok := swsp.Extensions.GetStringSlice(xSchemes); ok {
 		extraSchemes = concatUnique(ess1, extraSchemes)
 	}
 	sort.Strings(extraSchemes)
@@ -471,6 +472,7 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 			}
 		}
 	}
+
 	return GenOperation{
 		GenCommon: GenCommon{
 			Copyright:        b.GenOpts.Copyright,
@@ -502,14 +504,14 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 		HasBodyParams:        hasBodyParams,
 		HasStreamingResponse: hasStreamingResponse,
 		Authorized:           b.Authed,
-		Security:             b.Security,
-		SecurityDefinitions:  b.SecurityDefinitions,
-		Principal:            prin,
+		Security:             b.makeSecurityRequirements(receiver),
+		SecurityDefinitions:  b.makeSecuritySchemes(receiver),
+		Principal:            b.Principal,
 		Responses:            responses,
 		DefaultResponse:      defaultResponse,
 		SuccessResponse:      successResponse,
 		SuccessResponses:     successResponses,
-		ExtraSchemas:         extra,
+		ExtraSchemas:         gatherExtraSchemas(b.ExtraSchemas),
 		Schemes:              schemeOrDefault(schemes, b.DefaultScheme),
 		ProducesMediaTypes:   produces,
 		ConsumesMediaTypes:   consumes,
@@ -554,20 +556,9 @@ func concatUnique(collections ...[]string) []string {
 }
 
 func (b *codeGenOpBuilder) MakeResponse(receiver, name string, isSuccess bool, resolver *typeResolver, code int, resp spec.Response) (GenResponse, error) {
-	if Debug {
-		log.Printf("[%s %s] making id %q", b.Method, b.Path, b.Operation.ID)
-	}
+	debugLog("[%s %s] making id %q", b.Method, b.Path, b.Operation.ID)
 
-	if resp.Ref.String() != "" {
-		resp2, err := spec.ResolveResponse(b.Doc.Spec(), resp.Ref)
-		if err != nil {
-			return GenResponse{}, err
-		}
-		if resp2 == nil {
-			return GenResponse{}, fmt.Errorf("could not resolve response ref: %s", resp.Ref.String())
-		}
-		resp = *resp2
-	}
+	// assume minimal flattening has been carried on, so there is not $ref in response (but some may remain in response schema)
 
 	res := GenResponse{
 		Package:        b.APIPackage,
@@ -584,6 +575,7 @@ func (b *codeGenOpBuilder) MakeResponse(receiver, name string, isSuccess bool, r
 		Extensions:     resp.Extensions,
 	}
 
+	// prepare response headers
 	for hName, header := range resp.Headers {
 		hdr, err := b.MakeHeader(receiver, hName, header)
 		if err != nil {
@@ -594,127 +586,53 @@ func (b *codeGenOpBuilder) MakeResponse(receiver, name string, isSuccess bool, r
 	sort.Sort(res.Headers)
 
 	if resp.Schema != nil {
-		var named bool
-		rslv := resolver
-		sch := resp.Schema
-		if resp.Schema.Ref.String() != "" && !resp.Schema.Ref.HasFragmentOnly {
-			ss, err := spec.ResolveRefWithBase(b.Doc.Spec(), &resp.Schema.Ref, nil)
-			if err != nil {
-				return GenResponse{}, err
-			}
-			sch = ss
-			named = true
-			rslv = resolver.NewWithModelName(name + "Body")
+		// resolve schema model
+		schema, ers := b.buildOperationSchema(fmt.Sprintf("%q", name), name+"Body", swag.ToGoName(name+"Body"), receiver, "i", resp.Schema, resolver)
+		if ers != nil {
+			return GenResponse{}, ers
 		}
-
-		sc := schemaGenContext{
-			Path:             fmt.Sprintf("%q", name),
-			Name:             name + "Body",
-			Receiver:         receiver,
-			ValueExpr:        receiver,
-			IndexVar:         "i",
-			Schema:           *sch,
-			Required:         !named,
-			TypeResolver:     rslv,
-			Named:            named,
-			ExtraSchemas:     make(map[string]GenSchema),
-			IncludeModel:     true,
-			IncludeValidator: true,
-		}
-		if err := sc.makeGenSchema(); err != nil {
-			return GenResponse{}, err
-		}
-
-		for k, v := range sc.ExtraSchemas {
-			if b.ExtraSchemas == nil {
-				b.ExtraSchemas = make(map[string]GenSchema)
-			}
-			if !v.IsStream {
-				b.ExtraSchemas[k] = v
-			}
-		}
-
-		schema := sc.GenSchema
-		if named {
-			if b.ExtraSchemas == nil {
-				b.ExtraSchemas = make(map[string]GenSchema)
-			}
-			if !schema.IsStream {
-				b.ExtraSchemas[schema.Name] = schema
-			}
-		}
-		if schema.IsAnonymous {
-
-			schema.Name = swag.ToGoName(sc.Name)
-			nm := schema.Name
-			if b.ExtraSchemas == nil {
-				b.ExtraSchemas = make(map[string]GenSchema)
-			}
-			if !schema.IsStream {
-				b.ExtraSchemas[schema.Name] = schema
-			}
-			schema = GenSchema{}
-			schema.IsAnonymous = false
-			schema.GoType = resolver.goTypeName(nm)
-			schema.SwaggerType = nm
-		}
-
 		res.Schema = &schema
 	}
 	return res, nil
 }
 
 func (b *codeGenOpBuilder) MakeHeader(receiver, name string, hdr spec.Header) (GenHeader, error) {
-	hasNumberValidation := hdr.Maximum != nil || hdr.Minimum != nil || hdr.MultipleOf != nil
-	hasStringValidation := hdr.MaxLength != nil || hdr.MinLength != nil || hdr.Pattern != ""
-	hasSliceValidations := hdr.MaxItems != nil || hdr.MinItems != nil || hdr.UniqueItems
-	hasValidations := hasNumberValidation || hasStringValidation || hasSliceValidations || len(hdr.Enum) > 0
-
 	tpe := typeForHeader(hdr) //simpleResolvedType(hdr.Type, hdr.Format, hdr.Items)
 
 	id := swag.ToGoName(name)
 	res := GenHeader{
-		sharedValidations: sharedValidations{
-			Required:            true, // NOTE: Required is not defined by the Swagger schema for header. Set arbitrarily to true for convenience in templates.
-			Maximum:             hdr.Maximum,
-			ExclusiveMaximum:    hdr.ExclusiveMaximum,
-			Minimum:             hdr.Minimum,
-			ExclusiveMinimum:    hdr.ExclusiveMinimum,
-			MaxLength:           hdr.MaxLength,
-			MinLength:           hdr.MinLength,
-			Pattern:             hdr.Pattern,
-			MaxItems:            hdr.MaxItems,
-			MinItems:            hdr.MinItems,
-			UniqueItems:         hdr.UniqueItems,
-			MultipleOf:          hdr.MultipleOf,
-			Enum:                hdr.Enum,
-			HasValidations:      hasValidations,
-			HasSliceValidations: hasSliceValidations,
-		},
-		resolvedType:     tpe,
-		Package:          b.APIPackage,
-		ReceiverName:     receiver,
-		ID:               id,
-		Name:             name,
-		Path:             fmt.Sprintf("%q", name),
-		ValueExpression:  fmt.Sprintf("%s.%s", receiver, id),
-		Description:      trimBOM(hdr.Description),
-		Default:          hdr.Default,
-		HasDefault:       hdr.Default != nil,
-		Converter:        stringConverters[tpe.GoType],
-		Formatter:        stringFormatters[tpe.GoType],
-		ZeroValue:        tpe.Zero(),
-		CollectionFormat: hdr.CollectionFormat,
-		IndexVar:         "i",
+		sharedValidations: sharedValidationsFromSimple(hdr.CommonValidations, true), // NOTE: Required is not defined by the Swagger schema for header. Set arbitrarily to true for convenience in templates.
+		resolvedType:      tpe,
+		Package:           b.APIPackage,
+		ReceiverName:      receiver,
+		ID:                id,
+		Name:              name,
+		Path:              fmt.Sprintf("%q", name),
+		ValueExpression:   fmt.Sprintf("%s.%s", receiver, id),
+		Description:       trimBOM(hdr.Description),
+		Default:           hdr.Default,
+		HasDefault:        hdr.Default != nil,
+		Converter:         stringConverters[tpe.GoType],
+		Formatter:         stringFormatters[tpe.GoType],
+		ZeroValue:         tpe.Zero(),
+		CollectionFormat:  hdr.CollectionFormat,
+		IndexVar:          "i",
 	}
+	res.HasValidations, res.HasSliceValidations = b.HasValidations(hdr.CommonValidations, res.resolvedType)
 
+	hasChildValidations := false
 	if hdr.Items != nil {
 		pi, err := b.MakeHeaderItem(receiver, name+" "+res.IndexVar, res.IndexVar+"i", "fmt.Sprintf(\"%s.%v\", \"header\", "+res.IndexVar+")", res.Name+"I", hdr.Items, nil)
 		if err != nil {
 			return GenHeader{}, err
 		}
 		res.Child = &pi
+		hasChildValidations = pi.HasValidations
 	}
+	// we feed the GenHeader structure the same way as we do for
+	// GenParameter, even though there is currently no actual validation
+	// for response headers.
+	res.HasValidations = res.HasValidations || hasChildValidations
 
 	return res, nil
 }
@@ -722,20 +640,7 @@ func (b *codeGenOpBuilder) MakeHeader(receiver, name string, hdr spec.Header) (G
 func (b *codeGenOpBuilder) MakeHeaderItem(receiver, paramName, indexVar, path, valueExpression string, items, parent *spec.Items) (GenItems, error) {
 	var res GenItems
 	res.resolvedType = simpleResolvedType(items.Type, items.Format, items.Items)
-	res.sharedValidations = sharedValidations{
-		Maximum:          items.Maximum,
-		ExclusiveMaximum: items.ExclusiveMaximum,
-		Minimum:          items.Minimum,
-		ExclusiveMinimum: items.ExclusiveMinimum,
-		MaxLength:        items.MaxLength,
-		MinLength:        items.MinLength,
-		Pattern:          items.Pattern,
-		MaxItems:         items.MaxItems,
-		MinItems:         items.MinItems,
-		UniqueItems:      items.UniqueItems,
-		MultipleOf:       items.MultipleOf,
-		Enum:             items.Enum,
-	}
+	res.sharedValidations = sharedValidationsFromSimple(items.CommonValidations, false)
 	res.Name = paramName
 	res.Path = path
 	res.Location = "header"
@@ -744,12 +649,7 @@ func (b *codeGenOpBuilder) MakeHeaderItem(receiver, paramName, indexVar, path, v
 	res.Converter = stringConverters[res.GoType]
 	res.Formatter = stringFormatters[res.GoType]
 	res.IndexVar = indexVar
-	hasNumberValidation := items.Maximum != nil || items.Minimum != nil || items.MultipleOf != nil
-	hasStringValidation := items.MaxLength != nil || items.MinLength != nil || items.Pattern != ""
-	hasSliceValidations := items.MaxItems != nil || items.MinItems != nil || items.UniqueItems
-	hasValidations := hasNumberValidation || hasStringValidation || hasSliceValidations || len(items.Enum) > 0
-	res.HasValidations = hasValidations
-	res.HasSliceValidations = hasSliceValidations
+	res.HasValidations, res.HasSliceValidations = b.HasValidations(items.CommonValidations, res.resolvedType)
 
 	if items.Items != nil {
 		// Recursively follows nested arrays
@@ -767,24 +667,21 @@ func (b *codeGenOpBuilder) MakeHeaderItem(receiver, paramName, indexVar, path, v
 	return res, nil
 }
 
+// HasValidations resolves the validation status for simple schema objects
+func (b *codeGenOpBuilder) HasValidations(sh spec.CommonValidations, rt resolvedType) (hasValidations bool, hasSliceValidations bool) {
+	// TODO: exclude format byte (istrfmt.Base64) from validation (issue#1548)
+	hasNumberValidation := sh.Maximum != nil || sh.Minimum != nil || sh.MultipleOf != nil
+	hasStringValidation := sh.MaxLength != nil || sh.MinLength != nil || sh.Pattern != ""
+	hasSliceValidations = sh.MaxItems != nil || sh.MinItems != nil || sh.UniqueItems || len(sh.Enum) > 0
+	hasValidations = (hasNumberValidation || hasStringValidation || hasSliceValidations || rt.IsCustomFormatter) && !rt.IsStream && !rt.IsInterface
+	return
+}
+
 func (b *codeGenOpBuilder) MakeParameterItem(receiver, paramName, indexVar, path, valueExpression, location string, resolver *typeResolver, items, parent *spec.Items) (GenItems, error) {
 	debugLog("making parameter item recv=%s param=%s index=%s valueExpr=%s path=%s location=%s", receiver, paramName, indexVar, valueExpression, path, location)
 	var res GenItems
 	res.resolvedType = simpleResolvedType(items.Type, items.Format, items.Items)
-	res.sharedValidations = sharedValidations{
-		Maximum:          items.Maximum,
-		ExclusiveMaximum: items.ExclusiveMaximum,
-		Minimum:          items.Minimum,
-		ExclusiveMinimum: items.ExclusiveMinimum,
-		MaxLength:        items.MaxLength,
-		MinLength:        items.MinLength,
-		Pattern:          items.Pattern,
-		MaxItems:         items.MaxItems,
-		MinItems:         items.MinItems,
-		UniqueItems:      items.UniqueItems,
-		MultipleOf:       items.MultipleOf,
-		Enum:             items.Enum,
-	}
+	res.sharedValidations = sharedValidationsFromSimple(items.CommonValidations, false)
 	res.Name = paramName
 	res.Path = path
 	res.Location = location
@@ -793,13 +690,8 @@ func (b *codeGenOpBuilder) MakeParameterItem(receiver, paramName, indexVar, path
 	res.Converter = stringConverters[res.GoType]
 	res.Formatter = stringFormatters[res.GoType]
 	res.IndexVar = indexVar
-	hasNumberValidation := items.Maximum != nil || items.Minimum != nil || items.MultipleOf != nil
-	hasStringValidation := items.MaxLength != nil || items.MinLength != nil || items.Pattern != ""
-	hasSliceValidations := items.MaxItems != nil || items.MinItems != nil || items.UniqueItems
 
-	hasValidations := hasNumberValidation || hasStringValidation || hasSliceValidations || len(items.Enum) > 0 || res.IsCustomFormatter
-	res.HasValidations = hasValidations
-	res.HasSliceValidations = hasSliceValidations
+	res.HasValidations, res.HasSliceValidations = b.HasValidations(items.CommonValidations, res.resolvedType)
 
 	if items.Items != nil {
 		// Recursively follows nested arrays
@@ -818,21 +710,9 @@ func (b *codeGenOpBuilder) MakeParameterItem(receiver, paramName, indexVar, path
 }
 
 func (b *codeGenOpBuilder) MakeParameter(receiver string, resolver *typeResolver, param spec.Parameter, idMapping map[string]map[string]string) (GenParameter, error) {
-	if Debug {
-		log.Printf("[%s %s] making parameter %q", b.Method, b.Path, param.Name)
-	}
+	debugLog("[%s %s] making parameter %q", b.Method, b.Path, param.Name)
 
-	if param.Ref.String() != "" {
-		// Resolve $ref before all
-		param2, err := spec.ResolveParameter(b.Doc.Spec(), param.Ref)
-		if err != nil {
-			return GenParameter{}, err
-		}
-		if param2 == nil {
-			return GenParameter{}, fmt.Errorf("could not resolve parameter ref: %s", param.Ref.String())
-		}
-		param = *param2
-	}
+	// assume minimal flattening has been carried on, so there is not $ref in response (but some may remain in response schema)
 
 	var child *GenItems
 	id := swag.ToGoName(param.Name)
@@ -847,7 +727,6 @@ func (b *codeGenOpBuilder) MakeParameter(receiver string, resolver *typeResolver
 		Path:             fmt.Sprintf("%q", param.Name),
 		ValueExpression:  fmt.Sprintf("%s.%s", receiver, id),
 		IndexVar:         "i",
-		BodyParam:        nil,
 		Default:          param.Default,
 		HasDefault:       param.Default != nil,
 		Description:      trimBOM(param.Description),
@@ -859,114 +738,20 @@ func (b *codeGenOpBuilder) MakeParameter(receiver string, resolver *typeResolver
 		Extensions:       param.Extensions,
 	}
 
-	hasChildValidations := false
-
 	if param.In == "body" {
 		// Process parameters declared in body (i.e. have a Schema)
-		var named bool
-		rslv := resolver
-		sch := param.Schema
-		if sch.Ref.String() != "" && !sch.Ref.HasFragmentOnly {
-			ss, err := spec.ResolveRefWithBase(b.Doc.Spec(), &sch.Ref, nil)
-			if err != nil {
-				return GenParameter{}, err
-			}
-			sch = ss
-			named = true
-			rslv = resolver.NewWithModelName(b.Operation.ID + "ParamsBody")
-		}
-
-		sc := schemaGenContext{
-			Path:             res.Path,
-			Name:             b.Operation.ID + "ParamsBody",
-			Receiver:         res.ReceiverName,
-			ValueExpr:        res.ReceiverName,
-			IndexVar:         res.IndexVar,
-			Schema:           *sch,
-			Required:         param.Required,
-			TypeResolver:     rslv,
-			Named:            named,
-			IncludeModel:     true,
-			IncludeValidator: b.IncludeValidator,
-			ExtraSchemas:     make(map[string]GenSchema),
-		}
-		if err := sc.makeGenSchema(); err != nil {
+		res.Required = param.Required
+		if err := b.MakeBodyParameter(&res, resolver, param.Schema); err != nil {
 			return GenParameter{}, err
 		}
-
-		schema := sc.GenSchema
-		if named {
-			if b.ExtraSchemas == nil {
-				b.ExtraSchemas = make(map[string]GenSchema)
-			}
-			b.ExtraSchemas[b.Operation.ID+"ParamsBody"] = schema
-		}
-		if schema.IsAnonymous {
-			// A generated name for anonymous parameter in body
-			schema.Name = swag.ToGoName(b.Operation.ID + " Body")
-			nm := schema.Name
-			schema.GoType = nm
-			schema.IsAnonymous = false
-			if len(schema.Properties) > 0 {
-				if b.ExtraSchemas == nil {
-					b.ExtraSchemas = make(map[string]GenSchema)
-				}
-				b.ExtraSchemas[nm] = schema
-			}
-			prevSchema := schema
-			schema = GenSchema{}
-			schema.IsAnonymous = false
-			schema.GoType = nm
-			schema.SwaggerType = nm
-			if len(prevSchema.Properties) == 0 {
-				schema.GoType = iface
-			}
-			schema.IsComplexObject = true
-			schema.IsInterface = len(schema.Properties) == 0
-		}
-		res.Schema = &schema
-		it := res.Schema.Items
-
-		items := new(GenItems)
-		var prev *GenItems
-		next := items
-		for it != nil {
-			next.resolvedType = it.resolvedType
-			next.sharedValidations = it.sharedValidations
-			next.Formatter = stringFormatters[it.SwaggerFormat]
-			_, next.IsCustomFormatter = customFormatters[it.SwaggerFormat]
-			it = it.Items
-			if prev != nil {
-				prev.Child = next
-			}
-			prev = next
-			next = new(GenItems)
-		}
-		res.Child = items
-		res.resolvedType = schema.resolvedType
-		res.sharedValidations = schema.sharedValidations
-		res.ZeroValue = schema.Zero()
 	} else {
 		// Process parameters declared in other inputs: path, query, header (SimpleSchema)
 		res.resolvedType = simpleResolvedType(param.Type, param.Format, param.Items)
-		res.sharedValidations = sharedValidations{
-			Required:         param.Required,
-			Maximum:          param.Maximum,
-			ExclusiveMaximum: param.ExclusiveMaximum,
-			Minimum:          param.Minimum,
-			ExclusiveMinimum: param.ExclusiveMinimum,
-			MaxLength:        param.MaxLength,
-			MinLength:        param.MinLength,
-			Pattern:          param.Pattern,
-			MaxItems:         param.MaxItems,
-			MinItems:         param.MinItems,
-			UniqueItems:      param.UniqueItems,
-			MultipleOf:       param.MultipleOf,
-			Enum:             param.Enum,
-		}
+		res.sharedValidations = sharedValidationsFromSimple(param.CommonValidations, param.Required)
 
 		res.ZeroValue = res.resolvedType.Zero()
 
+		hasChildValidations := false
 		if param.Items != nil {
 			// Follow Items definition for array parameters
 			pi, err := b.MakeParameterItem(receiver, param.Name+" "+res.IndexVar, res.IndexVar+"i", "fmt.Sprintf(\"%s.%v\", "+res.Path+", "+res.IndexVar+")", res.Name+"I", param.In, resolver, param.Items, nil)
@@ -978,19 +763,371 @@ func (b *codeGenOpBuilder) MakeParameter(receiver string, resolver *typeResolver
 			hasChildValidations = pi.HasValidations
 		}
 		res.IsNullable = !param.Required && !param.AllowEmptyValue
+		res.HasValidations, res.HasSliceValidations = b.HasValidations(param.CommonValidations, res.resolvedType)
+		res.HasValidations = res.HasValidations || hasChildValidations
 	}
 
-	// Summarize validation requirements for code generator
-	hasNumberValidation := param.Maximum != nil || param.Minimum != nil || param.MultipleOf != nil
-	hasStringValidation := param.MaxLength != nil || param.MinLength != nil || param.Pattern != ""
-	hasSliceValidations := param.MaxItems != nil || param.MinItems != nil || param.UniqueItems
-	hasValidations := hasNumberValidation || hasStringValidation || hasSliceValidations || len(param.Enum) > 0 || hasChildValidations
-
+	// Select codegen strategy for body param validation
 	res.Converter = stringConverters[res.GoType]
 	res.Formatter = stringFormatters[res.GoType]
+	b.setBodyParamValidation(&res)
 
-	// Custom format requires a validation too
-	res.HasValidations = hasValidations || res.IsCustomFormatter
-	res.HasSliceValidations = hasSliceValidations
 	return res, nil
+}
+
+// MakeBodyParameter constructs a body parameter schema
+func (b *codeGenOpBuilder) MakeBodyParameter(res *GenParameter, resolver *typeResolver, sch *spec.Schema) error {
+	// resolve schema model
+	schema, ers := b.buildOperationSchema(res.Path, b.Operation.ID+"ParamsBody", swag.ToGoName(b.Operation.ID+" Body"), res.ReceiverName, res.IndexVar, sch, resolver)
+	if ers != nil {
+		return ers
+	}
+	res.Schema = &schema
+	res.Schema.Required = res.Required // Required in body is managed independently from validations
+
+	// build Child items for nested slices and maps
+	var items *GenItems
+	res.KeyVar = "k"
+	res.Schema.KeyVar = "k"
+	if schema.IsMap && !schema.IsInterface {
+		items = b.MakeBodyParameterItemsAndMaps(res, res.Schema.AdditionalProperties)
+	} else if schema.IsArray {
+		items = b.MakeBodyParameterItemsAndMaps(res, res.Schema.Items)
+	} else {
+		items = new(GenItems)
+	}
+
+	// templates assume at least one .Child != nil
+	res.Child = items
+	schema.HasValidations = schema.HasValidations || items.HasValidations
+
+	res.resolvedType = schema.resolvedType
+
+	// simple and schema views share the same validations
+	res.sharedValidations = schema.sharedValidations
+	res.ZeroValue = schema.Zero()
+	return nil
+}
+
+// MakeBodyParameterItemsAndMaps clones the .Items schema structure (resp. .AdditionalProperties) as a .GenItems structure
+// for compatibility with simple param templates.
+//
+// Constructed children assume simple structures: any complex object is assumed to be resolved by a model or extra schema definition
+func (b *codeGenOpBuilder) MakeBodyParameterItemsAndMaps(res *GenParameter, it *GenSchema) *GenItems {
+	items := new(GenItems)
+	if it != nil {
+		var prev *GenItems
+		next := items
+		if res.Schema.IsArray {
+			next.Path = "fmt.Sprintf(\"%s.%v\", " + res.Path + ", " + res.IndexVar + ")"
+		} else if res.Schema.IsMap {
+			next.Path = "fmt.Sprintf(\"%s.%v\", " + res.Path + ", " + res.KeyVar + ")"
+		}
+		next.Name = res.Name + " " + res.Schema.IndexVar
+		next.IndexVar = res.Schema.IndexVar + "i"
+		next.KeyVar = res.Schema.KeyVar + "k"
+		next.ValueExpression = swag.ToVarName(res.Name + "I")
+		next.Location = "body"
+		for it != nil {
+			next.resolvedType = it.resolvedType
+			next.sharedValidations = it.sharedValidations
+			next.Formatter = stringFormatters[it.SwaggerFormat]
+			next.Converter = stringConverters[res.GoType]
+			next.Parent = prev
+			_, next.IsCustomFormatter = customFormatters[it.GoType]
+			next.IsCustomFormatter = next.IsCustomFormatter && !it.IsStream
+
+			// special instruction to avoid using CollectionFormat for body params
+			next.SkipParse = true
+
+			if prev != nil {
+				if prev.IsArray {
+					next.Path = "fmt.Sprintf(\"%s.%v\", " + prev.Path + ", " + prev.IndexVar + ")"
+				} else if prev.IsMap {
+					next.Path = "fmt.Sprintf(\"%s.%v\", " + prev.Path + ", " + prev.KeyVar + ")"
+				}
+				next.Name = prev.Name + prev.IndexVar
+				next.IndexVar = prev.IndexVar + "i"
+				next.KeyVar = prev.KeyVar + "k"
+				next.ValueExpression = swag.ToVarName(prev.ValueExpression + "I")
+				prev.Child = next
+			}
+
+			// found a complex or aliased thing
+			// hide details from the aliased type and stop recursing
+			if next.IsAliased || next.IsComplexObject {
+				next.IsArray = false
+				next.IsMap = false
+				next.IsCustomFormatter = false
+				next.IsComplexObject = true
+				next.IsAliased = true
+				break
+			}
+			if next.IsInterface || next.IsStream {
+				next.HasValidations = false
+			}
+			prev = next
+			next = new(GenItems)
+
+			if it.Items != nil {
+				it = it.Items
+			} else if it.AdditionalProperties != nil {
+				it = it.AdditionalProperties
+			} else {
+				it = nil
+			}
+		}
+		// propagate HasValidations
+		var propag func(child *GenItems) bool
+		propag = func(child *GenItems) bool {
+			if child == nil {
+				return false
+			}
+			child.HasValidations = child.HasValidations || propag(child.Child)
+			return child.HasValidations
+		}
+		items.HasValidations = propag(items)
+
+		// resolve nullability conflicts when declaring body as a map of array of an anonymous complex object
+		// (e.g. refer to an extra schema type, which is nullable, but not rendered as a pointer in arrays or maps)
+		// Rule: outer type rules (with IsMapNullOverride), inner types are fixed
+		var fixNullable func(child *GenItems) string
+		fixNullable = func(child *GenItems) string {
+			if !child.IsArray && !child.IsMap {
+				if child.IsComplexObject {
+					return child.GoType
+				}
+				return ""
+			}
+			if innerType := fixNullable(child.Child); innerType != "" {
+				if child.IsMapNullOverride && child.IsArray {
+					child.GoType = "[]" + innerType
+					return child.GoType
+				}
+			}
+			return ""
+		}
+		fixNullable(items)
+	}
+	return items
+}
+
+func (b *codeGenOpBuilder) setBodyParamValidation(p *GenParameter) {
+	// Determine validation strategy for body param.
+	//
+	// Here are the distinct strategies:
+	// - the body parameter is a model object => delegates
+	// - the body parameter is an array of model objects => carry on slice validations, then iterate and delegate
+	// - the body parameter is a map of model objects => iterate and delegate
+	// - the body parameter is an array of simple objects (including maps)
+	// - the body parameter is a map of simple objects (including arrays)
+	if p.IsBodyParam() {
+		var hasSimpleBodyParams, hasSimpleBodyItems, hasSimpleBodyMap, hasModelBodyParams, hasModelBodyItems, hasModelBodyMap bool
+		s := p.Schema
+		if s != nil {
+			doNot := s.IsInterface || s.IsStream
+			// composition of primitive fields must be properly identified: hack this through
+			_, isPrimitive := primitives[s.GoType]
+			_, isFormatter := customFormatters[s.GoType]
+			isComposedPrimitive := s.IsPrimitive && !(isPrimitive || isFormatter)
+
+			hasSimpleBodyParams = !s.IsComplexObject && !s.IsAliased && !isComposedPrimitive && !doNot
+			hasModelBodyParams = (s.IsComplexObject || s.IsAliased || isComposedPrimitive) && !doNot
+
+			if s.IsArray && s.Items != nil {
+				it := s.Items
+				doNot = it.IsInterface || it.IsStream
+				hasSimpleBodyItems = !it.IsComplexObject && !(it.IsAliased || doNot)
+				hasModelBodyItems = (it.IsComplexObject || it.IsAliased) && !doNot
+			}
+			if s.IsMap && s.AdditionalProperties != nil {
+				it := s.AdditionalProperties
+				hasSimpleBodyMap = !it.IsComplexObject && !(it.IsAliased || doNot)
+				hasModelBodyMap = !hasSimpleBodyMap && !doNot
+			}
+		}
+		// set validation strategy for body param
+		p.HasSimpleBodyParams = hasSimpleBodyParams
+		p.HasSimpleBodyItems = hasSimpleBodyItems
+		p.HasModelBodyParams = hasModelBodyParams
+		p.HasModelBodyItems = hasModelBodyItems
+		p.HasModelBodyMap = hasModelBodyMap
+		p.HasSimpleBodyMap = hasSimpleBodyMap
+	}
+
+}
+
+// makeSecuritySchemes produces a sorted list of security schemes for this operation
+func (b *codeGenOpBuilder) makeSecuritySchemes(receiver string) GenSecuritySchemes {
+	return gatherSecuritySchemes(b.SecurityDefinitions, b.Name, b.Principal, receiver)
+}
+
+// makeSecurityRequirements produces a sorted list of security requirements for this operation.
+// As for current, these requirements are not used by codegen (sec. requirement is determined at runtime).
+// We keep the order of the slice from the original spec, but sort the inner slice which comes from a map,
+// as well as the map of scopes.
+func (b *codeGenOpBuilder) makeSecurityRequirements(receiver string) []GenSecurityRequirements {
+	if b.Security == nil {
+		// nil (default requirement) is different than [] (no requirement)
+		return nil
+	}
+
+	securityRequirements := make([]GenSecurityRequirements, 0, len(b.Security))
+	for _, req := range b.Security {
+		jointReq := make(GenSecurityRequirements, 0, len(req))
+		for _, j := range req {
+			scopes := j.Scopes
+			sort.Strings(scopes)
+			jointReq = append(jointReq, GenSecurityRequirement{
+				Name:   j.Name,
+				Scopes: scopes,
+			})
+		}
+		// sort joint requirements (come from a map in spec)
+		sort.Sort(jointReq)
+		securityRequirements = append(securityRequirements, jointReq)
+	}
+	return securityRequirements
+}
+
+// cloneSchema returns a deep copy of a schema
+func (b *codeGenOpBuilder) cloneSchema(schema *spec.Schema) *spec.Schema {
+	savedSchema := &spec.Schema{}
+	schemaRep, _ := json.Marshal(schema)
+	_ = json.Unmarshal(schemaRep, savedSchema)
+	return savedSchema
+}
+
+// saveResolveContext keeps a copy of known definitions and schema to properly roll back on a makeGenSchema() call
+// This uses a deep clone the spec document to construct a type resolver which knows about definitions when the making of this operation started,
+// and only these definitions. We are not interested in the "original spec", but in the already transformed spec.
+func (b *codeGenOpBuilder) saveResolveContext(resolver *typeResolver, schema *spec.Schema) (*typeResolver, *spec.Schema) {
+	rslv := newTypeResolver(resolver.ModelsPackage, b.Doc.Pristine())
+
+	return rslv, b.cloneSchema(schema)
+}
+
+// liftExtraSchemas constructs the schema for an anonymous construct with some ExtraSchemas.
+//
+// When some ExtraSchemas are produced from something else than a definition,
+// this indicates we are not running in fully flattened mode and we need to render
+// these ExtraSchemas in the operation's package.
+// We need to rebuild the schema with a new type resolver to reflect this change in the
+// models package.
+func (b *codeGenOpBuilder) liftExtraSchemas(resolver, br *typeResolver, bs *spec.Schema, sc *schemaGenContext) (schema *GenSchema, err error) {
+
+	// restore resolving state before previous call to makeGenSchema()
+	rslv := br
+	sc.Schema = *bs
+
+	pg := sc.shallowClone()
+	pg.TypeResolver = newTypeResolver("", rslv.Doc).withKeepDefinitionsPackage(resolver.ModelsPackage)
+	pg.ExtraSchemas = make(map[string]GenSchema, len(sc.ExtraSchemas))
+
+	if err = pg.makeGenSchema(); err != nil {
+		return
+	}
+	// lift nested extra schemas (inlined types)
+	if b.ExtraSchemas == nil {
+		b.ExtraSchemas = make(map[string]GenSchema, len(pg.ExtraSchemas))
+	}
+	for _, v := range pg.ExtraSchemas {
+		vv := v
+		if !v.IsStream {
+			b.ExtraSchemas[vv.Name] = vv
+		}
+	}
+	schema = &pg.GenSchema
+	return
+}
+
+// buildOperationSchema constructs a schema for an operation (for body params or responses).
+// It determines if the schema is readily available from the models package,
+// or if a schema has to be generated in the operations package (i.e. is anonymous).
+// Whenever an anonymous schema needs somes extra schemas, we also determine if these extras are
+// available from models or must be generated alongside the schema in the operations package.
+//
+// Duplicate extra schemas are pruned later on, when operations grouping in packages (e.g. from tags) takes place.
+func (b *codeGenOpBuilder) buildOperationSchema(schemaPath, containerName, schemaName, receiverName, indexVar string, sch *spec.Schema, resolver *typeResolver) (GenSchema, error) {
+	var schema GenSchema
+
+	if sch == nil {
+		sch = &spec.Schema{}
+	}
+	rslv := resolver
+	sc := schemaGenContext{
+		Path:             schemaPath,
+		Name:             containerName,
+		Receiver:         receiverName,
+		ValueExpr:        receiverName,
+		IndexVar:         indexVar,
+		Schema:           *sch,
+		Required:         false,
+		TypeResolver:     rslv,
+		Named:            false,
+		IncludeModel:     true,
+		IncludeValidator: true,
+		ExtraSchemas:     make(map[string]GenSchema),
+	}
+
+	var (
+		br *typeResolver
+		bs *spec.Schema
+	)
+	// these backups are not needed when sch has name.
+	if sch.Ref.String() == "" {
+		br, bs = b.saveResolveContext(rslv, sch)
+	}
+
+	if err := sc.makeGenSchema(); err != nil {
+		return GenSchema{}, err
+	}
+
+	if sch.Ref.String() == "" && len(sc.ExtraSchemas) > 0 {
+		newSchema, err := b.liftExtraSchemas(resolver, br, bs, &sc)
+		if err != nil {
+			return GenSchema{}, err
+		}
+		if newSchema != nil {
+			schema = *newSchema
+		}
+	} else {
+		schema = sc.GenSchema
+	}
+
+	if schema.IsAnonymous {
+		// a generated name for anonymous schema
+		// TODO: support x-go-name
+		hasProperties := len(schema.Properties) > 0
+		isAllOf := len(schema.AllOf) > 0
+		isInterface := schema.IsInterface
+		hasValidations := schema.HasValidations
+
+		// for complex anonymous objects, produce an extra schema
+		if hasProperties || isAllOf {
+			if b.ExtraSchemas == nil {
+				b.ExtraSchemas = make(map[string]GenSchema)
+			}
+			schema.Name = schemaName
+			schema.GoType = schemaName
+			schema.IsAnonymous = false
+			b.ExtraSchemas[schemaName] = schema
+
+			// constructs new schema to refer to the newly created type
+			schema = GenSchema{}
+			schema.IsAnonymous = false
+			schema.IsComplexObject = true
+			schema.SwaggerType = schemaName
+			schema.HasValidations = hasValidations
+			schema.GoType = schemaName
+		} else if isInterface {
+			schema = GenSchema{}
+			schema.IsAnonymous = false
+			schema.IsComplexObject = false
+			schema.IsInterface = true
+			schema.HasValidations = false
+			schema.GoType = iface
+		}
+	}
+	return schema, nil
 }

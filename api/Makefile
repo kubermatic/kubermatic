@@ -1,15 +1,20 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter ipam-controller
 GOBUILDFLAGS += -v
-LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
+KUBERMATICTAG=$(shell git describe --abbrev=0 --tags)
+LDFLAGS += -extldflags '-static' -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICTAG=$(KUBERMATICTAG)
 HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
+
+
+# github.com/kubermatic/kubermatic/api/pkg/resources
+# -X importpath.name=string
 
 default: all
 

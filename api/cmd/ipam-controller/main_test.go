@@ -1,0 +1,209 @@
+package main
+
+import (
+	"net"
+	"strings"
+	"testing"
+
+	machinefake "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
+	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
+func TestSingleCIDRAllocation(t *testing.T) {
+	err := setParameters("192.168.0.0/16", "192.168.0.1", "8.8.8.8")
+	if err != nil {
+		t.Errorf("couldn't set parameters, see: %v", err)
+	}
+
+	m := createMachine("susi", initializerName)
+	machineClient := machinefake.NewSimpleClientset(m)
+
+	err = machineAdded(m, machineClient)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	m2, err := machineClient.Machine().Machines().Get("susi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+
+	assertNetworkEquals(t, m2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+}
+
+func TestMultipleCIDRAllocation(t *testing.T) {
+	err := setParameters("192.168.0.0/30,10.0.0.0/24", "192.168.0.1", "8.8.8.8")
+	if err != nil {
+		t.Errorf("couldn't set parameters, see: %v", err)
+	}
+
+	machines := map[string]*machinev1alpha1.Machine{
+		"192.168.0.2": createMachine("susi", initializerName),
+		"192.168.0.3": createMachine("babsi", initializerName),
+		"10.0.0.1":    createMachine("joan", initializerName),
+	}
+
+	machineValues := make([]runtime.Object, 0, len(machines))
+	for _, m := range machines {
+		machineValues = append(machineValues, m)
+	}
+
+	machineClient := machinefake.NewSimpleClientset(machineValues...)
+
+	for ip, m := range machines {
+		err = machineAdded(m, machineClient)
+		if err != nil {
+			t.Errorf("error in machineAdded handler: %v", err)
+		}
+
+		m2, err := machineClient.Machine().Machines().Get(m.Name, metav1.GetOptions{})
+		if err != nil {
+			t.Errorf("couldn't retrieve updated machine, see: %v", err)
+		}
+
+		assertNetworkEquals(t, m2, ip, "192.168.0.1", "8.8.8.8")
+	}
+}
+
+func TestReuseReleasedIP(t *testing.T) {
+	err := setParameters("192.168.0.0/16", "192.168.0.1", "8.8.8.8")
+	if err != nil {
+		t.Errorf("couldn't set parameters, see: %v", err)
+	}
+
+	mSusi := createMachine("susi", initializerName)
+	mBabsi := createMachine("babsi", initializerName)
+
+	machineClient := machinefake.NewSimpleClientset(mSusi, mBabsi)
+
+	err = machineAdded(mSusi, machineClient)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	mSusi2, err := machineClient.Machine().Machines().Get("susi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+
+	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+
+	err = machineDeleted(mSusi2, machineClient)
+	if err != nil {
+		t.Errorf("couldn't delete machine, see: %v", err)
+	}
+
+	err = machineAdded(mBabsi, machineClient)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	mBabsi2, err := machineClient.Machine().Machines().Get("babsi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+
+	assertNetworkEquals(t, mBabsi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+}
+
+func TestFailWhenCIDRIsExhausted(t *testing.T) {
+	err := setParameters("192.168.0.0/30", "192.168.0.1", "8.8.8.8")
+	if err != nil {
+		t.Errorf("couldn't set parameters, see: %v", err)
+	}
+
+	mSusi := createMachine("susi", initializerName)
+	mBabsi := createMachine("babsi", initializerName)
+	mJoan := createMachine("joan", initializerName)
+
+	machineClient := machinefake.NewSimpleClientset(mSusi, mBabsi, mJoan)
+
+	err = machineAdded(mSusi, machineClient)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	err = machineAdded(mBabsi, machineClient)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	err = machineAdded(mJoan, machineClient)
+	if err == nil || !strings.Contains(err.Error(), "because no more ips can be allocated from the specified cidrs") {
+		t.Error("Expected error for exhausted CIDR range but didnt get it :-(")
+	}
+}
+
+func createMachine(name string, initializerNames ...string) *machinev1alpha1.Machine {
+	initializers := make([]metav1.Initializer, len(initializerNames))
+
+	for i, n := range initializerNames {
+		initializers[i] = metav1.Initializer{
+			Name: n,
+		}
+	}
+
+	machine := &machinev1alpha1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Initializers: &metav1.Initializers{
+				Pending: initializers,
+			},
+		},
+		Spec: machinev1alpha1.MachineSpec{
+			ProviderConfig: runtime.RawExtension{Raw: []byte{'{', '}'}},
+		},
+	}
+
+	return machine
+}
+
+func setParameters(cidr string, gw string, dns string) error {
+	var err error
+	cidrRange, err = parseCIDRs(cidr)
+	if err != nil {
+		return err
+	}
+
+	dnsServers = dns
+	gateway = gw
+	gatewayIP = net.ParseIP(gw)
+	usedIps = make(map[string]struct{})
+
+	return nil
+}
+
+func assertNetworkEquals(t *testing.T, m *machinev1alpha1.Machine, ip string, gw string, dns ...string) {
+	net, err := getNetworkForMachine(m, t)
+	if err != nil {
+		t.Errorf("couldn't get network for machine %s, see: %v", m.Name, err)
+	}
+
+	if net.CIDR != ip {
+		t.Errorf("Assertion mismatch for machine %s, see: expected cidr '%s' but got '%s'", m.Name, ip, net.CIDR)
+	}
+
+	if net.Gateway != gw {
+		t.Errorf("Assertion mismatch for machine %s, see: expected gateway '%s' but got '%s'", m.Name, gw, net.Gateway)
+	}
+
+	expectedDNSJoined := strings.Join(dns, ",")
+	actualDNSJoined := strings.Join(net.DNS.Servers, ",")
+
+	if expectedDNSJoined != actualDNSJoined {
+		t.Errorf("Assertion mismatch for machine %s, see: expected dns servers '%s' but got '%s'", m.Name, expectedDNSJoined, actualDNSJoined)
+	}
+}
+
+func getNetworkForMachine(m *machinev1alpha1.Machine, t *testing.T) (*providerconfig.NetworkConfig, error) {
+	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg.Network, nil
+}

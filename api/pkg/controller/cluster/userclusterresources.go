@@ -8,12 +8,119 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 
+	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func (cc *Controller) userClusterEnsureIPAMDeployment(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := []resources.DeploymentCreator{
+		ipamcontroller.Deployment,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *appsv1.Deployment
+		deploy, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build Deployment: %v", err)
+		}
+
+		if existing, err = client.AppsV1().Deployments("kube-system").Get(deploy.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = client.AppsV1().Deployments("kube-system").Create(deploy); err != nil {
+				return fmt.Errorf("failed to create Deployment %s %v", deploy.Name, err)
+			}
+			glog.V(4).Infof("Created Deployment %s inside user-cluster %s", deploy.Name, c.Name)
+			continue
+		}
+
+		deploy, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Deployment: %v", err)
+		}
+
+		if diff := deep.Equal(deploy, existing); diff == nil {
+			continue
+		}
+
+		if _, err = client.AppsV1().Deployments("kube-system").Update(deploy); err != nil {
+			return fmt.Errorf("failed to update Deployment %s: %v", deploy.Name, err)
+		}
+		glog.V(4).Infof("Updated Deployment %s inside user-cluster %s", deploy.Name, c.Name)
+	}
+
+	return nil
+}
+
+func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := []resources.InitializerConfigurationCreator{
+		ipamcontroller.MachineIPAMInitializerConfiguration,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *admissionv1alpha1.InitializerConfiguration
+		initializerConfiguration, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
+		}
+
+		if existing, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Get(initializerConfiguration.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Create(initializerConfiguration); err != nil {
+				return fmt.Errorf("failed to create InitializerConfiguration %s %v", initializerConfiguration.Name, err)
+			}
+			glog.V(4).Infof("Created InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+			continue
+		}
+
+		initializerConfiguration, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
+		}
+
+		if diff := deep.Equal(initializerConfiguration, existing); diff == nil {
+			continue
+		}
+
+		if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Update(initializerConfiguration); err != nil {
+			return fmt.Errorf("failed to update InitializerConfiguration %s: %v", initializerConfiguration.Name, err)
+		}
+		glog.V(4).Infof("Updated InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+	}
+
+	return nil
+}
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 	client, err := cc.userClusterConnProvider.GetClient(c)
