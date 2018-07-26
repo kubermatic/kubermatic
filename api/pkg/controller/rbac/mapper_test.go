@@ -1,7 +1,7 @@
 package rbac
 
 import (
-	"reflect"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"testing"
 )
 
@@ -35,7 +35,7 @@ func TestGenerateVerbs(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if returnedVerbs, err := generateVerbs(test.groupName, test.resourceKind); err != nil || !reflect.DeepEqual(returnedVerbs, test.expectedVerbs) {
+		if returnedVerbs, err := generateVerbs(test.groupName, test.resourceKind); err != nil || !equality.Semantic.DeepEqual(returnedVerbs, test.expectedVerbs) {
 			t.Fatalf("Failed (%v) %v, got: %v, want: %v", err, test.groupName, returnedVerbs, test.expectedVerbs)
 		}
 	}
