@@ -6,6 +6,7 @@ import (
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 )
 
+// MachineIPAMInitializerConfiguration returns the Initializer Configuration which makes sure that machine resoures are initialized by the ipam controller
 func MachineIPAMInitializerConfiguration(data *resources.TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error) {
 	var iniCfg *admissionv1alpha1.InitializerConfiguration
 	if existing != nil {

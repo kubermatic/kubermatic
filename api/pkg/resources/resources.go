@@ -28,6 +28,7 @@ import (
 var KUBERMATICTAG string
 
 const (
+	// ApiserverDeploymenName is the name of the apiserver deployment
 	ApiserverDeploymenName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"

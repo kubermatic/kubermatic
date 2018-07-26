@@ -79,10 +79,13 @@ func main() {
 		glog.Fatalf("Couldnt build kubernetes client: %v", err)
 	}
 
-	leaderElectionLoop(config, func(stop <-chan struct{}) {
+	err = leaderElectionLoop(config, func(stop <-chan struct{}) {
 		controllerLoop(machineclientset.NewForConfigOrDie(config), stop)
 		glog.Info("Controller loop finished.")
 	})
+	if err != nil {
+		glog.Fatalf("couldnt start leader election: %v", err)
+	}
 
 	glog.Info("Application stopped.")
 }
@@ -195,7 +198,7 @@ func leaderElectionLoop(config *restclient.Config, callback func(stopCh <-chan s
 func machineAdded(m *machinev1alpha1.Machine, client machineclientset.Interface) error {
 	glog.V(6).Infof("machine added %s", m.Name)
 
-	err, didInitialize := initMachineIfNeeded(m, client)
+	didInitialize, err := initMachineIfNeeded(m, client)
 	if err != nil {
 		return err
 	}
@@ -229,7 +232,7 @@ func machineDeleted(m *machinev1alpha1.Machine, client machineclientset.Interfac
 func machineUpdated(oldM *machinev1alpha1.Machine, newM *machinev1alpha1.Machine, client machineclientset.Interface) error {
 	glog.V(6).Infof("machine updated %s", newM.Name)
 
-	err, didInitialize := initMachineIfNeeded(newM, client)
+	didInitialize, err := initMachineIfNeeded(newM, client)
 	if err != nil {
 		return err
 	}
@@ -287,28 +290,28 @@ func releaseIP(ip net.IP) {
 	delete(usedIps, ip.String())
 }
 
-func initMachineIfNeeded(oldMachine *machinev1alpha1.Machine, client machineclientset.Interface) (error, bool) {
+func initMachineIfNeeded(oldMachine *machinev1alpha1.Machine, client machineclientset.Interface) (bool, error) {
 	if !testIfInitIsNeeded(oldMachine) {
 		glog.V(6).Infof("Skipping machine %s because no initialization is needed (yet)", oldMachine.Name)
-		return nil, false
+		return false, nil
 	}
 
 	newMachine := oldMachine.DeepCopy()
 
 	cfg, err := providerconfig.GetConfig(newMachine.Spec.ProviderConfig)
 	if err != nil {
-		return err, false
+		return false, err
 	}
 
 	ip := getNextFreeIP()
 	if ip.IsUnspecified() {
-		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs.", newMachine.Name)
+		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", newMachine.Name)
 		subErr := writeErrorToMachine(client, newMachine, machinev1alpha1.InsufficientResourcesMachineError, err)
 		if subErr != nil {
 			glog.Errorf("couldn't update error state for machine %s, see: %v", newMachine.Name, subErr)
 		}
 
-		return err, false
+		return false, err
 	}
 
 	cfg.Network = &providerconfig.NetworkConfig{
@@ -321,7 +324,7 @@ func initMachineIfNeeded(oldMachine *machinev1alpha1.Machine, client machineclie
 
 	cfgSerialized, err := json.Marshal(cfg)
 	if err != nil {
-		return err, false
+		return false, err
 	}
 
 	newMachine.Spec.ProviderConfig = runtime.RawExtension{Raw: cfgSerialized}
@@ -336,15 +339,15 @@ func initMachineIfNeeded(oldMachine *machinev1alpha1.Machine, client machineclie
 
 	_, err = client.MachineV1alpha1().Machines().Update(newMachine)
 	if err != nil {
-		return fmt.Errorf("Couldn't update machine %s, see: %v", newMachine.Name, err), false
+		return false, fmt.Errorf("Couldn't update machine %s, see: %v", newMachine.Name, err)
 	}
 
-	// Having getIP and allocateIP seperate will save us from blocking ips even tho we run in errors and dont use them.
+	// Having getIP and allocateIP separate will save us from blocking ips even tho we run in errors and dont use them.
 	// As long as we keep this code blocking & synchronous, this is cool-ish.
 	allocateIP(ip)
 	glog.V(6).Infof("Allocated ip %v for machine %s", ip, oldMachine.Name)
 
-	return nil, true
+	return true, nil
 }
 
 func testIfInitIsNeeded(m *machinev1alpha1.Machine) bool {
@@ -352,12 +355,7 @@ func testIfInitIsNeeded(m *machinev1alpha1.Machine) bool {
 		return false
 	}
 
-	pending := m.ObjectMeta.GetInitializers().Pending
-	if pending[0].Name != initializerName {
-		return false
-	}
-
-	return true
+	return m.ObjectMeta.GetInitializers().Pending[0].Name == initializerName
 }
 
 func getNextFreeIP() net.IP {

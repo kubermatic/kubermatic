@@ -3,6 +3,9 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/go-test/deep"
+	"github.com/golang/glog"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
