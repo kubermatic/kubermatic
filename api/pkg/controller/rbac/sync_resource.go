@@ -52,10 +52,10 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 }
 
 func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
-	for _, groupPrefix := range allGroupsPrefixes {
+	for _, groupPrefix := range AllGroupsPrefixes {
 		generatedRole, err := generateClusterRBACRoleNamedResource(
 			objectKind,
-			generateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupPrefix),
 			objectResource,
 			kubermaticv1.SchemeGroupVersion.Group,
 			object.GetName(),
@@ -97,11 +97,11 @@ func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, o
 }
 
 func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
-	for _, groupPrefix := range allGroupsPrefixes {
+	for _, groupPrefix := range AllGroupsPrefixes {
 		generatedRoleBinding := generateClusterRBACRoleBindingNamedResource(
 			objectKind,
 			object.GetName(),
-			generateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupPrefix),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       objectKind,

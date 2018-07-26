@@ -88,6 +88,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		removeDeprecatedFinalizers,
 		migrateVersion,
 		cleanupAddonManager,
+		setVSphereInfraManagementUser,
 	}
 
 	w := sync.WaitGroup{}
@@ -205,6 +206,21 @@ func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		cluster.Spec.Version = cluster.Spec.MasterVersion
 		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// We introduced the InfraManagementUser for Vsphere to allow using a dedicated user
+// for everything except the cloud provider functionality
+func setVSphereInfraManagementUser(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.Cloud.VSphere != nil {
+		if cluster.Spec.Cloud.VSphere.InfraManagementUser.Username == "" || cluster.Spec.Cloud.VSphere.InfraManagementUser.Password == "" {
+			cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = cluster.Spec.Cloud.VSphere.Username
+			cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = cluster.Spec.Cloud.VSphere.Password
+			if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

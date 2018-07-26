@@ -7,8 +7,6 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -182,61 +180,6 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 				},
 			}
 			_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(&secret)
-			if err != nil {
-				return fmt.Errorf("failed to create openvpn secret: %v", err)
-			}
-		} else {
-			return fmt.Errorf("failed to load openvpn secret from client cluster: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) launchingCreateOpenVPNConfigMap(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
-	name := "openvpn-client-config"
-	_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			openvpnSvc, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
-			if err != nil {
-				return err
-			}
-
-			config := fmt.Sprintf(`client
-proto tcp
-dev kube
-dev-type tun
-auth-nocache
-remote %s %d
-nobind
-ca '/etc/openvpn/certs/ca.crt'
-cert '/etc/openvpn/certs/client.crt'
-key '/etc/openvpn/certs/client.key'
-remote-cert-tls server
-script-security 2
-link-mtu 1432
-cipher AES-256-GCM
-auth SHA1
-keysize 256
-status /run/openvpn-status
-up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
-log /dev/stdout
-`, c.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
-			cm := v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: name,
-				},
-				Data: map[string]string{
-					"config": config,
-				},
-			}
-			_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(&cm)
 			if err != nil {
 				return fmt.Errorf("failed to create openvpn secret: %v", err)
 			}

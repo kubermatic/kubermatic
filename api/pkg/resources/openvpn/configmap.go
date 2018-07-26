@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ConfigMap returns a ConfigMap containing the openvpn config
-func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+// ServerClientConfigsConfigMap returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
+func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	if existing != nil {
 		cm = existing
@@ -20,7 +20,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm = &corev1.ConfigMap{}
 	}
 
-	cm.Name = resources.OpenVPNClientConfigConfigMapName
+	cm.Name = resources.OpenVPNClientConfigsConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.GetLabels(name)
 
@@ -56,6 +56,53 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	iroutes = append(iroutes, "")
 	cm.Data = map[string]string{
 		"user-cluster-client": strings.Join(iroutes, "\n"),
+	}
+
+	return cm, nil
+}
+
+// ClientConfigConfigMap returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
+func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	var cm *corev1.ConfigMap
+	if existing != nil {
+		cm = existing
+	} else {
+		cm = &corev1.ConfigMap{}
+	}
+
+	cm.Name = resources.OpenVPNClientConfigConfigMapName
+	cm.Namespace = metav1.NamespaceSystem
+	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	cm.Labels = resources.GetLabels(name)
+
+	openvpnSvc, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	if err != nil {
+		return nil, err
+	}
+
+	config := fmt.Sprintf(`client
+proto tcp
+dev kube
+dev-type tun
+auth-nocache
+remote %s %d
+nobind
+ca '/etc/openvpn/certs/ca.crt'
+cert '/etc/openvpn/certs/client.crt'
+key '/etc/openvpn/certs/client.key'
+remote-cert-tls server
+script-security 2
+link-mtu 1432
+cipher AES-256-GCM
+auth SHA1
+keysize 256
+status /run/openvpn-status
+up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
+log /dev/stdout
+`, data.Cluster.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
+
+	cm.Data = map[string]string{
+		"config": config,
 	}
 
 	return cm, nil

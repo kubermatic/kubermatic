@@ -32,10 +32,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/ssh-keys").
 		Handler(r.listSSHKeys())
 
-	mux.Methods(http.MethodGet).
-		Path("/user").
-		Handler(r.getUser())
-
 	mux.Methods(http.MethodPost).
 		Path("/ssh-keys").
 		Handler(r.createSSHKey())
@@ -179,6 +175,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
 		Handler(r.newDeleteNodeForCluster())
+
+	//
+	// Defines set of HTTP endpoints for Users of the given project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/users").
+		Handler(r.addUserToProject())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -538,18 +540,6 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
 		decodeDcReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) getUser() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(getUserHandler()),
-		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1069,6 +1059,33 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 		)(newDeleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
 		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/users users addUserToProject
+//
+//     Adds the given user to the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: User
+//       401: empty
+//       403: empty
+func (r Routing) addUserToProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(addUserToProject(r.projectProvider, r.userProvider)),
+		decodeAddUserToProject,
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

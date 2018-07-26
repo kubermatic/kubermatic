@@ -161,11 +161,31 @@ type SSHKeySpec struct {
 }
 
 // User represents an API user that is used for authentication.
+// Depreciated: use NewUser instead
 type User struct {
 	ID    string
 	Name  string
 	Email string
 	Roles map[string]struct{}
+}
+
+// NewUser represent an API user
+// swagger:model User
+type NewUser struct {
+	NewObjectMeta
+
+	// Email an email address of the user
+	Email string `json:"email"`
+	// Projects holds the list of project the user belongs to
+	// along with the group names
+	Projects []ProjectGroup `json:"projects,omitempty"`
+}
+
+// ProjectGroup is a helper data structure that
+// stores the information about a project and a group prefix that a user belongs to
+type ProjectGroup struct {
+	Name        string `json:"name"`
+	GroupPrefix string `json:"group"`
 }
 
 // Project is a top-level container for a set of resources

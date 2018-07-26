@@ -33,8 +33,10 @@ func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 		networks, err := vsProvider.GetNetworks(&kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Username: req.Username,
-				Password: req.Password,
+				InfraManagementUser: kubermaticv1.VSphereCredentials{
+					Username: req.Username,
+					Password: req.Password,
+				},
 			},
 		})
 		if err != nil {

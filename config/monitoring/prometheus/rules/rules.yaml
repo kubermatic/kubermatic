@@ -271,6 +271,15 @@ groups:
     for: 10m
     labels:
       severity: warning
+  - alert: MachineControllerMachineDeletionTakesTooLong
+    annotations:
+      message: Machine {{ $labels.machine }} is stuck in deletion since more than
+        30min.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollermachinedeletiontakestoolong
+    expr: (time() - machine_controller_machine_deleted) > 30*60
+    for: 0m
+    labels:
+      severity: warning
 - name: kubernetes-absent
   rules:
   - alert: CadvisorDown
@@ -406,7 +415,7 @@ groups:
       kube_deployment_spec_replicas{job="kube-state-metrics"}
         !=
       kube_deployment_status_replicas_available{job="kube-state-metrics"}
-    for: 15m
+    for: 1h
     labels:
       severity: critical
   - alert: KubeStatefulSetReplicasMismatch
@@ -765,40 +774,6 @@ groups:
     for: 10m
     labels:
       severity: critical
-  - alert: EtcdHighNumberOfFailedHTTPRequests
-    annotations:
-      message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for {{
-        $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-    expr: |
-      100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-        /
-      sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-        > 1
-    for: 10m
-    labels:
-      severity: warning
-  - alert: EtcdHighNumberOfFailedHTTPRequests
-    annotations:
-      message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}%% of requests for {{
-        $labels.method }} failed on etcd instance {{ $labels.instance }}.'
-    expr: |
-      100 * sum(rate(etcd_http_failed_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-        /
-      sum(rate(etcd_http_received_total{job=~".*etcd.*"}[5m])) BY (job, instance, method)
-        > 5
-    for: 5m
-    labels:
-      severity: critical
-  - alert: EtcdHTTPRequestsSlow
-    annotations:
-      message: 'Etcd cluster "{{ $labels.job }}": HTTP requests to {{ $labels.method
-        }} are taking {{ $value }} on etcd instance {{ $labels.instance }}.'
-    expr: |
-      histogram_quantile(0.99, rate(etcd_http_successful_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
-      > 0.15
-    for: 10m
-    labels:
-      severity: warning
   - alert: EtcdMemberCommunicationSlow
     annotations:
       message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To

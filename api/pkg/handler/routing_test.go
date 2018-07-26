@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -222,7 +222,7 @@ func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
 	if err != nil {
 		t.Fatalf("failed to marshal expected: %v", err)
 	}
-	return reflect.DeepEqual(actualBytes, expectedBytes)
+	return bytes.Equal(actualBytes, expectedBytes)
 }
 
 const (
