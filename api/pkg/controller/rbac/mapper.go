@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	ownerGroupNamePrefix  = "owners"
-	editorGroupNamePrefix = "editors"
-	viewerGroupNamePrefix = "viewers"
-	rbacResourcesNamePrefix = "kubermatic"
+	OwnerGroupNamePrefix    = "owners"
+	EditorGroupNamePrefix   = "editors"
+	ViewerGroupNamePrefix   = "viewers"
+	RbacResourcesNamePrefix = "kubermatic"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -20,10 +20,10 @@ const (
 // Note:
 // adding a new group also requires updating generateVerbs method.
 // the actual names of groups are different see generateActualGroupNameFor function
-var allGroupsPrefixes = []string{
-	ownerGroupNamePrefix,
-	editorGroupNamePrefix,
-	viewerGroupNamePrefix,
+var AllGroupsPrefixes = []string{
+	OwnerGroupNamePrefix,
+	EditorGroupNamePrefix,
+	ViewerGroupNamePrefix,
 }
 
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
@@ -41,12 +41,12 @@ func ExtractGroupPrefix(groupName string) string {
 }
 
 func generateRBACRoleNameForNamedResource(kind, resourceName, groupName string) string {
-	return fmt.Sprintf("%s:%s-%s:%s", rbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
+	return fmt.Sprintf("%s:%s-%s:%s", RbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
 }
 
 func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	groupPrefix := ExtractGroupPrefix(groupName)
-	return fmt.Sprintf("%s:%s:%s", rbacResourcesNamePrefix, resourceName, groupPrefix)
+	return fmt.Sprintf("%s:%s:%s", RbacResourcesNamePrefix, resourceName, groupPrefix)
 }
 
 func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
@@ -158,7 +158,7 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	// verbs for editors
 	//
 	// viewers of a resource
-	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
 		return []string{"get"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
