@@ -33,7 +33,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create", "create","create","create"},
+			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
 			existingProject: createProject("thunderball", createUser("James Bond")),
 
 			dependantToSync: &projectResourceQueueItem{

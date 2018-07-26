@@ -157,7 +157,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		{
 			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on \"master\" and seed clusters",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create","get", "create","get", "create"},
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -480,7 +480,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update","get", "update"},
+			expectedActionsForSeeds: []string{"get", "update", "get", "update", "get", "update"},
 			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -934,7 +934,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					destination: destinationSeed,
 				},
 			},
-			expectedActionsForMaster: []string{"get", "update", "get", "update","get", "update"},
+			expectedActionsForMaster: []string{"get", "update", "get", "update", "get", "update"},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1024,7 +1024,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update","get", "update"},
+			expectedActionsForSeeds: []string{"get", "update", "get", "update", "get", "update"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1258,7 +1258,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 1: desired RBAC Role Bindings for a project resource are created",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"create", "create","create"},
+			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1425,7 +1425,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 3: update when existing binding doesn't match desired ones",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"update","update","update"},
+			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1620,8 +1620,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		// scenario 1
 		{
 			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create","get", "create", "get", "create"},
-			expectedActionsForSeeds:  []string{"get", "create", "get", "create","get", "create"},
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActionsForSeeds:  []string{"get", "create", "get", "create", "get", "create"},
 			seedClusters:             2,
 			projectResourcesToSync: []projectResource{
 				{
@@ -2025,7 +2025,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 3: update when desired are not the same as expected RBAC Roles",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"update","update"},
+			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
