@@ -354,16 +354,11 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	// Wait until the cluster is ready enough
-	if clusterFromCache.Status.NamespaceName == "" || !clusterFromCache.Status.Health.Etcd {
-		return nil
-	}
-
-	glog.Infof("Backup controller: Processing cluster %s", clusterFromCache.Name)
-
 	cluster := clusterFromCache.DeepCopy()
 
-	// Cluster got deleted
+	glog.V(4).Infof("syncing cluster %s", cluster)
+
+	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
@@ -382,6 +377,11 @@ func (c *Controller) sync(key string) error {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
+		return nil
+	}
+
+	// Wait until we have a running cluster
+	if cluster.Status.NamespaceName == "" || !cluster.Status.Health.Etcd {
 		return nil
 	}
 
