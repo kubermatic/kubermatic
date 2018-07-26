@@ -9,6 +9,8 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
@@ -64,6 +66,17 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		}
 	case node.Spec.Cloud.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
+
+		// We use OverwriteCloudConfig for Vsphere to ensure we always
+		// use the credentials passed in via frontend for the cloud-provider
+		// functionality
+		templateData := &resources.TemplateData{Cluster: c, DC: &dc}
+		overwriteCloudConfig, err := cloudconfig.CloudConfig(templateData)
+		if err != nil {
+			return nil, err
+		}
+		config.OverwriteCloudConfig = &overwriteCloudConfig
+
 		cloudExt, err = getVSphereProviderSpec(c, node, dc)
 		if err != nil {
 			return nil, err
@@ -205,9 +218,6 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provid
 		VMNetName:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
 		CPUs:            int32(node.Spec.Cloud.VSphere.CPUs),
 		MemoryMB:        int64(node.Spec.Cloud.VSphere.Memory),
-		Username:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Username},
-		Password:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Password},
-		VSphereURL:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Endpoint},
 		Datacenter:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
 		Datastore:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
 		Cluster:         providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},

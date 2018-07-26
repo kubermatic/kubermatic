@@ -57,7 +57,11 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 	}
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+func (p Provider) UserData(
+	spec machinesv1alpha1.MachineSpec,
+	kubeconfig *clientcmdapi.Config,
+	ccProvider cloud.ConfigProvider,
+	clusterDNSIPs []net.IP) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -76,6 +80,10 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *client
 	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
+	}
+
+	if pconfig.OverwriteCloudConfig != nil {
+		cpConfig = *pconfig.OverwriteCloudConfig
 	}
 
 	coreosConfig, err := getConfig(pconfig.OperatingSystemSpec)
@@ -147,9 +155,27 @@ passwd:
         {{range .ProviderConfig.SSHPublicKeys}}- {{.}}
         {{end}}
 
+{{- if .ProviderConfig.Network }}
+networkd:
+  units:
+    - name: static-nic.network
+      contents: |
+        [Match]
+        # Because of difficulty predicting specific NIC names on different cloud providers,
+        # we only support static addressing on VSphere. There should be a single NIC attached
+        # that we will match by name prefix 'en' which denotes ethernet devices.
+        Name=en*
+
+        [Network]
+        DHCP=no
+        Address={{ .ProviderConfig.Network.CIDR }}
+        Gateway={{ .ProviderConfig.Network.Gateway }}
+        {{range .ProviderConfig.Network.DNS.Servers}}DNS={{.}}
+        {{end}}
+{{ end }}
 systemd:
   units:
-{{ if .CoreOSConfig.DisableAutoUpdate }}
+{{- if .CoreOSConfig.DisableAutoUpdate }}
     - name: update-engine.service
       mask: true
     - name: locksmithd.service

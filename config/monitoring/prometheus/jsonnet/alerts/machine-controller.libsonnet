@@ -17,6 +17,17 @@
               message: 'Machine Controller in {{ $labels.namespace }} has too many errors in its loop.',
             },
           },
+          {
+            alert: 'MachineControllerMachineDeletionTakesTooLong',
+            expr: '(time() - machine_controller_machine_deleted) > 30*60',
+            'for': '0m',
+            labels: {
+              severity: 'warning',
+            },
+            annotations: {
+              message: 'Machine {{ $labels.machine }} is stuck in deletion since more than 30min.',
+            },
+          },
         ],
       },
     ],

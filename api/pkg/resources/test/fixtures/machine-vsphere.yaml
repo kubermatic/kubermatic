@@ -15,15 +15,30 @@ spec:
       datastore: vsphere-datastore
       folder: vsphere-1a2b3c4d5e
       memoryMB: 2048
-      password: vsphere-password
+      password: ""
       templateNetName: ""
       templateVMName: ""
-      username: vsphere-username
+      username: ""
       vmNetName: ""
-      vsphereURL: http://vsphere.local
+      vsphereURL: ""
     operatingSystem: ubuntu
     operatingSystemSpec:
       distUpgradeOnBoot: false
+    overwriteCloudConfig: |2
+
+
+      [Global]
+              user = "vsphere-username"
+              password = "vsphere-password"
+              server = "http://vsphere.local"
+              port = "443"
+              insecure-flag = "1"
+              datacenter = "vsphere-datacenter"
+              datastore = "vsphere-datastore"
+              working-dir = "vsphere-1a2b3c4d5e"
+              vm-uuid = "vm-uuid"
+      [Disk]
+          scsicontrollertype = pvscsi
     sshPublicKeys:
     - ssh-rsa TEST123test
   roles:

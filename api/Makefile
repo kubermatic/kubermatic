@@ -83,6 +83,8 @@ endif
 	gosimple $$PACKAGES ;\
 	echo "unused" ;\
 	unused $$PACKAGES ;\
+	echo "forbidden functions" ;\
+	./hack/verify-forbidden-functions.sh ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
 	echo "misspell -error -locale US" ;\
 	misspell -error -locale US $$GOFILES ;\

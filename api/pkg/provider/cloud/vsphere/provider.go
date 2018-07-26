@@ -54,7 +54,9 @@ func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, er
 		return nil, err
 	}
 
-	user := url.UserPassword(cloud.VSphere.Username, cloud.VSphere.Password)
+	user := url.UserPassword(
+		cloud.VSphere.InfraManagementUser.Username,
+		cloud.VSphere.InfraManagementUser.Password)
 	err = c.Login(context.Background(), user)
 	if err != nil {
 		return nil, err
@@ -121,6 +123,20 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
 func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) {
+
+	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
+	// if set because that is the user which will ultimatively configure
+	// the networks - But it means users in the UI can see vsphere
+	// networks without entering credentials
+	dc, found := v.dcs[spec.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	}
+	if dc.Spec.VSphere.InfraManagementUser != nil {
+		spec.VSphere.InfraManagementUser.Username = dc.Spec.VSphere.InfraManagementUser.Username
+		spec.VSphere.InfraManagementUser.Password = dc.Spec.VSphere.InfraManagementUser.Password
+	}
+
 	client, err := v.getClient(spec)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
@@ -128,11 +144,6 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) 
 	defer logout(client)
 
 	finder := find.NewFinder(client.Client, true)
-
-	dc, found := v.dcs[spec.DatacenterName]
-	if !found || dc.Spec.VSphere == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
-	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -171,6 +182,27 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) 
 	}
 
 	return networks, nil
+}
+
+// DefaultCloudSpec adds defaults to the cloud spec
+func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	dc, found := v.dcs[spec.DatacenterName]
+	if !found || dc.Spec.VSphere == nil {
+		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	}
+	if dc.Spec.VSphere.InfraManagementUser != nil {
+		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
+			Username: dc.Spec.VSphere.InfraManagementUser.Username,
+			Password: dc.Spec.VSphere.InfraManagementUser.Password,
+		}
+	} else {
+		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
+			Username: spec.VSphere.Username,
+			Password: spec.VSphere.Password,
+		}
+	}
+
+	return nil
 }
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.

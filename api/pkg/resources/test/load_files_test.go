@@ -274,6 +274,13 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.PrometheusConfigConfigMapName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&v1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverExternalServiceName,
@@ -386,18 +393,47 @@ func TestLoadFiles(t *testing.T) {
 
 				for _, create := range clustercontroller.GetConfigMapCreators() {
 					res, err := create(data, nil)
-					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					if err != nil {
-						t.Fatalf("failed to create ConfigMap for %s: %v", fixturePath, err)
+						t.Fatalf("failed to create ConfigMap: %v", err)
 					}
+
+					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					checkTestResult(t, fixturePath, res)
 				}
 
 				for _, create := range clustercontroller.GetServiceCreators() {
 					res, err := create(data, nil)
-					fixturePath := fmt.Sprintf("service-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					if err != nil {
-						t.Fatalf("failed to create service for %s: %v", fixturePath, err)
+						t.Fatalf("failed to create Service: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("service-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					checkTestResult(t, fixturePath, res)
+				}
+
+				for _, create := range clustercontroller.GetStatefulSetCreators() {
+					res, err := create(data, nil)
+					if err != nil {
+						t.Fatalf("failed to create StatefulSet: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("statefulset-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					if err != nil {
+						t.Fatalf("failed to create StatefulSet for %s: %v", fixturePath, err)
+					}
+
+					checkTestResult(t, fixturePath, res)
+				}
+
+				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators() {
+					res, err := create(data, nil)
+					if err != nil {
+						t.Fatalf("failed to create PodDisruptionBudget: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("poddisruptionbudget-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					if err != nil {
+						t.Fatalf("failed to create PodDisruptionBudget for %s: %v", fixturePath, err)
 					}
 
 					checkTestResult(t, fixturePath, res)
