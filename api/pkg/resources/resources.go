@@ -67,10 +67,12 @@ const (
 	AdminKubeconfigSecretName = "admin-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
-	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machine controller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
-	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
+	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"
@@ -117,6 +119,8 @@ const (
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
+	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
+	IPAMControllerCertUsername = "ipam-controller"
 
 	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
 	MachineIPAMInitializerConfigurationName = "ipam-initializer"
@@ -124,6 +128,15 @@ const (
 	MachineIPAMInitializerName = "ipam.kubermatic.io"
 	// IPAMControllerDeploymentName is the name of the ipam controller's deployment
 	IPAMControllerDeploymentName = "ipam-controller"
+
+	// IPAMControllerRoleName is the name for the IPAMController roles
+	IPAMControllerRoleName = "ipam-controller"
+	// IPAMControllerRoleBindingName is the name for the IPAMController rolebinding
+	IPAMControllerRoleBindingName = "ipam-controller"
+	// IPAMControllerClusterRoleName is the name for the IPAMController cluster role
+	IPAMControllerClusterRoleName = "system:kubermatic-ipam-controller"
+	// IPAMControllerClusterRoleBindingName is the name for the IPAMController clusterrolebinding
+	IPAMControllerClusterRoleBindingName = "system:kubermatic-ipam-controller"
 
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"

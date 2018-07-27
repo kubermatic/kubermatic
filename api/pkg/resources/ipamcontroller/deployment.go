@@ -1,6 +1,7 @@
 package ipamcontroller
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -47,23 +48,30 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	kcDir := "/etc/kubernetes/ipamcontroller"
+	flags := []string{
+		"--cidr-range", strings.Join(data.Cluster.Spec.MachineNetwork.CIDRBlocks, ","),
+		"--gateway", data.Cluster.Spec.MachineNetwork.Gateway,
+		"--dns-servers", strings.Join(data.Cluster.Spec.MachineNetwork.DNSServers, ","),
+		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.IPAMControllerKubeconfigSecretName),
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            resources.IPAMControllerDeploymentName,
 			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + resources.KUBERMATICTAG,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/ipam-controller"},
-			Args:            getFlags(data),
+			Args:            flags,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.IPAMControllerKubeconfigSecretName,
+					MountPath: kcDir,
+					ReadOnly:  true,
+				},
+			},
 		},
 	}
 
 	return dep, nil
-}
-
-func getFlags(data *resources.TemplateData) []string {
-	return []string{
-		"--cidr-range", strings.Join(data.Cluster.Spec.MachineNetwork.CIDRBlocks, ","),
-		"--gateway", data.Cluster.Spec.MachineNetwork.Gateway,
-		"--dns-servers", strings.Join(data.Cluster.Spec.MachineNetwork.DNSServers, ","),
-	}
 }
