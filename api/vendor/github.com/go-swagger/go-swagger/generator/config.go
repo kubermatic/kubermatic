@@ -38,7 +38,7 @@ func ReadConfig(fpath string) (*viper.Viper, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer func() { _ = file.Close() }()
+		defer file.Close()
 		ext := filepath.Ext(fpath)
 		if len(ext) > 0 {
 			ext = ext[1:]

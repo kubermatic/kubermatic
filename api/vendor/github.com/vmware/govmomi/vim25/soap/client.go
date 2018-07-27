@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -54,8 +53,16 @@ type RoundTripper interface {
 }
 
 const (
-	SessionCookieName = "vmware_soap_session"
+	DefaultVimNamespace  = "urn:vim25"
+	DefaultVimVersion    = "6.5"
+	DefaultMinVimVersion = "5.5"
+	SessionCookieName    = "vmware_soap_session"
 )
+
+type header struct {
+	Cookie string `xml:"vcSessionCookie,omitempty"`
+	ID     string `xml:"operationID,omitempty"`
+}
 
 type Client struct {
 	http.Client
@@ -64,6 +71,7 @@ type Client struct {
 	k bool // Named after curl's -k flag
 	d *debugContainer
 	t *http.Transport
+	p *url.URL
 
 	hostsMu sync.Mutex
 	hosts   map[string]string
@@ -141,33 +149,20 @@ func NewClient(u *url.URL, insecure bool) *Client {
 	c.u = c.URL()
 	c.u.User = nil
 
+	c.Namespace = DefaultVimNamespace
+	c.Version = DefaultVimVersion
+
 	return &c
 }
 
 // NewServiceClient creates a NewClient with the given URL.Path and namespace.
 func (c *Client) NewServiceClient(path string, namespace string) *Client {
-	vc := c.URL()
-	u, err := url.Parse(path)
-	if err != nil {
-		log.Panicf("url.Parse(%q): %s", path, err)
-	}
-	if u.Host == "" {
-		u.Scheme = vc.Scheme
-		u.Host = vc.Host
-	}
+	u := c.URL()
+	u.Path = path
 
 	client := NewClient(u, c.k)
-	client.Namespace = "urn:" + namespace
-	if cert := c.Certificate(); cert != nil {
-		client.SetCertificate(*cert)
-	}
 
-	// Copy the trusted thumbprints
-	c.hostsMu.Lock()
-	for k, v := range c.hosts {
-		client.hosts[k] = v
-	}
-	c.hostsMu.Unlock()
+	client.Namespace = namespace
 
 	// Copy the cookies
 	client.Client.Jar.SetCookies(u, c.Client.Jar.Cookies(u))
@@ -179,9 +174,6 @@ func (c *Client) NewServiceClient(path string, namespace string) *Client {
 			break
 		}
 	}
-
-	// Copy any query params (e.g. GOVMOMI_TUNNEL_PROXY_PORT used in testing)
-	client.u.RawQuery = vc.RawQuery
 
 	return client
 }
@@ -354,33 +346,19 @@ func splitHostPort(host string) (string, string) {
 
 const sdkTunnel = "sdkTunnel:8089"
 
-func (c *Client) Certificate() *tls.Certificate {
-	certs := c.t.TLSClientConfig.Certificates
-	if len(certs) == 0 {
-		return nil
-	}
-	return &certs[0]
-}
-
 func (c *Client) SetCertificate(cert tls.Certificate) {
 	t := c.Client.Transport.(*http.Transport)
 
-	// Extension or HoK certificate
+	// Extension certificate
 	t.TLSClientConfig.Certificates = []tls.Certificate{cert}
-}
 
-// Tunnel returns a Client configured to proxy requests through vCenter's http port 80,
-// to the SDK tunnel virtual host.  Use of the SDK tunnel is required by LoginExtensionByCertificate()
-// and optional for other methods.
-func (c *Client) Tunnel() *Client {
-	tunnel := c.NewServiceClient(c.u.Path, c.Namespace)
-	t := tunnel.Client.Transport.(*http.Transport)
 	// Proxy to vCenter host on port 80
-	host := tunnel.u.Hostname()
+	host, _ := splitHostPort(c.u.Host)
+
 	// Should be no reason to change the default port other than testing
 	key := "GOVMOMI_TUNNEL_PROXY_PORT"
 
-	port := tunnel.URL().Query().Get(key)
+	port := c.URL().Query().Get(key)
 	if port == "" {
 		port = os.Getenv(key)
 	}
@@ -389,14 +367,20 @@ func (c *Client) Tunnel() *Client {
 		host += ":" + port
 	}
 
-	t.Proxy = http.ProxyURL(&url.URL{
+	c.p = &url.URL{
 		Scheme: "http",
 		Host:   host,
-	})
+	}
+	t.Proxy = func(r *http.Request) (*url.URL, error) {
+		// Only sdk requests should be proxied
+		if r.URL.Path == "/sdk" {
+			return c.p, nil
+		}
+		return http.ProxyFromEnvironment(r)
+	}
 
 	// Rewrite url Host to use the sdk tunnel, required for a certificate request.
-	tunnel.u.Host = sdkTunnel
-	return tunnel
+	c.u.Host = sdkTunnel
 }
 
 func (c *Client) URL() *url.URL {
@@ -442,41 +426,21 @@ func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, err
 	return c.Client.Do(req.WithContext(ctx))
 }
 
-// Signer can be implemented by soap.Header.Security to sign requests.
-// If the soap.Header.Security field is set to an implementation of Signer via WithHeader(),
-// then Client.RoundTrip will call Sign() to marshal the SOAP request.
-type Signer interface {
-	Sign(Envelope) ([]byte, error)
-}
-
-type headerContext struct{}
-
-// WithHeader can be used to modify the outgoing request soap.Header fields.
-func (c *Client) WithHeader(ctx context.Context, header Header) context.Context {
-	return context.WithValue(ctx, headerContext{}, header)
-}
-
 func (c *Client) RoundTrip(ctx context.Context, reqBody, resBody HasFault) error {
 	var err error
-	var b []byte
 
 	reqEnv := Envelope{Body: reqBody}
 	resEnv := Envelope{Body: resBody}
 
-	h, ok := ctx.Value(headerContext{}).(Header)
-	if !ok {
-		h = Header{}
+	h := &header{
+		Cookie: c.cookie,
 	}
 
-	// We added support for OperationID before soap.Header was exported.
 	if id, ok := ctx.Value(types.ID{}).(string); ok {
 		h.ID = id
 	}
 
-	h.Cookie = c.cookie
-	if h.Cookie != "" || h.ID != "" || h.Security != nil {
-		reqEnv.Header = &h // XML marshal header only if a field is set
-	}
+	reqEnv.Header = h
 
 	// Create debugging context for this round trip
 	d := c.d.newRoundTrip()
@@ -484,16 +448,9 @@ func (c *Client) RoundTrip(ctx context.Context, reqBody, resBody HasFault) error
 		defer d.done()
 	}
 
-	if signer, ok := h.Security.(Signer); ok {
-		b, err = signer.Sign(reqEnv)
-		if err != nil {
-			return err
-		}
-	} else {
-		b, err = xml.Marshal(reqEnv)
-		if err != nil {
-			panic(err)
-		}
+	b, err := xml.Marshal(reqEnv)
+	if err != nil {
+		panic(err)
 	}
 
 	rawReqBody := io.MultiReader(strings.NewReader(xml.Header), bytes.NewReader(b))
@@ -505,13 +462,8 @@ func (c *Client) RoundTrip(ctx context.Context, reqBody, resBody HasFault) error
 	req = req.WithContext(ctx)
 
 	req.Header.Set(`Content-Type`, `text/xml; charset="utf-8"`)
-
-	action := h.Action
-	if action == "" {
-		action = fmt.Sprintf("%s/%s", c.Namespace, c.Version)
-	}
-	req.Header.Set(`SOAPAction`, action)
-
+	soapAction := fmt.Sprintf("%s/%s", c.Namespace, c.Version)
+	req.Header.Set(`SOAPAction`, soapAction)
 	if c.UserAgent != "" {
 		req.Header.Set(`User-Agent`, c.UserAgent)
 	}

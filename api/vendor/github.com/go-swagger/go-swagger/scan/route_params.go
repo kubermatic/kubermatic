@@ -2,8 +2,8 @@ package scan
 
 import (
 	"github.com/go-openapi/spec"
-	"strconv"
 	"strings"
+	"strconv"
 )
 
 const (

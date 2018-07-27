@@ -41,7 +41,6 @@ import (
 //go:cgo_import_dynamic libc_dup dup "libc.so"
 //go:cgo_import_dynamic libc_dup2 dup2 "libc.so"
 //go:cgo_import_dynamic libc_exit exit "libc.so"
-//go:cgo_import_dynamic libc_faccessat faccessat "libc.so"
 //go:cgo_import_dynamic libc_fchdir fchdir "libc.so"
 //go:cgo_import_dynamic libc_fchmod fchmod "libc.so"
 //go:cgo_import_dynamic libc_fchmodat fchmodat "libc.so"
@@ -51,7 +50,6 @@ import (
 //go:cgo_import_dynamic libc_flock flock "libc.so"
 //go:cgo_import_dynamic libc_fpathconf fpathconf "libc.so"
 //go:cgo_import_dynamic libc_fstat fstat "libc.so"
-//go:cgo_import_dynamic libc_fstatat fstatat "libc.so"
 //go:cgo_import_dynamic libc_fstatvfs fstatvfs "libc.so"
 //go:cgo_import_dynamic libc_getdents getdents "libc.so"
 //go:cgo_import_dynamic libc_getgid getgid "libc.so"
@@ -129,7 +127,6 @@ import (
 //go:cgo_import_dynamic libc___xnet_connect __xnet_connect "libsocket.so"
 //go:cgo_import_dynamic libc_mmap mmap "libc.so"
 //go:cgo_import_dynamic libc_munmap munmap "libc.so"
-//go:cgo_import_dynamic libc_sendfile sendfile "libsendfile.so"
 //go:cgo_import_dynamic libc___xnet_sendto __xnet_sendto "libsocket.so"
 //go:cgo_import_dynamic libc___xnet_socket __xnet_socket "libsocket.so"
 //go:cgo_import_dynamic libc___xnet_socketpair __xnet_socketpair "libsocket.so"
@@ -170,7 +167,6 @@ import (
 //go:linkname procDup libc_dup
 //go:linkname procDup2 libc_dup2
 //go:linkname procExit libc_exit
-//go:linkname procFaccessat libc_faccessat
 //go:linkname procFchdir libc_fchdir
 //go:linkname procFchmod libc_fchmod
 //go:linkname procFchmodat libc_fchmodat
@@ -180,7 +176,6 @@ import (
 //go:linkname procFlock libc_flock
 //go:linkname procFpathconf libc_fpathconf
 //go:linkname procFstat libc_fstat
-//go:linkname procFstatat libc_fstatat
 //go:linkname procFstatvfs libc_fstatvfs
 //go:linkname procGetdents libc_getdents
 //go:linkname procGetgid libc_getgid
@@ -258,7 +253,6 @@ import (
 //go:linkname proc__xnet_connect libc___xnet_connect
 //go:linkname procmmap libc_mmap
 //go:linkname procmunmap libc_munmap
-//go:linkname procsendfile libc_sendfile
 //go:linkname proc__xnet_sendto libc___xnet_sendto
 //go:linkname proc__xnet_socket libc___xnet_socket
 //go:linkname proc__xnet_socketpair libc___xnet_socketpair
@@ -300,7 +294,6 @@ var (
 	procDup,
 	procDup2,
 	procExit,
-	procFaccessat,
 	procFchdir,
 	procFchmod,
 	procFchmodat,
@@ -310,7 +303,6 @@ var (
 	procFlock,
 	procFpathconf,
 	procFstat,
-	procFstatat,
 	procFstatvfs,
 	procGetdents,
 	procGetgid,
@@ -388,7 +380,6 @@ var (
 	proc__xnet_connect,
 	procmmap,
 	procmunmap,
-	procsendfile,
 	proc__xnet_sendto,
 	proc__xnet_socket,
 	proc__xnet_socketpair,
@@ -698,19 +689,6 @@ func Exit(code int) {
 	return
 }
 
-func Faccessat(dirfd int, path string, mode uint32, flags int) (err error) {
-	var _p0 *byte
-	_p0, err = BytePtrFromString(path)
-	if err != nil {
-		return
-	}
-	_, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procFaccessat)), 4, uintptr(dirfd), uintptr(unsafe.Pointer(_p0)), uintptr(mode), uintptr(flags), 0, 0)
-	if e1 != 0 {
-		err = e1
-	}
-	return
-}
-
 func Fchdir(fd int) (err error) {
 	_, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procFchdir)), 1, uintptr(fd), 0, 0, 0, 0, 0)
 	if e1 != 0 {
@@ -788,19 +766,6 @@ func Fpathconf(fd int, name int) (val int, err error) {
 
 func Fstat(fd int, stat *Stat_t) (err error) {
 	_, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procFstat)), 2, uintptr(fd), uintptr(unsafe.Pointer(stat)), 0, 0, 0, 0)
-	if e1 != 0 {
-		err = e1
-	}
-	return
-}
-
-func Fstatat(fd int, path string, stat *Stat_t, flags int) (err error) {
-	var _p0 *byte
-	_p0, err = BytePtrFromString(path)
-	if err != nil {
-		return
-	}
-	_, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procFstatat)), 4, uintptr(fd), uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), uintptr(flags), 0, 0)
 	if e1 != 0 {
 		err = e1
 	}
@@ -1602,15 +1567,6 @@ func mmap(addr uintptr, length uintptr, prot int, flag int, fd int, pos int64) (
 
 func munmap(addr uintptr, length uintptr) (err error) {
 	_, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procmunmap)), 2, uintptr(addr), uintptr(length), 0, 0, 0, 0)
-	if e1 != 0 {
-		err = e1
-	}
-	return
-}
-
-func sendfile(outfd int, infd int, offset *int64, count int) (written int, err error) {
-	r0, _, e1 := sysvicall6(uintptr(unsafe.Pointer(&procsendfile)), 4, uintptr(outfd), uintptr(infd), uintptr(unsafe.Pointer(offset)), uintptr(count), 0, 0)
-	written = int(r0)
 	if e1 != 0 {
 		err = e1
 	}

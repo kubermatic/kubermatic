@@ -55,10 +55,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		}
 
 		if cluster.Spec.MachineNetwork != nil {
-			if err := cc.ensureIPAMDeployment(cluster); err != nil {
-				return nil, err
-			}
-
 			if err := cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
 				return nil, err
 			}

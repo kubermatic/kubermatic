@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/analysis"
 	"github.com/go-openapi/spec"
 )
 
@@ -29,7 +30,7 @@ type GenDefinition struct {
 	Package        string
 	Imports        map[string]string
 	DefaultImports []string
-	ExtraSchemas   GenSchemaList
+	ExtraSchemas   []GenSchema
 	DependsOn      []string
 }
 
@@ -46,6 +47,10 @@ func (g GenDefinitions) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
 // It can be sorted by name to get a stable struct layout for
 // version control and such
 type GenSchemaList []GenSchema
+
+func (g GenSchemaList) Len() int           { return len(g) }
+func (g GenSchemaList) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
+func (g GenSchemaList) Less(i, j int) bool { return g[i].Name < g[j].Name }
 
 // GenSchema contains all the information needed to generate the code
 // for a schema
@@ -72,7 +77,7 @@ type GenSchema struct {
 	XMLName                 string
 	CustomTag               string
 	Properties              GenSchemaList
-	AllOf                   GenSchemaList
+	AllOf                   []GenSchema
 	HasAdditionalProperties bool
 	IsAdditionalProperties  bool
 	AdditionalProperties    *GenSchema
@@ -91,48 +96,26 @@ type GenSchema struct {
 	Default                 interface{}
 }
 
-func (g GenSchemaList) Len() int      { return len(g) }
-func (g GenSchemaList) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
-func (g GenSchemaList) Less(i, j int) bool {
-	a, ok := g[i].Extensions[xOrder].(float64)
-	if ok {
-		b, ok := g[j].Extensions[xOrder].(float64)
-		if ok {
-			return a < b
-		}
-	}
-	return g[i].Name < g[j].Name
-}
-
 type sharedValidations struct {
-	HasValidations bool
-	Required       bool
-
-	// String validations
-	MaxLength *int64
-	MinLength *int64
-	Pattern   string
-
-	// Number validations
-	MultipleOf       *float64
-	Minimum          *float64
-	Maximum          *float64
-	ExclusiveMinimum bool
-	ExclusiveMaximum bool
-
-	Enum      []interface{}
-	ItemsEnum []interface{}
-
-	// Slice validations
+	Required            bool
+	MaxLength           *int64
+	MinLength           *int64
+	Pattern             string
+	MultipleOf          *float64
+	Minimum             *float64
+	Maximum             *float64
+	ExclusiveMinimum    bool
+	ExclusiveMaximum    bool
+	Enum                []interface{}
+	ItemsEnum           []interface{}
+	HasValidations      bool
 	MinItems            *int64
 	MaxItems            *int64
 	UniqueItems         bool
 	HasSliceValidations bool
-
-	// Not used yet (perhaps intended for maxProperties, minProperties validations?)
-	NeedsSize bool
-
-	// NOTE: "patternProperties" and "dependencies" not supported by Swagger 2.0
+	NeedsSize           bool
+	NeedsValidation     bool
+	NeedsRequired       bool
 }
 
 // GenResponse represents a response object for code generation
@@ -225,7 +208,6 @@ type GenParameter struct {
 	Path            string
 	ValueExpression string
 	IndexVar        string
-	KeyVar          string
 	ReceiverName    string
 	Location        string
 	Title           string
@@ -240,28 +222,12 @@ type GenParameter struct {
 	Child  *GenItems
 	Parent *GenItems
 
-	/// Unused
-	//BodyParam *GenParameter
+	BodyParam *GenParameter
 
 	Default         interface{}
 	HasDefault      bool
 	ZeroValue       string
 	AllowEmptyValue bool
-
-	// validation strategy for Body params, which may mix model and simple constructs.
-	// Distinguish the following cases:
-	// - HasSimpleBodyParams: body is an inline simple type
-	// - HasModelBodyParams: body is a model objectd
-	// - HasSimpleBodyItems: body is an inline array of simple type
-	// - HasModelBodyItems: body is an array of model objects
-	// - HasSimpleBodyMap: body is a map of simple objects (possibly arrays)
-	// - HasModelBodyMap: body is a map of model objects
-	HasSimpleBodyParams bool
-	HasModelBodyParams  bool
-	HasSimpleBodyItems  bool
-	HasModelBodyItems   bool
-	HasSimpleBodyMap    bool
-	HasModelBodyMap     bool
 
 	Extensions map[string]interface{}
 }
@@ -337,10 +303,6 @@ type GenItems struct {
 
 	Location string
 	IndexVar string
-	KeyVar   string
-
-	// instructs generator to skip the splitting and parsing from CollectionFormat
-	SkipParse bool
 }
 
 // ItemsDepth returns a string "items.items..." with as many items as the level of nesting of the array.
@@ -367,7 +329,6 @@ type GenOperationGroup struct {
 	DefaultImports []string
 	RootPackage    string
 	WithContext    bool
-	GenOpts        *GenOpts
 }
 
 // GenOperationGroups is a sorted collection of operation groups
@@ -437,11 +398,11 @@ type GenOperation struct {
 
 	Imports        map[string]string
 	DefaultImports []string
-	ExtraSchemas   GenSchemaList
+	ExtraSchemas   []GenSchema
 
 	Authorized          bool
-	Security            []GenSecurityRequirements
-	SecurityDefinitions GenSecuritySchemes
+	Security            []analysis.SecurityRequirement
+	SecurityDefinitions map[string]spec.SecurityScheme
 	Principal           string
 
 	SuccessResponse  *GenResponse
@@ -502,17 +463,14 @@ type GenApp struct {
 	ExtraSchemes        []string
 	Consumes            GenSerGroups
 	Produces            GenSerGroups
-	SecurityDefinitions GenSecuritySchemes
+	SecurityDefinitions []GenSecurityScheme
 	Models              []GenDefinition
 	Operations          GenOperations
 	OperationGroups     GenOperationGroups
 	SwaggerJSON         string
-	// Embedded specs: this is important for when the generated server adds routes.
-	// NOTE: there is a distinct advantage to having this in runtime rather than generated code.
-	// We are noti ever going to generate the router.
-	// If embedding spec is an issue (e.g. memory usage), this can be excluded with the --exclude-spec
-	// generation option. Alternative methods to serve spec (e.g. from disk, ...) may be implemented by
-	// adding a middleware to the generated API.
+	// this is important for when the generated server adds routes
+	// ideally this should be removed after we code-generate the router instead of relying on runtime
+	// CAUTION: Could be problematic for big specs (might consume large amounts of memory)
 	FlatSwaggerJSON string
 	ExcludeSpec     bool
 	WithContext     bool
@@ -576,6 +534,13 @@ type GenSerializer struct {
 	Implementation string
 }
 
+// GenSecuritySchemes sorted representation of serializers
+type GenSecuritySchemes []GenSecurityScheme
+
+func (g GenSecuritySchemes) Len() int           { return len(g) }
+func (g GenSecuritySchemes) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
+func (g GenSecuritySchemes) Less(i, j int) bool { return g[i].Name < g[j].Name }
+
 // GenSecurityScheme represents a security scheme for code generation
 type GenSecurityScheme struct {
 	AppName      string
@@ -588,35 +553,4 @@ type GenSecurityScheme struct {
 	Scopes       []string
 	Source       string
 	Principal    string
-	// from spec.SecurityScheme
-	Description      string
-	Type             string
-	In               string
-	Flow             string
-	AuthorizationURL string
-	TokenURL         string
-	Extensions       map[string]interface{}
 }
-
-// GenSecuritySchemes sorted representation of serializers
-type GenSecuritySchemes []GenSecurityScheme
-
-func (g GenSecuritySchemes) Len() int           { return len(g) }
-func (g GenSecuritySchemes) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
-func (g GenSecuritySchemes) Less(i, j int) bool { return g[i].ID < g[j].ID }
-
-// GenSecurityRequirement represents a security requirement for an operation
-type GenSecurityRequirement struct {
-	Name   string
-	Scopes []string
-}
-
-// GenSecurityRequirements represents a compounded security requirement specification.
-// In a []GenSecurityRequirements complete requirements specification,
-// outer elements are interpreted as optional requirements (OR), and
-// inner elements are interpreted as jointly required (AND).
-type GenSecurityRequirements []GenSecurityRequirement
-
-func (g GenSecurityRequirements) Len() int           { return len(g) }
-func (g GenSecurityRequirements) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
-func (g GenSecurityRequirements) Less(i, j int) bool { return g[i].Name < g[j].Name }

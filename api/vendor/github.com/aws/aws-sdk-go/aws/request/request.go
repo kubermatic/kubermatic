@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/client/metadata"
-	"github.com/aws/aws-sdk-go/internal/sdkio"
 )
 
 const (
@@ -46,7 +45,6 @@ type Request struct {
 	Handlers   Handlers
 
 	Retryer
-	AttemptTime            time.Time
 	Time                   time.Time
 	Operation              *Operation
 	HTTPRequest            *http.Request
@@ -122,7 +120,6 @@ func New(cfg aws.Config, clientInfo metadata.ClientInfo, handlers Handlers,
 		Handlers:   handlers.Copy(),
 
 		Retryer:     retryer,
-		AttemptTime: time.Now(),
 		Time:        time.Now(),
 		ExpireTime:  0,
 		Operation:   operation,
@@ -261,7 +258,7 @@ func (r *Request) SetStringBody(s string) {
 // SetReaderBody will set the request's body reader.
 func (r *Request) SetReaderBody(reader io.ReadSeeker) {
 	r.Body = reader
-	r.BodyStart, _ = reader.Seek(0, sdkio.SeekCurrent) // Get the Bodies current offset.
+	r.BodyStart, _ = reader.Seek(0, 1) // Get the Bodies current offset.
 	r.ResetBody()
 }
 
@@ -297,11 +294,6 @@ func (r *Request) Presign(expire time.Duration) (string, error) {
 func (r *Request) PresignRequest(expire time.Duration) (string, http.Header, error) {
 	r = r.copy()
 	return getPresignedURL(r, expire)
-}
-
-// IsPresigned returns true if the request represents a presigned API url.
-func (r *Request) IsPresigned() bool {
-	return r.ExpireTime != 0
 }
 
 func getPresignedURL(r *Request, expire time.Duration) (string, http.Header, error) {
@@ -344,7 +336,7 @@ func debugLogReqError(r *Request, stage string, retrying bool, err error) {
 
 // Build will build the request's object so it can be signed and sent
 // to the service. Build will also validate all the request's parameters.
-// Any additional build Handlers set on this request will be run
+// Anny additional build Handlers set on this request will be run
 // in the order they were set.
 //
 // The request will only be built once. Multiple calls to build will have
@@ -370,9 +362,9 @@ func (r *Request) Build() error {
 	return r.Error
 }
 
-// Sign will sign the request, returning error if errors are encountered.
+// Sign will sign the request returning error if errors are encountered.
 //
-// Sign will build the request prior to signing. All Sign Handlers will
+// Send will build the request prior to signing. All Sign Handlers will
 // be executed in the order they were set.
 func (r *Request) Sign() error {
 	r.Build()
@@ -442,7 +434,7 @@ func (r *Request) GetBody() io.ReadSeeker {
 	return r.safeBody
 }
 
-// Send will send the request, returning error if errors are encountered.
+// Send will send the request returning error if errors are encountered.
 //
 // Send will sign the request prior to sending. All Send Handlers will
 // be executed in the order they were set.
@@ -463,7 +455,6 @@ func (r *Request) Send() error {
 	}()
 
 	for {
-		r.AttemptTime = time.Now()
 		if aws.BoolValue(r.Retryable) {
 			if r.Config.LogLevel.Matches(aws.LogDebugWithRequestRetries) {
 				r.Config.Logger.Log(fmt.Sprintf("DEBUG: Retrying Request %s/%s, attempt %d",

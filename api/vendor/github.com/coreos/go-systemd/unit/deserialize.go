@@ -33,13 +33,11 @@ const (
 	// but this would introduce an (unfortunate) dependency on cgo
 	SYSTEMD_LINE_MAX = 2048
 
-	// SYSTEMD_NEWLINE defines characters that systemd considers indicators
-	// for a newline.
+	// characters that systemd considers indicate a newline
 	SYSTEMD_NEWLINE = "\r\n"
 )
 
 var (
-	// ErrLineTooLong gets returned when a line is too long for systemd to handle.
 	ErrLineTooLong = fmt.Errorf("line too long (max %d bytes)", SYSTEMD_LINE_MAX)
 )
 
@@ -72,6 +70,7 @@ type lexer struct {
 }
 
 func (l *lexer) lex() {
+	var err error
 	defer func() {
 		close(l.optchan)
 		close(l.errchan)
@@ -94,7 +93,6 @@ func (l *lexer) lex() {
 			}
 		}
 
-		var err error
 		next, err = next()
 		if err != nil {
 			l.errchan <- err

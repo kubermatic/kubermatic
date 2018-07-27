@@ -1,8 +1,9 @@
 package godo
 
 import (
-	"context"
 	"net/http"
+
+	"github.com/digitalocean/godo/context"
 )
 
 // RegionsService is an interface for interfacing with the regions

@@ -1,9 +1,10 @@
 package godo
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/digitalocean/godo/context"
 )
 
 const loadBalancersBasePath = "/v2/load_balancers"

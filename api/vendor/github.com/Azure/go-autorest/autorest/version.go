@@ -1,7 +1,5 @@
 package autorest
 
-import "github.com/Azure/go-autorest/version"
-
 // Copyright 2017 Microsoft Corporation
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,5 +16,5 @@ import "github.com/Azure/go-autorest/version"
 
 // Version returns the semantic version (see http://semver.org).
 func Version() string {
-	return version.Number
+	return "v10.12.0"
 }

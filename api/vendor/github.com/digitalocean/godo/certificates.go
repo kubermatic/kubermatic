@@ -1,9 +1,10 @@
 package godo
 
 import (
-	"context"
 	"net/http"
 	"path"
+
+	"github.com/digitalocean/godo/context"
 )
 
 const certificatesBasePath = "/v2/certificates"
@@ -19,24 +20,19 @@ type CertificatesService interface {
 
 // Certificate represents a DigitalOcean certificate configuration.
 type Certificate struct {
-	ID              string   `json:"id,omitempty"`
-	Name            string   `json:"name,omitempty"`
-	DNSNames        []string `json:"dns_names,omitempty"`
-	NotAfter        string   `json:"not_after,omitempty"`
-	SHA1Fingerprint string   `json:"sha1_fingerprint,omitempty"`
-	Created         string   `json:"created_at,omitempty"`
-	State           string   `json:"state,omitempty"`
-	Type            string   `json:"type,omitempty"`
+	ID              string `json:"id,omitempty"`
+	Name            string `json:"name,omitempty"`
+	NotAfter        string `json:"not_after,omitempty"`
+	SHA1Fingerprint string `json:"sha1_fingerprint,omitempty"`
+	Created         string `json:"created_at,omitempty"`
 }
 
 // CertificateRequest represents configuration for a new certificate.
 type CertificateRequest struct {
-	Name             string   `json:"name,omitempty"`
-	DNSNames         []string `json:"dns_names,omitempty"`
-	PrivateKey       string   `json:"private_key,omitempty"`
-	LeafCertificate  string   `json:"leaf_certificate,omitempty"`
-	CertificateChain string   `json:"certificate_chain,omitempty"`
-	Type             string   `json:"type,omitempty"`
+	Name             string `json:"name,omitempty"`
+	PrivateKey       string `json:"private_key,omitempty"`
+	LeafCertificate  string `json:"leaf_certificate,omitempty"`
+	CertificateChain string `json:"certificate_chain,omitempty"`
 }
 
 type certificateRoot struct {

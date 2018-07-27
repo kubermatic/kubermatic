@@ -682,12 +682,6 @@ func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
-// GetInt32 returns the value associated with the key as an integer.
-func GetInt32(key string) int32 { return v.GetInt32(key) }
-func (v *Viper) GetInt32(key string) int32 {
-	return cast.ToInt32(v.Get(key))
-}
-
 // GetInt64 returns the value associated with the key as an integer.
 func GetInt64(key string) int64 { return v.GetInt64(key) }
 func (v *Viper) GetInt64(key string) int64 {
@@ -1726,14 +1720,18 @@ func (v *Viper) getConfigType() string {
 }
 
 func (v *Viper) getConfigFile() (string, error) {
-	if v.configFile == "" {
-		cf, err := v.findConfigFile()
-		if err != nil {
-			return "", err
-		}
-		v.configFile = cf
+	// if explicitly set, then use it
+	if v.configFile != "" {
+		return v.configFile, nil
 	}
-	return v.configFile, nil
+
+	cf, err := v.findConfigFile()
+	if err != nil {
+		return "", err
+	}
+
+	v.configFile = cf
+	return v.getConfigFile()
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {

@@ -455,11 +455,6 @@ type apiResponse struct {
 	Error     string          `json:"error"`
 }
 
-func apiError(code int) bool {
-	// These are the codes that Prometheus sends when it returns an error.
-	return code == statusAPIError || code == http.StatusBadRequest
-}
-
 func (c apiClient) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, error) {
 	resp, body, err := c.Client.Do(ctx, req)
 	if err != nil {
@@ -468,7 +463,7 @@ func (c apiClient) Do(ctx context.Context, req *http.Request) (*http.Response, [
 
 	code := resp.StatusCode
 
-	if code/100 != 2 && !apiError(code) {
+	if code/100 != 2 && code != statusAPIError {
 		return resp, body, &Error{
 			Type: ErrBadResponse,
 			Msg:  fmt.Sprintf("bad response code %d", resp.StatusCode),
@@ -484,14 +479,14 @@ func (c apiClient) Do(ctx context.Context, req *http.Request) (*http.Response, [
 		}
 	}
 
-	if apiError(code) != (result.Status == "error") {
+	if (code == statusAPIError) != (result.Status == "error") {
 		err = &Error{
 			Type: ErrBadResponse,
 			Msg:  "inconsistent body for response code",
 		}
 	}
 
-	if apiError(code) && result.Status == "error" {
+	if code == statusAPIError && result.Status == "error" {
 		err = &Error{
 			Type: result.ErrorType,
 			Msg:  result.Error,

@@ -8,9 +8,7 @@
 
 package mergo
 
-import (
-	"reflect"
-)
+import "reflect"
 
 func hasExportedField(dst reflect.Value) (exported bool) {
 	for i, n := 0, dst.NumField(); i < n; i++ {
@@ -24,21 +22,20 @@ func hasExportedField(dst reflect.Value) (exported bool) {
 	return
 }
 
-type Config struct {
-	Overwrite    bool
-	AppendSlice  bool
-	Transformers Transformers
+type config struct {
+	overwrite    bool
+	transformers transformers
 }
 
-type Transformers interface {
+type transformers interface {
 	Transformer(reflect.Type) func(dst, src reflect.Value) error
 }
 
 // Traverses recursively both values, assigning src's fields values to dst.
 // The map argument tracks comparisons that have already been seen, which allows
 // short circuiting on recursive types.
-func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, config *Config) (err error) {
-	overwrite := config.Overwrite
+func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, config *config) (err error) {
+	overwrite := config.overwrite
 
 	if !src.IsValid() {
 		return
@@ -57,8 +54,8 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 		visited[h] = &visit{addr, typ, seen}
 	}
 
-	if config.Transformers != nil && !isEmptyValue(dst) {
-		if fn := config.Transformers.Transformer(dst.Type()); fn != nil {
+	if config.transformers != nil && !isEmptyValue(dst) {
+		if fn := config.transformers.Transformer(dst.Type()); fn != nil {
 			err = fn(dst, src)
 			return
 		}
@@ -78,8 +75,9 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 			}
 		}
 	case reflect.Map:
-		if dst.IsNil() && !src.IsNil() {
+		if len(src.MapKeys()) == 0 && !src.IsNil() && len(dst.MapKeys()) == 0 {
 			dst.Set(reflect.MakeMap(dst.Type()))
+			return
 		}
 		for _, key := range src.MapKeys() {
 			srcElement := src.MapIndex(key)
@@ -88,7 +86,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 			}
 			dstElement := dst.MapIndex(key)
 			switch srcElement.Kind() {
-			case reflect.Chan, reflect.Func, reflect.Map, reflect.Interface, reflect.Slice:
+			case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Interface, reflect.Slice:
 				if srcElement.IsNil() {
 					continue
 				}
@@ -103,15 +101,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 				case reflect.Ptr:
 					fallthrough
 				case reflect.Map:
-					srcMapElm := srcElement
-					dstMapElm := dstElement
-					if srcMapElm.CanInterface() {
-						srcMapElm = reflect.ValueOf(srcMapElm.Interface())
-						if dstMapElm.IsValid() {
-							dstMapElm = reflect.ValueOf(dstMapElm.Interface())
-						}
-					}
-					if err = deepMerge(dstMapElm, srcMapElm, visited, depth+1, config); err != nil {
+					if err = deepMerge(dstElement, srcElement, visited, depth+1, config); err != nil {
 						return
 					}
 				case reflect.Slice:
@@ -124,11 +114,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 						dstSlice = reflect.ValueOf(dstElement.Interface())
 					}
 
-					if !isEmptyValue(src) && (overwrite || isEmptyValue(dst)) && !config.AppendSlice {
-						dstSlice = srcSlice
-					} else if config.AppendSlice {
-						dstSlice = reflect.AppendSlice(dstSlice, srcSlice)
-					}
+					dstSlice = reflect.AppendSlice(dstSlice, srcSlice)
 					dst.SetMapIndex(key, dstSlice)
 				}
 			}
@@ -136,7 +122,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 				continue
 			}
 
-			if srcElement.IsValid() && (overwrite || (!dstElement.IsValid() || isEmptyValue(dstElement))) {
+			if !isEmptyValue(srcElement) && (overwrite || (!dstElement.IsValid() || isEmptyValue(dst))) {
 				if dst.IsNil() {
 					dst.Set(reflect.MakeMap(dst.Type()))
 				}
@@ -144,14 +130,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 			}
 		}
 	case reflect.Slice:
-		if !dst.CanSet() {
-			break
-		}
-		if !isEmptyValue(src) && (overwrite || isEmptyValue(dst)) && !config.AppendSlice {
-			dst.Set(src)
-		} else if config.AppendSlice {
-			dst.Set(reflect.AppendSlice(dst, src))
-		}
+		dst.Set(reflect.AppendSlice(dst, src))
 	case reflect.Ptr:
 		fallthrough
 	case reflect.Interface:
@@ -195,41 +174,36 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, co
 // src attributes if they themselves are not empty. dst and src must be valid same-type structs
 // and dst must be a pointer to struct.
 // It won't merge unexported (private) fields and will do recursively any exported field.
-func Merge(dst, src interface{}, opts ...func(*Config)) error {
+func Merge(dst, src interface{}, opts ...func(*config)) error {
 	return merge(dst, src, opts...)
 }
 
 // MergeWithOverwrite will do the same as Merge except that non-empty dst attributes will be overriden by
 // non-empty src attribute values.
 // Deprecated: use Merge(…) with WithOverride
-func MergeWithOverwrite(dst, src interface{}, opts ...func(*Config)) error {
+func MergeWithOverwrite(dst, src interface{}, opts ...func(*config)) error {
 	return merge(dst, src, append(opts, WithOverride)...)
 }
 
 // WithTransformers adds transformers to merge, allowing to customize the merging of some types.
-func WithTransformers(transformers Transformers) func(*Config) {
-	return func(config *Config) {
-		config.Transformers = transformers
+func WithTransformers(transformers transformers) func(*config) {
+	return func(config *config) {
+		config.transformers = transformers
 	}
 }
 
 // WithOverride will make merge override non-empty dst attributes with non-empty src attributes values.
-func WithOverride(config *Config) {
-	config.Overwrite = true
+func WithOverride(config *config) {
+	config.overwrite = true
 }
 
-// WithAppendSlice will make merge append slices instead of overwriting it
-func WithAppendSlice(config *Config) {
-	config.AppendSlice = true
-}
-
-func merge(dst, src interface{}, opts ...func(*Config)) error {
+func merge(dst, src interface{}, opts ...func(*config)) error {
 	var (
 		vDst, vSrc reflect.Value
 		err        error
 	)
 
-	config := &Config{}
+	config := &config{}
 
 	for _, opt := range opts {
 		opt(config)

@@ -3,8 +3,6 @@ package aws
 import (
 	"io"
 	"sync"
-
-	"github.com/aws/aws-sdk-go/internal/sdkio"
 )
 
 // ReadSeekCloser wraps a io.Reader returning a ReaderSeekerCloser. Should
@@ -121,17 +119,17 @@ func SeekerLen(s io.Seeker) (int64, error) {
 }
 
 func seekerLen(s io.Seeker) (int64, error) {
-	curOffset, err := s.Seek(0, sdkio.SeekCurrent)
+	curOffset, err := s.Seek(0, 1)
 	if err != nil {
 		return 0, err
 	}
 
-	endOffset, err := s.Seek(0, sdkio.SeekEnd)
+	endOffset, err := s.Seek(0, 2)
 	if err != nil {
 		return 0, err
 	}
 
-	_, err = s.Seek(curOffset, sdkio.SeekStart)
+	_, err = s.Seek(curOffset, 0)
 	if err != nil {
 		return 0, err
 	}

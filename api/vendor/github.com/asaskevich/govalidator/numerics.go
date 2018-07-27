@@ -42,14 +42,11 @@ func IsNonPositive(value float64) bool {
 }
 
 // InRange returns true if value lies between left and right border
-func InRangeInt(value, left, right interface{}) bool {
-	value64, _ := ToInt(value)
-	left64, _ := ToInt(left)
-	right64, _ := ToInt(right)
-	if left64 > right64 {
-		left64, right64 = right64, left64
+func InRangeInt(value, left, right int) bool {
+	if left > right {
+		left, right = right, left
 	}
-	return value64 >= left64 && value64 <= right64
+	return value >= left && value <= right
 }
 
 // InRange returns true if value lies between left and right border

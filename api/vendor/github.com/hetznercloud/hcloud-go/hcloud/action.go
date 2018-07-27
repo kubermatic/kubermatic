@@ -27,8 +27,8 @@ type ActionStatus string
 // List of action statuses.
 const (
 	ActionStatusRunning ActionStatus = "running"
-	ActionStatusSuccess ActionStatus = "success"
-	ActionStatusError   ActionStatus = "error"
+	ActionStatusSuccess              = "success"
+	ActionStatusError                = "error"
 )
 
 // ActionResource references other resources from an action.
@@ -43,9 +43,9 @@ type ActionResourceType string
 // List of action resource reference types.
 const (
 	ActionResourceTypeServer     ActionResourceType = "server"
-	ActionResourceTypeImage      ActionResourceType = "image"
-	ActionResourceTypeISO        ActionResourceType = "iso"
-	ActionResourceTypeFloatingIP ActionResourceType = "floating_ip"
+	ActionResourceTypeImage                         = "image"
+	ActionResourceTypeISO                           = "iso"
+	ActionResourceTypeFloatingIP                    = "floating_ip"
 )
 
 // ActionError is the error of an action.

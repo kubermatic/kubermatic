@@ -15,6 +15,7 @@
 package generate
 
 import (
+	"io/ioutil"
 	"log"
 
 	"github.com/go-swagger/go-swagger/generator"
@@ -34,9 +35,23 @@ type Client struct {
 	SkipOperations  bool     `long:"skip-operations" description:"no operations will be generated when this flag is specified"`
 	DumpData        bool     `long:"dump-data" description:"when present dumps the json for the template generator instead of generating files"`
 	SkipValidation  bool     `long:"skip-validation" description:"skips validation of spec prior to generation"`
+	SkipFlattening  bool     `long:"skip-flatten" description:"skips flattening of spec prior to generation"`
 }
 
 func (c *Client) getOpts() (*generator.GenOpts, error) {
+	var copyrightstr string
+	copyrightfile := string(c.CopyrightFile)
+	if copyrightfile != "" {
+		//Read the Copyright from file path in opts
+		bytebuffer, err := ioutil.ReadFile(copyrightfile)
+		if err != nil {
+			return nil, err
+		}
+		copyrightstr = string(bytebuffer)
+	} else {
+		copyrightstr = ""
+	}
+
 	return &generator.GenOpts{
 		Spec: string(c.Spec),
 
@@ -54,17 +69,15 @@ func (c *Client) getOpts() (*generator.GenOpts, error) {
 		IncludeParameters: !c.SkipOperations,
 		IncludeResponses:  !c.SkipOperations,
 		ValidateSpec:      !c.SkipValidation,
+		FlattenSpec:       !c.SkipFlattening,
 		Tags:              c.Tags,
 		IncludeSupport:    true,
 		TemplateDir:       string(c.TemplateDir),
 		DumpData:          c.DumpData,
 		ExistingModels:    c.ExistingModels,
+		Copyright:         copyrightstr,
 		IsClient:          true,
 	}, nil
-}
-
-func (c *Client) getShared() *shared {
-	return &c.shared
 }
 
 func (c *Client) generate(opts *generator.GenOpts) error {

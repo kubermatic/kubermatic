@@ -15,10 +15,14 @@
 package types
 
 import (
+	"errors"
 	"net/url"
 
-	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/vincent-petithory/dataurl"
+)
+
+var (
+	ErrInvalidScheme = errors.New("invalid url scheme")
 )
 
 func validateURL(s string) error {
@@ -28,7 +32,7 @@ func validateURL(s string) error {
 	}
 	u, err := url.Parse(s)
 	if err != nil {
-		return errors.ErrInvalidUrl
+		return err
 	}
 
 	switch u.Scheme {
@@ -40,6 +44,6 @@ func validateURL(s string) error {
 		}
 		return nil
 	default:
-		return errors.ErrInvalidScheme
+		return ErrInvalidScheme
 	}
 }

@@ -3,9 +3,9 @@ package flags
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
+	"syscall"
 	"unicode/utf8"
 )
 
@@ -261,7 +261,9 @@ func (option *Option) clearDefault() {
 	usedDefault := option.Default
 
 	if envKey := option.EnvDefaultKey; envKey != "" {
-		if value, ok := os.LookupEnv(envKey); ok {
+		// os.Getenv() makes no distinction between undefined and
+		// empty values, so we use syscall.Getenv()
+		if value, ok := syscall.Getenv(envKey); ok {
 			if option.EnvDefaultDelim != "" {
 				usedDefault = strings.Split(value,
 					option.EnvDefaultDelim)

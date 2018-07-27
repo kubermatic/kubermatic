@@ -17,13 +17,11 @@ limitations under the License.
 package simulator
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -65,7 +63,7 @@ func NewVirtualMachine(parent types.ManagedObjectReference, spec *types.VirtualM
 		MemoryAllocation: &rspec.MemoryAllocation,
 		CpuAllocation:    &rspec.CpuAllocation,
 	}
-	vm.Snapshot = nil // intentionally set to nil until a snapshot is created
+	vm.Snapshot = &types.VirtualMachineSnapshotInfo{}
 	vm.Storage = &types.VirtualMachineStorageInfo{
 		Timestamp: time.Now(),
 	}
@@ -422,35 +420,6 @@ func (vm *VirtualMachine) generateMAC() string {
 	return mac.String()
 }
 
-func numberToString(n int64, sep rune) string {
-	buf := &bytes.Buffer{}
-	if n < 0 {
-		n = -n
-		buf.WriteRune('-')
-	}
-	s := strconv.FormatInt(n, 10)
-	pos := 3 - (len(s) % 3)
-	for i := 0; i < len(s); i++ {
-		if pos == 3 {
-			if i != 0 {
-				buf.WriteRune(sep)
-			}
-			pos = 0
-		}
-		pos++
-		buf.WriteByte(s[i])
-	}
-
-	return buf.String()
-}
-
-func getDiskSize(disk *types.VirtualDisk) int64 {
-	if disk.CapacityInBytes == 0 {
-		return disk.CapacityInKB * 1024
-	}
-	return disk.CapacityInBytes
-}
-
 func (vm *VirtualMachine) configureDevice(devices object.VirtualDeviceList, spec *types.VirtualDeviceConfigSpec) types.BaseMethodFault {
 	device := spec.Device
 	d := device.GetVirtualDevice()
@@ -500,7 +469,6 @@ func (vm *VirtualMachine) configureDevice(devices object.VirtualDeviceList, spec
 			c.MacAddress = vm.generateMAC()
 		}
 	case *types.VirtualDisk:
-		summary = fmt.Sprintf("%s KB", numberToString(x.CapacityInKB, ','))
 		switch b := d.Backing.(type) {
 		case types.BaseVirtualDeviceFileBackingInfo:
 			info := b.GetVirtualDeviceFileBackingInfo()
@@ -525,16 +493,9 @@ func (vm *VirtualMachine) configureDevice(devices object.VirtualDeviceList, spec
 			p, _ := parseDatastorePath(info.FileName)
 
 			host := Map.Get(*vm.Runtime.Host).(*HostSystem)
+			ds := Map.FindByName(p.Datastore, host.Datastore).Reference()
 
-			entity := Map.FindByName(p.Datastore, host.Datastore)
-			ref := entity.Reference()
-			info.Datastore = &ref
-
-			ds := entity.(*Datastore)
-
-			// XXX: compare disk size and free space until windows stat is supported
-			ds.Summary.FreeSpace -= getDiskSize(x)
-			ds.Info.GetDatastoreInfo().FreeSpace = ds.Summary.FreeSpace
+			info.Datastore = &ds
 		}
 	}
 
@@ -570,15 +531,6 @@ func (vm *VirtualMachine) removeDevice(devices object.VirtualDeviceList, spec *t
 				switch b := device.Backing.(type) {
 				case types.BaseVirtualDeviceFileBackingInfo:
 					file = b.GetVirtualDeviceFileBackingInfo().FileName
-
-					p, _ := parseDatastorePath(file)
-
-					host := Map.Get(*vm.Runtime.Host).(*HostSystem)
-
-					ds := Map.FindByName(p.Datastore, host.Datastore).(*Datastore)
-
-					ds.Summary.FreeSpace += getDiskSize(device)
-					ds.Info.GetDatastoreInfo().FreeSpace = ds.Summary.FreeSpace
 				}
 
 				if file != "" {
@@ -793,11 +745,6 @@ func (vm *VirtualMachine) DestroyTask(ctx *Context, req *types.Destroy_Task) soa
 		if r.Fault() != nil {
 			return nil, r.Fault().VimFault().(types.BaseMethodFault)
 		}
-
-		// Remove all devices
-		devices := object.VirtualDeviceList(vm.Config.Hardware.Device)
-		spec, _ := devices.ConfigSpec(types.VirtualDeviceConfigSpecOperationRemove)
-		vm.configureDevices(&types.VirtualMachineConfigSpec{DeviceChange: spec})
 
 		// Delete VM files from the datastore (ignoring result for now)
 		m := Map.FileManager()
@@ -1044,7 +991,8 @@ func (vm *VirtualMachine) RemoveAllSnapshotsTask(req *types.RemoveAllSnapshots_T
 
 		refs := allSnapshotsInTree(vm.Snapshot.RootSnapshotList)
 
-		vm.Snapshot = nil
+		vm.Snapshot.CurrentSnapshot = nil
+		vm.Snapshot.RootSnapshotList = nil
 
 		for _, ref := range refs {
 			Map.Remove(ref)

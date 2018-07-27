@@ -22,10 +22,9 @@ import (
 // Model the generate model file command
 type Model struct {
 	shared
-	Name           []string `long:"name" short:"n" description:"the model to generate"`
-	NoStruct       bool     `long:"skip-struct" description:"when present will not generate the model struct"`
-	DumpData       bool     `long:"dump-data" description:"when present dumps the json for the template generator instead of generating files"`
-	SkipValidation bool     `long:"skip-validation" description:"skips validation of spec prior to generation"`
+	Name     []string `long:"name" short:"n" description:"the model to generate"`
+	NoStruct bool     `long:"skip-struct" description:"when present will not generate the model struct"`
+	DumpData bool     `long:"dump-data" description:"when present dumps the json for the template generator instead of generating files"`
 }
 
 // Execute generates a model file
@@ -36,7 +35,7 @@ func (m *Model) Execute(args []string) error {
 	}
 
 	if m.ExistingModels != "" {
-		log.Println("warning: Ignoring existing-models flag when generating models.")
+		log.Println("Warning: Ignoring existing-models flag when generating models.")
 	}
 	s := &Server{
 		shared:         m.shared,
@@ -47,7 +46,6 @@ func (m *Model) Execute(args []string) error {
 		SkipSupport:    true,
 		SkipOperations: true,
 		SkipModels:     m.NoStruct,
-		SkipValidation: m.SkipValidation,
 	}
 	return s.Execute(args)
 }

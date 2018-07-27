@@ -29,10 +29,12 @@ func (ds *Datastore) stat() error {
 		return err
 	}
 
-	info.FreeSpace = int64(stat.Bfree * uint64(stat.Bsize))
+	bsize := uint64(stat.Bsize) / 512
+
+	info.FreeSpace = int64(stat.Bfree*bsize) >> 1
 
 	ds.Summary.FreeSpace = info.FreeSpace
-	ds.Summary.Capacity = int64(stat.Blocks * uint64(stat.Bsize))
+	ds.Summary.Capacity = int64(stat.Blocks*bsize) >> 1
 
 	return nil
 }

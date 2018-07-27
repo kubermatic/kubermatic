@@ -33,7 +33,8 @@ func init() {
 
 // IsBSONObjectID returns true when the string is a valid BSON.ObjectId
 func IsBSONObjectID(str string) bool {
-	return bson.IsObjectIdHex(str)
+	var id bson.ObjectId
+	return id.UnmarshalText([]byte(str)) == nil
 }
 
 // ObjectId represents a BSON object ID (alias to gopkg.in/mgo.v2/bson.ObjectId)
@@ -53,7 +54,12 @@ func (id *ObjectId) MarshalText() ([]byte, error) {
 
 // UnmarshalText hydrates this instance from text
 func (id *ObjectId) UnmarshalText(data []byte) error { // validation is performed later on
-	*id = ObjectId(bson.ObjectIdHex(string(data)))
+	var rawID bson.ObjectId
+	if err := rawID.UnmarshalText(data); err != nil {
+		return err
+	}
+
+	*id = ObjectId(rawID)
 	return nil
 }
 

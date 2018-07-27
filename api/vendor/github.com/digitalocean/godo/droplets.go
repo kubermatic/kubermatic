@@ -1,11 +1,12 @@
 package godo
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/digitalocean/godo/context"
 )
 
 const dropletBasePath = "v2/droplets"

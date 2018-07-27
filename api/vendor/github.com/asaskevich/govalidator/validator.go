@@ -52,33 +52,9 @@ func SetFieldsRequiredByDefault(value bool) {
 }
 
 // IsEmail check if the string is an email.
-func IsEmail(email string) bool {
-	if len(email) < 6 || len(email) > 254 {
-		return false
-	}
-	at := strings.LastIndex(email, "@")
-	if at <= 0 || at > len(email)-3 {
-		return false
-	}
-	user := email[:at]
-	host := email[at+1:]
-	if len(user) > 64 {
-		return false
-	}
-	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
-		return false
-	}
-	switch host {
-	case "localhost", "example.com":
-		return true
-	}
-	if _, err := net.LookupMX(host); err != nil {
-		if _, err := net.LookupIP(host); err != nil {
-			return false
-		}
-	}
-
-	return true
+func IsEmail(str string) bool {
+	// TODO uppercase letters are not supported
+	return rxEmail.MatchString(str)
 }
 
 // IsURL check if the string is an URL.
@@ -253,22 +229,6 @@ func IsUpperCase(str string) bool {
 		return true
 	}
 	return str == strings.ToUpper(str)
-}
-
-// HasLowerCase check if the string contains at least 1 lowercase. Empty string is valid.
-func HasLowerCase(str string) bool {
-	if IsNull(str) {
-		return true
-	}
-	return rxHasLowerCase.MatchString(str)
-}
-
-// HasUpperCase check if the string contians as least 1 uppercase. Empty string is valid.
-func HasUpperCase(str string) bool {
-	if IsNull(str) {
-		return true
-	}
-	return rxHasUpperCase.MatchString(str)
 }
 
 // IsInt check if the string is an integer. Empty string is valid.
@@ -563,7 +523,7 @@ func IsHash(str string, algorithm string) bool {
 		return false
 	}
 
-	return Matches(str, "^[a-f0-9]{"+len+"}$")
+	return Matches(str, "^[a-f0-9]{" + len + "}$")
 }
 
 // IsDialString validates the given string for usage with the various Dial() functions
@@ -718,9 +678,7 @@ func ValidateStruct(s interface{}) (bool, error) {
 			continue // Private field
 		}
 		structResult := true
-		if (valueField.Kind() == reflect.Struct ||
-			(valueField.Kind() == reflect.Ptr && valueField.Elem().Kind() == reflect.Struct)) &&
-			typeField.Tag.Get(tagName) != "-" {
+		if valueField.Kind() == reflect.Struct && typeField.Tag.Get(tagName) != "-" {
 			var err error
 			structResult, err = ValidateStruct(valueField.Interface())
 			if err != nil {
@@ -932,7 +890,7 @@ func checkRequired(v reflect.Value, t reflect.StructField, options tagOptionsMap
 		}
 		return false, Error{t.Name, fmt.Errorf("non zero value required"), false, "required"}
 	} else if _, isOptional := options["optional"]; fieldsRequiredByDefault && !isOptional {
-		return false, Error{t.Name, fmt.Errorf("Missing required field"), false, "required"}
+		return false, Error{t.Name, fmt.Errorf("All fields are required to at least have one validation defined"), false, "required"}
 	}
 	// not required and empty is valid
 	return true, nil
@@ -1036,11 +994,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 				delete(options, validatorSpec)
 
 				switch v.Kind() {
-				case reflect.String,
-					reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-					reflect.Float32, reflect.Float64:
-
+				case reflect.String:
 					field := fmt.Sprint(v) // make value into string, then validate with regex
 					if result := validatefunc(field, ps[1:]...); (!result && !negate) || (result && negate) {
 						if customMsgExists {

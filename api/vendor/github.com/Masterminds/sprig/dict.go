@@ -27,12 +27,10 @@ func pluck(key string, d ...map[string]interface{}) []interface{} {
 	return res
 }
 
-func keys(dicts ...map[string]interface{}) []string {
+func keys(dict map[string]interface{}) []string {
 	k := []string{}
-	for _, dict := range dicts {
-		for key := range dict {
-			k = append(k, key)
-		}
+	for key := range dict {
+		k = append(k, key)
 	}
 	return k
 }

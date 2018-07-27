@@ -22,6 +22,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Name = resources.IPAMControllerDeploymentName
+	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.GetLabels(resources.IPAMControllerDeploymentName)
 
 	dep.Spec.Replicas = resources.Int32(3)
@@ -54,6 +55,27 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		"--gateway", data.Cluster.Spec.MachineNetwork.Gateway,
 		"--dns-servers", strings.Join(data.Cluster.Spec.MachineNetwork.DNSServers, ","),
 		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.IPAMControllerKubeconfigSecretName),
+		"--master", "foo",
+	}
+
+	dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: resources.IPAMControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.IPAMControllerKubeconfigSecretName,
+					// We have to make the secret readable for all for now because owner/group cannot be changed.
+					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+				},
+			},
+		},
+	}
+
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+		{
+			Name: resources.DockerCfgSecretName,
+		},
 	}
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{

@@ -92,6 +92,31 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 	}, nil
 }
 
+func (cc *Controller) getDockerCfgSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	kubermaticDockerCfg, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.DockerCfgSecretName)
+	if err != nil {
+		return nil, "", fmt.Errorf("couldn't retrieve dockercfg from kubermatic ns: %v", err)
+	}
+
+	var secret *corev1.Secret
+	if existingSecret != nil {
+		secret = existingSecret
+	} else {
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations:     map[string]string{},
+				Labels:          map[string]string{},
+				OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		}
+	}
+
+	secret.Data = kubermaticDockerCfg.Data
+
+	return cc.secretWithJSON(secret)
+}
+
 func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	//Load the ca key
 	keySecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)

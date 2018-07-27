@@ -8,18 +8,13 @@ import (
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/spec"
-	"github.com/go-openapi/swag"
 	flags "github.com/jessevdk/go-flags"
-	yaml "gopkg.in/yaml.v2"
 )
 
-// ExpandSpec is a command that expands the $refs in a swagger document.
-//
-// There are no specific options for this expansion.
+// ExpandSpec is a command that expands the $refs in a swagger document
 type ExpandSpec struct {
-	Compact bool           `long:"compact" description:"applies to JSON formated specs. When present, doesn't prettify the json"`
+	Compact bool           `long:"compact" description:"when present, doesn't prettify the json"`
 	Output  flags.Filename `long:"output" short:"o" description:"the file to write to"`
-	Format  string         `long:"format" description:"the format for the spec document" default:"json" choice:"yaml" choice:"json"`
 }
 
 // Execute expands the spec
@@ -39,28 +34,16 @@ func (c *ExpandSpec) Execute(args []string) error {
 		return err
 	}
 
-	return writeToFile(exp.Spec(), !c.Compact, c.Format, string(c.Output))
+	return writeToFile(exp.Spec(), !c.Compact, string(c.Output))
 }
 
-func writeToFile(swspec *spec.Swagger, pretty bool, format string, output string) error {
+func writeToFile(swspec *spec.Swagger, pretty bool, output string) error {
 	var b []byte
 	var err error
-	asJSON := format == "json"
-
-	if pretty && asJSON {
+	if pretty {
 		b, err = json.MarshalIndent(swspec, "", "  ")
-	} else if asJSON {
-		b, err = json.Marshal(swspec)
 	} else {
-		// marshals as YAML
 		b, err = json.Marshal(swspec)
-		if err == nil {
-			d, ery := swag.BytesToYAMLDoc(b)
-			if ery != nil {
-				return ery
-			}
-			b, err = yaml.Marshal(d)
-		}
 	}
 	if err != nil {
 		return err

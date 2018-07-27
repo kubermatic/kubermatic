@@ -29,7 +29,7 @@ const (
 	StorageTypeLocal StorageType = "local"
 
 	// StorageTypeCeph is the type for remote storage.
-	StorageTypeCeph StorageType = "ceph"
+	StorageTypeCeph = "ceph"
 )
 
 // ServerTypeClient is a client for the server types API.

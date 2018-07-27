@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
@@ -165,61 +166,6 @@ func getPatch(currentObj, updateObj metav1.Object) ([]byte, error) {
 	return jsonmergepatch.CreateThreeWayJSONMergePatch([]byte(originalData), modifiedData, currentData)
 }
 
-/*func (cc *Controller) ensureIPAMDeployment(c *kubermaticv1.Cluster) error {
-	// -- Ensure Secret --------------------------------------------------------
-
-	// -- Ensure Deployment ----------------------------------------------------
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
-	creators := []resources.DeploymentCreator{
-		ipamcontroller.Deployment,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *appsv1.Deployment
-		deploy, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Deployment: %v", err)
-		}
-
-		if existing, err = client.AppsV1().Deployments("kube-system").Get(deploy.Name, metav1.GetOptions{}); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = client.AppsV1().Deployments("kube-system").Create(deploy); err != nil {
-				return fmt.Errorf("failed to create Deployment %s %v", deploy.Name, err)
-			}
-			glog.V(4).Infof("Created Deployment %s inside user-cluster %s", deploy.Name, c.Name)
-			continue
-		}
-
-		deploy, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Deployment: %v", err)
-		}
-
-		if diff := deep.Equal(deploy, existing); diff == nil {
-			continue
-		}
-
-		if _, err = client.AppsV1().Deployments("kube-system").Update(deploy); err != nil {
-			return fmt.Errorf("failed to update Deployment %s: %v", deploy.Name, err)
-		}
-		glog.V(4).Infof("Updated Deployment %s inside user-cluster %s", deploy.Name, c.Name)
-	}
-
-	return nil
-}*/
-
 // Deprecated
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	//We need to follow a specific order here...
@@ -241,6 +187,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
+		{resources.DockerCfgSecretName, cc.getDockerCfgSecret},
 	}
 
 	if c.Spec.MachineNetwork != nil {

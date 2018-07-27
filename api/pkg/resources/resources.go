@@ -28,6 +28,8 @@ import (
 var KUBERMATICTAG string
 
 const (
+	// KubermaitcNamespaceName specifies the name of the kubermatic namespace
+	KubermaticNamespaceName = "kubermatic"
 	// ApiserverDeploymenName is the name of the apiserver deployment
 	ApiserverDeploymenName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
@@ -73,6 +75,9 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
+
+	// DockerCfgSecretName specifies the name of the dockercfg secret used to access the private repo.
+	DockerCfgSecretName = "dockercfg"
 
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"

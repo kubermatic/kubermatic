@@ -1,10 +1,11 @@
 package godo
 
 import (
-	"context"
 	"net/http"
 	"path"
 	"strconv"
+
+	"github.com/digitalocean/godo/context"
 )
 
 const firewallsBasePath = "/v2/firewalls"

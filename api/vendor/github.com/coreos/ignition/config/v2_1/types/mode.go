@@ -15,12 +15,16 @@
 package types
 
 import (
-	"github.com/coreos/ignition/config/shared/errors"
+	"errors"
+)
+
+var (
+	ErrFileIllegalMode = errors.New("illegal file mode")
 )
 
 func validateMode(m int) error {
 	if m < 0 || m > 07777 {
-		return errors.ErrFileIllegalMode
+		return ErrFileIllegalMode
 	}
 	return nil
 }

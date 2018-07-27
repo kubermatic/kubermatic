@@ -38,15 +38,6 @@ func (e *Validation) Code() int32 {
 	return e.code
 }
 
-// ValidateName produces an error message name for an aliased property
-func (e *Validation) ValidateName(name string) *Validation {
-	if e.Name == "" && name != "" {
-		e.Name = name
-		e.message = name + e.message
-	}
-	return e
-}
-
 const (
 	contentTypeFail    = `unsupported media type %q, only %v are allowed`
 	responseFormatFail = `unsupported media type requested, only %v are available`
@@ -82,4 +73,13 @@ func InvalidResponseFormat(value string, allowed []string) *Validation {
 		Values:  values,
 		message: fmt.Sprintf(responseFormatFail, allowed),
 	}
+}
+
+// Validate error message name for aliased property
+func (e *Validation) ValidateName(name string) *Validation {
+	if e.Name == "" && name != "" {
+		e.Name = name
+		e.message = name+e.message
+	}
+	return e
 }
