@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -112,9 +111,6 @@ type Controller struct {
 	clusterLister    kubermaticv1lister.ClusterLister
 	cronJobLister    listersbatchv1beta1.CronJobLister
 	secretLister     corev1lister.SecretLister
-	secretSynced     cache.InformerSynced
-	clusterSynced    cache.InformerSynced
-	cronJobSynced    cache.InformerSynced
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -208,11 +204,8 @@ func New(
 		},
 	})
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
 	c.cronJobLister = cronJobInformer.Lister()
-	c.cronJobSynced = cronJobInformer.Informer().HasSynced
 	c.secretLister = secretInformer.Lister()
-	c.secretSynced = secretInformer.Informer().HasSynced
 	return c, nil
 }
 
@@ -242,13 +235,6 @@ func (c *Controller) handleObject(obj interface{}) {
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	glog.Infof("Starting Backup controller with %d workers", workerCount)
-	defer glog.Info("Shutting down Backup  controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.cronJobSynced, c.secretSynced) {
-		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
