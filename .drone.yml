@@ -2,8 +2,9 @@ pipeline:
   0-dep:
     commands:
     - cd api
-    - dep status -v
-    image: metalmatze/dep:0.4.1
+    - dep ensure -v
+    - '[[ -z "$(git diff Gopkg.lock)" ]]'
+    image: metalmatze/dep:0.5.0
     pull: true
   1-gofmt:
     commands:

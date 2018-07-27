@@ -31,10 +31,11 @@ local drone = import 'drone/drone.libsonnet';
     local tillerNamespace = ' --tiller-namespace=kubermatic-installer',
 
 
-    '0-dep': drone.step.new('metalmatze/dep:0.4.1') + {
+    '0-dep': drone.step.new('metalmatze/dep:0.5.0') + {
       commands: [
         'cd api',
-        'dep status -v',
+        'dep ensure -v',
+        '[[ -z "$(git diff Gopkg.lock)" ]]'
       ],
     },
 
