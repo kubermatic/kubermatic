@@ -686,7 +686,7 @@ func TestGetCurrentUser(t *testing.T) {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
 
-			req := httptest.NewRequest("GET", "/api/v1/users/me", nil)
+			req := httptest.NewRequest("GET", "/api/v1/me", nil)
 			res := httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 
