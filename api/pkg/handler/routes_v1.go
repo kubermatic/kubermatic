@@ -185,7 +185,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
-		Path("/users/me").
+		Path("/me").
 		Handler(r.getCurrentUser())
 }
 
@@ -1096,7 +1096,7 @@ func (r Routing) addUserToProject() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/users/me users getCurrentUser
+// swagger:route GET /api/v1/me users getCurrentUser
 //
 // Returns information about the current user.
 //

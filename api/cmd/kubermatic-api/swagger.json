@@ -127,6 +127,32 @@
         }
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Returns information about the current user.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -1461,32 +1487,6 @@
             "schema": {
               "$ref": "#/definitions/SSHKey"
             }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/users/me": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "users"
-        ],
-        "summary": "Returns information about the current user.",
-        "operationId": "getCurrentUser",
-        "responses": {
-          "200": {
-            "description": "User",
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
           },
           "default": {
             "$ref": "#/responses/errorResponse"
