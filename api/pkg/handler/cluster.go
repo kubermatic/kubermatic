@@ -111,7 +111,7 @@ func clusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
@@ -237,7 +237,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 // Deprecated: deleteClusterEndpoint is deprecated use newDeleteCluster instead.
 func deleteClusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
@@ -498,7 +498,7 @@ func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {

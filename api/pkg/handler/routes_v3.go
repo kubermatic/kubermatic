@@ -100,7 +100,7 @@ func (r Routing) clusterHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(clusterEndpoint()),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -188,7 +188,7 @@ func (r Routing) deleteClusterHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(deleteClusterEndpoint()),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -301,7 +301,7 @@ func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(getClusterUpgrades(r.updateManager)),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -314,7 +314,7 @@ func (r Routing) clusterMetricsHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(getClusterMetricsEndpoint(r.promURL)),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

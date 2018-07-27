@@ -49,16 +49,16 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-// GetClusterReq represent a request for cluster specific data
+// LegacyGetClusterReq represent a request for cluster specific data
 // swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 getPossibleClusterUpgradesV3
-type GetClusterReq struct {
+type LegacyGetClusterReq struct {
 	LegacyDCReq
 	// in: path
 	ClusterName string `json:"cluster"`
 }
 
-func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GetClusterReq
+func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyGetClusterReq
 	req.ClusterName = mux.Vars(r)["cluster"]
 
 	dcr, err := decodeLegacyDcReq(c, r)
@@ -78,18 +78,18 @@ type CreateClusterReqBody struct {
 // UpdateClusterReq represent a update request for a specific cluster
 // swagger:parameters updateClusterV3
 type UpdateClusterReq struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: body
 	Body CreateClusterReqBody
 }
 
 func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req UpdateClusterReq
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := decodeClusterReq(c, r)
+	req, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 // NodeReq represent a request for node specific data
 // swagger:parameters deleteNodeHandlerV3 getNodeHandlerV3
 type NodeReq struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: path
 	NodeName string `json:"node"`
 	// in: query
@@ -302,11 +302,11 @@ type NodeReq struct {
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeReq
 
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 	req.NodeName = mux.Vars(r)["node"]
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
 
