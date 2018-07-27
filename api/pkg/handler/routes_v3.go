@@ -56,6 +56,10 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/metrics").
+		Handler(r.legacyClusterMetricsHandlerV3())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
 		Handler(r.clusterMetricsHandlerV3())
 }
 
@@ -307,14 +311,27 @@ func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 	)
 }
 
-func (r Routing) clusterMetricsHandlerV3() http.Handler {
+func (r Routing) legacyClusterMetricsHandlerV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(getClusterMetricsEndpoint(r.promURL)),
+		)(legacyGetClusterMetricsEndpoint(r.promURL)),
 		decodeLegacyClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) clusterMetricsHandlerV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterMetricsEndpoint(r.projectProvider, r.promURL)),
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

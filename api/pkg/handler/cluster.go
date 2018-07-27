@@ -480,7 +480,7 @@ type (
 	}
 )
 
-func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
+func legacyGetClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
 	if prometheusURL == nil {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			return nil, fmt.Errorf("metrics endpoint disabled")
@@ -505,6 +505,64 @@ func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
 				return nil, errors.NewNotFound("cluster", req.ClusterName)
 			}
 			return nil, err
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+
+		var resp metricsResponse
+
+		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
+			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:  "Machines",
+			Value: val,
+		})
+
+		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
+			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:   "Machines (1h)",
+			Values: vals,
+		})
+
+		return resp, nil
+	}
+}
+
+func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometheusURL *string) endpoint.Endpoint {
+	if prometheusURL == nil {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			return nil, fmt.Errorf("metrics endpoint disabled")
+		}
+	}
+
+	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
+		Address: *prometheusURL,
+	})
+	if err != nil {
+		glog.Fatal(err)
+	}
+	promAPI := prometheusv1.NewAPI(promClient)
+
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		c, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			if err == provider.ErrNotFound {
+				return nil, kubernetesErrorToHTTPError(errors.NewNotFound("cluster", req.ClusterName))
+			}
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)

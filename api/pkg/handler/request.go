@@ -57,6 +57,13 @@ type LegacyGetClusterReq struct {
 	ClusterName string `json:"cluster"`
 }
 
+// GetClusterReq represent a request for cluster specific data
+type GetClusterReq struct {
+	DCReq
+	// in: path
+	ClusterName string `json:"cluster"`
+}
+
 func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req LegacyGetClusterReq
 	req.ClusterName = mux.Vars(r)["cluster"]
@@ -66,6 +73,19 @@ func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 	req.LegacyDCReq = dcr.(LegacyDCReq)
+
+	return req, nil
+}
+
+func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GetClusterReq
+	req.ClusterName = mux.Vars(r)["cluster"]
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
 
 	return req, nil
 }
