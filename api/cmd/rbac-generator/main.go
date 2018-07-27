@@ -87,21 +87,6 @@ func main() {
 		}
 	}
 
-	err = startRBACGeneratorController(ctrlCtx)
-	if err != nil {
-		glog.Fatal(err)
-	}
-
-	ctrlCtx.kubermaticMasterInformerFactory.Start(ctrlCtx.stopCh)
-	ctrlCtx.kubeMasterInformerFactory.Start(ctrlCtx.stopCh)
-	for _, seedClusterProvider := range ctrlCtx.seedClusterProviders {
-		seedClusterProvider.StartInformers((ctrlCtx.stopCh))
-	}
-
-	<-ctrlCtx.stopCh
-}
-
-func startRBACGeneratorController(ctrlCtx controllerContext) error {
 	ctrl, err := rbaccontroller.New(
 		rbaccontroller.NewMetrics(),
 		ctrlCtx.runOptions.workerName,
@@ -112,8 +97,23 @@ func startRBACGeneratorController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeMasterInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.seedClusterProviders)
 	if err != nil {
-		return err
+		glog.Fatal(err)
 	}
+
+	ctrlCtx.kubermaticMasterInformerFactory.Start(ctrlCtx.stopCh)
+	ctrlCtx.kubeMasterInformerFactory.Start(ctrlCtx.stopCh)
+
+	ctrlCtx.kubermaticMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
+	ctrlCtx.kubeMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
+
+	for _, seedClusterProvider := range ctrlCtx.seedClusterProviders {
+		seedClusterProvider.StartInformers(ctrlCtx.stopCh)
+		if err := seedClusterProvider.WaitForCachesToSync(ctrlCtx.stopCh); err != nil {
+			glog.Fatalf("failed to sync cache: %v", err)
+		}
+	}
+
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
+
+	<-ctrlCtx.stopCh
 }
