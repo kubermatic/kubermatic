@@ -501,10 +501,7 @@ func legacyGetClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
 		req := request.(LegacyGetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.ClusterName)
-			}
-			return nil, err
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -559,9 +556,6 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		}
 		c, err := clusterProvider.Get(user, project, req.ClusterName)
 		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, kubernetesErrorToHTTPError(errors.NewNotFound("cluster", req.ClusterName))
-			}
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
