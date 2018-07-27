@@ -12,14 +12,14 @@ const (
 	// OwnerGroupNamePrefix represents owners group prefix
 	OwnerGroupNamePrefix = "owners"
 
-	// EditorGroupNamePrefix represents editors group prefix
-	EditorGroupNamePrefix = "editors"
+	// editorGroupNamePrefix represents editors group prefix
+	editorGroupNamePrefix = "editors"
 
-	// ViewerGroupNamePrefix represents viewers group prefix
-	ViewerGroupNamePrefix = "viewers"
+	// viewerGroupNamePrefix represents viewers group prefix
+	viewerGroupNamePrefix = "viewers"
 
-	// RbacResourcesNamePrefix represents kubermatic group prefix
-	RbacResourcesNamePrefix = "kubermatic"
+	// rbacResourcesNamePrefix represents kubermatic group prefix
+	rbacResourcesNamePrefix = "kubermatic"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -29,8 +29,8 @@ const (
 // the actual names of groups are different see generateActualGroupNameFor function
 var AllGroupsPrefixes = []string{
 	OwnerGroupNamePrefix,
-	EditorGroupNamePrefix,
-	ViewerGroupNamePrefix,
+	editorGroupNamePrefix,
+	viewerGroupNamePrefix,
 }
 
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
@@ -48,12 +48,12 @@ func ExtractGroupPrefix(groupName string) string {
 }
 
 func generateRBACRoleNameForNamedResource(kind, resourceName, groupName string) string {
-	return fmt.Sprintf("%s:%s-%s:%s", RbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
+	return fmt.Sprintf("%s:%s-%s:%s", rbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
 }
 
 func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	groupPrefix := ExtractGroupPrefix(groupName)
-	return fmt.Sprintf("%s:%s:%s", RbacResourcesNamePrefix, resourceName, groupPrefix)
+	return fmt.Sprintf("%s:%s:%s", rbacResourcesNamePrefix, resourceName, groupPrefix)
 }
 
 func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
@@ -153,19 +153,19 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	//
 	// editors of a project
 	// special case - editors are not allowed to delete a project
-	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == "Project" {
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == "Project" {
 		return []string{"create", "get", "update"}, nil
 	}
 
 	// editors of a resource
-	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) {
 		return []string{"create", "get", "update", "delete"}, nil
 	}
 
 	// verbs for editors
 	//
 	// viewers of a resource
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
+	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
 		return []string{"get"}, nil
 	}
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
