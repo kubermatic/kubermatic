@@ -2,7 +2,6 @@ package addon
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-	corev1informer "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -83,10 +81,7 @@ type Controller struct {
 
 	client        kubermaticclientset.Interface
 	clusterLister kubermaticv1lister.ClusterLister
-	clusterSynced cache.InformerSynced
 	addonLister   kubermaticv1lister.AddonLister
-	addonSynced   cache.InformerSynced
-	secretsSynced cache.InformerSynced
 }
 
 // New creates a new Addon controller that is responsible for
@@ -99,7 +94,6 @@ func New(
 	overwriteRegistey string,
 	KubeconfigProvider KubeconfigProvider,
 	client kubermaticclientset.Interface,
-	secretInformer corev1informer.SecretInformer,
 	addonInformer kubermaticv1informers.AddonInformer,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
@@ -156,10 +150,7 @@ func New(
 		},
 	})
 	c.addonLister = addonInformer.Lister()
-	c.addonSynced = addonInformer.Informer().HasSynced
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
-	c.secretsSynced = secretInformer.Informer().HasSynced
 
 	return c, nil
 }
@@ -196,13 +187,6 @@ func (c *Controller) enqueueClusterAddons(i interface{}) {
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
-	glog.Infof("Starting Add-On controller with %d workers", workerCount)
-	defer glog.Info("Shutting down Add-On controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.addonSynced, c.secretsSynced) {
-		utilruntime.HandleError(errors.New("unable to sync caches for Add-On controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
