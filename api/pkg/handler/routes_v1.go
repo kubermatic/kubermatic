@@ -1106,6 +1106,7 @@ func (r Routing) addUserToProject() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: User
+//       401: empty
 func (r Routing) getCurrentUser() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
