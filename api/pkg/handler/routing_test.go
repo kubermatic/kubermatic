@@ -244,6 +244,7 @@ func getUser(name string, admin bool) apiv1.User {
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
 	if recorder.Code != wantStatusCode {
 		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
@@ -252,6 +253,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)

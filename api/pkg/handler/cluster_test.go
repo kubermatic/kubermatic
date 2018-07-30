@@ -23,6 +23,7 @@ import (
 )
 
 func TestDeleteClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcase := struct {
 		Name                   string
 		Body                   string
@@ -223,6 +224,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 }
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                            string
 		Body                            string
@@ -380,6 +382,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 }
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -521,6 +524,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 }
 
 func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -696,6 +700,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 }
 
 func TestCreateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -879,6 +884,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1021,6 +1027,7 @@ func TestGetClusterHealth(t *testing.T) {
 }
 
 func TestUpdateCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1152,6 +1159,7 @@ func TestUpdateCluster(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1279,6 +1287,7 @@ func TestGetCluster(t *testing.T) {
 }
 
 func TestListClusters(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1489,7 +1498,7 @@ func TestClusterEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
+			req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
 			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
 			if err != nil {
@@ -1596,7 +1605,7 @@ func TestClustersEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
+			req := httptest.NewRequest("GET", "/api/v3/projects/foo_project/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
 			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
 			if err != nil {
@@ -1637,6 +1646,7 @@ func TestClustersEndpoint(t *testing.T) {
 }
 
 func TestUpdateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		responseCode  int
@@ -1775,11 +1785,11 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			updatedCluster := test.cluster.DeepCopy()
 			updatedCluster = test.modifyCluster(updatedCluster)
 			body := &bytes.Buffer{}
-			if err := json.NewEncoder(body).Encode(updatedCluster); err != nil {
+			if err = json.NewEncoder(body).Encode(updatedCluster); err != nil {
 				t.Fatal(err)
 			}
 
-			req := httptest.NewRequest("PUT", "/api/v3/dc/us-central1/cluster/"+test.cluster.Name, body)
+			req := httptest.NewRequest("PUT", "/api/v3/projects/foo_project/dc/us-central1/cluster/"+test.cluster.Name, body)
 			ep.ServeHTTP(res, req)
 			checkStatusCode(test.responseCode, res, t)
 
