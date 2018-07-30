@@ -22,6 +22,7 @@ import (
 )
 
 func TestDeleteNodeForCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                    string
 		Body                    string
@@ -214,6 +215,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 }
 
 func TestListNodesForCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -473,6 +475,7 @@ func TestListNodesForCluster(t *testing.T) {
 }
 
 func TestGetNodeForCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -596,6 +599,7 @@ func TestGetNodeForCluster(t *testing.T) {
 }
 
 func TestCreateNodeForCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                               string
 		Body                               string

@@ -41,6 +41,7 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -178,9 +179,13 @@ func main() {
 	cloudProviders := cloud.Providers(datacenters)
 
 	// Only enable the metrics endpoint when prometheusEndpoint is true
-	var promURL *string
+	var prometheusClient prometheusapi.Client
 	if prometheusEndpoint {
-		promURL = &prometheusURL
+		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
+			Address: prometheusURL,
+		}); err != nil {
+			glog.Fatal(err)
+		}
 	}
 
 	r := handler.NewRouting(
@@ -194,7 +199,7 @@ func main() {
 		projectProvider,
 		authenticator,
 		updateManager,
-		promURL,
+		prometheusClient,
 	)
 
 	mainRouter := mux.NewRouter()

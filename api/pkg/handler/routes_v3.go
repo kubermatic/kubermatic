@@ -56,6 +56,10 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/metrics").
+		Handler(r.legacyClusterMetricsHandlerV3())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
 		Handler(r.clusterMetricsHandlerV3())
 }
 
@@ -100,7 +104,7 @@ func (r Routing) clusterHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(clusterEndpoint()),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -188,7 +192,7 @@ func (r Routing) deleteClusterHandlerV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(deleteClusterEndpoint()),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -301,7 +305,20 @@ func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 		)(getClusterUpgrades(r.updateManager)),
-		decodeClusterReq,
+		decodeLegacyClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) legacyClusterMetricsHandlerV3() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+		)(legacyGetClusterMetricsEndpoint(r.prometheusClient)),
+		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -312,8 +329,8 @@ func (r Routing) clusterMetricsHandlerV3() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
-		)(getClusterMetricsEndpoint(r.promURL)),
+			r.newDatacenterMiddleware(),
+		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

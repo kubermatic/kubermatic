@@ -545,7 +545,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
-		decodeDcReq,
+		decodeLegacyDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
