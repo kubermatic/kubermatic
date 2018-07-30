@@ -52,7 +52,7 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/upgrades").
-		Handler(r.getPossibleClusterUpgradesV3())
+		Handler(r.legacyGetPossibleClusterUpgradesV3())
 
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/metrics").
@@ -290,7 +290,7 @@ func (r Routing) getNodeHandlerV3() http.Handler {
 }
 
 // Get possible cluster upgrades
-// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/upgrades cluster getPossibleClusterUpgradesV3
+// swagger:route GET /api/v3/dc/{dc}/cluster/{cluster}/upgrades cluster legacyGetPossibleClusterUpgradesV3
 //
 //     Produces:
 //     - application/json
@@ -298,13 +298,13 @@ func (r Routing) getNodeHandlerV3() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: MasterVersion
-func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
+func (r Routing) legacyGetPossibleClusterUpgradesV3() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
-		)(getClusterUpgrades(r.updateManager)),
+		)(legacyGetClusterUpgrades(r.updateManager)),
 		decodeLegacyClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

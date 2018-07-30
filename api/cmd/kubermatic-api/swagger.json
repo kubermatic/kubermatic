@@ -1963,7 +1963,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getPossibleClusterUpgradesV3",
+        "operationId": "legacyGetPossibleClusterUpgradesV3",
         "parameters": [
           {
             "type": "string",

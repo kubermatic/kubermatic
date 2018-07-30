@@ -12,7 +12,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func getClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
+func legacyGetClusterUpgrades(updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)

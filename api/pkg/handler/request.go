@@ -50,7 +50,7 @@ func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) 
 }
 
 // LegacyGetClusterReq represent a request for cluster specific data
-// swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 getPossibleClusterUpgradesV3
+// swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 legacyGetPossibleClusterUpgradesV3
 type LegacyGetClusterReq struct {
 	LegacyDCReq
 	// in: path
