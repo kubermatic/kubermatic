@@ -1306,7 +1306,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Revokes the current admin tokens and returns a newly generated one.",
+        "summary": "Revokes the current admin token and returns a newly generated one.",
         "operationId": "revokeClusterAdminToken",
         "parameters": [
           {

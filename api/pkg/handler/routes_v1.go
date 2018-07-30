@@ -999,7 +999,7 @@ func (r Routing) getClusterAdminToken() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project revokeClusterAdminToken
 //
-//     Revokes the current admin tokens and returns a newly generated one.
+//     Revokes the current admin token and returns a newly generated one.
 //
 //     Produces:
 //     - application/json

@@ -1868,6 +1868,8 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 		},
 	}
 
+	expectedResponse := fmt.Sprintf(`{"token":"%s"}`, cluster.Address.AdminToken)
+
 	// setup world view
 	ep, err := createTestEndpoint(tester, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
 	if err != nil {
@@ -1876,21 +1878,12 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 
 	// perform test
 	res := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/"+cluster.Name+"/token", nil)
+	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
 	ep.ServeHTTP(res, req)
 
 	// check assertions
 	checkStatusCode(http.StatusOK, res, t)
-
-	response := &apiv1.ClusterAdminToken{}
-	err = json.Unmarshal(res.Body.Bytes(), response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response.Token != cluster.Address.AdminToken {
-		t.Errorf("did not received expected admin token. Expected '%s' and received '%s'", cluster.Address.AdminToken, response.Token)
-	}
+	compareWithResult(t, res, expectedResponse)
 }
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
@@ -1952,7 +1945,6 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	}
 
 	// setup world view
-	// ep, err := createTestEndpoint(tester, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
 	ep, clientsSets, err := createTestEndpointAndGetClients(tester, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
@@ -1960,7 +1952,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 
 	// perform test
 	res := httptest.NewRecorder()
-	req := httptest.NewRequest("PUT", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/"+cluster.Name+"/token", nil)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
 	ep.ServeHTTP(res, req)
 
 	// check assertions
