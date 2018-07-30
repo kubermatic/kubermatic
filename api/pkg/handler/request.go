@@ -58,6 +58,7 @@ type LegacyGetClusterReq struct {
 }
 
 // GetClusterReq represent a request for cluster specific data
+// swagger:parameters getPossibleClusterUpgradesV3
 type GetClusterReq struct {
 	DCReq
 	// in: path
