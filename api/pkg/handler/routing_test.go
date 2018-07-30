@@ -26,6 +26,7 @@ import (
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
+	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -91,7 +92,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	updateManager := version.New(versions, updates)
 
 	// Disable the metrics endpoint in tests
-	var promURL *string
+	var prometheusClient prometheusapi.Client
 
 	r := NewRouting(
 		datacenters,
@@ -104,7 +105,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectProvider,
 		authenticator,
 		updateManager,
-		promURL,
+		prometheusClient,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
