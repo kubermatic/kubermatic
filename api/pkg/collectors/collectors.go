@@ -10,5 +10,5 @@ import (
 
 // AvailableCollectors is a map of all available collectors
 var AvailableCollectors = map[string]func(registry prometheus.Registerer, informerFactory informers.SharedInformerFactory, kubermaticInformerfactory kubermaticinformers.SharedInformerFactory){
-	"clusters": RegisterClusterCollector,
+	"clusters": MustRegisterClusterCollector,
 }

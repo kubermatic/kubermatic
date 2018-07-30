@@ -26,8 +26,8 @@ type ClusterCollector struct {
 	clusterDeleted *prometheus.Desc
 }
 
-// RegisterClusterCollector registers the cluster collector at the given prometheus registry
-func RegisterClusterCollector(registry prometheus.Registerer, _ kubeinformers.SharedInformerFactory, kubermaticInformerfactory kubermaticinformers.SharedInformerFactory) {
+// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
+func MustRegisterClusterCollector(registry prometheus.Registerer, _ kubeinformers.SharedInformerFactory, kubermaticInformerfactory kubermaticinformers.SharedInformerFactory) {
 	cc := &ClusterCollector{
 		clusterLister: kubermaticInformerfactory.Kubermatic().V1().Clusters().Lister(),
 
