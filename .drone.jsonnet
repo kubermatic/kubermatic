@@ -35,7 +35,7 @@ local drone = import 'drone/drone.libsonnet';
       commands: [
         'cd api',
         'dep ensure -v',
-        '[[ -z "$(git diff Gopkg.lock)" ]]'
+        '[[ -z "$(git diff)" ]]'
       ],
     },
 
