@@ -26,6 +26,7 @@ import (
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
+	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -91,7 +92,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	updateManager := version.New(versions, updates)
 
 	// Disable the metrics endpoint in tests
-	var promURL *string
+	var prometheusClient prometheusapi.Client
 
 	r := NewRouting(
 		datacenters,
@@ -104,7 +105,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectProvider,
 		authenticator,
 		updateManager,
-		promURL,
+		prometheusClient,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
@@ -244,6 +245,7 @@ func getUser(name string, admin bool) apiv1.User {
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
 	if recorder.Code != wantStatusCode {
 		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
@@ -252,6 +254,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
