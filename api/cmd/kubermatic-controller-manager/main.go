@@ -14,12 +14,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
-	"github.com/kubermatic/kubermatic/api/pkg/controller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
@@ -142,8 +142,8 @@ func main() {
 		glog.Fatalf("failed to get event recorder: %v", err)
 	}
 
-	//Register the global runtime error metric
-	controller.Register()
+	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
+	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())

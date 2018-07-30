@@ -8,15 +8,13 @@ import (
 
 const (
 	clusterControllerSubsystem = "kubermatic_cluster_controller"
-
-	workersStatisticKey = "workers"
 )
 
 var (
 	workers = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Subsystem: clusterControllerSubsystem,
-			Name:      workersStatisticKey,
+			Name:      "workers",
 			Help:      "The number of running cluster controller workers.",
 		},
 	)

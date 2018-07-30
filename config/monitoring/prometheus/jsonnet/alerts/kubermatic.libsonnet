@@ -25,7 +25,7 @@
               severity: 'warning',
             },
             annotations: {
-              message: 'Cluster {{ $labels.cluster }} is stuck in deletion since more than 30min.',
+              message: 'Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.',
             },
           },
         ],
