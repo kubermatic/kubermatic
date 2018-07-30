@@ -39,9 +39,10 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	}
 	svc.Spec.Ports = []corev1.ServicePort{
 		{
-			Name:     "dns",
-			Protocol: corev1.ProtocolUDP,
-			Port:     int32(53),
+			Name:       "dns",
+			Protocol:   corev1.ProtocolUDP,
+			Port:       int32(53),
+			TargetPort: intstr.FromInt(53),
 		},
 	}
 
@@ -102,9 +103,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:  resources.DNSResolverDeploymentName,
-			Image: data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
-			Args:  []string{"-conf", "/etc/coredns/Corefile"},
+			Name:            resources.DNSResolverDeploymentName,
+			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Args:            []string{"-conf", "/etc/coredns/Corefile"},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceMemory: requestedMemory,
@@ -115,6 +117,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					corev1.ResourceCPU:    requestedCPU,
 				},
 			},
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.DNSResolverConfigMapName,
