@@ -822,19 +822,16 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 type ClusterAdminTokenReq struct {
 	DCReq
 	// in: path
-	ProjectName string `json:"project_id"`
-	// in: path
 	ClusterName string `json:"cluster_name"`
 }
 
 func decodeClusterAdminTokenReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterAdminTokenReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.ClusterName = clusterName
-	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -851,7 +848,7 @@ func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.End
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -871,7 +868,7 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}

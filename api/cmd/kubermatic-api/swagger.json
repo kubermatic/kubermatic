@@ -1261,15 +1261,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           },
@@ -1311,15 +1311,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           },
