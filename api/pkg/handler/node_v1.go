@@ -32,7 +32,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -79,7 +79,7 @@ func newListNodesForCluster(projectProvider provider.ProjectProvider) endpoint.E
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -147,7 +147,7 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -198,7 +198,7 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -345,7 +345,7 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return "", fmt.Errorf("'node_name' parameter is required but was not provided")
 	}
 
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,6 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return nil, err
 	}
 
-	req.ProjectName = projectName
 	req.ClusterName = clusterName
 	req.NodeName = nodeName
 	req.DCReq = dcr.(DCReq)
@@ -374,7 +373,7 @@ type NewListNodesForClusterReq struct {
 func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewListNodesForClusterReq
 
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +384,6 @@ func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{},
 	}
 
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
-	req.ProjectName = projectName
 	req.ClusterName = clusterName
 	req.DCReq = dcr.(DCReq)
 
@@ -403,7 +401,7 @@ type NewCreateNodeReq struct {
 func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewCreateNodeReq
 
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +410,6 @@ func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return nil, err
 	}
 
-	req.ProjectName = projectName
 	req.ClusterName = clusterName
 	req.DCReq = dcr.(DCReq)
 
@@ -436,7 +433,7 @@ type NewNodeReq struct {
 func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewNodeReq
 
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +447,6 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 		return nil, err
 	}
 
-	req.ProjectName = projectName
 	req.ClusterName = clusterName
 	req.NodeName = nodeName
 	req.DCReq = dcr.(DCReq)
