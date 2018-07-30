@@ -211,17 +211,17 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 
-	c.Username, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Username)
+	c.Username, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, "VSPHERE_USERNAME")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	c.Password, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Password)
+	c.Password, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Password, "VSPHERE_PASSWORD")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	c.VSphereURL, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.VSphereURL)
+	c.VSphereURL, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.VSphereURL, "VSPHERE_ADDRESS")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -246,7 +246,7 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 
-	c.AllowInsecure, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.AllowInsecure)
+	c.AllowInsecure, err = p.configVarResolver.GetConfigVarBoolValueOrEnv(rawConfig.AllowInsecure, "VSPHERE_ALLOW_INSECURE")
 	if err != nil {
 		return nil, nil, nil, err
 	}

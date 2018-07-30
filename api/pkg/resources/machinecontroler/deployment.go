@@ -14,7 +14,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.11"
+	tag = "v0.7.13"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -174,6 +174,11 @@ func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
 	}
 	if data.Cluster.Spec.Cloud.Digitalocean != nil {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster.Spec.Cloud.Digitalocean.Token})
+	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
 	return vars
 }

@@ -2,7 +2,6 @@ package addon
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-	corev1informer "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -83,10 +81,7 @@ type Controller struct {
 
 	client        kubermaticclientset.Interface
 	clusterLister kubermaticv1lister.ClusterLister
-	clusterSynced cache.InformerSynced
 	addonLister   kubermaticv1lister.AddonLister
-	addonSynced   cache.InformerSynced
-	secretsSynced cache.InformerSynced
 }
 
 // New creates a new Addon controller that is responsible for
@@ -99,7 +94,6 @@ func New(
 	overwriteRegistey string,
 	KubeconfigProvider KubeconfigProvider,
 	client kubermaticclientset.Interface,
-	secretInformer corev1informer.SecretInformer,
 	addonInformer kubermaticv1informers.AddonInformer,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
@@ -156,10 +150,7 @@ func New(
 		},
 	})
 	c.addonLister = addonInformer.Lister()
-	c.addonSynced = addonInformer.Informer().HasSynced
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
-	c.secretsSynced = secretInformer.Informer().HasSynced
 
 	return c, nil
 }
@@ -196,13 +187,6 @@ func (c *Controller) enqueueClusterAddons(i interface{}) {
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
-	glog.Infof("Starting Add-On controller with %d workers", workerCount)
-	defer glog.Info("Shutting down Add-On controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.addonSynced, c.secretsSynced) {
-		utilruntime.HandleError(errors.New("unable to sync caches for Add-On controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -284,8 +268,15 @@ func (c *Controller) sync(key string) error {
 	clusterFromCache, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			//Cluster got deleted
-			return c.cleanupManifests(addon, nil)
+			//Cluster got deleted - directly remove the finalizer
+			finalizers := sets.NewString(addon.Finalizers...)
+			if finalizers.Has(cleanupFinalizerName) {
+				finalizers.Delete(cleanupFinalizerName)
+				addon.Finalizers = finalizers.List()
+				_, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
+				return err
+			}
+			return nil
 		}
 		return fmt.Errorf("failed to get cluster %s: %v", addon.Spec.Cluster.Name, err)
 	}
@@ -296,15 +287,22 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	// Deletion
+	// When a cluster gets deleted - we can skip it - not worth the effort
+	if cluster.DeletionTimestamp != nil {
+		return nil
+	}
+
+	// When the apiserver is not healthy, we must skip it
+	if !cluster.Status.Health.Apiserver {
+		return nil
+	}
+
+	// Addon got deleted - remove all manifests
 	if addon.DeletionTimestamp != nil {
 		return c.cleanupManifests(addon, cluster)
 	}
 
-	//Reconciling
-	if !cluster.Status.Health.Apiserver {
-		return nil
-	}
+	// Reconciling
 	if err := c.ensureIsInstalled(addon, cluster); err != nil {
 		return err
 	}
@@ -580,30 +578,18 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 }
 
 func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	if cluster != nil && cluster.DeletionTimestamp == nil {
-		kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
-		if err != nil {
-			return err
-		}
-		defer done()
-
-		cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
-		glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
-		out, err := cmd.CombinedOutput()
-		glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
-		if err != nil {
-			return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
-		}
-		return nil
+	kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
+	if err != nil {
+		return err
 	}
+	defer done()
 
-	finalizers := sets.NewString(addon.Finalizers...)
-	if !finalizers.Has(cleanupFinalizerName) {
-		return nil
+	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
+	glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+	out, err := cmd.CombinedOutput()
+	glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	if err != nil {
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	}
-
-	finalizers.Delete(cleanupFinalizerName)
-	addon.Finalizers = finalizers.List()
-	addon, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
-	return err
+	return nil
 }

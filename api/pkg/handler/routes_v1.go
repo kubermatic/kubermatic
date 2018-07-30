@@ -175,6 +175,18 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
 		Handler(r.newDeleteNodeForCluster())
+
+	//
+	// Defines set of HTTP endpoints for Users of the given project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/users").
+		Handler(r.addUserToProject())
+
+	//
+	// Defines an endpoint to retrieve information about the current token owner
+	mux.Methods(http.MethodGet).
+		Path("/me").
+		Handler(r.getCurrentUser())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -533,7 +545,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
-		decodeDcReq,
+		decodeLegacyDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1052,6 +1064,56 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(newDeleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/users users addUserToProject
+//
+//     Adds the given user to the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: User
+//       401: empty
+//       403: empty
+func (r Routing) addUserToProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(addUserToProject(r.projectProvider, r.userProvider)),
+		decodeAddUserToProject,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me users getCurrentUser
+//
+// Returns information about the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) getCurrentUser() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getCurrentUserEndpoint(r.userProvider)),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

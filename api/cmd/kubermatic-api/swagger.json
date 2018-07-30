@@ -127,6 +127,32 @@
         }
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Returns information about the current user.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -302,6 +328,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -311,13 +344,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -351,6 +377,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -360,13 +393,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -529,7 +555,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -564,15 +590,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           }
@@ -610,6 +636,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -621,13 +654,6 @@
             "schema": {
               "$ref": "#/definitions/Cluster"
             }
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
-            "in": "path",
-            "required": true
           }
         ],
         "responses": {
@@ -662,6 +688,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -671,13 +704,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -712,6 +738,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -721,13 +754,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -771,6 +797,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -780,13 +813,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -823,6 +849,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -832,13 +865,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -885,6 +911,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -894,13 +927,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -947,6 +973,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -956,13 +989,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1010,6 +1036,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1019,13 +1052,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1069,15 +1095,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           },
@@ -1122,6 +1148,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1131,13 +1164,6 @@
             "type": "string",
             "name": "KeyName",
             "in": "query"
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
-            "in": "path",
-            "required": true
           },
           {
             "type": "string",
@@ -1179,6 +1205,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1188,13 +1221,6 @@
             "type": "string",
             "x-go-name": "KeyName",
             "name": "key_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1236,7 +1262,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1275,7 +1301,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1313,7 +1339,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1329,6 +1355,54 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/users": {
+      "post": {
+        "description": "Adds the given user to the given project",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "operationId": "addUserToProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -4029,6 +4103,21 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ProjectGroup": {
+      "description": "ProjectGroup is a helper data structure that\nstores the information about a project and a group prefix that a user belongs to",
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "GroupPrefix"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "RSAKeys": {
       "type": "object",
       "title": "RSAKeys is a pair of private and public key where the key is not published to the API client.",
@@ -4244,31 +4333,55 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "User": {
+      "description": "NewUser represent an API user",
       "type": "object",
-      "title": "User represents an API user that is used for authentication.",
       "properties": {
-        "Email": {
-          "type": "string"
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
         },
-        "ID": {
-          "type": "string"
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
         },
-        "Name": {
-          "type": "string"
+        "email": {
+          "description": "Email an email address of the user",
+          "type": "string",
+          "x-go-name": "Email"
         },
-        "Roles": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          }
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "projects": {
+          "description": "Projects holds the list of project the user belongs to\nalong with the group names",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProjectGroup"
+          },
+          "x-go-name": "Projects"
         }
       },
+      "x-go-name": "NewUser",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "VSphereCloudSpec": {
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "infraManagementUser": {
+          "$ref": "#/definitions/VSphereCredentials"
+        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
@@ -4280,6 +4393,21 @@
         "vmNetName": {
           "type": "string",
           "x-go-name": "VMNetName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "VSphereCredentials": {
+      "description": "VSphere credentials represents a credential for accessing vSphere",
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"

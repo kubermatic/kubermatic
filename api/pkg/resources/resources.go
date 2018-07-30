@@ -13,6 +13,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,8 +24,6 @@ import (
 )
 
 const (
-	//AddonManagerDeploymentName is the name for the addon-manager deployment
-	AddonManagerDeploymentName = "addon-manager"
 	//ApiserverDeploymenName is the name for the apiserver deployment
 	ApiserverDeploymenName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
@@ -92,8 +91,10 @@ const (
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
-	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
-	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
+	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
+	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
 
@@ -125,6 +126,9 @@ const (
 	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
 	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
 	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
+
+	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
+	EtcdPodDisruptionBudgetName = "etcd"
 
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400
@@ -217,6 +221,9 @@ type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.Clust
 
 // DeploymentCreator defines an interface to create/update Deployment's
 type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
+
+// PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets's
+type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {

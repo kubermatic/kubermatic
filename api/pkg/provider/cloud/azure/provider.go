@@ -535,6 +535,9 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 	return cluster, nil
 }
+func (a *azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+	return nil
+}
 
 func (a *azure) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	if cloud.Azure.ResourceGroup != "" {

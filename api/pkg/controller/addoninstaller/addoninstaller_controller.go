@@ -21,10 +21,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-const (
-	controllerName = "Addon-Installer"
-)
-
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
 	Workers prometheus.Gauge
@@ -53,9 +49,7 @@ type Controller struct {
 	defaultAddonList []string
 	client           kubermaticclientset.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
-	clusterSynced    cache.InformerSynced
 	addonLister      kubermaticv1lister.AddonLister
-	addonSynced      cache.InformerSynced
 }
 
 // New creates a new Addon-Installer controller that is responsible for
@@ -106,10 +100,7 @@ func New(
 	})
 
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
-
 	c.addonLister = addonInformer.Lister()
-	c.addonSynced = addonInformer.Informer().HasSynced
 
 	return c, nil
 }
@@ -154,13 +145,6 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
-	glog.Infof("Starting %s controller with %d workers", controllerName, workerCount)
-	defer glog.Infof("Shutting down %s controller", controllerName)
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.addonSynced) {
-		utilruntime.HandleError(fmt.Errorf("unable to sync caches for %s controller", controllerName))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -14,56 +15,81 @@ import (
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/oklog/run"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	kuberinformers "k8s.io/client-go/informers"
 )
 
 // allControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
-var allControllers = map[string]func(controllerContext) error{
-	"cluster":        startClusterController,
-	"update":         startUpdateController,
-	"addon":          startAddonController,
-	"addoninstaller": startAddonInstallerController,
-	"backup":         startBackupController,
+var allControllers = map[string]controllerCreator{
+	"Cluster":        createClusterController,
+	"Update":         createUpdateController,
+	"Addon":          createAddonController,
+	"AddonInstaller": createAddonInstallerController,
+	"Backup":         createBackupController,
 }
 
-func runAllControllers(ctrlCtx controllerContext) error {
+type controllerCreator func(*controllerContext) (controller, error)
 
-	ctrlCtx.kubermaticInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5)
-	ctrlCtx.kubeInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
+type controller interface {
+	Run(workerCount int, stopCh <-chan struct{})
+}
 
-	for name, startControllerFun := range allControllers {
-		glog.Infof("Running %s controller", name)
-		err := startControllerFun(ctrlCtx)
+func createAllControllers(ctrlCtx *controllerContext) (map[string]controller, error) {
+	controllers := map[string]controller{}
+	for name, create := range allControllers {
+		controller, err := create(ctrlCtx)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("failed to create '%s' controller: %v", name, err)
 		}
+		controllers[name] = controller
+	}
+	return controllers, nil
+}
+
+func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, name string, controller controller) (func() error, func(err error)) {
+	execute := func() error {
+		glog.V(2).Infof("Starting %s controller...", name)
+		controller.Run(workerCnt, done)
+
+		err := fmt.Errorf("%s controller finished/died", name)
+		glog.V(2).Info(err)
+		return err
 	}
 
-	ctrlCtx.kubermaticInformerFactory.Start(ctrlCtx.stopCh)
-	ctrlCtx.kubeInformerFactory.Start(ctrlCtx.stopCh)
-
-	<-ctrlCtx.stopCh
-	return nil
+	interrupt := func(err error) {
+		glog.V(2).Infof("Killing %s controller as group member finished/died: %v", name, err)
+		cancel()
+	}
+	return execute, interrupt
 }
 
-func startClusterController(ctrlCtx controllerContext) error {
+func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, controllers map[string]controller) error {
+	var g run.Group
+
+	for name, controller := range controllers {
+		execute, interrupt := getControllerStarter(workerCnt, done, cancel, name, controller)
+		g.Add(execute, interrupt)
+	}
+
+	return g.Run()
+}
+
+func createClusterController(ctrlCtx *controllerContext) (controller, error) {
 	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	cps := cloud.Providers(dcs)
 
-	ctrl, err := cluster.NewController(
+	return cluster.NewController(
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
@@ -91,29 +117,24 @@ func startClusterController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
+		ctrlCtx.kubeInformerFactory.Policy().V1beta1().PodDisruptionBudgets(),
 	)
-	if err != nil {
-		return err
-	}
-
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
 }
 
-func startBackupController(ctrlCtx controllerContext) error {
+func createBackupController(ctrlCtx *controllerContext) (controller, error) {
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cleanupContainer, err := getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return fmt.Errorf("failed to parse %s as duratation: %v", ctrlCtx.runOptions.backupInterval, err)
+		return nil, fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
 	}
-	ctrl, err := backupcontroller.New(
+	return backupcontroller.New(
 		*storeContainer,
 		*cleanupContainer,
 		backupInterval,
@@ -126,11 +147,6 @@ func startBackupController(ctrlCtx controllerContext) error {
 		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 	)
-	if err != nil {
-		return err
-	}
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
 }
 
 func getContainerFromFile(path string) (*corev1.Container, error) {
@@ -157,27 +173,23 @@ func getContainerFromFile(path string) (*corev1.Container, error) {
 	return container, nil
 }
 
-func startUpdateController(ctrlCtx controllerContext) error {
+func createUpdateController(ctrlCtx *controllerContext) (controller, error) {
 	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile)
 	if err != nil {
-		return fmt.Errorf("failed to create update manager: %v", err)
+		return nil, fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	ctrl, err := updatecontroller.New(
+	return updatecontroller.New(
 		updatecontroller.NewMetrics(),
 		updateManager,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
-	if err != nil {
-		return err
-	}
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+	)
 }
 
-func startAddonController(ctrlCtx controllerContext) error {
-	ctrl, err := addon.New(
+func createAddonController(ctrlCtx *controllerContext) (controller, error) {
+	return addon.New(
 		addon.NewMetrics(),
 		map[string]interface{}{ // addonVariables
 			"openvpn": map[string]interface{}{
@@ -189,33 +201,24 @@ func startAddonController(ctrlCtx controllerContext) error {
 		ctrlCtx.runOptions.overwriteRegistry,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
-	if err != nil {
-		return err
-	}
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+	)
 }
 
-func startAddonInstallerController(ctrlCtx controllerContext) error {
+func createAddonInstallerController(ctrlCtx *controllerContext) (controller, error) {
 
 	defaultAddonsList := strings.Split(ctrlCtx.runOptions.addonsList, ",")
-	for i, addon := range defaultAddonsList {
-		defaultAddonsList[i] = strings.TrimSpace(addon)
+	for i, a := range defaultAddonsList {
+		defaultAddonsList[i] = strings.TrimSpace(a)
 	}
 
-	ctrl, err := addoninstaller.New(
+	return addoninstaller.New(
 		addoninstaller.NewMetrics(),
 		ctrlCtx.runOptions.workerName,
 		defaultAddonsList,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters())
-	if err != nil {
-		return err
-	}
-	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-	return nil
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+	)
 }

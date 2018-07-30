@@ -1,11 +1,9 @@
 package backup
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
@@ -20,7 +18,7 @@ import (
 	"k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -113,9 +111,6 @@ type Controller struct {
 	clusterLister    kubermaticv1lister.ClusterLister
 	cronJobLister    listersbatchv1beta1.CronJobLister
 	secretLister     corev1lister.SecretLister
-	secretSynced     cache.InformerSynced
-	clusterSynced    cache.InformerSynced
-	cronJobSynced    cache.InformerSynced
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -209,11 +204,8 @@ func New(
 		},
 	})
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
 	c.cronJobLister = cronJobInformer.Lister()
-	c.cronJobSynced = cronJobInformer.Informer().HasSynced
 	c.secretLister = secretInformer.Lister()
-	c.secretSynced = secretInformer.Informer().HasSynced
 	return c, nil
 }
 
@@ -243,13 +235,6 @@ func (c *Controller) handleObject(obj interface{}) {
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	glog.Infof("Starting Backup controller with %d workers", workerCount)
-	defer glog.Info("Shutting down Backup  controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced, c.cronJobSynced, c.secretSynced) {
-		runtime.HandleError(errors.New("unable to sync caches for Backup controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -355,16 +340,11 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	// Wait until the cluster is ready enough
-	if clusterFromCache.Status.NamespaceName == "" || !clusterFromCache.Status.Health.Etcd {
-		return nil
-	}
-
-	glog.Infof("Backup controller: Processing cluster %s", clusterFromCache.Name)
-
 	cluster := clusterFromCache.DeepCopy()
 
-	// Cluster got deleted
+	glog.V(4).Infof("syncing cluster %s", cluster.Name)
+
+	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
@@ -383,6 +363,11 @@ func (c *Controller) sync(key string) error {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
+		return nil
+	}
+
+	// Wait until we have a running cluster
+	if cluster.Status.NamespaceName == "" || !cluster.Status.Health.Etcd {
 		return nil
 	}
 
@@ -444,7 +429,7 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		return fmt.Errorf("failed to build Secret: %v", err)
 	}
 
-	if diff := deep.Equal(se, existing); diff == nil {
+	if equality.Semantic.DeepEqual(se, existing) {
 		return nil
 	}
 
@@ -480,7 +465,7 @@ func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	if equal := apiequality.Semantic.DeepEqual(existing.Spec, cronJob.Spec); equal {
+	if equality.Semantic.DeepEqual(existing.Spec, cronJob.Spec) {
 		return nil
 	}
 

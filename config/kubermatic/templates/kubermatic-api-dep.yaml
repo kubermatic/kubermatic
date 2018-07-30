@@ -61,6 +61,21 @@ spec:
               cpu: "250m"
       imagePullSecrets:
         - name: dockercfg
+      tolerations:
+      - key: "only_critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "kubermatic.io/type"
+                operator: In
+                values:
+                - "stable"
       volumes:
         - name: kubeconfig
           secret:

@@ -173,6 +173,22 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
+	set.Spec.Template.Spec.Affinity = &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: getBasePodLabels(data),
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		},
+	}
+
 	set.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
 			Name: resources.EtcdTLSCertificateSecretName,
@@ -204,37 +220,38 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	// Make sure, we don't change size of existing pvc's
+	// Phase needs to be taken from an existing
 	diskSize := data.EtcdDiskSize
-	if len(set.Spec.VolumeClaimTemplates) > 0 {
-		if size, exists := set.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage]; exists {
-			diskSize = size
-		}
-	}
-
-	set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "data",
-				OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				StorageClassName: resources.String("kubermatic-fast"),
-				AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+	if len(set.Spec.VolumeClaimTemplates) == 0 {
+		set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "data",
+					OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					StorageClassName: resources.String("kubermatic-fast"),
+					AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+					},
 				},
 			},
-		},
+		}
 	}
 
 	return set, nil
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
+func getBasePodLabels(data *resources.TemplateData) map[string]string {
+	return map[string]string{
 		resources.AppLabelKey: name,
 		"cluster":             data.Cluster.Name,
 	}
+}
+
+func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
+	podLabels := getBasePodLabels(data)
 
 	secretDependencies := []string{
 		resources.ApiserverEtcdClientCertificateSecretName,
