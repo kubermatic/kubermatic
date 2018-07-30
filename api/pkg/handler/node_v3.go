@@ -40,7 +40,7 @@ const (
 // CreateNodeReqV3 represent a request for specific data to create a node
 // swagger:parameters createNodesHandlerV3
 type CreateNodeReqV3 struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: body
 	Body CreateNodeReqBodyV3
 }
@@ -53,11 +53,11 @@ type CreateNodeReqBodyV3 struct {
 func decodeCreateNodeReqV3(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateNodeReqV3
 
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -494,7 +494,7 @@ func deleteNodeEndpointV3() endpoint.Endpoint {
 // NodesV3Req represent a request to fetch all cluster nodes
 // swagger:parameters nodesHandlerV3
 type NodesV3Req struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: query
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
@@ -504,11 +504,11 @@ func decodeNodesV3Req(c context.Context, r *http.Request) (interface{}, error) {
 	req.ClusterName = mux.Vars(r)["cluster"]
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
 
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 
 	return req, nil
 }

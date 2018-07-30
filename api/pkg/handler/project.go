@@ -70,12 +70,12 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		if len(req.ProjectName) == 0 {
+		if len(req.ProjectID) == 0 {
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		err := projectProvider.Delete(user, req.ProjectName)
+		err := projectProvider.Delete(user, req.ProjectID)
 		return nil, kubernetesErrorToHTTPError(err)
 	}
 }
@@ -173,15 +173,15 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 // DeleteProjectRq defines HTTP request for deleteProject endpoint
 // swagger:parameters deleteProject
 type DeleteProjectRq struct {
-	// in: path
-	ProjectName string `json:"project_id"`
+	ProjectReq
 }
 
 func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteProjectRq
-	var err error
-	req.ProjectName, err = decodeProjectPathReq(c, r)
-	return req, err
+	req, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, nil
+	}
+	return DeleteProjectRq{ProjectReq: req.(ProjectReq)}, err
 }
 
 // kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.

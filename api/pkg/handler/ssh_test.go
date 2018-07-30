@@ -18,6 +18,7 @@ import (
 )
 
 func TestListSSHKeys(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -159,6 +160,7 @@ func TestListSSHKeys(t *testing.T) {
 }
 
 func TestCreateSSHKeysEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -231,15 +233,13 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			expectedResponse := tc.ExpectedResponse
-			{
-				actualSSHKey := &apiv2.NewSSHKey{}
-				err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
-				if err != nil {
-					t.Fatal(err)
-				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.Metadata.Name)
+			actualSSHKey := &apiv2.NewSSHKey{}
+			err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
+			if err != nil {
+				t.Fatal(err)
 			}
+			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.Metadata.Name)
+
 			compareWithResult(t, res, expectedResponse)
 		})
 	}
