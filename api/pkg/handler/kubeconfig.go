@@ -18,7 +18,7 @@ import (
 
 func kubeconfigEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 
@@ -38,7 +38,7 @@ func newGetClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.
 		req := request.(NewGetClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
