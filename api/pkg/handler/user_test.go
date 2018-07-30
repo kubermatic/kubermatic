@@ -18,6 +18,7 @@ import (
 )
 
 func TestAddUserToProject(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                        string
 		Body                        string

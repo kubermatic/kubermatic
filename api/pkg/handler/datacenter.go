@@ -55,7 +55,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		req := request.(DCReq)
+		req := request.(LegacyDCReq)
 
 		dc, found := dcs[req.DC]
 		if !found {
