@@ -177,6 +177,16 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newDeleteNodeForCluster())
 
 	//
+	// Defines set of HTTP endpoints for the admin token that belongs to a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Handler(r.getClusterAdminToken())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Handler(r.revokeClusterAdminToken())
+
+	//
 	// Defines set of HTTP endpoints for Users of the given project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/users").
@@ -957,6 +967,56 @@ func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(detachSSHKeyFromCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project getClusterAdminToken
+//
+//     Returns the current admin token for the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterAdminToken
+//       401: empty
+//       403: empty
+func (r Routing) getClusterAdminToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterAdminToken(r.projectProvider)),
+		decodeClusterAdminTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project revokeClusterAdminToken
+//
+//     Revokes the current admin tokens and returns a newly generated one.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterAdminToken
+//       401: empty
+//       403: empty
+func (r Routing) revokeClusterAdminToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(revokeClusterAdminToken(r.projectProvider)),
+		decodeClusterAdminTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

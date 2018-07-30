@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
@@ -807,4 +808,86 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 	req.KeyName = sshKeyName
 
 	return req, nil
+}
+
+// ClusterAdminTokenReq defines HTTP request data for getClusterAdminToken and
+// revokeClusterAdminToken endpoints.
+// swagger:parameters getClusterAdminToken revokeClusterAdminToken
+type ClusterAdminTokenReq struct {
+	DCReq
+	// in: path
+	ProjectName string `json:"project_id"`
+	// in: path
+	ClusterName string `json:"cluster_name"`
+}
+
+func decodeClusterAdminTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ClusterAdminTokenReq
+	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterName = clusterName
+	req.ProjectName = projectName
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ClusterAdminTokenReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalClusterTokenToExternal(cluster), nil
+	}
+}
+
+func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ClusterAdminTokenReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+
+		_, err = clusterProvider.Update(user, project, cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalClusterTokenToExternal(cluster), nil
+	}
+}
+
+func convertInternalClusterTokenToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.ClusterAdminToken {
+	return &apiv1.ClusterAdminToken{
+		Token: internalCluster.Address.AdminToken,
+	}
 }
