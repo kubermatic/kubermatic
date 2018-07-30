@@ -1,0 +1,10 @@
+{
+  "Vendor": true,
+  "DisableAll": true,
+  "Exclude": [
+    "pkg/crd"
+  ],
+  "Enable": [
+    "vet"
+  ]
+}

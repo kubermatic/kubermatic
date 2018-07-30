@@ -68,9 +68,9 @@ ifndef HAS_GOMETALINTER
 endif
 	{ \
 	set -e ;\
+	echo "gometalinter" ;\
+	gometalinter --config gometalinter.json ./... ;\
 	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
-	echo "go vet" ;\
-	go vet $$PACKAGES ;\
 	echo "golint" ;\
 	golint -set_exit_status $$PACKAGES ;\
 	echo "errcheck -blank" ;\
