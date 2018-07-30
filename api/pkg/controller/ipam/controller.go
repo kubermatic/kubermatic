@@ -9,13 +9,16 @@ import (
 	"github.com/golang/glog"
 
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	machineinformersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions/machines/v1alpha1"
 	machinelistersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/listers/machines/v1alpha1"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -37,31 +40,27 @@ type Controller struct {
 	queue     workqueue.RateLimitingInterface
 	cidrRange []Network
 
-	client         machineclientset.Interface
-	informer       cache.SharedIndexInformer
-	lister         machinelistersv1alpha1.MachineLister
-	informerSynced cache.InformerSynced
+	client        machineclientset.Interface
+	machineLister machinelistersv1alpha1.MachineLister
 
 	usedIps map[string]struct{}
 }
 
-func NewController(client machineclientset.Interface, informer machineinformersv1alpha1.MachineInformer, networks []Network) *Controller {
+func NewController(client machineclientset.Interface, machineInformer machineinformersv1alpha1.MachineInformer, networks []Network) *Controller {
 	controller := &Controller{
-		cidrRange:      networks,
-		client:         client,
-		informer:       informer.Informer(),
-		informerSynced: informer.Informer().Synced,
-		lister:         informer.Lister(),
-		usedIps:        make(map[string]struct{}),
-		queue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "MachineQueue"),
+		cidrRange:     networks,
+		client:        client,
+		machineLister: machineInformer.Lister(),
+		usedIps:       make(map[string]struct{}),
+		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "MachineQueue"),
 	}
 
-	controller.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	machineInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueueMachine(obj.(*machinev1alpha1.Machine))
+			controller.enqueueMachine(obj.(*machinev1alpha1.Machine))
 		},
 		UpdateFunc: func(_, cur interface{}) {
-			c.enqueueMachine(cur.(*machinev1alpha1.Machine))
+			controller.enqueueMachine(cur.(*machinev1alpha1.Machine))
 		},
 		DeleteFunc: func(obj interface{}) {
 			m, ok := obj.(*machinev1alpha1.Machine)
@@ -78,7 +77,7 @@ func NewController(client machineclientset.Interface, informer machineinformersv
 				}
 			}
 
-			c.enqueueMachine(m)
+			controller.enqueueMachine(m)
 		},
 	})
 
@@ -86,65 +85,51 @@ func NewController(client machineclientset.Interface, informer machineinformersv
 }
 
 func (c *Controller) Run(stopCh <-chan struct{}) error {
-	glog.Info("Starting IPAM-Controller")
-	defer glog.Info("Shutting down IPAM-Controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.informerSynced) {
-		return errors.New("Unable to sync caches for IPAM-Controller")
-	}
-
-	go wait.Until(c.loopQueue, time.Second, stopCh)
-
-	glog.Info("IPAM-Controller started")
+	go wait.Until(c.runWorker, time.Second, stopCh)
 	<-stopCh
+
+	return nil
 }
 
-func (c *Controller) loopQueue() {
-	stop := false
-	for !stop {
-		func() {
-			key, quit := c.queue.Get()
-			if quit {
-				stop = true
-				return
-			}
-
-			defer c.queue.Done(key)
-
-			keyStr := key.(string)
-			err := c.handleMachineForKey(keyStr)
-			if err != nil {
-				glog.Errorf("error syncing machine for key %s: %v", keyStr, err)
-
-				if c.queue.NumRequeues(key) < 5 {
-					c.queue.AddRateLimited(key)
-					return
-				}
-			}
-
-			c.queue.Forget(key)
-		}()
+func (c *Controller) runWorker() {
+	for c.processNextWorkItem() {
 	}
 }
 
-func (c *Controller) handleMachineForKey(key string) {
-	m, err := c.informer.Lister().Get(key)
+func (c *Controller) processNextWorkItem() bool {
+	key, quit := c.queue.Get()
+	if quit {
+		return false
+	}
 
+	defer c.queue.Done(key)
+
+	glog.V(6).Infof("Processing machine: %s", key)
+	err := c.syncHandler(key.(string))
+	if err == nil {
+		c.queue.Forget(key)
+		return true
+	}
+
+	utilruntime.HandleError(fmt.Errorf("%v failed with: %v", key, err))
+	c.queue.AddRateLimited(key)
+
+	return true
+}
+
+func (c *Controller) syncHandler(key string) error {
+	listerMachine, err := c.machineLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("machine '%s' no longer exists in queue", key)
+			glog.V(2).Infof("machine '%s' in work queue no longer exists", key)
 			return nil
 		}
 		return err
 	}
+	m := listerMachine.DeepCopy()
 
-	return c.handleMachine(m)
-}
-
-func (c *Controller) handleMachine(m *machinev1alpha1.Machine) error {
 	if m.DeletionTimestamp != nil {
-		err := c.handleMachineDeletionIfNeeded(m)
-		return err
+		return c.handleMachineDeletionIfNeeded(m)
 	}
 
 	didInitialize, err := c.initMachineIfNeeded(m)
@@ -162,16 +147,17 @@ func (c *Controller) handleMachine(m *machinev1alpha1.Machine) error {
 	return nil
 }
 
-func (c *Controller) enqueueMachine(m *machinev1alpha1) error {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(m)
-	if err != nil {
-		return fmt.Errorf("couldn't get key for machine %s: %v", m.Name, err)
+func (c *Controller) enqueueMachine(obj interface{}) {
+	var key string
+	var err error
+	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
+		utilruntime.HandleError(err)
+		return
 	}
-
-	c.queue.Add(key)
+	c.queue.AddRateLimited(key)
 }
 
-func (c *Controller) handleMachineDeletionIfNeeded(m *machinev1alpha1) error {
+func (c *Controller) handleMachineDeletionIfNeeded(m *machinev1alpha1.Machine) error {
 	if !kuberneteshelper.HasFinalizer(m, finalizerName) {
 		return nil
 	}
@@ -184,7 +170,7 @@ func (c *Controller) handleMachineDeletionIfNeeded(m *machinev1alpha1) error {
 	m.Finalizers = kuberneteshelper.RemoveFinalizer(m.Finalizers, finalizerName)
 	_, err = c.client.MachineV1alpha1().Machines().Update(m)
 	if err != nil {
-		return fmt.Errorf("Couldn't update machine %s, see: %v", m.Name, err)
+		return fmt.Errorf("couldn't update machine %s, see: %v", m.Name, err)
 	}
 
 	ip := net.ParseIP(cfg.Network.CIDR)
@@ -210,7 +196,7 @@ func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason mach
 func (c *Controller) syncIPAllocationFromMachine(m *machinev1alpha1.Machine) error {
 	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
 	if err != nil {
-		return fmt.Errorf("Couldn't get provider config: %v", err)
+		return fmt.Errorf("couldn't get provider config: %v", err)
 	}
 
 	if cfg.Network == nil {
@@ -242,19 +228,19 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 		return false, nil
 	}
 
-	newMachine := oldMachine.DeepCopy()
+	machine := oldMachine.DeepCopy()
 
-	cfg, err := providerconfig.GetConfig(newMachine.Spec.ProviderConfig)
+	cfg, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return false, err
 	}
 
 	ip, network := c.getNextFreeIP()
 	if ip.IsUnspecified() {
-		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", newMachine.Name)
-		subErr := c.writeErrorToMachine(client, newMachine, machinev1alpha1.InsufficientResourcesMachineError, err)
+		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
+		subErr := c.writeErrorToMachine(machine, machinev1alpha1.InsufficientResourcesMachineError, err)
 		if subErr != nil {
-			glog.Errorf("couldn't update error state for machine %s, see: %v", newMachine.Name, subErr)
+			glog.Errorf("couldn't update error state for machine %s, see: %v", machine.Name, subErr)
 		}
 
 		return false, err
@@ -264,7 +250,7 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 		CIDR:    ip.String(),
 		Gateway: network.gateway.String(),
 		DNS: providerconfig.DNSConfig{
-			Servers: ipsToStrs(network.dnsServers),
+			Servers: c.ipsToStrs(network.dnsServers),
 		},
 	}
 
@@ -273,23 +259,23 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 		return false, err
 	}
 
-	newMachine.Finalizers = append(newMachine.Finalizers, finalizerName)
-	newMachine.Spec.ProviderConfig = runtime.RawExtension{Raw: cfgSerialized}
-	pendingInitializers := newMachine.ObjectMeta.GetInitializers().Pending
+	machine.Finalizers = append(machine.Finalizers, finalizerName)
+	machine.Spec.ProviderConfig = runtime.RawExtension{Raw: cfgSerialized}
+	pendingInitializers := machine.ObjectMeta.GetInitializers().Pending
 
 	// Remove self from the list of pending Initializers while preserving ordering.
 	if len(pendingInitializers) == 1 {
-		newMachine.ObjectMeta.Initializers = nil
+		machine.ObjectMeta.Initializers = nil
 	} else {
-		newMachine.ObjectMeta.Initializers.Pending = append(pendingInitializers[:0], pendingInitializers[1:]...)
+		machine.ObjectMeta.Initializers.Pending = append(pendingInitializers[:0], pendingInitializers[1:]...)
 	}
 
-	_, err = c.client.MachineV1alpha1().Machines().Update(newMachine)
+	_, err = c.client.MachineV1alpha1().Machines().Update(machine)
 	if err != nil {
-		return false, fmt.Errorf("Couldn't update machine %s, see: %v", newMachine.Name, err)
+		return false, fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
 	}
 
-	// Having getIP and allocateIP separate will save us from blocking ips even tho we run in errors and dont use them.
+	// Having getIP and allocateIP separate will save us from blocking ips even tho we run in kerrors and dont use them.
 	// As long as we keep this code blocking & synchronous, this is cool-ish.
 	c.allocateIP(ip)
 	glog.V(6).Infof("Allocated ip %v for machine %s", ip, oldMachine.Name)
