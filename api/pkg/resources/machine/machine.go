@@ -191,7 +191,8 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider
 		SubnetName:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
 		RouteTableName: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
 
-		AssignPublicIP: providerconfig.ConfigVarBool{Value: node.Spec.Cloud.Azure.AssignPublicIP},
+		// Revisit when we have the DNAT topic complete and we can use private machines. Then we can use: node.Spec.Cloud.Azure.AssignPublicIP
+		AssignPublicIP: providerconfig.ConfigVarBool{Value: true},
 	}
 	config.Tags = map[string]string{}
 	for key, value := range node.Spec.Cloud.Azure.Tags {
