@@ -199,6 +199,10 @@ func getFlags(data *resources.TemplateData, apiserverIP string) []string {
 		flags = append(flags, "--cloud-provider", "vsphere")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
+	if data.Cluster.Spec.Cloud.Azure != nil {
+		flags = append(flags, "--cloud-provider", "azure")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
 	return flags
 }
 
