@@ -70,26 +70,26 @@ func (nf *networkFlags) Set(value string) error {
 	}
 
 	gwStr := splitted[1]
-	gwIp := net.ParseIP(gwStr)
-	if gwIp == nil {
+	gwIP := net.ParseIP(gwStr)
+	if gwIP == nil {
 		return fmt.Errorf("expected valid gateway ip but got %s", gwStr)
 	}
 
 	dnsSplitted := splitted[2:]
 	dnsServers := make([]net.IP, len(dnsSplitted))
 	for i, d := range dnsSplitted {
-		dnsIp := net.ParseIP(d)
-		if dnsIp == nil {
+		dnsIP := net.ParseIP(d)
+		if dnsIP == nil {
 			return fmt.Errorf("expected valid dns ip but got %s", d)
 		}
 
-		dnsServers[i] = dnsIp
+		dnsServers[i] = dnsIP
 	}
 
 	val := ipam.Network{
 		IP:         ip,
 		IPNet:      ipnet,
-		Gateway:    gwIp,
+		Gateway:    gwIP,
 		DNSServers: dnsServers,
 	}
 
@@ -125,7 +125,10 @@ func main() {
 		controller := ipam.NewController(client, informer, networks)
 
 		factory.Start(stopCh)
-		controller.Run(stopCh)
+		err := controller.Run(stopCh)
+		if err != nil {
+			glog.Fatalf("couldn't start controller: %v", err)
+		}
 
 		glog.Info("Controller loop finished.")
 	})

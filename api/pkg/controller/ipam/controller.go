@@ -29,6 +29,7 @@ const (
 	finalizerName   = initializerName
 )
 
+// Network represents a machine network configuration
 type Network struct {
 	IP         net.IP
 	IPNet      *net.IPNet
@@ -36,6 +37,7 @@ type Network struct {
 	DNSServers []net.IP
 }
 
+// Controller is the ipam controller itself
 type Controller struct {
 	queue     workqueue.RateLimitingInterface
 	cidrRange []Network
@@ -46,6 +48,7 @@ type Controller struct {
 	usedIps map[string]struct{}
 }
 
+// NewController creates a new controller for the specified data.
 func NewController(client machineclientset.Interface, machineInformer machineinformersv1alpha1.MachineInformer, networks []Network) *Controller {
 	controller := &Controller{
 		cidrRange:     networks,
@@ -84,6 +87,7 @@ func NewController(client machineclientset.Interface, machineInformer machineinf
 	return controller
 }
 
+// Run executes the worker loop. Blocks.
 func (c *Controller) Run(stopCh <-chan struct{}) error {
 	go wait.Until(c.runWorker, time.Second, stopCh)
 	<-stopCh

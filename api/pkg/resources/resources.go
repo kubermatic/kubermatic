@@ -28,7 +28,7 @@ import (
 var KUBERMATICTAG string
 
 const (
-	// KubermaitcNamespaceName specifies the name of the kubermatic namespace
+	// KubermaticNamespaceName specifies the name of the kubermatic namespace
 	KubermaticNamespaceName = "kubermatic"
 	// ApiserverDeploymenName is the name of the apiserver deployment
 	ApiserverDeploymenName = "apiserver"

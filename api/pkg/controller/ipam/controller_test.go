@@ -15,8 +15,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type machineTestData struct {
+	ip      string
+	gw      string
+	machine *machinev1alpha1.Machine
+}
+
 func TestSingleCIDRAllocation(t *testing.T) {
-	nets := []Network{buildNet("192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
 	m := createMachine("susi")
 	ctrl, stop := newTestController(nets, m)
@@ -35,16 +41,10 @@ func TestSingleCIDRAllocation(t *testing.T) {
 	assertNetworkEquals(t, m2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 }
 
-type machineTestData struct {
-	ip      string
-	gw      string
-	machine *machinev1alpha1.Machine
-}
-
 func TestMultipleCIDRAllocation(t *testing.T) {
 	nets := []Network{
-		buildNet("192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
-		buildNet("10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
+		buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
+		buildNet(t, "10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
 	}
 
 	machines := []machineTestData{
@@ -77,7 +77,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 }
 
 func TestReuseReleasedIP(t *testing.T) {
-	nets := []Network{buildNet("192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
 	mSusi := createMachine("susi")
 	mBabsi := createMachine("babsi")
@@ -119,7 +119,7 @@ func TestReuseReleasedIP(t *testing.T) {
 }
 
 func TestFailWhenCIDRIsExhausted(t *testing.T) {
-	nets := []Network{buildNet("192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
+	nets := []Network{buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
 
 	mSusi := createMachine("susi")
 	mBabsi := createMachine("babsi")
@@ -177,8 +177,11 @@ func newTestController(networks []Network, objects ...runtime.Object) (*Controll
 	return controller, stopCh
 }
 
-func buildNet(cidr string, gw string, dnsServers ...string) Network {
-	ip, ipnet, _ := net.ParseCIDR(cidr)
+func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Network {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		t.Fatalf("error in network config of test, couldnt parse %s as cidr", cidr)
+	}
 
 	dnsIps := make([]net.IP, len(dnsServers))
 	for i, d := range dnsServers {
