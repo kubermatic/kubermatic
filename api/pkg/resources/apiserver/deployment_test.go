@@ -18,19 +18,19 @@ func TestGetAdmissionControlFlags(t *testing.T) {
 			name:                              "Ensure no admission webhooks pre 1.9",
 			kubernetesVersion:                 "1.8.0",
 			expectedAdmissionControlFlagName:  "--admission-control",
-			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
+			expectedAdmissionControlFlagValue: "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 		},
 		{
 			name:                              "Ensure admission webhooks 1.9+",
 			kubernetesVersion:                 "1.9.0",
 			expectedAdmissionControlFlagName:  "--admission-control",
-			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+			expectedAdmissionControlFlagValue: "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
 		},
 		{
 			name:                              "Ensure new admission flagname 1.10+",
 			kubernetesVersion:                 "1.10.0",
 			expectedAdmissionControlFlagName:  "--enable-admission-plugins",
-			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+			expectedAdmissionControlFlagValue: "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
 		},
 	}
 

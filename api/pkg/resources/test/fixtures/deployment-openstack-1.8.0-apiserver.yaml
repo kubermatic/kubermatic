@@ -120,7 +120,11 @@ spec:
         - --storage-backend
         - etcd3
         - --admission-control
-        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
+        - Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
+        - --feature-gates
+        - Initializers=true
+        - --runtime-config
+        - admissionregistration.k8s.io/v1alpha1
         - --authorization-mode
         - Node,RBAC
         - --external-hostname

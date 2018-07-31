@@ -30,10 +30,10 @@ const (
 )
 
 type Network struct {
-	ip         net.IP
-	ipnet      *net.IPNet
-	gateway    net.IP
-	dnsServers []net.IP
+	IP         net.IP
+	IPNet      *net.IPNet
+	Gateway    net.IP
+	DNSServers []net.IP
 }
 
 type Controller struct {
@@ -126,7 +126,12 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		return err
 	}
-	m := listerMachine.DeepCopy()
+
+	return c.syncMachine(listerMachine)
+}
+
+func (c *Controller) syncMachine(mo *machinev1alpha1.Machine) error {
+	m := mo.DeepCopy()
 
 	if m.DeletionTimestamp != nil {
 		return c.handleMachineDeletionIfNeeded(m)
@@ -248,9 +253,9 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 
 	cfg.Network = &providerconfig.NetworkConfig{
 		CIDR:    ip.String(),
-		Gateway: network.gateway.String(),
+		Gateway: network.Gateway.String(),
 		DNS: providerconfig.DNSConfig{
-			Servers: c.ipsToStrs(network.dnsServers),
+			Servers: c.ipsToStrs(network.DNSServers),
 		},
 	}
 
@@ -284,7 +289,7 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 }
 
 func (c *Controller) ipsToStrs(ips []net.IP) []string {
-	strs := make([]string, 0, len(ips))
+	strs := make([]string, len(ips))
 
 	for i, ip := range ips {
 		strs[i] = ip.String()
@@ -312,9 +317,9 @@ func (c *Controller) getNextFreeIP() (net.IP, Network) {
 	return net.IP{0, 0, 0, 0}, Network{}
 }
 
-func (c *Controller) getNextFreeIPForCIDR(cidr Network) net.IP {
-	for ip := cidr.ip.Mask(cidr.ipnet.Mask); cidr.ipnet.Contains(ip); c.inc(ip) {
-		if ip[len(ip)-1] == 0 || ip.Equal(cidr.gateway) {
+func (c *Controller) getNextFreeIPForCIDR(network Network) net.IP {
+	for ip := network.IP.Mask(network.IPNet.Mask); network.IPNet.Contains(ip); c.inc(ip) {
+		if ip[len(ip)-1] == 0 || ip.Equal(network.Gateway) {
 			continue
 		}
 

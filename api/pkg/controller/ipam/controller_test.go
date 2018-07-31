@@ -1,11 +1,13 @@
-package main
+package ipam
 
 import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	machinefake "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
+	machineinformers "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
@@ -14,20 +16,18 @@ import (
 )
 
 func TestSingleCIDRAllocation(t *testing.T) {
-	err := setParameters("192.168.0.0/16", "192.168.0.1", "8.8.8.8")
-	if err != nil {
-		t.Errorf("couldn't set parameters, see: %v", err)
-	}
+	nets := []Network{buildNet("192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
-	m := createMachine("susi", initializerName)
-	machineClient := machinefake.NewSimpleClientset(m)
+	m := createMachine("susi")
+	ctrl, stop := newTestController(nets, m)
+	defer close(stop)
 
-	err = machineAdded(m, machineClient)
+	err := ctrl.syncMachine(m)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	m2, err := machineClient.Machine().Machines().Get("susi", metav1.GetOptions{})
+	m2, err := ctrl.client.Machine().Machines().Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -35,74 +35,82 @@ func TestSingleCIDRAllocation(t *testing.T) {
 	assertNetworkEquals(t, m2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 }
 
+type machineTestData struct {
+	ip      string
+	gw      string
+	machine *machinev1alpha1.Machine
+}
+
 func TestMultipleCIDRAllocation(t *testing.T) {
-	err := setParameters("192.168.0.0/30,10.0.0.0/24", "192.168.0.1", "8.8.8.8")
-	if err != nil {
-		t.Errorf("couldn't set parameters, see: %v", err)
+	nets := []Network{
+		buildNet("192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
+		buildNet("10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
 	}
 
-	machines := map[string]*machinev1alpha1.Machine{
-		"192.168.0.2": createMachine("susi", initializerName),
-		"192.168.0.3": createMachine("babsi", initializerName),
-		"10.0.0.1":    createMachine("joan", initializerName),
+	machines := []machineTestData{
+		{"192.168.0.2", "192.168.0.1", createMachine("susi")},
+		{"192.168.0.3", "192.168.0.1", createMachine("babsi")},
+		{"10.0.0.2", "10.0.0.1", createMachine("joan")},
 	}
 
 	machineValues := make([]runtime.Object, 0, len(machines))
 	for _, m := range machines {
-		machineValues = append(machineValues, m)
+		machineValues = append(machineValues, m.machine)
 	}
 
-	machineClient := machinefake.NewSimpleClientset(machineValues...)
+	ctrl, stop := newTestController(nets, machineValues...)
+	defer close(stop)
 
-	for ip, m := range machines {
-		err = machineAdded(m, machineClient)
+	for _, tuple := range machines {
+		err := ctrl.syncMachine(tuple.machine)
 		if err != nil {
 			t.Errorf("error in machineAdded handler: %v", err)
 		}
 
-		m2, err := machineClient.Machine().Machines().Get(m.Name, metav1.GetOptions{})
+		m2, err := ctrl.client.Machine().Machines().Get(tuple.machine.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Errorf("couldn't retrieve updated machine, see: %v", err)
 		}
 
-		assertNetworkEquals(t, m2, ip, "192.168.0.1", "8.8.8.8")
+		assertNetworkEquals(t, m2, tuple.ip, tuple.gw, "8.8.8.8")
 	}
 }
 
 func TestReuseReleasedIP(t *testing.T) {
-	err := setParameters("192.168.0.0/16", "192.168.0.1", "8.8.8.8")
-	if err != nil {
-		t.Errorf("couldn't set parameters, see: %v", err)
-	}
+	nets := []Network{buildNet("192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
-	mSusi := createMachine("susi", initializerName)
-	mBabsi := createMachine("babsi", initializerName)
+	mSusi := createMachine("susi")
+	mBabsi := createMachine("babsi")
 
-	machineClient := machinefake.NewSimpleClientset(mSusi, mBabsi)
+	ctrl, stop := newTestController(nets, mSusi, mBabsi)
+	defer close(stop)
 
-	err = machineAdded(mSusi, machineClient)
+	err := ctrl.syncMachine(mSusi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	mSusi2, err := machineClient.Machine().Machines().Get("susi", metav1.GetOptions{})
+	mSusi2, err := ctrl.client.Machine().Machines().Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 
-	err = machineDeleted(mSusi2, machineClient)
+	now := metav1.NewTime(time.Now())
+	mSusi2.DeletionTimestamp = &now
+
+	err = ctrl.syncMachine(mSusi2)
 	if err != nil {
 		t.Errorf("couldn't delete machine, see: %v", err)
 	}
 
-	err = machineAdded(mBabsi, machineClient)
+	err = ctrl.syncMachine(mBabsi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	mBabsi2, err := machineClient.Machine().Machines().Get("babsi", metav1.GetOptions{})
+	mBabsi2, err := ctrl.client.Machine().Machines().Get("babsi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -111,47 +119,37 @@ func TestReuseReleasedIP(t *testing.T) {
 }
 
 func TestFailWhenCIDRIsExhausted(t *testing.T) {
-	err := setParameters("192.168.0.0/30", "192.168.0.1", "8.8.8.8")
-	if err != nil {
-		t.Errorf("couldn't set parameters, see: %v", err)
-	}
+	nets := []Network{buildNet("192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
 
-	mSusi := createMachine("susi", initializerName)
-	mBabsi := createMachine("babsi", initializerName)
-	mJoan := createMachine("joan", initializerName)
+	mSusi := createMachine("susi")
+	mBabsi := createMachine("babsi")
+	mJoan := createMachine("joan")
 
-	machineClient := machinefake.NewSimpleClientset(mSusi, mBabsi, mJoan)
+	ctrl, stop := newTestController(nets, mSusi, mBabsi, mJoan)
+	defer close(stop)
 
-	err = machineAdded(mSusi, machineClient)
+	err := ctrl.syncMachine(mSusi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	err = machineAdded(mBabsi, machineClient)
+	err = ctrl.syncMachine(mBabsi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	err = machineAdded(mJoan, machineClient)
+	err = ctrl.syncMachine(mJoan)
 	if err == nil || !strings.Contains(err.Error(), "because no more ips can be allocated from the specified cidrs") {
 		t.Error("Expected error for exhausted CIDR range but didnt get it :-(")
 	}
 }
 
-func createMachine(name string, initializerNames ...string) *machinev1alpha1.Machine {
-	initializers := make([]metav1.Initializer, len(initializerNames))
-
-	for i, n := range initializerNames {
-		initializers[i] = metav1.Initializer{
-			Name: n,
-		}
-	}
-
+func createMachine(name string) *machinev1alpha1.Machine {
 	machine := &machinev1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Initializers: &metav1.Initializers{
-				Pending: initializers,
+				Pending: []metav1.Initializer{{Name: initializerName}},
 			},
 		},
 		Spec: machinev1alpha1.MachineSpec{
@@ -162,19 +160,37 @@ func createMachine(name string, initializerNames ...string) *machinev1alpha1.Mac
 	return machine
 }
 
-func setParameters(cidr string, gw string, dns string) error {
-	var err error
-	cidrRange, err = parseCIDRs(cidr)
-	if err != nil {
-		return err
+func newTestController(networks []Network, objects ...runtime.Object) (*Controller, chan struct{}) {
+	tweakFunc := func(options *metav1.ListOptions) {
+		options.IncludeUninitialized = true
 	}
 
-	dnsServers = dns
-	gateway = gw
-	gatewayIP = net.ParseIP(gw)
-	usedIps = make(map[string]struct{})
+	client := machinefake.NewSimpleClientset(objects...)
+	factory := machineinformers.NewFilteredSharedInformerFactory(client, 30*time.Second, metav1.NamespaceAll, tweakFunc)
+	informer := factory.Machine().V1alpha1().Machines()
 
-	return nil
+	controller := NewController(client, informer, networks)
+	stopCh := make(chan struct{})
+
+	factory.Start(stopCh)
+
+	return controller, stopCh
+}
+
+func buildNet(cidr string, gw string, dnsServers ...string) Network {
+	ip, ipnet, _ := net.ParseCIDR(cidr)
+
+	dnsIps := make([]net.IP, len(dnsServers))
+	for i, d := range dnsServers {
+		dnsIps[i] = net.ParseIP(d)
+	}
+
+	return Network{
+		IP:         ip,
+		IPNet:      ipnet,
+		Gateway:    net.ParseIP(gw),
+		DNSServers: dnsIps,
+	}
 }
 
 func assertNetworkEquals(t *testing.T, m *machinev1alpha1.Machine, ip string, gw string, dns ...string) {

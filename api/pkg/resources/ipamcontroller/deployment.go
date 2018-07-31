@@ -51,12 +51,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	kcDir := "/etc/kubernetes/ipamcontroller"
 	flags := []string{
-		"--cidr-range", strings.Join(data.Cluster.Spec.MachineNetwork.CIDRBlocks, ","),
-		"--gateway", data.Cluster.Spec.MachineNetwork.Gateway,
-		"--dns-servers", strings.Join(data.Cluster.Spec.MachineNetwork.DNSServers, ","),
 		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.IPAMControllerKubeconfigSecretName),
-		"--master", "foo",
+		"-v", "4",
 	}
+
+	flags = append(flags, getNetworkArgs(data)...)
 
 	dep.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
@@ -81,7 +80,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            resources.IPAMControllerDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + resources.KUBERMATICTAG,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + "ipam-wip-pk", //resources.KUBERMATICTAG,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/ipam-controller"},
 			Args:            flags,
@@ -96,4 +95,18 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	return dep, nil
+}
+
+func getNetworkArgs(data *resources.TemplateData) []string {
+	networkFlags := make([]string, len(data.Cluster.Spec.MachineNetworks)*2)
+	i := 0
+
+	for _, n := range data.Cluster.Spec.MachineNetworks {
+		networkFlags[i] = "--network"
+		i++
+		networkFlags[i] = fmt.Sprintf("%s,%s,%s", n.CIDR, n.Gateway, strings.Join(n.DNSServers, ","))
+		i++
+	}
+
+	return networkFlags
 }

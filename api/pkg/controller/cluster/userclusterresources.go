@@ -188,7 +188,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 		machinecontroller.ClusterRole,
 	}
 
-	if c.Spec.MachineNetwork != nil {
+	if len(c.Spec.MachineNetworks) > 0 {
 		creators = append(creators, ipamcontroller.ClusterRole)
 	}
 
@@ -247,7 +247,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		controllermanager.AdminClusterRoleBinding,
 	}
 
-	if c.Spec.MachineNetwork != nil {
+	if len(c.Spec.MachineNetworks) > 0 {
 		creators = append(creators, ipamcontroller.ClusterRoleBinding)
 	}
 

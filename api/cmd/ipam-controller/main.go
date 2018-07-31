@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
+	"bytes"
 	"flag"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -15,18 +13,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+	machineinformers "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions"
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/record"
@@ -34,13 +29,82 @@ import (
 
 const controllerName = "ipam-controller"
 
-func main() {
-	networks, kubeconfig, masterURL, err := parseArgs(os.Args[1:])
-	if err != nil {
-		glog.Errorf("couldn't parse args: %v", err)
-		glog.Infoln("usage: ./ipam-controller --cidr \"192.168.0.14/30\" --gateway \"192.168.0.1\" --dns-servers \"192.168.0.1,192.168.0.2\" --cidr \"10.0.0.0/16\" --gateway \"10.0.0.1\" --dns-server \"8.8.8.8,8.8.4.4\"")
-		os.Exit(1)
+type networkFlags []ipam.Network
+
+func (nf *networkFlags) String() string {
+	var buf bytes.Buffer
+
+	for i, n := range *nf {
+		buf.WriteString(n.IP.String())
+		buf.WriteString(",")
+		buf.WriteString(n.Gateway.String())
+		buf.WriteString(",")
+
+		for iD, dns := range n.DNSServers {
+			buf.WriteString(dns.String())
+
+			if iD < len(n.DNSServers)-1 {
+				buf.WriteString(",")
+			}
+		}
+
+		if i < len(*nf)-1 {
+			buf.WriteString(";")
+		}
 	}
+
+	return buf.String()
+}
+
+func (nf *networkFlags) Set(value string) error {
+	splitted := strings.Split(value, ",")
+
+	if len(splitted) < 3 {
+		return fmt.Errorf("Expected cidr,gateway,dns1,dns2,... but got: %s", value)
+	}
+
+	cidrStr := splitted[0]
+	ip, ipnet, err := net.ParseCIDR(cidrStr)
+	if err != nil {
+		return fmt.Errorf("error parsing cidr %s: %v", cidrStr, err)
+	}
+
+	gwStr := splitted[1]
+	gwIp := net.ParseIP(gwStr)
+	if gwIp == nil {
+		return fmt.Errorf("expected valid gateway ip but got %s", gwStr)
+	}
+
+	dnsSplitted := splitted[2:]
+	dnsServers := make([]net.IP, len(dnsSplitted))
+	for i, d := range dnsSplitted {
+		dnsIp := net.ParseIP(d)
+		if dnsIp == nil {
+			return fmt.Errorf("expected valid dns ip but got %s", d)
+		}
+
+		dnsServers[i] = dnsIp
+	}
+
+	val := ipam.Network{
+		IP:         ip,
+		IPNet:      ipnet,
+		Gateway:    gwIp,
+		DNSServers: dnsServers,
+	}
+
+	*nf = append(*nf, val)
+	return nil
+}
+
+func main() {
+	var networks networkFlags
+	var kubeconfig, masterURL string
+
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.Var(&networks, "network", "The networks from which ips should be allocated (format: cidr,gw,dns1,dns2,...)")
+	flag.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
@@ -49,9 +113,18 @@ func main() {
 
 	config = restclient.AddUserAgent(config, controllerName)
 	client := machineclientset.NewForConfigOrDie(config)
-	controller := setupController(client, networks)
 
 	err = leaderElectionLoop(config, func(stopCh <-chan struct{}) {
+		tweakFunc := func(options *metav1.ListOptions) {
+			options.IncludeUninitialized = true
+		}
+
+		factory := machineinformers.NewFilteredSharedInformerFactory(client, 30*time.Second, metav1.NamespaceAll, tweakFunc)
+		informer := factory.Machine().V1alpha1().Machines()
+
+		controller := ipam.NewController(client, informer, networks)
+
+		factory.Start(stopCh)
 		controller.Run(stopCh)
 
 		glog.Info("Controller loop finished.")
@@ -61,17 +134,6 @@ func main() {
 	}
 
 	glog.Info("Application stopped.")
-}
-
-func setupController(client machineclientset.Interface, networks []Network) *ipam.Controller {
-	tweakFunc := func(options metav1.ListOptions) {
-		options.IncludeUninitialized = true
-	}
-
-	factory := machinev1alpha1.NewFilteredSharedInformerFactory(client, 30*time.Second(), metav1.NamespaceAll, tweakFunc)
-	informer := factory.Machine().V1alpha1().Machines()
-
-	return ipam.New(client, informer, networks)
 }
 
 func getEventRecorder(masterKubeClient *kubernetes.Clientset, name string) (record.EventRecorder, error) {
@@ -113,93 +175,4 @@ func leaderElectionLoop(config *restclient.Config, callback func(stopCh <-chan s
 
 	leader.Run()
 	return nil
-}
-
-func parseArgs(args []string) (list []ipam.Network, kubecfg string, masterUrl string, retErr error) {
-	kubecfg = ""
-	masterUrl = ""
-	retErr = nil
-	list = make([]ipam.Network)
-	var current *ipam.Network
-
-	getNetErrors := func(n *ipam.Network) error {
-		if n.gateway == nil || n.gateway.IsUnspecified() {
-			return fmt.Errorf("missing gateway for %v", n.ip)
-		}
-
-		if n.dnsServers == nil || len(n.dnsServers) == 0 {
-			return fmt.Errorf("missing dns servers for %v", n.ip)
-		}
-	}
-
-	// manual parsing so we can supply multiple params for the different cidrs.
-	for i := 0; i < len(args); i += 2 {
-		arg = args[i]
-
-		hasNextArg = len(args) > i+1
-		if !hasNextArg {
-			retErr = fmt.Errorf("expected value for parameter %s", arg)
-			return
-		}
-
-		nextArg = args[i+1]
-
-		if arg == "--cidr" {
-			if current != nil {
-				if err := getNetErrors(current); err != nil {
-					retErr = err
-					return
-				}
-
-				list = append(list, *current)
-			}
-
-			ip, ipnet, err := net.ParseCIDR(nextArg)
-			if err != nil {
-				retErr = fmt.Errorf("error parsing cidr %s: %v", nextArg, err)
-				return
-			}
-
-			current := &ipam.Network{
-				ip:    ip,
-				ipnet: ipnet,
-			}
-		} else if arg == "--gateway" {
-			if current == nil {
-				retErr = errors.New("wrong order, expected --cidr before --gateway")
-				return
-			}
-
-			current.gateway = net.ParseIP(nextArg)
-		} else if arg == "--dns-servers" {
-			if current == nil {
-				retErr = errors.New("wrong order, expected --cidr before --dns-servers")
-				return
-			}
-
-			ipStrs := strings.Split(nextArg, ",")
-			dnsServers := make([]net.IP, 0, len(ipStrs))
-			for i2, v := range ipStrs {
-				dnsServers[i2] = net.ParseIP(v)
-			}
-
-			current.dnsServers = dnsServers
-		} else if arg == "--kubeconfig" {
-			kubecfg = nextArg
-		} else if arg == "--master" {
-			masterUrl = nextArg
-		} else {
-			retErr = fmt.Errrof("unknown flag: %s", arg)
-			return
-		}
-	}
-
-	if err := getNetErrors(current); err != nil {
-		retErr = err
-		return
-	}
-
-	list = append(list, *current)
-
-	return
 }

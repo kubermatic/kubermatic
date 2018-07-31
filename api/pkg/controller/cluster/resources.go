@@ -190,7 +190,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.DockerCfgSecretName, cc.getDockerCfgSecret},
 	}
 
-	if c.Spec.MachineNetwork != nil {
+	if len(c.Spec.MachineNetworks) > 0 {
 		ipamSecret := secretOp{resources.IPAMControllerKubeconfigSecretName, cc.getIPAMControllerKubeconfigSecret}
 		ops = append(ops, ipamSecret)
 	}
@@ -493,7 +493,7 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	creators := GetDeploymentCreators()
 
-	if c.Spec.MachineNetwork != nil {
+	if len(c.Spec.MachineNetworks) > 0 {
 		creators = append(creators, ipamcontroller.Deployment)
 	}
 
