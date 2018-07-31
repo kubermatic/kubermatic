@@ -76,7 +76,7 @@ const (
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 
-	// DockerCfgSecretName specifies the name of the dockercfg secret used to access the private repo.
+	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
 	//CAKeySecretName is the name for the secret containing the private ca key

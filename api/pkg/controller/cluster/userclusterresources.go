@@ -178,6 +178,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 	return nil
 }
 
+// GetUserClusterRoleCreators returns a list of GetUserClusterRoleCreators
 func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
@@ -240,6 +241,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 	return nil
 }
 
+// GetUserClusterRoleBindingCreators returns a list of ClusterRoleBindingCreators which should be used to - guess what - create user cluster role bindings.
 func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreator {
 	creators := []resources.ClusterRoleBindingCreator{
 		machinecontroller.ClusterRoleBinding,
