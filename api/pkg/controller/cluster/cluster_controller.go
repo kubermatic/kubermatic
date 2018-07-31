@@ -264,15 +264,29 @@ func (cc *Controller) enqueue(cluster *kubermaticv1.Cluster) {
 
 func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		//Get latest version from api
-		currentCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Get(name, metav1.GetOptions{})
+		//Get latest version from cache
+		cacheCluster, err := cc.clusterLister.Get(name)
 		if err != nil {
 			return err
 		}
+
+		currentCluster := cacheCluster.DeepCopy()
 		// Apply modifications
 		modify(currentCluster)
 		// Update the cluster
 		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		if err != nil && kubeapierrors.IsConflict(err) {
+			//Get latest version from api
+			currentCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Get(name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			// Apply modifications
+			modify(currentCluster)
+			// Update the cluster
+			updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		}
+
 		return err
 	})
 
