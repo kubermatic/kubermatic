@@ -114,6 +114,10 @@ spec:
         - '*,bootstrapsigner,tokencleaner'
         - --v
         - "4"
+        - --cloud-provider
+        - azure
+        - --cloud-config
+        - /etc/kubernetes/cloud/config
         command:
         - /hyperkube
         - controller-manager
