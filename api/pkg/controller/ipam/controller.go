@@ -195,11 +195,7 @@ func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason mach
 	m.Status.ErrorReason = &reason
 
 	_, err := c.client.MachineV1alpha1().Machines().Update(m)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (c *Controller) syncIPAllocationFromMachine(m *machinev1alpha1.Machine) error {
