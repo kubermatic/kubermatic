@@ -2563,6 +2563,13 @@
           "type": "string",
           "x-go-name": "HumanReadableName"
         },
+        "machineNetworks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MachineNetworkingConfig"
+          },
+          "x-go-name": "MachineNetworks"
+        },
         "masterVersion": {
           "type": "string",
           "x-go-name": "MasterVersion"
@@ -3266,6 +3273,28 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "MachineNetworkingConfig": {
+      "type": "object",
+      "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
+      "properties": {
+        "cidr": {
+          "type": "string",
+          "x-go-name": "CIDR"
+        },
+        "dnsServers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "DNSServers"
+        },
+        "gateway": {
+          "type": "string",
+          "x-go-name": "Gateway"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
       "type": "object",
@@ -3367,6 +3396,14 @@
       "properties": {
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
+        },
+        "machineNetworks": {
+          "description": "MachineNetworks optionally specifies the parameters for IPAM.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MachineNetworkingConfig"
+          },
+          "x-go-name": "MachineNetworks"
         },
         "version": {
           "description": "Version desired version of the kubernetes master components",
