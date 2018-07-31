@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nodeport-proxy
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: nodeport-proxy
@@ -24,11 +24,53 @@ spec:
       - name: nodeport-proxy
         image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
         command:
-        - "/nodeport-proxy"
+        - "/proxy"
         args: [
           "-listen-address", "0.0.0.0",
+          "-logtostderr",
+          "-v","4"
+        ]
+      tolerations:
+      - key: "only_critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "kubermatic.io/type"
+                operator: In
+                values:
+                - "stable"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lb-updater
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lb-updater
+  template:
+    metadata:
+      labels:
+        app: lb-updater
+    spec:
+      serviceAccountName: nodeport-proxy
+      imagePullSecrets:
+        - name: quay
+      containers:
+      - name: lb-updater
+        image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
+        command:
+        - "/lb-updater"
+        args: [
           "-lb-namespace", "nodeport-proxy",
           "-lb-name", "nodeport-lb",
           "-logtostderr",
-          "-v","6"
+          "-v","4"
         ]
