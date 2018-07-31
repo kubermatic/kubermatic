@@ -14,6 +14,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1965,7 +1966,11 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	}
 
 	if len(response.Token) == 0 || response.Token == cluster.Address.AdminToken {
-		t.Errorf("revokation response does not contain updated admin token, but '%s'", response.Token)
+		t.Errorf("revocation response does not contain updated admin token, but '%s'", response.Token)
+	}
+
+	if err := validation.ValidateKubernetesToken(response.Token); err != nil {
+		t.Errorf("generated token '%s' is malformed: %v", response.Token, err)
 	}
 
 	// check if the cluster was really updated

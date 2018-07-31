@@ -16,12 +16,12 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/defaulting"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
@@ -878,7 +878,7 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+		cluster.Address.AdminToken = kubernetes.GenerateToken()
 
 		_, err = clusterProvider.Update(user, project, cluster)
 		if err != nil {
