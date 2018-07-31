@@ -1977,4 +1977,11 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	if updatedCluster.Address.AdminToken == cluster.Address.AdminToken {
 		t.Error("updated admin token in cluster resource was not persisted")
 	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token",cluster.Name), nil)
+	ep.ServeHTTP(res, req)
+	checkStatusCode(http.StatusOK, res, t)
+
+	compareWithResult(t, res, "dummy response")
 }
