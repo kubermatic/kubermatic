@@ -282,13 +282,13 @@ func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Clust
 
 func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) (*kubermaticv1.Cluster, error) {
 	var err error
-	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
+	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason != reason {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = &message
 			c.Status.ErrorReason = &reason
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to set error status on cluster to: errorReason='%s' errorMessage='%s'. Could not update cluster: %v", reason, message, err)
 		}
 	}
 
