@@ -120,11 +120,7 @@ spec:
         - --storage-backend
         - etcd3
         - --enable-admission-plugins
-        - Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
-        - --feature-gates
-        - Initializers=true
-        - --runtime-config
-        - admissionregistration.k8s.io/v1alpha1
+        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
         - --authorization-mode
         - Node,RBAC
         - --external-hostname
@@ -164,6 +160,10 @@ spec:
         - /etc/kubernetes/kubelet/kubelet-client.key
         - --v
         - "4"
+        - --feature-gates
+        - Initializers=true
+        - --runtime-config
+        - admissionregistration.k8s.io/v1alpha1
         - --cloud-provider
         - vsphere
         - --cloud-config

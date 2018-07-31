@@ -103,7 +103,7 @@ func main() {
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.Var(&networks, "network", "The networks from which ips should be allocated (format: cidr,gw,dns1,dns2,...)")
+	flag.Var(&networks, "network", "The networks from which ips should be allocated (e.g.: ./ipam-controller --network  \"10.0.0.0/16,10.0.0.1,8.8.8.8\" --network  \"192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4\")")
 	flag.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
@@ -125,6 +125,7 @@ func main() {
 		controller := ipam.NewController(client, informer, networks)
 
 		factory.Start(stopCh)
+		factory.WaitForCacheSync(stopCh)
 		err := controller.Run(stopCh)
 		if err != nil {
 			glog.Fatalf("couldn't start controller: %v", err)

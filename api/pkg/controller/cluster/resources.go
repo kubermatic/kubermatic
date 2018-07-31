@@ -187,7 +187,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
-		{resources.DockerCfgSecretName, cc.getDockerCfgSecret},
+		{resources.ImagePullSecretName, cc.getImagePullSecret},
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -479,8 +479,8 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators() []resources.DeploymentCreator {
-	return []resources.DeploymentCreator{
+func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
+	creators := []resources.DeploymentCreator{
 		machinecontroller.Deployment,
 		openvpn.Deployment,
 		apiserver.Deployment,
@@ -488,14 +488,16 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 		controllermanager.Deployment,
 		dns.Deployment,
 	}
+
+	if c != nil && len(c.Spec.MachineNetworks) > 0 {
+		creators = append(creators, ipamcontroller.Deployment)
+	}
+
+	return creators
 }
 
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
-	creators := GetDeploymentCreators()
-
-	if len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.Deployment)
-	}
+	creators := GetDeploymentCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {

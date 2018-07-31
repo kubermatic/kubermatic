@@ -92,8 +92,8 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 	}, nil
 }
 
-func (cc *Controller) getDockerCfgSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	kubermaticDockerCfg, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.DockerCfgSecretName)
+func (cc *Controller) getImagePullSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	kubermaticDockerCfg, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.ImagePullSecretName)
 	if err != nil {
 		return nil, "", fmt.Errorf("couldn't retrieve dockercfg from kubermatic ns: %v", err)
 	}

@@ -73,7 +73,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 		{
-			Name: resources.DockerCfgSecretName,
+			Name: resources.ImagePullSecretName,
 		},
 	}
 

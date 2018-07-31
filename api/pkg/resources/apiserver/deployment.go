@@ -115,6 +115,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
+
+	flags, err := getApiserverFlags(data, externalNodePort, etcd)
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -123,7 +129,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Env:             getEnvVars(data),
-			Args:            getApiserverFlags(data, externalNodePort, etcd),
+			Args:            flags,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
@@ -214,10 +220,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) []string {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) ([]string, error) {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
+	}
+
+	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err != nil {
+		return nil, err
 	}
 
 	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
@@ -234,8 +245,6 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
-		"--feature-gates", "Initializers=true",
-		"--runtime-config", "admissionregistration.k8s.io/v1alpha1",
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -258,6 +267,10 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
 	}
+	if clusterVersionSemVer.Minor() >= 9 {
+		flags = append(flags, "--feature-gates", "Initializers=true")
+		flags = append(flags, "--runtime-config", "admissionregistration.k8s.io/v1alpha1")
+	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -276,12 +289,12 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 	} else {
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
-	return flags
+	return flags, nil
 }
 
 func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	// We use these as default in case semver parsing fails
-	admissionControlFlagValue := "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
+	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
 	admissionControlFlagName := "--admission-control"
 
 	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
@@ -291,7 +304,7 @@ func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 
 	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
 	if clusterVersionSemVer.Minor() >= 9 {
-		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+		admissionControlFlagValue += ",Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
 	}
 
 	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+

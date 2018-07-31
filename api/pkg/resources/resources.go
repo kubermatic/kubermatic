@@ -77,7 +77,7 @@ const (
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 
 	// DockerCfgSecretName specifies the name of the dockercfg secret used to access the private repo.
-	DockerCfgSecretName = "dockercfg"
+	ImagePullSecretName = "dockercfg"
 
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"
@@ -125,7 +125,7 @@ const (
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
 	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
-	IPAMControllerCertUsername = "ipam-controller"
+	IPAMControllerCertUsername = "kubermatic:ipam-controller"
 
 	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
 	MachineIPAMInitializerConfigurationName = "ipam-initializer"

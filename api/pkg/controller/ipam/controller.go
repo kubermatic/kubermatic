@@ -29,6 +29,18 @@ const (
 	finalizerName   = initializerName
 )
 
+type cidrExhaustedError struct {
+	str string
+}
+
+func newCidrExhaustedError(s string) error {
+	return &cidrExhaustedError{str: s}
+}
+
+func (e *cidrExhaustedError) Error() string {
+	return e.str
+}
+
 // Network represents a machine network configuration
 type Network struct {
 	IP         net.IP
@@ -240,8 +252,8 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 		return false, err
 	}
 
-	ip, network := c.getNextFreeIP()
-	if ip.IsUnspecified() {
+	ip, network, err := c.getNextFreeIP()
+	if _, isCidrExhausted := err.(*cidrExhaustedError); isCidrExhausted {
 		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
 		subErr := c.writeErrorToMachine(machine, machinev1alpha1.InsufficientResourcesMachineError, err)
 		if subErr != nil {
@@ -306,29 +318,29 @@ func (c *Controller) testIfInitIsNeeded(m *machinev1alpha1.Machine) bool {
 	return m.ObjectMeta.GetInitializers().Pending[0].Name == initializerName
 }
 
-func (c *Controller) getNextFreeIP() (net.IP, Network) {
+func (c *Controller) getNextFreeIP() (net.IP, Network, error) {
 	for _, cidr := range c.cidrRange {
-		ip := c.getNextFreeIPForCIDR(cidr)
-		if !ip.IsUnspecified() {
-			return ip, cidr
+		ip, err := c.getNextFreeIPForCIDR(cidr)
+		if err == nil {
+			return ip, cidr, nil
 		}
 	}
 
-	return net.IP{0, 0, 0, 0}, Network{}
+	return nil, Network{}, newCidrExhaustedError("cidrs exhausted.")
 }
 
-func (c *Controller) getNextFreeIPForCIDR(network Network) net.IP {
+func (c *Controller) getNextFreeIPForCIDR(network Network) (net.IP, error) {
 	for ip := network.IP.Mask(network.IPNet.Mask); network.IPNet.Contains(ip); c.inc(ip) {
 		if ip[len(ip)-1] == 0 || ip.Equal(network.Gateway) {
 			continue
 		}
 
 		if _, used := c.usedIps[ip.String()]; !used {
-			return ip
+			return ip, nil
 		}
 	}
 
-	return net.IP{0, 0, 0, 0}
+	return nil, newCidrExhaustedError("no free ip left in cidr " + network.IP.String())
 }
 
 func (c *Controller) inc(ip net.IP) {

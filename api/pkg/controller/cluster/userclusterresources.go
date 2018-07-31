@@ -178,12 +178,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 	}
@@ -191,6 +186,17 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 	if len(c.Spec.MachineNetworks) > 0 {
 		creators = append(creators, ipamcontroller.ClusterRole)
 	}
+
+	return creators
+}
+
+func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := GetUserClusterRoleCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -234,12 +240,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreator {
 	creators := []resources.ClusterRoleBindingCreator{
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
@@ -250,6 +251,17 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 	if len(c.Spec.MachineNetworks) > 0 {
 		creators = append(creators, ipamcontroller.ClusterRoleBinding)
 	}
+
+	return creators
+}
+
+func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := GetUserClusterRoleBindingCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
