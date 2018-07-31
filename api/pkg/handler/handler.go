@@ -77,9 +77,9 @@ func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interfa
 func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
-	//As long as we pipe the response from the listers we need this.
-	//The listers might return a uninitialized slice in case it has no results.
-	//This results to "null" when marshaling to json.
+	// As long as we pipe the response from the listers we need this.
+	// The listers might return a uninitialized slice in case it has no results.
+	// This results to "null" when marshaling to json.
 	t := reflect.TypeOf(response)
 	if t != nil && t.Kind() == reflect.Slice {
 		v := reflect.ValueOf(response)
@@ -87,6 +87,13 @@ func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 			_, err := w.Write([]byte("[]"))
 			return err
 		}
+	}
+
+	// For completely empty responses, we still want to ensure that we
+	// send a JSON object instead of the string "null".
+	if response == nil {
+		_, err := w.Write([]byte("{}"))
+		return err
 	}
 
 	return json.NewEncoder(w).Encode(response)
