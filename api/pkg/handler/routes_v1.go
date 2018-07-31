@@ -181,6 +181,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/users").
 		Handler(r.addUserToProject())
+
+	//
+	// Defines an endpoint to retrieve information about the current token owner
+	mux.Methods(http.MethodGet).
+		Path("/me").
+		Handler(r.getCurrentUser())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -539,7 +545,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
-		decodeDcReq,
+		decodeLegacyDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1086,6 +1092,29 @@ func (r Routing) addUserToProject() http.Handler {
 		)(addUserToProject(r.projectProvider, r.userProvider)),
 		decodeAddUserToProject,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me users getCurrentUser
+//
+// Returns information about the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) getCurrentUser() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getCurrentUserEndpoint(r.userProvider)),
+		decodeEmptyReq,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

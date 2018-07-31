@@ -141,6 +141,13 @@ func main() {
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 
+	ctrlCtx := newControllerContext(runOp, ctx.Done(), kubeClient, kubermaticClient)
+	controllers, err := createAllControllers(ctrlCtx)
+	if err != nil {
+		glog.Fatalf("could not create all controllers: %v", err)
+	}
+	ctrlCtx.Start()
+
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
@@ -195,8 +202,7 @@ func main() {
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					ctrlCtx := controllerContext{runOptions: runOp, stopCh: ctx.Done(), kubeClient: kubeClient, kubermaticClient: kubermaticClient}
-					err := runAllControllers(ctrlCtx)
+					err := runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, controllers)
 					if err != nil {
 						glog.Error(err)
 						ctxDone()
@@ -244,4 +250,26 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
 	return recorder, nil
+}
+
+func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface) *controllerContext {
+	ctrlCtx := &controllerContext{
+		runOptions:       runOp,
+		stopCh:           done,
+		kubeClient:       kubeClient,
+		kubermaticClient: kubermaticClient,
+	}
+
+	ctrlCtx.kubermaticInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5)
+	ctrlCtx.kubeInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
+
+	return ctrlCtx
+}
+
+func (ctx *controllerContext) Start() {
+	ctx.kubermaticInformerFactory.Start(ctx.stopCh)
+	ctx.kubeInformerFactory.Start(ctx.stopCh)
+
+	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
+	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -74,7 +73,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		req := request.(NewCreateClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -84,10 +83,10 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		spec.Cloud = &req.Body.Spec.Cloud
 		spec.MachineNetworks = req.Body.Spec.MachineNetworks
 		spec.Version = req.Body.Spec.Version
-		if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
+		if err = defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
-		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
+		if err = validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
@@ -112,7 +111,7 @@ func clusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
 			if err == provider.ErrNotFound {
@@ -130,7 +129,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		req := request.(NewGetClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -176,7 +175,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		req := request.(NewUpdateClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -190,7 +189,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		existingCluster.Spec.Version = req.Body.Spec.Version
 		existingCluster.Spec.MachineNetworks = req.Body.Spec.MachineNetworks
 
-		if err := validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
+		if err = validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
@@ -221,7 +220,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 		req := request.(NewListClustersReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -239,7 +238,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 // Deprecated: deleteClusterEndpoint is deprecated use newDeleteCluster instead.
 func deleteClusterEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
@@ -259,7 +258,7 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 		req := request.(NewGetClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -274,7 +273,7 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 
 		for _, clusterSSHKey := range clusterSSHKeys {
 			clusterSSHKey.RemoveFromCluster(req.ClusterName)
-			if _, err := sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
+			if _, err = sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
 		}
@@ -292,7 +291,7 @@ func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoin
 		req := request.(NewGetClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -320,7 +319,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 			return nil, errors.NewBadRequest("please provide an SSH key")
 		}
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -373,7 +372,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -428,7 +427,7 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 		req := request.(DetachSSHKeysFromClusterReq)
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -483,31 +482,71 @@ type (
 	}
 )
 
-func getClusterMetricsEndpoint(prometheusURL *string) endpoint.Endpoint {
-	if prometheusURL == nil {
+func legacyGetClusterMetricsEndpoint(prometheusClient prometheusapi.Client) endpoint.Endpoint {
+	if prometheusClient == nil {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			return nil, fmt.Errorf("metrics endpoint disabled")
 		}
 	}
 
-	promClient, err := prometheusapi.NewClient(prometheusapi.Config{
-		Address: *prometheusURL,
-	})
-	if err != nil {
-		glog.Fatal(err)
-	}
-	promAPI := prometheusv1.NewAPI(promClient)
+	promAPI := prometheusv1.NewAPI(prometheusClient)
 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(GetClusterReq)
+		req := request.(LegacyGetClusterReq)
 		c, err := clusterProvider.Cluster(user, req.ClusterName)
 		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.ClusterName)
-			}
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+
+		var resp metricsResponse
+
+		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
 			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:  "Machines",
+			Value: val,
+		})
+
+		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		if err != nil {
+			return nil, err
+		}
+		resp.Metrics = append(resp.Metrics, metricResponse{
+			Name:   "Machines (1h)",
+			Values: vals,
+		})
+
+		return resp, nil
+	}
+}
+
+func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometheusClient prometheusapi.Client) endpoint.Endpoint {
+	if prometheusClient == nil {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			return nil, fmt.Errorf("metrics endpoint disabled")
+		}
+	}
+
+	promAPI := prometheusv1.NewAPI(prometheusClient)
+
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		project, err := projectProvider.Get(user, req.ProjectID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		c, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -586,8 +625,6 @@ type AssignSSHKeysToClusterReq struct {
 	DCReq
 	assignSSHKeysToClusterBodyReq
 	// in: path
-	ProjectName string `json:"project_id"`
-	// in: path
 	ClusterName string `json:"cluster_name"`
 }
 
@@ -600,8 +637,6 @@ type assignSSHKeysToClusterBodyReq struct {
 type ListSSHKeysAssignedToClusterReq struct {
 	DCReq
 	// in: path
-	ProjectName string `json:"project_id"`
-	// in: path
 	ClusterName string `json:"cluster_name"`
 }
 
@@ -612,8 +647,6 @@ type DetachSSHKeysFromClusterReq struct {
 	// in: path
 	KeyName string `json:"key_name"`
 	// in: path
-	ProjectName string `json:"project_id"`
-	// in: path
 	ClusterName string `json:"cluster_name"`
 }
 
@@ -623,8 +656,6 @@ type NewCreateClusterReq struct {
 	DCReq
 	// in: body
 	Body apiv1.NewCluster
-	// in: path
-	ProjectName string `json:"project_id"`
 }
 
 func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -635,12 +666,6 @@ func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
-
-	projectName, err := decodeProjectPathReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectName = projectName
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -653,8 +678,6 @@ func newDecodeCreateClusterReq(c context.Context, r *http.Request) (interface{},
 // swagger:parameters newListClusters
 type NewListClustersReq struct {
 	DCReq
-	// in: path
-	ProjectName string `json:"project_id"`
 }
 
 func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -666,12 +689,6 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.DCReq = dcr.(DCReq)
 
-	projectName, err := decodeProjectPathReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectName = projectName
-
 	return req, nil
 }
 
@@ -681,18 +698,15 @@ type NewGetClusterReq struct {
 	DCReq
 	// in: path
 	ClusterName string `json:"cluster_name"`
-	// in: path
-	ProjectName string `json:"project_id"`
 }
 
 func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewGetClusterReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.ProjectName = projectName
 	req.ClusterName = clusterName
 
 	dcr, err := decodeDcReq(c, r)
@@ -704,17 +718,13 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func decodeClusterNameAndProject(c context.Context, r *http.Request) (string, string, error) {
+func decodeClusterName(c context.Context, r *http.Request) (string, error) {
 	clusterName := mux.Vars(r)["cluster_name"]
 	if clusterName == "" {
-		return "", "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
+		return "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
 	}
 
-	projectName, err := decodeProjectPathReq(c, r)
-	if err != nil {
-		return "", "", err
-	}
-	return clusterName, projectName, nil
+	return clusterName, nil
 }
 
 // NewUpdateClusterReq defines HTTP request for newUpdateCluster endpoint
@@ -727,7 +737,7 @@ type NewUpdateClusterReq struct {
 
 func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewUpdateClusterReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -738,7 +748,6 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 	}
 	req.DCReq = dcr.(DCReq)
 	req.ClusterName = clusterName
-	req.ProjectName = projectName
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -749,12 +758,11 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 
 func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AssignSSHKeysToClusterReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.ClusterName = clusterName
-	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -771,12 +779,11 @@ func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interfa
 
 func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req ListSSHKeysAssignedToClusterReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
 	req.ClusterName = clusterName
-	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -789,13 +796,12 @@ func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (int
 
 func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req DetachSSHKeysFromClusterReq
-	clusterName, projectName, err := decodeClusterNameAndProject(c, r)
+	clusterName, err := decodeClusterName(c, r)
 	if err != nil {
 		return nil, err
 	}
 
 	req.ClusterName = clusterName
-	req.ProjectName = projectName
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {

@@ -144,7 +144,7 @@ func buildOpenstackDatacenterMeta() map[string]provider.DatacenterMeta {
 }
 
 func TestOpenstackEndpoints(t *testing.T) {
-
+	t.Parallel()
 	testcases := []struct {
 		Name              string
 		URL               string

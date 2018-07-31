@@ -6,7 +6,7 @@ spec:
   - name: dns
     port: 53
     protocol: UDP
-    targetPort: 0
+    targetPort: 53
   selector:
     app: dns-resolver
 status:

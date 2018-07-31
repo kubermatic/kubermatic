@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -73,33 +72,19 @@ type Controller struct {
 	metrics *Metrics
 
 	clusterLister             kubermaticv1lister.ClusterLister
-	clusterSynced             cache.InformerSynced
 	namespaceLister           corev1lister.NamespaceLister
-	namespaceSynced           cache.InformerSynced
 	secretLister              corev1lister.SecretLister
-	secretSynced              cache.InformerSynced
 	serviceLister             corev1lister.ServiceLister
-	serviceSynced             cache.InformerSynced
 	pvcLister                 corev1lister.PersistentVolumeClaimLister
-	pvcSynced                 cache.InformerSynced
 	configMapLister           corev1lister.ConfigMapLister
-	configMapSynced           cache.InformerSynced
 	serviceAccountLister      corev1lister.ServiceAccountLister
-	serviceAccountSynced      cache.InformerSynced
 	deploymentLister          appsv1lister.DeploymentLister
-	deploymentSynced          cache.InformerSynced
 	statefulSetLister         appsv1lister.StatefulSetLister
-	statefulSynced            cache.InformerSynced
 	ingressLister             extensionsv1beta1lister.IngressLister
-	ingressSynced             cache.InformerSynced
 	roleLister                rbacb1lister.RoleLister
-	roleSynced                cache.InformerSynced
 	roleBindingLister         rbacb1lister.RoleBindingLister
-	roleBindingSynced         cache.InformerSynced
 	clusterRoleBindingLister  rbacb1lister.ClusterRoleBindingLister
-	clusterRoleBindingSynced  cache.InformerSynced
 	podDisruptionBudgetLister policyv1beta1lister.PodDisruptionBudgetLister
-	podDisruptionBudgetSynced cache.InformerSynced
 }
 
 // NewController creates a cluster controller.
@@ -240,33 +225,19 @@ func NewController(
 	})
 
 	cc.clusterLister = clusterInformer.Lister()
-	cc.clusterSynced = clusterInformer.Informer().HasSynced
 	cc.namespaceLister = namespaceInformer.Lister()
-	cc.namespaceSynced = namespaceInformer.Informer().HasSynced
 	cc.secretLister = secretInformer.Lister()
-	cc.secretSynced = secretInformer.Informer().HasSynced
 	cc.serviceLister = serviceInformer.Lister()
-	cc.serviceSynced = serviceInformer.Informer().HasSynced
 	cc.pvcLister = pvcInformer.Lister()
-	cc.pvcSynced = pvcInformer.Informer().HasSynced
 	cc.configMapLister = configMapInformer.Lister()
-	cc.configMapSynced = configMapInformer.Informer().HasSynced
 	cc.serviceAccountLister = serviceAccountInformer.Lister()
-	cc.serviceAccountSynced = serviceAccountInformer.Informer().HasSynced
 	cc.deploymentLister = deploymentInformer.Lister()
-	cc.deploymentSynced = deploymentInformer.Informer().HasSynced
 	cc.statefulSetLister = statefulSetInformer.Lister()
-	cc.statefulSynced = statefulSetInformer.Informer().HasSynced
 	cc.ingressLister = ingressInformer.Lister()
-	cc.ingressSynced = ingressInformer.Informer().HasSynced
 	cc.roleLister = roleInformer.Lister()
-	cc.roleSynced = roleInformer.Informer().HasSynced
 	cc.roleBindingLister = roleBindingInformer.Lister()
-	cc.roleBindingSynced = roleBindingInformer.Informer().HasSynced
 	cc.clusterRoleBindingLister = clusterRoleBindingInformer.Lister()
-	cc.clusterRoleBindingSynced = clusterRoleBindingInformer.Informer().HasSynced
 	cc.podDisruptionBudgetLister = podDisruptionBudgetInformer.Lister()
-	cc.podDisruptionBudgetSynced = podDisruptionBudgetInformer.Informer().HasSynced
 
 	// register error handler that will increment a counter that will be scraped by prometheus,
 	// that accounts for all errors reported via a call to runtime.HandleError
@@ -311,13 +282,13 @@ func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Clust
 
 func (cc *Controller) updateClusterError(cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) (*kubermaticv1.Cluster, error) {
 	var err error
-	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason == reason {
+	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason != reason {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = &message
 			c.Status.ErrorReason = &reason
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to set error status on cluster to: errorReason='%s' errorMessage='%s'. Could not update cluster: %v", reason, message, err)
 		}
 	}
 
@@ -488,28 +459,6 @@ func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-
-	glog.Infof("Starting cluster controller with %d workers", workerCount)
-	defer glog.Info("Shutting down cluster controller")
-
-	if !cache.WaitForCacheSync(stopCh,
-		cc.clusterSynced,
-		cc.namespaceSynced,
-		cc.secretSynced,
-		cc.serviceSynced,
-		cc.pvcSynced,
-		cc.configMapSynced,
-		cc.serviceAccountSynced,
-		cc.deploymentSynced,
-		cc.statefulSynced,
-		cc.ingressSynced,
-		cc.roleSynced,
-		cc.roleBindingSynced,
-		cc.clusterRoleBindingSynced,
-		cc.podDisruptionBudgetSynced) {
-		runtime.HandleError(errors.New("unable to sync caches for cluster controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, time.Second, stopCh)

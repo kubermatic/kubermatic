@@ -24,8 +24,8 @@ spec:
       hostNetwork: true
     {{ end }}
       serviceAccountName: nginx-ingress-serviceaccount
-      {{ if .Values.nginx.ignoreMasterTaint }}
       tolerations:
+      {{ if .Values.nginx.ignoreMasterTaint }}
       - key: dedicated
         operator: Equal
         value: master
@@ -33,6 +33,22 @@ spec:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
       {{ end }}
+      - key: "only_critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+{{ if not .Values.nginx.asDaemonSet }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "kubermatic.io/type"
+                operator: In
+                values:
+                - "stable"
+{{ end }}
       containers:
         - name: nginx-ingress-controller
           image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}

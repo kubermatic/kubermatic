@@ -127,6 +127,32 @@
         }
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Returns information about the current user.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -302,6 +328,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -311,13 +344,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -351,6 +377,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -360,13 +393,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -529,7 +555,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -564,15 +590,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           }
@@ -610,6 +636,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -621,13 +654,6 @@
             "schema": {
               "$ref": "#/definitions/Cluster"
             }
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
-            "in": "path",
-            "required": true
           }
         ],
         "responses": {
@@ -662,6 +688,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -671,13 +704,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -712,6 +738,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -721,13 +754,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -771,6 +797,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -780,13 +813,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           }
@@ -823,6 +849,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -832,13 +865,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -885,6 +911,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -894,13 +927,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -947,6 +973,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -956,13 +989,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1010,6 +1036,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1019,13 +1052,6 @@
             "type": "string",
             "x-go-name": "ClusterName",
             "name": "cluster_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1069,15 +1095,15 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           },
@@ -1122,6 +1148,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1131,13 +1164,6 @@
             "type": "string",
             "name": "KeyName",
             "in": "query"
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
-            "in": "path",
-            "required": true
           },
           {
             "type": "string",
@@ -1179,6 +1205,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -1188,13 +1221,6 @@
             "type": "string",
             "x-go-name": "KeyName",
             "name": "key_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ProjectName",
-            "name": "project_id",
             "in": "path",
             "required": true
           },
@@ -1236,7 +1262,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1275,7 +1301,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1313,7 +1339,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
