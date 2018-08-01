@@ -871,7 +871,13 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/MetricsResponse"
+            "description": "ClusterMetric",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterMetric"
+              }
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -1297,7 +1303,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrade": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades": {
       "get": {
         "description": "Gets possible cluster upgrades",
         "produces": [
@@ -1334,7 +1340,10 @@
           "200": {
             "description": "MasterVersion",
             "schema": {
-              "$ref": "#/definitions/MasterVersion"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
             }
           },
           "401": {
@@ -2610,6 +2619,25 @@
       "x-go-name": "ClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterMetric": {
+      "description": "ClusterMetric defines a metric for the given cluster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "x-go-name": "Values"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ClusterNetworkingConfig": {
       "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
       "type": "object",
@@ -3387,33 +3415,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "MetricResponse": {
-      "description": "MetricResponse represents a metric returned for a given cluster",
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "value": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "Value"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "number",
-            "format": "double"
-          },
-          "x-go-name": "Values"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "NamedAuthInfo": {
       "description": "NamedAuthInfo relates nicknames to auth information",
@@ -4611,15 +4612,6 @@
     }
   },
   "responses": {
-    "MetricsResponse": {
-      "description": "MetricsResponse represents metrics returned for a given cluster",
-      "schema": {
-        "type": "array",
-        "items": {
-          "$ref": "#/definitions/MetricResponse"
-        }
-      }
-    },
     "empty": {
       "description": "EmptyResponse is a empty response"
     },
