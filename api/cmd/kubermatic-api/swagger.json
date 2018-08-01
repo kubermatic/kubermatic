@@ -4560,7 +4560,7 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "VSphereCredentials": {
-      "description": "VSphere credentials represents a credential for accessing vSphere",
+      "description": "VSphereCredentials credentials represents a credential for accessing vSphere",
       "type": "object",
       "properties": {
         "password": {

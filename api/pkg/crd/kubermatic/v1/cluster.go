@@ -230,7 +230,7 @@ type AzureCloudSpec struct {
 	AvailabilitySet string `json:"availabilitySet"`
 }
 
-// VSphere credentials represents a credential for accessing vSphere
+// VSphereCredentials credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
