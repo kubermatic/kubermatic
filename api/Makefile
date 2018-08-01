@@ -73,8 +73,6 @@ endif
 	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
 	echo "errcheck -blank" ;\
 	errcheck -exclude errcheck_excludes.txt -blank $$PACKAGES ;\
-	echo "unused" ;\
-	unused $$PACKAGES ;\
 	echo "forbidden functions" ;\
 	./hack/verify-forbidden-functions.sh ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\

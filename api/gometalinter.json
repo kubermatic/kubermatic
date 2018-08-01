@@ -9,6 +9,7 @@
     "golint",
     "varcheck",
     "structcheck",
-    "gosimple"
+    "gosimple",
+    "unused"
   ]
 }
