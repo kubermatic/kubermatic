@@ -180,6 +180,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
 		Handler(r.getPossibleClusterUpgrades())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
+		Handler(r.clusterMetricsHandler())
+
 	//
 	// Defines set of HTTP endpoints for Users of the given project
 	mux.Methods(http.MethodPost).
@@ -1089,6 +1093,19 @@ func (r Routing) getPossibleClusterUpgrades() http.Handler {
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) clusterMetricsHandler() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

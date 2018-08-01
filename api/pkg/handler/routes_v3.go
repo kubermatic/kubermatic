@@ -57,10 +57,6 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/dc/{dc}/cluster/{cluster}/metrics").
 		Handler(r.legacyClusterMetricsHandlerV3())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
-		Handler(r.clusterMetricsHandlerV3())
 }
 
 // Creates a cluster
@@ -319,19 +315,6 @@ func (r Routing) legacyClusterMetricsHandlerV3() http.Handler {
 			r.datacenterMiddleware(),
 		)(legacyGetClusterMetricsEndpoint(r.prometheusClient)),
 		decodeLegacyClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) clusterMetricsHandlerV3() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.newDatacenterMiddleware(),
-		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
-		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
