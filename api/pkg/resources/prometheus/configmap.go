@@ -51,6 +51,16 @@ global:
 rule_files:
 - "/etc/prometheus/config/rules.yaml"
 scrape_configs:
+- job_name: etcd
+  scheme: https
+  metrics_path: '/metrics'
+  static_configs:
+  - targets: ['etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379']
+  tls_config:
+    ca_file: /etc/etcd/apiserver/ca.crt
+    cert_file: /etc/etcd/apiserver/apiserver-etcd-client.crt
+    key_file: /etc/etcd/apiserver/apiserver-etcd-client.key
+
 - job_name: 'pods'
   kubernetes_sd_configs:
   - role: pod
