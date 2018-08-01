@@ -2559,6 +2559,9 @@
         "clusterNetwork": {
           "$ref": "#/definitions/ClusterNetworkingConfig"
         },
+        "componentsOverride": {
+          "$ref": "#/definitions/ComponentSettings"
+        },
         "humanReadableName": {
           "type": "string",
           "x-go-name": "HumanReadableName"
@@ -2759,6 +2762,24 @@
       "x-go-name": "Cluster",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ComponentSettings": {
+      "type": "object",
+      "properties": {
+        "apiserver": {
+          "$ref": "#/definitions/DeploymentSettings"
+        },
+        "controllerManager": {
+          "$ref": "#/definitions/DeploymentSettings"
+        },
+        "etcd": {
+          "$ref": "#/definitions/EtcdSettings"
+        },
+        "scheduler": {
+          "$ref": "#/definitions/DeploymentSettings"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "ContainerLinuxSpecV2": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
       "type": "object",
@@ -2899,6 +2920,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DeploymentSettings": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Replicas"
+        },
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -3055,6 +3090,15 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "EtcdSettings": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ExecConfig": {
       "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",
@@ -4146,6 +4190,23 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceList": {
+      "title": "ResourceList is a set of (resource name, quantity) pairs.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "ResourceRequirements": {
+      "type": "object",
+      "title": "ResourceRequirements describes the compute resource requirements.",
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/ResourceList"
+        },
+        "requests": {
+          "$ref": "#/definitions/ResourceList"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
     "SSHKey": {
       "description": "SSHKey represents a ssh key",
