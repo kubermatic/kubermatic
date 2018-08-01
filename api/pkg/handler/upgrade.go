@@ -28,12 +28,12 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		c, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		versions, err := updateManager.GetPossibleUpdates(c.Spec.Version)
+		versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version)
 		if err != nil {
 			return nil, err
 		}
