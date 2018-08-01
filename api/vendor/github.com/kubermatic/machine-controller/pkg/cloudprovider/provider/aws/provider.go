@@ -503,7 +503,7 @@ func ensureDefaultInstanceProfileExists(client *iam.IAM) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater, userdata string) (instance.Instance, error) {
 	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -630,7 +630,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 		Groups:     aws.StringSlice(securityGroupIDs),
 	})
 	if err != nil {
-		delErr := p.Delete(machine, awsInstance)
+		delErr := p.Delete(machine, update)
 		if delErr != nil {
 			return nil, awsErrorToTerminalError(err, fmt.Sprintf("failed to attach instance %s to security group %s & delete the created instance", aws.StringValue(runOut.Instances[0].InstanceId), defaultSecurityGroupName))
 		}
@@ -640,7 +640,15 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	return awsInstance, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, instance instance.Instance) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+	instance, err := p.Get(machine)
+	if err != nil {
+		if err == cloudprovidererrors.ErrInstanceNotFound {
+			return nil
+		}
+		return err
+	}
+
 	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return cloudprovidererrors.TerminalError{
