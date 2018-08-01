@@ -111,6 +111,11 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 			Name:      volumeDataName,
 			MountPath: "/var/prometheus/data",
 		},
+		{
+			Name:      resources.ApiserverEtcdClientCertificateSecretName,
+			MountPath: "/etc/etcd/apiserver",
+			ReadOnly:  true,
+		},
 	}
 
 	if set.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
@@ -140,22 +145,32 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	if len(set.Spec.Template.Spec.Volumes) == 0 {
-		set.Spec.Template.Spec.Volumes = make([]corev1.Volume, 2)
-	}
-
-	set.Spec.Template.Spec.Volumes[0].Name = volumeConfigName
-	set.Spec.Template.Spec.Volumes[0].VolumeSource = corev1.VolumeSource{
-		ConfigMap: &corev1.ConfigMapVolumeSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: resources.PrometheusConfigConfigMapName,
+	set.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: volumeConfigName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.PrometheusConfigConfigMapName,
+					},
+				},
 			},
 		},
-	}
-
-	set.Spec.Template.Spec.Volumes[1].Name = volumeDataName
-	set.Spec.Template.Spec.Volumes[1].VolumeSource = corev1.VolumeSource{
-		EmptyDir: &corev1.EmptyDirVolumeSource{},
+		{
+			Name: volumeDataName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
 	}
 
 	return set, nil
