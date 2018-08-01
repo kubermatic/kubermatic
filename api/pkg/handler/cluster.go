@@ -468,16 +468,23 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 	}
 }
 
-type (
-	metricsResponse struct {
-		Metrics []metricResponse `json:"metrics"`
-	}
-	metricResponse struct {
-		Name   string    `json:"name"`
-		Value  float64   `json:"value,omitempty"`
-		Values []float64 `json:"values,omitempty"`
-	}
-)
+// MetricsResponse represents metrics returned for a given cluster
+// swagger:response MetricsResponse
+type MetricsResponse struct {
+	// in: body
+	// required: true
+	Metrics []MetricResponse `json:"metrics"`
+}
+
+// MetricResponse represents a metric returned for a given cluster
+type MetricResponse struct {
+	// required: true
+	Name string `json:"name"`
+	// required: false
+	Value float64 `json:"value,omitempty"`
+	// required: false
+	Values []float64 `json:"values,omitempty"`
+}
 
 func legacyGetClusterMetricsEndpoint(prometheusClient prometheusapi.Client) endpoint.Endpoint {
 	if prometheusClient == nil {
@@ -500,13 +507,13 @@ func legacyGetClusterMetricsEndpoint(prometheusClient prometheusapi.Client) endp
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 
-		var resp metricsResponse
+		var resp MetricsResponse
 
 		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
+		resp.Metrics = append(resp.Metrics, MetricResponse{
 			Name:  "Machines",
 			Value: val,
 		})
@@ -515,7 +522,7 @@ func legacyGetClusterMetricsEndpoint(prometheusClient prometheusapi.Client) endp
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
+		resp.Metrics = append(resp.Metrics, MetricResponse{
 			Name:   "Machines (1h)",
 			Values: vals,
 		})
@@ -549,13 +556,13 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 
-		var resp metricsResponse
+		var resp MetricsResponse
 
 		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
+		resp.Metrics = append(resp.Metrics, MetricResponse{
 			Name:  "Machines",
 			Value: val,
 		})
@@ -564,7 +571,7 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
+		resp.Metrics = append(resp.Metrics, MetricResponse{
 			Name:   "Machines (1h)",
 			Values: vals,
 		})

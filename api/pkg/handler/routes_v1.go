@@ -1077,7 +1077,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster}/upgrade cluster getClusterUpgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrade project getClusterUpgrades
 //
 //    Gets possible cluster upgrades
 //
@@ -1102,6 +1102,18 @@ func (r Routing) getClusterUpgrades() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics project clusterMetricsHandler
+//
+//    Gets cluster metrics
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: MetricsResponse
+//       401: empty
+//       403: empty
 func (r Routing) clusterMetricsHandler() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
