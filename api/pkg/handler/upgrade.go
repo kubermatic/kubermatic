@@ -37,15 +37,15 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 		if err != nil {
 			return nil, err
 		}
-		var sv []*apiv1.MasterVersion
-		for v := range versions {
-			sv = append(sv, &apiv1.MasterVersion{
-				Version:             versions[v].Version,
-				AllowedNodeVersions: versions[v].AllowedNodeVersions,
+		var upgrades []*apiv1.MasterVersion
+		for _, v := range versions {
+			upgrades = append(upgrades, &apiv1.MasterVersion{
+				Version:             v.Version,
+				AllowedNodeVersions: v.AllowedNodeVersions,
 			})
 		}
 
-		return sv, nil
+		return upgrades, nil
 	}
 }
 
