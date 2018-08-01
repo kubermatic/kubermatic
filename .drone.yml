@@ -292,13 +292,14 @@ pipeline:
     - values
     when:
       branch: master
-  10-e2e:
+  10-e2e-aws:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
     - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
     - echo "$NODE_YAML" > /tmp/node.yaml
     - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
       -kubermatic-node=/tmp/node.yaml
+    group: e2e
     image: quay.io/kubermatic/e2e
     pull: true
     secrets:
@@ -310,6 +311,23 @@ pipeline:
       target: node_yaml
     when:
       branch: master
+  10-e2e-azure:
+    commands:
+    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
+    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
+    - echo "$NODE_YAML" > /tmp/node.yaml
+    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
+      -kubermatic-node=/tmp/node.yaml
+    group: e2e
+    image: quay.io/kubermatic/e2e
+    pull: true
+    secrets:
+    - source: kubeconfig_dev
+      target: kubeconfig
+    - source: azure_1.10.5_cluster_yaml
+      target: cluster_yaml
+    - source: azure_1.10.5_node_yaml
+      target: node_yaml
   11-slack:
     channel: dev
     group: slack

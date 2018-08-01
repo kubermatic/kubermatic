@@ -35,7 +35,7 @@ local drone = import 'drone/drone.libsonnet';
       commands: [
         'cd api',
         'dep ensure -v',
-        '[[ -z "$(git diff)" ]]'
+        '[[ -z "$(git diff)" ]]',
       ],
     },
 
@@ -191,7 +191,7 @@ local drone = import 'drone/drone.libsonnet';
     } + whenBranchMaster,
 
     // run e2e tests
-    '10-e2e': drone.step.new('quay.io/kubermatic/e2e') + {
+    '10-e2e-aws': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
       secrets: [
         { source: 'kubeconfig_dev', target: 'kubeconfig' },
         { source: 'aws_1.10.5_cluster_yaml', target: 'cluster_yaml' },
@@ -204,6 +204,20 @@ local drone = import 'drone/drone.libsonnet';
         '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
       ],
     } + whenBranchMaster,
+
+    '10-e2e-azure': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
+      secrets: [
+        { source: 'kubeconfig_dev', target: 'kubeconfig' },
+        { source: 'azure_1.10.5_cluster_yaml', target: 'cluster_yaml' },
+        { source: 'azure_1.10.5_node_yaml', target: 'node_yaml' },
+      ],
+      commands: [
+        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
+        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
+        'echo "$NODE_YAML" > /tmp/node.yaml',
+        '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
+      ],
+    },
 
     // Slack
     '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
