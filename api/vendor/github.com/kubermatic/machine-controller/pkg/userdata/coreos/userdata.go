@@ -9,20 +9,15 @@ import (
 
 	"github.com/Masterminds/semver"
 	ctconfig "github.com/coreos/container-linux-config-transpiler/config"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
 	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
-
-type Provider struct{}
-
-type Config struct {
-	DisableAutoUpdate bool `json:"disableAutoUpdate"`
-}
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
 	p := Config{}
@@ -36,6 +31,15 @@ func getConfig(r runtime.RawExtension) (*Config, error) {
 	return &p, nil
 }
 
+// Config TODO
+type Config struct {
+	DisableAutoUpdate bool `json:"disableAutoUpdate"`
+}
+
+// Provider is a pkg/userdata.Provider implementation
+type Provider struct{}
+
+// SupportedContainerRuntimes return list of container runtimes
 func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.ContainerRuntimeInfo) {
 	return []machinesv1alpha1.ContainerRuntimeInfo{
 		{
@@ -57,7 +61,14 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 	}
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+// UserData renders user-data template
+func (p Provider) UserData(
+	spec machinesv1alpha1.MachineSpec,
+	kubeconfig *clientcmdapi.Config,
+	ccProvider cloud.ConfigProvider,
+	clusterDNSIPs []net.IP,
+) (string, error) {
+
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -147,6 +158,25 @@ passwd:
         {{range .ProviderConfig.SSHPublicKeys}}- {{.}}
         {{end}}
 
+{{- if .ProviderConfig.Network }}
+networkd:
+  units:
+    - name: static-nic.network
+      contents: |
+        [Match]
+        # Because of difficulty predicting specific NIC names on different cloud providers,
+        # we only support static addressing on VSphere. There should be a single NIC attached
+        # that we will match by name prefix 'en' which denotes ethernet devices.
+        Name=en*
+
+        [Network]
+        DHCP=no
+        Address={{ .ProviderConfig.Network.CIDR }}
+        Gateway={{ .ProviderConfig.Network.Gateway }}
+        {{range .ProviderConfig.Network.DNS.Servers}}DNS={{.}}
+        {{end}}
+{{- end }}
+
 systemd:
   units:
 {{ if .CoreOSConfig.DisableAutoUpdate }}
@@ -215,7 +245,8 @@ systemd:
           --bootstrap-kubeconfig=/etc/kubernetes/bootstrap.kubeconfig \
           --lock-file=/var/run/lock/kubelet.lock \
           --exit-on-lock-contention \
-          --read-only-port 0 \
+          --read-only-port=0 \
+          --protect-kernel-defaults=true \
           --authorization-mode=Webhook \
           --anonymous-auth=false \
           --client-ca-file=/etc/kubernetes/ca.crt
@@ -227,6 +258,36 @@ systemd:
 
 storage:
   files:
+    - path: /etc/sysctl.d/k8s.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          kernel.panic_on_oops = 1
+          kernel.panic = 10
+          vm.overcommit_memory = 1
+
+    - path: /proc/sys/kernel/panic_on_oops
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          1
+
+    - path: /proc/sys/kernel/panic
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          10
+
+    - path: /proc/sys/vm/overcommit_memory
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          1
+
     - path: /etc/kubernetes/bootstrap.kubeconfig
       filesystem: root
       mode: 0400

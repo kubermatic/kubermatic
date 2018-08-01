@@ -540,6 +540,8 @@
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
     "pkg/containerruntime",
+    "pkg/kubernetes",
+    "pkg/machines/common",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
     "pkg/template",
@@ -549,8 +551,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "107da316315768c1a3606a6b74f12a4415d21588"
-  version = "v0.7.11"
+  revision = "d5838cd3d34f33ba2feea9218f362894f085fbc7"
+  version = "v0.7.16"
 
 [[projects]]
   name = "github.com/magiconair/properties"
