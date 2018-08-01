@@ -19,20 +19,3 @@ type ObjectMeta struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 }
-
-// NewSSHKey represents a ssh key
-// swagger:model NewSSHKey
-type NewSSHKey struct {
-	Metadata ObjectMeta    `json:"metadata"`
-	Spec     NewSSHKeySpec `json:"spec"`
-}
-
-// NewSSHKeySpec represents the details of a ssh key
-type NewSSHKeySpec struct {
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"publicKey"`
-}
-
-// NewSSHKeyList represents a list of NewSSHKey
-// swagger:model NewSSHKeyList
-type NewSSHKeyList []NewSSHKey
