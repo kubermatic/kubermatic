@@ -8,6 +8,7 @@
     "vet",
     "golint",
     "varcheck",
-    "structcheck"
+    "structcheck",
+    "gosimple"
   ]
 }
