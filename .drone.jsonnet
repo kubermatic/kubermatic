@@ -190,37 +190,8 @@ local drone = import 'drone/drone.libsonnet';
       charts: charts,
     } + whenBranchMaster,
 
-    // run e2e tests
-    '10-e2e-aws': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
-      secrets: [
-        { source: 'kubeconfig_dev', target: 'kubeconfig' },
-        { source: 'aws_1.10.5_cluster_yaml', target: 'cluster_yaml' },
-        { source: 'aws_1.10.5_node_yaml', target: 'node_yaml' },
-      ],
-      commands: [
-        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
-        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
-        'echo "$NODE_YAML" > /tmp/node.yaml',
-        '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
-      ],
-    } + whenBranchMaster,
-
-    '10-e2e-azure': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
-      secrets: [
-        { source: 'kubeconfig_dev', target: 'kubeconfig' },
-        { source: 'azure_1.10.5_cluster_yaml', target: 'cluster_yaml' },
-        { source: 'azure_1.10.5_node_yaml', target: 'node_yaml' },
-      ],
-      commands: [
-        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
-        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
-        'echo "$NODE_YAML" > /tmp/node.yaml',
-        '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
-      ],
-    },
-
     // Slack
-    '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
+    '10-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
       webhook: 'https://hooks.slack.com/services/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',
       username: 'drone',
       icon_url: 'https://avatars2.githubusercontent.com/u/2181346?v=4&s=200',
@@ -229,7 +200,7 @@ local drone = import 'drone/drone.libsonnet';
       when: { status: ['success'], branch: 'master' },
     },
 
-    '11-slack-failure': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
+    '10-slack-failure': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
       webhook: 'https://hooks.slack.com/services/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',
       username: 'drone',
       icon_url: 'https://avatars2.githubusercontent.com/u/2181346?v=4&s=200',
@@ -252,6 +223,46 @@ local drone = import 'drone/drone.libsonnet';
         'toschneck=Tobi',
       ],
       when: { status: ['failure'] },
+    },
+
+    // run e2e tests
+    '11-e2e-aws': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
+      secrets: [
+        { source: 'kubeconfig_dev', target: 'kubeconfig' },
+        { source: 'aws_1.10.5_cluster_yaml', target: 'cluster_yaml' },
+        { source: 'aws_1.10.5_node_yaml', target: 'node_yaml' },
+      ],
+      commands: [
+        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
+        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
+        'echo "$NODE_YAML" > /tmp/node.yaml',
+        |||
+          /kubermatic-e2e \
+            -kubeconfig=/tmp/kubeconfig \
+            -kubermatic-cluster=/tmp/cluster.yaml \
+            -kubermatic-node=/tmp/node.yaml
+        |||,
+      ],
+    } + whenBranchMaster,
+
+    '11-e2e-azure': drone.step.new('quay.io/kubermatic/e2e', group='e2e') + {
+      secrets: [
+        { source: 'kubeconfig_dev', target: 'kubeconfig' },
+        { source: 'azure_1.10.5_cluster_yaml', target: 'cluster_yaml' },
+        { source: 'azure_1.10.5_node_yaml', target: 'node_yaml' },
+      ],
+      commands: [
+        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
+        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
+        'echo "$NODE_YAML" > /tmp/node.yaml',
+        |||
+          /kubermatic-e2e \
+            -kubeconfig=/tmp/kubeconfig \
+            -kubermatic-cluster=/tmp/cluster.yaml \
+            -kubermatic-node=/tmp/node.yaml \
+            -kubermatic-nodes-timeout=20m
+        |||,
+      ],
     },
   },
 }
