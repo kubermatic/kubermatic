@@ -178,7 +178,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade").
-		Handler(r.getPossibleClusterUpgrades())
+		Handler(r.getClusterUpgrades())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
@@ -1077,7 +1077,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade cluster getPossibleClusterUpgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade cluster getClusterUpgrades
 //
 //    Gets possible cluster upgrades
 //
@@ -1089,7 +1089,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 //       200: MasterVersion
 //       401: empty
 //       403: empty
-func (r Routing) getPossibleClusterUpgrades() http.Handler {
+func (r Routing) getClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),

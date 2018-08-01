@@ -586,7 +586,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getPossibleClusterUpgrades",
+        "operationId": "getClusterUpgrades",
         "parameters": [
           {
             "type": "string",
