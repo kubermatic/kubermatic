@@ -56,13 +56,9 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Name:   name,
-		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "2379",
-		},
+		Name:        name,
+		Labels:      podLabels,
+		Annotations: map[string]string{},
 	}
 
 	// For migration purpose.
@@ -220,27 +216,24 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	// Make sure, we don't change size of existing pvc's
+	// Phase needs to be taken from an existing
 	diskSize := data.EtcdDiskSize
-	if len(set.Spec.VolumeClaimTemplates) > 0 {
-		if size, exists := set.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage]; exists {
-			diskSize = size
-		}
-	}
-
-	set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "data",
-				OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				StorageClassName: resources.String("kubermatic-fast"),
-				AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+	if len(set.Spec.VolumeClaimTemplates) == 0 {
+		set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "data",
+					OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					StorageClassName: resources.String("kubermatic-fast"),
+					AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+					},
 				},
 			},
-		},
+		}
 	}
 
 	return set, nil

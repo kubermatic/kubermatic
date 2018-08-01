@@ -42,7 +42,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
 		ExpectedActions:  12,
 		Body:             ``,
-		ExpectedResponse: `null`,
+		ExpectedResponse: `{}`,
 		HTTPStatus:       http.StatusOK,
 		ExistingProject: &kubermaticv1.Project{
 			ObjectMeta: metav1.ObjectMeta{
@@ -244,7 +244,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			Name:                            "scenario 1: detaches one key from the cluster",
 			Body:                            ``,
 			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:          `null`,
+			ExpectedDeleteResponse:          `{}`,
 			ExpectedDeleteHTTPStatus:        http.StatusOK,
 			ExpectedGetHTTPStatus:           http.StatusOK,
 			ExpectedResponseOnGetAfterDelte: `[{"metadata":{"name":"key-abc-yafn","displayName":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
@@ -540,7 +540,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
 			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
-			ExpectedResponse: `null`,
+			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
