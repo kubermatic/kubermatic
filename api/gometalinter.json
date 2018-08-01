@@ -4,6 +4,7 @@
   "Exclude": [
     "pkg/crd"
   ],
+  "Deadline": "5m",
   "Enable": [
     "vet",
     "golint",
