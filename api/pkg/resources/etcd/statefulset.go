@@ -56,13 +56,9 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Name:   name,
-		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "2379",
-		},
+		Name:        name,
+		Labels:      podLabels,
+		Annotations: map[string]string{},
 	}
 
 	// For migration purpose.
