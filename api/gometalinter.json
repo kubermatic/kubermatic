@@ -10,6 +10,10 @@
     "varcheck",
     "structcheck",
     "gosimple",
-    "unused"
-  ]
+    "unused",
+    "errcheck"
+  ],
+  "Linters": {
+    "errcheck": {"Command": "errcheck -blank -exclude errcheck_excludes.txt"}
+  }
 }
