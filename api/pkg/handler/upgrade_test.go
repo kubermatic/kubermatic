@@ -268,9 +268,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
-				t.Errorf("Expected status code to be 200, got %d", res.Code)
-				t.Error(res.Body.String())
-				return
+				t.Fatalf("Expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
 			}
 
 			var gotUpdates []*apiv1.MasterVersion
@@ -280,7 +278,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			}
 
 			if diff := deep.Equal(gotUpdates, test.wantUpdates); diff != nil {
-				t.Errorf("got different upgrade response than expected. Diff: %v", diff)
+				t.Fatalf("got different upgrade response than expected. Diff: %v", diff)
 			}
 		})
 	}
