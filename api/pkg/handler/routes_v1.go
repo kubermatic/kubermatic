@@ -176,6 +176,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
 		Handler(r.newDeleteNodeForCluster())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
+		Handler(r.getPossibleClusterUpgrades())
+
 	//
 	// Defines set of HTTP endpoints for Users of the given project
 	mux.Methods(http.MethodPost).
@@ -1064,6 +1068,28 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(newDeleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// Get possible cluster upgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades cluster getPossibleClusterUpgrades
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: MasterVersion
+func (r Routing) getPossibleClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

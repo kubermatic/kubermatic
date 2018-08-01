@@ -59,10 +59,6 @@ func (r Routing) RegisterV3(mux *mux.Router) {
 		Handler(r.legacyClusterMetricsHandlerV3())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
-		Handler(r.getPossibleClusterUpgradesV3())
-
-	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/metrics").
 		Handler(r.clusterMetricsHandlerV3())
 }
@@ -310,28 +306,6 @@ func (r Routing) legacyGetPossibleClusterUpgradesV3() http.Handler {
 			r.datacenterMiddleware(),
 		)(legacyGetClusterUpgrades(r.updateManager)),
 		decodeLegacyClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// Get possible cluster upgrades
-// swagger:route GET /api/v3/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades cluster getPossibleClusterUpgradesV3
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: MasterVersion
-func (r Routing) getPossibleClusterUpgradesV3() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.newDatacenterMiddleware(),
-		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
-		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

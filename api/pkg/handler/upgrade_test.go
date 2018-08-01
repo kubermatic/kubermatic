@@ -194,7 +194,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			})
 
 			t.Run("with project", func(t *testing.T) {
-				req := httptest.NewRequest("GET", "/api/v3/projects/myProjectInternalName/dc/us-central1/cluster/foo/upgrades", nil)
+				req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/cluster/foo/upgrades", nil)
 				runTest(t, req)
 			})
 		})
