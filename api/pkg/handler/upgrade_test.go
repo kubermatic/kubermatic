@@ -251,7 +251,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/cluster/foo/upgrade", nil)
+			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/foo/upgrade", nil)
 			res := httptest.NewRecorder()
 
 			kubermaticObj := []runtime.Object{test.cluster}
