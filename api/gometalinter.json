@@ -6,6 +6,7 @@
   ],
   "Enable": [
     "vet",
-    "golint"
+    "golint",
+    "varcheck"
   ]
 }
