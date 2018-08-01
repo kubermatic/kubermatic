@@ -577,7 +577,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades": {
+    "/api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade": {
       "get": {
         "description": "Gets possible cluster upgrades",
         "produces": [

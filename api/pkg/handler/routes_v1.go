@@ -177,7 +177,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newDeleteNodeForCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades").
+		Path("/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade").
 		Handler(r.getPossibleClusterUpgrades())
 
 	mux.Methods(http.MethodGet).
@@ -1077,7 +1077,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades cluster getPossibleClusterUpgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrade cluster getPossibleClusterUpgrades
 //
 //    Gets possible cluster upgrades
 //
