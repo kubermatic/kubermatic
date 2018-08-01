@@ -94,23 +94,13 @@ type ClusterSpec struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         ApiserverSettings         `json:"apiserver"`
-	ControllerManager ControllerManagerSettings `json:"controllerManager"`
-	Scheduler         SchedulerSettings         `json:"scheduler"`
-	Etcd              EtcdSettings              `json:"etcd"`
+	Apiserver         DeploymentSettings `json:"apiserver"`
+	ControllerManager DeploymentSettings `json:"controllerManager"`
+	Scheduler         DeploymentSettings `json:"scheduler"`
+	Etcd              EtcdSettings       `json:"etcd"`
 }
 
-type ApiserverSettings struct {
-	Replicas  *int32                       `json:"replicas,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-type ControllerManagerSettings struct {
-	Replicas  *int32                       `json:"replicas,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-type SchedulerSettings struct {
+type DeploymentSettings struct {
 	Replicas  *int32                       `json:"replicas,omitempty"`
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }

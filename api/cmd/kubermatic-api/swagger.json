@@ -2091,20 +2091,6 @@
       "x-go-name": "AWSNodeSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
-    "ApiserverSettings": {
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Replicas"
-        },
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
     "AuthInfo": {
       "type": "object",
       "title": "AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.",
@@ -2780,16 +2766,16 @@
       "type": "object",
       "properties": {
         "apiserver": {
-          "$ref": "#/definitions/ApiserverSettings"
+          "$ref": "#/definitions/DeploymentSettings"
         },
         "controllerManager": {
-          "$ref": "#/definitions/ControllerManagerSettings"
+          "$ref": "#/definitions/DeploymentSettings"
         },
         "etcd": {
           "$ref": "#/definitions/EtcdSettings"
         },
         "scheduler": {
-          "$ref": "#/definitions/SchedulerSettings"
+          "$ref": "#/definitions/DeploymentSettings"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -2836,20 +2822,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
-    },
-    "ControllerManagerSettings": {
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Replicas"
-        },
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "CreateClusterReqBody": {
       "description": "CreateClusterReqBody represents the request body for a create cluster request",
@@ -2948,6 +2920,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DeploymentSettings": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Replicas"
+        },
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -4264,20 +4250,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "SchedulerSettings": {
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Replicas"
-        },
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Status": {
       "type": "object",
