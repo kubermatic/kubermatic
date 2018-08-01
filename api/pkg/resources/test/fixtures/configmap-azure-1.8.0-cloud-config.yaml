@@ -15,6 +15,7 @@ data:
       "subnetName": "az-subnet-name",
       "routeTableName": "az-route-table-name",
       "securityGroupName": "az-sec-group",
+      "primaryAvailabilitySetName": "az-availability-set",
 
 
       "useInstanceMetadata": false
