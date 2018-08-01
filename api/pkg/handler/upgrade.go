@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/go-kit/kit/endpoint"
 )
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
