@@ -252,7 +252,7 @@ func uploadRandomSSHPublicKey(ctx context.Context, service godo.KeysService) (st
 	return newDoKey.Fingerprint, nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, userdata string) (instance.Instance, error) {
 	c, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -324,7 +324,15 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	return &doInstance{droplet: droplet}, err
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, instance instance.Instance) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+	instance, err := p.Get(machine)
+	if err != nil {
+		if err == cloudprovidererrors.ErrInstanceNotFound {
+			return nil
+		}
+		return err
+	}
+
 	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return cloudprovidererrors.TerminalError{
