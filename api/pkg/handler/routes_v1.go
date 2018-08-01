@@ -177,11 +177,11 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newDeleteNodeForCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster}/upgrade").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrade").
 		Handler(r.getClusterUpgrades())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster}/metrics").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics").
 		Handler(r.clusterMetricsHandler())
 
 	//

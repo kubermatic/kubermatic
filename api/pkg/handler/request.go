@@ -62,7 +62,7 @@ type LegacyGetClusterReq struct {
 type GetClusterReq struct {
 	DCReq
 	// in: path
-	ClusterName string `json:"cluster"`
+	ClusterName string `json:"cluster_name"`
 }
 
 func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, error) {
