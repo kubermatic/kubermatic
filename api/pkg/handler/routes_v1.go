@@ -1077,8 +1077,9 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// Get possible cluster upgrades
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/cluster/{cluster}/upgrades cluster getPossibleClusterUpgrades
+//
+//    Gets possible cluster upgrades
 //
 //     Produces:
 //     - application/json
@@ -1086,6 +1087,8 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: MasterVersion
+//       401: empty
+//       403: empty
 func (r Routing) getPossibleClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
