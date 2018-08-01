@@ -5,6 +5,7 @@
     "pkg/crd"
   ],
   "Enable": [
-    "vet"
+    "vet",
+    "golint"
   ]
 }

@@ -71,8 +71,6 @@ endif
 	echo "gometalinter" ;\
 	gometalinter --config gometalinter.json ./... ;\
 	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
-	echo "golint" ;\
-	golint -set_exit_status $$PACKAGES ;\
 	echo "errcheck -blank" ;\
 	errcheck -exclude errcheck_excludes.txt -blank $$PACKAGES ;\
 	echo "varcheck" ;\
