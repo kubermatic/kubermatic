@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-datadir
 spec:
-  storageClassName: aws-test
+  storageClassName: default
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
