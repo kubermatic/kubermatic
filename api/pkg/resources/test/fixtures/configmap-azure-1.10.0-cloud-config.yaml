@@ -16,7 +16,7 @@ data:
       "routeTableName": "az-route-table-name",
       "securityGroupName": "az-sec-group",
 
-      /* Consumed by apiserver and controller-manager */
+
       "useInstanceMetadata": false
     }
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00

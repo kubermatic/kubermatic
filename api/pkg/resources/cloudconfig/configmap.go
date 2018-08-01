@@ -105,7 +105,7 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
   "routeTableName": "{{ .Cluster.Spec.Cloud.Azure.RouteTableName }}",
   "securityGroupName": "{{ .Cluster.Spec.Cloud.Azure.SecurityGroup }}",
 
-  /* Consumed by apiserver and controller-manager */
+{{/* Consumed by apiserver and controller-manager */}}
   "useInstanceMetadata": false
 }
 {{- end }}
