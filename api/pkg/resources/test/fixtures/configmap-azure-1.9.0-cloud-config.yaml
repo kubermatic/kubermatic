@@ -14,6 +14,7 @@ data:
       "vnetResourceGroup": "az-res-group",
       "subnetName": "az-subnet-name",
       "routeTableName": "az-route-table-name",
+      "securityGroupName": "az-sec-group",
 
       "useInstanceMetadata": true
     }

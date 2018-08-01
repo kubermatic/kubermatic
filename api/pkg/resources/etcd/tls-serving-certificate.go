@@ -29,7 +29,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	altNames := sets.NewString("127.0.0.1", "localhost", fmt.Sprintf("%s-%s.svc.cluster.local.", resources.EtcdClientServiceName, data.Cluster.Name))
+	altNames := sets.NewString("127.0.0.1", "localhost", fmt.Sprintf("%s-%s.svc.cluster.local", resources.EtcdClientServiceName, data.Cluster.Name))
 	for i := 0; i < 3; i++ {
 		// Member name
 		podName := fmt.Sprintf("etcd-%d", i)
