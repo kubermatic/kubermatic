@@ -269,11 +269,24 @@ func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Clust
 		if err != nil {
 			return err
 		}
+
 		currentCluster := cacheCluster.DeepCopy()
 		// Apply modifications
 		modify(currentCluster)
 		// Update the cluster
 		updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		if err != nil && kubeapierrors.IsConflict(err) {
+			//Get latest version from api
+			currentCluster, err := cc.kubermaticClient.KubermaticV1().Clusters().Get(name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			// Apply modifications
+			modify(currentCluster)
+			// Update the cluster
+			updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+		}
+
 		return err
 	})
 

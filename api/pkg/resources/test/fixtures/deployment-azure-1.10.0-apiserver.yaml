@@ -164,6 +164,10 @@ spec:
         - Initializers=true
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
+        - --cloud-provider
+        - azure
+        - --cloud-config
+        - /etc/kubernetes/cloud/config
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         command:
