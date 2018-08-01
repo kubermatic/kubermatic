@@ -80,7 +80,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            resources.IPAMControllerDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + "ipam-wip-pk", //resources.KUBERMATICTAG,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/ipam-controller"},
 			Args:            flags,

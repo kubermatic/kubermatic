@@ -24,8 +24,8 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-// KUBERMATICTAG is a magic variable containing the git tag of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
-var KUBERMATICTAG string
+// KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
+var KUBERMATICCOMMIT string
 
 const (
 	// KubermaticNamespaceName specifies the name of the kubermatic namespace
