@@ -1080,16 +1080,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3cbc05413b8aac22b1f6d4350ed696b5a83a8515a4136db8f1ec3a0aee3d76e1"
+  digest = "1:1f0e114700d8e1601436225f469f63ea9420c22f4fc01c52f9cea915eae9cdc5"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
     "go/buildutil",
     "go/loader",
     "imports",
+    "internal/fastwalk",
   ]
   pruneopts = "NUT"
-  revision = "ce871d178848e3eea1e8795e5cfb74053dde4bb9"
+  revision = "1801cb7c1535809b97bb6628791b3fb0df73476e"
 
 [[projects]]
   digest = "1:f229c599a645bffd97518107ac89955adfa6d5e5e4efa3e8cadb29789219639f"
