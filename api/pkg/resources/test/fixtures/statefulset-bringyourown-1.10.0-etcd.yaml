@@ -18,10 +18,6 @@ spec:
   serviceName: etcd
   template:
     metadata:
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "2379"
-        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
