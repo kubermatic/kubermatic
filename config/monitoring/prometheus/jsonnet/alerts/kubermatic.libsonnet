@@ -7,28 +7,25 @@
           {
             alert: 'KubermaticTooManyUnhandledErrors',
             expr: |||
-              sum(rate(kubermatic_cluster_controller_unhandled_errors_total[5m])) > 0.01
+              sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
             ||| % $._config,
             'for': '10m',
             labels: {
               severity: 'warning',
             },
             annotations: {
-              message: 'Kubermatic Controller Manager in {{ $labels.namespace }} has too many errors in its loop.',
+              message: 'Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.',
             },
           },
           {
-            alert: 'KubermaticStuckClusterPhase',
-            expr: |||
-              kubermatic_cluster_controller_cluster_status_phase{phase="running"} == 0 and
-              kubermatic_cluster_controller_cluster_status_phase{phase="deleting"} == 0
-            ||| % $._config,
-            'for': '10m',
+            alert: 'KubermaticClusterDeletionTakesTooLong',
+            expr: '(time() - kubermatic_cluster_deleted) > 30*60',
+            'for': '0m',
             labels: {
               severity: 'warning',
             },
             annotations: {
-              message: 'Kubermatic cluster {{ $labels.cluster }} is stuck in unexpected phase {{ $labels.phase }}.',
+              message: 'Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.',
             },
           },
         ],

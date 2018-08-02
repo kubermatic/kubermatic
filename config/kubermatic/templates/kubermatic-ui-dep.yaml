@@ -6,6 +6,8 @@ spec:
   replicas: {{ .Values.kubermatic.ui.replicas }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/ui-config-configmap.yaml") . | sha256sum }}
       labels:
         role: kubermatic-ui
         version: v1

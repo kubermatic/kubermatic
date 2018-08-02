@@ -35,14 +35,14 @@ var allControllers = map[string]controllerCreator{
 	"Backup":         createBackupController,
 }
 
-type controllerCreator func(*controllerContext) (controller, error)
+type controllerCreator func(*controllerContext) (runner, error)
 
-type controller interface {
+type runner interface {
 	Run(workerCount int, stopCh <-chan struct{})
 }
 
-func createAllControllers(ctrlCtx *controllerContext) (map[string]controller, error) {
-	controllers := map[string]controller{}
+func createAllControllers(ctrlCtx *controllerContext) (map[string]runner, error) {
+	controllers := map[string]runner{}
 	for name, create := range allControllers {
 		controller, err := create(ctrlCtx)
 		if err != nil {
@@ -53,7 +53,7 @@ func createAllControllers(ctrlCtx *controllerContext) (map[string]controller, er
 	return controllers, nil
 }
 
-func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, name string, controller controller) (func() error, func(err error)) {
+func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, name string, controller runner) (func() error, func(err error)) {
 	execute := func() error {
 		glog.V(2).Infof("Starting %s controller...", name)
 		controller.Run(workerCnt, done)
@@ -70,7 +70,7 @@ func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.Ca
 	return execute, interrupt
 }
 
-func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, controllers map[string]controller) error {
+func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, controllers map[string]runner) error {
 	var g run.Group
 
 	for name, controller := range controllers {
@@ -81,7 +81,7 @@ func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.Cance
 	return g.Run()
 }
 
-func createClusterController(ctrlCtx *controllerContext) (controller, error) {
+func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,6 @@ func createClusterController(ctrlCtx *controllerContext) (controller, error) {
 		ctrlCtx.runOptions.dc,
 		dcs,
 		cps,
-		cluster.NewMetrics(true),
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
@@ -121,7 +120,7 @@ func createClusterController(ctrlCtx *controllerContext) (controller, error) {
 	)
 }
 
-func createBackupController(ctrlCtx *controllerContext) (controller, error) {
+func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
 	if err != nil {
 		return nil, err
@@ -173,7 +172,7 @@ func getContainerFromFile(path string) (*corev1.Container, error) {
 	return container, nil
 }
 
-func createUpdateController(ctrlCtx *controllerContext) (controller, error) {
+func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create update manager: %v", err)
@@ -188,7 +187,7 @@ func createUpdateController(ctrlCtx *controllerContext) (controller, error) {
 	)
 }
 
-func createAddonController(ctrlCtx *controllerContext) (controller, error) {
+func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 	return addon.New(
 		addon.NewMetrics(),
 		map[string]interface{}{ // addonVariables
@@ -206,7 +205,7 @@ func createAddonController(ctrlCtx *controllerContext) (controller, error) {
 	)
 }
 
-func createAddonInstallerController(ctrlCtx *controllerContext) (controller, error) {
+func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) {
 
 	defaultAddonsList := strings.Split(ctrlCtx.runOptions.addonsList, ",")
 	for i, a := range defaultAddonsList {

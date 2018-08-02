@@ -195,6 +195,12 @@ type NewUser struct {
 	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
+// ClusterAdminToken represents a cluster's admin token
+// swagger:model ClusterAdminToken
+type ClusterAdminToken struct {
+	Token string `json:"token"`
+}
+
 // ProjectGroup is a helper data structure that
 // stores the information about a project and a group prefix that a user belongs to
 type ProjectGroup struct {
