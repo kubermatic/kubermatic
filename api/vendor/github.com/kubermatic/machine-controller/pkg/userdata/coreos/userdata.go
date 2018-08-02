@@ -89,6 +89,10 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
+	if pconfig.OverwriteCloudConfig != nil {
+		cpConfig = *pconfig.OverwriteCloudConfig
+	}
+
 	coreosConfig, err := getConfig(pconfig.OperatingSystemSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get coreos config from provider config: %v", err)
@@ -179,7 +183,7 @@ networkd:
 
 systemd:
   units:
-{{ if .CoreOSConfig.DisableAutoUpdate }}
+{{- if .CoreOSConfig.DisableAutoUpdate }}
     - name: update-engine.service
       mask: true
     - name: locksmithd.service

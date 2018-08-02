@@ -89,6 +89,14 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
+	if pconfig.OverwriteCloudConfig != nil {
+		cpConfig = *pconfig.OverwriteCloudConfig
+	}
+
+	if pconfig.Network != nil {
+		return "", errors.New("static IP config is not supported with Ubuntu")
+	}
+
 	osConfig, err := getConfig(pconfig.OperatingSystemSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get ubuntu config from provider config: %v", err)
@@ -277,7 +285,7 @@ write_files:
   permissions: "0400"
   content: |
     -----BEGIN PGP PUBLIC KEY BLOCK-----
-    
+
     mQENBFrBaNsBCADrF18KCbsZlo4NjAvVecTBCnp6WcBQJ5oSh7+E98jX9YznUCrN
     rgmeCcCMUvTDRDxfTaDJybaHugfba43nqhkbNpJ47YXsIa+YL6eEE9emSmQtjrSW
     IiY+2YJYwsDgsgckF3duqkb02OdBQlh6IbHPoXB6H//b1PgZYsomB+841XW1LSJP
