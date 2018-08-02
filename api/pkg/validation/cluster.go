@@ -17,6 +17,15 @@ var (
 	tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 )
 
+// ValidateKubernetesToken checks if a given token is syntactically correct.
+func ValidateKubernetesToken(token string) error {
+	if !tokenValidator.MatchString(token) {
+		return fmt.Errorf("token is malformed, must match %s", tokenValidator.String())
+	}
+
+	return nil
+}
+
 // ValidateCreateClusterSpec validates the given cluster spec
 func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider) error {
 	if spec.HumanReadableName == "" {
@@ -100,12 +109,12 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return errors.New("changing the url is not allowed")
 	}
 
-	if !tokenValidator.Match([]byte(newCluster.Address.AdminToken)) {
-		return fmt.Errorf("invalid admin token. Format needs to match: %s", tokenValidator.String())
+	if err := ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
+		return fmt.Errorf("invalid admin token: %v", err)
 	}
 
-	if !tokenValidator.Match([]byte(newCluster.Address.KubeletToken)) {
-		return fmt.Errorf("invalid kubelet token. Format needs to match: %s", tokenValidator.String())
+	if err := ValidateKubernetesToken(newCluster.Address.KubeletToken); err != nil {
+		return fmt.Errorf("invalid kubelet token: %v", err)
 	}
 
 	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {

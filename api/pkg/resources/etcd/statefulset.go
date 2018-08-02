@@ -16,10 +16,16 @@ import (
 )
 
 var (
-	defaultEtcdMemoryRequest = resource.MustParse("256Mi")
-	defaultEtcdCPURequest    = resource.MustParse("50m")
-	defaultEtcdMemoryLimit   = resource.MustParse("1Gi")
-	defaultEtcdCPULimit      = resource.MustParse("100m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 const (
@@ -56,9 +62,8 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Name:        name,
-		Labels:      podLabels,
-		Annotations: map[string]string{},
+		Name:   name,
+		Labels: podLabels,
 	}
 
 	// For migration purpose.
@@ -75,6 +80,10 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	etcdStartCmd, err := getEtcdCommand(data.Cluster.Name, data.Cluster.Status.NamespaceName, migrate)
 	if err != nil {
 		return nil, err
+	}
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.Etcd.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Etcd.Resources
 	}
 	set.Spec.Template.Spec.Containers = []corev1.Container{
 		{
@@ -120,16 +129,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Name:          "peer",
 				},
 			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultEtcdMemoryRequest,
-					corev1.ResourceCPU:    defaultEtcdCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultEtcdMemoryLimit,
-					corev1.ResourceCPU:    defaultEtcdCPULimit,
-				},
-			},
+			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				TimeoutSeconds:   1,
 				PeriodSeconds:    10,

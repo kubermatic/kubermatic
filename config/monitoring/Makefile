@@ -14,4 +14,3 @@ check-config:
 
 check-rules:
 	promtool check rules prometheus/rules/rules.yaml
-

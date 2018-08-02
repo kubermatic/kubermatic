@@ -662,7 +662,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:4cbbd64e7839abea9fec2e10f57f5a01697b4859e2dedc8d2233690b5c4f67af"
+  digest = "1:d0201fe7324f7ef02f2a66d530e839879e6c1adbc523366402302426da010d00"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -681,6 +681,8 @@
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
     "pkg/containerruntime",
+    "pkg/kubernetes",
+    "pkg/machines/common",
     "pkg/machines/v1alpha1",
     "pkg/providerconfig",
     "pkg/template",
@@ -691,8 +693,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "2e0d2f0875316755ac1a8dbc3b61d2110abf5968"
-  version = "v0.7.13"
+  revision = "d5838cd3d34f33ba2feea9218f362894f085fbc7"
+  version = "v0.7.16"
 
 [[projects]]
   digest = "1:35e5598ba3bc950039e13d91958ce37f675264735907cada569d11b243e5cacb"
