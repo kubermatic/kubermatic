@@ -550,22 +550,22 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 
-		var resp metricsResponse
+		var resp []apiv1.ClusterMetric
 
 		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
-			Name:  "Machines",
-			Value: val,
+		resp = append(resp, apiv1.ClusterMetric{
+			Name:   "Machines",
+			Values: []float64{val},
 		})
 
 		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
 		if err != nil {
 			return nil, err
 		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
+		resp = append(resp, apiv1.ClusterMetric{
 			Name:   "Machines (1h)",
 			Values: vals,
 		})
