@@ -2543,22 +2543,22 @@
       "title": "ClusterAddress stores access and address information of a cluster.",
       "properties": {
         "adminToken": {
+          "description": "AdminToken is the token for the kubeconfig, the user can download",
           "type": "string",
           "x-go-name": "AdminToken"
         },
         "externalName": {
+          "description": "ExternalName is the DNS name for this cluster",
           "type": "string",
           "x-go-name": "ExternalName"
         },
         "ip": {
+          "description": "IP is the external IP under which the apiserver is available",
           "type": "string",
           "x-go-name": "IP"
         },
-        "kubeletToken": {
-          "type": "string",
-          "x-go-name": "KubeletToken"
-        },
         "url": {
+          "description": "URL under which the Apiserver is available",
           "type": "string",
           "x-go-name": "URL"
         }
@@ -2676,10 +2676,12 @@
           "$ref": "#/definitions/ComponentSettings"
         },
         "humanReadableName": {
+          "description": "HumanReadableName is the cluster name provided by the user",
           "type": "string",
           "x-go-name": "HumanReadableName"
         },
         "masterVersion": {
+          "description": "MasterVersion is Deprecated",
           "type": "string",
           "x-go-name": "MasterVersion"
         },
@@ -2694,12 +2696,9 @@
           "x-go-name": "PauseReason"
         },
         "version": {
+          "description": "Version defines the wanted version of the control plane",
           "type": "string",
           "x-go-name": "Version"
-        },
-        "workerName": {
-          "type": "string",
-          "x-go-name": "WorkerName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -2715,6 +2714,7 @@
           "$ref": "#/definitions/RSAKeys"
         },
         "errorMessage": {
+          "description": "ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved",
           "type": "string",
           "x-go-name": "ErrorMessage"
         },
@@ -2727,14 +2727,11 @@
         "kubeletCert": {
           "$ref": "#/definitions/KeyCert"
         },
-        "lastDeployedMasterVersion": {
-          "type": "string",
-          "x-go-name": "LastDeployedMasterVersion"
-        },
         "lastUpdated": {
           "$ref": "#/definitions/Time"
         },
         "namespaceName": {
+          "description": "NamespaceName defines the namespace the control plane of this cluster is deployed in",
           "type": "string",
           "x-go-name": "NamespaceName"
         },
@@ -2748,10 +2745,12 @@
           "$ref": "#/definitions/Bytes"
         },
         "userEmail": {
+          "description": "UserEmail contains the email of the owner of this cluster",
           "type": "string",
           "x-go-name": "UserEmail"
         },
         "userName": {
+          "description": "UserName contains the name of the owner of this cluster",
           "type": "string",
           "x-go-name": "UserName"
         }
