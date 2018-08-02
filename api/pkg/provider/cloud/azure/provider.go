@@ -580,23 +580,6 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
-		asName := "cluster-" + cluster.Name
-		glog.Infof("cluster %q: ensuring AvailabilitySet %q", cluster.Name, asName)
-
-		if err := ensureAvailabilitySet(asName, location, cluster.Spec.Cloud); err != nil {
-			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = asName
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerAvailabilitySet)
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return cluster, nil
 }
 
