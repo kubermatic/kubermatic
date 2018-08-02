@@ -144,6 +144,14 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/health").
 		Handler(r.newGetClusterHealth())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades").
+		Handler(r.getClusterUpgrades())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics").
+		Handler(r.clusterMetricsHandler())
+
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPost).
@@ -175,14 +183,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
 		Handler(r.newDeleteNodeForCluster())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrade").
-		Handler(r.getClusterUpgrades())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics").
-		Handler(r.clusterMetricsHandler())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -1077,7 +1077,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrade project getClusterUpgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades project getClusterUpgrades
 //
 //    Gets possible cluster upgrades
 //
@@ -1086,7 +1086,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: MasterVersion
+//       200: []MasterVersion
 //       401: empty
 //       403: empty
 func (r Routing) getClusterUpgrades() http.Handler {
@@ -1111,7 +1111,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: MetricsResponse
+//       200: []ClusterMetric
 //       401: empty
 //       403: empty
 func (r Routing) clusterMetricsHandler() http.Handler {

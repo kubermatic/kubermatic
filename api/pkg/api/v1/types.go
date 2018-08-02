@@ -338,3 +338,10 @@ type Node struct {
 	// TODO: and once we have it then we will remove apiv2.Node struct.
 	Status apiv2.NodeStatus `json:"status"`
 }
+
+// ClusterMetric defines a metric for the given cluster
+// swagger:model ClusterMetric
+type ClusterMetric struct {
+	Name   string    `json:"name"`
+	Values []float64 `json:"values,omitempty"`
+}
