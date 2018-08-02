@@ -9,15 +9,19 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
-	"github.com/oklog/run"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -138,14 +142,26 @@ func main() {
 		glog.Fatalf("failed to get event recorder: %v", err)
 	}
 
+	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
+	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
+
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 
+	// Create Context
 	ctrlCtx := newControllerContext(runOp, ctx.Done(), kubeClient, kubermaticClient)
+
 	controllers, err := createAllControllers(ctrlCtx)
 	if err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
+
+	for name, register := range collectors.AvailableCollectors {
+		glog.V(6).Infof("Starting %s collector", name)
+		register(prometheus.DefaultRegisterer, ctrlCtx.kubeInformerFactory, ctrlCtx.kubermaticInformerFactory)
+	}
+
+	// Start context (Informers)
 	ctrlCtx.Start()
 
 	// This group is forever waiting in a goroutine for signals to stop
