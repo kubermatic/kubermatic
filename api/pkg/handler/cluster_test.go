@@ -957,8 +957,7 @@ func TestGetClusterHealth(t *testing.T) {
 						HumanReadableName: "cluster-abc",
 					},
 					Address: kubermaticv1.ClusterAddress{
-						AdminToken:   "drphc2.g4kq82pnlfqjqt65",
-						KubeletToken: "drphc2.g4kq82pnlfqjqt65",
+						AdminToken: "drphc2.g4kq82pnlfqjqt65",
 					},
 					Status: kubermaticv1.ClusterStatus{
 						Health: kubermaticv1.ClusterHealth{
@@ -1100,8 +1099,7 @@ func TestUpdateCluster(t *testing.T) {
 						HumanReadableName: "cluster-abc",
 					},
 					Address: kubermaticv1.ClusterAddress{
-						AdminToken:   "drphc2.g4kq82pnlfqjqt65",
-						KubeletToken: "drphc2.g4kq82pnlfqjqt65",
+						AdminToken: "drphc2.g4kq82pnlfqjqt65",
 					},
 				},
 				&kubermaticv1.Cluster{
@@ -1665,9 +1663,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1695,9 +1692,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1725,9 +1721,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1755,9 +1750,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1855,9 +1849,8 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 		},
 		Address: kubermaticv1.ClusterAddress{
-			AdminToken:   "cccccc.cccccccccccccccc",
-			KubeletToken: "dddddd.dddddddddddddddd",
-			URL:          "https://foo.bar:8443",
+			AdminToken: "cccccc.cccccccccccccccc",
+			URL:        "https://foo.bar:8443",
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
@@ -1931,9 +1924,8 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 		},
 		Address: kubermaticv1.ClusterAddress{
-			AdminToken:   "cccccc.cccccccccccccccc",
-			KubeletToken: "dddddd.dddddddddddddddd",
-			URL:          "https://foo.bar:8443",
+			AdminToken: "cccccc.cccccccccccccccc",
+			URL:        "https://foo.bar:8443",
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: &kubermaticv1.CloudSpec{
