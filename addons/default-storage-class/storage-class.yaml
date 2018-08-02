@@ -1,0 +1,30 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: standard
+{{ if .Cluster.Spec.Cloud.Azure }}
+provisioner: kubernetes.io/azure-disk
+parameters:
+  kind: Managed
+  storageaccounttype: Standard_LRS
+{{ end }}
+{{ if .Cluster.Spec.Cloud.AWS }}
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+  zone: {{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
+{{ end }}
+{{ if .Cluster.Spec.Cloud.VSphere }}
+provisioner: kubernetes.io/vsphere-volume
+parameters:
+  diskformat: thin
+{{ end }}
+{{ if .Cluster.Spec.Cloud.Openstack }}
+provisioner: kubernetes.io/cinder
+{{ end }}
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
