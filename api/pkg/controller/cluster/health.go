@@ -21,7 +21,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	healthMapping := map[string]*depInfo{
-		resources.ApiserverDeploymenName:          {healthy: &health.Apiserver},
+		resources.ApiserverDeploymentName:         {healthy: &health.Apiserver},
 		resources.ControllerManagerDeploymentName: {healthy: &health.Controller},
 		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler},
 		resources.MachineControllerDeploymentName: {healthy: &health.MachineController},

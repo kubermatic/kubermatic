@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -87,6 +88,25 @@ type ClusterSpec struct {
 	Pause bool `json:"pause"`
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
+
+	// Optional component specific overrides
+	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+}
+
+type ComponentSettings struct {
+	Apiserver         DeploymentSettings `json:"apiserver"`
+	ControllerManager DeploymentSettings `json:"controllerManager"`
+	Scheduler         DeploymentSettings `json:"scheduler"`
+	Etcd              EtcdSettings       `json:"etcd"`
+}
+
+type DeploymentSettings struct {
+	Replicas  *int32                       `json:"replicas,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type EtcdSettings struct {
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
@@ -202,11 +222,18 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
 
-	ResourceGroup  string `json:"resourceGroup"`
-	VNetName       string `json:"vnet"`
-	SubnetName     string `json:"subnet"`
-	RouteTableName string `json:"routeTable"`
-	SecurityGroup  string `json:"securityGroup"`
+	ResourceGroup   string `json:"resourceGroup"`
+	VNetName        string `json:"vnet"`
+	SubnetName      string `json:"subnet"`
+	RouteTableName  string `json:"routeTable"`
+	SecurityGroup   string `json:"securityGroup"`
+	AvailabilitySet string `json:"availabilitySet"`
+}
+
+// VSphere credentials represents a credential for accessing vSphere
+type VSphereCredentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
@@ -214,6 +241,9 @@ type VSphereCloudSpec struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	VMNetName string `json:"vmNetName"`
+
+	// This user will be used for everything except cloud provider functionality
+	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

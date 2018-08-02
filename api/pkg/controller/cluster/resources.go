@@ -3,25 +3,26 @@ package cluster
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"k8s.io/api/policy/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -54,7 +55,7 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all role bindings are created
+	// check that all cluster role bindings are created
 	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
 	}
@@ -74,7 +75,7 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all ConfigMap's are available
+	// check that all ServerClientConfigsConfigMap's are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
 	}
@@ -86,6 +87,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// check that all StatefulSet's are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
+		return err
+	}
+
+	// check that all PodDisruptionBudget's are created
+	if err := cc.ensurePodDisruptionBudgets(cluster); err != nil {
 		return err
 	}
 
@@ -174,6 +180,9 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
+		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
+		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
+		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
@@ -234,15 +243,21 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
-	creators := []resources.ServiceCreator{
+// GetServiceCreators returns all service creators that are currently in use
+func GetServiceCreators() []resources.ServiceCreator {
+	return []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
 		prometheus.Service,
 		openvpn.Service,
 		etcd.DiscoveryService,
 		etcd.ClientService,
+		dns.Service,
 	}
+}
+
+func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
+	creators := GetServiceCreators()
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -272,7 +287,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if diff := deep.Equal(service, existing); diff == nil {
+		if equality.Semantic.DeepEqual(service, existing) {
 			continue
 		}
 
@@ -312,7 +327,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 
 		// We update the existing SA
 		sa = resources.ServiceAccount(name, &ref, existing.DeepCopy())
-		if diff := deep.Equal(sa, existing); diff == nil {
+		if equality.Semantic.DeepEqual(sa, existing) {
 			continue
 		}
 		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
@@ -356,7 +371,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if diff := deep.Equal(role, existing); diff == nil {
+		if equality.Semantic.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -401,7 +416,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(rb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(rb, existing) {
 			continue
 		}
 
@@ -444,7 +459,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if diff := deep.Equal(crb, existing); diff == nil {
+		if equality.Semantic.DeepEqual(crb, existing) {
 			continue
 		}
 
@@ -464,6 +479,7 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 		apiserver.Deployment,
 		scheduler.Deployment,
 		controllermanager.Deployment,
+		dns.Deployment,
 	}
 }
 
@@ -498,12 +514,12 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
 
-		if diff := deep.Equal(dep, existing); diff == nil {
+		if equality.Semantic.DeepEqual(dep, existing) {
 			continue
 		}
 
 		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !reflect.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+		if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
 			propagation := metav1.DeletePropagationForeground
 			return cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
@@ -517,10 +533,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators() []resources.SecretCreator {
-	return []resources.SecretCreator{
-		etcd.TLSCertificate,
-		apiserver.EtcdClientCertificate,
+func GetSecretCreators() map[string]resources.SecretCreator {
+	return map[string]resources.SecretCreator{
+		resources.EtcdTLSCertificateSecretName:             etcd.TLSCertificate,
+		resources.ApiserverEtcdClientCertificateSecretName: apiserver.EtcdClientCertificate,
 	}
 }
 
@@ -532,15 +548,16 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for _, create := range creators {
+	for name, create := range creators {
 		var existing *corev1.Secret
-		se, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Secret: %v", err)
-		}
-		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(se.Name); err != nil {
+		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
+			}
+
+			se, err := create(data, nil)
+			if err != nil {
+				return fmt.Errorf("failed to build Secret: %v", err)
 			}
 
 			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
@@ -549,12 +566,12 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		se, err = create(data, existing.DeepCopy())
+		se, err := create(data, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}
 
-		if diff := deep.Equal(se, existing); diff == nil {
+		if equality.Semantic.DeepEqual(se, existing) {
 			continue
 		}
 
@@ -570,8 +587,9 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 func GetConfigMapCreators() []resources.ConfigMapCreator {
 	return []resources.ConfigMapCreator{
 		cloudconfig.ConfigMap,
-		openvpn.ConfigMap,
+		openvpn.ServerClientConfigsConfigMap,
 		prometheus.ConfigMap,
+		dns.ConfigMap,
 	}
 }
 
@@ -606,7 +624,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
 
-		if diff := deep.Equal(cm, existing); diff == nil {
+		if equality.Semantic.DeepEqual(cm, existing) {
 			continue
 		}
 
@@ -657,18 +675,68 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if diff := deep.Equal(set, existing); diff == nil {
+		if equality.Semantic.DeepEqual(set, existing) {
 			continue
 		}
 
 		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !reflect.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+		if !equality.Semantic.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
 			propagation := metav1.DeletePropagationForeground
 			return cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Delete(set.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
 
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
 			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
+func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
+	return []resources.PodDisruptionBudgetCreator{
+		etcd.PodDisruptionBudget,
+	}
+}
+
+func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error {
+	creators := GetPodDisruptionBudgetCreators()
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *v1beta1.PodDisruptionBudget
+		pdb, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
+		}
+
+		if existing, err = cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName).Get(pdb.Name); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Create(pdb); err != nil {
+				return fmt.Errorf("failed to create PodDisruptionBudget %s: %v", pdb.Name, err)
+			}
+			continue
+		}
+
+		pdb, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(pdb, existing) {
+			continue
+		}
+
+		if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Update(pdb); err != nil {
+			return fmt.Errorf("failed to update PodDisruptionBudget %s: %v", pdb.Name, err)
 		}
 	}
 

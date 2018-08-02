@@ -12,10 +12,16 @@ import (
 )
 
 var (
-	defaultMemoryRequest = resource.MustParse("64Mi")
-	defaultCPURequest    = resource.MustParse("20m")
-	defaultMemoryLimit   = resource.MustParse("128Mi")
-	defaultCPULimit      = resource.MustParse("100m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("20m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 const (
@@ -36,6 +42,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
+	if data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas
+	}
+
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
@@ -65,7 +75,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get openvpn sidecar container and apiserverServiceIP
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiAddress, err := data.InClusterApiserverAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +85,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// Configure user cluster DNS resolver for this pod.
-	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 	if err != nil {
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/scheduler"
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -89,11 +100,24 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -O - -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
+				// * unfortunately no curl in busybox image
+				// * "fortunately" busybox wget does not care about TLS verification (neither peername, nor ca)
+				// * might still be enough for only waiting for `apiserver-running`
+				//
+				// curl could do a nice trick with --resolve, which eases handing in the peername
+				// but still connect to a different ip:
+				// curl --resolve kubernetes:31834:10.47.248.241 --cacert /ca.crt --cert /1.crt --key /1.key  -i https://kubernetes:31834/healthz
+				// (but busybox image has no curl by default)
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
+	}
+
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.Scheduler.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Scheduler.Resources
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
@@ -103,21 +127,19 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
-				"--master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
+				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.SchedulerKubeconfigSecretName),
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.SchedulerKubeconfigSecretName,
+					MountPath: kcDir,
+					ReadOnly:  true,
 				},
 			},
+			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -164,7 +186,15 @@ func getVolumes() []corev1.Volume {
 			Name: resources.CACertSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName: resources.CACertSecretName,
+				},
+			},
+		},
+		{
+			Name: resources.SchedulerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.SchedulerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

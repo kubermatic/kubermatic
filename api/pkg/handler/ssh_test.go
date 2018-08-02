@@ -2,25 +2,164 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"strings"
-
-	"fmt"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
 )
 
+func TestListSSHKeys(t *testing.T) {
+	t.Parallel()
+	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingCluster        *kubermaticv1.Cluster
+		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
+			Body:             ``,
+			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
+			HTTPStatus:       http.StatusOK,
+			ExistingProject: &kubermaticv1.Project{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "myProjectInternalName",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.io/v1",
+							Kind:       "User",
+							UID:        "",
+							Name:       "John",
+						},
+					},
+				},
+				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+			},
+			ExistingKubermaticUser: &kubermaticv1.User{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kubermaticv1.UserSpec{
+					Name:  "John",
+					Email: testEmail,
+					Projects: []kubermaticv1.ProjectGroup{
+						{
+							Group: "owners-myProjectInternalName",
+							Name:  "myProjectInternalName",
+						},
+					},
+				},
+			},
+			ExistingAPIUser: &apiv1.User{
+				ID:    testUsername,
+				Email: testEmail,
+			},
+			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       "myProjectInternalName",
+							},
+						},
+						CreationTimestamp: metav1.NewTime(creationTime),
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "yafn",
+						Clusters: []string{"abcd"},
+					},
+				},
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-abc-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       "myProjectInternalName",
+							},
+						},
+						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "abcd",
+						Clusters: []string{"abcd"},
+					},
+				},
+			},
+			ExistingCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abcd",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.k8s.io/v1",
+							Kind:       "Project",
+							UID:        "",
+							Name:       "myProjectInternalName",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/sshkeys", strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			if tc.ExistingProject != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingProject)
+			}
+			if tc.ExistingCluster != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingCluster)
+			}
+			if tc.ExistingKubermaticUser != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticUser)
+			}
+			for _, existingKey := range tc.ExistingSSHKeys {
+				kubermaticObj = append(kubermaticObj, existingKey)
+			}
+			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func TestCreateSSHKeysEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -31,12 +170,11 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
 	}{
-
 		// scenario 1
 		{
 			Name:             "scenario 1: a user can create ssh key that will be assigned to the given project",
-			Body:             `{"metadata":{"displayName":"my-second-ssh-key"},"spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
-			ExpectedResponse: `{"metadata":{"name":"%s","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
+			Body:             `{"name":"my-second-ssh-key","spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
+			ExpectedResponse: `{"id":"%s","name":"my-second-ssh-key","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -53,11 +191,10 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -68,7 +205,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 		},
 	}
@@ -95,15 +232,13 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			expectedResponse := tc.ExpectedResponse
-			{
-				actualSSHKey := &apiv2.NewSSHKey{}
-				err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
-				if err != nil {
-					t.Fatal(err)
-				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.Metadata.Name)
+			actualSSHKey := &apiv1.NewSSHKey{}
+			err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
+			if err != nil {
+				t.Fatal(err)
 			}
+			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.ID)
+
 			compareWithResult(t, res, expectedResponse)
 		})
 	}
@@ -113,8 +248,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 	keyList := []runtime.Object{
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user1-1",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user1")},
+				Name: "user1-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user1",
@@ -126,8 +260,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		},
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user1-2",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user1")},
+				Name: "user1-2",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user1",
@@ -139,8 +272,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		},
 		&kubermaticv1.UserSSHKey{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "user2-1",
-				Labels: map[string]string{ssh.DefaultUserLabel: ssh.UserToLabel("user2")},
+				Name: "user2-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
 				Owner:       "user2",

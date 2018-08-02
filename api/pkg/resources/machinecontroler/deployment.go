@@ -14,7 +14,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.7"
+	tag = "v0.7.16"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -61,11 +61,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiAddress, err := data.InClusterApiserverAddress()
 	if err != nil {
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/machinecontroller"
+	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -74,7 +76,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -91,7 +93,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-master", fmt.Sprintf("http://%s:8080", apiserverServiceIP),
+				"-kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.MachineControllerKubeconfigSecretName),
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", clusterDNSIP,
@@ -125,10 +127,33 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				SuccessThreshold:    1,
 				TimeoutSeconds:      15,
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      resources.MachineControllerKubeconfigSecretName,
+					MountPath: kcDir,
+					ReadOnly:  true,
+				},
+			},
 		},
 	}
 
 	return dep, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.MachineControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.MachineControllerKubeconfigSecretName,
+					// We have to make the secret readable for all for now because owner/group cannot be changed.
+					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+				},
+			},
+		},
+	}
 }
 
 func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
@@ -149,6 +174,11 @@ func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
 	}
 	if data.Cluster.Spec.Cloud.Digitalocean != nil {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster.Spec.Cloud.Digitalocean.Token})
+	}
+	if data.Cluster.Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
 	return vars
 }

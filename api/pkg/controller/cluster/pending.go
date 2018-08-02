@@ -16,7 +16,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Setup required infrastructure at cloud provider
-	if err := cc.ensureCloudProviderIsInitialize(cluster); err != nil {
+	if err := cc.ensureCloudProviderIsInitialized(cluster); err != nil {
 		return nil, err
 	}
 
@@ -41,6 +41,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	if cluster.Status.Health.Apiserver {
+		// Controlling of user-cluster resources
 		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
 			return nil, err
 		}
@@ -53,7 +54,23 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
-		if err := cc.launchingCreateOpenVPNConfigMap(cluster); err != nil {
+		if err := cc.userClusterEnsureRoles(cluster); err != nil {
+			return nil, err
+		}
+
+		if err := cc.userClusterEnsureConfigMaps(cluster); err != nil {
+			return nil, err
+		}
+
+		if err := cc.userClusterEnsureRoleBindings(cluster); err != nil {
+			return nil, err
+		}
+
+		if err := cc.userClusterEnsureClusterRoles(cluster); err != nil {
+			return nil, err
+		}
+
+		if err := cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
 			return nil, err
 		}
 	}
@@ -65,7 +82,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
 		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-			cluster.Status.Phase = kubermaticv1.RunningClusterStatusPhase
+			c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
 		})
 		if err != nil {
 			return nil, err
@@ -75,7 +92,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	return cluster, nil
 }
 
-func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCloudProviderIsInitialized(cluster *kubermaticv1.Cluster) error {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, cluster)
 	if err != nil {
 		return err

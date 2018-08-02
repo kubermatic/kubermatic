@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,26 +12,36 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
+
+	prometheusapi "github.com/prometheus/client_golang/api"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
+	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
-
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *kubermaticfakeclentset.Clientset, error) {
-
-	datacenters := buildDatacenterMeta()
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
+	datacenters := dc
+	if datacenters == nil {
+		datacenters = buildDatacenterMeta()
+	}
 	cloudProviders := cloud.Providers(datacenters)
 
 	authenticator := NewFakeAuthenticator(user)
@@ -59,10 +72,12 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 		IsAdmin,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+	fakeMachineClient := fakemachineclientset.NewSimpleClientset(machineObjects...)
+	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
 
 	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
 		fakeImpersonationClient,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 	)
@@ -77,7 +92,7 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 	updateManager := version.New(versions, updates)
 
 	// Disable the metrics endpoint in tests
-	var promURL *string
+	var prometheusClient prometheusapi.Client
 
 	r := NewRouting(
 		datacenters,
@@ -90,7 +105,7 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 		projectProvider,
 		authenticator,
 		updateManager,
-		promURL,
+		prometheusClient,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
@@ -98,11 +113,11 @@ func createTestEndpointAndGetClients(user apiv1.User, kubeObjects, kubermaticObj
 	r.RegisterV1(v1Router)
 	r.RegisterV3(v3Router)
 
-	return mainRouter, kubermaticClient, nil
+	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
-	router, _, err := createTestEndpointAndGetClients(user, kubeObjects, kubermaticObjects, versions, updates)
+	router, _, err := createTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates)
 	return router, err
 }
 
@@ -172,8 +187,48 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 	}
 }
 
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+	}
+}
+
+// areEqualOrDie checks if binary representation of actual and expected is equal.
+//
+// note that:
+// this function fails when conversion is not possible
+func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
+	actualBytes, err := json.Marshal(actual)
+	if err != nil {
+		t.Fatalf("failed to marshal actual: %v", err)
+	}
+
+	expectedBytes, err := json.Marshal(expected)
+	if err != nil {
+		t.Fatalf("failed to marshal expected: %v", err)
+	}
+	return bytes.Equal(actualBytes, expectedBytes)
+}
+
 const (
 	testUsername = "user1"
+	testEmail    = "john@acme.com"
 )
 
 func getUser(name string, admin bool) apiv1.User {
@@ -190,6 +245,7 @@ func getUser(name string, admin bool) apiv1.User {
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
 	if recorder.Code != wantStatusCode {
 		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
@@ -198,6 +254,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
@@ -206,4 +263,26 @@ func TestUpRoute(t *testing.T) {
 	}
 	ep.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
+}
+
+type fakeUserClusterConnection struct {
+	fakeMachineClient    machineclientset.Interface
+	fakeKubernetesClient kubernetesclient.Interface
+}
+
+func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
+	return []byte{}, errors.New("not yet implemented")
+}
+
+func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (machineclientset.Interface, error) {
+	return f.fakeMachineClient, nil
+}
+
+func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kubernetesclient.Interface, error) {
+	return f.fakeKubernetesClient, nil
+}
+
+type clientsSets struct {
+	fakeKubermaticClient *kubermaticfakeclentset.Clientset
+	fakeMachineClient    *fakemachineclientset.Clientset
 }

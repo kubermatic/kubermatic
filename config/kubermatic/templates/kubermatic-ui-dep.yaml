@@ -6,6 +6,8 @@ spec:
   replicas: {{ .Values.kubermatic.ui.replicas }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/ui-config-configmap.yaml") . | sha256sum }}
       labels:
         role: kubermatic-ui
         version: v1
@@ -30,6 +32,21 @@ spec:
               readOnly: true
       imagePullSecrets:
         - name: dockercfg
+      tolerations:
+      - key: "only_critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "kubermatic.io/type"
+                operator: In
+                values:
+                - "stable"
       volumes:
         - name: config
           configMap:

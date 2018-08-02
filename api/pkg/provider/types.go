@@ -47,6 +47,7 @@ type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Clu
 type CloudSpecProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error
 }
 
@@ -124,7 +125,17 @@ type NewClusterProvider interface {
 	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
-	GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+
+	// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+	//
+	// Note that the client you will get has admin privileges
+	GetMachineClientForCustomerCluster(cluster *kubermaticv1.Cluster) (machineclientset.Interface, error)
+
+	// GetClientForCustomerCluster returns a client to interact with the given cluster
+	//
+	// Note that the client you will get has admin privileges
+	GetKubernetesClientForCustomerCluster(cluster *kubermaticv1.Cluster) (kubernetes.Interface, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
@@ -164,6 +175,7 @@ type NewSSHKeyProvider interface {
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
+	Update(*kubermaticv1.User) (*kubermaticv1.User, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project

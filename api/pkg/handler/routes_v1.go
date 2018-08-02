@@ -32,10 +32,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/ssh-keys").
 		Handler(r.listSSHKeys())
 
-	mux.Methods(http.MethodGet).
-		Path("/user").
-		Handler(r.getUser())
-
 	mux.Methods(http.MethodPost).
 		Path("/ssh-keys").
 		Handler(r.createSSHKey())
@@ -65,6 +61,14 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/openstack/securitygroups").
+		Handler(r.listOpenstackSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/openstack/subnets").
+		Handler(r.listOpenstackSubnets())
+
+	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
@@ -75,10 +79,14 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listVSphereNetworks())
 
 	//
-	// Project management
+	// Defines a set of HTTP endpoints for project resource
 	mux.Methods(http.MethodGet).
 		Path("/projects").
-		Handler(r.getProjects())
+		Handler(r.listProjects())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}").
+		Handler(r.getProject())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects").
@@ -93,7 +101,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.deleteProject())
 
 	//
-	// SSH keys that belong to a project
+	// Defines a set of HTTP endpoints for SSH Keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").
 		Handler(r.newCreateSSHKey())
@@ -107,7 +115,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListSSHKeys())
 
 	//
-	// Clusters that belong to a project
+	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
 		Handler(r.newCreateCluster())
@@ -137,18 +145,58 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newGetClusterHealth())
 
 	//
-	// Defines set of endpoints that manipulate SSH keys of a cluster
+	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
-		Handler(r.assignSSHKeyToCluster())
+		Handler(r.newAssignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
-		Handler(r.listSSHKeysAssignedToCluster())
+		Handler(r.newListSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
-		Handler(r.detachSSHKeyFromCluster())
+		Handler(r.newDetachSSHKeyFromCluster())
+
+	//
+	// Defines a set of HTTP endpoints for nodes that belong to a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Handler(r.newGetNodeForCluster())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Handler(r.newCreateNodeForCluster())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Handler(r.newListNodesForCluster())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Handler(r.newDeleteNodeForCluster())
+
+	//
+	// Defines set of HTTP endpoints for the admin token that belongs to a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Handler(r.getClusterAdminToken())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Handler(r.revokeClusterAdminToken())
+
+	//
+	// Defines set of HTTP endpoints for Users of the given project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/users").
+		Handler(r.addUserToProject())
+
+	//
+	// Defines an endpoint to retrieve information about the current token owner
+	mux.Methods(http.MethodGet).
+		Path("/me").
+		Handler(r.getCurrentUser())
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -183,7 +231,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) newListSSHKeys() http.Handler {
@@ -356,7 +404,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
-		decodeOpenstackSizeReq,
+		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -400,7 +448,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackTenantEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		decodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -422,6 +470,50 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(openstackNetworkEndpoint(r.cloudProviders)),
+		decodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/subnets openstack listOpenstackSubnets
+//
+// Lists subnets from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSubnet
+func (r Routing) listOpenstackSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackSubnetsEndpoint(r.cloudProviders)),
+		decodeOpenstackSubnetReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/openstack/securitygroups openstack listOpenstackSecurityGroups
+//
+// Lists security groups from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSecurityGroup
+func (r Routing) listOpenstackSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(openstackSecurityGroupEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -463,19 +555,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
-		decodeDcReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-func (r Routing) getUser() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(getUserHandler()),
-		decodeEmptyReq,
+		decodeLegacyDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -503,7 +583,7 @@ func (r Routing) getMasterVersions() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects project getProjects
+// swagger:route GET /api/v1/projects project listProjects
 //
 //     Lists projects that an authenticated user is a member of.
 //
@@ -512,14 +592,40 @@ func (r Routing) getMasterVersions() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       501: empty
-func (r Routing) getProjects() http.Handler {
+//       200: []Project
+//       401: empty
+//       409: empty
+func (r Routing) listProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(getProjectsEndpoint()),
+		)(listProjectsEndpoint(r.projectProvider)),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id} project getProject
+//
+//     Gets the project with the given ID
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Project
+//       401: empty
+//       409: empty
+func (r Routing) getProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getProjectEndpoint(r.projectProvider)),
+		decodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -781,7 +887,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project assignSSHKeyToCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newAssignSSHKeyToCluster
 //
 //     Assigns an existing ssh key to the given cluster
 //
@@ -796,7 +902,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) assignSSHKeyToCluster() http.Handler {
+func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -809,7 +915,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project listSSHKeysAssignedToCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newListSSHKeysAssignedToCluster
 //
 //     Lists ssh keys that are assigned to the cluster
 //     The returned collection is sorted by creation timestamp.
@@ -822,10 +928,10 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
-func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
+func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -838,7 +944,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project detachSSHKeyFromCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
 //
 //     Unassignes an ssh key from the given cluster
 //
@@ -853,7 +959,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) detachSSHKeyFromCluster() http.Handler {
+func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
@@ -861,6 +967,213 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(detachSSHKeyFromCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project getClusterAdminToken
+//
+//     Returns the current admin token for the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterAdminToken
+//       401: empty
+//       403: empty
+func (r Routing) getClusterAdminToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterAdminToken(r.projectProvider)),
+		decodeClusterAdminTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project revokeClusterAdminToken
+//
+//     Revokes the current admin token and returns a newly generated one.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterAdminToken
+//       401: empty
+//       403: empty
+func (r Routing) revokeClusterAdminToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(revokeClusterAdminToken(r.projectProvider)),
+		decodeClusterAdminTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newGetNodeForCluster
+//
+//     Gets a node that is assigned to the given cluster.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Node
+//       401: empty
+//       403: empty
+func (r Routing) newGetNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newGetNodeForCluster(r.projectProvider)),
+		decodeGetNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newCreateNodeForCluster
+//
+//     Creates a node that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Node
+//       401: empty
+//       403: empty
+func (r Routing) newCreateNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newCreateNodeForCluster(r.newSSHKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeForCluster,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newListNodesForCluster
+//
+//
+//     Lists nodes that belong to the given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Node
+//       401: empty
+//       403: empty
+func (r Routing) newListNodesForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newListNodesForCluster(r.projectProvider)),
+		decodeListNodesForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newDeleteNodeForCluster
+//
+//    Deletes the given node that belongs to the cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) newDeleteNodeForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(newDeleteNodeForCluster(r.projectProvider)),
+		decodeDeleteNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/users users addUserToProject
+//
+//     Adds the given user to the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: User
+//       401: empty
+//       403: empty
+func (r Routing) addUserToProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(addUserToProject(r.projectProvider, r.userProvider)),
+		decodeAddUserToProject,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me users getCurrentUser
+//
+// Returns information about the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) getCurrentUser() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(getCurrentUserEndpoint(r.userProvider)),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

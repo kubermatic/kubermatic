@@ -4,6 +4,8 @@
 
 # API
 /api/pkg/handler @p0lyn0mial
+/api/pkg/api @p0lyn0mial
+/api/cmd/kubermatic-api @p0lyn0mial
 
 /api/pkg/provider/kubernetes @p0lyn0mial
 
@@ -12,6 +14,9 @@
 
 # vSphere
 /api/pkg/provider/cloud/vsphere @alvaroaleman
+
+# Openstack
+/api/pkg/provider/cloud/openstack @alvaroaleman
 
 # etcd Backups
 /api/pkg/storeuploader @alvaroaleman

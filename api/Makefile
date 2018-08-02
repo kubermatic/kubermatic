@@ -83,6 +83,8 @@ endif
 	gosimple $$PACKAGES ;\
 	echo "unused" ;\
 	unused $$PACKAGES ;\
+	echo "forbidden functions" ;\
+	./hack/verify-forbidden-functions.sh ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
 	echo "misspell -error -locale US" ;\
 	misspell -error -locale US $$GOFILES ;\
@@ -91,13 +93,13 @@ endif
 cover:
 	./hack/cover.sh --html
 
-run-controller-manager: kubermatic-controller-manager
+run-controller-manager:
 	./hack/run-controller.sh
 
-run-api-server: kubermatic-api
+run-api-server:
 	./hack/run-api.sh
 
-run-rbac-generator: rbac-generator
+run-rbac-generator:
 	./hack/run-rbac-generator.sh
 
 .PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)

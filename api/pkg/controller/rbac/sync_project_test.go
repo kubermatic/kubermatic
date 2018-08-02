@@ -157,7 +157,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		{
 			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on \"master\" and seed clusters",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -198,19 +198,36 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 				&rbacv1.ClusterRoleBinding{
@@ -232,24 +249,41 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:admins",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:admins",
+						Name:     "kubermatic:usersshkeies:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:usersshkeies:viewers",
 					},
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "create", "get", "create"},
+			expectedActionsForSeeds: []string{"get", "create", "get", "create", "get", "create"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -270,19 +304,36 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -292,7 +343,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		{
 			name:                     "Scenario 2: Existing RBAC Bindings are properly updated when a new project is added",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"get", "update", "get", "update"},
+			expectedActionsForMaster: []string{"get", "update", "get", "update", "get", "update"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -324,19 +375,36 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-existing-project-1",
+							Name:     "editors-existing-project-1",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -366,30 +434,53 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-existing-project-1",
+							Name:     "editors-existing-project-1",
 						},
 						{
 
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-existing-project-1",
+						},
+						{
+
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
+			expectedActionsForSeeds: []string{"get", "update", "get", "update", "get", "update"},
 			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -410,7 +501,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -422,7 +513,24 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -451,7 +559,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -462,13 +570,35 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-existing-project-1",
+						},
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -516,7 +646,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				}
 
 				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -554,7 +684,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %v", seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -575,6 +705,200 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					}
 					createActionIndex = createActionIndex + 1
 				}
+			}
+		})
+	}
+}
+
+// TestEnsureUserProjectCleanup extends TestEnsureProjectCleanup in a way
+// that also checks if the project being removed is removed from "Spec.Project" array for all users that belong the the project
+func TestEnsureUsersProjectCleanup(t *testing.T) {
+	tests := []struct {
+		name            string
+		projectToSync   *kubermaticv1.Project
+		existingUsers   []*kubermaticv1.User
+		expectedActions []string
+		expectedUsers   []*kubermaticv1.User
+	}{
+		// scenario 1
+		{
+			name:          "Scenario 1: bob's projects entries are updated when the project he belongs to is removed",
+			projectToSync: createProject("plan9", createUser("bob")),
+			existingUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-myFirstProjectName",
+								Name:  "myFirstProjectName",
+							},
+							{
+								Group: "owners-plan9",
+								Name:  "plan9",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+			},
+			expectedActions: []string{"update", "update"},
+			expectedUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-myFirstProjectName",
+								Name:  "myFirstProjectName",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+			},
+		},
+
+		// scenario 2
+		{
+			name:          "Scenario 2: only bob's projects entries are updated when the project he belongs to is removed",
+			projectToSync: createProject("plan9", createUser("bob")),
+			existingUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-plan9",
+								Name:  "plan9",
+							},
+						},
+					},
+				},
+
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "alice",
+						Email: "alice@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-placeX",
+								Name:  "placeX",
+							},
+						},
+					},
+				},
+			},
+			expectedActions: []string{"update", "update"},
+			expectedUsers: []*kubermaticv1.User{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:     "bob",
+						Email:    "bob@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{},
+					},
+				},
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Name:  "alice",
+						Email: "alice@acme.com",
+						Projects: []kubermaticv1.ProjectGroup{
+							{
+								Group: "editors-placeX",
+								Name:  "placeX",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			kubermaticObjs := []runtime.Object{}
+			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			if test.projectToSync != nil {
+				err := projectIndexer.Add(test.projectToSync)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
+			}
+			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
+
+			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingUser := range test.existingUsers {
+				err := userIndexer.Add(existingUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, existingUser)
+			}
+			userLister := kubermaticv1lister.NewUserLister(userIndexer)
+			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+
+			// act
+			target := Controller{}
+			target.kubermaticMasterClient = fakeKubermaticClient
+			target.projectLister = projectLister
+			target.userLister = userLister
+			err := target.ensureProjectCleanup(test.projectToSync)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// validate
+			actualActions := fakeKubermaticClient.Actions()
+			if len(test.expectedActions) != len(actualActions) {
+				t.Fatalf("expected to get exactly %d actions but got %d, actions = %v", len(test.expectedActions), len(actualActions), actualActions)
+			}
+
+			// verifiedActions is equal to one because the last update action is updating the project
+			// not the users and this is something we don't want to validate
+			verifiedActions := 1
+			for index, actualAction := range actualActions {
+				if actualAction.Matches(test.expectedActions[index], "users") {
+					updateAction, ok := actualAction.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("cannot cast actualAction to CreateActon")
+					}
+					updatedUser := updateAction.GetObject().(*kubermaticv1.User)
+					if !equality.Semantic.DeepEqual(updatedUser, test.expectedUsers[index]) {
+						t.Fatalf("%v", diff.ObjectDiff(updatedUser, test.expectedUsers[index]))
+					}
+					verifiedActions = verifiedActions + 1
+				}
+			}
+			if verifiedActions != len(test.expectedActions) {
+				t.Fatalf("expected to verify %d actions but only %d were verified", verifiedActions, len(test.expectedActions))
 			}
 		})
 	}
@@ -610,7 +934,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					destination: destinationSeed,
 				},
 			},
-			expectedActionsForMaster: []string{"get", "update", "get", "update"},
+			expectedActionsForMaster: []string{"get", "update", "get", "update", "get", "update"},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -625,13 +949,24 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -655,24 +990,41 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-plan9",
+							Name:     "editors-plan9",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
+			expectedActionsForSeeds: []string{"get", "update", "get", "update", "get", "update"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -687,13 +1039,24 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -717,19 +1080,36 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-plan9",
+							Name:     "editors-plan9",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:admins",
+						Name:     "kubermatic:clusters:editors",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -802,7 +1182,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 
 				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -878,7 +1258,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 1: desired RBAC Role Bindings for a project resource are created",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"create", "create"},
+			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -907,7 +1287,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -921,13 +1301,38 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:project-thunderball:admins-thunderball",
+						Name:     "kubermatic:project-thunderball:editors-thunderball",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:viewers-thunderball",
 					},
 				},
 			},
@@ -965,7 +1370,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -979,13 +1384,38 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "editors-thunderball",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:project-thunderball:admins-thunderball",
+						Name:     "kubermatic:project-thunderball:editors-thunderball",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:viewers-thunderball",
 					},
 				},
 			},
@@ -995,7 +1425,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 3: update when existing binding doesn't match desired ones",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"update"},
+			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1024,7 +1454,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1044,14 +1474,12 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:project-thunderball:admins-thunderball",
+						Name:     "kubermatic:project-thunderball:editors-thunderball",
 					},
 				},
-			},
-			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1065,13 +1493,65 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						{
 							APIGroup: rbacv1.GroupName,
 							Kind:     "Group",
-							Name:     "admins-thunderball",
+							Name:     "wrong-subject-name",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:project-thunderball:admins-thunderball",
+						Name:     "kubermatic:project-thunderball:viewers-thunderball",
+					},
+				},
+			},
+			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:editors-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:editors-thunderball",
+					},
+				},
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:viewers-thunderball",
 					},
 				},
 			},
@@ -1109,7 +1589,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			}
 
 			if len(fakeKubeClient.Actions()) != len(test.expectedClusterRoleBindings) {
-				t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
 			}
 			for index, action := range fakeKubeClient.Actions() {
 				if !action.Matches(test.expectedActions[index], "clusterrolebindings") {
@@ -1140,8 +1620,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		// scenario 1
 		{
 			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
-			expectedActionsForSeeds:  []string{"get", "create", "get", "create"},
+			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActionsForSeeds:  []string{"get", "create", "get", "create", "get", "create"},
 			seedClusters:             2,
 			projectResourcesToSync: []projectResource{
 				{
@@ -1180,13 +1660,25 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources: []string{"clusters"},
 							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"get"},
 						},
 					},
 				},
@@ -1208,13 +1700,26 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:admins",
+						Name: "kubermatic:clusters:editors",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources: []string{"clusters"},
 							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:clusters:viewers",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"clusters"},
+							Verbs:     []string{"get"},
 						},
 					},
 				},
@@ -1234,13 +1739,26 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:admins",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources: []string{"usersshkeies"},
 							Verbs:     []string{"create", "get", "update", "delete"},
+						},
+					},
+				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkeies:viewers",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"usersshkeies"},
+							Verbs:     []string{"get"},
 						},
 					},
 				},
@@ -1286,7 +1804,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				}
 
 				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -1324,7 +1842,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %v", seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -1362,7 +1880,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 1: desired RBAC Roles for a project resource are created",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"create", "create"},
+			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1388,7 +1906,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1404,6 +1922,27 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							Resources:     []string{"projects"},
 							ResourceNames: []string{"thunderball"},
 							Verbs:         []string{"create", "get", "update"},
+						},
+					},
+				},
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get"},
 						},
 					},
 				},
@@ -1439,7 +1978,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1458,6 +1997,27 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						},
 					},
 				},
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
 			},
 		},
 
@@ -1465,7 +2025,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		{
 			name:            "scenario 3: update when desired are not the same as expected RBAC Roles",
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			expectedActions: []string{"update"},
+			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1491,7 +2051,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1510,11 +2070,33 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						},
 					},
 				},
+
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
 			},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:project-thunderball:admins-thunderball",
+						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1568,7 +2150,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			}
 
 			if len(fakeKubeClient.Actions()) != len(test.expectedClusterRoles) {
-				t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				t.Fatalf("unexpected actions %#v ", fakeKubeClient.Actions())
 			}
 
 			for index, action := range fakeKubeClient.Actions() {

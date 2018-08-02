@@ -13,6 +13,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +24,8 @@ import (
 )
 
 const (
-	//AddonManagerDeploymentName is the name for the addon-manager deployment
-	AddonManagerDeploymentName = "addon-manager"
-	//ApiserverDeploymenName is the name for the apiserver deployment
-	ApiserverDeploymenName = "apiserver"
+	//ApiserverDeploymentName is the name for the apiserver deployment
+	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
 	//SchedulerDeploymentName is the name for the scheduler deployment
@@ -35,6 +34,12 @@ const (
 	MachineControllerDeploymentName = "machine-controller"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
+	//DNSResolverDeploymentName is the name of the dns resolver deployment
+	DNSResolverDeploymentName = "dns-resolver"
+	//DNSResolverConfigMapName is the name of the dns resolvers configmap
+	DNSResolverConfigMapName = "dns-resolver"
+	//DNSResolverServiceName is the name of the dns resolvers service
+	DNSResolverServiceName = "dns-resolver"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -56,6 +61,13 @@ const (
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
+	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
+	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+
 	//CAKeySecretName is the name for the secret containing the private ca key
 	CAKeySecretName = "ca-key"
 	//CACertSecretName is the name for the secret containing the ca.crt
@@ -79,8 +91,10 @@ const (
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
-	//OpenVPNClientConfigConfigMapName is the name for the configmap containing the openvpn client config used within the user cluster
-	OpenVPNClientConfigConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
+	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
+	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
+	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
 
@@ -93,8 +107,34 @@ const (
 	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
-	// DefaultOwnerReadOnlyMode represents file mode 0400 in decimal
-	DefaultOwnerReadOnlyMode = 256
+	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
+	MachineControllerCertUsername = "machine-controller"
+	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	ControllerManagerCertUsername = "system:kube-controller-manager"
+	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
+	SchedulerCertUsername = "system:kube-scheduler"
+
+	//MachineControllerRoleName is the name for the MachineController roles
+	MachineControllerRoleName = "machine-controller"
+	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
+	MachineControllerRoleBindingName = "machine-controller"
+	//MachineControllerClusterRoleName is the name for the MachineController cluster role
+	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
+	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
+	//ControllerManagerRoleBindingName is the name of the controller-manager's rolebindings
+	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
+	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
+	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
+
+	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
+	EtcdPodDisruptionBudgetName = "etcd"
+
+	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
+	DefaultOwnerReadOnlyMode = 0400
+
+	// DefaultAllReadOnlyMode represents file mode with read permissions for all
+	DefaultAllReadOnlyMode = 0444
 
 	// AppLabelKey defines the label key app which should be used within resources
 	AppLabelKey = "app"
@@ -122,7 +162,7 @@ const (
 	// KubeletClientKeySecretKey kubelet-client.key
 	KubeletClientKeySecretKey = "kubelet-client.key"
 	// KubeletClientCertSecretKey kubelet-client.crt
-	KubeletClientCertSecretKey = "kubelet-client.crt"
+	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
 	// ServiceAccountKeySecretKey sa.key
 	ServiceAccountKeySecretKey = "sa.key"
 	// AdminKubeconfigSecretKey admin-kubeconfig
@@ -173,11 +213,17 @@ type RoleCreator = func(data *TemplateData, existing *rbacv1.Role) (*rbacv1.Role
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
 type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
 
+// ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
+type ClusterRoleCreator = func(data *TemplateData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
+
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
 type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
 
 // DeploymentCreator defines an interface to create/update Deployment's
 type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
+
+// PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets's
+type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
@@ -280,24 +326,24 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(cluster *kubermaticv1.Cluster) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
 	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := UserClusterDNSResolverIP(cluster)
+	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
 	if err != nil {
 		return corev1.DNSNone, nil, err
 	}
-	if len(cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", cluster.Name)
+	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
 	}
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", cluster.Spec.ClusterNetwork.DNSDomain),
-			cluster.Spec.ClusterNetwork.DNSDomain,
+			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			d.Cluster.Spec.ClusterNetwork.DNSDomain,
 		},
 		Options: []corev1.PodDNSConfigOption{
 			{
@@ -344,6 +390,20 @@ func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 
 	}
 	return s.Spec.Ports[0].NodePort, nil
+}
+
+// InClusterApiserverAddress takes the ClusterIP and node-port of the external/secure apiserver service
+// and returns them joined by a `:`.
+// Service lookup happens within `Cluster.Status.NamespaceName`.
+func (d *TemplateData) InClusterApiserverAddress() (string, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
+	if err != nil {
+		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, d.Cluster.Name, err)
+	}
+	if net.ParseIP(service.Spec.ClusterIP) == nil {
+		return "", fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", ApiserverExternalServiceName, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return fmt.Sprintf("%s:%d", service.Spec.ClusterIP, service.Spec.Ports[0].NodePort), nil
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified

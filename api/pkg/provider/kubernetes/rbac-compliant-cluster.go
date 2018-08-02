@@ -194,10 +194,10 @@ func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kub
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 
-// GetClientForCustomerCluster returns a client to interact with the given cluster
+// GetKubernetesClientForCustomerCluster returns a client to interact with the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *RBACCompliantClusterProvider) GetClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
+func (p *RBACCompliantClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
 }
 

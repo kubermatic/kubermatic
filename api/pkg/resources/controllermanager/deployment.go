@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -13,10 +14,16 @@ import (
 )
 
 var (
-	defaultMemoryRequest = resource.MustParse("100Mi")
-	defaultCPURequest    = resource.MustParse("100m")
-	defaultMemoryLimit   = resource.MustParse("512Mi")
-	defaultCPULimit      = resource.MustParse("250m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+		},
+	}
 )
 
 const (
@@ -37,6 +44,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
+	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas
+	}
+
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
@@ -69,17 +80,18 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// get clusterIP of apiserver
-	apiserverServiceIP, err := data.ClusterIPByServiceName(resources.ApiserverInternalServiceName)
+	apiAddress, err := data.InClusterApiserverAddress()
 	if err != nil {
 		return nil, err
 	}
 
 	// Configure user cluster DNS resolver for this pod.
-	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data.Cluster)
+	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 	if err != nil {
 		return nil, err
 	}
 
+	kcDir := "/etc/kubernetes/controllermanager"
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -89,7 +101,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				"until wget -T 1 http://" + apiserverServiceIP + ":8080/healthz; do echo waiting for apiserver; sleep 2; done;",
+				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", apiAddress),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -122,6 +134,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
+		{
+			Name:      resources.ControllerManagerKubeconfigSecretName,
+			MountPath: kcDir,
+			ReadOnly:  true,
+		},
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
 		fakeVMWareUUIDMount := corev1.VolumeMount{
@@ -134,6 +151,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
 	}
 
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -141,20 +162,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data, apiserverServiceIP),
+			Args:            getFlags(data, kcDir),
 			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
-				},
-			},
+			Resources:                resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -187,9 +199,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData, apiserverIP string) []string {
+func getFlags(data *resources.TemplateData, kcDir string) []string {
 	flags := []string{
-		"--master", "http://" + apiserverIP + ":8080",
+		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
@@ -210,6 +222,10 @@ func getFlags(data *resources.TemplateData, apiserverIP string) []string {
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
+	if data.Cluster.Spec.Cloud.Azure != nil {
+		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 	return flags
@@ -287,6 +303,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.OpenVPNClientCertificatesSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.ControllerManagerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ControllerManagerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

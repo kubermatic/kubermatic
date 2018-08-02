@@ -8,6 +8,8 @@ import (
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
+	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
+	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -28,6 +30,11 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	return &Provider{
 		dcs: dcs,
 	}
+}
+
+// DefaultCloudSpec adds defaults to the cloud spec
+func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec
@@ -260,6 +267,26 @@ func (os *Provider) GetNetworks(cloud *kubermaticv1.CloudSpec) ([]NetworkWithExt
 	return networks, nil
 }
 
+// GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName
+func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuritygroups.SecGroup, error) {
+	authClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	dc, found := os.dcs[cloud.DatacenterName]
+	if !found || dc.Spec.Openstack == nil {
+		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	}
+
+	securityGroups, err := getAllSecurityGroups(authClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get securityGroups: %v", err)
+	}
+
+	return securityGroups, nil
+}
+
 func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
@@ -293,4 +320,19 @@ func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Se
 	}
 
 	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+}
+
+// GetSubnets list all available subnet ids fot a given CloudSpec
+func (os *Provider) GetSubnets(cloud *kubermaticv1.CloudSpec, networkID string) ([]ossubnets.Subnet, error) {
+	serviceClient, err := os.getNetClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %v", err)
+	}
+
+	subnets, err := getSubnetForNetwork(serviceClient, networkID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subnets, nil
 }

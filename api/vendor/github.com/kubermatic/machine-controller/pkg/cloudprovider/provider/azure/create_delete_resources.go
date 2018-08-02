@@ -33,7 +33,7 @@ func deleteInterfacesByMachineUID(ctx context.Context, c *config, machineUID typ
 	}
 
 	for _, iface := range allInterfaces {
-		if iface.Tags != nil && *iface.Tags[machineUIDTag] == string(machineUID) {
+		if iface.Tags != nil && iface.Tags[machineUIDTag] != nil && *iface.Tags[machineUIDTag] == string(machineUID) {
 			future, err := ifClient.Delete(ctx, c.ResourceGroup, *iface.Name)
 			if err != nil {
 				return err
@@ -104,7 +104,7 @@ func deleteVMsByMachineUID(ctx context.Context, c *config, machineUID types.UID)
 	}
 
 	for _, vm := range allServers {
-		if vm.Tags != nil && *vm.Tags[machineUIDTag] == string(machineUID) {
+		if vm.Tags != nil && vm.Tags[machineUIDTag] != nil && *vm.Tags[machineUIDTag] == string(machineUID) {
 			future, err := vmClient.Delete(ctx, c.ResourceGroup, *vm.Name)
 			if err != nil {
 				return err
@@ -138,7 +138,7 @@ func deleteDisksByMachineUID(ctx context.Context, c *config, machineUID types.UI
 	}
 
 	for _, disk := range allDisks {
-		if disk.Tags != nil && *disk.Tags[machineUIDTag] == string(machineUID) {
+		if disk.Tags != nil && disk.Tags[machineUIDTag] != nil && *disk.Tags[machineUIDTag] == string(machineUID) {
 			future, err := disksClient.Delete(ctx, c.ResourceGroup, *disk.Name)
 			if err != nil {
 				return err
@@ -153,10 +153,11 @@ func deleteDisksByMachineUID(ctx context.Context, c *config, machineUID types.UI
 	return nil
 }
 
-func createPublicIPAddress(ctx context.Context, ipName string, machineUID types.UID, c *config) (network.PublicIPAddress, error) {
+func createPublicIPAddress(ctx context.Context, ipName string, machineUID types.UID, c *config) (*network.PublicIPAddress, error) {
+	glog.Infof("Creating public IP %q", ipName)
 	ipClient, err := getIPClient(c)
 	if err != nil {
-		return network.PublicIPAddress{}, err
+		return nil, err
 	}
 
 	ipParams := network.PublicIPAddress{
@@ -170,24 +171,29 @@ func createPublicIPAddress(ctx context.Context, ipName string, machineUID types.
 	}
 	future, err := ipClient.CreateOrUpdate(ctx, c.ResourceGroup, ipName, ipParams)
 	if err != nil {
-		return network.PublicIPAddress{}, fmt.Errorf("failed to create public IP address: %v", err)
+		return nil, fmt.Errorf("failed to create public IP address: %v", err)
 	}
 
 	err = future.WaitForCompletion(ctx, ipClient.Client)
 	if err != nil {
-		return network.PublicIPAddress{}, fmt.Errorf("failed to retrieve public IP address creation result: %v", err)
+		return nil, fmt.Errorf("failed to retrieve public IP address creation result: %v", err)
 	}
 
-	return future.Result(*ipClient)
+	if _, err = future.Result(*ipClient); err != nil {
+		return nil, fmt.Errorf("failed to create public IP address: %v", err)
+	}
+
+	glog.Infof("Fetching info for IP address %q", ipName)
+	ip, err := getPublicIPAddress(ctx, ipName, c.ResourceGroup, ipClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch info about public IP %q: %v", ipName, err)
+	}
+
+	return ip, nil
 }
 
-func getPublicIPAddress(ctx context.Context, ipName string, c *config) (*network.PublicIPAddress, error) {
-	ipClient, err := getIPClient(c)
-	if err != nil {
-		return nil, err
-	}
-
-	ip, err := ipClient.Get(ctx, c.ResourceGroup, ipName, "")
+func getPublicIPAddress(ctx context.Context, ipName string, resourceGroup string, ipClient *network.PublicIPAddressesClient) (*network.PublicIPAddress, error) {
+	ip, err := ipClient.Get(ctx, resourceGroup, ipName, "")
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +210,16 @@ func getSubnet(ctx context.Context, c *config) (network.Subnet, error) {
 	return subnetsClient.Get(ctx, c.ResourceGroup, c.VNetName, c.SubnetName, "")
 }
 
-func createNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config) (network.Interface, error) {
+func getVirtualNetwork(ctx context.Context, c *config) (network.VirtualNetwork, error) {
+	virtualNetworksClient, err := getVirtualNetworksClient(c)
+	if err != nil {
+		return network.VirtualNetwork{}, err
+	}
+
+	return virtualNetworksClient.Get(ctx, c.ResourceGroup, c.VNetName, "")
+}
+
+func createNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config, publicIP *network.PublicIPAddress) (network.Interface, error) {
 	ifClient, err := getInterfacesClient(config)
 	if err != nil {
 		return network.Interface{}, fmt.Errorf("failed to create interfaces client: %v", err)
@@ -213,22 +228,6 @@ func createNetworkInterface(ctx context.Context, ifName string, machineUID types
 	subnet, err := getSubnet(ctx, config)
 	if err != nil {
 		return network.Interface{}, fmt.Errorf("failed to fetch subnet: %v", err)
-	}
-
-	var ip *network.PublicIPAddress
-	if config.AssignPublicIP {
-		glog.Infof("Creating public IP for interface %q", ifName)
-		ipName := ifName + "-pubip"
-		_, err = createPublicIPAddress(ctx, ipName, machineUID, config)
-		if err != nil {
-			return network.Interface{}, fmt.Errorf("failed to create public IP: %v", err)
-		}
-
-		glog.Infof("Fetching info for IP address %q", ipName)
-		ip, err = getPublicIPAddress(ctx, ipName, config)
-		if err != nil {
-			return network.Interface{}, fmt.Errorf("failed to fetch info about public IP %q: %v", ipName, err)
-		}
 	}
 
 	ifSpec := network.Interface{
@@ -241,7 +240,7 @@ func createNetworkInterface(ctx context.Context, ifName string, machineUID types
 					InterfaceIPConfigurationPropertiesFormat: &network.InterfaceIPConfigurationPropertiesFormat{
 						Subnet: &subnet,
 						PrivateIPAllocationMethod: network.Dynamic,
-						PublicIPAddress:           ip,
+						PublicIPAddress:           publicIP,
 					},
 				},
 			},

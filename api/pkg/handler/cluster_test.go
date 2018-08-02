@@ -14,7 +14,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +24,7 @@ import (
 )
 
 func TestDeleteClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcase := struct {
 		Name                   string
 		Body                   string
@@ -42,7 +43,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
 		ExpectedActions:  12,
 		Body:             ``,
-		ExpectedResponse: `null`,
+		ExpectedResponse: `{}`,
 		HTTPStatus:       http.StatusOK,
 		ExistingProject: &kubermaticv1.Project{
 			ObjectMeta: metav1.ObjectMeta{
@@ -59,11 +60,10 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 		},
 		ExistingKubermaticUser: &kubermaticv1.User{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-			},
+			ObjectMeta: metav1.ObjectMeta{},
 			Spec: kubermaticv1.UserSpec{
-				Name: "John",
+				Name:  "John",
+				Email: testEmail,
 				Projects: []kubermaticv1.ProjectGroup{
 					{
 						Group: "owners-myProjectInternalName",
@@ -74,7 +74,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		},
 		ExistingAPIUser: &apiv1.User{
 			ID:    testUsername,
-			Email: "john@acme.com",
+			Email: testEmail,
 		},
 		ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 			&kubermaticv1.UserSSHKey{
@@ -173,10 +173,13 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	for _, existingKey := range testcase.ExistingSSHKeys {
 		kubermaticObj = append(kubermaticObj, existingKey)
 	}
-	ep, kubermaticClient, err := createTestEndpointAndGetClients(*testcase.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+
+	ep, clientsSets, err := createTestEndpointAndGetClients(*testcase.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
+
+	kubermaticClient := clientsSets.fakeKubermaticClient
 
 	ep.ServeHTTP(res, req)
 
@@ -222,29 +225,30 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 }
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
-		Name                     string
-		Body                     string
-		KeyToDelete              string
-		ExpectedDeleteResponse   string
-		ExpectedDeleteHTTPStatus int
-		ExistingProject          *kubermaticv1.Project
-		ExistingKubermaticUser   *kubermaticv1.User
-		ExistingAPIUser          *apiv1.User
-		ExistingCluster          *kubermaticv1.Cluster
-		ExistingSSHKeys          []*kubermaticv1.UserSSHKey
-		ExpectedGetResponse      string
-		ExpectedGetHTTPStatus    int
+		Name                            string
+		Body                            string
+		KeyToDelete                     string
+		ExpectedDeleteResponse          string
+		ExpectedDeleteHTTPStatus        int
+		ExistingProject                 *kubermaticv1.Project
+		ExistingKubermaticUser          *kubermaticv1.User
+		ExistingAPIUser                 *apiv1.User
+		ExistingCluster                 *kubermaticv1.Cluster
+		ExistingSSHKeys                 []*kubermaticv1.UserSSHKey
+		ExpectedResponseOnGetAfterDelte string
+		ExpectedGetHTTPStatus           int
 	}{
 		// scenario 1
 		{
-			Name:                     "scenario 1: detaches one key from the cluster",
-			Body:                     ``,
-			KeyToDelete:              "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:   `null`,
-			ExpectedDeleteHTTPStatus: http.StatusOK,
-			ExpectedGetHTTPStatus:    http.StatusOK,
-			ExpectedGetResponse:      `[{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			Name:                            "scenario 1: detaches one key from the cluster",
+			Body:                            ``,
+			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:          `{}`,
+			ExpectedDeleteHTTPStatus:        http.StatusOK,
+			ExpectedGetHTTPStatus:           http.StatusOK,
+			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -260,11 +264,10 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -275,7 +278,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -307,6 +310,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "key-display-name",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -372,13 +376,14 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				if res.Code != tc.ExpectedGetHTTPStatus {
 					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedGetHTTPStatus, res.Code, res.Body.String())
 				}
-				compareWithResult(t, res, tc.ExpectedGetResponse)
+				compareWithResult(t, res, tc.ExpectedResponseOnGetAfterDelte)
 			}
 		})
 	}
 }
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -400,7 +405,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body:             ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -417,11 +422,10 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -432,7 +436,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -449,6 +453,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						CreationTimestamp: metav1.NewTime(creationTime),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "yafn",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -466,6 +471,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "abcd",
 						Clusters: []string{"abcd"},
 					},
 				},
@@ -519,6 +525,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 }
 
 func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -534,7 +541,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
 			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
-			ExpectedResponse: `null`,
+			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -551,11 +558,10 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -566,7 +572,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -616,11 +622,10 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -631,7 +636,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -696,18 +701,18 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 }
 
 func TestCreateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
-		Name                               string
-		Body                               string
-		ExpectedResponse                   string
-		HTTPStatus                         int
-		ExistingProject                    *kubermaticv1.Project
-		ExistingKubermaticUser             *kubermaticv1.User
-		ExistingAPIUser                    *apiv1.User
-		ExistingSSHKey                     *kubermaticv1.UserSSHKey
-		RewriteClusterNameAndNamespaceName bool
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingSSHKey         *kubermaticv1.UserSSHKey
+		RewriteClusterID       bool
 	}{
-
 		// scenario 1
 		{
 			Name:             "scenario 1: a cluster with invalid spec is rejected",
@@ -729,11 +734,10 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -744,16 +748,16 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 		},
 		// scenario 2
 		{
-			Name:                               "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:                               `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse:                   `{"metadata":{"name":"%s","creationTimestamp":null,"labels":{"worker-name":""},"ownerReferences":[{"apiVersion":"kubermatic.k8s.io/v1","kind":"Project","name":"myProjectInternalName","uid":""}]},"spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":""},"version":"1.9.7","masterVersion":"","humanReadableName":"keen-snyder","workerName":"","pause":false},"address":{"url":"","externalName":"","kubeletToken":"","adminToken":"","ip":""},"status":{"lastUpdated":null,"health":{"apiserver":false,"scheduler":false,"controller":false,"machineController":false,"etcd":false,"lastTransitionTime":null},"lastDeployedMasterVersion":"","rootCA":{"key":"","cert":""},"apiserverCert":{"key":"","cert":""},"kubeletCert":{"key":"","cert":""},"apiserverSshKey":{"privateKey":"","publicKey":""},"serviceAccountKey":"","namespaceName":"%s","userName":"","userEmail":""}}`,
-			RewriteClusterNameAndNamespaceName: true,
-			HTTPStatus:                         http.StatusCreated,
+			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
+			Body:             `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -769,11 +773,10 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -784,7 +787,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -821,11 +824,10 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-secretProject",
@@ -836,7 +838,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 		},
 	}
@@ -868,13 +870,13 @@ func TestCreateClusterEndpoint(t *testing.T) {
 
 			expectedResponse := tc.ExpectedResponse
 			// since Cluster.Name is automatically generated by the system just rewrite it.
-			if tc.RewriteClusterNameAndNamespaceName {
-				actualCluster := &apiv1.Cluster{}
+			if tc.RewriteClusterID {
+				actualCluster := &apiv1.NewCluster{}
 				err = json.Unmarshal(res.Body.Bytes(), actualCluster)
 				if err != nil {
 					t.Fatal(err)
 				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualCluster.Name, actualCluster.Status.NamespaceName)
+				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualCluster.ID)
 			}
 
 			compareWithResult(t, res, expectedResponse)
@@ -883,6 +885,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -916,11 +919,10 @@ func TestGetClusterHealth(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -931,7 +933,7 @@ func TestGetClusterHealth(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1026,6 +1028,7 @@ func TestGetClusterHealth(t *testing.T) {
 }
 
 func TestUpdateCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1059,11 +1062,10 @@ func TestUpdateCluster(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1074,7 +1076,7 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1158,6 +1160,7 @@ func TestUpdateCluster(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1191,11 +1194,10 @@ func TestGetCluster(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1206,7 +1208,7 @@ func TestGetCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1286,6 +1288,7 @@ func TestGetCluster(t *testing.T) {
 }
 
 func TestListClusters(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1317,11 +1320,10 @@ func TestListClusters(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
 			},
 			ExistingKubermaticUser: &kubermaticv1.User{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"email": kubernetes.ToLabelValue("john@acme.com")},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
-					Name: "John",
+					Name:  "John",
+					Email: testEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1332,7 +1334,7 @@ func TestListClusters(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUsername,
-				Email: "john@acme.com",
+				Email: testEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1645,6 +1647,7 @@ func TestClustersEndpoint(t *testing.T) {
 }
 
 func TestUpdateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		responseCode  int
@@ -1652,7 +1655,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		modifyCluster func(*kubermaticv1.Cluster) *kubermaticv1.Cluster
 	}{
 		{
-			name: "successful update admin token",
+			name: "successful update admin token (deprecated)",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
@@ -1712,7 +1715,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid admin token",
+			name: "invalid admin token (deprecated)",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
@@ -1805,5 +1808,178 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 				t.Errorf("got different cluster than expected. Diff: %v", diff)
 			}
 		})
+	}
+}
+
+func TestGetClusterAdminTokenEndpoint(t *testing.T) {
+	tester := apiv1.User{
+		ID:    testUsername,
+		Email: testEmail,
+	}
+
+	user := &kubermaticv1.User{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: kubermaticv1.UserSpec{
+			Name:  "John",
+			Email: testEmail,
+			Projects: []kubermaticv1.ProjectGroup{
+				{
+					Group: "owners-myProjectInternalName",
+					Name:  "myProjectInternalName",
+				},
+			},
+		},
+	}
+
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "myProjectInternalName",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "kubermatic.io/v1",
+					Kind:       "User",
+					UID:        "",
+					Name:       "John",
+				},
+			},
+		},
+		Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+		},
+		Address: kubermaticv1.ClusterAddress{
+			AdminToken:   "cccccc.cccccccccccccccc",
+			KubeletToken: "dddddd.dddddddddddddddd",
+			URL:          "https://foo.bar:8443",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				Fake: &kubermaticv1.FakeCloudSpec{
+					Token: "foo",
+				},
+				DatacenterName: "us-central1",
+			},
+		},
+	}
+
+	expectedResponse := fmt.Sprintf(`{"token":"%s"}`, cluster.Address.AdminToken)
+
+	// setup world view
+	ep, err := createTestEndpoint(tester, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	// perform test
+	res := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
+	ep.ServeHTTP(res, req)
+
+	// check assertions
+	checkStatusCode(http.StatusOK, res, t)
+	compareWithResult(t, res, expectedResponse)
+}
+
+func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
+	tester := apiv1.User{
+		ID:    testUsername,
+		Email: testEmail,
+	}
+
+	user := &kubermaticv1.User{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: kubermaticv1.UserSpec{
+			Name:  "John",
+			Email: testEmail,
+			Projects: []kubermaticv1.ProjectGroup{
+				{
+					Group: "owners-myProjectInternalName",
+					Name:  "myProjectInternalName",
+				},
+			},
+		},
+	}
+
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "myProjectInternalName",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "kubermatic.io/v1",
+					Kind:       "User",
+					UID:        "",
+					Name:       "John",
+				},
+			},
+		},
+		Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+		},
+		Address: kubermaticv1.ClusterAddress{
+			AdminToken:   "cccccc.cccccccccccccccc",
+			KubeletToken: "dddddd.dddddddddddddddd",
+			URL:          "https://foo.bar:8443",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				Fake: &kubermaticv1.FakeCloudSpec{
+					Token: "foo",
+				},
+				DatacenterName: "us-central1",
+			},
+		},
+	}
+
+	// setup world view
+	ep, clientsSets, err := createTestEndpointAndGetClients(tester, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	// perform test
+	res := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
+	ep.ServeHTTP(res, req)
+
+	// check assertions
+	checkStatusCode(http.StatusOK, res, t)
+
+	response := &apiv1.ClusterAdminToken{}
+	err = json.Unmarshal(res.Body.Bytes(), response)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(response.Token) == 0 || response.Token == cluster.Address.AdminToken {
+		t.Errorf("revocation response does not contain updated admin token, but '%s'", response.Token)
+	}
+
+	if err := validation.ValidateKubernetesToken(response.Token); err != nil {
+		t.Errorf("generated token '%s' is malformed: %v", response.Token, err)
+	}
+
+	// check if the cluster was really updated
+	updatedCluster, err := clientsSets.fakeKubermaticClient.KubermaticV1().Clusters().Get(cluster.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updatedCluster.Address.AdminToken == cluster.Address.AdminToken {
+		t.Error("updated admin token in cluster resource was not persisted")
 	}
 }

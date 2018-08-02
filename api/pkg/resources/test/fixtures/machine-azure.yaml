@@ -8,7 +8,8 @@ spec:
   providerConfig:
     cloudProvider: azure
     cloudProviderSpec:
-      assignPublicIP: false
+      assignPublicIP: true
+      availabilitySet: ""
       clientID: 32hrf23oh89f32
       clientSecret: rbyughv438oh32f23v2
       location: westeurope

@@ -8,35 +8,73 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+// ProjectReq represents a request for project-specific data
+type ProjectReq struct {
+	// in: path
+	ProjectID string `json:"project_id"`
+}
+
+// GetProjectID returns the ID of a requested project
+func (pr ProjectReq) GetProjectID() string {
+	return pr.ProjectID
+}
+
+func decodeProjectRequest(c context.Context, r *http.Request) (interface{}, error) {
+	return ProjectReq{
+		ProjectID: mux.Vars(r)["project_id"],
+	}, nil
+}
+
 // ListClustersReq represent a request for clusters specific data
 // swagger:parameters listClusters listClustersV3
 type ListClustersReq struct {
-	DCReq
+	LegacyDCReq
 }
 
 func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ListClustersReq
 
-	dcr, err := decodeDcReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.DCReq = dcr.(DCReq)
+	req.LegacyDCReq = dcr.(LegacyDCReq)
 
 	return req, nil
 }
 
-// GetClusterReq represent a request for cluster specific data
+// LegacyGetClusterReq represent a request for cluster specific data
 // swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 getPossibleClusterUpgradesV3
+type LegacyGetClusterReq struct {
+	LegacyDCReq
+	// in: path
+	ClusterName string `json:"cluster"`
+}
+
+// GetClusterReq represent a request for cluster specific data
 type GetClusterReq struct {
 	DCReq
 	// in: path
 	ClusterName string `json:"cluster"`
+}
+
+func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyGetClusterReq
+	req.ClusterName = mux.Vars(r)["cluster"]
+
+	dcr, err := decodeLegacyDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.LegacyDCReq = dcr.(LegacyDCReq)
+
+	return req, nil
 }
 
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -60,18 +98,18 @@ type CreateClusterReqBody struct {
 // UpdateClusterReq represent a update request for a specific cluster
 // swagger:parameters updateClusterV3
 type UpdateClusterReq struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: body
 	Body CreateClusterReqBody
 }
 
 func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req UpdateClusterReq
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
 		return nil, err
@@ -83,7 +121,7 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 // ClusterReq represent a request for clusters specific data
 // swagger:parameters createCluster createClusterV3
 type ClusterReq struct {
-	DCReq
+	LegacyDCReq
 	// in: body
 	Body ClusterReqBody
 }
@@ -97,11 +135,11 @@ type ClusterReqBody struct {
 func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterReq
 
-	dcr, err := decodeDcReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.DCReq = dcr.(DCReq)
+	req.LegacyDCReq = dcr.(LegacyDCReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -124,9 +162,9 @@ type DCGetter interface {
 	GetDC() string
 }
 
-// DCReq represent a request for datacenter specific data
-// swagger:parameters getDatacenter
+// DCReq represent a request for datacenter specific data in a given project
 type DCReq struct {
+	ProjectReq
 	// in: path
 	DC string `json:"dc"`
 }
@@ -136,20 +174,35 @@ func (req DCReq) GetDC() string {
 	return req.DC
 }
 
-func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCReq
+// LegacyDCReq represent a request for datacenter specific data
+// swagger:parameters getDatacenter
+type LegacyDCReq struct {
+	// in: path
+	DC string `json:"dc"`
+}
+
+// GetDC returns the name of the datacenter in the request
+func (req LegacyDCReq) GetDC() string {
+	return req.DC
+}
+
+func decodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyDCReq
 
 	req.DC = mux.Vars(r)["dc"]
 	return req, nil
 }
 
-func decodeProjectPathReq(c context.Context, r *http.Request) (string, error) {
-	// project_id is actually an internal name of the object
-	projectName, ok := mux.Vars(r)["project_id"]
-	if !ok {
-		return "", fmt.Errorf("'project_id' parameter is required but was not provided")
+func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
+	projectReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 	}
-	return projectName, nil
+
+	return DCReq{
+		DC:         mux.Vars(r)["dc"],
+		ProjectReq: projectReq.(ProjectReq),
+	}, nil
 }
 
 // DoSizesReq represent a request for digitalocean sizes
@@ -184,17 +237,17 @@ func decodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// OpenstackSizeReq represent a request for openstack sizes
-type OpenstackSizeReq struct {
+// OpenstackReq represent a request for openstack
+type OpenstackReq struct {
 	Username       string
 	Password       string
-	Tenant         string
 	Domain         string
+	Tenant         string
 	DatacenterName string
 }
 
-func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackSizeReq
+func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackReq
 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
@@ -205,16 +258,39 @@ func decodeOpenstackSizeReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// OpenstackReq represent a request for openstack tenants and networks
-type OpenstackReq struct {
+// OpenstackSubnetReq represent a request for openstack subnets
+// swagger:parameters listOpenstackSubnets
+type OpenstackSubnetReq struct {
+	OpenstackReq
+	// in: query
+	NetworkID string
+}
+
+func decodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Domain = r.Header.Get("Domain")
+	req.Tenant = r.Header.Get("Tenant")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
+	return req, nil
+}
+
+// OpenstackTenantReq represent a request for openstack tenants
+type OpenstackTenantReq struct {
 	Username       string
 	Password       string
 	Domain         string
 	DatacenterName string
 }
 
-func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req OpenstackReq
+func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackTenantReq
 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
@@ -225,7 +301,7 @@ func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := decodeClusterReq(c, r)
+	req, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -233,24 +309,10 @@ func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// CreateNodesReq represent a request for specific data to create a node
-// swagger:parameters createClusterNodes
-type CreateNodesReq struct {
-	GetClusterReq
-	// in: body
-	Body CreateNodesReqBody
-}
-
-// CreateNodesReqBody represents the request body of a create nodes request
-type CreateNodesReqBody struct {
-	Instances int            `json:"instances"`
-	Spec      apiv1.NodeSpec `json:"spec"`
-}
-
 // NodeReq represent a request for node specific data
 // swagger:parameters deleteNodeHandlerV3 getNodeHandlerV3
 type NodeReq struct {
-	GetClusterReq
+	LegacyGetClusterReq
 	// in: path
 	NodeName string `json:"node"`
 	// in: query
@@ -260,11 +322,11 @@ type NodeReq struct {
 func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeReq
 
-	cr, err := decodeClusterReq(c, r)
+	cr, err := decodeLegacyClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(GetClusterReq)
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 	req.NodeName = mux.Vars(r)["node"]
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
 

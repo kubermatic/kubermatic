@@ -1,11 +1,10 @@
 package kubernetes
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -21,9 +20,8 @@ func RemoveFinalizer(finalizers []string, toRemove string) []string {
 	return set.List()
 }
 
-// ToLabelValue returns the base64 encoded sha1 sum of s
-func ToLabelValue(s string) string {
-	sh := sha1.New()
-	fmt.Fprint(sh, s)
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(sh.Sum(nil))
+// GenerateToken generates a new, random token that can be used
+// as an admin and kubelet token.
+func GenerateToken() string {
+	return fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 }

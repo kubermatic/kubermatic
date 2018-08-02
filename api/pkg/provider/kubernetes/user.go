@@ -1,19 +1,18 @@
 package kubernetes
 
 import (
+	"strings"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
-	userLabelKey      = "user"
-	userEmailLabelKey = "email"
-	userIDLabelKey    = "id"
+	userLabelKey = "user"
 )
 
 // NewUserProvider returns a user provider
@@ -32,24 +31,36 @@ type UserProvider struct {
 
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
-	selector := labels.SelectorFromSet(map[string]string{userEmailLabelKey: kubernetes.ToLabelValue(email)})
-	users, err := p.userLister.List(selector)
+	users, err := p.userLister.List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	if len(users) == 0 {
-		return nil, provider.ErrNotFound
+
+	for _, user := range users {
+		if strings.ToLower(user.Spec.Email) == strings.ToLower(email) {
+			return user.DeepCopy(), nil
+		}
 	}
-	return users[0], err
+
+	// In case we could not find the user from the lister, we get all users from the API
+	// This ensures we don't run into issues with an outdated cache & create the same user twice
+	// This part will be called when a new user does the first request & the user does not exist yet as resource.
+	userList, err := p.client.KubermaticV1().Users().List(v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range userList.Items {
+		if strings.ToLower(user.Spec.Email) == strings.ToLower(email) {
+			return user.DeepCopy(), nil
+		}
+	}
+
+	return nil, provider.ErrNotFound
 }
 
 // CreateUser creates a user
 func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
 	user := kubermaticv1.User{}
-	user.Labels = map[string]string{
-		userEmailLabelKey: kubernetes.ToLabelValue(email),
-		userIDLabelKey:    kubernetes.ToLabelValue(id),
-	}
 	user.GenerateName = "user-"
 	user.Spec.Email = email
 	user.Spec.Name = name
@@ -57,4 +68,9 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
 	return p.client.KubermaticV1().Users().Create(&user)
+}
+
+// Update updates the given user
+func (p *UserProvider) Update(user *kubermaticv1.User) (*kubermaticv1.User, error) {
+	return p.client.KubermaticV1().Users().Update(user)
 }

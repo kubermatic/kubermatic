@@ -221,8 +221,14 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			Namespace: mockNamespaceName,
 		},
 	}
+	dnsResolverConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.DNSResolverConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
 	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap},
+		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap},
 	}
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -230,7 +236,8 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			Namespace: mockNamespaceName,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{{NodePort: 99}},
+			Ports:     []corev1.ServicePort{{NodePort: 99}},
+			ClusterIP: "192.0.2.10",
 		},
 	}
 	apiserverService := corev1.Service{
@@ -263,12 +270,23 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			ClusterIP: "192.0.2.2",
 		},
 	}
+	dnsService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.DNSResolverServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 98}},
+			ClusterIP: "192.0.2.11",
+		},
+	}
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{
 			apiServerExternalService,
 			apiserverService,
 			etcdclientService,
 			openvpnserverService,
+			dnsService,
 		},
 	}
 	secretList := createNamedSecrets([]string{
