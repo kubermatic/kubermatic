@@ -211,17 +211,17 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 
-	c.Username, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Username)
+	c.Username, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, "VSPHERE_USERNAME")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	c.Password, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.Password)
+	c.Password, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Password, "VSPHERE_PASSWORD")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	c.VSphereURL, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.VSphereURL)
+	c.VSphereURL, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.VSphereURL, "VSPHERE_ADDRESS")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -246,7 +246,7 @@ func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.C
 		return nil, nil, nil, err
 	}
 
-	c.AllowInsecure, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.AllowInsecure)
+	c.AllowInsecure, err = p.configVarResolver.GetConfigVarBoolValueOrEnv(rawConfig.AllowInsecure, "VSPHERE_ALLOW_INSECURE")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -298,7 +298,7 @@ func machineInvalidConfigurationTerminalError(err error) error {
 	}
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, userdata string) (instance.Instance, error) {
 	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -386,7 +386,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, userdata string) (instance.
 	return VSphereServer{name: virtualMachine.Name(), status: instance.StatusRunning, id: virtualMachine.Reference().Value}, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, _ instance.Instance) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+	if _, err := p.Get(machine); err != nil {
+		if err == cloudprovidererrors.ErrInstanceNotFound {
+			return nil
+		}
+		return err
+	}
+
 	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
@@ -445,6 +452,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ instance.Instance) error 
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
+
 	config, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)

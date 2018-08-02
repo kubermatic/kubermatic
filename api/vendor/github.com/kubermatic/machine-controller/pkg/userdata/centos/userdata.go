@@ -3,26 +3,22 @@ package centos
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"text/template"
 
 	"github.com/Masterminds/semver"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
 	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
-
-type Provider struct{}
-
-type Config struct {
-	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
-}
 
 type packageCompatibilityMatrix struct {
 	versions []string
@@ -34,15 +30,6 @@ var dockerInstallCandidates = []packageCompatibilityMatrix{
 		versions: []string{"1.13", "1.13.1"},
 		pkg:      "docker-1.13.1",
 	},
-}
-
-func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.ContainerRuntimeInfo) {
-	for _, installCandidate := range dockerInstallCandidates {
-		for _, v := range installCandidate.versions {
-			runtimes = append(runtimes, machinesv1alpha1.ContainerRuntimeInfo{Name: containerruntime.Docker, Version: v})
-		}
-	}
-	return runtimes
 }
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
@@ -67,7 +54,32 @@ func getDockerPackageName(version string) (string, error) {
 	return "", fmt.Errorf("no package found for version '%s'", version)
 }
 
-func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
+// Config TODO
+type Config struct {
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
+// Provider is a pkg/userdata.Provider implementation
+type Provider struct{}
+
+// SupportedContainerRuntimes return list of container runtimes
+func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.ContainerRuntimeInfo) {
+	for _, installCandidate := range dockerInstallCandidates {
+		for _, v := range installCandidate.versions {
+			runtimes = append(runtimes, machinesv1alpha1.ContainerRuntimeInfo{Name: containerruntime.Docker, Version: v})
+		}
+	}
+	return runtimes
+}
+
+// UserData renders user-data template
+func (p Provider) UserData(
+	spec machinesv1alpha1.MachineSpec,
+	kubeconfig *clientcmdapi.Config,
+	ccProvider cloud.ConfigProvider,
+	clusterDNSIPs []net.IP,
+) (string, error) {
+
 	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
@@ -92,6 +104,14 @@ func (p Provider) UserData(spec machinesv1alpha1.MachineSpec, kubeconfig *client
 	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
+	}
+
+	if pconfig.OverwriteCloudConfig != nil {
+		cpConfig = *pconfig.OverwriteCloudConfig
+	}
+
+	if pconfig.Network != nil {
+		return "", errors.New("static IP config is not supported with CentOS")
 	}
 
 	osConfig, err := getConfig(pconfig.OperatingSystemSpec)
@@ -157,7 +177,7 @@ package_reboot_if_required: true
 
 ssh_pwauth: no
 
-{{ if ne (len .ProviderConfig.SSHPublicKeys) 0 }}
+{{- if ne (len .ProviderConfig.SSHPublicKeys) 0 }}
 ssh_authorized_keys:
 {{- range .ProviderConfig.SSHPublicKeys }}
   - "{{ . }}"
@@ -169,6 +189,9 @@ write_files:
   content: |
     net.bridge.bridge-nf-call-ip6tables = 1
     net.bridge.bridge-nf-call-iptables = 1
+    kernel.panic_on_oops = 1
+    kernel.panic = 10
+    vm.overcommit_memory = 1
 
 - path: "/etc/yum.repos.d/kubernetes.repo"
   content: |
@@ -194,19 +217,25 @@ write_files:
     #     mls - Multi Level Security protection.
     SELINUXTYPE=targeted
 
-
 - path: "/etc/sysconfig/kubelet-overwrite"
   content: |
-    KUBELET_EXTRA_ARGS={{ if .CloudProvider }}--cloud-provider={{ .CloudProvider }} --cloud-config=/etc/kubernetes/cloud-config{{ end}} \
-      --authentication-token-webhook=true --hostname-override={{ .MachineSpec.Name }} --read-only-port 0 \
-      --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} --cluster-domain=cluster.local
-{{ if semverCompare "<1.11.0" .KubeletVersion }}
+    KUBELET_EXTRA_ARGS=--authentication-token-webhook=true \
+      {{- if .CloudProvider }}
+      --cloud-provider={{ .CloudProvider }} \
+      --cloud-config=/etc/kubernetes/cloud-config \
+      {{- end}}
+      --hostname-override={{ .MachineSpec.Name }} \
+      --read-only-port=0 \
+      --protect-kernel-defaults=true \
+      --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
+      --cluster-domain=cluster.local
+
+{{- if semverCompare "<1.11.0" .KubeletVersion }}
 - path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
   content: |
     [Service]
     EnvironmentFile=/etc/sysconfig/kubelet
-{{ end }}
-
+{{- end }}
 
 - path: "/etc/kubernetes/cloud-config"
   content: |

@@ -94,6 +94,7 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
   "subnetName": "{{ .Cluster.Spec.Cloud.Azure.SubnetName }}",
   "routeTableName": "{{ .Cluster.Spec.Cloud.Azure.RouteTableName }}",
   "securityGroupName": "{{ .Cluster.Spec.Cloud.Azure.SecurityGroup }}",
+  "primaryAvailabilitySetName": "{{ .Cluster.Spec.Cloud.Azure.AvailabilitySet }}",
 
 {{/* Consumed by apiserver and controller-manager */}}
   "useInstanceMetadata": false
