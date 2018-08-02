@@ -37,14 +37,6 @@ const (
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
 
-var ClusterPhases = []ClusterPhase{
-	NoneClusterStatusPhase,
-	ValidatingClusterStatusPhase,
-	LaunchingClusterStatusPhase,
-	RunningClusterStatusPhase,
-	DeletingClusterStatusPhase,
-}
-
 const (
 	WorkerNameLabelKey = "worker-name"
 )
@@ -78,11 +70,14 @@ type ClusterSpec struct {
 	Cloud          *CloudSpec              `json:"cloud"`
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
-	Version       string `json:"version"`       // Cluster version
-	MasterVersion string `json:"masterVersion"` // Deprecated cluster version
+	// Version defines the wanted version of the control plane
+	Version string `json:"version"`
+	// MasterVersion is Deprecated
+	MasterVersion string `json:"masterVersion"`
 
-	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
-	WorkerName        string `json:"workerName"`        // WorkerName is a cluster used in development, compare --worker-name flag.
+	// HumanReadableName is the cluster name provided by the user
+	HumanReadableName string `json:"humanReadableName"`
+
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -129,32 +124,46 @@ type NetworkRanges struct {
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL          string `json:"url"`
+	// URL under which the Apiserver is available
+	URL string `json:"url"`
+	// ExternalName is the DNS name for this cluster
 	ExternalName string `json:"externalName"`
-	KubeletToken string `json:"kubeletToken"`
-	AdminToken   string `json:"adminToken"`
-	IP           string `json:"ip"`
+	// AdminToken is the token for the kubeconfig, the user can download
+	AdminToken string `json:"adminToken"`
+	// IP is the external IP under which the apiserver is available
+	IP string `json:"ip"`
 }
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastUpdated               metav1.Time   `json:"lastUpdated,omitempty"`
-	Phase                     ClusterPhase  `json:"phase,omitempty"`
-	Health                    ClusterHealth `json:"health,omitempty"`
-	LastDeployedMasterVersion string        `json:"lastDeployedMasterVersion"`
+	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
+	// Phase is Deprecated.
+	Phase ClusterPhase `json:"phase,omitempty"`
+	// Health exposes information about the current health state of the individual control plane components
+	Health ClusterHealth `json:"health,omitempty"`
 
-	RootCA            KeyCert `json:"rootCA"`
-	ApiserverCert     KeyCert `json:"apiserverCert"`
-	KubeletCert       KeyCert `json:"kubeletCert"`
-	ApiserverSSHKey   RSAKeys `json:"apiserverSshKey"`
-	ServiceAccountKey Bytes   `json:"serviceAccountKey"`
-	NamespaceName     string  `json:"namespaceName"`
+	// Deprecated
+	RootCA KeyCert `json:"rootCA"`
+	// Deprecated
+	ApiserverCert KeyCert `json:"apiserverCert"`
+	// Deprecated
+	KubeletCert KeyCert `json:"kubeletCert"`
+	// Deprecated
+	ApiserverSSHKey RSAKeys `json:"apiserverSshKey"`
+	// Deprecated
+	ServiceAccountKey Bytes `json:"serviceAccountKey"`
+	// NamespaceName defines the namespace the control plane of this cluster is deployed in
+	NamespaceName string `json:"namespaceName"`
 
-	UserName  string `json:"userName"`
+	// UserName contains the name of the owner of this cluster
+	UserName string `json:"userName"`
+	// UserEmail contains the email of the owner of this cluster
 	UserEmail string `json:"userEmail"`
 
-	ErrorReason  *ClusterStatusError `json:"errorReason,omitempty"`
-	ErrorMessage *string             `json:"errorMessage,omitempty"`
+	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved
+	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
+	// ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved
+	ErrorMessage *string `json:"errorMessage,omitempty"`
 }
 
 type ClusterStatusError string

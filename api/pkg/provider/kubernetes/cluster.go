@@ -57,7 +57,6 @@ type ClusterProvider struct {
 // NewCluster creates a new Cluster with the given ClusterSpec for the given user
 func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
-	spec.WorkerName = p.workerName
 
 	clusters, err := p.Clusters(user)
 	if err != nil {

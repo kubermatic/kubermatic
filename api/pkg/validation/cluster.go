@@ -113,10 +113,6 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return fmt.Errorf("invalid admin token: %v", err)
 	}
 
-	if err := ValidateKubernetesToken(newCluster.Address.KubeletToken); err != nil {
-		return fmt.Errorf("invalid kubelet token: %v", err)
-	}
-
 	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
 		return errors.New("changing the status is not allowed")
 	}
