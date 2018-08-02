@@ -222,11 +222,12 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
 
-	ResourceGroup  string `json:"resourceGroup"`
-	VNetName       string `json:"vnet"`
-	SubnetName     string `json:"subnet"`
-	RouteTableName string `json:"routeTable"`
-	SecurityGroup  string `json:"securityGroup"`
+	ResourceGroup   string `json:"resourceGroup"`
+	VNetName        string `json:"vnet"`
+	SubnetName      string `json:"subnet"`
+	RouteTableName  string `json:"routeTable"`
+	SecurityGroup   string `json:"securityGroup"`
+	AvailabilitySet string `json:"availabilitySet"`
 }
 
 // VSphere credentials represents a credential for accessing vSphere
