@@ -42,7 +42,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		dep = &appsv1.Deployment{}
 	}
 
-	dep.Name = resources.ApiserverDeploymenName
+	dep.Name = resources.ApiserverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.GetLabels(name)
 

@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	//ApiserverDeploymenName is the name for the apiserver deployment
-	ApiserverDeploymenName = "apiserver"
+	//ApiserverDeploymentName is the name for the apiserver deployment
+	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
 	//SchedulerDeploymentName is the name for the scheduler deployment
