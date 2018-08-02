@@ -9,9 +9,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/go-kit/kit/endpoint"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
