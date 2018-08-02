@@ -174,6 +174,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 }
 
 func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
+	t.Helper()
 	bBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
@@ -188,6 +189,7 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 }
 
 func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
 	var actualResponse interface{}
 	var expectedResponse interface{}
 
@@ -214,6 +216,7 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 // note that:
 // this function fails when conversion is not possible
 func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
+	t.Helper()
 	actualBytes, err := json.Marshal(actual)
 	if err != nil {
 		t.Fatalf("failed to marshal actual: %v", err)
