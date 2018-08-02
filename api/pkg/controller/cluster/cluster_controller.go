@@ -2,11 +2,9 @@ package cluster
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
@@ -18,7 +16,6 @@ import (
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsv1informer "k8s.io/client-go/informers/apps/v1"
@@ -35,13 +32,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
-)
-
-const (
-	validatingSyncPeriod = 15 * time.Second
-	launchingSyncPeriod  = 2 * time.Second
-	deletingSyncPeriod   = 10 * time.Second
-	runningSyncPeriod    = 60 * time.Second
 )
 
 // UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
@@ -69,8 +59,6 @@ type Controller struct {
 	nodeAccessNetwork string
 	etcdDiskSize      resource.Quantity
 
-	metrics *Metrics
-
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
 	secretLister              corev1lister.SecretLister
@@ -96,7 +84,6 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	metrics *Metrics,
 	userClusterConnProvider UserClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -134,7 +121,6 @@ func NewController(
 		dc:          dc,
 		dcs:         dcs,
 		cps:         cps,
-		metrics:     metrics,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -239,12 +225,6 @@ func NewController(
 	cc.clusterRoleBindingLister = clusterRoleBindingInformer.Lister()
 	cc.podDisruptionBudgetLister = podDisruptionBudgetInformer.Lister()
 
-	// register error handler that will increment a counter that will be scraped by prometheus,
-	// that accounts for all errors reported via a call to runtime.HandleError
-	runtime.ErrorHandlers = append(runtime.ErrorHandlers, func(err error) {
-		metrics.UnhandledErrors.Add(1.0)
-	})
-
 	return cc, nil
 }
 
@@ -346,17 +326,6 @@ func (cc *Controller) syncCluster(key string) error {
 
 	glog.V(4).Infof("syncing cluster %s", key)
 
-	for _, phase := range kubermaticv1.ClusterPhases {
-		value := 0.0
-		if phase == cluster.Status.Phase {
-			value = 1.0
-		}
-		cc.metrics.ClusterPhases.With(prometheus.Labels{
-			"cluster": cluster.Name,
-			"phase":   strings.ToLower(string(phase))},
-		).Set(value)
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		if cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
 			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
@@ -453,22 +422,6 @@ func (cc *Controller) handleErr(err error, key interface{}) {
 	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
-func (cc *Controller) syncInPhase(phase kubermaticv1.ClusterPhase) {
-	clusters, err := cc.clusterLister.List(labels.Everything())
-	if err != nil {
-		cc.metrics.Clusters.Set(0)
-		runtime.HandleError(fmt.Errorf("error listing clusters during phase sync %s: %v", phase, err))
-		return
-	}
-	cc.metrics.Clusters.Set(float64(len(clusters)))
-
-	for _, c := range clusters {
-		if c.Status.Phase == phase {
-			cc.queue.Add(c.Name)
-		}
-	}
-}
-
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
@@ -476,12 +429,7 @@ func (cc *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(cc.runWorker, time.Second, stopCh)
 	}
-	cc.metrics.Workers.Set(float64(workerCount))
-
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.ValidatingClusterStatusPhase) }, validatingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.LaunchingClusterStatusPhase) }, launchingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.DeletingClusterStatusPhase) }, deletingSyncPeriod, stopCh)
-	go wait.Until(func() { cc.syncInPhase(kubermaticv1.RunningClusterStatusPhase) }, runningSyncPeriod, stopCh)
+	workers.Set(float64(workerCount))
 
 	<-stopCh
 }
@@ -511,7 +459,8 @@ func (cc *Controller) handleChildObject(i interface{}) {
 				if obj.GetDeletionTimestamp() != nil {
 					return
 				}
-				runtime.HandleError(fmt.Errorf("orphaned child obj found '%s/%s'. Responsible controller %s not found", obj.GetNamespace(), obj.GetName(), controllerRef.Name))
+				// If the child exists but the parent is gone, the GarbageCollector has not deleted this resource yet.
+				glog.V(6).Infof("orphaned child obj found '%s/%s'. Responsible controller %s not found. GarbageCollector will take care.", obj.GetNamespace(), obj.GetName(), controllerRef.Name)
 				return
 			}
 			runtime.HandleError(fmt.Errorf("failed to get cluster %s from lister: %v", controllerRef.Name, err))

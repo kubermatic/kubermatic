@@ -18,7 +18,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     kubeApiserverSelector: 'job="apiserver"',
     machineControllerSelector: 'job="machine-controller"',
 
-    // We build alerts for the presence of all these jobs.
+    // We build alerts for the presence of all these jobs. Those are global running applications
     jobs+:: {
       Cadvisor: $._config.cadvisorSelector,
       Kubelet: $._config.kubeletSelector,
@@ -26,7 +26,6 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       KubermaticControllerManager: 'job="pods",namespace="kubermatic",role="controller-manager"',
       KubernetesApiserver: $._config.kubeApiserverSelector,
       KubeStateMetrics: $._config.kubeStateMetricsSelector,
-      MachineController: $._config.machineControllerSelector,
       // KubernetesControllerManager: $._config.kubeControllerManagerSelector,
       // KubernetesScheduler: $._config.kubeSchedulerSelector,
     },
