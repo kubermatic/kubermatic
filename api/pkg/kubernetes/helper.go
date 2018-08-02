@@ -1,7 +1,10 @@
 package kubernetes
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -15,4 +18,10 @@ func RemoveFinalizer(finalizers []string, toRemove string) []string {
 	set := sets.NewString(finalizers...)
 	set.Delete(toRemove)
 	return set.List()
+}
+
+// GenerateToken generates a new, random token that can be used
+// as an admin and kubelet token.
+func GenerateToken() string {
+	return fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
 }

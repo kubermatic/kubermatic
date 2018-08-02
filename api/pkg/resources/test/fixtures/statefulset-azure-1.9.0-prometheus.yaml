@@ -34,6 +34,7 @@ spec:
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
         image: quay.io/prometheus/prometheus:v2.2.0
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 10
           httpGet:
@@ -41,6 +42,7 @@ spec:
             port: web
           initialDelaySeconds: 30
           periodSeconds: 5
+          successThreshold: 1
           timeoutSeconds: 3
         name: prometheus
         ports:
@@ -52,7 +54,9 @@ spec:
           httpGet:
             path: /-/healthy
             port: web
+          initialDelaySeconds: 30
           periodSeconds: 5
+          successThreshold: 1
           timeoutSeconds: 3
         resources:
           limits:
@@ -61,6 +65,8 @@ spec:
           requests:
             cpu: 50m
             memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/prometheus/config
           name: config

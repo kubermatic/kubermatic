@@ -1248,6 +1248,108 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Returns the current admin token for the given cluster.",
+        "operationId": "getClusterAdminToken",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterAdminToken",
+            "schema": {
+              "$ref": "#/definitions/ClusterAdminToken"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Revokes the current admin token and returns a newly generated one.",
+        "operationId": "revokeClusterAdminToken",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterAdminToken",
+            "schema": {
+              "$ref": "#/definitions/ClusterAdminToken"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/sshkeys": {
       "get": {
         "description": "The returned collection is sorted by creation timestamp.",
@@ -2463,6 +2565,17 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "ClusterAdminToken": {
+      "description": "ClusterAdminToken represents a cluster's admin token",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ClusterHealth": {
       "type": "object",
       "title": "NewClusterHealth stores health information about the cluster's components.",
@@ -2558,6 +2671,9 @@
         },
         "clusterNetwork": {
           "$ref": "#/definitions/ClusterNetworkingConfig"
+        },
+        "componentsOverride": {
+          "$ref": "#/definitions/ComponentSettings"
         },
         "humanReadableName": {
           "type": "string",
@@ -2759,6 +2875,24 @@
       "x-go-name": "Cluster",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ComponentSettings": {
+      "type": "object",
+      "properties": {
+        "apiserver": {
+          "$ref": "#/definitions/DeploymentSettings"
+        },
+        "controllerManager": {
+          "$ref": "#/definitions/DeploymentSettings"
+        },
+        "etcd": {
+          "$ref": "#/definitions/EtcdSettings"
+        },
+        "scheduler": {
+          "$ref": "#/definitions/DeploymentSettings"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "ContainerLinuxSpecV2": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
       "type": "object",
@@ -2899,6 +3033,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "DeploymentSettings": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Replicas"
+        },
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -3055,6 +3203,15 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "EtcdSettings": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ExecConfig": {
       "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",
@@ -4146,6 +4303,23 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceList": {
+      "title": "ResourceList is a set of (resource name, quantity) pairs.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+    },
+    "ResourceRequirements": {
+      "type": "object",
+      "title": "ResourceRequirements describes the compute resource requirements.",
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/ResourceList"
+        },
+        "requests": {
+          "$ref": "#/definitions/ResourceList"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
     "SSHKey": {
       "description": "SSHKey represents a ssh key",

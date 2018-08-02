@@ -16,6 +16,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/defaulting"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
@@ -813,4 +814,83 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 	req.KeyName = sshKeyName
 
 	return req, nil
+}
+
+// ClusterAdminTokenReq defines HTTP request data for getClusterAdminToken and
+// revokeClusterAdminToken endpoints.
+// swagger:parameters getClusterAdminToken revokeClusterAdminToken
+type ClusterAdminTokenReq struct {
+	DCReq
+	// in: path
+	ClusterName string `json:"cluster_name"`
+}
+
+func decodeClusterAdminTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ClusterAdminTokenReq
+	clusterName, err := decodeClusterName(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterName = clusterName
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ClusterAdminTokenReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalClusterTokenToExternal(cluster), nil
+	}
+}
+
+func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ClusterAdminTokenReq)
+		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+
+		project, err := projectProvider.Get(user, req.ProjectID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster.Address.AdminToken = kubernetes.GenerateToken()
+
+		_, err = clusterProvider.Update(user, project, cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalClusterTokenToExternal(cluster), nil
+	}
+}
+
+func convertInternalClusterTokenToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.ClusterAdminToken {
+	return &apiv1.ClusterAdminToken{
+		Token: internalCluster.Address.AdminToken,
+	}
 }
