@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-kit/kit/endpoint"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	"github.com/go-kit/kit/endpoint"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
