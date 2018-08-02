@@ -248,7 +248,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			ExpectedDeleteResponse:          `{}`,
 			ExpectedDeleteHTTPStatus:        http.StatusOK,
 			ExpectedGetHTTPStatus:           http.StatusOK,
-			ExpectedResponseOnGetAfterDelte: `[{"metadata":{"name":"key-abc-yafn","displayName":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -405,7 +405,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body:             ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"yafn","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"abcd","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
