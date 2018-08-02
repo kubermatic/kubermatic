@@ -807,7 +807,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user doesn't belong to the given project = myProjectInternalName"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"John\" doesn't belong to the given project = myProjectInternalName"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
