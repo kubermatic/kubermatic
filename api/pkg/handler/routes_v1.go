@@ -231,7 +231,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) newListSSHKeys() http.Handler {
@@ -928,7 +928,7 @@ func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
