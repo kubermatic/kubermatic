@@ -143,6 +143,8 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) (*kubermati
 		return nil, fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
 
+	countUpdate(c, "namespace", c.Status.NamespaceName)
+
 	return c, nil
 }
 
@@ -236,6 +238,8 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 				if _, err := cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Patch(op.name, types.MergePatchType, patch); err != nil {
 					return fmt.Errorf("failed to patch secret '%s': %v", op.name, err)
 				}
+
+				countUpdate(c, "secret", op.name)
 			}
 		}
 	}
@@ -294,6 +298,11 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Update(service); err != nil {
 			return fmt.Errorf("failed to patch Service %s: %v", service.Name, err)
 		}
+
+		fmt.Printf("gvk = %#v\n", service.GetObjectKind())
+		fmt.Printf("gvk = %#v\n", service.GetObjectKind().GroupVersionKind())
+
+		countUpdate(c, "service", service.Name)
 	}
 
 	return nil
@@ -333,6 +342,8 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
 			return fmt.Errorf("failed to patch ServiceAccount %s: %v", sa.Name, err)
 		}
+
+		countUpdate(c, "serviceaccount", sa.Name)
 	}
 
 	return nil
@@ -378,6 +389,8 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Update(role); err != nil {
 			return fmt.Errorf("failed to update Role %s: %v", role.Name, err)
 		}
+
+		countUpdate(c, "role", role.Name)
 	}
 
 	return nil
@@ -423,6 +436,8 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Update(rb); err != nil {
 			return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
 		}
+
+		countUpdate(c, "rolebinding", rb.Name)
 	}
 
 	return nil
@@ -466,6 +481,8 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Update(crb); err != nil {
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
+
+		countUpdate(c, "clusterrolebinding", crb.Name)
 	}
 
 	return nil
@@ -527,6 +544,8 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
 			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
 		}
+
+		countUpdate(c, "deployment", dep.Name)
 	}
 
 	return nil
@@ -578,6 +597,8 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Update(se); err != nil {
 			return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
 		}
+
+		countUpdate(c, "secret", se.Name)
 	}
 
 	return nil
@@ -631,6 +652,8 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Update(cm); err != nil {
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
+
+		countUpdate(c, "configmap", cm.Name)
 	}
 
 	return nil
@@ -688,6 +711,8 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
 			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
 		}
+
+		countUpdate(c, "statefulset", set.Name)
 	}
 
 	return nil
@@ -738,6 +763,8 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 		if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Update(pdb); err != nil {
 			return fmt.Errorf("failed to update PodDisruptionBudget %s: %v", pdb.Name, err)
 		}
+
+		countUpdate(c, "poddisruptionbudget", pdb.Name)
 	}
 
 	return nil
