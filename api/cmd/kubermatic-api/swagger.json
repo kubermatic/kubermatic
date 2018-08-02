@@ -2308,6 +2308,10 @@
       "type": "object",
       "title": "AzureCloudSpec specifies acceess credentials to Azure cloud.",
       "properties": {
+        "availabilitySet": {
+          "type": "string",
+          "x-go-name": "AvailabilitySet"
+        },
         "clientID": {
           "type": "string",
           "x-go-name": "ClientID"
