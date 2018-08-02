@@ -345,10 +345,6 @@ func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[strin
 	if err := writer.Write([]string{c.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
 		return nil, err
 	}
-	if err := writer.Write([]string{c.Address.KubeletToken, "kubelet-bootstrap", "10001", "system:bootstrappers"}); err != nil {
-		// Bootstrapping now works with dedicated (per-node) tokens and no longer requires this token.
-		return nil, err
-	}
 	writer.Flush()
 	if err := writer.Error(); err != nil {
 		return nil, err
