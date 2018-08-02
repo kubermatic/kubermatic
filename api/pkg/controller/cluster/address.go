@@ -6,10 +6,10 @@ import (
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -43,7 +43,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 	if c.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Address.AdminToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+			c.Address.AdminToken = kubernetes.GenerateToken()
 		})
 		if err != nil {
 			return nil, err
@@ -54,7 +54,7 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 	if c.Address.KubeletToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Address.KubeletToken = fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+			c.Address.KubeletToken = kubernetes.GenerateToken()
 		})
 		if err != nil {
 			return nil, err
