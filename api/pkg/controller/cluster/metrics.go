@@ -40,7 +40,7 @@ func init() {
 	})
 }
 
-func countUpdate(cluster *kubermaticv1.Cluster, typeName, resourceName string) {
+func countSeedResourceUpdate(cluster *kubermaticv1.Cluster, typeName, resourceName string) {
 	updates.With(prometheus.Labels{
 		"cluster":       cluster.Name,
 		"type":          typeName,

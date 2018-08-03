@@ -143,7 +143,7 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) (*kubermati
 		return nil, fmt.Errorf("failed to create namespace %s: %v", c.Status.NamespaceName, err)
 	}
 
-	countUpdate(c, "namespace", c.Status.NamespaceName)
+	countSeedResourceUpdate(c, "namespace", c.Status.NamespaceName)
 
 	return c, nil
 }
@@ -239,7 +239,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 					return fmt.Errorf("failed to patch secret '%s': %v", op.name, err)
 				}
 
-				countUpdate(c, "secret", op.name)
+				countSeedResourceUpdate(c, "secret", op.name)
 			}
 		}
 	}
@@ -299,10 +299,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to patch Service %s: %v", service.Name, err)
 		}
 
-		fmt.Printf("gvk = %#v\n", service.GetObjectKind())
-		fmt.Printf("gvk = %#v\n", service.GetObjectKind().GroupVersionKind())
-
-		countUpdate(c, "service", service.Name)
+		countSeedResourceUpdate(c, "service", service.Name)
 	}
 
 	return nil
@@ -343,7 +340,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 			return fmt.Errorf("failed to patch ServiceAccount %s: %v", sa.Name, err)
 		}
 
-		countUpdate(c, "serviceaccount", sa.Name)
+		countSeedResourceUpdate(c, "serviceaccount", sa.Name)
 	}
 
 	return nil
@@ -390,7 +387,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update Role %s: %v", role.Name, err)
 		}
 
-		countUpdate(c, "role", role.Name)
+		countSeedResourceUpdate(c, "role", role.Name)
 	}
 
 	return nil
@@ -437,7 +434,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
 		}
 
-		countUpdate(c, "rolebinding", rb.Name)
+		countSeedResourceUpdate(c, "rolebinding", rb.Name)
 	}
 
 	return nil
@@ -482,7 +479,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
 
-		countUpdate(c, "clusterrolebinding", crb.Name)
+		countSeedResourceUpdate(c, "clusterrolebinding", crb.Name)
 	}
 
 	return nil
@@ -545,7 +542,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
 		}
 
-		countUpdate(c, "deployment", dep.Name)
+		countSeedResourceUpdate(c, "deployment", dep.Name)
 	}
 
 	return nil
@@ -598,7 +595,7 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
 		}
 
-		countUpdate(c, "secret", se.Name)
+		countSeedResourceUpdate(c, "secret", se.Name)
 	}
 
 	return nil
@@ -653,7 +650,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
 
-		countUpdate(c, "configmap", cm.Name)
+		countSeedResourceUpdate(c, "configmap", cm.Name)
 	}
 
 	return nil
@@ -712,7 +709,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
 		}
 
-		countUpdate(c, "statefulset", set.Name)
+		countSeedResourceUpdate(c, "statefulset", set.Name)
 	}
 
 	return nil
@@ -764,7 +761,7 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 			return fmt.Errorf("failed to update PodDisruptionBudget %s: %v", pdb.Name, err)
 		}
 
-		countUpdate(c, "poddisruptionbudget", pdb.Name)
+		countSeedResourceUpdate(c, "poddisruptionbudget", pdb.Name)
 	}
 
 	return nil
