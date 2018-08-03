@@ -92,6 +92,12 @@ var (
 	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifest1, testManifest2, testManifest3)
 )
 
+type fakeKubeconfigProvider struct{}
+
+func (f *fakeKubeconfigProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
+	return []byte("foo"), nil
+}
+
 func TestController_combineManifests(t *testing.T) {
 	controller := &Controller{}
 
@@ -167,7 +173,8 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir: addonDir,
+		addonDir:           addonDir,
+		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
 	if err != nil {
@@ -218,8 +225,9 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir:    addonDir,
-		registryURI: parceRegistryURI("bar.io"),
+		addonDir:           addonDir,
+		registryURI:        parceRegistryURI("bar.io"),
+		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
 	if err != nil {
@@ -254,7 +262,8 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir: addonDir,
+		addonDir:           addonDir,
+		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
 	if err != nil {
@@ -294,7 +303,8 @@ func TestController_getAddonManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir: addonDir,
+		addonDir:           addonDir,
+		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
 	if err != nil {
@@ -317,7 +327,9 @@ func TestController_getAddonManifests(t *testing.T) {
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
-	controller := &Controller{}
+	controller := &Controller{
+		KubeconfigProvider: &fakeKubeconfigProvider{},
+	}
 
 	manifests := []*bytes.Buffer{
 		bytes.NewBufferString(testManifest1),
