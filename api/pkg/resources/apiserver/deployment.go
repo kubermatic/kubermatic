@@ -148,6 +148,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
+			Ports: []corev1.ContainerPort{
+				{
+					ContainerPort: externalNodePort,
+					Protocol:      corev1.ProtocolTCP,
+				},
+				{
+					ContainerPort: 8080,
+					Protocol:      corev1.ProtocolTCP,
 				},
 			},
 			ReadinessProbe: &corev1.Probe{

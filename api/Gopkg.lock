@@ -662,7 +662,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:67e57e82886fba0a7e8cf0e3e07f6337cdbcbcfeabfc158ba7274c00c848111b"
+  digest = "1:9b2057f1bef9e384bf77c40f56f28e90f69459fbc0f5be54ca85a762d656de7a"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
