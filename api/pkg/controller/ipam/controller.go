@@ -291,7 +291,7 @@ func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) er
 
 		key, err := cache.MetaNamespaceKeyFunc(machine)
 		if err != nil {
-			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased.", machine.Name)
+			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased", machine.Name)
 		}
 
 		if c.liveSync {
