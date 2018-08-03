@@ -317,6 +317,7 @@ func (c *Controller) sync(key string) error {
 
 type templateData struct {
 	Addon             *kubermaticv1.Addon
+	Kubeconfig        string
 	Cluster           *kubermaticv1.Cluster
 	Variables         map[string]interface{}
 	OverwriteRegistry string
@@ -338,10 +339,16 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
+	kubeconfig, err := c.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &templateData{
 		Variables:         make(map[string]interface{}),
 		Cluster:           cluster,
 		Addon:             addon,
+		Kubeconfig:        string(kubeconfig),
 		OverwriteRegistry: c.registryURI,
 		DNSClusterIP:      clusterIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
