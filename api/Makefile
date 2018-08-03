@@ -68,21 +68,8 @@ ifndef HAS_GOMETALINTER
 endif
 	{ \
 	set -e ;\
-	PACKAGES=$$(go list ./... | grep -v /vendor/ | grep -v /api/pkg/crd/) ;\
-	echo "go vet" ;\
-	go vet $$PACKAGES ;\
-	echo "golint" ;\
-	golint -set_exit_status $$PACKAGES ;\
-	echo "errcheck -blank" ;\
-	errcheck -exclude errcheck_excludes.txt -blank $$PACKAGES ;\
-	echo "varcheck" ;\
-	varcheck $$PACKAGES ;\
-	echo "structcheck" ;\
-	structcheck $$PACKAGES ;\
-	echo "gosimple" ;\
-	gosimple $$PACKAGES ;\
-	echo "unused" ;\
-	unused $$PACKAGES ;\
+	echo "gometalinter" ;\
+	gometalinter --config gometalinter.json ./... ;\
 	echo "forbidden functions" ;\
 	./hack/verify-forbidden-functions.sh ;\
 	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\

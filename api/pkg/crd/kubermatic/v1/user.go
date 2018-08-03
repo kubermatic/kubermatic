@@ -31,7 +31,7 @@ type UserSpec struct {
 	ID       string         `json:"id"`
 	Name     string         `json:"name"`
 	Email    string         `json:"email"`
-	Projects []ProjectGroup `json:"projects, omitempty"`
+	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
 // UserList is a list of users

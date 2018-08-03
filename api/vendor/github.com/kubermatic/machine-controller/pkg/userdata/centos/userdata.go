@@ -219,6 +219,7 @@ write_files:
 
 - path: "/etc/sysconfig/kubelet-overwrite"
   content: |
+    KUBELET_DNS_ARGS=
     KUBELET_EXTRA_ARGS=--authentication-token-webhook=true \
       {{- if .CloudProvider }}
       --cloud-provider={{ .CloudProvider }} \
