@@ -25,15 +25,6 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return errors.New("no name specified")
 	}
 
-	clusterSemVer, err := semver.NewVersion(spec.Version)
-	if err != nil {
-		return fmt.Errorf("couldnt parse version, see: %v", err)
-	}
-
-	if len(spec.MachineNetworks) > 0 && clusterSemVer.Minor() < 9 {
-		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
-	}
-
 	if spec.Cloud == nil {
 		return errors.New("no cloud spec given")
 	}
@@ -58,6 +49,15 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 
 	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
+	}
+
+	clusterSemVer, err := semver.NewVersion(spec.Version)
+	if err != nil {
+		return fmt.Errorf("couldnt parse version, see: %v", err)
+	}
+
+	if len(spec.MachineNetworks) > 0 && clusterSemVer.Minor() < 9 {
+		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
 	}
 
 	return nil

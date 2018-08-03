@@ -97,12 +97,9 @@ func TestReuseReleasedIP(t *testing.T) {
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 
-	now := metav1.NewTime(time.Now())
-	mSusi2.DeletionTimestamp = &now
-
-	err = ctrl.syncMachine(mSusi2)
+	err = ctrl.client.Machine().Machines().Delete("susi", &metav1.DeleteOptions{})
 	if err != nil {
-		t.Errorf("couldn't delete machine, see: %v", err)
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
 	err = ctrl.syncMachine(mBabsi)
@@ -170,6 +167,7 @@ func newTestController(networks []Network, objects ...runtime.Object) (*Controll
 	informer := factory.Machine().V1alpha1().Machines()
 
 	controller := NewController(client, informer, networks)
+	controller.liveSync = true
 	stopCh := make(chan struct{})
 
 	factory.Start(stopCh)

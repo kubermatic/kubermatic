@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -50,7 +51,8 @@ type Controller struct {
 	client        machineclientset.Interface
 	machineLister machinelistersv1alpha1.MachineLister
 
-	usedIps map[string]struct{}
+	usedIps  map[string]struct{}
+	liveSync bool
 }
 
 // NewController creates a new controller for the specified data.
@@ -127,7 +129,15 @@ func (c *Controller) processNextWorkItem() bool {
 }
 
 func (c *Controller) syncHandler(key string) error {
-	listerMachine, err := c.machineLister.Get(key)
+	var listerMachine *machinev1alpha1.Machine
+	var err error
+
+	if c.liveSync {
+		listerMachine, err = c.client.MachineV1alpha1().Machines().Get(key, metav1.GetOptions{IncludeUninitialized: true})
+	} else {
+		listerMachine, err = c.machineLister.Get(key)
+	}
+
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			glog.V(2).Infof("machine '%s' in work queue no longer exists", key)
@@ -174,7 +184,22 @@ func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason mach
 }
 
 func (c *Controller) getUsedIPs() ([]net.IP, error) {
-	machines, err := c.machineLister.List(labels.Everything())
+	var machines []*machinev1alpha1.Machine
+	var err error
+
+	if c.liveSync {
+		var list *machinev1alpha1.MachineList
+
+		list, err = c.client.MachineV1alpha1().Machines().List(metav1.ListOptions{IncludeUninitialized: true})
+		if err == nil {
+			for i := range list.Items {
+				machines = append(machines, &list.Items[i])
+			}
+		}
+	} else {
+		machines, err = c.machineLister.List(labels.Everything())
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("error listing machines: '%v'", err)
 	}
@@ -261,12 +286,20 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool
 
 func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) error {
 	return wait.Poll(10*time.Millisecond, 60*time.Second, func() (bool, error) {
+		var m2 *machinev1alpha1.Machine
+		var err error
+
 		key, err := cache.MetaNamespaceKeyFunc(machine)
 		if err != nil {
 			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased.", machine.Name)
 		}
 
-		m2, err := c.machineLister.Get(key)
+		if c.liveSync {
+			m2, err = c.client.MachineV1alpha1().Machines().Get(key, metav1.GetOptions{IncludeUninitialized: true})
+		} else {
+			m2, err = c.machineLister.Get(key)
+		}
+
 		if err != nil {
 			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", m2.Name, err)
 		}
