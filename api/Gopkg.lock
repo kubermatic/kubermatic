@@ -551,8 +551,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "d5838cd3d34f33ba2feea9218f362894f085fbc7"
-  version = "v0.7.16"
+  revision = "f7994174463060273481bc87e2bda03c4e82a106"
+  version = "v0.7.17"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -1206,6 +1206,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0cd585120eab871fec291e4bfbdd322fab5ce5a5ef8639bf98c5a7a57b940b9e"
+  inputs-digest = "3efa67226bab7cada944a8d044147933ab8c5e1ee30509df499dd9d03fcb91ed"
   solver-name = "gps-cdcl"
   solver-version = 1
