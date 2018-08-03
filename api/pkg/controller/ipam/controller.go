@@ -8,8 +8,6 @@ import (
 
 	"github.com/golang/glog"
 
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	machineinformersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions/machines/v1alpha1"
 	machinelistersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/listers/machines/v1alpha1"
@@ -17,6 +15,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -29,22 +28,16 @@ const (
 	finalizerName   = initializerName
 )
 
-type cidrExhaustedError struct {
-	str string
-}
+type cidrExhaustedError struct{}
 
-func newCidrExhaustedError(s string) error {
-	return &cidrExhaustedError{str: s}
-}
-
-func (e *cidrExhaustedError) Error() string {
-	return e.str
+func (c cidrExhaustedError) Error() string {
+	return "cidr exhausted"
 }
 
 // Network represents a machine network configuration
 type Network struct {
 	IP         net.IP
-	IPNet      *net.IPNet
+	IPNet      net.IPNet
 	Gateway    net.IP
 	DNSServers []net.IP
 }
@@ -150,19 +143,12 @@ func (c *Controller) syncMachine(mo *machinev1alpha1.Machine) error {
 	m := mo.DeepCopy()
 
 	if m.DeletionTimestamp != nil {
-		return c.handleMachineDeletionIfNeeded(m)
+		return nil
 	}
 
-	didInitialize, err := c.initMachineIfNeeded(m)
+	_, err := c.initMachineIfNeeded(m)
 	if err != nil {
 		return err
-	}
-
-	if !didInitialize {
-		err := c.syncIPAllocationFromMachine(m)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -178,29 +164,6 @@ func (c *Controller) enqueueMachine(obj interface{}) {
 	c.queue.AddRateLimited(key)
 }
 
-func (c *Controller) handleMachineDeletionIfNeeded(m *machinev1alpha1.Machine) error {
-	if !kuberneteshelper.HasFinalizer(m, finalizerName) {
-		return nil
-	}
-
-	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
-	if err != nil {
-		return err
-	}
-
-	m.Finalizers = kuberneteshelper.RemoveFinalizer(m.Finalizers, finalizerName)
-	_, err = c.client.MachineV1alpha1().Machines().Update(m)
-	if err != nil {
-		return fmt.Errorf("couldn't update machine %s, see: %v", m.Name, err)
-	}
-
-	ip := net.ParseIP(cfg.Network.CIDR)
-	c.releaseIP(ip)
-	glog.V(6).Infof("Released ip %v from machine %s", ip, m.Name)
-
-	return nil
-}
-
 func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason machinev1alpha1.MachineStatusError, errToWrite error) error {
 	message := errToWrite.Error()
 	m.Status.ErrorMessage = &message
@@ -210,42 +173,43 @@ func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason mach
 	return err
 }
 
-func (c *Controller) syncIPAllocationFromMachine(m *machinev1alpha1.Machine) error {
-	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
+func (c *Controller) getUsedIPs() ([]net.IP, error) {
+	machines, err := c.machineLister.List(labels.Everything())
 	if err != nil {
-		return fmt.Errorf("couldn't get provider config: %v", err)
+		return nil, fmt.Errorf("error listing machines: '%v'", err)
 	}
 
-	if cfg.Network == nil {
-		return nil
+	ips := make([]net.IP, 0)
+	for _, m := range machines {
+		if m.DeletionTimestamp != nil {
+			continue
+		}
+
+		cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		if cfg.Network == nil {
+			continue
+		}
+
+		ip := net.ParseIP(cfg.Network.CIDR)
+		if ip == nil {
+			continue
+		}
+
+		ips = append(ips, ip)
 	}
 
-	ip := net.ParseIP(cfg.Network.CIDR)
-	if ip == nil {
-		return nil
-	}
-
-	c.allocateIP(ip)
-	glog.V(6).Infof("Synchronized ip %v from machine %s", ip, m.Name)
-
-	return nil
+	return ips, nil
 }
 
-func (c *Controller) allocateIP(ip net.IP) {
-	c.usedIps[ip.String()] = struct{}{}
-}
-
-func (c *Controller) releaseIP(ip net.IP) {
-	delete(c.usedIps, ip.String())
-}
-
-func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (bool, error) {
-	if !c.testIfInitIsNeeded(oldMachine) {
-		glog.V(6).Infof("Skipping machine %s because no initialization is needed (yet)", oldMachine.Name)
+func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool, error) {
+	if !c.testIfInitIsNeeded(machine) {
+		glog.V(6).Infof("Skipping machine %s because no initialization is needed (yet)", machine.Name)
 		return false, nil
 	}
-
-	machine := oldMachine.DeepCopy()
 
 	cfg, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
 	if err != nil {
@@ -253,7 +217,7 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 	}
 
 	ip, network, err := c.getNextFreeIP()
-	if _, isCidrExhausted := err.(*cidrExhaustedError); isCidrExhausted {
+	if _, isCidrExhausted := err.(cidrExhaustedError); isCidrExhausted {
 		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
 		subErr := c.writeErrorToMachine(machine, machinev1alpha1.InsufficientResourcesMachineError, err)
 		if subErr != nil {
@@ -292,12 +256,28 @@ func (c *Controller) initMachineIfNeeded(oldMachine *machinev1alpha1.Machine) (b
 		return false, fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
 	}
 
-	// Having getIP and allocateIP separate will save us from blocking ips even tho we run in kerrors and dont use them.
-	// As long as we keep this code blocking & synchronous, this is cool-ish.
-	c.allocateIP(ip)
-	glog.V(6).Infof("Allocated ip %v for machine %s", ip, oldMachine.Name)
+	return true, c.awaitIPSync(machine, ip)
+}
 
-	return true, nil
+func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) error {
+	return wait.Poll(10*time.Millisecond, 60*time.Second, func() (bool, error) {
+		key, err := cache.MetaNamespaceKeyFunc(machine)
+		if err != nil {
+			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased.", machine.Name)
+		}
+
+		m2, err := c.machineLister.Get(key)
+		if err != nil {
+			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", m2.Name, err)
+		}
+
+		cfg2, err := providerconfig.GetConfig(m2.Spec.ProviderConfig)
+		if err != nil {
+			return false, fmt.Errorf("couldn't get providerconfig for machine %s, see: %v", m2.Name, err)
+		}
+
+		return cfg2.Network != nil && cfg2.Network.CIDR == ip.String(), nil
+	})
 }
 
 func (c *Controller) ipsToStrs(ips []net.IP) []string {
@@ -319,28 +299,43 @@ func (c *Controller) testIfInitIsNeeded(m *machinev1alpha1.Machine) bool {
 }
 
 func (c *Controller) getNextFreeIP() (net.IP, Network, error) {
+	usedIps, err := c.getUsedIPs()
+	if err != nil {
+		return nil, Network{}, err
+	}
+
 	for _, cidr := range c.cidrRange {
-		ip, err := c.getNextFreeIPForCIDR(cidr)
+		ip, err := c.getNextFreeIPForCIDR(cidr, usedIps)
 		if err == nil {
 			return ip, cidr, nil
 		}
 	}
 
-	return nil, Network{}, newCidrExhaustedError("cidrs exhausted.")
+	return nil, Network{}, cidrExhaustedError{}
 }
 
-func (c *Controller) getNextFreeIPForCIDR(network Network) (net.IP, error) {
+func (c *Controller) getNextFreeIPForCIDR(network Network, usedIps []net.IP) (net.IP, error) {
 	for ip := network.IP.Mask(network.IPNet.Mask); network.IPNet.Contains(ip); c.inc(ip) {
 		if ip[len(ip)-1] == 0 || ip.Equal(network.Gateway) {
 			continue
 		}
 
-		if _, used := c.usedIps[ip.String()]; !used {
+		if !ipsContains(usedIps, ip) {
 			return ip, nil
 		}
 	}
 
-	return nil, newCidrExhaustedError("no free ip left in cidr " + network.IP.String())
+	return nil, cidrExhaustedError{}
+}
+
+func ipsContains(haystack []net.IP, needle net.IP) bool {
+	for _, ip := range haystack {
+		if ip.Equal(needle) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *Controller) inc(ip net.IP) {

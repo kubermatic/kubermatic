@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/Masterminds/semver"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -21,6 +23,15 @@ var (
 func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider) error {
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
+	}
+
+	clusterSemVer, err := semver.NewVersion(spec.Version)
+	if err != nil {
+		return fmt.Errorf("couldnt parse version, see: %v", err)
+	}
+
+	if len(spec.MachineNetworks) > 0 && clusterSemVer.Minor() < 9 {
+		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
 	}
 
 	if spec.Cloud == nil {

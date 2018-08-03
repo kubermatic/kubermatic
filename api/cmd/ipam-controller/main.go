@@ -88,7 +88,7 @@ func (nf *networkFlags) Set(value string) error {
 
 	val := ipam.Network{
 		IP:         ip,
-		IPNet:      ipnet,
+		IPNet:      *ipnet,
 		Gateway:    gwIP,
 		DNSServers: dnsServers,
 	}
@@ -119,7 +119,7 @@ func main() {
 			options.IncludeUninitialized = true
 		}
 
-		factory := machineinformers.NewFilteredSharedInformerFactory(client, 30*time.Second, metav1.NamespaceAll, tweakFunc)
+		factory := machineinformers.NewFilteredSharedInformerFactory(client, 20*time.Second, metav1.NamespaceAll, tweakFunc)
 		informer := factory.Machine().V1alpha1().Machines()
 
 		controller := ipam.NewController(client, informer, networks)

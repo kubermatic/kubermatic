@@ -166,7 +166,7 @@ func newTestController(networks []Network, objects ...runtime.Object) (*Controll
 	}
 
 	client := machinefake.NewSimpleClientset(objects...)
-	factory := machineinformers.NewFilteredSharedInformerFactory(client, 30*time.Second, metav1.NamespaceAll, tweakFunc)
+	factory := machineinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
 	informer := factory.Machine().V1alpha1().Machines()
 
 	controller := NewController(client, informer, networks)
@@ -190,7 +190,7 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 
 	return Network{
 		IP:         ip,
-		IPNet:      ipnet,
+		IPNet:      *ipnet,
 		Gateway:    net.ParseIP(gw),
 		DNSServers: dnsIps,
 	}
