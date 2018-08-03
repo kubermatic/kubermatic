@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
