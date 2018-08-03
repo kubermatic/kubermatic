@@ -16,7 +16,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Setup required infrastructure at cloud provider
-	if err := cc.ensureCloudProviderIsInitialize(cluster); err != nil {
+	if err := cc.ensureCloudProviderIsInitialized(cluster); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	return cluster, nil
 }
 
-func (cc *Controller) ensureCloudProviderIsInitialize(cluster *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCloudProviderIsInitialized(cluster *kubermaticv1.Cluster) error {
 	_, prov, err := provider.ClusterCloudProvider(cc.cps, cluster)
 	if err != nil {
 		return err

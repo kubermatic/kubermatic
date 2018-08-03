@@ -12,10 +12,16 @@ import (
 )
 
 var (
-	defaultMemoryRequest = resource.MustParse("64Mi")
-	defaultCPURequest    = resource.MustParse("20m")
-	defaultMemoryLimit   = resource.MustParse("128Mi")
-	defaultCPULimit      = resource.MustParse("100m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("20m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 const (
@@ -36,6 +42,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
+	if data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas
+	}
+
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
@@ -104,6 +114,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 		},
 	}
+
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.Scheduler.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Scheduler.Resources
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -124,16 +139,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
-				},
-			},
+			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{

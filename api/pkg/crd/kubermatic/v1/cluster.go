@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,14 +36,6 @@ const (
 	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
 	DeletingClusterStatusPhase ClusterPhase = "Deleting"
 )
-
-var ClusterPhases = []ClusterPhase{
-	NoneClusterStatusPhase,
-	ValidatingClusterStatusPhase,
-	LaunchingClusterStatusPhase,
-	RunningClusterStatusPhase,
-	DeletingClusterStatusPhase,
-}
 
 const (
 	WorkerNameLabelKey = "worker-name"
@@ -78,16 +71,38 @@ type ClusterSpec struct {
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
-	Version       string `json:"version"`       // Cluster version
-	MasterVersion string `json:"masterVersion"` // Deprecated cluster version
+	// Version defines the wanted version of the control plane
+	Version string `json:"version"`
+	// MasterVersion is Deprecated
+	MasterVersion string `json:"masterVersion"`
 
-	HumanReadableName string `json:"humanReadableName"` // HumanReadableName is the cluster name provided by the user
-	WorkerName        string `json:"workerName"`        // WorkerName is a cluster used in development, compare --worker-name flag.
+	// HumanReadableName is the cluster name provided by the user
+	HumanReadableName string `json:"humanReadableName"`
+
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
+
+	// Optional component specific overrides
+	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+}
+
+type ComponentSettings struct {
+	Apiserver         DeploymentSettings `json:"apiserver"`
+	ControllerManager DeploymentSettings `json:"controllerManager"`
+	Scheduler         DeploymentSettings `json:"scheduler"`
+	Etcd              EtcdSettings       `json:"etcd"`
+}
+
+type DeploymentSettings struct {
+	Replicas  *int32                       `json:"replicas,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type EtcdSettings struct {
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
@@ -117,32 +132,46 @@ type NetworkRanges struct {
 
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
-	URL          string `json:"url"`
+	// URL under which the Apiserver is available
+	URL string `json:"url"`
+	// ExternalName is the DNS name for this cluster
 	ExternalName string `json:"externalName"`
-	KubeletToken string `json:"kubeletToken"`
-	AdminToken   string `json:"adminToken"`
-	IP           string `json:"ip"`
+	// AdminToken is the token for the kubeconfig, the user can download
+	AdminToken string `json:"adminToken"`
+	// IP is the external IP under which the apiserver is available
+	IP string `json:"ip"`
 }
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
-	LastUpdated               metav1.Time   `json:"lastUpdated,omitempty"`
-	Phase                     ClusterPhase  `json:"phase,omitempty"`
-	Health                    ClusterHealth `json:"health,omitempty"`
-	LastDeployedMasterVersion string        `json:"lastDeployedMasterVersion"`
+	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
+	// Phase is Deprecated.
+	Phase ClusterPhase `json:"phase,omitempty"`
+	// Health exposes information about the current health state of the individual control plane components
+	Health ClusterHealth `json:"health,omitempty"`
 
-	RootCA            KeyCert `json:"rootCA"`
-	ApiserverCert     KeyCert `json:"apiserverCert"`
-	KubeletCert       KeyCert `json:"kubeletCert"`
-	ApiserverSSHKey   RSAKeys `json:"apiserverSshKey"`
-	ServiceAccountKey Bytes   `json:"serviceAccountKey"`
-	NamespaceName     string  `json:"namespaceName"`
+	// Deprecated
+	RootCA KeyCert `json:"rootCA"`
+	// Deprecated
+	ApiserverCert KeyCert `json:"apiserverCert"`
+	// Deprecated
+	KubeletCert KeyCert `json:"kubeletCert"`
+	// Deprecated
+	ApiserverSSHKey RSAKeys `json:"apiserverSshKey"`
+	// Deprecated
+	ServiceAccountKey Bytes `json:"serviceAccountKey"`
+	// NamespaceName defines the namespace the control plane of this cluster is deployed in
+	NamespaceName string `json:"namespaceName"`
 
-	UserName  string `json:"userName"`
+	// UserName contains the name of the owner of this cluster
+	UserName string `json:"userName"`
+	// UserEmail contains the email of the owner of this cluster
 	UserEmail string `json:"userEmail"`
 
-	ErrorReason  *ClusterStatusError `json:"errorReason,omitempty"`
-	ErrorMessage *string             `json:"errorMessage,omitempty"`
+	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved
+	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
+	// ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved
+	ErrorMessage *string `json:"errorMessage,omitempty"`
 }
 
 type ClusterStatusError string
@@ -210,14 +239,15 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
 
-	ResourceGroup  string `json:"resourceGroup"`
-	VNetName       string `json:"vnet"`
-	SubnetName     string `json:"subnet"`
-	RouteTableName string `json:"routeTable"`
-	SecurityGroup  string `json:"securityGroup"`
+	ResourceGroup   string `json:"resourceGroup"`
+	VNetName        string `json:"vnet"`
+	SubnetName      string `json:"subnet"`
+	RouteTableName  string `json:"routeTable"`
+	SecurityGroup   string `json:"securityGroup"`
+	AvailabilitySet string `json:"availabilitySet"`
 }
 
-// VSphere credentials represents a credential for accessing vSphere
+// VSphereCredentials credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

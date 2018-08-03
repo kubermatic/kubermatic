@@ -30,8 +30,8 @@ var KUBERMATICCOMMIT string
 const (
 	// KubermaticNamespaceName specifies the name of the kubermatic namespace
 	KubermaticNamespaceName = "kubermatic"
-	// ApiserverDeploymenName is the name of the apiserver deployment
-	ApiserverDeploymenName = "apiserver"
+	// ApiserverDeploymentName is the name of the apiserver deployment
+	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
 	//SchedulerDeploymentName is the name for the scheduler deployment

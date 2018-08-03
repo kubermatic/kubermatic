@@ -10,8 +10,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -42,18 +40,18 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		key, err := keyProvider.Create(user, project, req.Key.Metadata.DisplayName, req.Key.Spec.PublicKey)
+		key, err := keyProvider.Create(user, project, req.Key.Name, req.Key.Spec.PublicKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKey := v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				DisplayName:       key.Spec.Name,
+		apiKey := apiv1.NewSSHKey{
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                key.Name,
+				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: v2.NewSSHKeySpec{
+			Spec: apiv1.NewSSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -132,16 +130,16 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 	}
 }
 
-func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*v2.NewSSHKey {
-	apiKeys := make([]*v2.NewSSHKey, len(internalKeys))
+func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.NewSSHKey {
+	apiKeys := make([]*apiv1.NewSSHKey, len(internalKeys))
 	for index, key := range internalKeys {
-		apiKey := &v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				DisplayName:       key.Spec.Name,
+		apiKey := &apiv1.NewSSHKey{
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                key.Name,
+				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: v2.NewSSHKeySpec{
+			Spec: apiv1.NewSSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -196,7 +194,7 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 type NewCreateSSHKeyReq struct {
 	ProjectReq
 	// swagger:ignore
-	Key apiv2.NewSSHKey `json:"-"`
+	Key apiv1.NewSSHKey `json:"-"`
 }
 
 func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -208,19 +206,16 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.ProjectReq = dcr.(ProjectReq)
 
-	req.Key = apiv2.NewSSHKey{}
+	req.Key = apiv1.NewSSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.Key); err != nil {
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
 	}
 
-	if len(req.Key.Metadata.Name) != 0 {
-		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead")
+	if len(req.Key.Name) == 0 {
+		return nil, fmt.Errorf("'name' field cannot be empty")
 	}
 	if len(req.Key.Spec.PublicKey) == 0 {
 		return nil, fmt.Errorf("'spec.publicKey' field cannot be empty")
-	}
-	if len(req.Key.Metadata.DisplayName) == 0 {
-		return nil, fmt.Errorf("'metadata.displayName' field cannot be empty")
 	}
 
 	return req, nil

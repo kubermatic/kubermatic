@@ -15,10 +15,16 @@ import (
 )
 
 var (
-	defaultApiserverMemoryRequest = resource.MustParse("256Mi")
-	defaultApiserverCPURequest    = resource.MustParse("100m")
-	defaultApiserverMemoryLimit   = resource.MustParse("1Gi")
-	defaultApiserverCPULimit      = resource.MustParse("500m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	}
 )
 
 const (
@@ -36,11 +42,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		dep = &appsv1.Deployment{}
 	}
 
-	dep.Name = resources.ApiserverDeploymenName
+	dep.Name = resources.ApiserverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
+	if data.Cluster.Spec.ComponentsOverride.Apiserver.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.Apiserver.Replicas
+	}
+
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
@@ -121,6 +131,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.Apiserver.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Apiserver.Resources
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -132,24 +147,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Args:            flags,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultApiserverMemoryRequest,
-					corev1.ResourceCPU:    defaultApiserverCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultApiserverMemoryLimit,
-					corev1.ResourceCPU:    defaultApiserverCPULimit,
-				},
-			},
-			Ports: []corev1.ContainerPort{
-				{
-					ContainerPort: externalNodePort,
-					Protocol:      corev1.ProtocolTCP,
-				},
-				{
-					ContainerPort: 8080,
-					Protocol:      corev1.ProtocolTCP,
+			Resources:                resourceRequirements,
 				},
 			},
 			ReadinessProbe: &corev1.Probe{
