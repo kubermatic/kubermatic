@@ -14,8 +14,11 @@ data:
       "vnetResourceGroup": "az-res-group",
       "subnetName": "az-subnet-name",
       "routeTableName": "az-route-table-name",
+      "securityGroupName": "az-sec-group",
+      "primaryAvailabilitySetName": "az-availability-set",
 
-      "useInstanceMetadata": true
+
+      "useInstanceMetadata": false
     }
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:

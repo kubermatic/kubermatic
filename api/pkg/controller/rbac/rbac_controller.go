@@ -1,7 +1,6 @@
 package rbac
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -61,19 +60,14 @@ type Controller struct {
 
 	kubermaticMasterClient kubermaticclientset.Interface
 	projectLister          kubermaticv1lister.ProjectLister
-	projectSynced          cache.InformerSynced
 	userLister             kubermaticv1lister.UserLister
-	userSynced             cache.InformerSynced
 
-	kubeMasterClient                      kubernetes.Interface
-	rbacClusterRoleMasterLister           rbaclister.ClusterRoleLister
-	rbacClusterRoleMasterHasSynced        cache.InformerSynced
-	rbacClusterRoleBindingMasterLister    rbaclister.ClusterRoleBindingLister
-	rbacClusterRoleBindingMasterHasSynced cache.InformerSynced
+	kubeMasterClient                   kubernetes.Interface
+	rbacClusterRoleMasterLister        rbaclister.ClusterRoleLister
+	rbacClusterRoleBindingMasterLister rbaclister.ClusterRoleBindingLister
 
-	projectResourcesInformers         []cache.Controller
-	projectResourcesInformesHasSynced []cache.InformerSynced
-	projectResourcesQueue             workqueue.RateLimitingInterface
+	projectResourcesInformers []cache.Controller
+	projectResourcesQueue     workqueue.RateLimitingInterface
 
 	seedClusterProviders []*ClusterProvider
 	projectResources     []projectResource
@@ -136,17 +130,13 @@ func New(
 		},
 	})
 	c.projectLister = projectInformer.Lister()
-	c.projectSynced = projectInformer.Informer().HasSynced
 
 	userInformer := kubermaticMasterInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
-	c.userSynced = userInformer.Informer().HasSynced
 
 	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
-	c.rbacClusterRoleBindingMasterHasSynced = rbacClusterRoleBindingMasterInformer.Informer().HasSynced
 
 	c.rbacClusterRoleMasterLister = rbacClusterRoleMasterInformer.Lister()
-	c.rbacClusterRoleMasterHasSynced = rbacClusterRoleMasterInformer.Informer().HasSynced
 
 	// a list of dependent resources that we would like to watch/monitor
 	c.projectResources = []projectResource{
@@ -191,7 +181,6 @@ func New(
 				return nil, err
 			}
 			c.projectResourcesInformers = append(c.projectResourcesInformers, informer)
-			c.projectResourcesInformesHasSynced = append(c.projectResourcesInformesHasSynced, informer.HasSynced)
 		}
 	}
 
@@ -201,17 +190,7 @@ func New(
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	glog.Infof("Starting RBACGenerator controller with %d workers", workerCount)
-	defer glog.Info("Shutting down RBACGenerator controller")
 
-	if !cache.WaitForCacheSync(stopCh, c.projectSynced, c.userSynced, c.rbacClusterRoleMasterHasSynced, c.rbacClusterRoleBindingMasterHasSynced) {
-		runtime.HandleError(errors.New("Unable to sync caches for RBACGenerator controller"))
-		return
-	}
-	if !cache.WaitForCacheSync(stopCh, c.projectResourcesInformesHasSynced...) {
-		runtime.HandleError(errors.New("Unable to sync caches for project resources for RBACGenerator controller"))
-		return
-	}
 	for _, seedClusterProvider := range c.seedClusterProviders {
 		err := seedClusterProvider.WaitForCachesToSync(stopCh)
 		if err != nil {

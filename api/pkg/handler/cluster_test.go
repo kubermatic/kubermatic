@@ -14,6 +14,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +24,7 @@ import (
 )
 
 func TestDeleteClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcase := struct {
 		Name                   string
 		Body                   string
@@ -41,7 +43,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
 		ExpectedActions:  12,
 		Body:             ``,
-		ExpectedResponse: `null`,
+		ExpectedResponse: `{}`,
 		HTTPStatus:       http.StatusOK,
 		ExistingProject: &kubermaticv1.Project{
 			ObjectMeta: metav1.ObjectMeta{
@@ -223,6 +225,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 }
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                            string
 		Body                            string
@@ -242,10 +245,10 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			Name:                            "scenario 1: detaches one key from the cluster",
 			Body:                            ``,
 			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:          `null`,
+			ExpectedDeleteResponse:          `{}`,
 			ExpectedDeleteHTTPStatus:        http.StatusOK,
 			ExpectedGetHTTPStatus:           http.StatusOK,
-			ExpectedResponseOnGetAfterDelte: `[{"metadata":{"name":"key-abc-yafn","displayName":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -380,6 +383,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 }
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -401,7 +405,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body:             ``,
-			ExpectedResponse: `[{"metadata":{"name":"key-c08aa5c7abf34504f18552846485267d-yafn","displayName":"yafn","creationTimestamp":"2013-02-03T19:54:00Z"},"spec":{"fingerprint":"","publicKey":""}},{"metadata":{"name":"key-abc-yafn","displayName":"abcd","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"fingerprint":"","publicKey":""}}]`,
+			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -521,6 +525,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 }
 
 func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -536,7 +541,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
 			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
-			ExpectedResponse: `null`,
+			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -696,6 +701,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 }
 
 func TestCreateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -801,7 +807,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user doesn't belong to the given project = myProjectInternalName"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"John\" doesn't belong to the given project = myProjectInternalName"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
@@ -879,6 +885,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -950,8 +957,7 @@ func TestGetClusterHealth(t *testing.T) {
 						HumanReadableName: "cluster-abc",
 					},
 					Address: kubermaticv1.ClusterAddress{
-						AdminToken:   "drphc2.g4kq82pnlfqjqt65",
-						KubeletToken: "drphc2.g4kq82pnlfqjqt65",
+						AdminToken: "drphc2.g4kq82pnlfqjqt65",
 					},
 					Status: kubermaticv1.ClusterStatus{
 						Health: kubermaticv1.ClusterHealth{
@@ -1021,6 +1027,7 @@ func TestGetClusterHealth(t *testing.T) {
 }
 
 func TestUpdateCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1092,8 +1099,7 @@ func TestUpdateCluster(t *testing.T) {
 						HumanReadableName: "cluster-abc",
 					},
 					Address: kubermaticv1.ClusterAddress{
-						AdminToken:   "drphc2.g4kq82pnlfqjqt65",
-						KubeletToken: "drphc2.g4kq82pnlfqjqt65",
+						AdminToken: "drphc2.g4kq82pnlfqjqt65",
 					},
 				},
 				&kubermaticv1.Cluster{
@@ -1152,6 +1158,7 @@ func TestUpdateCluster(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1279,6 +1286,7 @@ func TestGetCluster(t *testing.T) {
 }
 
 func TestListClusters(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1637,6 +1645,7 @@ func TestClustersEndpoint(t *testing.T) {
 }
 
 func TestUpdateClusterEndpoint(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		responseCode  int
@@ -1644,7 +1653,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		modifyCluster func(*kubermaticv1.Cluster) *kubermaticv1.Cluster
 	}{
 		{
-			name: "successful update admin token",
+			name: "successful update admin token (deprecated)",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
@@ -1654,9 +1663,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1684,9 +1692,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1704,7 +1711,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid admin token",
+			name: "invalid admin token (deprecated)",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
@@ -1714,9 +1721,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1744,9 +1750,8 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
 				},
 				Address: kubermaticv1.ClusterAddress{
-					AdminToken:   "cccccc.cccccccccccccccc",
-					KubeletToken: "cccccc.cccccccccccccccc",
-					URL:          "https://foo.bar:8443",
+					AdminToken: "cccccc.cccccccccccccccc",
+					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: &kubermaticv1.CloudSpec{
@@ -1797,5 +1802,176 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 				t.Errorf("got different cluster than expected. Diff: %v", diff)
 			}
 		})
+	}
+}
+
+func TestGetClusterAdminTokenEndpoint(t *testing.T) {
+	tester := apiv1.User{
+		ID:    testUsername,
+		Email: testEmail,
+	}
+
+	user := &kubermaticv1.User{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: kubermaticv1.UserSpec{
+			Name:  "John",
+			Email: testEmail,
+			Projects: []kubermaticv1.ProjectGroup{
+				{
+					Group: "owners-myProjectInternalName",
+					Name:  "myProjectInternalName",
+				},
+			},
+		},
+	}
+
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "myProjectInternalName",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "kubermatic.io/v1",
+					Kind:       "User",
+					UID:        "",
+					Name:       "John",
+				},
+			},
+		},
+		Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+		},
+		Address: kubermaticv1.ClusterAddress{
+			AdminToken: "cccccc.cccccccccccccccc",
+			URL:        "https://foo.bar:8443",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				Fake: &kubermaticv1.FakeCloudSpec{
+					Token: "foo",
+				},
+				DatacenterName: "us-central1",
+			},
+		},
+	}
+
+	expectedResponse := fmt.Sprintf(`{"token":"%s"}`, cluster.Address.AdminToken)
+
+	// setup world view
+	ep, err := createTestEndpoint(tester, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	// perform test
+	res := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
+	ep.ServeHTTP(res, req)
+
+	// check assertions
+	checkStatusCode(http.StatusOK, res, t)
+	compareWithResult(t, res, expectedResponse)
+}
+
+func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
+	tester := apiv1.User{
+		ID:    testUsername,
+		Email: testEmail,
+	}
+
+	user := &kubermaticv1.User{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: kubermaticv1.UserSpec{
+			Name:  "John",
+			Email: testEmail,
+			Projects: []kubermaticv1.ProjectGroup{
+				{
+					Group: "owners-myProjectInternalName",
+					Name:  "myProjectInternalName",
+				},
+			},
+		},
+	}
+
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "myProjectInternalName",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "kubermatic.io/v1",
+					Kind:       "User",
+					UID:        "",
+					Name:       "John",
+				},
+			},
+		},
+		Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "foo",
+			Labels: map[string]string{"user": testUsername},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+		},
+		Address: kubermaticv1.ClusterAddress{
+			AdminToken: "cccccc.cccccccccccccccc",
+			URL:        "https://foo.bar:8443",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				Fake: &kubermaticv1.FakeCloudSpec{
+					Token: "foo",
+				},
+				DatacenterName: "us-central1",
+			},
+		},
+	}
+
+	// setup world view
+	ep, clientsSets, err := createTestEndpointAndGetClients(tester, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	// perform test
+	res := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/%s/token", cluster.Name), nil)
+	ep.ServeHTTP(res, req)
+
+	// check assertions
+	checkStatusCode(http.StatusOK, res, t)
+
+	response := &apiv1.ClusterAdminToken{}
+	err = json.Unmarshal(res.Body.Bytes(), response)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(response.Token) == 0 || response.Token == cluster.Address.AdminToken {
+		t.Errorf("revocation response does not contain updated admin token, but '%s'", response.Token)
+	}
+
+	if err := validation.ValidateKubernetesToken(response.Token); err != nil {
+		t.Errorf("generated token '%s' is malformed: %v", response.Token, err)
+	}
+
+	// check if the cluster was really updated
+	updatedCluster, err := clientsSets.fakeKubermaticClient.KubermaticV1().Clusters().Get(cluster.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updatedCluster.Address.AdminToken == cluster.Address.AdminToken {
+		t.Error("updated admin token in cluster resource was not persisted")
 	}
 }

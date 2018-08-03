@@ -14,10 +14,16 @@ import (
 )
 
 var (
-	defaultMemoryRequest = resource.MustParse("100Mi")
-	defaultCPURequest    = resource.MustParse("100m")
-	defaultMemoryLimit   = resource.MustParse("512Mi")
-	defaultCPULimit      = resource.MustParse("250m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+		},
+	}
 )
 
 const (
@@ -38,6 +44,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.GetLabels(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
+	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas
+	}
+
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: name,
@@ -141,6 +151,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
 	}
 
+	resourceRequirements := defaultResourceRequirements
+	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources != nil {
+		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources
+	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -152,16 +166,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
-				},
-			},
+			Resources:                resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -217,6 +222,10 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 	}
 	if data.Cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
+	if data.Cluster.Spec.Cloud.Azure != nil {
+		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 	return flags

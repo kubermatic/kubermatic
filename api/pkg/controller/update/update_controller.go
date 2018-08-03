@@ -1,7 +1,6 @@
 package update
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -51,7 +50,6 @@ type Controller struct {
 
 	kubermaticClient kubermaticclientset.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
-	clusterSynced    cache.InformerSynced
 }
 
 // Manager specifies a set of methods to find suitable update versions for clusters
@@ -102,7 +100,6 @@ func New(
 		},
 	})
 	c.clusterLister = clusterInformer.Lister()
-	c.clusterSynced = clusterInformer.Informer().HasSynced
 
 	return c, nil
 }
@@ -110,13 +107,6 @@ func New(
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	glog.Infof("Starting Update controller with %d workers", workerCount)
-	defer glog.Info("Shutting down Update controller")
-
-	if !cache.WaitForCacheSync(stopCh, c.clusterSynced) {
-		runtime.HandleError(errors.New("unable to sync caches for Update controller"))
-		return
-	}
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)

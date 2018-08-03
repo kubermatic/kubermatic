@@ -83,6 +83,22 @@ spec:
               cpu: "200m"
       imagePullSecrets:
         - name: dockercfg
+        - name: quay
+      tolerations:
+      - key: "only_critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "kubermatic.io/type"
+                operator: In
+                values:
+                - "stable"
       volumes:
         - name: master-files
           secret:

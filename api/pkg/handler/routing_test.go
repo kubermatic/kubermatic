@@ -26,6 +26,7 @@ import (
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
+	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -91,7 +92,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	updateManager := version.New(versions, updates)
 
 	// Disable the metrics endpoint in tests
-	var promURL *string
+	var prometheusClient prometheusapi.Client
 
 	r := NewRouting(
 		datacenters,
@@ -104,7 +105,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectProvider,
 		authenticator,
 		updateManager,
-		promURL,
+		prometheusClient,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
@@ -173,6 +174,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 }
 
 func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
+	t.Helper()
 	bBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
@@ -187,6 +189,7 @@ func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 }
 
 func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
 	var actualResponse interface{}
 	var expectedResponse interface{}
 
@@ -213,6 +216,7 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 // note that:
 // this function fails when conversion is not possible
 func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
+	t.Helper()
 	actualBytes, err := json.Marshal(actual)
 	if err != nil {
 		t.Fatalf("failed to marshal actual: %v", err)
@@ -244,6 +248,7 @@ func getUser(name string, admin bool) apiv1.User {
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
 	if recorder.Code != wantStatusCode {
 		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
 		t.Error(recorder.Body.String())
@@ -252,6 +257,7 @@ func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 }
 
 func TestUpRoute(t *testing.T) {
+	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
 	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)

@@ -60,7 +60,6 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 		return nil, errors.New("project and/or user and/or spec is missing but required")
 	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
-	spec.WorkerName = p.workerName
 
 	name := rand.String(10)
 	cluster := &kubermaticapiv1.Cluster{

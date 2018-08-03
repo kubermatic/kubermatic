@@ -19,11 +19,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	machine2 "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroler"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
@@ -95,15 +91,16 @@ func TestLoadFiles(t *testing.T) {
 	clouds := map[string]*kubermaticv1.CloudSpec{
 		"azure": {
 			Azure: &kubermaticv1.AzureCloudSpec{
-				TenantID:       "az-tenant-id",
-				SubscriptionID: "az-subscription-id",
-				ClientID:       "az-client-id",
-				ClientSecret:   "az-client-secret",
-				ResourceGroup:  "az-res-group",
-				VNetName:       "az-vnet-name",
-				SubnetName:     "az-subnet-name",
-				RouteTableName: "az-route-table-name",
-				SecurityGroup:  "az-sec-group",
+				TenantID:        "az-tenant-id",
+				SubscriptionID:  "az-subscription-id",
+				ClientID:        "az-client-id",
+				ClientSecret:    "az-client-secret",
+				ResourceGroup:   "az-res-group",
+				VNetName:        "az-vnet-name",
+				SubnetName:      "az-subnet-name",
+				RouteTableName:  "az-route-table-name",
+				SecurityGroup:   "az-sec-group",
+				AvailabilitySet: "az-availability-set",
 			},
 		},
 		"vsphere": {
@@ -281,6 +278,13 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.DNSResolverConfigMapName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&v1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverExternalServiceName,
@@ -375,20 +379,16 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				deps := map[string]resources.DeploymentCreator{
-					fmt.Sprintf("deployment-%s-%s-scheduler", prov, ver.Version.String()):          scheduler.Deployment,
-					fmt.Sprintf("deployment-%s-%s-controller-manager", prov, ver.Version.String()): controllermanager.Deployment,
-					fmt.Sprintf("deployment-%s-%s-apiserver", prov, ver.Version.String()):          apiserver.Deployment,
-					fmt.Sprintf("deployment-%s-%s-machine-controller", prov, ver.Version.String()): machinecontroller.Deployment,
-				}
+				deps := clustercontroller.GetDeploymentCreators()
 
-				for fixture, create := range deps {
+				for _, create := range deps {
 					res, err := create(data, nil)
 					if err != nil {
-						t.Fatalf("failed to create Deployment for %s: %v", fixture, err)
+						t.Fatalf("failed to create Deployment: %v", err)
 					}
+					fixturePath := fmt.Sprintf("deployment-%s-%s-%s", prov, ver.Version.String(), res.Name)
 
-					checkTestResult(t, fixture, res)
+					checkTestResult(t, fixturePath, res)
 				}
 
 				for _, create := range clustercontroller.GetConfigMapCreators() {
@@ -927,7 +927,7 @@ func TestExecute(t *testing.T) {
 	for fixture, test := range tests {
 		//TODO: Each test above needs to be executed for every supported version
 		t.Run(test.name, func(t *testing.T) {
-			machine, err := machine2.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys)
+			machine, err := machine.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys)
 			if err != nil {
 				t.Fatalf("failed to generate machine: %v", err)
 			}

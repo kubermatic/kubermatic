@@ -31,10 +31,11 @@ local drone = import 'drone/drone.libsonnet';
     local tillerNamespace = ' --tiller-namespace=kubermatic-installer',
 
 
-    '0-dep': drone.step.new('metalmatze/dep:0.4.1') + {
+    '0-dep': drone.step.new('metalmatze/dep:0.5.0') + {
       commands: [
         'cd api',
-        'dep status -v',
+        'dep ensure -v',
+        '[[ -z "$(git diff)" ]]'
       ],
     },
 
@@ -60,7 +61,7 @@ local drone = import 'drone/drone.libsonnet';
       ],
     },
 
-    '3-lint': drone.step.new('metalmatze/gometalinter:1.9', group='lint') + {
+    '3-lint': drone.step.new('metalmatze/gometalinter:2.0.5', group='lint') + {
       commands: [
         'cd api',
         'make lint',

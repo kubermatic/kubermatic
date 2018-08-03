@@ -184,14 +184,16 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider
 		ClientID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientID},
 		ClientSecret:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientSecret},
 
-		Location:       providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
-		ResourceGroup:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
-		VMSize:         providerconfig.ConfigVarString{Value: node.Spec.Cloud.Azure.Size},
-		VNetName:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
-		SubnetName:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
-		RouteTableName: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
+		Location:        providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
+		ResourceGroup:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
+		VMSize:          providerconfig.ConfigVarString{Value: node.Spec.Cloud.Azure.Size},
+		VNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
+		SubnetName:      providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
+		RouteTableName:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
+		AvailabilitySet: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.AvailabilitySet},
 
-		AssignPublicIP: providerconfig.ConfigVarBool{Value: node.Spec.Cloud.Azure.AssignPublicIP},
+		// Revisit when we have the DNAT topic complete and we can use private machines. Then we can use: node.Spec.Cloud.Azure.AssignPublicIP
+		AssignPublicIP: providerconfig.ConfigVarBool{Value: true},
 	}
 	config.Tags = map[string]string{}
 	for key, value := range node.Spec.Cloud.Azure.Tags {

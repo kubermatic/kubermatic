@@ -93,6 +93,14 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 	}
 }
 
+func getCurrentUserEndpoint(users provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		authenticatedUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+
+		return convertInternalUserToExternal(authenticatedUser), nil
+	}
+}
+
 func convertInternalUserToExternal(internalUser *kubermaticapiv1.User) *apiv1.NewUser {
 	apiUser := &apiv1.NewUser{
 		NewObjectMeta: apiv1.NewObjectMeta{

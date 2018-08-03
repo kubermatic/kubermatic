@@ -10,8 +10,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -37,23 +35,23 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		key, err := keyProvider.Create(user, project, req.Key.Metadata.DisplayName, req.Key.Spec.PublicKey)
+		key, err := keyProvider.Create(user, project, req.Key.Name, req.Key.Spec.PublicKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKey := v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				DisplayName:       key.Spec.Name,
+		apiKey := apiv1.NewSSHKey{
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                key.Name,
+				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: v2.NewSSHKeySpec{
+			Spec: apiv1.NewSSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -69,7 +67,7 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -111,13 +109,13 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		if len(req.ProjectName) == 0 {
+		if len(req.ProjectID) == 0 {
 
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectName)
+		project, err := projectProvider.Get(user, req.ProjectID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -132,16 +130,16 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 	}
 }
 
-func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*v2.NewSSHKey {
-	apiKeys := make([]*v2.NewSSHKey, len(internalKeys))
+func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.NewSSHKey {
+	apiKeys := make([]*apiv1.NewSSHKey, len(internalKeys))
 	for index, key := range internalKeys {
-		apiKey := &v2.NewSSHKey{
-			Metadata: v2.ObjectMeta{
-				Name:              key.Name,
-				DisplayName:       key.Spec.Name,
+		apiKey := &apiv1.NewSSHKey{
+			NewObjectMeta: apiv1.NewObjectMeta{
+				ID:                key.Name,
+				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: v2.NewSSHKeySpec{
+			Spec: apiv1.NewSSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -154,22 +152,21 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 // NewListSSHKeyReq defined HTTP request for newListSHHKeys endpoint
 // swagger:parameters newListSSHKeys
 type NewListSSHKeyReq struct {
-	// in: path
-	ProjectName string `json:"project_id"`
+	ProjectReq
 }
 
 func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewListSSHKeyReq
-	var err error
-	req.ProjectName, err = decodeProjectPathReq(c, r)
-	return req, err
+	req, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, nil
+	}
+	return NewListSSHKeyReq{ProjectReq: req.(ProjectReq)}, err
 }
 
 // NewDeleteSSHKeyReq defines HTTP request for newDeleteSSHKey endpoint
 // swagger:parameters newDeleteSSHKey
 type NewDeleteSSHKeyReq struct {
-	// in: path
-	ProjectName string `json:"project_id"`
+	ProjectReq
 	// in: path
 	SSHKeyName string `json:"key_name"`
 }
@@ -177,19 +174,17 @@ type NewDeleteSSHKeyReq struct {
 func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewDeleteSSHKeyReq
 
-	// project_id is actually an internal name of the object
-	projectName, err := decodeProjectPathReq(c, r)
+	dcr, err := decodeLegacyDcReq(c, r)
 	if err != nil {
-		return nil, fmt.Errorf("'project_id' parameter is required in order to delete ssh key that belong to the project")
+		return nil, err
 	}
-	req.ProjectName = projectName
 
+	req.ProjectReq = dcr.(ProjectReq)
 	sshKeyName, ok := mux.Vars(r)["key_name"]
 	if !ok {
 		return nil, fmt.Errorf("'key_name' parameter is required in order to delete ssh key")
 	}
 
-	req.ProjectName = projectName
 	req.SSHKeyName = sshKeyName
 	return req, nil
 }
@@ -197,35 +192,30 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 // NewCreateSSHKeyReq represent a request for specific data to create a new SSH key
 // swagger:parameters newCreateSSHKey
 type NewCreateSSHKeyReq struct {
+	ProjectReq
 	// swagger:ignore
-	Key apiv2.NewSSHKey `json:"-"`
-	// in: path
-	ProjectName string `json:"project_id"`
+	Key apiv1.NewSSHKey `json:"-"`
 }
 
 func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewCreateSSHKeyReq
 
-	// project_id is actually an internal name of the object
-	projectName, err := decodeProjectPathReq(c, r)
+	dcr, err := decodeProjectRequest(c, r)
 	if err != nil {
-		return nil, fmt.Errorf("'project_id' parameter is required in order to list ssh Keys that belong to the project")
+		return nil, err
 	}
-	req.ProjectName = projectName
+	req.ProjectReq = dcr.(ProjectReq)
 
-	req.Key = apiv2.NewSSHKey{}
+	req.Key = apiv1.NewSSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.Key); err != nil {
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
 	}
 
-	if len(req.Key.Metadata.Name) != 0 {
-		return nil, fmt.Errorf("'metadata.name' field cannot be set, please set 'metadata.displayName' instead")
+	if len(req.Key.Name) == 0 {
+		return nil, fmt.Errorf("'name' field cannot be empty")
 	}
 	if len(req.Key.Spec.PublicKey) == 0 {
 		return nil, fmt.Errorf("'spec.publicKey' field cannot be empty")
-	}
-	if len(req.Key.Metadata.DisplayName) == 0 {
-		return nil, fmt.Errorf("'metadata.displayName' field cannot be empty")
 	}
 
 	return req, nil
