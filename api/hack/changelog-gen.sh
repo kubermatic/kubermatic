@@ -19,10 +19,6 @@ while getopts r:help: opts; do
    case ${opts} in
       r) NEW_RELEASE=${OPTARG}
         ;;
-      h) usage
-        ;;
-      help) usage
-        ;;
       ?) usage
         ;;
    esac
