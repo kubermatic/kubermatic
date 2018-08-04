@@ -8,6 +8,8 @@ import (
 	"github.com/golang/glog"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"k8s.io/api/core/v1"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,6 +84,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		migrateVersion,
 		cleanupAddonManager,
 		setVSphereInfraManagementUser,
+		combineCACertAndKey,
 	}
 
 	w := sync.WaitGroup{}
@@ -214,6 +217,49 @@ func setVSphereInfraManagementUser(cluster *kubermaticv1.Cluster, ctx *cleanupCo
 			if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+// We combine the ca cert and key into one secret
+func combineCACertAndKey(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	_, err := ctx.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName).Get(resources.CASecretName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+
+			//Create the combined secret
+			caKeySecret, err := ctx.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName).Get("ca-key", metav1.GetOptions{})
+			if err != nil {
+				// If no old secret can be found, we assume it does not need a migration
+				if k8serrors.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}
+
+			//Create the combined secret
+			caCertSecret, err := ctx.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName).Get("ca-cert", metav1.GetOptions{})
+			if err != nil {
+				// If no old secret can be found, we assume it does not need a migration
+				if k8serrors.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}
+
+			caSecret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: resources.CASecretName,
+				},
+				Data: map[string][]byte{
+					resources.CAKeySecretKey:  caKeySecret.Data[resources.CAKeySecretKey],
+					resources.CACertSecretKey: caCertSecret.Data[resources.CACertSecretKey],
+				},
+			}
+
+			_, err = ctx.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName).Create(caSecret)
+			return err
 		}
 	}
 	return nil

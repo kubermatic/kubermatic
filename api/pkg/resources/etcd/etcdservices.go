@@ -23,10 +23,8 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 		"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
 	}
 	se.Spec.ClusterIP = "None"
-	se.Spec.Selector = map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
-	}
+	se.Spec.Selector = resources.BaseAppLabel(name)
+
 	se.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "client",
@@ -56,10 +54,8 @@ func ClientService(data *resources.TemplateData, existing *corev1.Service) (*cor
 
 	se.Name = resources.EtcdClientServiceName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Spec.Selector = map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
-	}
+	se.Spec.Selector = resources.BaseAppLabel(name)
+
 	se.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "client",

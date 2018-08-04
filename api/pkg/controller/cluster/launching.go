@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -15,33 +15,27 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
 
-// ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyPair, error) {
+	return resources.GetClusterCAFromLister(c, cc.secretLister)
+}
+
+// clusterIsReachable checks if the cluster is reachable via its external name
+func (cc *Controller) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
+
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
-		return c, nil
+		return false, nil
 	}
 
-	// Only add the node deletion finalizer when the cluster is actually running
-	// Otherwise we fail to delete the nodes and are stuck in a loop
-	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-	}
-
-	return c, nil
+	return true, nil
 }
 
 // Creates cluster-info ConfigMap in customer cluster

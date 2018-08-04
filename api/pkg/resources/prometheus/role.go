@@ -18,7 +18,7 @@ func Role(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, er
 
 	r.Name = resources.PrometheusRoleName
 	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{

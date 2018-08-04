@@ -13,7 +13,6 @@ spec:
   selector:
     matchLabels:
       app: etcd
-      cluster: de-test-01
 status:
   currentHealthy: 0
   desiredHealthy: 0

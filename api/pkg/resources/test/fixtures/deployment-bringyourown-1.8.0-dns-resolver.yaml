@@ -26,6 +26,7 @@ spec:
       labels:
         app: dns-resolver
         dns-resolver-configmap-revision: "123456"
+        dns-resolver-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -44,7 +45,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --cert
         - /etc/openvpn/certs/client.crt
         - --key
@@ -85,8 +86,8 @@ spec:
         - mountPath: /etc/openvpn/certs
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/ca
+          name: ca
           readOnly: true
       - args:
         - -conf
@@ -124,8 +125,11 @@ spec:
         secret:
           defaultMode: 256
           secretName: openvpn-client-certificates
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
 status: {}

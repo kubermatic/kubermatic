@@ -18,7 +18,7 @@ var (
 // Also required but not provided by this func:
 // * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
 func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container, error) {
-	openvpnServiceIP, err := data.ClusterIPByServiceName(OpenVPNServerServiceName)
+	openvpnServiceIP, err := data.ServiceClusterIP(OpenVPNServerServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -32,11 +32,11 @@ func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container
 			"--proto", "tcp",
 			"--dev", "tun",
 			"--auth-nocache",
-			"--remote", openvpnServiceIP, "1194",
+			"--remote", openvpnServiceIP.String(), "1194",
 			"--nobind",
 			"--connect-timeout", "5",
 			"--connect-retry", "1",
-			"--ca", "/etc/kubernetes/ca-cert/ca.crt",
+			"--ca", "/etc/kubernetes/ca/ca.crt",
 			"--cert", "/etc/openvpn/certs/client.crt",
 			"--key", "/etc/openvpn/certs/client.key",
 			"--remote-cert-tls", "server",
@@ -70,8 +70,8 @@ func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container
 				ReadOnly:  true,
 			},
 			{
-				MountPath: "/etc/kubernetes/ca-cert",
-				Name:      CACertSecretName,
+				MountPath: "/etc/kubernetes/ca",
+				Name:      CASecretName,
 				ReadOnly:  true,
 			},
 		},

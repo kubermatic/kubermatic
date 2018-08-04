@@ -14,16 +14,13 @@ spec:
   selector:
     matchLabels:
       app: etcd
-      cluster: de-test-01
   serviceName: etcd
   template:
     metadata:
       creationTimestamp: null
       labels:
-        apiserver-etcd-client-certificate-secret-revision: "123456"
         app: etcd
-        cluster: de-test-01
-        etcd-tls-certificate-secret-revision: "123456"
+        etcd-secret-revision: "123456"
       name: etcd
     spec:
       affinity:
@@ -33,7 +30,6 @@ spec:
               labelSelector:
                 matchLabels:
                   app: etcd
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
       containers:
@@ -123,7 +119,7 @@ spec:
         - mountPath: /etc/etcd/tls
           name: etcd-tls-certificate
         - mountPath: /etc/etcd/ca
-          name: ca-cert
+          name: ca
         - mountPath: /etc/etcd/client
           name: apiserver-etcd-client-certificate
           readOnly: true
@@ -132,10 +128,13 @@ spec:
         secret:
           defaultMode: 256
           secretName: etcd-tls-certificate
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
       - name: apiserver-etcd-client-certificate
         secret:
           defaultMode: 256

@@ -29,11 +29,12 @@ spec:
       creationTimestamp: null
       labels:
         app: machine-controller
+        machine-controller-secret-revision: "123456"
     spec:
       containers:
       - args:
         - -kubeconfig
-        - /etc/kubernetes/machinecontroller/machinecontroller-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - -logtostderr
         - -v
         - "4"
@@ -72,7 +73,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/kubernetes/machinecontroller
+        - mountPath: /etc/kubernetes/kubeconfig
           name: machinecontroller-kubeconfig
           readOnly: true
       initContainers:

@@ -32,7 +32,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 
 	cm.Name = resources.PrometheusConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.GetLabels(name)
+	cm.Labels = resources.BaseAppLabel(name)
 	cm.Data = map[string]string{
 		"prometheus.yaml": configBuffer.String(),
 		"rules.yaml":      prometheusRules,

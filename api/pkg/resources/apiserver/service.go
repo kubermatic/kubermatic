@@ -19,12 +19,11 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 
 	se.Name = resources.ApiserverInternalServiceName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Labels = resources.GetLabels(name)
+	se.Labels = resources.BaseAppLabel(name)
 
 	se.Spec.Type = corev1.ServiceTypeClusterIP
-	se.Spec.Selector = map[string]string{
-		resources.AppLabelKey: name,
-	}
+	se.Spec.Selector = resources.BaseAppLabel(name)
+
 	se.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "insecure",

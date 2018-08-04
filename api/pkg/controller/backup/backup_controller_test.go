@@ -7,6 +7,7 @@ import (
 	fakekubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"k8s.io/client-go/util/cert/triple"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	corev1 "k8s.io/api/core/v1"
@@ -41,36 +42,23 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
-	caKey, err := certutil.NewPrivateKey()
+	caKp, err := triple.NewCA("foo")
 	if err != nil {
-		t.Fatalf("unable to create a private key for the CA: %v", err)
+		t.Fatalf("unable to create a CA: %v", err)
 	}
-	caKeySecret := &corev1.Secret{
+
+	caSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
-			Name:      resources.CAKeySecretName,
+			Name:      resources.CASecretName,
 		},
 		Data: map[string][]byte{
-			resources.CAKeySecretKey: certutil.EncodePrivateKeyPEM(caKey),
+			resources.CACertSecretKey: certutil.EncodeCertPEM(caKp.Cert),
+			resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(caKp.Key),
 		},
 	}
 
-	config := certutil.Config{CommonName: "foo"}
-	caCert, err := certutil.NewSelfSignedCACert(config, caKey)
-	if err != nil {
-		t.Fatalf("unable to create a self-signed certificate for a new CA: %v", err)
-	}
-	caCertSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Status.NamespaceName,
-			Name:      resources.CACertSecretName,
-		},
-		Data: map[string][]byte{
-			resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
-		},
-	}
-
-	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset(caKeySecret, caCertSecret)
+	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset(caSecret)
 	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
 	kubermaticInformers := externalversions.NewSharedInformerFactory(fakeKubermaticClient, 10*time.Millisecond)
