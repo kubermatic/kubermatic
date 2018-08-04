@@ -19,7 +19,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	machine "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
@@ -91,15 +91,16 @@ func TestLoadFiles(t *testing.T) {
 	clouds := map[string]*kubermaticv1.CloudSpec{
 		"azure": {
 			Azure: &kubermaticv1.AzureCloudSpec{
-				TenantID:       "az-tenant-id",
-				SubscriptionID: "az-subscription-id",
-				ClientID:       "az-client-id",
-				ClientSecret:   "az-client-secret",
-				ResourceGroup:  "az-res-group",
-				VNetName:       "az-vnet-name",
-				SubnetName:     "az-subnet-name",
-				RouteTableName: "az-route-table-name",
-				SecurityGroup:  "az-sec-group",
+				TenantID:        "az-tenant-id",
+				SubscriptionID:  "az-subscription-id",
+				ClientID:        "az-client-id",
+				ClientSecret:    "az-client-secret",
+				ResourceGroup:   "az-res-group",
+				VNetName:        "az-vnet-name",
+				SubnetName:      "az-subnet-name",
+				RouteTableName:  "az-route-table-name",
+				SecurityGroup:   "az-sec-group",
+				AvailabilitySet: "az-availability-set",
 			},
 		},
 		"vsphere": {

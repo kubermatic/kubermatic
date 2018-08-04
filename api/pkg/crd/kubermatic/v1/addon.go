@@ -10,7 +10,7 @@ const (
 	// AddonResourceName represents "Resource" defined in Kubernetes
 	AddonResourceName = "addons"
 
-	// ProjectKindName represents "Kind" defined in Kubernetes
+	// AddonKindName represents "Kind" defined in Kubernetes
 	AddonKindName = "Addon"
 )
 

@@ -31,7 +31,7 @@ type UserSpec struct {
 	ID       string         `json:"id"`
 	Name     string         `json:"name"`
 	Email    string         `json:"email"`
-	Projects []ProjectGroup `json:"projects, omitempty"`
+	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
 // UserList is a list of users
@@ -58,5 +58,5 @@ func (u *User) GroupForProject(projectName string) (string, error) {
 			return pg.Group, nil
 		}
 	}
-	return "", fmt.Errorf("The user doesn't belong to the given project = %s", projectName)
+	return "", fmt.Errorf("The user %q doesn't belong to the given project = %s", u.Spec.Name, projectName)
 }

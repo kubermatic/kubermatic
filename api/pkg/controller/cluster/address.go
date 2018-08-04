@@ -51,17 +51,6 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 		glog.V(4).Infof("Created admin token for cluster %s", c.Name)
 	}
 
-	if c.Address.KubeletToken == "" {
-		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Address.KubeletToken = kubernetes.GenerateToken()
-		})
-		if err != nil {
-			return nil, err
-		}
-		glog.V(4).Infof("Created kubelet token for cluster %s", c.Name)
-	}
-
 	externalName := fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
 	if c.Address.ExternalName != externalName {
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {

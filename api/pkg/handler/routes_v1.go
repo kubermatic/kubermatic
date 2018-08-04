@@ -144,6 +144,14 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/health").
 		Handler(r.newGetClusterHealth())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades").
+		Handler(r.getClusterUpgrades())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics").
+		Handler(r.clusterMetricsHandler())
+
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPost).
@@ -231,7 +239,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) newListSSHKeys() http.Handler {
@@ -928,7 +936,7 @@ func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NewSSHKeyList
+//       200: []NewSSHKey
 //       401: empty
 //       403: empty
 func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
@@ -1124,6 +1132,56 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 			r.newDatacenterMiddleware(),
 		)(newDeleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades project getClusterUpgrades
+//
+//    Gets possible cluster upgrades
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) getClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
+		decodeClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics project clusterMetricsHandler
+//
+//    Gets cluster metrics
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterMetric
+//       401: empty
+//       403: empty
+func (r Routing) clusterMetricsHandler() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
+		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
