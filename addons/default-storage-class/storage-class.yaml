@@ -1,3 +1,4 @@
+{{/* Template must only emit data in case its valid for a given provider. That way we can ensure we don't install it when not needed */}}
 {{ if .Cluster.Spec.Cloud.Azure }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
