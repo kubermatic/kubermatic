@@ -28,9 +28,6 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 		return c, err
 	}
 
-	// update metrics since we're not handling this cluster anymore
-	removeClusterFromMetrics(c)
-
 	return c, nil
 }
 
