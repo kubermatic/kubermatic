@@ -35,7 +35,7 @@ var (
 	clusters = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Subsystem: clusterControllerSubsystem,
-			Name:      "cluster",
+			Name:      "cluster_info",
 			Help:      "The clusters managed by this controller.",
 		},
 		[]string{"name", "display_name", "ip", "master_version", "cloud_provider", "user_name", "user_email"},
