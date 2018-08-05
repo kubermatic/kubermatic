@@ -1,3 +1,5 @@
+{{/* Template must only emit data in case its valid for a given provider. That way we can ensure we don't install it when not needed */}}
+{{ if .Cluster.Spec.Cloud.Azure }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -6,25 +8,50 @@ metadata:
   labels:
     kubernetes.io/cluster-service: "true"
   name: standard
-{{ if .Cluster.Spec.Cloud.Azure }}
 provisioner: kubernetes.io/azure-disk
 parameters:
   kind: Managed
   storageaccounttype: Standard_LRS
 {{ end }}
+
 {{ if .Cluster.Spec.Cloud.AWS }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: standard
 provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2
   zone: {{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
 {{ end }}
+
 {{ if .Cluster.Spec.Cloud.VSphere }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: standard
 provisioner: kubernetes.io/vsphere-volume
 parameters:
   diskformat: thin
 {{ end }}
+
 {{ if .Cluster.Spec.Cloud.Openstack }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: standard
 provisioner: kubernetes.io/cinder
 {{ end }}
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
+
