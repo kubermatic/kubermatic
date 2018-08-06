@@ -1581,19 +1581,6 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					},
 				},
 
-				/*&rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"clusters"},
-							Verbs:     []string{},
-						},
-					},
-				},*/
-
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
@@ -1619,19 +1606,6 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 						},
 					},
 				},
-
-				/*&rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:viewers",
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"usersshkeies"},
-							Verbs:     []string{},
-						},
-					},
-				},*/
 			},
 		},
 
