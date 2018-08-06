@@ -1,0 +1,21 @@
+{
+  "Vendor": true,
+  "Concurrency": 2,
+  "DisableAll": true,
+  "Exclude": [
+    "pkg/crd"
+  ],
+  "Deadline": "5m",
+  "Enable": [
+    "vet",
+    "golint",
+    "varcheck",
+    "structcheck",
+    "gosimple",
+    "unused",
+    "errcheck"
+  ],
+  "Linters": {
+    "errcheck": {"Command": "errcheck -blank -exclude errcheck_excludes.txt"}
+  }
+}

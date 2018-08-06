@@ -236,7 +236,7 @@ groups:
         node_namespace_pod:kube_pod_info:
       )
     record: node:node_net_saturation:sum_irate
-- name: node.rules
+- name: node-exporter.rules
   rules:
   - expr: |
       count by (instance) (
@@ -934,7 +934,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-- name: node
+- name: node-exporter
   rules:
   - alert: NodeFilesystemSpaceFillingUp
     annotations:

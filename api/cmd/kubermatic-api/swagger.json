@@ -836,6 +836,61 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics": {
+      "get": {
+        "description": "Gets cluster metrics",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "clusterMetricsHandler",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterMetric",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterMetric"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes": {
       "get": {
         "description": "Lists nodes that belong to the given cluster",
@@ -1339,6 +1394,61 @@
             "description": "ClusterAdminToken",
             "schema": {
               "$ref": "#/definitions/ClusterAdminToken"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades": {
+      "get": {
+        "description": "Gets possible cluster upgrades",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getClusterUpgrades",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
             }
           },
           "401": {
@@ -2071,7 +2181,7 @@
         "tags": [
           "cluster"
         ],
-        "operationId": "getPossibleClusterUpgradesV3",
+        "operationId": "legacyGetPossibleClusterUpgradesV3",
         "parameters": [
           {
             "type": "string",
@@ -2553,22 +2663,22 @@
       "title": "ClusterAddress stores access and address information of a cluster.",
       "properties": {
         "adminToken": {
+          "description": "AdminToken is the token for the kubeconfig, the user can download",
           "type": "string",
           "x-go-name": "AdminToken"
         },
         "externalName": {
+          "description": "ExternalName is the DNS name for this cluster",
           "type": "string",
           "x-go-name": "ExternalName"
         },
         "ip": {
+          "description": "IP is the external IP under which the apiserver is available",
           "type": "string",
           "x-go-name": "IP"
         },
-        "kubeletToken": {
-          "type": "string",
-          "x-go-name": "KubeletToken"
-        },
         "url": {
+          "description": "URL under which the Apiserver is available",
           "type": "string",
           "x-go-name": "URL"
         }
@@ -2632,6 +2742,25 @@
       "x-go-name": "ClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterMetric": {
+      "description": "ClusterMetric defines a metric for the given cluster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "x-go-name": "Values"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ClusterNetworkingConfig": {
       "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
       "type": "object",
@@ -2686,10 +2815,12 @@
           "$ref": "#/definitions/ComponentSettings"
         },
         "humanReadableName": {
+          "description": "HumanReadableName is the cluster name provided by the user",
           "type": "string",
           "x-go-name": "HumanReadableName"
         },
         "masterVersion": {
+          "description": "MasterVersion is Deprecated",
           "type": "string",
           "x-go-name": "MasterVersion"
         },
@@ -2704,12 +2835,9 @@
           "x-go-name": "PauseReason"
         },
         "version": {
+          "description": "Version defines the wanted version of the control plane",
           "type": "string",
           "x-go-name": "Version"
-        },
-        "workerName": {
-          "type": "string",
-          "x-go-name": "WorkerName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -2725,6 +2853,7 @@
           "$ref": "#/definitions/RSAKeys"
         },
         "errorMessage": {
+          "description": "ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved",
           "type": "string",
           "x-go-name": "ErrorMessage"
         },
@@ -2737,14 +2866,11 @@
         "kubeletCert": {
           "$ref": "#/definitions/KeyCert"
         },
-        "lastDeployedMasterVersion": {
-          "type": "string",
-          "x-go-name": "LastDeployedMasterVersion"
-        },
         "lastUpdated": {
           "$ref": "#/definitions/Time"
         },
         "namespaceName": {
+          "description": "NamespaceName defines the namespace the control plane of this cluster is deployed in",
           "type": "string",
           "x-go-name": "NamespaceName"
         },
@@ -2758,10 +2884,12 @@
           "$ref": "#/definitions/Bytes"
         },
         "userEmail": {
+          "description": "UserEmail contains the email of the owner of this cluster",
           "type": "string",
           "x-go-name": "UserEmail"
         },
         "userName": {
+          "description": "UserName contains the name of the owner of this cluster",
           "type": "string",
           "x-go-name": "UserName"
         }
@@ -4560,7 +4688,7 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "VSphereCredentials": {
-      "description": "VSphere credentials represents a credential for accessing vSphere",
+      "description": "VSphereCredentials credentials represents a credential for accessing vSphere",
       "type": "object",
       "properties": {
         "password": {

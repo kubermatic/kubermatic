@@ -315,6 +315,7 @@ func (c *Controller) sync(key string) error {
 
 type templateData struct {
 	Addon             *kubermaticv1.Addon
+	Kubeconfig        string
 	Cluster           *kubermaticv1.Cluster
 	Variables         map[string]interface{}
 	OverwriteRegistry string
@@ -336,10 +337,16 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
+	kubeconfig, err := c.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &templateData{
 		Variables:         make(map[string]interface{}),
 		Cluster:           cluster,
 		Addon:             addon,
+		Kubeconfig:        string(kubeconfig),
 		OverwriteRegistry: c.registryURI,
 		DNSClusterIP:      clusterIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
@@ -367,18 +374,24 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
 		}
 
 		tplName := fmt.Sprintf("%s-%s", addon.Name, info.Name())
 		tpl, err := template.New(tplName).Funcs(sprig.TxtFuncMap()).Parse(string(fbytes))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
 		}
 
 		bufferAll := bytes.NewBuffer([]byte{})
 		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
+		}
+
+		sd := strings.TrimSpace(string(bufferAll.String()))
+		if len(sd) == 0 {
+			glog.V(6).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
+			continue
 		}
 
 		reader := kyaml.NewDocumentDecoder(ioutil.NopCloser(bufferAll))
@@ -563,6 +576,16 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 		return err
 	}
 	defer done()
+
+	d, err := ioutil.ReadFile(manifestFilename)
+	if err != nil {
+		return err
+	}
+	sd := strings.TrimSpace(string(d))
+	if len(sd) == 0 {
+		glog.V(6).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
+		return nil
+	}
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(c.getAddonLabel(addon))

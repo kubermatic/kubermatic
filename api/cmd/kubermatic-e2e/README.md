@@ -42,7 +42,7 @@ All flags have reasonable defaults
     -kubeconfig string
         path to kubeconfig file (default "/config/kubeconfig")
     -kubermatic-addons value
-        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap)
+        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class)
     -kubermatic-cluster string
         path to Cluster yaml (default "/manifests/cluster.yaml")
     -kubermatic-cluster-timeout duration
