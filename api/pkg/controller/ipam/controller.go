@@ -49,8 +49,6 @@ type Controller struct {
 
 	client        machineclientset.Interface
 	machineLister machinelistersv1alpha1.MachineLister
-
-	usedIps map[string]struct{}
 }
 
 // NewController creates a new controller for the specified data.
@@ -59,7 +57,6 @@ func NewController(client machineclientset.Interface, machineInformer machineinf
 		cidrRange:     networks,
 		client:        client,
 		machineLister: machineInformer.Lister(),
-		usedIps:       make(map[string]struct{}),
 		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "MachineQueue"),
 	}
 
