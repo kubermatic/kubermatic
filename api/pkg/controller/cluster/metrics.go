@@ -30,7 +30,9 @@ var (
 	)
 )
 
-var registerMetrics sync.Once
+var (
+	registerMetrics sync.Once
+)
 
 // Register the metrics that are to be monitored.
 func init() {
