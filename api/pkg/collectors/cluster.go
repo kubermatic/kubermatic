@@ -94,7 +94,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 
 	labels, err := cc.clusterLabels(c)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to determine cluster labels: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %v", c.Name, err))
 	} else {
 		ch <- prometheus.MustNewConstMetric(
 			cc.clusterInfo,
