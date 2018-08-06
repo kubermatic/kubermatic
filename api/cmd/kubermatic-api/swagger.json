@@ -1602,7 +1602,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -4384,9 +4384,9 @@
           "type": "string",
           "x-go-name": "GroupPrefix"
         },
-        "name": {
+        "id": {
           "type": "string",
-          "x-go-name": "Name"
+          "x-go-name": "ID"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
