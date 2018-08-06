@@ -33,7 +33,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	m2, err := ctrl.client.Machine().Machines().Get("susi", metav1.GetOptions{})
+	m2, err := ctrl.client.MachineV1alpha1().Machines().Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 			t.Errorf("error in machineAdded handler: %v", err)
 		}
 
-		m2, err := ctrl.client.Machine().Machines().Get(tuple.machine.Name, metav1.GetOptions{})
+		m2, err := ctrl.client.MachineV1alpha1().Machines().Get(tuple.machine.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Errorf("couldn't retrieve updated machine, see: %v", err)
 		}
@@ -89,25 +89,29 @@ func TestReuseReleasedIP(t *testing.T) {
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
+	time.Sleep(5 * time.Second)
 
-	mSusi2, err := ctrl.client.Machine().Machines().Get("susi", metav1.GetOptions{})
+	mSusi2, err := ctrl.client.MachineV1alpha1().Machines().Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
+	time.Sleep(5 * time.Second)
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 
-	err = ctrl.client.Machine().Machines().Delete("susi", &metav1.DeleteOptions{})
+	err = ctrl.client.MachineV1alpha1().Machines().Delete("susi", &metav1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
+	time.Sleep(5 * time.Second)
 
 	err = ctrl.syncMachine(mBabsi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
+	time.Sleep(5 * time.Second)
 
-	mBabsi2, err := ctrl.client.Machine().Machines().Get("babsi", metav1.GetOptions{})
+	mBabsi2, err := ctrl.client.MachineV1alpha1().Machines().Get("babsi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -164,13 +168,12 @@ func newTestController(networks []Network, objects ...runtime.Object) (*Controll
 
 	client := machinefake.NewSimpleClientset(objects...)
 	factory := machineinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
-	informer := factory.Machine().V1alpha1().Machines()
 
-	controller := NewController(client, informer, networks)
-	controller.liveSync = true
+	controller := NewController(client, factory.Machine().V1alpha1().Machines(), networks)
 	stopCh := make(chan struct{})
 
 	factory.Start(stopCh)
+	factory.WaitForCacheSync(stopCh)
 
 	return controller, stopCh
 }
@@ -195,28 +198,28 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 }
 
 func assertNetworkEquals(t *testing.T, m *machinev1alpha1.Machine, ip string, gw string, dns ...string) {
-	net, err := getNetworkForMachine(m, t)
+	network, err := getNetworkForMachine(m)
 	if err != nil {
 		t.Errorf("couldn't get network for machine %s, see: %v", m.Name, err)
 	}
 
-	if net.CIDR != ip {
-		t.Errorf("Assertion mismatch for machine %s, see: expected cidr '%s' but got '%s'", m.Name, ip, net.CIDR)
+	if network.CIDR != ip {
+		t.Errorf("Assertion mismatch for machine %s, see: expected cidr '%s' but got '%s'", m.Name, ip, network.CIDR)
 	}
 
-	if net.Gateway != gw {
-		t.Errorf("Assertion mismatch for machine %s, see: expected gateway '%s' but got '%s'", m.Name, gw, net.Gateway)
+	if network.Gateway != gw {
+		t.Errorf("Assertion mismatch for machine %s, see: expected gateway '%s' but got '%s'", m.Name, gw, network.Gateway)
 	}
 
 	expectedDNSJoined := strings.Join(dns, ",")
-	actualDNSJoined := strings.Join(net.DNS.Servers, ",")
+	actualDNSJoined := strings.Join(network.DNS.Servers, ",")
 
 	if expectedDNSJoined != actualDNSJoined {
 		t.Errorf("Assertion mismatch for machine %s, see: expected dns servers '%s' but got '%s'", m.Name, expectedDNSJoined, actualDNSJoined)
 	}
 }
 
-func getNetworkForMachine(m *machinev1alpha1.Machine, t *testing.T) (*providerconfig.NetworkConfig, error) {
+func getNetworkForMachine(m *machinev1alpha1.Machine) (*providerconfig.NetworkConfig, error) {
 	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
 	if err != nil {
 		return nil, err
