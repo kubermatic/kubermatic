@@ -61,7 +61,7 @@ local drone = import 'drone/drone.libsonnet';
       ],
     },
 
-    '3-lint': drone.step.new('metalmatze/gometalinter:2.0.5', group='lint') + {
+    '3-lint': drone.step.new('quay.io/kubermatic/gometalinter:latest', group='lint') + {
       commands: [
         'cd api',
         'make lint',
