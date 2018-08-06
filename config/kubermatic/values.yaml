@@ -28,6 +28,8 @@ kubermatic:
     - kube-proxy
     - openvpn
     - rbac
+    - kubelet-configmap  
+    - default-storage-class
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
@@ -41,7 +43,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.0"
+        tag: "v0.1.6"
         pullPolicy: "IfNotPresent"
   api:
     replicas: 2
