@@ -103,7 +103,7 @@ func TestReuseReleasedIP(t *testing.T) {
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
-	wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
+	err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
 		_, err = ctrl.machineLister.Get("susi")
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -113,6 +113,9 @@ func TestReuseReleasedIP(t *testing.T) {
 		}
 		return false, nil
 	})
+	if err != nil {
+		t.Errorf("failed waiting until lister received delete event on machine 'susi': %v", err)
+	}
 
 	err = ctrl.syncMachine(mBabsi)
 	if err != nil {
