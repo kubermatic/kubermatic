@@ -11,8 +11,10 @@ import (
 	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type machineTestData struct {
@@ -89,13 +91,11 @@ func TestReuseReleasedIP(t *testing.T) {
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
-	time.Sleep(5 * time.Second)
 
 	mSusi2, err := ctrl.client.MachineV1alpha1().Machines().Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
-	time.Sleep(5 * time.Second)
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
 
@@ -103,13 +103,21 @@ func TestReuseReleasedIP(t *testing.T) {
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
-	time.Sleep(5 * time.Second)
+	wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
+		_, err = ctrl.machineLister.Get("susi")
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	})
 
 	err = ctrl.syncMachine(mBabsi)
 	if err != nil {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
-	time.Sleep(5 * time.Second)
 
 	mBabsi2, err := ctrl.client.MachineV1alpha1().Machines().Get("babsi", metav1.GetOptions{})
 	if err != nil {
