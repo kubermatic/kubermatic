@@ -9,6 +9,66 @@
                 }
             },
             "version": "83f20ee933bcd13fcf4ad1b49a40c92135c5569c"
+        },
+        {
+            "name": "kubernetes-mixin",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin",
+                    "subdir": ""
+                }
+            },
+            "version": "3c341913ddd3882c8f1edc1c20accdbcaaf10525"
+        },
+        {
+            "name": "grafonnet",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/grafana/grafonnet-lib",
+                    "subdir": "grafonnet"
+                }
+            },
+            "version": "0fdef020a6360415d2c8fdc82b29122583e4df05"
+        },
+        {
+            "name": "grafana-builder",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/kausalco/public",
+                    "subdir": "grafana-builder"
+                }
+            },
+            "version": "42f72ac60fad1022d26f1a88062689e94219d582"
+        },
+        {
+            "name": "etcd-mixin",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/coreos/etcd",
+                    "subdir": "Documentation/etcd-mixin"
+                }
+            },
+            "version": "93be31d43a2728d1750120aeae7a483698ccead2"
+        },
+        {
+            "name": "node_exporter",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/metalmatze/node_exporter",
+                    "subdir": "node-mixin"
+                }
+            },
+            "version": "0fa5ec36b73fe67d417d07b22f3fe7871ff2f615"
+        },
+        {
+            "name": "prometheus",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/tomwilkie/prometheus",
+                    "subdir": "prometheus-mixin"
+                }
+            },
+            "version": "3dc646872c0412832a2879a2a59c6acaa77aa68d"
         }
     ]
 }
