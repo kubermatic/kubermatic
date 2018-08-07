@@ -30,7 +30,7 @@ pipeline:
     - cd api
     - make lint
     group: lint
-    image: metalmatze/gometalinter:2.0.5
+    image: quay.io/kubermatic/gometalinter:latest
     pull: true
   3-verify-addons-up-to-date:
     commands:

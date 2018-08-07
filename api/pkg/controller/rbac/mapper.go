@@ -25,7 +25,7 @@ const (
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
 //
 // Note:
-// adding a new group also requires updating generateVerbs method.
+// adding a new group also requires updating generateVerbsForNamedResource method.
 // the actual names of groups are different see generateActualGroupNameFor function
 var AllGroupsPrefixes = []string{
 	OwnerGroupNamePrefix,
@@ -56,8 +56,16 @@ func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	return fmt.Sprintf("%s:%s:%s", rbacResourcesNamePrefix, resourceName, groupPrefix)
 }
 
+// generateClusterRBACRoleNamedResource generates ClusterRole for a named resource.
+// named resources have its rules set to a resource with the given name for example:
+// the following rule allows reading a ConfigMap named “my-config”
+//  rules:
+//   - apiGroups: [""]
+//   resources: ["configmaps"]
+//   resourceNames: ["my-config"]
+//   verbs: ["get"]
 func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
-	verbs, err := generateVerbs(groupName, kind)
+	verbs, err := generateVerbsForNamedResource(groupName, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +86,8 @@ func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, polic
 	return role, nil
 }
 
+// generateClusterRBACRoleBindingNamedResource generates ClusterRoleBiding for the given group
+// that will be bound to the corresponding ClusterRole
 func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -100,10 +110,15 @@ func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName s
 	return binding
 }
 
-func generateClusterRBACRoleForResource(kind, groupName, policyResource, policyAPIGroups string) (*rbacv1.ClusterRole, error) {
-	verbs, err := generateVerbs(groupName, kind)
+// generateClusterRBACRoleForResource generates ClusterRole for the given resource
+// Note that for some groups we don't want to generate ClusterRole in that case a nil will be returned
+func generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups string) (*rbacv1.ClusterRole, error) {
+	verbs, err := generateVerbsForResource(groupName)
 	if err != nil {
 		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
 	}
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -141,12 +156,14 @@ func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *
 	return binding
 }
 
-func generateVerbs(groupName, resourceKind string) ([]string, error) {
+// generateVerbsForNamedResource generates a set of verbs for a named resource
+// for example a "cluster" named "beefy-john"
+func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
 	// verbs for owners
 	//
-	// owners of a resource
+	// owners of a named resource
 	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) {
-		return []string{"create", "get", "update", "delete"}, nil
+		return []string{"get", "update", "delete"}, nil
 	}
 
 	// verbs for editors
@@ -154,19 +171,42 @@ func generateVerbs(groupName, resourceKind string) ([]string, error) {
 	// editors of a project
 	// special case - editors are not allowed to delete a project
 	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == "Project" {
-		return []string{"create", "get", "update"}, nil
+		return []string{"get", "update"}, nil
 	}
 
-	// editors of a resource
+	// editors of a named resource
 	if strings.HasPrefix(groupName, editorGroupNamePrefix) {
-		return []string{"create", "get", "update", "delete"}, nil
+		return []string{"get", "update", "delete"}, nil
 	}
 
 	// verbs for editors
 	//
-	// viewers of a resource
+	// viewers of a named resource
 	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
 		return []string{"get"}, nil
 	}
+
+	// unknown group passed
+	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
+}
+
+// generateVerbsForResource generates verbs for a resource for example "cluster"
+// to make it even more concrete, if there is "create" verb returned for owners group, that means that the owners can create "cluster" resources.
+func generateVerbsForResource(groupName string) ([]string, error) {
+	// verbs for owners and editors
+	//
+	// owners and editors can create resources
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, editorGroupNamePrefix) {
+		return []string{"create"}, nil
+	}
+
+	// verbs for readers
+	//
+	// viewers cannot create resources
+	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
+		return []string{}, nil
+	}
+
+	// unknown group passed
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
