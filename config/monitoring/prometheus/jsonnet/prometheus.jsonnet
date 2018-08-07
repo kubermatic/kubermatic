@@ -1,7 +1,5 @@
 (import './alerts/kubermatic.libsonnet') +
-(import './alerts/machine-controller.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
-(import 'etcd-mixin/mixin.libsonnet') +
 (import 'prometheus/mixin.libsonnet') +
 (import 'node_exporter/mixin.libsonnet') +
 {
