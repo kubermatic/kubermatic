@@ -111,7 +111,7 @@ local kubermaticDashboard = import "../dashboard.jsonnet";
             template.new(
                 'namespace',
                 'prometheus',
-                'label_values(machine_controller_nodes,namespace)',
+                'label_values(machine_controller_workers,namespace)',
                 refresh='time',
                 includeAll=true,
             )

@@ -5499,7 +5499,7 @@ items:
                       "options": [
 
                       ],
-                      "query": "label_values(machine_controller_nodes,namespace)",
+                      "query": "label_values(machine_controller_workers,namespace)",
                       "refresh": 2,
                       "regex": "",
                       "sort": 0,
