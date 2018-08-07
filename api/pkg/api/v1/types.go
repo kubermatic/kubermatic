@@ -204,7 +204,7 @@ type ClusterAdminToken struct {
 // ProjectGroup is a helper data structure that
 // stores the information about a project and a group prefix that a user belongs to
 type ProjectGroup struct {
-	Name        string `json:"name"`
+	ID          string `json:"id"`
 	GroupPrefix string `json:"group"`
 }
 

@@ -33,7 +33,7 @@ func TestAddUserToProject(t *testing.T) {
 	}{
 		{
 			Name:          "scenario 1: john the owner of the plan9 project invites bob to the project as an editor",
-			Body:          `{"email":"bob@acme.com", "projects":[{"name":"plan9", "group":"editors"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusCreated,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -127,7 +127,7 @@ func TestAddUserToProject(t *testing.T) {
 				ID:    testUsername,
 				Email: testEmail,
 			},
-			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"name":"placeX","group":"editors-placeX"},{"name":"plan9","group":"editors-plan9"}]}`,
+			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"placeX","group":"editors-placeX"},{"id":"plan9","group":"editors-plan9"}]}`,
 			ExpectedActions:  10,
 			ExpectedUserAfterInvitation: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{
@@ -152,7 +152,7 @@ func TestAddUserToProject(t *testing.T) {
 
 		{
 			Name:          "scenario 2: john the editor of the plan9 project tries to invite bob to the project",
-			Body:          `{"email":"bob@acme.com", "projects":[{"name":"plan9", "group":"editors"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -248,7 +248,7 @@ func TestAddUserToProject(t *testing.T) {
 
 		{
 			Name:          "scenario 3: john the owner of the plan9 project tries to invite bob to another project",
-			Body:          `{"email":"bob@acme.com", "projects":[{"name":"moby", "group":"editors"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"moby", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -344,7 +344,7 @@ func TestAddUserToProject(t *testing.T) {
 
 		{
 			Name:          "scenario 4: john the owner of the plan9 project tries to invite  himself to another group",
-			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"name":"plan9", "group":"editors"}]}`, testEmail),
+			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9", "group":"editors"}]}`, testEmail),
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -440,7 +440,7 @@ func TestAddUserToProject(t *testing.T) {
 
 		{
 			Name:          "scenario 5: john the owner of the plan9 project tries to invite bob to the project as an owner",
-			Body:          `{"email":"bob@acme.com", "projects":[{"name":"plan9", "group":"owners"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"owners"}]}`,
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -668,7 +668,7 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  tester,
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"name":"plan9","group":"owners-plan9"},{"name":"myThirdProjectInternalName","group":"editors-myThirdProjectInternalName"}]}`,
+			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9","group":"owners-plan9"},{"id":"myThirdProjectInternalName","group":"editors-myThirdProjectInternalName"}]}`,
 		},
 	}
 

@@ -29,11 +29,11 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 			return nil, k8cerrors.NewBadRequest("expected exactly one entry in \"Projects\" field, but received %d", len(apiUserFromRequest.Projects))
 		}
 		projectFromRequest := apiUserFromRequest.Projects[0]
-		if len(projectFromRequest.Name) == 0 || len(projectFromRequest.GroupPrefix) == 0 {
+		if len(projectFromRequest.ID) == 0 || len(projectFromRequest.GroupPrefix) == 0 {
 			return nil, k8cerrors.NewBadRequest("both the project name and the group name fields are required")
 		}
-		if projectFromRequest.Name != req.ProjectName {
-			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", req.ProjectName))
+		if projectFromRequest.ID != req.ProjectID {
+			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", req.ProjectID))
 		}
 		if apiUserFromRequest.Email == authenticatedUser.Spec.Email {
 			return nil, k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
@@ -44,11 +44,11 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 
 		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
 		if err != nil && err == provider.ErrNotFound {
-			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.Name)
+			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.Name)
+		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -73,7 +73,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		}
 		updatedProjectGroups := []kubermaticapiv1.ProjectGroup{}
 		for _, existingProjectGroup := range userToInvite.Spec.Projects {
-			if existingProjectGroup.Name != projectFromRequest.Name {
+			if existingProjectGroup.Name != projectFromRequest.ID {
 				updatedProjectGroups = append(updatedProjectGroups, existingProjectGroup)
 			}
 		}
@@ -111,7 +111,7 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User) *apiv1.Ne
 		Email: internalUser.Spec.Email,
 	}
 	for _, pg := range internalUser.Spec.Projects {
-		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{Name: pg.Name, GroupPrefix: pg.Group})
+		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: pg.Name, GroupPrefix: pg.Group})
 	}
 	return apiUser
 }
@@ -152,7 +152,7 @@ func IsAdmin(u apiv1.User) bool {
 // swagger:parameters addUserToProject
 type AddUserToProjectReq struct {
 	// in: path
-	ProjectName string `json:"project_id"`
+	ProjectID string `json:"project_id"`
 	// in: body
 	Body apiv1.NewUser
 }
@@ -165,7 +165,7 @@ func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, er
 		return "", fmt.Errorf("'project_id' parameter is required but was not provided")
 	}
 
-	req.ProjectName = projectName
+	req.ProjectID = projectName
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
