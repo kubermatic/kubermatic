@@ -157,7 +157,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		{
 			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on \"master\" and seed clusters",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActionsForMaster: []string{"create", "create", "create", "create"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -249,7 +249,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "create", "get", "create"},
+			expectedActionsForSeeds: []string{"create", "create"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -292,7 +292,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		{
 			name:                     "Scenario 2: Existing RBAC Bindings are properly updated when a new project is added",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"get", "update", "get", "update"},
+			expectedActionsForMaster: []string{"update", "update"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -389,7 +389,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
+			expectedActionsForSeeds: []string{"update", "update"},
 			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -478,20 +478,35 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
+			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForMaster {
 				objs = append(objs, existingClusterRoleBinding)
+				err := roleBindingsIndexer.Add(existingClusterRoleBinding)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
+				roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
+					err := roleBindingsIndexer.Add(existingClusterRoleBinding)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
 				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
 				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+
+				// manually set lister as we don't want to start informers in the tests
+				roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
+				fakeProvider.rbacClusterRoleBindingLister = roleBindingsLister
 				seedClusterProviders[i] = fakeProvider
 			}
 
@@ -500,7 +515,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
 			target.seedClusterProviders = seedClusterProviders
-			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
+			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync, roleBindingsLister)
 
 			// validate master cluster
 			{
@@ -1490,8 +1505,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		// scenario 1
 		{
 			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
-			expectedActionsForMaster: []string{"get", "create", "get", "create", "get", "create", "get", "create"},
-			expectedActionsForSeeds:  []string{"get", "create", "get", "create"},
+			expectedActionsForMaster: []string{"create", "create", "create", "create"},
+			expectedActionsForSeeds:  []string{"create", "create"},
 			seedClusters:             2,
 			projectResourcesToSync: []projectResource{
 				{
@@ -1616,6 +1631,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			roleLister := rbaclister.NewClusterRoleLister(roleIndexer)
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1628,11 +1645,10 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := Controller{}
-			//target.rbacClusterRoleMasterLister = clusterRoleLister
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
 			target.seedClusterProviders = seedClusterProviders
-			err := target.ensureClusterRBACRoleForResources()
+			err := target.ensureClusterRBACRoleForResources(roleLister)
 
 			// validate master cluster
 			{
