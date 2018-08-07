@@ -90,33 +90,38 @@ scrape_configs:
     regex: default;kubernetes;https
 
 - job_name: kubelet
-  scheme: http
+  scheme: https
+  tls_config:
+    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   kubernetes_sd_configs:
   - role: node
   relabel_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
-  - source_labels: [__address__]
-    action: replace
-    target_label: __address__
-    regex: ([^:;]+):(\d+)
-    replacement: ${1}:10255
+  - target_label: __address__
+    replacement: kubernetes.default.svc:443
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics
 
 - job_name: cadvisor
-  scheme: http
+  scheme: https
+  tls_config:
+    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   kubernetes_sd_configs:
   - role: node
   relabel_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
-  - source_labels: [__address__]
-    action: replace
-    target_label: __address__
-    regex: ([^:;]+):(\d+)
-    replacement: ${1}:10255
-  - target_label: __metrics_path__
-    action: replace
-    replacement: /metrics/cadvisor
+  - target_label: __address__
+    replacement: kubernetes.default.svc:443
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
 
 - job_name: kube-state-metrics
   honor_labels: true
