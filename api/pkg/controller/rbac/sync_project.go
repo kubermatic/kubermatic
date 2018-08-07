@@ -51,10 +51,10 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleBindingMasterLister); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleForResources(c.rbacClusterRoleMasterLister); err != nil {
+	if err = c.ensureClusterRBACRoleForResources(); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleBindingForResources(project.Name, c.rbacClusterRoleBindingMasterLister); err != nil {
+	if err = c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
 		return err
 	}
 	err = c.ensureProjectIsInActivePhase(project)
@@ -113,10 +113,10 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	return err
 }
 
-func (c *Controller) ensureClusterRBACRoleForResources(rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
+func (c *Controller) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
-			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, rbacClusterRoleLister)
+			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, c.rbacClusterRoleMasterLister)
 			if err != nil {
 				return err
 			}
@@ -135,7 +135,7 @@ func (c *Controller) ensureClusterRBACRoleForResources(rbacClusterRoleLister rba
 	return nil
 }
 
-func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
+func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string) error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
@@ -151,7 +151,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 				continue
 			}
 
-			err = ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, rbacClusterRoleBindingLister)
+			err = ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, c.rbacClusterRoleBindingMasterLister)
 			if err != nil {
 				return err
 			}

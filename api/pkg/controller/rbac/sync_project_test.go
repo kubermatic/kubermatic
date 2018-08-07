@@ -514,8 +514,9 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			target := Controller{}
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
+			target.rbacClusterRoleBindingMasterLister = roleBindingsLister
 			target.seedClusterProviders = seedClusterProviders
-			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync, roleBindingsLister)
+			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
 
 			// validate master cluster
 			{
@@ -1647,8 +1648,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			target := Controller{}
 			target.kubeMasterClient = fakeKubeClient
 			target.projectResources = test.projectResourcesToSync
+			target.rbacClusterRoleMasterLister = roleLister
 			target.seedClusterProviders = seedClusterProviders
-			err := target.ensureClusterRBACRoleForResources(roleLister)
+			err := target.ensureClusterRBACRoleForResources()
 
 			// validate master cluster
 			{
