@@ -1,5 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-
 (import './alerts/kubermatic.libsonnet') +
 (import './alerts/machine-controller.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
