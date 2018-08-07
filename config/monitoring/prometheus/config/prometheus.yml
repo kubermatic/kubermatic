@@ -92,30 +92,31 @@ scrape_configs:
 - job_name: kubelet
   scheme: http
   kubernetes_sd_configs:
-  - role: endpoints
-    namespaces:
-      names:
-      - kube-system
+  - role: node
   relabel_configs:
-  - source_labels: [__meta_kubernetes_endpoint_port_name]
-    regex: http-metrics
-    replacement: $1
-    action: keep
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - source_labels: [__address__]
+    action: replace
+    target_label: __address__
+    regex: ([^:;]+):(\d+)
+    replacement: ${1}:10255
 
 - job_name: cadvisor
-  honor_labels: true
   scheme: http
   kubernetes_sd_configs:
-  - role: endpoints
-    namespaces:
-      names:
-      - kube-system
+  - role: node
   relabel_configs:
-  - source_labels: [__meta_kubernetes_endpoint_port_name]
-    separator: ;
-    regex: cadvisor
-    replacement: $1
-    action: keep
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - source_labels: [__address__]
+    action: replace
+    target_label: __address__
+    regex: ([^:;]+):(\d+)
+    replacement: ${1}:10255
+  - target_label: __metrics_path__
+    action: replace
+    replacement: /metrics/cadvisor
 
 - job_name: kube-state-metrics
   honor_labels: true
