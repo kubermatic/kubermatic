@@ -7,7 +7,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kubermatic:clusters:reader
+  name: kubermatic:s3exporter:clusters:reader
 rules:
 - apiGroups:
   - kubermatic.k8s.io
@@ -21,11 +21,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kubermatic:clusters:reader
+  name: kubermatic:s3exporter:clusters:reader
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kubermatic:clusters:reader
+  name: kubermatic:s3exporter:clusters:reader
 subjects:
 - kind: ServiceAccount
   name: s3-exporter
