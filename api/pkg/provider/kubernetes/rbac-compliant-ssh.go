@@ -185,6 +185,9 @@ func (p *RBACCompliantSSHKeyProvider) createMasterImpersonationClientWrapper(use
 
 // sortBy sort the given keys by the specified field name (sortBy param)
 func (p *RBACCompliantSSHKeyProvider) sortBy(keys []*kubermaticapiv1.UserSSHKey, sortBy string) ([]*kubermaticapiv1.UserSSHKey, error) {
+	if len(keys) == 0 {
+		return keys, nil
+	}
 	rawKeys := []runtime.Object{}
 	for index := range keys {
 		rawKeys = append(rawKeys, keys[index])
