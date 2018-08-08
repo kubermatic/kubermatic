@@ -51,7 +51,16 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 		glog.V(4).Infof("Created admin token for cluster %s", c.Name)
 	}
 
-	externalName := fmt.Sprintf("%s.%s.%s", c.Name, cc.dc, cc.externalURL)
+	nodeDc, found := cc.dcs[c.Spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("unknown node dataceter set '%s'", c.Spec.Cloud.DatacenterName)
+	}
+	seedDCName := cc.dc
+	if nodeDc.SeedDNSOverwrite != nil && *nodeDc.SeedDNSOverwrite != "" {
+		seedDCName = *nodeDc.SeedDNSOverwrite
+	}
+
+	externalName := fmt.Sprintf("%s.%s.%s", c.Name, seedDCName, cc.externalURL)
 	if c.Address.ExternalName != externalName {
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
