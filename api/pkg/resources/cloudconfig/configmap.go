@@ -88,6 +88,28 @@ ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- if eq (substr 0 4 .Cluster.Spec.Version) "1.10" }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
+{{- with $version := (split "." .Cluster.Spec.Version) }}
+{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "9" }}{{- if ge (int (index $version "_2")) 10 }}
+
+[LoadBalancer]
+manage-security-groups = true
+{{- end }}{{- end }}{{- end }}
+{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "10" }}{{- if ge (int (index $version "_2")) 6 }}
+
+[LoadBalancer]
+manage-security-groups = true
+{{- end }}{{- end }}{{- end }}
+{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "11" }}{{- if ge (int (index $version "_2")) 1 }}
+
+[LoadBalancer]
+manage-security-groups = true
+{{- end }}{{- end }}{{- end }}
+{{- if eq (index $version "_0") "1" }}{{- if ge (int (index $version "_1")) 12 }}
+
+[LoadBalancer]
+manage-security-groups = true
+{{- end }}{{- end }}
+{{- end }}
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Azure}}
 {
