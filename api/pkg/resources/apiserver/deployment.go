@@ -44,7 +44,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ApiserverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster.Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -52,10 +52,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		MatchLabels: resources.BaseAppLabel(name),
 	}
+
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
 		MaxSurge: &intstr.IntOrString{
@@ -68,7 +67,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
+	etcdClientServiceIP, err := data.ServiceClusterIP(resources.EtcdClientServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	if err != nil {
 		return nil, err
 	}
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
@@ -194,8 +194,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/ca",
 					ReadOnly:  true,
 				},
 				{
@@ -257,7 +257,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--proxy-client-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
+		"--client-ca-file", "/etc/kubernetes/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
@@ -314,36 +314,6 @@ func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	return admissionControlFlagName, admissionControlFlagValue
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: "apiserver",
-	}
-
-	secretDependencies := []string{
-		resources.TokensSecretName,
-		resources.ApiserverTLSSecretName,
-		resources.KubeletClientCertificatesSecretName,
-		resources.CACertSecretName,
-		resources.ServiceAccountKeySecretName,
-		resources.ApiserverEtcdClientCertificateSecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	return podLabels, nil
-}
-
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
@@ -383,11 +353,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  resources.CACertSecretKey,
+							Path: resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},

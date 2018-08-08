@@ -1,6 +1,6 @@
 {
   "Vendor": true,
-  "Concurrency": 2,
+  "Concurrency": 4,
   "DisableAll": true,
   "Exclude": [
     "pkg/crd"

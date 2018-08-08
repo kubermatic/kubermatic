@@ -15,15 +15,14 @@ spec:
   selector:
     matchLabels:
       app: prometheus
-      cluster: de-test-01
   serviceName: prometheus
   template:
     metadata:
       creationTimestamp: null
       labels:
         app: prometheus
-        cluster: de-test-01
-        config-revision: "123456"
+        prometheus-configmap-revision: "123456"
+        prometheus-secret-revision: "123456"
     spec:
       containers:
       - args:

@@ -23,6 +23,5 @@ spec:
     targetPort: 2380
   selector:
     app: etcd
-    cluster: de-test-01
 status:
   loadBalancer: {}

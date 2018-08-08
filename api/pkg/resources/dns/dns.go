@@ -12,19 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: resources.DNSResolverDeploymentName,
-	}
-	configRevision, err := data.ConfigMapRevision(resources.DNSResolverConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.DNSResolverConfigMapName)] = configRevision
-
-	return podLabels, err
-}
-
 // Service returns the service for the dns resolver
 func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var svc *corev1.Service
@@ -60,7 +47,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.DNSResolverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(resources.DNSResolverDeploymentName)
+	dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName)
 	dep.Spec.Replicas = resources.Int32(2)
 
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -80,12 +67,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get podlabels: %v", err)
 	}
 
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
+	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+		Labels: podLabels,
+	}
 	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
@@ -141,7 +131,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 	}
-	dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+
+	dep.Spec.Template.Spec.Volumes = volumes
+
+	return dep, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
 		{
 			Name: resources.DNSResolverConfigMapName,
 			VolumeSource: corev1.VolumeSource{
@@ -162,17 +159,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  resources.CACertSecretKey,
+							Path: resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
 	}
-
-	return dep, nil
 }
 
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data

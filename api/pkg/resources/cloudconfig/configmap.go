@@ -28,7 +28,6 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 
 	cm.Name = resources.CloudConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.GetLabels("cloud-config")
 	cm.Data = map[string]string{
 		"config":              cloudConfig,
 		FakeVMWareUUIDKeyName: fakeVMWareUUID,

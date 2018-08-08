@@ -28,14 +28,9 @@ spec:
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
-        apiserver-etcd-client-certificate-secret-revision: "123456"
-        apiserver-tls-secret-revision: "123456"
+        apiserver-configmap-revision: "123456"
+        apiserver-secret-revision: "123456"
         app: apiserver
-        ca-cert-secret-revision: "123456"
-        cloud-config-configmap-revision: "123456"
-        kubelet-client-certificates-secret-revision: "123456"
-        service-account-key-secret-revision: "123456"
-        tokens-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -54,7 +49,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --cert
         - /etc/openvpn/certs/client.crt
         - --key
@@ -95,8 +90,8 @@ spec:
         - mountPath: /etc/openvpn/certs
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/ca
+          name: ca
           readOnly: true
       - args:
         - --advertise-address
@@ -153,7 +148,7 @@ spec:
         - --proxy-client-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --client-ca-file
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --kubelet-client-certificate
         - /etc/kubernetes/kubelet/kubelet-client.crt
         - --kubelet-client-key
@@ -213,8 +208,8 @@ spec:
         - mountPath: /etc/kubernetes/kubelet
           name: kubelet-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/ca
+          name: ca
           readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
@@ -271,10 +266,13 @@ spec:
         secret:
           defaultMode: 256
           secretName: kubelet-client-certificates
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
       - name: service-account-key
         secret:
           defaultMode: 256

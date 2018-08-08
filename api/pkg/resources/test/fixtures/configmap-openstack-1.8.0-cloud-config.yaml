@@ -15,8 +15,6 @@ data:
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null
-  labels:
-    app: cloud-config
   name: cloud-config
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1

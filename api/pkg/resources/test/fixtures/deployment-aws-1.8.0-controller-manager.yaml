@@ -29,10 +29,8 @@ spec:
       creationTimestamp: null
       labels:
         app: controller-manager
-        ca-cert-secret-revision: "123456"
-        ca-key-secret-revision: "123456"
-        cloud-config-configmap-revision: "123456"
-        service-account-key-secret-revision: "123456"
+        controller-manager-configmap-revision: "123456"
+        controller-manager-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -51,7 +49,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --cert
         - /etc/openvpn/certs/client.crt
         - --key
@@ -92,20 +90,20 @@ spec:
         - mountPath: /etc/openvpn/certs
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/ca
+          name: ca
           readOnly: true
       - args:
         - --kubeconfig
-        - /etc/kubernetes/controllermanager/controllermanager-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --service-account-private-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --root-ca-file
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --cluster-signing-cert-file
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/ca/ca.crt
         - --cluster-signing-key-file
-        - /etc/kubernetes/ca-key/ca.key
+        - /etc/kubernetes/ca/ca.key
         - --cluster-cidr
         - 172.25.0.0/16
         - --configure-cloud-routes=false
@@ -160,11 +158,8 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
-          readOnly: true
-        - mountPath: /etc/kubernetes/ca-key
-          name: ca-key
+        - mountPath: /etc/kubernetes/ca
+          name: ca
           readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
@@ -172,7 +167,7 @@ spec:
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
-        - mountPath: /etc/kubernetes/controllermanager
+        - mountPath: /etc/kubernetes/kubeconfig
           name: controllermanager-kubeconfig
           readOnly: true
       dnsConfig:
@@ -199,14 +194,10 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       volumes:
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
-      - name: ca-key
-        secret:
-          defaultMode: 256
-          secretName: ca-key
+          secretName: ca
       - name: service-account-key
         secret:
           defaultMode: 256

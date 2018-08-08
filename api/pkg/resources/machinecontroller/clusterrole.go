@@ -16,7 +16,7 @@ func ClusterRole(data *resources.TemplateData, existing *rbacv1.ClusterRole) (*r
 	}
 
 	r.Name = resources.MachineControllerClusterRoleName
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{

@@ -29,13 +29,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Name = resources.MachineControllerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: "machine-controller",
-		},
+		MatchLabels: resources.BaseAppLabel(name),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -49,10 +47,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes)
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		Labels: podLabels,
 		Annotations: map[string]string{
 			"prometheus.io/scrape": "true",
 			"prometheus.io/path":   "/metrics",
@@ -66,8 +68,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
-	kcDir := "/etc/kubernetes/machinecontroller"
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -93,7 +94,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.MachineControllerKubeconfigSecretName),
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", clusterDNSIP,
@@ -130,7 +131,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},

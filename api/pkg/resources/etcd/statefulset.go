@@ -50,13 +50,11 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
 	set.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-		},
+		MatchLabels: resources.BaseAppLabel(name),
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
@@ -157,7 +155,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					MountPath: "/etc/etcd/tls",
 				},
 				{
-					Name:      resources.CACertSecretName,
+					Name:      resources.CASecretName,
 					MountPath: "/etc/etcd/ca",
 				},
 				{
@@ -176,7 +174,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Weight: 100,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: getBasePodLabels(data),
+							MatchLabels: resources.BaseAppLabel(name),
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},
@@ -185,35 +183,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	set.Spec.Template.Spec.Volumes = []corev1.Volume{
-		{
-			Name: resources.EtcdTLSCertificateSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.EtcdTLSCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.CACertSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.ApiserverEtcdClientCertificateSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-	}
+	set.Spec.Template.Spec.Volumes = volumes
 
 	// Make sure, we don't change size of existing pvc's
 	// Phase needs to be taken from an existing
@@ -239,29 +209,42 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	return set, nil
 }
 
-func getBasePodLabels(data *resources.TemplateData) map[string]string {
-	return map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.EtcdTLSCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.EtcdTLSCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  resources.CACertSecretKey,
+							Path: resources.CACertSecretKey,
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
 	}
-}
-
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := getBasePodLabels(data)
-
-	secretDependencies := []string{
-		resources.ApiserverEtcdClientCertificateSecretName,
-		resources.EtcdTLSCertificateSecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	return podLabels, nil
 }
 
 type commandTplData struct {
