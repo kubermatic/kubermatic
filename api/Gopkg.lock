@@ -551,8 +551,8 @@
     "pkg/userdata/helper",
     "pkg/userdata/ubuntu"
   ]
-  revision = "f7994174463060273481bc87e2bda03c4e82a106"
-  version = "v0.7.17"
+  revision = "5c11b45346a6e22b6a3a0538a3d568c48da342bc"
+  version = "v0.7.18"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -912,10 +912,10 @@
   version = "v2.1.3"
 
 [[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
 
 [[projects]]
   branch = "release-1.10"
@@ -1206,6 +1206,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3efa67226bab7cada944a8d044147933ab8c5e1ee30509df499dd9d03fcb91ed"
+  inputs-digest = "6732acade7f6549e8617a622f4ffa708a2670ad2ffe0decbd11ffa5350de8442"
   solver-name = "gps-cdcl"
   solver-version = 1
