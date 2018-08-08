@@ -20,11 +20,11 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (do *digitalocean) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (do *digitalocean) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (do *digitalocean) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: spec.Digitalocean.Token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 

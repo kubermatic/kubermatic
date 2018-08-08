@@ -12,11 +12,11 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (b *bringyourown) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (b *bringyourown) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *bringyourown) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (b *bringyourown) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 

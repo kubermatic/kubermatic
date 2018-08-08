@@ -949,7 +949,7 @@ func TestGetClusterHealth(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "MyPowerfulDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -984,7 +984,7 @@ func TestGetClusterHealth(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "DatacenterInEurope",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1091,7 +1091,7 @@ func TestUpdateCluster(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "MyPowerfulDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1115,7 +1115,7 @@ func TestUpdateCluster(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "DatacenterInEurope",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1222,7 +1222,7 @@ func TestGetCluster(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "MyPowerfulDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1243,7 +1243,7 @@ func TestGetCluster(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "DatacenterInEurope",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1357,7 +1357,7 @@ func TestListClusters(t *testing.T) {
 						}(),
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "MyPowerfulDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1387,7 +1387,7 @@ func TestListClusters(t *testing.T) {
 						}(),
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "DatacenterInEurope",
 							Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 						},
@@ -1667,7 +1667,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: &kubermaticv1.CloudSpec{
+					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "foo",
 						},
@@ -1696,7 +1696,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: &kubermaticv1.CloudSpec{
+					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "foo",
 						},
@@ -1725,7 +1725,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: &kubermaticv1.CloudSpec{
+					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "foo",
 						},
@@ -1754,7 +1754,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL:        "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: &kubermaticv1.CloudSpec{
+					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "foo",
 						},
@@ -1853,7 +1853,7 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 			URL:        "https://foo.bar:8443",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				Fake: &kubermaticv1.FakeCloudSpec{
 					Token: "foo",
 				},
@@ -1928,7 +1928,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 			URL:        "https://foo.bar:8443",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				Fake: &kubermaticv1.FakeCloudSpec{
 					Token: "foo",
 				},
