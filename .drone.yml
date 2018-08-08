@@ -327,18 +327,20 @@ pipeline:
   11-slack-failure:
     author_recipient_mapping:
     - alvaroaleman=alvaro
+    - cbrgm=christian
+    - glower=igor.komlew
     - guusvw=guus
     - j3ank=eugenia
-    - kgroschoff=kristin
-    - metalmatze=matthias
+    - kdomanski=kamil
+    - kgroschoff=kristin.groschoff
+    - kron4eg=artiom
     - mrIncompetent=henrik
     - p0lyn0mial=lukasz
+    - pkavajin=patrick
     - scheeles=sebastian
-    - kdomanski=kamil
-    - kron4eg=artiom.diomin
-    - thz=thz
-    - cbrgm=Chris
-    - toschneck=Tobi
+    - thz=tobias.hintze
+    - toschneck=tobias.schneck
+    - xrstf=christoph
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
