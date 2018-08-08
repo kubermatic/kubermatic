@@ -48,6 +48,13 @@ versions:
 - version: "1.8.13"
   default: false
   allowedNodeVersions: *node-versions
+- version: "1.8.14"
+  default: false
+  allowedNodeVersions: *node-versions
+# Broken -> https://github.com/kubernetes/kubeadm/issues/1039
+#- version: "1.8.15"
+#  default: false
+#  allowedNodeVersions: *node-versions
 # Kubernetes 1.9
 - version: "1.9.0"
   default: false
@@ -71,6 +78,15 @@ versions:
   default: false
   allowedNodeVersions: *node-versions
 - version: "1.9.7"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.9.8"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.9.9"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.9.10"
   default: true
   allowedNodeVersions: *node-versions
 # Kubernetes 1.10
@@ -84,5 +100,14 @@ versions:
   default: false
   allowedNodeVersions: *node-versions
 - version: "1.10.3"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.10.4"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.10.5"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.10.6"
   default: false
   allowedNodeVersions: *node-versions
