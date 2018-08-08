@@ -1,7 +1,3 @@
-*       @mrIncompetent
-
-/config/monitoring/ @metalmatze
-
 # API
 /api/pkg/handler @p0lyn0mial
 /api/pkg/api @p0lyn0mial
@@ -34,3 +30,17 @@
 
 # E2E Runner
 /api/cmd/kubermatic-e2e @kron4eg
+
+# Cluster controller
+/api/pkg/controller/cluster @mrIncompetent
+/api/pkg/resources @mrIncompetent
+
+# Some clouds
+/api/pkg/provider/cloud/aws @mrIncompetent
+/api/pkg/provider/cloud/digitalocean @mrIncompetent
+/api/pkg/provider/cloud/hetzner @mrIncompetent
+/api/pkg/provider/cloud/bringyourown @mrIncompetent
+/api/pkg/provider/cloud/fake @mrIncompetent
+
+# Update controller
+/api/pkg/controller/update @mrIncompetent
