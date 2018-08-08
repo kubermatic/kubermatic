@@ -218,6 +218,9 @@ func (p *RBACCompliantClusterProvider) createSeedImpersonationClientWrapper(user
 
 // sortBy sort the given clusters by the specified field name (sortBy param)
 func (p *RBACCompliantClusterProvider) sortBy(clusters []*kubermaticapiv1.Cluster, sortBy string) ([]*kubermaticapiv1.Cluster, error) {
+	if len(clusters) == 0 {
+		return clusters, nil
+	}
 	rawKeys := []runtime.Object{}
 	for index := range clusters {
 		rawKeys = append(rawKeys, clusters[index])
