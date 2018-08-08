@@ -10,7 +10,7 @@ spec:
     metadata:
       annotations:
         kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '10254'
+        kubermatic/scrape_port: '8080'
       labels:
         app: default-http-backend
     spec:

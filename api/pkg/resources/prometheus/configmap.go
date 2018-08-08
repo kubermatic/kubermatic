@@ -41,8 +41,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	return cm, nil
 }
 
-const (
-	prometheusConfig = `
+const prometheusConfig = `
 global:
   evaluation_interval: 30s
   scrape_interval: 30s
@@ -91,9 +90,12 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-alerting:
-  alertmanagers: []
-`
 
-	prometheusRules = ``
-)
+alerting:
+  alertmanagers:
+  - dns_sd_configs:
+    - names:
+      - 'alertmanager-kubermatic.monitoring.svc.cluster.local'
+      type: A
+      port: 9093
+`
