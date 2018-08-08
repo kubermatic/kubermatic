@@ -116,5 +116,16 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 				},
 			},
 		},
+		"dns-override-do2": {
+			Location:         "Amsterdam",
+			Seed:             "us-central1",
+			Country:          "NL",
+			SeedDNSOverwrite: "alias-europe-west3-c",
+			Spec: provider.DatacenterSpec{
+				Digitalocean: &provider.DigitaloceanSpec{
+					Region: "ams3",
+				},
+			},
+		},
 	}
 }
