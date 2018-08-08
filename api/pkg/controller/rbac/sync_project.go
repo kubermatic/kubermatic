@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+	rbaclister "k8s.io/client-go/listers/rbac/v1"
 )
 
 const (
@@ -30,7 +31,7 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 	if c.shouldSkipProject(sharedProject) {
-		glog.V(8).Infof("skipping project %s due to different worker (%s) assigned to it", key, c.workerName)
+		glog.V(8).Infof("skipping project %s due to different worker than (%s) is assigned to it", key, c.workerName)
 		return nil
 	}
 	if c.shouldDeleteProject(sharedProject) {
@@ -115,7 +116,7 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 func (c *Controller) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
-			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource)
+			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, c.rbacClusterRoleMasterLister)
 			if err != nil {
 				return err
 			}
@@ -123,7 +124,7 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
 					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource)
+					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, seedClusterProvider.rbacClusterRoleLister)
 					if err != nil {
 						return err
 					}
@@ -146,11 +147,11 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 				return err
 			}
 			if generatedClusterRole == nil {
-				glog.V(5).Infof("skipping ClusterRoleBinding generation because corresponding ClusterRole will not be created for %s resource", projectResource.gvr.Resource)
+				glog.V(5).Infof("skipping ClusterRoleBinding generation because corresponding ClusterRole will not be created for group \"%s\" and \"%s\" resource for project %s", groupPrefix, projectResource.gvr.Resource, projectName)
 				continue
 			}
 
-			err = ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
+			err = ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, c.rbacClusterRoleBindingMasterLister)
 			if err != nil {
 				return err
 			}
@@ -158,7 +159,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
 					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleBindingForResource(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
+					err := ensureClusterRBACRoleBindingForResource(seedClusterRESTClient, groupName, projectResource.gvr.Resource, seedClusterProvider.rbacClusterRoleBindingLister)
 					if err != nil {
 						return err
 					}
@@ -169,17 +170,16 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 	return nil
 }
 
-// TODO (p0lyn0mial) pass a lister for cluster roles
-func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName, resource string) error {
+func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName, resource string, rbacLister rbaclister.ClusterRoleLister) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group)
 	if err != nil {
 		return err
 	}
 	if generatedClusterRole == nil {
-		glog.V(5).Infof("skipping ClusterRole generation because corresponding ClusterRole doesn't exist for %s resource", resource)
+		glog.V(5).Infof("skipping ClusterRole generation because ClusterRole for group \"%s\" and resource \"%s\" will not be created", groupName, resource)
 		return nil
 	}
-	sharedExistingClusterRole, err := kubeClient.RbacV1().ClusterRoles().Get(generatedClusterRole.Name, metav1.GetOptions{})
+	sharedExistingClusterRole, err := rbacLister.Get(generatedClusterRole.Name)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
@@ -201,10 +201,10 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName
 	return err
 }
 
-// TODO (p0lyn0mial) pass a lister for cluster role bindings
-func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource string) error {
+func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource string, rbacLister rbaclister.ClusterRoleBindingLister) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
-	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
+
+	sharedExistingClusterRoleBinding, err := rbacLister.Get(generatedClusterRoleBinding.Name)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
