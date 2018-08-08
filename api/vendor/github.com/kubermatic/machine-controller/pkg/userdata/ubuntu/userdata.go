@@ -278,6 +278,9 @@ write_files:
       kubeadm join \
         --token {{ .BoostrapToken }} \
         --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
+        {{- if semverCompare ">=1.9.X" .KubernetesVersion }}
+        --ignore-preflight-errors=CRI \
+        {{- end }}
         {{ .ServerAddr }}
     fi
 
