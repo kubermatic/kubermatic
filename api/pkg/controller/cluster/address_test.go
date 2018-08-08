@@ -32,7 +32,11 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
-		Spec:    kubermaticv1.ClusterSpec{},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				DatacenterName: "regular-do1",
+			},
+		},
 		Address: kubermaticv1.ClusterAddress{},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-" + TestClusterName,
@@ -60,6 +64,52 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 
 	expectedExternalName := fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL)
 	if updatedCluster.Address.ExternalName != fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL) {
+		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, updatedCluster.Address.ExternalName)
+	}
+
+	expectedURL := fmt.Sprintf("https://%s:%d", updatedCluster.Address.ExternalName, TestExternalPort)
+	if updatedCluster.Address.URL != expectedURL {
+		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, updatedCluster.Address.URL)
+	}
+}
+
+func TestSeedDNSOverride(t *testing.T) {
+	c := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: TestClusterName,
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: &kubermaticv1.CloudSpec{
+				DatacenterName: "dns-override-do2",
+			},
+		},
+		Address: kubermaticv1.ClusterAddress{},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: "cluster-" + TestClusterName,
+		},
+	}
+	externalService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ApiserverExternalServiceName,
+			Namespace: "cluster-" + TestClusterName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					NodePort: 30000,
+				},
+			},
+		},
+	}
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{c})
+
+	updatedCluster, err := controller.syncAddress(c)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedExternalName := fmt.Sprintf("%s.%s.%s", updatedCluster.Name, "alias-europe-west3-c", TestExternalURL)
+	if updatedCluster.Address.ExternalName != expectedExternalName {
 		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, updatedCluster.Address.ExternalName)
 	}
 

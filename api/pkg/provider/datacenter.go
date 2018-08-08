@@ -94,12 +94,13 @@ type DatacenterSpec struct {
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
-	Location string         `yaml:"location"`
-	Seed     string         `yaml:"seed"`
-	Country  string         `yaml:"country"`
-	Spec     DatacenterSpec `yaml:"spec"`
-	Private  bool           `yaml:"private"`
-	IsSeed   bool           `yaml:"is_seed"`
+	Location         string         `yaml:"location"`
+	Seed             string         `yaml:"seed"`
+	Country          string         `yaml:"country"`
+	Spec             DatacenterSpec `yaml:"spec"`
+	Private          bool           `yaml:"private"`
+	IsSeed           bool           `yaml:"is_seed"`
+	SeedDNSOverwrite *string        `yaml:"seed_dns_overwrite,omitempty"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.

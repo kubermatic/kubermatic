@@ -74,6 +74,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 }
 
 func buildDatacenterMeta() map[string]provider.DatacenterMeta {
+	seedAlias := "alias-europe-west3-c"
 	return map[string]provider.DatacenterMeta{
 		"us-central1": {
 			Location: "us-central",
@@ -113,6 +114,17 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Spec: provider.DatacenterSpec{
 				Digitalocean: &provider.DigitaloceanSpec{
 					Region: "ams2",
+				},
+			},
+		},
+		"dns-override-do2": {
+			Location:         "Amsterdam",
+			Seed:             "us-central1",
+			Country:          "NL",
+			SeedDNSOverwrite: &seedAlias,
+			Spec: provider.DatacenterSpec{
+				Digitalocean: &provider.DigitaloceanSpec{
+					Region: "ams3",
 				},
 			},
 		},
