@@ -56,8 +56,8 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 		return nil, fmt.Errorf("unknown node dataceter set '%s'", c.Spec.Cloud.DatacenterName)
 	}
 	seedDCName := cc.dc
-	if nodeDc.SeedDNSOverwrite != "" {
-		seedDCName = nodeDc.SeedDNSOverwrite
+	if nodeDc.SeedDNSOverwrite != nil && *nodeDc.SeedDNSOverwrite != "" {
+		seedDCName = *nodeDc.SeedDNSOverwrite
 	}
 
 	externalName := fmt.Sprintf("%s.%s.%s", c.Name, seedDCName, cc.externalURL)
