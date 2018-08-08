@@ -260,6 +260,12 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
+		// and make sure the Proxy Certificate has the key usage client auth and server auth
+		"--requestheader-client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
+		"--requestheader-allowed-names", "aggregator",
+		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
+		"--requestheader-group-headers", "X-Remote-Group",
+		"--requestheader-username-headers", "X-Remote-User",
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
