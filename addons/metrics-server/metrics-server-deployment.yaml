@@ -52,7 +52,7 @@ spec:
         image: k8s.gcr.io/metrics-server-amd64:v0.2.1
         command:
         - /metrics-server
-        - --source=kubernetes.summary_api:''
+        - '--source=kubernetes.summary_api:https://kubernetes.default.svc?kubeletHttps=true&kubeletPort=10250&insecure=true'
         ports:
         - containerPort: 443
           name: https
