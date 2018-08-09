@@ -91,7 +91,7 @@ func TestLoadFiles(t *testing.T) {
 		},
 	}
 
-	clouds := map[string]*kubermaticv1.CloudSpec{
+	clouds := map[string]kubermaticv1.CloudSpec{
 		"azure": {
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:        "az-tenant-id",
@@ -470,7 +470,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "do-fra1",
 							Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 								Token: "digitalocean-token",
@@ -543,7 +543,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "aws-eu-central-1a",
 							AWS: &kubermaticv1.AWSCloudSpec{
 								AccessKeyID:         "aws-access-key-id",
@@ -637,7 +637,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "syseleven-dbl1",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								Username:       "os-username",
@@ -719,7 +719,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "whatever-dc",
 							Azure: &kubermaticv1.AzureCloudSpec{
 								TenantID:       "38w7giefb32fhifw3q",
@@ -796,7 +796,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "hetzner-fsn1",
 							Hetzner: &kubermaticv1.HetznerCloudSpec{
 								Token: "hetzner-token",
@@ -863,7 +863,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "vsphere-dummy",
 							VSphere: &kubermaticv1.VSphereCloudSpec{
 								Username: "vsphere-username",

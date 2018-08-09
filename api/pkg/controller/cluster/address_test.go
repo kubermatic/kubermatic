@@ -33,7 +33,7 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 			Name: TestClusterName,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "regular-do1",
 			},
 		},
@@ -79,7 +79,7 @@ func TestSeedDNSOverride(t *testing.T) {
 			Name: TestClusterName,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: &kubermaticv1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "dns-override-do2",
 			},
 		},

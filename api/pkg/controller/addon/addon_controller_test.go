@@ -134,7 +134,7 @@ func setupTestCluster(CIDRBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 			},
-			Cloud: &kubermaticv1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 					Token: "1234567890",
 				},

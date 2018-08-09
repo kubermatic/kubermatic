@@ -29,7 +29,7 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		flavors, dc, err := osProvider.GetFlavors(&kubermaticv1.CloudSpec{
+		flavors, dc, err := osProvider.GetFlavors(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
@@ -77,7 +77,7 @@ func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		tenants, err := osProvider.GetTenants(&kubermaticv1.CloudSpec{
+		tenants, err := osProvider.GetTenants(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
@@ -121,7 +121,7 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		networks, err := osProvider.GetNetworks(&kubermaticv1.CloudSpec{
+		networks, err := osProvider.GetNetworks(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
@@ -167,7 +167,7 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		securityGroups, err := osProvider.GetSecurityGroups(&kubermaticv1.CloudSpec{
+		securityGroups, err := osProvider.GetSecurityGroups(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
@@ -211,7 +211,7 @@ func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 			return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
 		}
 
-		subnets, err := osProvider.GetSubnets(&kubermaticv1.CloudSpec{
+		subnets, err := osProvider.GetSubnets(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Username: req.Username,
