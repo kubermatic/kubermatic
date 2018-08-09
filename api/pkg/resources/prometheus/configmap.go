@@ -20,6 +20,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
 
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
@@ -33,10 +36,8 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Name = resources.PrometheusConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
-	cm.Data = map[string]string{
-		"prometheus.yaml": configBuffer.String(),
-		"rules.yaml":      prometheusRules,
-	}
+	cm.Data["prometheus.yaml"] = configBuffer.String()
+	cm.Data["rules.yaml"] = prometheusRules
 
 	return cm, nil
 }

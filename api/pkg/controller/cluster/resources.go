@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"hash/crc32"
 	"os"
 	"time"
 
@@ -38,6 +39,7 @@ const (
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
+	checksumAnnotation          = annotationPrefix + "checksum"
 )
 
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
@@ -627,6 +629,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
+		if cm.Annotations == nil {
+			cm.Annotations = map[string]string{}
+		}
+		cm.Annotations[checksumAnnotation] = getChecksum(cm.Data)
 
 		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
@@ -643,8 +649,16 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
+		if cm.Annotations == nil {
+			cm.Annotations = map[string]string{}
+		}
+		cm.Annotations[checksumAnnotation] = getChecksum(cm.Data)
 
-		if equality.Semantic.DeepEqual(cm, existing) {
+		if existing.Annotations == nil {
+			existing.Annotations = map[string]string{}
+		}
+		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+		if annotationExists && annotationVal == cm.Annotations[checksumAnnotation] {
 			continue
 		}
 
@@ -656,6 +670,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	}
 
 	return nil
+}
+
+func getChecksum(data map[string]string) string {
+	return fmt.Sprintf("%v", crc32.ChecksumIEEE([]byte(fmt.Sprintf("%+v", data))))
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
