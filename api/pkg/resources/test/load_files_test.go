@@ -84,10 +84,22 @@ func TestLoadFiles(t *testing.T) {
 			Version: semver.MustParse("1.9.0"),
 		},
 		{
+			Version: semver.MustParse("1.9.10"),
+		},
+		{
 			Version: semver.MustParse("1.10.0"),
 		},
 		{
+			Version: semver.MustParse("1.10.6"),
+		},
+		{
 			Version: semver.MustParse("1.11.0"),
+		},
+		{
+			Version: semver.MustParse("1.11.1"),
+		},
+		{
+			Version: semver.MustParse("1.12.0"),
 		},
 	}
 

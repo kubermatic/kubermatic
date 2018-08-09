@@ -1,0 +1,201 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: openvpn-server
+  name: openvpn-server
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openvpn-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: openvpn-server
+        ca-cert-secret-revision: "123456"
+        openvpn-client-configs-configmap-revision: "123456"
+        openvpn-server-certificates-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --mode
+        - server
+        - --lport
+        - "1194"
+        - --server
+        - 10.20.0.0
+        - 255.255.255.0
+        - --ca
+        - /etc/kubernetes/ca-cert/ca.crt
+        - --cert
+        - /etc/openvpn/certs/server.crt
+        - --key
+        - /etc/openvpn/certs/server.key
+        - --dh
+        - /etc/openvpn/dh/dh2048.pem
+        - --duplicate-cn
+        - --client-config-dir
+        - /etc/openvpn/clients
+        - --status
+        - /run/openvpn-status
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --ping
+        - "5"
+        - --verb
+        - "3"
+        - --log
+        - /dev/stdout
+        - --push
+        - route 172.25.0.0 255.255.0.0
+        - --route
+        - 172.25.0.0
+        - 255.255.0.0
+        - --push
+        - route 10.10.10.0 255.255.255.0
+        - --route
+        - 10.10.10.0
+        - 255.255.255.0
+        - --push
+        - route 192.0.2.0 255.255.255.0
+        - --route
+        - 192.0.2.0
+        - 255.255.255.0
+        command:
+        - /usr/sbin/openvpn
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: openvpn-server
+        ports:
+        - containerPort: 1194
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - test
+            - -s
+            - /run/openvpn-status
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/openvpn/dh
+          name: diffie-hellman-params
+          readOnly: true
+        - mountPath: /etc/openvpn/certs
+          name: openvpn-server-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/ca-cert
+          name: ca-cert
+          readOnly: true
+        - mountPath: /etc/openvpn/clients
+          name: openvpn-client-configs
+          readOnly: true
+      initContainers:
+      - args:
+        - -c
+        - "\n\t\t\t\t# do not give a 10.20.0.0/24 route to clients (nodes) but\n\t\t\t\t#
+          masquerade to openvpn-server's IP instead:\n\t\t\t\tiptables -t nat -A POSTROUTING
+          -o tun0 -s 10.20.0.0/24 -j MASQUERADE\n\n\t\t\t\t# Only allow outbound traffic
+          to services, pods, nodes\n\t\t\t\tiptables -P FORWARD DROP\n\t\t\t\tiptables
+          -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT\n\t\t\t\tiptables
+          -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 172.25.0.0/16 -j ACCEPT\n\t\t\t\tiptables
+          -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 10.10.10.0/24 -j ACCEPT\n\t\t\t\tiptables
+          -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 192.0.2.0/24 -j ACCEPT\n\n\t\t\t\tiptables
+          -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\t\t\t\tiptables
+          -A INPUT -i tun0 -p icmp -j ACCEPT\n\t\t\t\tiptables -A INPUT -i tun0 -j
+          DROP\n\t\t\t\t"
+        command:
+        - /bin/bash
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: iptables-init
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 128Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - args:
+        - dhparam
+        - -out
+        - /etc/openvpn/dh/dh2048.pem
+        - "2048"
+        command:
+        - /usr/bin/openssl
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: openssl-dhparam
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/openvpn/dh
+          name: diffie-hellman-params
+      volumes:
+      - emptyDir: {}
+        name: diffie-hellman-params
+      - name: ca-cert
+        secret:
+          defaultMode: 256
+          secretName: ca-cert
+      - name: openvpn-server-certificates
+        secret:
+          defaultMode: 256
+          secretName: openvpn-server-certificates
+      - configMap:
+          defaultMode: 256
+          name: openvpn-client-configs
+        name: openvpn-client-configs
+status: {}

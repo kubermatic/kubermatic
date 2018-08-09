@@ -1,0 +1,72 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: kube-state-metrics
+  name: kube-state-metrics
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-state-metrics
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        prometheus.io-0/path: /metrics
+        prometheus.io-0/port: "8080"
+        prometheus.io-0/scrape: "true"
+        prometheus.io-1/path: /metrics
+        prometheus.io-1/port: "8081"
+        prometheus.io-1/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: kube-state-metrics
+        kube-state-metrics-kubeconfig-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --kubeconfig
+        - /etc/kubernetes/kubeconfig/kube-state-metrics-kubeconfig
+        - --port
+        - "8080"
+        - --telemetry-port
+        - "8081"
+        command:
+        - /kube-state-metrics
+        image: quay.io/coreos/kube-state-metrics:v1.3.1
+        imagePullPolicy: IfNotPresent
+        name: kube-state-metrics
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 50m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 12Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: kube-state-metrics-kubeconfig
+          readOnly: true
+      volumes:
+      - name: kube-state-metrics-kubeconfig
+        secret:
+          defaultMode: 256
+          secretName: kube-state-metrics-kubeconfig
+status: {}
