@@ -33,12 +33,12 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
-func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (os *Provider) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec
-func (os *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	netClient, err := os.getNetClient(spec)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -209,7 +209,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
-func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]osflavors.Flavor, provider.DatacenterMeta, error) {
+func (os *Provider) GetFlavors(cloud kubermaticv1.CloudSpec) ([]osflavors.Flavor, provider.DatacenterMeta, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
 		return nil, provider.DatacenterMeta{}, err
@@ -227,7 +227,7 @@ func (os *Provider) GetFlavors(cloud *kubermaticv1.CloudSpec) ([]osflavors.Flavo
 }
 
 // GetTenants lists all available tenents for the given CloudSpec.DatacenterName
-func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]osprojects.Project, error) {
+func (os *Provider) GetTenants(cloud kubermaticv1.CloudSpec) ([]osprojects.Project, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
@@ -248,7 +248,7 @@ func (os *Provider) GetTenants(cloud *kubermaticv1.CloudSpec) ([]osprojects.Proj
 }
 
 // GetNetworks lists all available networks for the given CloudSpec.DatacenterName
-func (os *Provider) GetNetworks(cloud *kubermaticv1.CloudSpec) ([]NetworkWithExternalExt, error) {
+func (os *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkWithExternalExt, error) {
 	authClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
@@ -268,7 +268,7 @@ func (os *Provider) GetNetworks(cloud *kubermaticv1.CloudSpec) ([]NetworkWithExt
 }
 
 // GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName
-func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuritygroups.SecGroup, error) {
+func (os *Provider) GetSecurityGroups(cloud kubermaticv1.CloudSpec) ([]ossecuritygroups.SecGroup, error) {
 	authClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
@@ -287,7 +287,7 @@ func (os *Provider) GetSecurityGroups(cloud *kubermaticv1.CloudSpec) ([]ossecuri
 	return securityGroups, nil
 }
 
-func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
+func (os *Provider) getAuthClient(cloud kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
 	dc, found := os.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.Openstack == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
@@ -308,7 +308,7 @@ func (os *Provider) getAuthClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.P
 	return client, nil
 }
 
-func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
+func (os *Provider) getNetClient(cloud kubermaticv1.CloudSpec) (*gophercloud.ServiceClient, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
 		return nil, err
@@ -323,7 +323,7 @@ func (os *Provider) getNetClient(cloud *kubermaticv1.CloudSpec) (*gophercloud.Se
 }
 
 // GetSubnets list all available subnet ids fot a given CloudSpec
-func (os *Provider) GetSubnets(cloud *kubermaticv1.CloudSpec, networkID string) ([]ossubnets.Subnet, error) {
+func (os *Provider) GetSubnets(cloud kubermaticv1.CloudSpec, networkID string) ([]ossubnets.Subnet, error) {
 	serviceClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)

@@ -35,11 +35,11 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-func (a *amazonEc2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *amazonEc2) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *amazonEc2) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *amazonEc2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	client, err := a.getEC2client(spec)
 	if err != nil {
 		return err
@@ -509,7 +509,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	return cluster, nil
 }
 
-func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session, error) {
+func (a *amazonEc2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
 	dc, found := a.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.AWS == nil {
@@ -521,7 +521,7 @@ func (a *amazonEc2) getSession(cloud *kubermaticv1.CloudSpec) (*session.Session,
 	return session.NewSession(config)
 }
 
-func (a *amazonEc2) getEC2client(cloud *kubermaticv1.CloudSpec) (*ec2.EC2, error) {
+func (a *amazonEc2) getEC2client(cloud kubermaticv1.CloudSpec) (*ec2.EC2, error) {
 	sess, err := a.getSession(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get amazonEc2 session: %v", err)
@@ -529,7 +529,7 @@ func (a *amazonEc2) getEC2client(cloud *kubermaticv1.CloudSpec) (*ec2.EC2, error
 	return ec2.New(sess), nil
 }
 
-func (a *amazonEc2) getIAMClient(cloud *kubermaticv1.CloudSpec) (*iam.IAM, error) {
+func (a *amazonEc2) getIAMClient(cloud kubermaticv1.CloudSpec) (*iam.IAM, error) {
 	sess, err := a.getSession(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get amazonEc2 session: %v", err)

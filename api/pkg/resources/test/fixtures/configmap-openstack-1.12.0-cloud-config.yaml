@@ -12,6 +12,7 @@ data:
     [BlockStorage]
     trust-device-path = false
     bs-version = "v2"
+    ignore-volume-az = true
 
     [LoadBalancer]
     manage-security-groups = true

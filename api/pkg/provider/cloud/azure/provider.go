@@ -40,7 +40,7 @@ func New(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider 
 	}
 }
 
-func deleteSubnet(cloud *kubermaticv1.CloudSpec) error {
+func deleteSubnet(cloud kubermaticv1.CloudSpec) error {
 	subnetsClient, err := getSubnetsClient(cloud)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func deleteSubnet(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func deleteAvailabilitySet(cloud *kubermaticv1.CloudSpec) error {
+func deleteAvailabilitySet(cloud kubermaticv1.CloudSpec) error {
 	asClient, err := getAvailabilitySetClient(cloud)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func deleteAvailabilitySet(cloud *kubermaticv1.CloudSpec) error {
 	return err
 }
 
-func deleteVNet(cloud *kubermaticv1.CloudSpec) error {
+func deleteVNet(cloud kubermaticv1.CloudSpec) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func deleteVNet(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func deleteResourceGroup(cloud *kubermaticv1.CloudSpec) error {
+func deleteResourceGroup(cloud kubermaticv1.CloudSpec) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func deleteResourceGroup(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func deleteRouteTable(cloud *kubermaticv1.CloudSpec) error {
+func deleteRouteTable(cloud kubermaticv1.CloudSpec) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func deleteRouteTable(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func deleteSecurityGroup(cloud *kubermaticv1.CloudSpec) error {
+func deleteSecurityGroup(cloud kubermaticv1.CloudSpec) error {
 	securityGroupsClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureResourceGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -267,7 +267,7 @@ func ensureResourceGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	sgClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -378,7 +378,7 @@ func ensureSecurityGroup(cloud *kubermaticv1.CloudSpec, location string, cluster
 }
 
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureVNet(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
@@ -408,7 +408,7 @@ func ensureVNet(cloud *kubermaticv1.CloudSpec, location string, clusterName stri
 }
 
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(cloud *kubermaticv1.CloudSpec) error {
+func ensureSubnet(cloud kubermaticv1.CloudSpec) error {
 	subnetsClient, err := getSubnetsClient(cloud)
 	if err != nil {
 		return err
@@ -434,7 +434,7 @@ func ensureSubnet(cloud *kubermaticv1.CloudSpec) error {
 }
 
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(cloud *kubermaticv1.CloudSpec, location string) error {
+func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -583,7 +583,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return cluster, nil
 }
 
-func ensureAvailabilitySet(name, location string, cloud *kubermaticv1.CloudSpec) error {
+func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) error {
 	client, err := getAvailabilitySetClient(cloud)
 	if err != nil {
 		return err
@@ -605,11 +605,11 @@ func ensureAvailabilitySet(name, location string, cloud *kubermaticv1.CloudSpec)
 	return err
 }
 
-func (a *azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+func (a *azure) DefaultCloudSpec(cloud kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *azure) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+func (a *azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 	if cloud.Azure.ResourceGroup != "" {
 		rgClient, err := getGroupsClient(cloud)
 		if err != nil {
@@ -668,7 +668,7 @@ func (a *azure) ValidateCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func getGroupsClient(cloud *kubermaticv1.CloudSpec) (*resources.GroupsClient, error) {
+func getGroupsClient(cloud kubermaticv1.CloudSpec) (*resources.GroupsClient, error) {
 	var err error
 	groupsClient := resources.NewGroupsClient(cloud.Azure.SubscriptionID)
 	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
@@ -679,7 +679,7 @@ func getGroupsClient(cloud *kubermaticv1.CloudSpec) (*resources.GroupsClient, er
 	return &groupsClient, nil
 }
 
-func getNetworksClient(cloud *kubermaticv1.CloudSpec) (*network.VirtualNetworksClient, error) {
+func getNetworksClient(cloud kubermaticv1.CloudSpec) (*network.VirtualNetworksClient, error) {
 	var err error
 	networksClient := network.NewVirtualNetworksClient(cloud.Azure.SubscriptionID)
 	networksClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
@@ -690,7 +690,7 @@ func getNetworksClient(cloud *kubermaticv1.CloudSpec) (*network.VirtualNetworksC
 	return &networksClient, nil
 }
 
-func getSubnetsClient(cloud *kubermaticv1.CloudSpec) (*network.SubnetsClient, error) {
+func getSubnetsClient(cloud kubermaticv1.CloudSpec) (*network.SubnetsClient, error) {
 	var err error
 	subnetsClient := network.NewSubnetsClient(cloud.Azure.SubscriptionID)
 	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
@@ -701,7 +701,7 @@ func getSubnetsClient(cloud *kubermaticv1.CloudSpec) (*network.SubnetsClient, er
 	return &subnetsClient, nil
 }
 
-func getRouteTablesClient(cloud *kubermaticv1.CloudSpec) (*network.RouteTablesClient, error) {
+func getRouteTablesClient(cloud kubermaticv1.CloudSpec) (*network.RouteTablesClient, error) {
 	var err error
 	routeTablesClient := network.NewRouteTablesClient(cloud.Azure.SubscriptionID)
 	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
@@ -712,7 +712,7 @@ func getRouteTablesClient(cloud *kubermaticv1.CloudSpec) (*network.RouteTablesCl
 	return &routeTablesClient, nil
 }
 
-func getSecurityGroupsClient(cloud *kubermaticv1.CloudSpec) (*network.SecurityGroupsClient, error) {
+func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec) (*network.SecurityGroupsClient, error) {
 	var err error
 	securityGroupsClient := network.NewSecurityGroupsClient(cloud.Azure.SubscriptionID)
 	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()
@@ -723,7 +723,7 @@ func getSecurityGroupsClient(cloud *kubermaticv1.CloudSpec) (*network.SecurityGr
 	return &securityGroupsClient, nil
 }
 
-func getAvailabilitySetClient(cloud *kubermaticv1.CloudSpec) (*compute.AvailabilitySetsClient, error) {
+func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec) (*compute.AvailabilitySetsClient, error) {
 	var err error
 	asClient := compute.NewAvailabilitySetsClient(cloud.Azure.SubscriptionID)
 	asClient.Authorizer, err = auth.NewClientCredentialsConfig(cloud.Azure.ClientID, cloud.Azure.ClientSecret, cloud.Azure.TenantID).Authorizer()

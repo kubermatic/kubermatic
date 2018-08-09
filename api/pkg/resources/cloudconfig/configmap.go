@@ -82,33 +82,13 @@ region = "{{ .DC.Spec.Openstack.Region }}"
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
-{{- if eq (substr 0 3 .Cluster.Spec.Version) "1.9" }}
+{{- if semverCompare ">=1.9.*" .Cluster.Spec.Version }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
-{{- if eq (substr 0 4 .Cluster.Spec.Version) "1.10" }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
-{{- end }}
-{{- with $version := (split "." .Cluster.Spec.Version) }}
-{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "9" }}{{- if ge (int (index $version "_2")) 10 }}
 
 [LoadBalancer]
+{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Cluster.Spec.Version }}
 manage-security-groups = true
-{{- end }}{{- end }}{{- end }}
-{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "10" }}{{- if ge (int (index $version "_2")) 6 }}
-
-[LoadBalancer]
-manage-security-groups = true
-{{- end }}{{- end }}{{- end }}
-{{- if eq (index $version "_0") "1" }}{{- if eq (index $version "_1") "11" }}{{- if ge (int (index $version "_2")) 1 }}
-
-[LoadBalancer]
-manage-security-groups = true
-{{- end }}{{- end }}{{- end }}
-{{- if eq (index $version "_0") "1" }}{{- if ge (int (index $version "_1")) 12 }}
-
-[LoadBalancer]
-manage-security-groups = true
-{{- end }}{{- end }}
 {{- end }}
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Azure}}

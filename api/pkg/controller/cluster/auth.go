@@ -452,6 +452,10 @@ func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Clust
 	return cc.getKubeconfigSecret(c, existingSecret, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername)
 }
 
+func (cc *Controller) getKubeStateMetricsKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername)
+}
+
 func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, secretName, username string) (*corev1.Secret, string, error) {
 	caKp, err := cc.getFullCAFromLister(c)
 	if err != nil {
