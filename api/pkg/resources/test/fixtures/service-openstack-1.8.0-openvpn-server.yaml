@@ -3,7 +3,7 @@ metadata:
     nodeport-proxy.k8s.io/expose: "true"
   creationTimestamp: null
   labels:
-    app: openvpn
+    app: openvpn-server
   name: openvpn-server
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1

@@ -16,7 +16,7 @@ func ClusterRoleBinding(_ *resources.TemplateData, existing *rbacv1.ClusterRoleB
 	}
 
 	crb.Name = resources.KubeStateMetricsClusterRoleBindingName
-	crb.Labels = resources.GetLabels(name)
+	crb.Labels = resources.BaseAppLabel(name, nil)
 
 	crb.RoleRef = rbacv1.RoleRef{
 		Name:     resources.KubeStateMetricsClusterRoleName,

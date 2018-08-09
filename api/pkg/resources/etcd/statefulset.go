@@ -49,14 +49,14 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
+
+	baseLabels := getBasePodLabels(data)
 	set.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-		},
+		MatchLabels: baseLabels,
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
@@ -176,7 +176,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Weight: 100,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: getBasePodLabels(data),
+							MatchLabels: baseLabels,
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},
@@ -185,7 +185,34 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	set.Spec.Template.Spec.Volumes = []corev1.Volume{
+	set.Spec.Template.Spec.Volumes = volumes
+
+	// Make sure, we don't change size of existing pvc's
+	// Phase needs to be taken from an existing
+	diskSize := data.EtcdDiskSize
+	if len(set.Spec.VolumeClaimTemplates) == 0 {
+		set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "data",
+					OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					StorageClassName: resources.String("kubermatic-fast"),
+					AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
+					},
+				},
+			},
+		}
+	}
+
+	return set, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
 		{
 			Name: resources.EtcdTLSCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -214,54 +241,13 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 			},
 		},
 	}
-
-	// Make sure, we don't change size of existing pvc's
-	// Phase needs to be taken from an existing
-	diskSize := data.EtcdDiskSize
-	if len(set.Spec.VolumeClaimTemplates) == 0 {
-		set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "data",
-					OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					StorageClassName: resources.String("kubermatic-fast"),
-					AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
-					},
-				},
-			},
-		}
-	}
-
-	return set, nil
 }
 
 func getBasePodLabels(data *resources.TemplateData) map[string]string {
-	return map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
+	additionalLabels := map[string]string{
+		"cluster": data.Cluster.Name,
 	}
-}
-
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := getBasePodLabels(data)
-
-	secretDependencies := []string{
-		resources.ApiserverEtcdClientCertificateSecretName,
-		resources.EtcdTLSCertificateSecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	return podLabels, nil
+	return resources.BaseAppLabel(resources.EtcdStatefulSetName, additionalLabels)
 }
 
 type commandTplData struct {

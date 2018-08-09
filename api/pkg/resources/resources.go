@@ -318,52 +318,6 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	return service.Spec.ClusterIP, nil
 }
 
-// UserClusterDNSResolverIP returns the 9th usable IP address
-// from the first Service CIDR block from ClusterNetwork spec.
-// This is by convention the IP address of the DNS resolver.
-// Returns "" on error.
-func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
-	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: empty CIDRBlocks", cluster.Name)
-	}
-	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
-	ip, _, err := net.ParseCIDR(block)
-	if err != nil {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
-	}
-	ip[len(ip)-1] = ip[len(ip)-1] + 10
-	return ip.String(), nil
-}
-
-// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	// DNSNone indicates that the pod should use empty DNS settings. DNS
-	// parameters such as nameservers and search paths should be defined via
-	// DNSConfig.
-	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
-	if err != nil {
-		return corev1.DNSNone, nil, err
-	}
-	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
-	}
-	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{dnsConfigResolverIP},
-		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			d.Cluster.Spec.ClusterNetwork.DNSDomain,
-		},
-		Options: []corev1.PodDNSConfigOption{
-			{
-				Name:  "ndots",
-				Value: &dnsConfigOptionNdots,
-			},
-		},
-	}, nil
-}
-
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
 func (d *TemplateData) SecretRevision(name string) (string, error) {
 	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
@@ -429,9 +383,86 @@ func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
 	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
 }
 
-// GetLabels returns default labels every resource should have
-func GetLabels(app string) map[string]string {
-	return map[string]string{AppLabelKey: app}
+// UserClusterDNSResolverIP returns the 9th usable IP address
+// from the first Service CIDR block from ClusterNetwork spec.
+// This is by convention the IP address of the DNS resolver.
+// Returns "" on error.
+func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: empty CIDRBlocks", cluster.Name)
+	}
+	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
+	ip, _, err := net.ParseCIDR(block)
+	if err != nil {
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
+	}
+	ip[len(ip)-1] = ip[len(ip)-1] + 10
+	return ip.String(), nil
+}
+
+// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
+func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+	// DNSNone indicates that the pod should use empty DNS settings. DNS
+	// parameters such as nameservers and search paths should be defined via
+	// DNSConfig.
+	dnsConfigOptionNdots := "5"
+	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
+	if err != nil {
+		return corev1.DNSNone, nil, err
+	}
+	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
+	}
+	return corev1.DNSNone, &corev1.PodDNSConfig{
+		Nameservers: []string{dnsConfigResolverIP},
+		Searches: []string{
+			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			d.Cluster.Spec.ClusterNetwork.DNSDomain,
+		},
+		Options: []corev1.PodDNSConfigOption{
+			{
+				Name:  "ndots",
+				Value: &dnsConfigOptionNdots,
+			},
+		},
+	}, nil
+}
+
+// GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
+// This will force pods being restarted as soon as one of the secrets/configmaps get updated.
+func (d *TemplateData) GetPodTemplateLabels(name string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+	podLabels := BaseAppLabel(name, additionalLabels)
+
+	for _, v := range volumes {
+		if v.VolumeSource.Secret != nil {
+			revision, err := d.SecretRevision(v.VolumeSource.Secret.SecretName)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-secret-revision", v.VolumeSource.Secret.SecretName)] = revision
+		}
+		if v.VolumeSource.ConfigMap != nil {
+			revision, err := d.ConfigMapRevision(v.VolumeSource.ConfigMap.Name)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-configmap-revision", v.VolumeSource.ConfigMap.Name)] = revision
+		}
+	}
+
+	return podLabels, nil
+}
+
+// BaseAppLabel returns the minimum required labels
+func BaseAppLabel(name string, additionalLabels map[string]string) map[string]string {
+	labels := map[string]string{
+		AppLabelKey: name,
+	}
+	for k, v := range additionalLabels {
+		labels[k] = v
+	}
+	return labels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days
