@@ -227,8 +227,14 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			Namespace: mockNamespaceName,
 		},
 	}
+	openvpnClientConfigsConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.OpenVPNClientConfigsConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
 	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap},
+		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap},
 	}
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -298,6 +304,12 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.ServiceAccountKeySecretName,
 		resources.ApiserverEtcdClientCertificateSecretName,
 		resources.EtcdTLSCertificateSecretName,
+		resources.MachineControllerKubeconfigSecretName,
+		resources.ControllerManagerKubeconfigSecretName,
+		resources.SchedulerKubeconfigSecretName,
+		resources.KubeStateMetricsKubeconfigSecretName,
+		resources.OpenVPNServerCertificatesSecretName,
+		resources.OpenVPNClientCertificatesSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)

@@ -44,7 +44,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ApiserverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster.Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -52,9 +52,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -68,7 +66,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	if err != nil {
 		return nil, err
 	}
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
@@ -312,36 +311,6 @@ func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	admissionControlFlagValue += ",ResourceQuota"
 
 	return admissionControlFlagName, admissionControlFlagValue
-}
-
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: "apiserver",
-	}
-
-	secretDependencies := []string{
-		resources.TokensSecretName,
-		resources.ApiserverTLSSecretName,
-		resources.KubeletClientCertificatesSecretName,
-		resources.CACertSecretName,
-		resources.ServiceAccountKeySecretName,
-		resources.ApiserverEtcdClientCertificateSecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	return podLabels, nil
 }
 
 func getVolumes() []corev1.Volume {
