@@ -22,7 +22,7 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 
 	cm.Name = resources.OpenVPNClientConfigsConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.GetLabels(name)
+	cm.Labels = resources.BaseAppLabel(name, nil)
 
 	var iroutes []string
 
@@ -73,7 +73,7 @@ func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.Config
 	cm.Name = resources.OpenVPNClientConfigConfigMapName
 	cm.Namespace = metav1.NamespaceSystem
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.GetLabels(name)
+	cm.Labels = resources.BaseAppLabel(name, nil)
 
 	openvpnSvc, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
 	if err != nil {

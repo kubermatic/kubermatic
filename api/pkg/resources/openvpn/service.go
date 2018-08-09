@@ -18,7 +18,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	}
 
 	se.Name = resources.OpenVPNServerServiceName
-	se.Labels = resources.GetLabels("openvpn")
+	se.Labels = resources.BaseAppLabel(name, nil)
 	se.Annotations = map[string]string{
 		"nodeport-proxy.k8s.io/expose": "true",
 	}

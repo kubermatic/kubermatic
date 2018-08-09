@@ -1,6 +1,8 @@
 package kubestatemetrics
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,15 +41,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.KubeStateMetricsDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.GetLabels(name),
+		MatchLabels: resources.BaseAppLabel(name, nil),
+	}
+
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: resources.GetLabels(name),
+		Labels: podLabels,
 		Annotations: map[string]string{
 			"prometheus.io-0/scrape": "true",
 			"prometheus.io-0/path":   "/metrics",
@@ -58,7 +66,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 
 	resourceRequirements := defaultResourceRequirements
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
