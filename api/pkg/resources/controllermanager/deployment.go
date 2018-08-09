@@ -41,7 +41,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ControllerManagerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas != nil {
@@ -49,9 +49,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -65,7 +63,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	kcDir := "/etc/kubernetes/controllermanager"
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -229,33 +228,6 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 	return flags
-}
-
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: name,
-	}
-
-	secretDependencies := []string{
-		resources.CACertSecretName,
-		resources.CAKeySecretName,
-		resources.ServiceAccountKeySecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	return podLabels, nil
 }
 
 func getVolumes() []corev1.Volume {

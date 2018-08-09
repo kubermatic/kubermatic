@@ -19,7 +19,7 @@ func KubeSystemRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = metav1.NamespaceSystem
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name, nil)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{
@@ -64,7 +64,7 @@ func KubePublicRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = metav1.NamespacePublic
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name, nil)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{
@@ -92,7 +92,7 @@ func Role(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, er
 
 	r.Name = resources.MachineControllerRoleName
 	r.Namespace = metav1.NamespaceDefault
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name, nil)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{

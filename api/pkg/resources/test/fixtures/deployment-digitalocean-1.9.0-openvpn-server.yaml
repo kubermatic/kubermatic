@@ -26,7 +26,8 @@ spec:
       labels:
         app: openvpn-server
         ca-cert-secret-revision: "123456"
-        cloud-config-configmap-revision: "123456"
+        openvpn-client-configs-configmap-revision: "123456"
+        openvpn-server-certificates-secret-revision: "123456"
     spec:
       containers:
       - args:

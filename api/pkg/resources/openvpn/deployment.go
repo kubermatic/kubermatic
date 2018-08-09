@@ -14,8 +14,6 @@ import (
 )
 
 var (
-	name = "openvpn-server"
-
 	defaultInitMemoryRequest = resource.MustParse("128Mi")
 	defaultInitCPURequest    = resource.MustParse("250m")
 	defaultInitMemoryLimit   = resource.MustParse("512Mi")
@@ -25,6 +23,10 @@ var (
 	defaultCPURequest    = resource.MustParse("25m")
 	defaultMemoryLimit   = resource.MustParse("256Mi")
 	defaultCPULimit      = resource.MustParse("250m")
+)
+
+const (
+	name = "openvpn-server"
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
@@ -38,7 +40,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.OpenVPNServerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -58,9 +60,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -95,7 +98,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		"--route", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String(),
 	}...)
 
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "iptables-init",
@@ -264,26 +267,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	return dep, nil
-}
-
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: name,
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	caCertSecretRevision, err := data.SecretRevision(resources.CACertSecretName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-secret-revision", resources.CACertSecretName)] = caCertSecretRevision
-
-	return podLabels, nil
 }
 
 func getVolumes() []corev1.Volume {

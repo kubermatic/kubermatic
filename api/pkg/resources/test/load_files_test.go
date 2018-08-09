@@ -267,6 +267,55 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.MachineControllerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNServerCertificatesSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNClientCertificatesSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.ControllerManagerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubeStateMetricsKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.SchedulerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNClientConfigsConfigMapName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&v1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
