@@ -11,6 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
+	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
 
 func TestLaunchingCreateNamespace(t *testing.T) {
@@ -97,6 +101,59 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 
 		if val, exists := new.Data["Test"]; !exists || val != "Data" {
 			t.Fatalf("Configmap creator for %s removed additional data!", new.Name)
+		}
+	}
+}
+
+func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{}
+	cluster.Status.NamespaceName = "test-ns"
+	dc := &provider.DatacenterMeta{}
+	controller := Controller{}
+
+	keyPair := triple.NewCA("test-ca")
+
+	caKeySecret := &corev1.Secret{}
+	caKeySecret.Name = resources.CACertSecretKey
+	caKeySecret.Namespace = "test-ns"
+	data, err := controller.createRootCAKeySecret
+	if err != nil {
+		t.Fatalf("Failed to create private key for root ca: %v", err)
+	}
+	caKeySecret.Data = data
+
+	caCertSecret := &corev1.Secret{}
+	caKeySecret.Name = resources.CACertSecretName
+	caKeySecret.Namespace = "test-ns"
+	data, err := controller.createRootCAKeySecret
+	if err != nil {
+		t.Fatalf("Failed to create private key for root ca: %v", err)
+	}
+	caKeySecret.Data = data
+
+	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	if err := secretIndexer.Add(caCertSecret); err != nil {
+		t.Fatalf("Error adding secret to indexer: %v", err)
+	}
+	secretLister := listerscorev1.NewSecretLister(secretIndexer)
+
+	templateData := &resources.TemplateData{
+		Cluster:      cluster,
+		DC:           dc,
+		SecretLister: secretLister,
+	}
+
+	for name, create := range GetSecretCreators() {
+		existing := &corev1.Secret{
+			Data: map[string][]byte{"Test": []byte("val")},
+		}
+		new, err := create(templateData, existing)
+		if err != nil {
+			t.Fatalf("Error executing secet creator %s: %v", name, err)
+		}
+
+		if val, exists := new.Data["Test"]; !exists || string(val) != "Data" {
+			t.Fatalf("Secret creator for %s removed additional data!", new.Name)
 		}
 	}
 }

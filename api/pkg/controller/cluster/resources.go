@@ -581,6 +581,10 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return fmt.Errorf("failed to build Secret: %v", err)
 			}
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
 
 			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
 				return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
@@ -592,8 +596,13 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}
+		if se.Annotations == nil {
+			se.Annotations = map[string]string{}
+		}
+		se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
 
-		if equality.Semantic.DeepEqual(se, existing) {
+		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+		if annotationExists && annotationVal == se.Annotations[checksumAnnotation] {
 			continue
 		}
 
@@ -674,16 +683,28 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
+func getChecksumForMapStringByteSlice(data map[string][]byte) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, string(data[k])))
+	}
+	return getChecksumForStringSlice(keyVals)
+}
+
 func getChecksumForMapStringString(data map[string]string) string {
 	// Maps are unordered so we have to sort it first
 	var keyVals []string
 	for k := range data {
 		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, data[k]))
 	}
-	sort.Strings(keyVals)
+	return getChecksumForStringSlice(keyVals)
+}
 
+func getChecksumForStringSlice(stringSlice []string) string {
+	sort.Strings(stringSlice)
 	buffer := bytes.NewBuffer(nil)
-	for _, item := range keyVals {
+	for _, item := range stringSlice {
 		buffer.WriteString(item)
 	}
 	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
