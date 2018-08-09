@@ -73,9 +73,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
 		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "10252",
+			"prometheus.io-0/scrape": "true",
+			"prometheus.io-0/path":   "/metrics",
+			"prometheus.io-0/port":   "10252",
 		},
 	}
 
