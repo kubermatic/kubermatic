@@ -16,16 +16,9 @@ These controllers already exist within the [sig cluster-api repo](https://github
 * [machineDeployment controller]: https://github.com/kubernetes-sigs/cluster-api/tree/c8f5046fb0b9a3a16b7f8b92f6dda7b0f65b4f55/pkg/controller/machinedeployment
 
 To reduce development efforts we would like to use the upstream controllers. However simply importing them is
-currently not possible, because:
+currently not possible, because the upstream types have diverged from what we imported.
 
-* Upstream types have diverged from what we imported
-* This would force us to downgrade `client-go` in both the `machine-controller` and `kubermatic`, as the latter
-  imports parts of the former
-
-The second problem is not really solvable until Golang has a stable way of importing multiple versions of the same
-library. Hence, the approach will be to copy over the relevant parts, but in a scripted and reproducible way.
-
-The focus of this proposal is to outline the required steps to be able to copy over and use the `machineSet` and
+The focus of this proposal is to outline the required steps to be able to use the `machineSet` and
 `machineDeployment` controller from the upstream repository.
 
 ## Non-Goals
@@ -69,26 +62,15 @@ This is defined as being done when:
 * All currently existing functionality is preserved, we have the same set of e2e tests, they just create different
   types now
 
-### Copy over `machineSet` controller and plumb it in
-
-We have to have a reproducible way of copying over the upstream `machineSet` controller into our `machine-controller`.
-There is [already a working POC for this](https://github.com/kubermatic/machine-controller/tree/0b3ab3edb76ca7579ffcc6fba56a8a3b854c3b2d/pkg/controller/machineset),
-this one is pretty easy as the `machineSet` controller doesn't have to know anything about the machines, since the
-only thing it touches on the `machine` objects is metadata.
+### Import upstreams `machineSet` controller and plumb it in
 
 This is defined as being done when:
 
-* The copy-over can be reproduced via a script, there are no manual changes involved
 * All currently existing e2e tests create a `machineSet` instead of a `machine` and pass
 
-### Copy over `machineDeployment` controller and plumb it in
-
-We have to have a reproducible way of copying over the upstream `machineDeployment` controller into our
-`machine-controller`. There is no POC for this yet and there is a higher change this may be challenging, as the
-`machineDeployment` controller needs to check the `spec` of a machine to determine if there is something to do.
+### Import upstreams `machineDeployment` controller and plumb it in
 
 This is defined as being done when:
 
-* The copy-over can be reproduced via a script, there are no manual changes involved
 * All currently existing e2e tests create a `machineDeployment` instead of a `machine` and pass
 * There is an e2e test which checks the recration of a machine after its `machineDeployment` was altered
