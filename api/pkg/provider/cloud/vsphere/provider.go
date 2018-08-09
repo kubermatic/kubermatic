@@ -38,7 +38,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, error) {
+func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, error) {
 	dc, found := v.dcs[cloud.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
@@ -65,7 +65,7 @@ func (v *Provider) getClient(cloud *kubermaticv1.CloudSpec) (*govmomi.Client, er
 	return c, nil
 }
 
-func (v *Provider) getVsphereRootPath(spec *kubermaticv1.CloudSpec) (string, error) {
+func (v *Provider) getVsphereRootPath(spec kubermaticv1.CloudSpec) (string, error) {
 	dc, found := v.dcs[spec.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
 		return "", fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
@@ -122,7 +122,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
-func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) {
+func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 
 	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
 	// if set because that is the user which will ultimatively configure
@@ -185,7 +185,7 @@ func (v *Provider) GetNetworks(spec *kubermaticv1.CloudSpec) ([]Network, error) 
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
-func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (v *Provider) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
 	dc, found := v.dcs[spec.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
 		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
@@ -206,7 +206,7 @@ func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
-func (v *Provider) ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)
 	if err != nil {
 		return err
