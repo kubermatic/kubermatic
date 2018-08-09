@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -130,6 +131,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
+		kubestatemetrics.ClusterRole,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -185,6 +187,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
 		controllermanager.AdminClusterRoleBinding,
+		kubestatemetrics.ClusterRoleBinding,
 	}
 
 	data, err := cc.getClusterTemplateData(c)

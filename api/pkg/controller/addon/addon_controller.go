@@ -370,7 +370,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		}
 
 		filename := path.Join(manifestPath, info.Name())
-		glog.V(6).Infof("Processing file %s for addon %s/%s", filename, addon.Namespace, addon.Name)
+		glog.V(8).Infof("Processing file %s for addon %s/%s", filename, addon.Namespace, addon.Name)
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
@@ -591,9 +591,9 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 	selector := labels.SelectorFromSet(c.getAddonLabel(addon))
 	cmd := c.getApplyCommand(kubeconfigFilename, manifestFilename, selector)
 
-	glog.V(6).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+	glog.V(8).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
-	glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	}
@@ -608,9 +608,9 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 	defer done()
 
 	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
-	glog.V(6).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+	glog.V(8).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
-	glog.V(6).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	}
