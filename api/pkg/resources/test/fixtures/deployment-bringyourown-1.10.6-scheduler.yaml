@@ -29,6 +29,9 @@ spec:
       creationTimestamp: null
       labels:
         app: scheduler
+        ca-cert-secret-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
+        scheduler-kubeconfig-secret-revision: "123456"
     spec:
       containers:
       - args:

@@ -25,7 +25,9 @@ spec:
       creationTimestamp: null
       labels:
         app: dns-resolver
+        ca-cert-secret-revision: "123456"
         dns-resolver-configmap-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
     spec:
       containers:
       - args:

@@ -34,6 +34,7 @@ spec:
         ca-cert-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:

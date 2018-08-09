@@ -22,6 +22,7 @@ spec:
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
         app: etcd
+        ca-cert-secret-revision: "123456"
         cluster: de-test-01
         etcd-tls-certificate-secret-revision: "123456"
       name: etcd
