@@ -553,8 +553,9 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 // GetSecretCreators returns all SecretCreators that are currently in use
 func GetSecretCreators() map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
-		resources.EtcdTLSCertificateSecretName:             etcd.TLSCertificate,
-		resources.ApiserverEtcdClientCertificateSecretName: apiserver.EtcdClientCertificate,
+		resources.EtcdTLSCertificateSecretName:              etcd.TLSCertificate,
+		resources.ApiserverEtcdClientCertificateSecretName:  apiserver.EtcdClientCertificate,
+		resources.ApiserverProxyClientCertificateSecretName: apiserver.ProxyClientCertificate,
 	}
 }
 
