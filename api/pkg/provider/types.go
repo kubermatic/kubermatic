@@ -47,8 +47,8 @@ type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Clu
 type CloudSpecProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
-	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
-	ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error
+	DefaultCloudSpec(spec kubermaticv1.CloudSpec) error
+	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 }
 
 // ClusterProvider declares the set of methods for storing and loading clusters.
@@ -195,11 +195,7 @@ type ProjectProvider interface {
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
-func ClusterCloudProviderName(spec *kubermaticv1.CloudSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-
+func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	var clouds []string
 	if spec.AWS != nil {
 		clouds = append(clouds, AWSCloudProvider)

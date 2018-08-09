@@ -30,7 +30,7 @@ func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 			return nil, fmt.Errorf("unable to cast vsProviderInterface to *vsphere.Provider")
 		}
 
-		networks, err := vsProvider.GetNetworks(&kubermaticv1.CloudSpec{
+		networks, err := vsProvider.GetNetworks(kubermaticv1.CloudSpec{
 			DatacenterName: req.DatacenterName,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				InfraManagementUser: kubermaticv1.VSphereCredentials{
