@@ -18,7 +18,7 @@ func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*r
 
 	rb.Name = resources.PrometheusRoleBindingName
 	rb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	rb.Labels = resources.GetLabels(name)
+	rb.Labels = resources.BaseAppLabel(name, nil)
 
 	rb.RoleRef = rbacv1.RoleRef{
 		Name:     resources.PrometheusRoleName,

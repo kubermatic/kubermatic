@@ -16,7 +16,7 @@ func ClusterRole(_ *resources.TemplateData, existing *rbacv1.ClusterRole) (*rbac
 	}
 
 	r.Name = resources.KubeStateMetricsClusterRoleName
-	r.Labels = resources.GetLabels(name)
+	r.Labels = resources.BaseAppLabel(name, nil)
 
 	r.Rules = []rbacv1.PolicyRule{
 		{

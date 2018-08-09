@@ -16,7 +16,7 @@ func AdminClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.Clus
 	}
 
 	crb.Name = resources.ControllerManagerClusterRoleBindingName
-	crb.Labels = resources.GetLabels(name)
+	crb.Labels = resources.BaseAppLabel(name, nil)
 	crb.RoleRef = rbacv1.RoleRef{
 		Name:     "cluster-admin",
 		Kind:     "ClusterRole",

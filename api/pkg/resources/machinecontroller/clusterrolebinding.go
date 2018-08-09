@@ -51,7 +51,7 @@ func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cR
 	}
 
 	crb.Name = fmt.Sprintf("%s:%s", resources.MachineControllerClusterRoleBindingName, crbSuffix)
-	crb.Labels = resources.GetLabels(name)
+	crb.Labels = resources.BaseAppLabel(name, nil)
 
 	crb.RoleRef = rbacv1.RoleRef{
 		Name:     cRoleRef,

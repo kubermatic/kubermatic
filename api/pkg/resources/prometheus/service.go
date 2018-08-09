@@ -19,7 +19,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 
 	se.Name = resources.PrometheusServiceName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Labels = resources.GetLabels(name)
+	se.Labels = resources.BaseAppLabel(name, nil)
 	// We need to set cluster: user for the ServiceMonitor which federates metrics8
 	se.Labels["cluster"] = "user"
 
