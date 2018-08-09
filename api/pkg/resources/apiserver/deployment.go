@@ -73,12 +73,17 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	externalNodePort, err := data.GetApiserverExternalNodePort()
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
 		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "8080",
+			"prometheus.io-0/scrape": "true",
+			"prometheus.io-0/path":   "/metrics",
+			"prometheus.io-0/port":   "8080",
 		},
 	}
 
@@ -87,11 +92,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 	etcd := fmt.Sprintf("https://%s:2379", etcdClientServiceIP)
-
-	externalNodePort, err := data.GetApiserverExternalNodePort()
-	if err != nil {
-		return nil, err
-	}
 
 	// Configure user cluster DNS resolver for this pod.
 	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)

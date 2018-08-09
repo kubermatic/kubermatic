@@ -14,14 +14,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
-	"k8s.io/api/policy/v1beta1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -186,6 +186,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
 		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
 		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
+		{resources.KubeStateMetricsKubeconfigSecretName, cc.getKubeStateMetricsKubeconfigSecret},
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
@@ -501,6 +502,7 @@ func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreato
 		scheduler.Deployment,
 		controllermanager.Deployment,
 		dns.Deployment,
+		kubestatemetrics.Deployment,
 	}
 
 	if c != nil && len(c.Spec.MachineNetworks) > 0 {

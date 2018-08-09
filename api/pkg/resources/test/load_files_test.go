@@ -71,7 +71,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	}
 
 	if resStr != expStr {
-		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates.", path, diffStr)
+		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates. If the diff seems valid, run the tests again with '-update'", path, diffStr)
 	}
 }
 
@@ -86,9 +86,12 @@ func TestLoadFiles(t *testing.T) {
 		{
 			Version: semver.MustParse("1.10.0"),
 		},
+		{
+			Version: semver.MustParse("1.11.0"),
+		},
 	}
 
-	clouds := map[string]*kubermaticv1.CloudSpec{
+	clouds := map[string]kubermaticv1.CloudSpec{
 		"azure": {
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:        "az-tenant-id",
@@ -379,7 +382,15 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				deps := clustercontroller.GetDeploymentCreators(nil)
+				dummyCluster := &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
+							{},
+						},
+					},
+				}
+
+				deps := clustercontroller.GetDeploymentCreators(dummyCluster)
 
 				for _, create := range deps {
 					res, err := create(data, nil)
@@ -467,7 +478,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "do-fra1",
 							Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 								Token: "digitalocean-token",
@@ -540,7 +551,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "aws-eu-central-1a",
 							AWS: &kubermaticv1.AWSCloudSpec{
 								AccessKeyID:         "aws-access-key-id",
@@ -634,7 +645,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "syseleven-dbl1",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								Username:       "os-username",
@@ -716,7 +727,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "whatever-dc",
 							Azure: &kubermaticv1.AzureCloudSpec{
 								TenantID:       "38w7giefb32fhifw3q",
@@ -793,7 +804,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "hetzner-fsn1",
 							Hetzner: &kubermaticv1.HetznerCloudSpec{
 								Token: "hetzner-token",
@@ -860,7 +871,7 @@ func TestExecute(t *testing.T) {
 					Address: kubermaticv1.ClusterAddress{},
 					Status:  kubermaticv1.ClusterStatus{},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud: &kubermaticv1.CloudSpec{
+						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "vsphere-dummy",
 							VSphere: &kubermaticv1.VSphereCloudSpec{
 								Username: "vsphere-username",

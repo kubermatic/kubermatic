@@ -661,7 +661,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: &kubermaticv1.CloudSpec{
+					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: "us-central1",
 					},
 				},

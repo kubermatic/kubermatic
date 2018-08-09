@@ -41,9 +41,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	return cm, nil
 }
 
-const (
-	prometheusConfig = `
-global:
+const prometheusConfig = `global:
   evaluation_interval: 30s
   scrape_interval: 30s
   external_labels:
@@ -61,22 +59,24 @@ scrape_configs:
     cert_file: /etc/etcd/apiserver/apiserver-etcd-client.crt
     key_file: /etc/etcd/apiserver/apiserver-etcd-client.key
 
-- job_name: 'pods'
+{{- range $i, $e := until 2 }}
+- job_name: 'pods-{{ $i }}'
+
   kubernetes_sd_configs:
   - role: pod
     namespaces:
       names:
-      - "{{ .Cluster.Status.NamespaceName }}"
+      - "{{ $.Cluster.Status.NamespaceName }}"
 
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_scrape]
     action: keep
     regex: true
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_path]
     action: replace
     target_label: __metrics_path__
     regex: (.+)
-  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_port]
     action: replace
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
@@ -91,9 +91,13 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-alerting:
-  alertmanagers: []
-`
 
-	prometheusRules = ``
-)
+{{- end }}
+alerting:
+  alertmanagers:
+  - dns_sd_configs:
+    - names:
+      - 'alertmanager-kubermatic.monitoring.svc.cluster.local'
+      type: A
+      port: 9093
+`

@@ -34,10 +34,6 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return errors.New("no name specified")
 	}
 
-	if spec.Cloud == nil {
-		return errors.New("no cloud spec given")
-	}
-
 	if err := ValidateCloudSpec(spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
@@ -73,7 +69,7 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 }
 
 // ValidateCloudChange validates if the cloud provider has been changed
-func ValidateCloudChange(newSpec, oldSpec *kubermaticv1.CloudSpec) error {
+func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Openstack == nil && oldSpec.Openstack != nil {
 		return ErrCloudChangeNotAllowed
 	}
@@ -101,9 +97,6 @@ func ValidateCloudChange(newSpec, oldSpec *kubermaticv1.CloudSpec) error {
 
 // ValidateUpdateCluster validates if the cluster update is allowed
 func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
-	if newCluster.Spec.Cloud == nil {
-		return errors.New("deleting the cloud spec is not allowed")
-	}
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -158,7 +151,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 }
 
 // ValidateCloudSpec validates if the cloud spec is valid
-func ValidateCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	if spec.DatacenterName == "" {
 		return errors.New("no node datacenter specified")
 	}

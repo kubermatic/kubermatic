@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "8085"
-        prometheus.io/scrape: "true"
+        prometheus.io-0/path: /metrics
+        prometheus.io-0/port: "8085"
+        prometheus.io-0/scrape: "true"
       creationTimestamp: null
       labels:
         app: machine-controller
@@ -43,7 +43,7 @@ spec:
         - 0.0.0.0:8085
         command:
         - /usr/local/bin/machine-controller
-        image: docker.io/kubermatic/machine-controller:v0.7.17
+        image: docker.io/kubermatic/machine-controller:v0.7.18
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

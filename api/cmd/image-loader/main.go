@@ -311,7 +311,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	serviceLister := serviceInformer.Lister()
 
 	fakeCluster := &clusterv1.Cluster{}
-	fakeCluster.Spec.Cloud = &clusterv1.CloudSpec{}
+	fakeCluster.Spec.Cloud = clusterv1.CloudSpec{}
 	fakeCluster.Spec.Version = masterVersion.Version.String()
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}

@@ -67,7 +67,7 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud           *CloudSpec                `json:"cloud"`
+	Cloud           CloudSpec                 `json:"cloud"`
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 

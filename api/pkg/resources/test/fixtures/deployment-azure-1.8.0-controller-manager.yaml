@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "10252"
-        prometheus.io/scrape: "true"
+        prometheus.io-0/path: /metrics
+        prometheus.io-0/port: "10252"
+        prometheus.io-0/scrape: "true"
       creationTimestamp: null
       labels:
         app: controller-manager

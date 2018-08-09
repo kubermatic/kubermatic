@@ -25,6 +25,9 @@ check: gofmt lint
 test: vendor
 	@$(GO) test -v ./...
 
+test-update:
+	@$(GO) test -v ./... -update
+
 clean:
 	@cd _build
 	@rm -f $(CMD)
@@ -90,4 +93,4 @@ run-api-server:
 run-rbac-generator:
 	./hack/run-rbac-generator.sh
 
-.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)
+.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(CMD)

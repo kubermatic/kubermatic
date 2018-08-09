@@ -46,6 +46,8 @@ const (
 	DNSResolverConfigMapName = "dns-resolver"
 	//DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
+	//KubeStateMetricsDeploymentName is the name for the kube-state-metrics deployment
+	KubeStateMetricsDeploymentName = "kube-state-metrics"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -69,10 +71,12 @@ const (
 	AdminKubeconfigSecretName = "admin-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
-	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machine controller
-	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
-	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the controller manager
+	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
+	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
+	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 
@@ -120,6 +124,8 @@ const (
 
 	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
 	MachineControllerCertUsername = "machine-controller"
+	//KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
+	KubeStateMetricsCertUsername = "kube-state-metrics"
 	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
@@ -149,8 +155,12 @@ const (
 	MachineControllerRoleBindingName = "machine-controller"
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
+	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
+	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
+	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
 	//ControllerManagerRoleBindingName is the name of the controller-manager's rolebindings
 	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
 	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings

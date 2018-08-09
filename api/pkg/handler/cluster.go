@@ -81,7 +81,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 
 		spec := &kubermaticapiv1.ClusterSpec{}
 		spec.HumanReadableName = req.Body.Name
-		spec.Cloud = &req.Body.Spec.Cloud
+		spec.Cloud = req.Body.Spec.Cloud
 		spec.MachineNetworks = req.Body.Spec.MachineNetworks
 		spec.Version = req.Body.Spec.Version
 		if err = defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
@@ -186,7 +186,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster.Spec.Cloud = &req.Body.Spec.Cloud
+		existingCluster.Spec.Cloud = req.Body.Spec.Cloud
 		existingCluster.Spec.Version = req.Body.Spec.Version
 		existingCluster.Spec.MachineNetworks = req.Body.Spec.MachineNetworks
 
@@ -404,7 +404,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 			}(),
 		},
 		Spec: apiv1.NewClusterSpec{
-			Cloud:           *internalCluster.Spec.Cloud,
+			Cloud:           internalCluster.Spec.Cloud,
 			Version:         internalCluster.Spec.Version,
 			MachineNetworks: internalCluster.Spec.MachineNetworks,
 		},

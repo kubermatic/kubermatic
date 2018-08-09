@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -182,6 +183,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
+		kubestatemetrics.ClusterRole,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -245,6 +247,10 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreator {
 	creators := []resources.ClusterRoleBindingCreator{
 		machinecontroller.ClusterRoleBinding,
+		machinecontroller.NodeBootstrapperClusterRoleBinding,
+		machinecontroller.NodeSignerClusterRoleBinding,
+		controllermanager.AdminClusterRoleBinding,
+		kubestatemetrics.ClusterRoleBinding,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
