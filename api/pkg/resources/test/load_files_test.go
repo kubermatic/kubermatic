@@ -71,7 +71,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	}
 
 	if resStr != expStr {
-		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates.", path, diffStr)
+		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates. If the diff seems valid, run the tests again with '-update'", path, diffStr)
 	}
 }
 
@@ -85,6 +85,9 @@ func TestLoadFiles(t *testing.T) {
 		},
 		{
 			Version: semver.MustParse("1.10.0"),
+		},
+		{
+			Version: semver.MustParse("1.11.0"),
 		},
 	}
 
