@@ -1,9 +1,11 @@
 package cluster
 
 import (
+	"bytes"
 	"fmt"
 	"hash/crc32"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/golang/glog"
@@ -632,7 +634,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if cm.Annotations == nil {
 			cm.Annotations = map[string]string{}
 		}
-		cm.Annotations[checksumAnnotation] = getChecksum(cm.Data)
+		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
 
 		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
@@ -652,7 +654,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if cm.Annotations == nil {
 			cm.Annotations = map[string]string{}
 		}
-		cm.Annotations[checksumAnnotation] = getChecksum(cm.Data)
+		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
 
 		if existing.Annotations == nil {
 			existing.Annotations = map[string]string{}
@@ -672,8 +674,19 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func getChecksum(data map[string]string) string {
-	return fmt.Sprintf("%v", crc32.ChecksumIEEE([]byte(fmt.Sprintf("%+v", data))))
+func getChecksumForMapStringString(data map[string]string) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, data[k]))
+	}
+	sort.Strings(keyVals)
+
+	buffer := bytes.NewBuffer(nil)
+	for _, item := range keyVals {
+		buffer.WriteString(item)
+	}
+	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
