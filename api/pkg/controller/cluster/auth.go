@@ -2,12 +2,10 @@ package cluster
 
 import (
 	"bytes"
-	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/csv"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"net"
 	"strings"
@@ -208,41 +206,6 @@ func (cc *Controller) createKubeletClientCertificates(caKp *triple.KeyPair, comm
 	return map[string][]byte{
 		resources.KubeletClientKeySecretKey:  certutil.EncodePrivateKeyPEM(kubeletKp.Key),
 		resources.KubeletClientCertSecretKey: certutil.EncodeCertPEM(kubeletKp.Cert),
-	}, nil
-}
-
-func (cc *Controller) getServiceAccountKeySecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	if existingSecret == nil {
-		data, err := cc.createServiceAccountKey(c)
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to create a service account key: %v", err)
-		}
-		return cc.secretWithJSON(cc.secretWithData(data, c))
-	}
-	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
-}
-
-func (cc *Controller) createServiceAccountKey(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
-	if len(c.Status.ServiceAccountKey) > 0 {
-		return map[string][]byte{
-			resources.ServiceAccountKeySecretKey: c.Status.ServiceAccountKey,
-		}, nil
-	}
-
-	priv, err := rsa.GenerateKey(cryptorand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	saKey := x509.MarshalPKCS1PrivateKey(priv)
-	block := pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: saKey,
-	}
-
-	return map[string][]byte{
-		resources.ServiceAccountKeySecretKey: pem.EncodeToMemory(&block),
 	}, nil
 }
 
