@@ -85,6 +85,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		fakeKubeClient,
 		kubermaticInformers.Kubermatic().V1().Clusters(),
 		kubeInformers.Batch().V1beta1().CronJobs(),
+		kubeInformers.Batch().V1().Jobs(),
 		kubeInformers.Core().V1().Secrets(),
 	)
 	if err != nil {
