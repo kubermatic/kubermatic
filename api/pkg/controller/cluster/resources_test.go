@@ -109,43 +109,46 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Status.NamespaceName = "test-ns"
 	dc := &provider.DatacenterMeta{}
-	controller := Controller{}
 
-	keyPair := triple.NewCA("test-ca")
-
-	caKeySecret := &corev1.Secret{}
-	caKeySecret.Name = resources.CACertSecretKey
-	caKeySecret.Namespace = "test-ns"
-	data, err := controller.createRootCAKeySecret
+	keyPair, err := triple.NewCA("test-ca")
 	if err != nil {
-		t.Fatalf("Failed to create private key for root ca: %v", err)
+		t.Fatalf("Failed to generate test root ca: %v", err)
 	}
-	caKeySecret.Data = data
+	caSecret := &corev1.Secret{}
+	caSecret.Name = resources.CASecretName
+	caSecret.Namespace = "test-ns"
+	caSecret.Data = map[string][]byte{
+		resources.CACertSecretKey: certutil.EncodeCertPEM(keyPair.Cert),
+		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
+	}
 
-	caCertSecret := &corev1.Secret{}
-	caKeySecret.Name = resources.CACertSecretName
-	caKeySecret.Namespace = "test-ns"
-	data, err := controller.createRootCAKeySecret
-	if err != nil {
-		t.Fatalf("Failed to create private key for root ca: %v", err)
-	}
-	caKeySecret.Data = data
+	etcdClientService := &corev1.Service{}
+	etcdClientService.Name = resources.EtcdClientServiceName
+	etcdClientService.Namespace = "test-ns"
+	etcdClientService.Spec.ClusterIP = "1.2.3.4"
 
 	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-	if err := secretIndexer.Add(caCertSecret); err != nil {
+	if err := secretIndexer.Add(caSecret); err != nil {
 		t.Fatalf("Error adding secret to indexer: %v", err)
 	}
 	secretLister := listerscorev1.NewSecretLister(secretIndexer)
 
+	serviceIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	if err := serviceIndexer.Add(etcdClientService); err != nil {
+		t.Fatalf("Error adding service to idnexer: %v", err)
+	}
+	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
+
 	templateData := &resources.TemplateData{
-		Cluster:      cluster,
-		DC:           dc,
-		SecretLister: secretLister,
+		Cluster:       cluster,
+		DC:            dc,
+		SecretLister:  secretLister,
+		ServiceLister: serviceLister,
 	}
 
 	for name, create := range GetSecretCreators() {
 		existing := &corev1.Secret{
-			Data: map[string][]byte{"Test": []byte("val")},
+			Data: map[string][]byte{"Test": []byte("Data")},
 		}
 		new, err := create(templateData, existing)
 		if err != nil {

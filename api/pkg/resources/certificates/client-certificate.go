@@ -50,12 +50,13 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			return nil, fmt.Errorf("failed to create %s key pair: %v", name, err)
 		}
 
-		se.Data = map[string][]byte{
-			dataKeyKey:  certutil.EncodePrivateKeyPEM(newKP.Key),
-			dataCertKey: certutil.EncodeCertPEM(newKP.Cert),
-			// Include the CA for simplicity
-			resources.CACertSecretKey: certutil.EncodeCertPEM(ca.Cert),
+		if se.Data == nil {
+			se.Data = map[string][]byte{}
 		}
+		se.Data[dataKeyKey] = certutil.EncodePrivateKeyPEM(newKP.Key)
+		se.Data[dataCertKey] = certutil.EncodeCertPEM(newKP.Cert)
+		// Include the CA for simplicity
+		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
 
 		return se, nil
 	}
