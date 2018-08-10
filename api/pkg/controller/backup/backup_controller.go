@@ -400,8 +400,9 @@ type secretData struct {
 	secretLister corev1lister.SecretLister
 }
 
-func (d *secretData) GetCA(name string) (*triple.KeyPair, error) {
-	return resources.GetClusterCAFromLister(name, d.cluster, d.secretLister)
+// GetRootCA returns the root CA of the cluster
+func (d *secretData) GetRootCA() (*triple.KeyPair, error) {
+	return resources.GetClusterRootCA(d.cluster, d.secretLister)
 }
 
 func (d *secretData) GetClusterRef() metav1.OwnerReference {
@@ -420,19 +421,19 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		return err
 	}
 
+	data := secretData{
+		cluster:      cluster,
+		secretLister: c.secretLister,
+	}
+
 	create := certificates.GetClientCertificateCreator(
-		resources.CASecretName,
 		name,
 		"backup",
 		nil,
 		resources.BackupEtcdClientCertificateCertSecretKey,
 		resources.BackupEtcdClientCertificateKeySecretKey,
+		data.GetRootCA,
 	)
-
-	data := secretData{
-		cluster:      cluster,
-		secretLister: c.secretLister,
-	}
 
 	se, err := create(&data, existing.DeepCopy())
 	if err != nil {
