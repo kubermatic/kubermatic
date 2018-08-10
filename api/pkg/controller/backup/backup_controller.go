@@ -26,9 +26,11 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	informersbatchv1 "k8s.io/client-go/informers/batch/v1"
 	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
 	corev1informer "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
+	listersbatchv1 "k8s.io/client-go/listers/batch/v1"
 	listersbatchv1beta1 "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -110,6 +112,7 @@ type Controller struct {
 	kubernetesClient kubernetes.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
 	cronJobLister    listersbatchv1beta1.CronJobLister
+	jobLister        listersbatchv1.JobLister
 	secretLister     corev1lister.SecretLister
 }
 
@@ -126,6 +129,7 @@ func New(
 	kubernetesClient kubernetes.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	cronJobInformer informersbatchv1beta1.CronJobInformer,
+	jobInformer informersbatchv1.JobInformer,
 	secretInformer corev1informer.SecretInformer,
 ) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
@@ -205,6 +209,7 @@ func New(
 	})
 	c.clusterLister = clusterInformer.Lister()
 	c.cronJobLister = cronJobInformer.Lister()
+	c.jobLister = jobInformer.Lister()
 	c.secretLister = secretInformer.Lister()
 	return c, nil
 }
@@ -253,9 +258,13 @@ func (c *Controller) cleanupJobs() {
 		utilruntime.HandleError(err)
 		return
 	}
-	jobList, err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).List(metav1.ListOptions{LabelSelector: selector.String()})
+	jobList, err := c.jobLister.List(selector)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("Failed to list jobs: %v", err))
+		return
+	}
 
-	for _, job := range jobList.Items {
+	for _, job := range jobList {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
 			propagation := metav1.DeletePropagationForeground
 			if err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {

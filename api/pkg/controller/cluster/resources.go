@@ -1,8 +1,11 @@
 package cluster
 
 import (
+	"bytes"
 	"fmt"
+	"hash/crc32"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/golang/glog"
@@ -38,6 +41,7 @@ const (
 
 	annotationPrefix            = "kubermatic.io/"
 	lastAppliedConfigAnnotation = annotationPrefix + "last-applied-configuration"
+	checksumAnnotation          = annotationPrefix + "checksum"
 )
 
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
@@ -177,11 +181,9 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		gen  func(*kubermaticv1.Cluster, *corev1.Secret) (*corev1.Secret, string, error)
 	}
 	ops := []secretOp{
-		{resources.CAKeySecretName, cc.getRootCAKeySecret},
-		{resources.CACertSecretName, cc.getRootCACertSecret},
+		{resources.CASecretName, cc.getRootCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
-		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
 		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
@@ -556,6 +558,7 @@ func GetSecretCreators() map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
 		resources.EtcdTLSCertificateSecretName:             etcd.TLSCertificate,
 		resources.ApiserverEtcdClientCertificateSecretName: apiserver.EtcdClientCertificate,
+		resources.ServiceAccountKeySecretName:              apiserver.ServiceAccountKey,
 	}
 }
 
@@ -578,6 +581,10 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			if err != nil {
 				return fmt.Errorf("failed to build Secret: %v", err)
 			}
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
 
 			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
 				return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
@@ -589,8 +596,13 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}
+		if se.Annotations == nil {
+			se.Annotations = map[string]string{}
+		}
+		se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
 
-		if equality.Semantic.DeepEqual(se, existing) {
+		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+		if annotationExists && annotationVal == se.Annotations[checksumAnnotation] {
 			continue
 		}
 
@@ -628,6 +640,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
+		if cm.Annotations == nil {
+			cm.Annotations = map[string]string{}
+		}
+		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
 
 		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
 			if !errors.IsNotFound(err) {
@@ -644,8 +660,16 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
+		if cm.Annotations == nil {
+			cm.Annotations = map[string]string{}
+		}
+		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
 
-		if equality.Semantic.DeepEqual(cm, existing) {
+		if existing.Annotations == nil {
+			existing.Annotations = map[string]string{}
+		}
+		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+		if annotationExists && annotationVal == cm.Annotations[checksumAnnotation] {
 			continue
 		}
 
@@ -657,6 +681,33 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	}
 
 	return nil
+}
+
+func getChecksumForMapStringByteSlice(data map[string][]byte) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, string(data[k])))
+	}
+	return getChecksumForStringSlice(keyVals)
+}
+
+func getChecksumForMapStringString(data map[string]string) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, data[k]))
+	}
+	return getChecksumForStringSlice(keyVals)
+}
+
+func getChecksumForStringSlice(stringSlice []string) string {
+	sort.Strings(stringSlice)
+	buffer := bytes.NewBuffer(nil)
+	for _, item := range stringSlice {
+		buffer.WriteString(item)
+	}
+	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use

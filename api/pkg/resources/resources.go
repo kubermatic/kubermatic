@@ -72,10 +72,8 @@ const (
 	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 
-	//CAKeySecretName is the name for the secret containing the private ca key
-	CAKeySecretName = "ca-key"
-	//CACertSecretName is the name for the secret containing the ca.crt
-	CACertSecretName = "ca-cert"
+	//CASecretName is the name for the secret containing the root ca key
+	CASecretName = "ca"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
 	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
@@ -383,6 +381,22 @@ func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
 	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
 }
 
+// ServiceClusterIP returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ServiceClusterIP(name string) (*net.IP, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	ip := net.ParseIP(service.Spec.ClusterIP)
+	if ip == nil {
+		return nil, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return &ip, nil
+}
+
 // UserClusterDNSResolverIP returns the 9th usable IP address
 // from the first Service CIDR block from ClusterNetwork spec.
 // This is by convention the IP address of the DNS resolver.
@@ -471,7 +485,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -489,14 +503,13 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcNam
 	}
 
 	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
-	wantIPs := sets.NewString(ips...)
+	wantIPs := sets.NewString(getIPStrings(altNames.IPs)...)
 
 	if !wantIPs.Equal(certIPs) {
 		return false
 	}
 
-	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
-	wantDNSNames.Insert(hostnames...)
+	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
 	return wantDNSNames.Equal(certDNSNames)
@@ -520,25 +533,19 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 
 // GetClusterCAFromLister returns the root CA of the cluster from the lister
 func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CACertSecretName)
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CASecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", CACertSecretName, err)
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
 	}
 
-	//Load the ca key
-	caKeySecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CAKeySecretName)
+	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
-	}
-
-	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[CAKeySecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", CAKeySecretName, err)
+		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
 	}
 
 	return &triple.KeyPair{

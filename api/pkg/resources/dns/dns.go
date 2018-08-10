@@ -155,11 +155,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
@@ -174,14 +180,17 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+
 	dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
 	if err != nil {
 		return nil, err
 	}
 	cm.Name = resources.DNSResolverConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Data = map[string]string{
-		"Corefile": fmt.Sprintf(`
+	cm.Data["Corefile"] = fmt.Sprintf(`
 %s {
     forward . %s
     errors
@@ -191,7 +200,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
   errors
   health
 }
-`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)}
+`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)
 
 	return cm, nil
 }

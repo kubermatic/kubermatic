@@ -240,13 +240,6 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            resources.CACertSecretName,
-							Namespace:       cluster.Status.NamespaceName,
-						},
-					},
-					&v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							ResourceVersion: "123456",
 							Name:            resources.ApiserverTLSSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
@@ -261,7 +254,7 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            resources.CAKeySecretName,
+							Name:            resources.CASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},

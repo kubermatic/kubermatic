@@ -179,9 +179,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		"--mode", "server",
 		"--lport", "1194",
 		"--server", "10.20.0.0", "255.255.255.0",
-		"--ca", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cert", "/etc/openvpn/certs/server.crt",
-		"--key", "/etc/openvpn/certs/server.key",
+		"--ca", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cert", "/etc/openvpn/pki/server/server.crt",
+		"--key", "/etc/openvpn/pki/server/server.key",
 		"--dh", "/etc/openvpn/dh/dh2048.pem",
 		"--duplicate-cn",
 		"--client-config-dir", "/etc/openvpn/clients",
@@ -249,12 +249,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				},
 				{
 					Name:      resources.OpenVPNServerCertificatesSecretName,
-					MountPath: "/etc/openvpn/certs",
+					MountPath: "/etc/openvpn/pki/server",
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
 					ReadOnly:  true,
 				},
 				{
@@ -278,11 +278,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},

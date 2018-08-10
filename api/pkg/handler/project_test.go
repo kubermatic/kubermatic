@@ -96,7 +96,7 @@ func TestListProjectEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExpectedResponse: []apiv1.Project{
@@ -220,7 +220,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 		},
@@ -271,7 +271,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive"}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 		},
@@ -309,7 +309,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 		},
@@ -376,7 +376,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingProject: &kubermaticapiv1.Project{ObjectMeta: metav1.ObjectMeta{Name: "myProjectInternalName"}, Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"}},
@@ -398,7 +398,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingProject: &kubermaticapiv1.Project{ObjectMeta: metav1.ObjectMeta{Name: "myProjectInternalName"}, Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"}},

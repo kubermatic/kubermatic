@@ -230,7 +230,8 @@ func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
 }
 
 const (
-	testUsername = "user1"
+	testUserID   = "1233"
+	testUserName = "user1"
 	testEmail    = "john@acme.com"
 )
 
@@ -260,7 +261,7 @@ func TestUpRoute(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}

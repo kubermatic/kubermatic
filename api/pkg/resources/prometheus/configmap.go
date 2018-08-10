@@ -20,6 +20,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
 
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
@@ -33,10 +36,8 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Name = resources.PrometheusConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
-	cm.Data = map[string]string{
-		"prometheus.yaml": configBuffer.String(),
-		"rules.yaml":      prometheusRules,
-	}
+	cm.Data["prometheus.yaml"] = configBuffer.String()
+	cm.Data["rules.yaml"] = prometheusRules
 
 	return cm, nil
 }
@@ -55,9 +56,9 @@ scrape_configs:
   static_configs:
   - targets: ['etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379']
   tls_config:
-    ca_file: /etc/etcd/apiserver/ca.crt
-    cert_file: /etc/etcd/apiserver/apiserver-etcd-client.crt
-    key_file: /etc/etcd/apiserver/apiserver-etcd-client.key
+    ca_file: /etc/etcd/pki/client/ca.crt
+    cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
+    key_file: /etc/etcd/pki/client/apiserver-etcd-client.key
 
 {{- range $i, $e := until 2 }}
 - job_name: 'pods-{{ $i }}'
