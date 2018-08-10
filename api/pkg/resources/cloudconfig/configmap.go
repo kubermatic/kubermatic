@@ -24,6 +24,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
 
 	cloudConfig, err := CloudConfig(data)
 	if err != nil {
@@ -33,10 +36,8 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Name = resources.CloudConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
-	cm.Data = map[string]string{
-		"config":              cloudConfig,
-		FakeVMWareUUIDKeyName: fakeVMWareUUID,
-	}
+	cm.Data["config"] = cloudConfig
+	cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 
 	return cm, nil
 }

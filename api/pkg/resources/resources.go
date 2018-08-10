@@ -390,6 +390,22 @@ func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
 	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
 }
 
+// ServiceClusterIP returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ServiceClusterIP(name string) (*net.IP, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	ip := net.ParseIP(service.Spec.ClusterIP)
+	if ip == nil {
+		return nil, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return &ip, nil
+}
+
 // UserClusterDNSResolverIP returns the 9th usable IP address
 // from the first Service CIDR block from ClusterNetwork spec.
 // This is by convention the IP address of the DNS resolver.
@@ -478,7 +494,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -496,14 +512,13 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcNam
 	}
 
 	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
-	wantIPs := sets.NewString(ips...)
+	wantIPs := sets.NewString(getIPStrings(altNames.IPs)...)
 
 	if !wantIPs.Equal(certIPs) {
 		return false
 	}
 
-	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
-	wantDNSNames.Insert(hostnames...)
+	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
 	return wantDNSNames.Equal(certDNSNames)

@@ -71,7 +71,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingNodes: []*corev1.Node{
@@ -260,7 +260,7 @@ func TestListNodesForCluster(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingNodes: []*corev1.Node{
@@ -523,7 +523,7 @@ func TestGetNodeForCluster(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingNodes: []*corev1.Node{
@@ -645,7 +645,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingCluster: &kubermaticv1.Cluster{

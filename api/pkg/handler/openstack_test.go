@@ -223,7 +223,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			req.Header.Add("Domain", domain)
 
 			res := httptest.NewRecorder()
-			router, _, err := createTestEndpointAndGetClients(getUser(testUsername, false), buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{}, nil, nil)
+			router, _, err := createTestEndpointAndGetClients(getUser(testUserName, false), buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{}, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}
