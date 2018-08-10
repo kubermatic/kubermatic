@@ -69,7 +69,7 @@ func TestListSSHKeys(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
@@ -204,7 +204,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: &apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 			},
 		},
@@ -293,7 +293,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		{
 			name:         "got user1 keys",
 			wantKeyNames: []string{"user1-1", "user1-2"},
-			username:     testUsername,
+			username:     testUserName,
 			admin:        false,
 		},
 		{
@@ -311,7 +311,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		{
 			name:         "admin got all keys",
 			wantKeyNames: []string{"user1-1", "user1-2", "user2-1"},
-			username:     testUsername,
+			username:     testUserName,
 			admin:        true,
 		},
 	}

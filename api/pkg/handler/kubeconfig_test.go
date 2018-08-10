@@ -44,7 +44,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "foo",
-			Labels: map[string]string{"user": testUsername},
+			Labels: map[string]string{"user": testUserName},
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-foo",
@@ -66,7 +66,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 		},
 	}
 
-	ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{secret}, []runtime.Object{cluster}, nil, nil)
+	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{secret}, []runtime.Object{cluster}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}

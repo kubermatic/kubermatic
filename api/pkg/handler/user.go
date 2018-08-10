@@ -137,6 +137,19 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 				}
 			}
 
+			// if for some reason ID and Name of the authenticated user
+			// are different than the ones we have in our database update the record.
+			if user.Spec.ID != apiUser.ID {
+				user.Spec.ID = apiUser.ID
+				if user.Spec.Name != apiUser.Name {
+					user.Spec.Name = apiUser.Name
+				}
+				user, err = r.userProvider.Update(user)
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			return next(context.WithValue(ctx, userCRContextKey, user), request)
 		}
 	}
