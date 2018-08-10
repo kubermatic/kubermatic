@@ -35,8 +35,9 @@ func ServiceAccountKey(data *resources.TemplateData, existing *corev1.Secret) (*
 		Type:  "RSA PRIVATE KEY",
 		Bytes: saKey,
 	}
-	se.Data = map[string][]byte{
-		resources.ServiceAccountKeySecretKey: pem.EncodeToMemory(&block),
+	if se.Data == nil {
+		se.Data = map[string][]byte{}
 	}
+	se.Data[resources.ServiceAccountKeySecretKey] = pem.EncodeToMemory(&block)
 	return se, nil
 }

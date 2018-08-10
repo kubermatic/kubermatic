@@ -86,10 +86,11 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 	}
 
-	se.Data = map[string][]byte{
-		resources.EtcdTLSKeySecretKey:  certutil.EncodePrivateKeyPEM(key),
-		resources.EtcdTLSCertSecretKey: certutil.EncodeCertPEM(cert),
+	if se.Data == nil {
+		se.Data = map[string][]byte{}
 	}
+	se.Data[resources.EtcdTLSKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
+	se.Data[resources.EtcdTLSCertSecretKey] = certutil.EncodeCertPEM(cert)
 
 	return se, nil
 }
