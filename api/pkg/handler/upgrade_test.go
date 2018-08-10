@@ -30,7 +30,7 @@ func TestGetClusterUpgradesV3(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUsername},
+					Labels: map[string]string{"user": testUserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
@@ -71,7 +71,7 @@ func TestGetClusterUpgradesV3(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUsername},
+					Labels: map[string]string{"user": testUserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
@@ -88,7 +88,7 @@ func TestGetClusterUpgradesV3(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/foo/upgrades", nil)
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(getUser(testUsername, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
+			ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{test.cluster}, test.versions, test.updates)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -129,7 +129,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUsername},
+					Labels: map[string]string{"user": testUserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
@@ -160,7 +160,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 			},
 			apiUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 				Roles: map[string]struct{}{
 					"user": struct{}{},
@@ -203,7 +203,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUsername},
+					Labels: map[string]string{"user": testUserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
@@ -234,7 +234,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 			},
 			apiUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserName,
 				Email: testEmail,
 				Roles: map[string]struct{}{
 					"user": struct{}{},
