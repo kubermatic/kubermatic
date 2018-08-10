@@ -19,6 +19,9 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
 
 	cm.Name = resources.OpenVPNClientConfigsConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
@@ -27,6 +30,9 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 	var iroutes []string
 
 	// iroute for pod network
+	if len(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) < 1 {
+		return nil, fmt.Errorf("cluster.Spec.ClusterNetwork.Pods.CIDRBlocks must contain at least one entry")
+	}
 	_, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
@@ -36,6 +42,9 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 		net.IP(podNet.Mask).String()))
 
 	// iroute for service network
+	if len(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks) < 1 {
+		return nil, fmt.Errorf("cluster.Spec.ClusterNetwork.Services.CIDRBlocks must contain at least one entry")
+	}
 	_, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
@@ -54,9 +63,7 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 
 	// trailing newline
 	iroutes = append(iroutes, "")
-	cm.Data = map[string]string{
-		"user-cluster-client": strings.Join(iroutes, "\n"),
-	}
+	cm.Data["user-cluster-client"] = strings.Join(iroutes, "\n")
 
 	return cm, nil
 }
@@ -68,6 +75,9 @@ func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.Config
 		cm = existing
 	} else {
 		cm = &corev1.ConfigMap{}
+	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
 	}
 
 	cm.Name = resources.OpenVPNClientConfigConfigMapName
@@ -101,9 +111,7 @@ up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERA
 log /dev/stdout
 `, data.Cluster.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
 
-	cm.Data = map[string]string{
-		"config": config,
-	}
+	cm.Data["config"] = config
 
 	return cm, nil
 }
