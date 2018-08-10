@@ -72,10 +72,8 @@ const (
 	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 
-	//CAKeySecretName is the name for the secret containing the private ca key
-	CAKeySecretName = "ca-key"
-	//CACertSecretName is the name for the secret containing the ca.crt
-	CACertSecretName = "ca-cert"
+	//CASecretName is the name for the secret containing the root ca key
+	CASecretName = "ca"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
 	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
@@ -520,25 +518,19 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 
 // GetClusterCAFromLister returns the root CA of the cluster from the lister
 func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CACertSecretName)
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CASecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", CACertSecretName, err)
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
 	}
 
-	//Load the ca key
-	caKeySecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CAKeySecretName)
+	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
-	}
-
-	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[CAKeySecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", CAKeySecretName, err)
+		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
 	}
 
 	return &triple.KeyPair{

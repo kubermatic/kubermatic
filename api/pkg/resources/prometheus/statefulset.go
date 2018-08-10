@@ -110,7 +110,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},

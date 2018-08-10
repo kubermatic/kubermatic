@@ -114,13 +114,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	controllerManagerMounts := []corev1.VolumeMount{
 		{
-			Name:      resources.CACertSecretName,
-			MountPath: "/etc/kubernetes/ca-cert",
-			ReadOnly:  true,
-		},
-		{
-			Name:      resources.CAKeySecretName,
-			MountPath: "/etc/kubernetes/ca-key",
+			Name:      resources.CASecretName,
+			MountPath: "/etc/kubernetes/pki/ca",
 			ReadOnly:  true,
 		},
 		{
@@ -202,9 +197,9 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 	flags := []string{
 		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cluster-signing-key-file", "/etc/kubernetes/ca-key/ca.key",
+		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
 		"--cluster-cidr", data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
@@ -233,19 +228,10 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.CAKeySecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CAKeySecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

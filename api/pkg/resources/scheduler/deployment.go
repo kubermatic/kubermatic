@@ -186,10 +186,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
