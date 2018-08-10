@@ -70,10 +70,10 @@ exec /usr/local/bin/etcd \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
-    --cert-file /etc/etcd/tls/etcd-tls.crt \
-    --key-file /etc/etcd/tls/etcd-tls.key
+    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
+    --key-file /etc/etcd/pki/tls/etcd-tls.key
 `
 
 	migration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
@@ -142,9 +142,9 @@ exec /usr/local/bin/etcd \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
-    --cert-file /etc/etcd/tls/etcd-tls.crt \
-    --key-file /etc/etcd/tls/etcd-tls.key
+    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
+    --key-file /etc/etcd/pki/tls/etcd-tls.key
 `
 )
