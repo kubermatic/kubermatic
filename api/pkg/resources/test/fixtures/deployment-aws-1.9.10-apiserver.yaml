@@ -151,9 +151,9 @@ spec:
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --proxy-client-cert-file
-        - /etc/kubernetes/client-certs/proxy/apiserver-proxy-client.crt
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.crt
         - --proxy-client-key-file
-        - /etc/kubernetes/client-certs/proxy/apiserver-proxy-client.key
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.key
         - --client-ca-file
         - /etc/kubernetes/pki/ca/ca.crt
         - --kubelet-client-certificate
@@ -246,7 +246,7 @@ spec:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
-        - mountPath: /etc/kubernetes/client-certs/proxy
+        - mountPath: /etc/kubernetes/pki/proxy-client
           name: apiserver-proxy-client-certificate
           readOnly: true
       dnsConfig:
