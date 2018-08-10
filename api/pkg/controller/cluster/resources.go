@@ -180,7 +180,6 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.CASecretName, cc.getRootCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
-		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
 		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
@@ -555,6 +554,7 @@ func GetSecretCreators() map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
 		resources.EtcdTLSCertificateSecretName:             etcd.TLSCertificate,
 		resources.ApiserverEtcdClientCertificateSecretName: apiserver.EtcdClientCertificate,
+		resources.ServiceAccountKeySecretName:              apiserver.ServiceAccountKey,
 	}
 }
 
