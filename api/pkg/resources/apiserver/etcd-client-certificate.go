@@ -21,7 +21,7 @@ func EtcdClientCertificate(data *resources.TemplateData, existing *corev1.Secret
 func ProxyClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverProxyClientCertificateSecretName,
-		"aggregator",
+		"apiserver-aggregator",
 		nil,
 		resources.ApiserverProxyClientCertificateCertSecretKey,
 		resources.ApiserverProxyClientCertificateKeySecretKey)(data, existing)

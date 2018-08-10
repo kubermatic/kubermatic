@@ -266,7 +266,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
 		"--requestheader-client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
-		"--requestheader-allowed-names", "aggregator",
+		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
