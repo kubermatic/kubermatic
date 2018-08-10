@@ -88,7 +88,8 @@ func TestAddUserToProject(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
@@ -124,7 +125,8 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				ID:    testUserID,
+				Name:  testUserName,
 				Email: testEmail,
 			},
 			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"placeX","group":"editors-placeX"},{"id":"plan9","group":"editors-plan9"}]}`,
@@ -207,7 +209,8 @@ func TestAddUserToProject(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
@@ -239,7 +242,8 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				Name:  testUserName,
+				ID:    testUserID,
 				Email: testEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"only the owner of the project can invite the other users"}}`,
@@ -303,7 +307,8 @@ func TestAddUserToProject(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
@@ -335,7 +340,8 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				Name:  testUserName,
+				ID:    testUserID,
 				Email: testEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you can only assign the user to plan9 project"}}`,
@@ -399,7 +405,8 @@ func TestAddUserToProject(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
@@ -431,7 +438,8 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				Name:  testUserName,
+				ID:    testUserID,
 				Email: testEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot assign yourself to a different group"}}`,
@@ -495,7 +503,8 @@ func TestAddUserToProject(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
@@ -527,7 +536,8 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 			ExistingAPIUser: apiv1.User{
-				ID:    testUsername,
+				Name:  testUserName,
+				ID:    testUserID,
 				Email: testEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
@@ -583,7 +593,8 @@ func TestAddUserToProject(t *testing.T) {
 
 func TestGetCurrentUser(t *testing.T) {
 	tester := apiv1.User{
-		ID:    testUsername,
+		Name:  testUserName,
+		ID:    testUserID,
 		Email: testEmail,
 	}
 
@@ -603,7 +614,8 @@ func TestGetCurrentUser(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 					},
 				},
@@ -651,7 +663,8 @@ func TestGetCurrentUser(t *testing.T) {
 						Name: "john",
 					},
 					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUsername,
+						Name:  testUserName,
+						ID:    testUserID,
 						Email: testEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
