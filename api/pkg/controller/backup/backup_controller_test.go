@@ -5,10 +5,10 @@ import (
 	"time"
 
 	fakekubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,32 +45,24 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create a private key for the CA: %v", err)
 	}
-	caKeySecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Status.NamespaceName,
-			Name:      resources.CAKeySecretName,
-		},
-		Data: map[string][]byte{
-			resources.CAKeySecretKey: certutil.EncodePrivateKeyPEM(caKey),
-		},
-	}
 
 	config := certutil.Config{CommonName: "foo"}
 	caCert, err := certutil.NewSelfSignedCACert(config, caKey)
 	if err != nil {
 		t.Fatalf("unable to create a self-signed certificate for a new CA: %v", err)
 	}
-	caCertSecret := &corev1.Secret{
+	caSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
-			Name:      resources.CACertSecretName,
+			Name:      resources.CASecretName,
 		},
 		Data: map[string][]byte{
 			resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
+			resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(caKey),
 		},
 	}
 
-	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset(caKeySecret, caCertSecret)
+	fakeKubeClient := fakekubernetesclientset.NewSimpleClientset(caSecret)
 	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
 	kubermaticInformers := externalversions.NewSharedInformerFactory(fakeKubermaticClient, 10*time.Millisecond)

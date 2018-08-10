@@ -177,8 +177,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		gen  func(*kubermaticv1.Cluster, *corev1.Secret) (*corev1.Secret, string, error)
 	}
 	ops := []secretOp{
-		{resources.CAKeySecretName, cc.getRootCAKeySecret},
-		{resources.CACertSecretName, cc.getRootCACertSecret},
+		{resources.CASecretName, cc.getRootCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.ServiceAccountKeySecretName, cc.getServiceAccountKeySecret},

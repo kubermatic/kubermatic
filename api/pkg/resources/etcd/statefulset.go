@@ -139,9 +139,9 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"/usr/local/bin/etcdctl",
-							"--cacert", "/etc/etcd/ca/ca.crt",
-							"--cert", "/etc/etcd/client/apiserver-etcd-client.crt",
-							"--key", "/etc/etcd/client/apiserver-etcd-client.key",
+							"--cacert", "/etc/etcd/pki/ca/ca.crt",
+							"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+							"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 							"--endpoints", "https://localhost:2379", "endpoint", "health",
 						},
 					},
@@ -154,15 +154,15 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				},
 				{
 					Name:      resources.EtcdTLSCertificateSecretName,
-					MountPath: "/etc/etcd/tls",
+					MountPath: "/etc/etcd/pki/tls",
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/etcd/ca",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/etcd/pki/ca",
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/client",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -223,11 +223,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
@@ -354,9 +360,9 @@ exec /usr/local/bin/etcd \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
-    --cert-file /etc/etcd/tls/etcd-tls.crt \
-    --key-file /etc/etcd/tls/etcd-tls.key
+    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
+    --key-file /etc/etcd/pki/tls/etcd-tls.key
 `
 )
