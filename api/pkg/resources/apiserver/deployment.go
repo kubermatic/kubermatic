@@ -106,14 +106,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/apiserver/ca.crt --cert=/etc/etcd/apiserver/apiserver-etcd-client.crt --key=/etc/etcd/apiserver/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -193,8 +193,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
 					ReadOnly:  true,
 				},
 				{
@@ -209,7 +209,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -234,9 +234,9 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
 		"--etcd-servers", etcd,
-		"--etcd-cafile", "/etc/etcd/apiserver/ca.crt",
-		"--etcd-certfile", "/etc/etcd/apiserver/apiserver-etcd-client.crt",
-		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
+		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
+		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
@@ -256,7 +256,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--proxy-client-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
+		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
@@ -352,11 +352,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},

@@ -44,40 +44,10 @@ func (cc *Controller) secretWithJSON(secret *corev1.Secret) (*corev1.Secret, str
 	return secret, string(b), nil
 }
 
-func (cc *Controller) createRootCAKeySecret(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
-	if len(c.Status.RootCA.Key) > 0 {
-		return map[string][]byte{
-			resources.CAKeySecretKey: c.Status.RootCA.Key,
-		}, nil
-	}
+func (cc *Controller) createRootCASecret(commonName string, c *kubermaticv1.Cluster) (map[string][]byte, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a private key for a new CA: %v", err)
-	}
-	return map[string][]byte{
-		resources.CAKeySecretKey: certutil.EncodePrivateKeyPEM(key),
-	}, nil
-}
-
-func (cc *Controller) getRootCAKeySecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	if existingSecret == nil {
-		data, err := cc.createRootCAKeySecret(c)
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to create a private key for a new CA: %v", err)
-		}
-		return cc.secretWithJSON(cc.secretWithData(data, c))
-	}
-
-	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
-}
-
-func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName string, c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	//TODO(HSC): Remove when deployed everywhere. This is just for migration purpose
-	if len(c.Status.RootCA.Cert) > 0 {
-		return map[string][]byte{
-			resources.CACertSecretKey: c.Status.RootCA.Cert,
-		}, nil
+		return nil, fmt.Errorf("unable to create a private key for new CA: %v", err)
 	}
 
 	config := certutil.Config{CommonName: commonName}
@@ -89,23 +59,13 @@ func (cc *Controller) createRootCACertSecret(key *rsa.PrivateKey, commonName str
 
 	return map[string][]byte{
 		resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
+		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(key),
 	}, nil
 }
 
 func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	//Load the ca key
-	keySecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to check if a private CA key already exists: %v", err)
-	}
-
-	key, err := certutil.ParsePrivateKeyPEM(keySecret.Data[resources.CAKeySecretKey])
-	if err != nil {
-		return nil, "", fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", resources.CAKeySecretName, err)
-	}
-
 	if existingSecret == nil {
-		data, err := cc.createRootCACertSecret(key.(*rsa.PrivateKey), fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL), c)
+		data, err := cc.createRootCASecret(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL), c)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to create a self-signed certificate for a new CA: %v", err)
 		}
@@ -115,25 +75,19 @@ func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecre
 }
 
 func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyPair, error) {
-	caCertSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CACertSecretName)
+	caSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CASecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
-	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[resources.CACertSecretKey])
+	certs, err := certutil.ParseCertsPEM(caSecret.Data[resources.CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", resources.CACertSecretName, err)
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", resources.CASecretName, err)
 	}
 
-	//Load the ca key
-	caKeySecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CAKeySecretName)
+	key, err := certutil.ParsePrivateKeyPEM(caSecret.Data[resources.CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
-	}
-
-	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[resources.CAKeySecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", resources.CAKeySecretName, err)
+		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", resources.CASecretName, err)
 	}
 
 	return &triple.KeyPair{

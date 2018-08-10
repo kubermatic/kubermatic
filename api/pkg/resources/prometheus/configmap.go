@@ -55,9 +55,9 @@ scrape_configs:
   static_configs:
   - targets: ['etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379']
   tls_config:
-    ca_file: /etc/etcd/apiserver/ca.crt
-    cert_file: /etc/etcd/apiserver/apiserver-etcd-client.crt
-    key_file: /etc/etcd/apiserver/apiserver-etcd-client.key
+    ca_file: /etc/etcd/pki/client/ca.crt
+    cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
+    key_file: /etc/etcd/pki/client/apiserver-etcd-client.key
 
 {{- range $i, $e := until 2 }}
 - job_name: 'pods-{{ $i }}'
