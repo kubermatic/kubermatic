@@ -296,8 +296,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		},
 	}
 	secretList := createNamedSecrets([]string{
-		resources.CACertSecretName,
-		resources.CAKeySecretName,
+		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,
 		resources.KubeletClientCertificatesSecretName,

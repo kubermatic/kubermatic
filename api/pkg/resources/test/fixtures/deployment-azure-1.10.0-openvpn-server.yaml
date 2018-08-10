@@ -25,7 +25,7 @@ spec:
       creationTimestamp: null
       labels:
         app: openvpn-server
-        ca-cert-secret-revision: "123456"
+        ca-secret-revision: "123456"
         openvpn-client-configs-configmap-revision: "123456"
         openvpn-server-certificates-secret-revision: "123456"
     spec:
@@ -43,11 +43,11 @@ spec:
         - 10.20.0.0
         - 255.255.255.0
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/pki/ca/ca.crt
         - --cert
-        - /etc/openvpn/certs/server.crt
+        - /etc/openvpn/pki/server/server.crt
         - --key
-        - /etc/openvpn/certs/server.key
+        - /etc/openvpn/pki/server/server.key
         - --dh
         - /etc/openvpn/dh/dh2048.pem
         - --duplicate-cn
@@ -120,11 +120,11 @@ spec:
         - mountPath: /etc/openvpn/dh
           name: diffie-hellman-params
           readOnly: true
-        - mountPath: /etc/openvpn/certs
+        - mountPath: /etc/openvpn/pki/server
           name: openvpn-server-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
         - mountPath: /etc/openvpn/clients
           name: openvpn-client-configs
@@ -186,10 +186,13 @@ spec:
       volumes:
       - emptyDir: {}
         name: diffie-hellman-params
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
       - name: openvpn-server-certificates
         secret:
           defaultMode: 256

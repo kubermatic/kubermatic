@@ -29,7 +29,7 @@ spec:
       creationTimestamp: null
       labels:
         app: scheduler
-        ca-cert-secret-revision: "123456"
+        ca-secret-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
         scheduler-kubeconfig-secret-revision: "123456"
     spec:
@@ -50,11 +50,11 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/pki/ca/ca.crt
         - --cert
-        - /etc/openvpn/certs/client.crt
+        - /etc/openvpn/pki/client/client.crt
         - --key
-        - /etc/openvpn/certs/client.key
+        - /etc/openvpn/pki/client/client.key
         - --remote-cert-tls
         - server
         - --link-mtu
@@ -88,11 +88,11 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/openvpn/certs
+        - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
       - args:
         - --kubeconfig
@@ -163,9 +163,13 @@ spec:
         secret:
           defaultMode: 256
           secretName: openvpn-client-certificates
-      - name: ca-cert
+      - name: ca
         secret:
-          secretName: ca-cert
+          defaultMode: 256
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
       - name: scheduler-kubeconfig
         secret:
           defaultMode: 256
