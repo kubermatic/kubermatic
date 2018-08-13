@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: prometheus-kubermatic-config
 data:
-{{ (.Files.Glob "config/*").AsConfig | indent 2 }}
+{{ (tpl (.Files.Glob "config/*").AsConfig .) | indent 2 }}
