@@ -42,7 +42,6 @@ spec:
           protocol: TCP
         args:
           - --auto-generate-certificates
-          - --heapster-host=http://heapster:80
         volumeMounts:
         - name: kubernetes-dashboard-certs
           mountPath: /certs
