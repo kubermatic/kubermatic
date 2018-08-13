@@ -212,6 +212,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.ApiserverProxyClientCertificateSecretName,
+					MountPath: "/etc/kubernetes/pki/proxy-client",
+					ReadOnly:  true,
+				},
 			},
 		},
 	}
@@ -244,7 +249,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth", "true",
 		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		// There are efforts upstream adding support for multiple cidr's. Until that has landet, we'll take the first entry
+		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
 		"--service-cluster-ip-range", data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
 		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
@@ -254,12 +259,17 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--audit-log-path", "/var/log/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--proxy-client-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
-		"--proxy-client-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
+		"--proxy-client-cert-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
+		"--proxy-client-key-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
+		"--requestheader-client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--requestheader-allowed-names", "apiserver-aggregator",
+		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
+		"--requestheader-group-headers", "X-Remote-Group",
+		"--requestheader-username-headers", "X-Remote-User",
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
@@ -391,6 +401,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverProxyClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverProxyClientCertificateSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
