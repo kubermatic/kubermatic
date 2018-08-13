@@ -2,7 +2,7 @@
 
 set -e
 
-function cleanup {
+cleanup() {
   OLD_EXIT_CODE=$?
   docker rm -f $CONTAINER_NAME >/dev/null
   rm -rf ./addons-from-container

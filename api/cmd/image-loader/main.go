@@ -302,6 +302,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.KubeletClientCertificatesSecretName,
 		resources.ServiceAccountKeySecretName,
 		resources.ApiserverEtcdClientCertificateSecretName,
+		resources.ApiserverProxyClientCertificateSecretName,
 		resources.EtcdTLSCertificateSecretName,
 		resources.MachineControllerKubeconfigSecretName,
 		resources.ControllerManagerKubeconfigSecretName,

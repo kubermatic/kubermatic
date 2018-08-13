@@ -31,19 +31,19 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.6"
+        tag: "v0.1.8-rc"
         pullPolicy: "IfNotPresent"
       # list of Addons to install into every user-cluster. All need to exist in the addons image
       defaultAddons:
       - canal
       - dashboard
       - dns
-      - heapster
       - kube-proxy
       - openvpn
       - rbac
-      - kubelet-configmap  
+      - kubelet-configmap
       - default-storage-class
+      - metrics-server
   api:
     replicas: 2
     image:
