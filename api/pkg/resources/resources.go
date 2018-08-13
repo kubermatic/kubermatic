@@ -88,8 +88,10 @@ const (
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
-	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the etcd client certificate used by the apiserver
+	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
+	//ApiserverProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	ApiserverProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -189,10 +191,17 @@ const (
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
+
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
 	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key
 	ApiserverEtcdClientCertificateKeySecretKey = "apiserver-etcd-client.key"
+
+	// ApiserverProxyClientCertificateCertSecretKey apiserver-proxy-client.crt
+	ApiserverProxyClientCertificateCertSecretKey = "apiserver-proxy-client.crt"
+	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key
+	ApiserverProxyClientCertificateKeySecretKey = "apiserver-proxy-client.key"
+
 	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
 	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key

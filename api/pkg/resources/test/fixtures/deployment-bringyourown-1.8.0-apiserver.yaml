@@ -29,6 +29,7 @@ spec:
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
+        apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
         app: apiserver
         ca-secret-revision: "123456"
@@ -150,9 +151,9 @@ spec:
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --proxy-client-cert-file
-        - /etc/kubernetes/tls/apiserver-tls.crt
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.crt
         - --proxy-client-key-file
-        - /etc/kubernetes/tls/apiserver-tls.key
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.key
         - --client-ca-file
         - /etc/kubernetes/pki/ca/ca.crt
         - --kubelet-client-certificate
@@ -161,6 +162,16 @@ spec:
         - /etc/kubernetes/kubelet/kubelet-client.key
         - --v
         - "4"
+        - --requestheader-client-ca-file
+        - /etc/kubernetes/pki/ca/ca.crt
+        - --requestheader-allowed-names
+        - apiserver-aggregator
+        - --requestheader-extra-headers-prefix
+        - X-Remote-Extra-
+        - --requestheader-group-headers
+        - X-Remote-Group
+        - --requestheader-username-headers
+        - X-Remote-User
         - --kubelet-preferred-address-types
         - Hostname,InternalIP,ExternalIP
         command:
@@ -221,6 +232,9 @@ spec:
           readOnly: true
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/proxy-client
+          name: apiserver-proxy-client-certificate
           readOnly: true
       dnsConfig:
         nameservers:
@@ -287,4 +301,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: apiserver-etcd-client-certificate
+      - name: apiserver-proxy-client-certificate
+        secret:
+          defaultMode: 256
+          secretName: apiserver-proxy-client-certificate
 status: {}

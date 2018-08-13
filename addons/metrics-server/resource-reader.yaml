@@ -1,25 +1,22 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: heapster-patched
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
+  name: system:metrics-server
 rules:
 - apiGroups:
   - ""
   resources:
-  - events
-  - namespaces
+  - pods
   - nodes
   - nodes/stats
-  - pods
+  - namespaces
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - extensions
+  - "extensions"
   resources:
   - deployments
   verbs:
@@ -30,15 +27,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: heapster-patched
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
+  name: system:metrics-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: heapster-patched
+  name: system:metrics-server
 subjects:
 - kind: ServiceAccount
-  name: heapster
+  name: metrics-server
   namespace: kube-system
