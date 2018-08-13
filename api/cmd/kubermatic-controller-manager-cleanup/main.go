@@ -85,6 +85,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupAddonManager,
 		setVSphereInfraManagementUser,
 		combineCACertAndKey,
+		cleanupHeapsterAddon,
 	}
 
 	w := sync.WaitGroup{}
@@ -259,4 +260,10 @@ func combineCACertAndKey(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 		}
 	}
 	return nil
+}
+
+// We migrated from heapster to the metrics-server
+func cleanupHeapsterAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+	return deleteResourceIgnoreNonExistent(ns, "kubermatic.k8s.io", "v1", "addons", "heapster", ctx)
 }
