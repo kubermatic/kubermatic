@@ -4,3 +4,4 @@ prometheus:
   version: 'v2.2.1'
   host: ""
   storageSize: 100Gi
+  region: default
