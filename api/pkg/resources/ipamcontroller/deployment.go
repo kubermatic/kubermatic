@@ -23,7 +23,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.IPAMControllerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(resources.IPAMControllerDeploymentName)
+	dep.Labels = resources.BaseAppLabel(resources.IPAMControllerDeploymentName, nil)
 
 	dep.Spec.Replicas = resources.Int32(3)
 	dep.Spec.Selector = &metav1.LabelSelector{
