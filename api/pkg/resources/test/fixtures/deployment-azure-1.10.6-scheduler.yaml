@@ -1,0 +1,177 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: scheduler
+  name: scheduler
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io-0/path: /metrics
+        prometheus.io-0/port: "10251"
+        prometheus.io-0/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: scheduler
+        ca-secret-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
+        scheduler-kubeconfig-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --client
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --auth-nocache
+        - --remote
+        - 192.0.2.13
+        - "1194"
+        - --nobind
+        - --connect-timeout
+        - "5"
+        - --connect-retry
+        - "1"
+        - --ca
+        - /etc/kubernetes/pki/ca/ca.crt
+        - --cert
+        - /etc/openvpn/pki/client/client.crt
+        - --key
+        - /etc/openvpn/pki/client/client.key
+        - --remote-cert-tls
+        - server
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --status
+        - /run/openvpn-status
+        - --log
+        - /dev/stdout
+        command:
+        - /usr/sbin/openvpn
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: openvpn-client
+        resources:
+          limits:
+            cpu: 40m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 30Mi
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/openvpn/pki/client
+          name: openvpn-client-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
+          readOnly: true
+      - args:
+        - --kubeconfig
+        - /etc/kubernetes/scheduler/scheduler-kubeconfig
+        - --v
+        - "4"
+        command:
+        - /hyperkube
+        - scheduler
+        image: gcr.io/google_containers/hyperkube-amd64:v1.10.6
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: 10251
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: scheduler
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10251
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 64Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/scheduler
+          name: scheduler-kubeconfig
+          readOnly: true
+      dnsConfig:
+        nameservers:
+        - 192.0.2.14
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - kube-system.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+      dnsPolicy: None
+      initContainers:
+      - command:
+        - /bin/sh
+        - -ec
+        - until wget -O - -T 1 https://192.0.2.10:30000/healthz; do echo waiting for
+          apiserver; sleep 2; done
+        image: docker.io/busybox
+        imagePullPolicy: IfNotPresent
+        name: apiserver-running
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: openvpn-client-certificates
+        secret:
+          defaultMode: 256
+          secretName: openvpn-client-certificates
+      - name: ca
+        secret:
+          defaultMode: 256
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
+      - name: scheduler-kubeconfig
+        secret:
+          defaultMode: 256
+          secretName: scheduler-kubeconfig
+status: {}

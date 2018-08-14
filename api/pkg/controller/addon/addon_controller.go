@@ -299,7 +299,16 @@ func (c *Controller) sync(key string) error {
 
 	// Addon got deleted - remove all manifests
 	if addon.DeletionTimestamp != nil {
-		return c.cleanupManifests(addon, cluster)
+		if err := c.cleanupManifests(addon, cluster); err != nil {
+			return fmt.Errorf("failed to delete manifests from cluster: %v", err)
+		}
+		finalizers := sets.NewString(addon.Finalizers...)
+		if finalizers.Has(cleanupFinalizerName) {
+			finalizers.Delete(cleanupFinalizerName)
+			addon.Finalizers = finalizers.List()
+			_, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
+			return err
+		}
 	}
 
 	// Reconciling
@@ -612,7 +621,41 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 	out, err := cmd.CombinedOutput()
 	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
-		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+		if isKubectlDeleteAllNotFoundMessage(string(out), manifestFilename) {
+			return nil
+		}
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: \n%s\n%v", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out), err)
 	}
 	return nil
+}
+
+func isKubectlDeleteAllNotFoundMessage(out, filename string) bool {
+	out = strings.TrimSpace(out)
+	if out == "" {
+		return false
+	}
+	lines := strings.Split(out, "\n")
+	for _, rawLine := range lines {
+		line := strings.TrimSpace(rawLine)
+		if line == "" {
+			continue
+		}
+		if !isKubectlDeleteNotFoundMessage(line, filename) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isKubectlDeleteNotFoundMessage(message, filename string) bool {
+	if !strings.HasPrefix(message, fmt.Sprintf("Error from server (NotFound): error when deleting \"%s\"", filename)) {
+		return false
+	}
+
+	if !strings.HasSuffix(message, "not found") {
+		return false
+	}
+
+	return true
 }

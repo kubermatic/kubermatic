@@ -2,6 +2,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: prometheus
+    cluster: de-test-01
   name: prometheus
   ownerReferences:
   - apiVersion: kubermatic.k8s.io/v1
@@ -21,9 +22,10 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
+        apiserver-etcd-client-certificate-secret-revision: "123456"
         app: prometheus
         cluster: de-test-01
-        config-revision: "123456"
+        prometheus-configmap-revision: "123456"
     spec:
       containers:
       - args:
@@ -73,7 +75,7 @@ spec:
           readOnly: true
         - mountPath: /var/prometheus/data
           name: data
-        - mountPath: /etc/etcd/apiserver
+        - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
       restartPolicy: Always

@@ -12,21 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: resources.DNSResolverDeploymentName,
-	}
-	configRevision, err := data.ConfigMapRevision(resources.DNSResolverConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.DNSResolverConfigMapName)] = configRevision
-
-	return podLabels, err
-}
-
 // Service returns the service for the dns resolver
-func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+func Service(_ *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
 	var svc *corev1.Service
 	if existing != nil {
 		svc = existing
@@ -60,13 +47,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.DNSResolverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(resources.DNSResolverDeploymentName)
+	dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
 	dep.Spec.Replicas = resources.Int32(2)
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: resources.DNSResolverDeploymentName,
-		},
+		MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -80,7 +65,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get podlabels: %v", err)
 	}
@@ -141,7 +127,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 	}
-	dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+
+	dep.Spec.Template.Spec.Volumes = volumes
+
+	return dep, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
 		{
 			Name: resources.DNSResolverConfigMapName,
 			VolumeSource: corev1.VolumeSource{
@@ -162,17 +155,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
 	}
-
-	return dep, nil
 }
 
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
@@ -183,14 +180,17 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	} else {
 		cm = &corev1.ConfigMap{}
 	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+
 	dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
 	if err != nil {
 		return nil, err
 	}
 	cm.Name = resources.DNSResolverConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Data = map[string]string{
-		"Corefile": fmt.Sprintf(`
+	cm.Data["Corefile"] = fmt.Sprintf(`
 %s {
     forward . %s
     errors
@@ -200,7 +200,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
   errors
   health
 }
-`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)}
+`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)
 
 	return cm, nil
 }

@@ -83,10 +83,8 @@ const (
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
-	//CAKeySecretName is the name for the secret containing the private ca key
-	CAKeySecretName = "ca-key"
-	//CACertSecretName is the name for the secret containing the ca.crt
-	CACertSecretName = "ca-cert"
+	//CASecretName is the name for the secret containing the root ca key
+	CASecretName = "ca"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
 	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
@@ -101,8 +99,10 @@ const (
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
-	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the etcd client certificate used by the apiserver
+	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
+	//ApiserverProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	ApiserverProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -220,10 +220,17 @@ const (
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
+
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
 	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key
 	ApiserverEtcdClientCertificateKeySecretKey = "apiserver-etcd-client.key"
+
+	// ApiserverProxyClientCertificateCertSecretKey apiserver-proxy-client.crt
+	ApiserverProxyClientCertificateCertSecretKey = "apiserver-proxy-client.crt"
+	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key
+	ApiserverProxyClientCertificateKeySecretKey = "apiserver-proxy-client.key"
+
 	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
 	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
@@ -350,52 +357,6 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	return service.Spec.ClusterIP, nil
 }
 
-// UserClusterDNSResolverIP returns the 9th usable IP address
-// from the first Service CIDR block from ClusterNetwork spec.
-// This is by convention the IP address of the DNS resolver.
-// Returns "" on error.
-func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
-	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: empty CIDRBlocks", cluster.Name)
-	}
-	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
-	ip, _, err := net.ParseCIDR(block)
-	if err != nil {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
-	}
-	ip[len(ip)-1] = ip[len(ip)-1] + 10
-	return ip.String(), nil
-}
-
-// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	// DNSNone indicates that the pod should use empty DNS settings. DNS
-	// parameters such as nameservers and search paths should be defined via
-	// DNSConfig.
-	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
-	if err != nil {
-		return corev1.DNSNone, nil, err
-	}
-	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
-	}
-	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{dnsConfigResolverIP},
-		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			d.Cluster.Spec.ClusterNetwork.DNSDomain,
-		},
-		Options: []corev1.PodDNSConfigOption{
-			{
-				Name:  "ndots",
-				Value: &dnsConfigOptionNdots,
-			},
-		},
-	}, nil
-}
-
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
 func (d *TemplateData) SecretRevision(name string) (string, error) {
 	secret, err := d.SecretLister.Secrets(d.Cluster.Status.NamespaceName).Get(name)
@@ -461,9 +422,102 @@ func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
 	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
 }
 
-// GetLabels returns default labels every resource should have
-func GetLabels(app string) map[string]string {
-	return map[string]string{AppLabelKey: app}
+// ServiceClusterIP returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ServiceClusterIP(name string) (*net.IP, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	ip := net.ParseIP(service.Spec.ClusterIP)
+	if ip == nil {
+		return nil, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return &ip, nil
+}
+
+// UserClusterDNSResolverIP returns the 9th usable IP address
+// from the first Service CIDR block from ClusterNetwork spec.
+// This is by convention the IP address of the DNS resolver.
+// Returns "" on error.
+func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: empty CIDRBlocks", cluster.Name)
+	}
+	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
+	ip, _, err := net.ParseCIDR(block)
+	if err != nil {
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
+	}
+	ip[len(ip)-1] = ip[len(ip)-1] + 10
+	return ip.String(), nil
+}
+
+// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
+func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+	// DNSNone indicates that the pod should use empty DNS settings. DNS
+	// parameters such as nameservers and search paths should be defined via
+	// DNSConfig.
+	dnsConfigOptionNdots := "5"
+	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
+	if err != nil {
+		return corev1.DNSNone, nil, err
+	}
+	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
+	}
+	return corev1.DNSNone, &corev1.PodDNSConfig{
+		Nameservers: []string{dnsConfigResolverIP},
+		Searches: []string{
+			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
+			d.Cluster.Spec.ClusterNetwork.DNSDomain,
+		},
+		Options: []corev1.PodDNSConfigOption{
+			{
+				Name:  "ndots",
+				Value: &dnsConfigOptionNdots,
+			},
+		},
+	}, nil
+}
+
+// GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
+// This will force pods being restarted as soon as one of the secrets/configmaps get updated.
+func (d *TemplateData) GetPodTemplateLabels(name string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+	podLabels := BaseAppLabel(name, additionalLabels)
+
+	for _, v := range volumes {
+		if v.VolumeSource.Secret != nil {
+			revision, err := d.SecretRevision(v.VolumeSource.Secret.SecretName)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-secret-revision", v.VolumeSource.Secret.SecretName)] = revision
+		}
+		if v.VolumeSource.ConfigMap != nil {
+			revision, err := d.ConfigMapRevision(v.VolumeSource.ConfigMap.Name)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-configmap-revision", v.VolumeSource.ConfigMap.Name)] = revision
+		}
+	}
+
+	return podLabels, nil
+}
+
+// BaseAppLabel returns the minimum required labels
+func BaseAppLabel(name string, additionalLabels map[string]string) map[string]string {
+	labels := map[string]string{
+		AppLabelKey: name,
+	}
+	for k, v := range additionalLabels {
+		labels[k] = v
+	}
+	return labels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days
@@ -472,7 +526,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -490,14 +544,13 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcNam
 	}
 
 	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
-	wantIPs := sets.NewString(ips...)
+	wantIPs := sets.NewString(getIPStrings(altNames.IPs)...)
 
 	if !wantIPs.Equal(certIPs) {
 		return false
 	}
 
-	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
-	wantDNSNames.Insert(hostnames...)
+	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
 	return wantDNSNames.Equal(certDNSNames)
@@ -521,25 +574,19 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 
 // GetClusterCAFromLister returns the root CA of the cluster from the lister
 func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CACertSecretName)
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CASecretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the ca cert secret %s: %v", CACertSecretName, err)
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
 	}
 
-	//Load the ca key
-	caKeySecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CAKeySecretName)
+	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a private CA key already exists: %v", err)
-	}
-
-	key, err := certutil.ParsePrivateKeyPEM(caKeySecret.Data[CAKeySecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the private key ca secret %s: %v", CAKeySecretName, err)
+		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
 	}
 
 	return &triple.KeyPair{

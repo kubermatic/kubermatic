@@ -12,6 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	name = "cloud-config"
+)
+
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
 func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
@@ -19,6 +23,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm = existing
 	} else {
 		cm = &corev1.ConfigMap{}
+	}
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
 	}
 
 	cloudConfig, err := CloudConfig(data)
@@ -28,11 +35,9 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 
 	cm.Name = resources.CloudConfigConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.GetLabels("cloud-config")
-	cm.Data = map[string]string{
-		"config":              cloudConfig,
-		FakeVMWareUUIDKeyName: fakeVMWareUUID,
-	}
+	cm.Labels = resources.BaseAppLabel(name, nil)
+	cm.Data["config"] = cloudConfig
+	cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 
 	return cm, nil
 }
@@ -82,11 +87,13 @@ region = "{{ .DC.Spec.Openstack.Region }}"
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
-{{- if eq (substr 0 3 .Cluster.Spec.Version) "1.9" }}
+{{- if semverCompare ">=1.9.*" .Cluster.Spec.Version }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
-{{- if eq (substr 0 4 .Cluster.Spec.Version) "1.10" }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+
+[LoadBalancer]
+{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Cluster.Spec.Version }}
+manage-security-groups = true
 {{- end }}
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Azure}}

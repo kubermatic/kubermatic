@@ -144,6 +144,7 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
+		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 	)
 }

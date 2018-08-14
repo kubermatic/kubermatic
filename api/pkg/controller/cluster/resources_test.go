@@ -4,10 +4,17 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
+	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 )
 
 func TestLaunchingCreateNamespace(t *testing.T) {
@@ -69,5 +76,87 @@ func TestLaunchingCreateNamespace(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{}
+	cluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"10.10.0.0/8"}
+	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.11.0.0/8"}
+	dc := &provider.DatacenterMeta{}
+	templateData := &resources.TemplateData{
+		Cluster:           cluster,
+		DC:                dc,
+		NodeAccessNetwork: "10.12.0.0/8",
+	}
+
+	for _, create := range GetConfigMapCreators() {
+		existing := &corev1.ConfigMap{
+			Data: map[string]string{"Test": "Data"},
+		}
+		new, err := create(templateData, existing)
+		if err != nil {
+			t.Fatalf("Error executing configmap creator: %v", err)
+		}
+
+		if val, exists := new.Data["Test"]; !exists || val != "Data" {
+			t.Fatalf("Configmap creator for %s removed additional data!", new.Name)
+		}
+	}
+}
+
+func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{}
+	cluster.Status.NamespaceName = "test-ns"
+	dc := &provider.DatacenterMeta{}
+
+	keyPair, err := triple.NewCA("test-ca")
+	if err != nil {
+		t.Fatalf("Failed to generate test root ca: %v", err)
+	}
+	caSecret := &corev1.Secret{}
+	caSecret.Name = resources.CASecretName
+	caSecret.Namespace = "test-ns"
+	caSecret.Data = map[string][]byte{
+		resources.CACertSecretKey: certutil.EncodeCertPEM(keyPair.Cert),
+		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
+	}
+
+	etcdClientService := &corev1.Service{}
+	etcdClientService.Name = resources.EtcdClientServiceName
+	etcdClientService.Namespace = "test-ns"
+	etcdClientService.Spec.ClusterIP = "1.2.3.4"
+
+	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	if err := secretIndexer.Add(caSecret); err != nil {
+		t.Fatalf("Error adding secret to indexer: %v", err)
+	}
+	secretLister := listerscorev1.NewSecretLister(secretIndexer)
+
+	serviceIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	if err := serviceIndexer.Add(etcdClientService); err != nil {
+		t.Fatalf("Error adding service to idnexer: %v", err)
+	}
+	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
+
+	templateData := &resources.TemplateData{
+		Cluster:       cluster,
+		DC:            dc,
+		SecretLister:  secretLister,
+		ServiceLister: serviceLister,
+	}
+
+	for name, create := range GetSecretCreators() {
+		existing := &corev1.Secret{
+			Data: map[string][]byte{"Test": []byte("Data")},
+		}
+		new, err := create(templateData, existing)
+		if err != nil {
+			t.Fatalf("Error executing secet creator %s: %v", name, err)
+		}
+
+		if val, exists := new.Data["Test"]; !exists || string(val) != "Data" {
+			t.Fatalf("Secret creator for %s removed additional data!", new.Name)
+		}
 	}
 }

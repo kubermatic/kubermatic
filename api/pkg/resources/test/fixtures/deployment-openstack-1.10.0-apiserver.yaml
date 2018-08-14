@@ -29,11 +29,13 @@ spec:
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
+        apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
         app: apiserver
-        ca-cert-secret-revision: "123456"
+        ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:
@@ -54,11 +56,11 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/pki/ca/ca.crt
         - --cert
-        - /etc/openvpn/certs/client.crt
+        - /etc/openvpn/pki/client/client.crt
         - --key
-        - /etc/openvpn/certs/client.key
+        - /etc/openvpn/pki/client/client.key
         - --remote-cert-tls
         - server
         - --link-mtu
@@ -92,11 +94,11 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/openvpn/certs
+        - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
       - args:
         - --advertise-address
@@ -112,15 +114,15 @@ spec:
         - --etcd-servers
         - https://192.0.2.12:2379
         - --etcd-cafile
-        - /etc/etcd/apiserver/ca.crt
+        - /etc/etcd/pki/client/ca.crt
         - --etcd-certfile
-        - /etc/etcd/apiserver/apiserver-etcd-client.crt
+        - /etc/etcd/pki/client/apiserver-etcd-client.crt
         - --etcd-keyfile
-        - /etc/etcd/apiserver/apiserver-etcd-client.key
+        - /etc/etcd/pki/client/apiserver-etcd-client.key
         - --storage-backend
         - etcd3
         - --enable-admission-plugins
-        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
+        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
         - --authorization-mode
         - Node,RBAC
         - --external-hostname
@@ -149,21 +151,27 @@ spec:
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --proxy-client-cert-file
-        - /etc/kubernetes/tls/apiserver-tls.crt
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.crt
         - --proxy-client-key-file
-        - /etc/kubernetes/tls/apiserver-tls.key
+        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.key
         - --client-ca-file
-        - /etc/kubernetes/ca-cert/ca.crt
+        - /etc/kubernetes/pki/ca/ca.crt
         - --kubelet-client-certificate
         - /etc/kubernetes/kubelet/kubelet-client.crt
         - --kubelet-client-key
         - /etc/kubernetes/kubelet/kubelet-client.key
         - --v
         - "4"
-        - --feature-gates
-        - Initializers=true
-        - --runtime-config
-        - admissionregistration.k8s.io/v1alpha1
+        - --requestheader-client-ca-file
+        - /etc/kubernetes/pki/ca/ca.crt
+        - --requestheader-allowed-names
+        - apiserver-aggregator
+        - --requestheader-extra-headers-prefix
+        - X-Remote-Extra-
+        - --requestheader-group-headers
+        - X-Remote-Group
+        - --requestheader-username-headers
+        - X-Remote-User
         - --cloud-provider
         - openstack
         - --cloud-config
@@ -217,8 +225,8 @@ spec:
         - mountPath: /etc/kubernetes/kubelet
           name: kubelet-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/ca-cert
-          name: ca-cert
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
@@ -226,8 +234,11 @@ spec:
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
           readOnly: true
-        - mountPath: /etc/etcd/apiserver
+        - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/proxy-client
+          name: apiserver-proxy-client-certificate
           readOnly: true
       dnsConfig:
         nameservers:
@@ -244,8 +255,8 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/apiserver/ca.crt
-          --cert=/etc/etcd/apiserver/apiserver-etcd-client.crt --key=/etc/etcd/apiserver/apiserver-etcd-client.key
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt
+          --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key
           --dial-timeout=2s --endpoints=[https://192.0.2.12:2379] get foo; do echo
           waiting for etcd; sleep 2; done;
         image: quay.io/coreos/etcd:v3.2.7
@@ -255,7 +266,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/etcd/apiserver
+        - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
       volumes:
@@ -275,10 +286,13 @@ spec:
         secret:
           defaultMode: 256
           secretName: kubelet-client-certificates
-      - name: ca-cert
+      - name: ca
         secret:
           defaultMode: 256
-          secretName: ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
       - name: service-account-key
         secret:
           defaultMode: 256
@@ -291,4 +305,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: apiserver-etcd-client-certificate
+      - name: apiserver-proxy-client-certificate
+        secret:
+          defaultMode: 256
+          secretName: apiserver-proxy-client-certificate
 status: {}

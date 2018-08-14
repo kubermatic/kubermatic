@@ -1,6 +1,8 @@
 package prometheus
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,31 +35,27 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		set = &appsv1.StatefulSet{}
 	}
 
-	cm, err := data.ConfigMapLister.ConfigMaps(data.Cluster.Status.NamespaceName).Get(resources.PrometheusConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-
 	set.Name = resources.PrometheusStatefulSetName
 	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	set.Labels = resources.GetLabels(name)
+
+	requiredBaseLabels := map[string]string{"cluster": data.Cluster.Name}
+	set.Labels = resources.BaseAppLabel(name, requiredBaseLabels)
+	set.Spec.Selector = &metav1.LabelSelector{
+		MatchLabels: resources.BaseAppLabel(name, requiredBaseLabels),
+	}
 
 	set.Spec.Replicas = resources.Int32(1)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.ServiceName = resources.PrometheusServiceName
-	set.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-		},
+
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
 
 	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-			"config-revision":     cm.ObjectMeta.ResourceVersion,
-		},
+		Labels: podLabels,
 	}
 	set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
 	set.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
@@ -112,7 +110,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -145,7 +143,13 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	set.Spec.Template.Spec.Volumes = []corev1.Volume{
+	set.Spec.Template.Spec.Volumes = volumes
+
+	return set, nil
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
 		{
 			Name: volumeConfigName,
 			VolumeSource: corev1.VolumeSource{
@@ -172,6 +176,4 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 			},
 		},
 	}
-
-	return set, nil
 }

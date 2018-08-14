@@ -84,10 +84,22 @@ func TestLoadFiles(t *testing.T) {
 			Version: semver.MustParse("1.9.0"),
 		},
 		{
+			Version: semver.MustParse("1.9.10"),
+		},
+		{
 			Version: semver.MustParse("1.10.0"),
 		},
 		{
+			Version: semver.MustParse("1.10.6"),
+		},
+		{
 			Version: semver.MustParse("1.11.0"),
+		},
+		{
+			Version: semver.MustParse("1.11.1"),
+		},
+		{
+			Version: semver.MustParse("1.12.0"),
 		},
 	}
 
@@ -228,13 +240,6 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            resources.CACertSecretName,
-							Namespace:       cluster.Status.NamespaceName,
-						},
-					},
-					&v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							ResourceVersion: "123456",
 							Name:            resources.ApiserverTLSSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
@@ -249,7 +254,7 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            resources.CAKeySecretName,
+							Name:            resources.CASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
@@ -263,7 +268,63 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
+							Name:            resources.ApiserverProxyClientCertificateSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
 							Name:            resources.EtcdTLSCertificateSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.MachineControllerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNServerCertificatesSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNClientCertificatesSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.ControllerManagerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubeStateMetricsKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.SchedulerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.OpenVPNClientConfigsConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},

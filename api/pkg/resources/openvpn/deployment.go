@@ -14,8 +14,6 @@ import (
 )
 
 var (
-	name = "openvpn-server"
-
 	defaultInitMemoryRequest = resource.MustParse("128Mi")
 	defaultInitCPURequest    = resource.MustParse("250m")
 	defaultInitMemoryLimit   = resource.MustParse("512Mi")
@@ -25,6 +23,10 @@ var (
 	defaultCPURequest    = resource.MustParse("25m")
 	defaultMemoryLimit   = resource.MustParse("256Mi")
 	defaultCPULimit      = resource.MustParse("250m")
+)
+
+const (
+	name = "openvpn-server"
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
@@ -38,7 +40,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.OpenVPNServerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -58,9 +60,10 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -95,7 +98,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		"--route", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String(),
 	}...)
 
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "iptables-init",
@@ -176,9 +179,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		"--mode", "server",
 		"--lport", "1194",
 		"--server", "10.20.0.0", "255.255.255.0",
-		"--ca", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cert", "/etc/openvpn/certs/server.crt",
-		"--key", "/etc/openvpn/certs/server.key",
+		"--ca", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cert", "/etc/openvpn/pki/server/server.crt",
+		"--key", "/etc/openvpn/pki/server/server.key",
 		"--dh", "/etc/openvpn/dh/dh2048.pem",
 		"--duplicate-cn",
 		"--client-config-dir", "/etc/openvpn/clients",
@@ -246,12 +249,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				},
 				{
 					Name:      resources.OpenVPNServerCertificatesSecretName,
-					MountPath: "/etc/openvpn/certs",
+					MountPath: "/etc/openvpn/pki/server",
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
 					ReadOnly:  true,
 				},
 				{
@@ -266,26 +269,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: name,
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	caCertSecretRevision, err := data.SecretRevision(resources.CACertSecretName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-secret-revision", resources.CACertSecretName)] = caCertSecretRevision
-
-	return podLabels, nil
-}
-
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
@@ -295,11 +278,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},

@@ -13,6 +13,8 @@ data:
     trust-device-path = false
     bs-version = "v2"
     ignore-volume-az = true
+
+    [LoadBalancer]
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null

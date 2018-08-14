@@ -49,14 +49,14 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
+
+	baseLabels := getBasePodLabels(data)
 	set.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-			"cluster":             data.Cluster.Name,
-		},
+		MatchLabels: baseLabels,
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
@@ -139,9 +139,9 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"/usr/local/bin/etcdctl",
-							"--cacert", "/etc/etcd/ca/ca.crt",
-							"--cert", "/etc/etcd/client/apiserver-etcd-client.crt",
-							"--key", "/etc/etcd/client/apiserver-etcd-client.key",
+							"--cacert", "/etc/etcd/pki/ca/ca.crt",
+							"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+							"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 							"--endpoints", "https://localhost:2379", "endpoint", "health",
 						},
 					},
@@ -154,15 +154,15 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 				},
 				{
 					Name:      resources.EtcdTLSCertificateSecretName,
-					MountPath: "/etc/etcd/tls",
+					MountPath: "/etc/etcd/pki/tls",
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/etcd/ca",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/etcd/pki/ca",
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/client",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -176,7 +176,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 					Weight: 100,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: getBasePodLabels(data),
+							MatchLabels: baseLabels,
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},
@@ -185,35 +185,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	set.Spec.Template.Spec.Volumes = []corev1.Volume{
-		{
-			Name: resources.EtcdTLSCertificateSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.EtcdTLSCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.CACertSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.ApiserverEtcdClientCertificateSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-	}
+	set.Spec.Template.Spec.Volumes = volumes
 
 	// Make sure, we don't change size of existing pvc's
 	// Phase needs to be taken from an existing
@@ -239,29 +211,49 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	return set, nil
 }
 
-func getBasePodLabels(data *resources.TemplateData) map[string]string {
-	return map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.EtcdTLSCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.EtcdTLSCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverEtcdClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
 	}
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := getBasePodLabels(data)
-
-	secretDependencies := []string{
-		resources.ApiserverEtcdClientCertificateSecretName,
-		resources.EtcdTLSCertificateSecretName,
+func getBasePodLabels(data *resources.TemplateData) map[string]string {
+	additionalLabels := map[string]string{
+		"cluster": data.Cluster.Name,
 	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	return podLabels, nil
+	return resources.BaseAppLabel(resources.EtcdStatefulSetName, additionalLabels)
 }
 
 type commandTplData struct {
@@ -368,9 +360,9 @@ exec /usr/local/bin/etcd \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
     --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/ca/ca.crt \
+    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
-    --cert-file /etc/etcd/tls/etcd-tls.crt \
-    --key-file /etc/etcd/tls/etcd-tls.key
+    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
+    --key-file /etc/etcd/pki/tls/etcd-tls.key
 `
 )

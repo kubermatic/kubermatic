@@ -41,7 +41,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ControllerManagerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas != nil {
@@ -49,9 +49,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -65,7 +63,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	kcDir := "/etc/kubernetes/controllermanager"
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "apiserver-running",
@@ -115,13 +114,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	controllerManagerMounts := []corev1.VolumeMount{
 		{
-			Name:      resources.CACertSecretName,
-			MountPath: "/etc/kubernetes/ca-cert",
-			ReadOnly:  true,
-		},
-		{
-			Name:      resources.CAKeySecretName,
-			MountPath: "/etc/kubernetes/ca-key",
+			Name:      resources.CASecretName,
+			MountPath: "/etc/kubernetes/pki/ca",
 			ReadOnly:  true,
 		},
 		{
@@ -203,9 +197,9 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 	flags := []string{
 		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		"--root-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cluster-signing-cert-file", "/etc/kubernetes/ca-cert/ca.crt",
-		"--cluster-signing-key-file", "/etc/kubernetes/ca-key/ca.key",
+		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
 		"--cluster-cidr", data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
@@ -231,49 +225,13 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 	return flags
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: name,
-	}
-
-	secretDependencies := []string{
-		resources.CACertSecretName,
-		resources.CAKeySecretName,
-		resources.ServiceAccountKeySecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	return podLabels, nil
-}
-
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.CAKeySecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CAKeySecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

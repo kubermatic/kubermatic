@@ -44,7 +44,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Name = resources.ApiserverDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.GetLabels(name)
+	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster.Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -52,9 +52,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: name,
-		},
+		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -68,7 +66,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	podLabels, err := getTemplatePodLabels(data)
+	volumes := getVolumes()
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	if err != nil {
 		return nil, err
 	}
-	dep.Spec.Template.Spec.Volumes = getVolumes()
+	dep.Spec.Template.Spec.Volumes = volumes
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
@@ -107,14 +106,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/apiserver/ca.crt --cert=/etc/etcd/apiserver/apiserver-etcd-client.crt --key=/etc/etcd/apiserver/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
 			},
@@ -200,8 +199,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.CACertSecretName,
-					MountPath: "/etc/kubernetes/ca-cert",
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
 					ReadOnly:  true,
 				},
 				{
@@ -216,7 +215,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				},
 				{
 					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/apiserver",
+					MountPath: "/etc/etcd/pki/client",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.ApiserverProxyClientCertificateSecretName,
+					MountPath: "/etc/kubernetes/pki/proxy-client",
 					ReadOnly:  true,
 				},
 			},
@@ -246,9 +250,9 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
 		"--etcd-servers", etcd,
-		"--etcd-cafile", "/etc/etcd/apiserver/ca.crt",
-		"--etcd-certfile", "/etc/etcd/apiserver/apiserver-etcd-client.crt",
-		"--etcd-keyfile", "/etc/etcd/apiserver/apiserver-etcd-client.key",
+		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
+		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
 		admissionControlFlagName, admissionControlFlagValue,
 		"--authorization-mode", "Node,RBAC",
@@ -256,7 +260,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth", "true",
 		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		// There are efforts upstream adding support for multiple cidr's. Until that has landet, we'll take the first entry
+		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
 		"--service-cluster-ip-range", data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
 		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
@@ -266,12 +270,17 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--audit-log-path", "/var/log/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--proxy-client-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
-		"--proxy-client-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--client-ca-file", "/etc/kubernetes/ca-cert/ca.crt",
+		"--proxy-client-cert-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
+		"--proxy-client-key-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
+		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
+		"--requestheader-client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--requestheader-allowed-names", "apiserver-aggregator",
+		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
+		"--requestheader-group-headers", "X-Remote-Group",
+		"--requestheader-username-headers", "X-Remote-User",
 	}
 	if clusterVersionSemVer.Minor() >= 9 {
 		flags = append(flags, "--feature-gates", "Initializers=true")
@@ -329,36 +338,6 @@ func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 	return admissionControlFlagName, admissionControlFlagValue
 }
 
-func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
-	podLabels := map[string]string{
-		resources.AppLabelKey: "apiserver",
-	}
-
-	secretDependencies := []string{
-		resources.TokensSecretName,
-		resources.ApiserverTLSSecretName,
-		resources.KubeletClientCertificatesSecretName,
-		resources.CACertSecretName,
-		resources.ServiceAccountKeySecretName,
-		resources.ApiserverEtcdClientCertificateSecretName,
-	}
-	for _, name := range secretDependencies {
-		revision, err := data.SecretRevision(name)
-		if err != nil {
-			return nil, err
-		}
-		podLabels[fmt.Sprintf("%s-secret-revision", name)] = revision
-	}
-
-	cloudConfigRevision, err := data.ConfigMapRevision(resources.CloudConfigConfigMapName)
-	if err != nil {
-		return nil, err
-	}
-	podLabels[fmt.Sprintf("%s-configmap-revision", resources.CloudConfigConfigMapName)] = cloudConfigRevision
-
-	return podLabels, nil
-}
-
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
@@ -398,11 +377,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CACertSecretName,
+			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CACertSecretName,
+					SecretName:  resources.CASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
@@ -431,6 +416,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.ApiserverProxyClientCertificateSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.ApiserverProxyClientCertificateSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
