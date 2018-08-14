@@ -3,6 +3,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net"
 	"regexp"
 
 	"github.com/Masterminds/semver"
@@ -56,13 +57,46 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
+	if err = validateMachineNetworksFromClusterSpec(spec); err != nil {
+		return fmt.Errorf("machine network validation failed, see: %v", err)
+	}
+
+	return nil
+}
+
+func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec) error {
+	networks := spec.MachineNetworks
+
+	if len(networks) == 0 {
+		return nil
+	}
+
 	clusterSemVer, err := semver.NewVersion(spec.Version)
 	if err != nil {
 		return fmt.Errorf("couldnt parse version, see: %v", err)
 	}
 
-	if len(spec.MachineNetworks) > 0 && clusterSemVer.Minor() < 9 {
+	if len(networks) > 0 && clusterSemVer.Minor() < 9 {
 		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
+	}
+
+	for _, network := range networks {
+		_, _, err := net.ParseCIDR(network.CIDR)
+		if err != nil {
+			return fmt.Errorf("couldn't parse cidr `%s`, see: %v", network.CIDR, err)
+		}
+
+		if net.ParseIP(network.Gateway) == nil {
+			return fmt.Errorf("couldn't parse gateway `%s`", network.Gateway)
+		}
+
+		if len(network.DNSServers) > 0 {
+			for _, dnsServer := range network.DNSServers {
+				if net.ParseIP(dnsServer) == nil {
+					return fmt.Errorf("couldn't parse dns server `%s`", dnsServer)
+				}
+			}
+		}
 	}
 
 	return nil
