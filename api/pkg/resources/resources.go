@@ -88,8 +88,10 @@ const (
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
-	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the etcd client certificate used by the apiserver
+	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
+	//ApiserverProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	ApiserverProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -189,10 +191,17 @@ const (
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
+
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
 	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key
 	ApiserverEtcdClientCertificateKeySecretKey = "apiserver-etcd-client.key"
+
+	// ApiserverProxyClientCertificateCertSecretKey apiserver-proxy-client.crt
+	ApiserverProxyClientCertificateCertSecretKey = "apiserver-proxy-client.crt"
+	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key
+	ApiserverProxyClientCertificateKeySecretKey = "apiserver-proxy-client.key"
+
 	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
 	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
@@ -381,6 +390,22 @@ func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
 	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
 }
 
+// ServiceClusterIP returns the ClusterIP as string for the
+// Service specified by `name`. Service lookup happens within
+// `Cluster.Status.NamespaceName`. When ClusterIP fails to parse
+// as valid IP address, an error is returned.
+func (d *TemplateData) ServiceClusterIP(name string) (*net.IP, error) {
+	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(name)
+	if err != nil {
+		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", name, d.Cluster.Name, err)
+	}
+	ip := net.ParseIP(service.Spec.ClusterIP)
+	if ip == nil {
+		return nil, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", name, d.Cluster.Name, service.Spec.ClusterIP, err)
+	}
+	return &ip, nil
+}
+
 // UserClusterDNSResolverIP returns the 9th usable IP address
 // from the first Service CIDR block from ClusterNetwork spec.
 // This is by convention the IP address of the DNS resolver.
@@ -469,7 +494,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -487,14 +512,13 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName, svcNam
 	}
 
 	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
-	wantIPs := sets.NewString(ips...)
+	wantIPs := sets.NewString(getIPStrings(altNames.IPs)...)
 
 	if !wantIPs.Equal(certIPs) {
 		return false
 	}
 
-	wantDNSNames := sets.NewString(svcName, svcName+"."+svcNamespace, svcName+"."+svcNamespace+".svc", svcName+"."+svcNamespace+".svc."+dnsDomain)
-	wantDNSNames.Insert(hostnames...)
+	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
 	return wantDNSNames.Equal(certDNSNames)

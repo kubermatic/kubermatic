@@ -38,7 +38,7 @@
                     "subdir": "grafana-builder"
                 }
             },
-            "version": "42f72ac60fad1022d26f1a88062689e94219d582"
+            "version": "a17504d81e2ab5b29d97c77faf72b8d7644bbabf"
         },
         {
             "name": "etcd-mixin",
@@ -48,17 +48,17 @@
                     "subdir": "Documentation/etcd-mixin"
                 }
             },
-            "version": "93be31d43a2728d1750120aeae7a483698ccead2"
+            "version": "4fa58fc062deccb7c598351a8a5a3686e972148d"
         },
         {
             "name": "node_exporter",
             "source": {
                 "git": {
-                    "remote": "https://github.com/metalmatze/node_exporter",
+                    "remote": "https://github.com/tomwilkie/node_exporter",
                     "subdir": "node-mixin"
                 }
             },
-            "version": "0fa5ec36b73fe67d417d07b22f3fe7871ff2f615"
+            "version": "088f124f827f35fd5bb52b265f5d580e0e200491"
         },
         {
             "name": "prometheus",
@@ -69,6 +69,16 @@
                 }
             },
             "version": "3dc646872c0412832a2879a2a59c6acaa77aa68d"
+        },
+        {
+            "name": "grafana",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/brancz/kubernetes-grafana",
+                    "subdir": "grafana"
+                }
+            },
+            "version": "8f131a315dfe877819c3a490eedfbcfe183b95cf"
         }
     ]
 }

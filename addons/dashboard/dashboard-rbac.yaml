@@ -21,10 +21,10 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["kubernetes-dashboard-settings"]
   verbs: ["get", "update"]
-  # Allow Dashboard to get metrics from heapster.
+  # Allow Dashboard to get metrics from metrics-server.
 - apiGroups: [""]
   resources: ["services"]
-  resourceNames: ["heapster"]
+  resourceNames: ["metrics-server"]
   verbs: ["proxy"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
