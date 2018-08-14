@@ -6,7 +6,7 @@ local drone = import 'drone/drone.libsonnet';
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
   pipeline: {
 
-    local goImage = 'golang:1.10.3',
+    local goImage = 'quay.io/kubermatic/build',
     local dockerSecrets = ['docker_username', 'docker_password'],
     local whenBranchMaster = { when: { branch: 'master' } },
     local whenEventTag = { when: { event: ['tag'] } },
@@ -31,7 +31,7 @@ local drone = import 'drone/drone.libsonnet';
     local tillerNamespace = ' --tiller-namespace=kubermatic-installer',
 
 
-    '0-dep': drone.step.new('metalmatze/dep:0.5.0') + {
+    '0-dep': drone.step.new(goImage) + {
       commands: [
         'cd api',
         'dep ensure -v',
@@ -54,14 +54,14 @@ local drone = import 'drone/drone.libsonnet';
     },
 
     // Linting
-    '3-license-validation': drone.step.new('metalmatze/wwhrd:1.9', group='lint') + {
+    '3-license-validation': drone.step.new(goImage, group='lint') + {
       commands: [
         'cd api',
         'wwhrd check -f ../allowed_licensed.yaml',
       ],
     },
 
-    '3-lint': drone.step.new('quay.io/kubermatic/gometalinter:latest', group='lint') + {
+    '3-lint': drone.step.new(goImage, group='lint') + {
       commands: [
         'cd api',
         'make lint',
@@ -95,7 +95,7 @@ local drone = import 'drone/drone.libsonnet';
       ],
     },
 
-    '4-write-version': drone.step.new('ubuntu', group='build') + {
+    '4-write-version': drone.step.new(goImage, group='build') + {
       commands: [
         'cd config',
         'sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml',
@@ -133,7 +133,7 @@ local drone = import 'drone/drone.libsonnet';
       context: 'api',
     } + whenEventTag,
 
-    '7-sync-charts': drone.step.new('alpine:3.7') + {
+    '7-sync-charts': drone.step.new(goImage) + {
       commands: [
         'apk add --no-cache -U git bash openssh',
         'git config --global user.email "dev@loodse.com"',

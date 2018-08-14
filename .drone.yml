@@ -4,33 +4,33 @@ pipeline:
     - cd api
     - dep ensure -v
     - '[[ -z "$(git diff)" ]]'
-    image: metalmatze/dep:0.5.0
+    image: quay.io/kubermatic/build
     pull: true
   1-gofmt:
     commands:
     - cd api
     - make gofmt
-    image: golang:1.10.3
+    image: quay.io/kubermatic/build
     pull: true
   2-verify-codegen:
     commands:
     - cd api
     - ./hack/verify-codegen.sh
-    image: golang:1.10.3
+    image: quay.io/kubermatic/build
     pull: true
   3-license-validation:
     commands:
     - cd api
     - wwhrd check -f ../allowed_licensed.yaml
     group: lint
-    image: metalmatze/wwhrd:1.9
+    image: quay.io/kubermatic/build
     pull: true
   3-lint:
     commands:
     - cd api
     - make lint
     group: lint
-    image: quay.io/kubermatic/gometalinter:latest
+    image: quay.io/kubermatic/build
     pull: true
   3-verify-addons-up-to-date:
     commands:
@@ -45,21 +45,21 @@ pipeline:
     - cd api
     - ./hack/verify-swagger.sh
     group: lint
-    image: golang:1.10.3
+    image: quay.io/kubermatic/build
     pull: true
   4-build:
     commands:
     - cd api
     - make build
     group: build
-    image: golang:1.10.3
+    image: quay.io/kubermatic/build
     pull: true
   4-test:
     commands:
     - cd api
     - make test
     group: build
-    image: golang:1.10.3
+    image: quay.io/kubermatic/build
     pull: true
   4-write-version:
     commands:
@@ -69,7 +69,7 @@ pipeline:
     - sed -i "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
     - cat versions-values.yaml
     group: build
-    image: ubuntu
+    image: quay.io/kubermatic/build
     pull: true
   5-kubermatic-docker-master:
     context: api
@@ -125,7 +125,7 @@ pipeline:
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
-    image: alpine:3.7
+    image: quay.io/kubermatic/build
     pull: true
     when:
       branch:
