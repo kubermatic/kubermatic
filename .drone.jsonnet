@@ -143,7 +143,7 @@ local drone = import 'drone/drone.libsonnet';
       when: {
         branch: {
           include: ['release/*'],
-          exclude: ['release/v1.*'],
+          exclude: ['release/v1.*', 'release/*cherry*'],
         },
       },
     },
