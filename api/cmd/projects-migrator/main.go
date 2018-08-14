@@ -123,7 +123,7 @@ func migrateToProject(ctx migrationContext) error {
 	glog.Info("STEP 1: getting the list of clusters that needs to be migrated")
 	clustersToAdoptByUserID, err := getAllClusters(ctx)
 	if err != nil {
-		return nil
+		return err
 	}
 	printClusterToAdopt(clustersToAdoptByUserID)
 
@@ -173,7 +173,7 @@ func migrateToProject(ctx migrationContext) error {
 	glog.Info("STEP 3: creating a default project for each user if not already exists")
 	ownersOfClusterWithProject := map[string]kubermaticv1.Project{}
 	{
-		defaultProjectName := "competent-pike"
+		defaultProjectName := "default"
 		for _, user := range ownersOfClustersToAdopt {
 			projectName := ""
 			// if the users owns more than one project take the first one
