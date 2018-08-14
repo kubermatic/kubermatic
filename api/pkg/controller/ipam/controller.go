@@ -188,7 +188,11 @@ func (c *Controller) getUsedIPs() ([]net.IP, error) {
 			continue
 		}
 
-		ip := net.ParseIP(cfg.Network.CIDR)
+		ip, _, err := net.ParseCIDR(cfg.Network.CIDR)
+		if err != nil {
+			return nil, err
+		}
+
 		if ip == nil {
 			continue
 		}
@@ -222,9 +226,10 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 	}
 
 	mask, _ := network.IPNet.Mask.Size()
+	cidr := fmt.Sprintf("%s/%d", ip.String(), mask)
 
 	cfg.Network = &providerconfig.NetworkConfig{
-		CIDR:    fmt.Sprintf("%s/%d", ip.String(), mask),
+		CIDR:    cidr,
 		Gateway: network.Gateway.String(),
 		DNS: providerconfig.DNSConfig{
 			Servers: c.ipsToStrs(network.DNSServers),
@@ -252,10 +257,10 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 		return fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
 	}
 
-	return c.awaitIPSync(machine, ip)
+	return c.awaitIPSync(machine, cidr)
 }
 
-func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) error {
+func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, cidr string) error {
 	return wait.Poll(10*time.Millisecond, 60*time.Second, func() (bool, error) {
 		key, err := cache.MetaNamespaceKeyFunc(machine)
 		if err != nil {
@@ -272,7 +277,7 @@ func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) er
 			return false, fmt.Errorf("couldn't get providerconfig for machine %s, see: %v", m2.Name, err)
 		}
 
-		return cfg2.Network != nil && cfg2.Network.CIDR == ip.String(), nil
+		return cfg2.Network != nil && cfg2.Network.CIDR == cidr, nil
 	})
 }
 

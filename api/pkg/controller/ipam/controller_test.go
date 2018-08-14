@@ -127,7 +127,7 @@ func TestReuseReleasedIP(t *testing.T) {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
-	assertNetworkEquals(t, mBabsi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+	assertNetworkEquals(t, mBabsi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 }
 
 func TestFailWhenCIDRIsExhausted(t *testing.T) {
