@@ -91,6 +91,7 @@ func NewController(client machineclientset.Interface, machineInformer machineinf
 
 // Run executes the worker loop. Blocks.
 func (c *Controller) Run(stopCh <-chan struct{}) error {
+	// ATM it is important that only one worker is running at a time since we dont do any locking for the "wait till cache has synchronized"-mechanism which would be needed if we have multiple workers running.
 	go wait.Until(c.runWorker, time.Second, stopCh)
 	<-stopCh
 
@@ -144,8 +145,7 @@ func (c *Controller) syncMachine(mo *machinev1alpha1.Machine) error {
 		return nil
 	}
 
-	_, err := c.initMachineIfNeeded(m)
-	return err
+	return c.initMachineIfNeeded(m)
 }
 
 func (c *Controller) enqueueMachine(obj interface{}) {
@@ -199,15 +199,15 @@ func (c *Controller) getUsedIPs() ([]net.IP, error) {
 	return ips, nil
 }
 
-func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool, error) {
+func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error {
 	if !c.testIfInitIsNeeded(machine) {
 		glog.V(6).Infof("Skipping machine %s because no initialization is needed (yet)", machine.Name)
-		return false, nil
+		return nil
 	}
 
 	cfg, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	ip, network, err := c.getNextFreeIP()
@@ -218,11 +218,13 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool
 			glog.Errorf("couldn't update error state for machine %s, see: %v", machine.Name, subErr)
 		}
 
-		return false, err
+		return err
 	}
 
+	mask, _ := network.IPNet.Mask.Size()
+
 	cfg.Network = &providerconfig.NetworkConfig{
-		CIDR:    ip.String(),
+		CIDR:    fmt.Sprintf("%s/%d", ip.String(), mask),
 		Gateway: network.Gateway.String(),
 		DNS: providerconfig.DNSConfig{
 			Servers: c.ipsToStrs(network.DNSServers),
@@ -231,7 +233,7 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool
 
 	cfgSerialized, err := json.Marshal(cfg)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	machine.Finalizers = append(machine.Finalizers, finalizerName)
@@ -247,10 +249,10 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) (bool
 
 	_, err = c.client.MachineV1alpha1().Machines().Update(machine)
 	if err != nil {
-		return false, fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
+		return fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
 	}
 
-	return true, c.awaitIPSync(machine, ip)
+	return c.awaitIPSync(machine, ip)
 }
 
 func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, ip net.IP) error {
@@ -310,7 +312,7 @@ func (c *Controller) getNextFreeIP() (net.IP, Network, error) {
 
 func (c *Controller) getNextFreeIPForCIDR(network Network, usedIps []net.IP) (net.IP, error) {
 	for ip := network.IP.Mask(network.IPNet.Mask); network.IPNet.Contains(ip); c.inc(ip) {
-		if ip[len(ip)-1] == 0 || ip.Equal(network.Gateway) {
+		if ip[len(ip)-1] == 0 || ip[len(ip)-1] == 255 || ip.Equal(network.Gateway) {
 			continue
 		}
 

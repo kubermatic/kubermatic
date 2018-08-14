@@ -40,7 +40,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
-	assertNetworkEquals(t, m2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+	assertNetworkEquals(t, m2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 }
 
 func TestMultipleCIDRAllocation(t *testing.T) {
@@ -50,9 +50,9 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 	}
 
 	machines := []machineTestData{
-		{"192.168.0.2", "192.168.0.1", createMachine("susi")},
-		{"192.168.0.3", "192.168.0.1", createMachine("babsi")},
-		{"10.0.0.2", "10.0.0.1", createMachine("joan")},
+		{"192.168.0.2/30", "192.168.0.1", createMachine("susi")},
+		{"192.168.0.3/30", "192.168.0.1", createMachine("babsi")},
+		{"10.0.0.2/24", "10.0.0.1", createMachine("joan")},
 	}
 
 	machineValues := make([]runtime.Object, 0, len(machines))
@@ -97,7 +97,7 @@ func TestReuseReleasedIP(t *testing.T) {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
-	assertNetworkEquals(t, mSusi2, "192.168.0.2", "192.168.0.1", "8.8.8.8")
+	assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 
 	err = ctrl.client.MachineV1alpha1().Machines().Delete("susi", &metav1.DeleteOptions{})
 	if err != nil {
