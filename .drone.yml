@@ -131,7 +131,7 @@ pipeline:
       branch:
         exclude:
         - release/v1.*
-        - '*cherry-pick*'
+        - release/*cherry*
         include:
         - release/*
   8-deploy-dev:
