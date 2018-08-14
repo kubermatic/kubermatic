@@ -131,6 +131,7 @@ pipeline:
       branch:
         exclude:
         - release/v1.*
+        - release/*cherry*
         include:
         - release/*
   8-deploy-dev:
