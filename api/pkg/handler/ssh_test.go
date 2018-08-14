@@ -59,7 +59,7 @@ func TestListSSHKeys(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -70,7 +70,7 @@ func TestListSSHKeys(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -194,7 +194,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -205,7 +205,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 	}
@@ -251,7 +251,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 				Name: "user1-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
-				Owner:       "user1",
+				Owner:       "1233",
 				PublicKey:   "AAAAAAAAAAAAAAA",
 				Fingerprint: "BBBBBBBBBBBBBBB",
 				Name:        "user1-1",
@@ -263,7 +263,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 				Name: "user1-2",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
-				Owner:       "user1",
+				Owner:       "1233",
 				PublicKey:   "CCCCCCCCCCCCCCC",
 				Fingerprint: "DDDDDDDDDDDDDDD",
 				Name:        "user1-2",
@@ -275,7 +275,7 @@ func TestSSHKeysEndpoint(t *testing.T) {
 				Name: "user2-1",
 			},
 			Spec: kubermaticv1.SSHKeySpec{
-				Owner:       "user2",
+				Owner:       "222",
 				PublicKey:   "EEEEEEEEEEEEEEE",
 				Fingerprint: "FFFFFFFFFFFFFFF",
 				Name:        "user2-1",
@@ -288,38 +288,53 @@ func TestSSHKeysEndpoint(t *testing.T) {
 		name         string
 		wantKeyNames []string
 		username     string
+		useremail    string
+		userid       string
 		admin        bool
 	}{
 		{
 			name:         "got user1 keys",
 			wantKeyNames: []string{"user1-1", "user1-2"},
 			username:     testUserName,
+			useremail:    testUserEmail,
+			userid:       testUserID,
 			admin:        false,
 		},
 		{
 			name:         "got user2 keys",
 			wantKeyNames: []string{"user2-1"},
 			username:     "user2",
+			useremail:    "user2@user2.com",
+			userid:       "222",
 			admin:        false,
 		},
 		{
 			name:         "got no keys",
 			wantKeyNames: []string{},
 			username:     "does-not-exist",
+			useremail:    "does@not.exist",
+			userid:       "222111",
 			admin:        false,
 		},
 		{
 			name:         "admin got all keys",
 			wantKeyNames: []string{"user1-1", "user1-2", "user2-1"},
 			username:     testUserName,
+			useremail:    testUserEmail,
+			userid:       testUserID,
 			admin:        true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			apiUser := getUser(test.useremail, test.userid, test.username, test.admin)
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, keyList...)
+			kubermaticObj = append(kubermaticObj, apiUserToKubermaticUser(apiUser))
+
 			req := httptest.NewRequest("GET", "/api/v1/ssh-keys", nil)
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, keyList, nil, nil)
+			ep, err := createTestEndpoint(apiUser, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

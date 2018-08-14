@@ -90,7 +90,7 @@ func TestAddUserToProject(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "owners-plan9",
@@ -127,7 +127,7 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser: apiv1.User{
 				ID:    testUserID,
 				Name:  testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"placeX","group":"editors-placeX"},{"id":"plan9","group":"editors-plan9"}]}`,
 			ExpectedActions:  10,
@@ -211,7 +211,7 @@ func TestAddUserToProject(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "editors-plan9",
@@ -244,7 +244,7 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser: apiv1.User{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"only the owner of the project can invite the other users"}}`,
 			ExpectedActions:  9,
@@ -309,7 +309,7 @@ func TestAddUserToProject(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "owners-plan9",
@@ -342,7 +342,7 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser: apiv1.User{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you can only assign the user to plan9 project"}}`,
 			ExpectedActions:  8,
@@ -350,7 +350,7 @@ func TestAddUserToProject(t *testing.T) {
 
 		{
 			Name:          "scenario 4: john the owner of the plan9 project tries to invite  himself to another group",
-			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9", "group":"editors"}]}`, testEmail),
+			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9", "group":"editors"}]}`, testUserEmail),
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
@@ -407,7 +407,7 @@ func TestAddUserToProject(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "owners-plan9",
@@ -440,7 +440,7 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser: apiv1.User{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot assign yourself to a different group"}}`,
 			ExpectedActions:  8,
@@ -505,7 +505,7 @@ func TestAddUserToProject(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "owners-plan9",
@@ -538,7 +538,7 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser: apiv1.User{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
 			ExpectedActions:  8,
@@ -595,7 +595,7 @@ func TestGetCurrentUser(t *testing.T) {
 	tester := apiv1.User{
 		Name:  testUserName,
 		ID:    testUserID,
-		Email: testEmail,
+		Email: testUserEmail,
 	}
 
 	testcases := []struct {
@@ -616,7 +616,7 @@ func TestGetCurrentUser(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 					},
 				},
 			},
@@ -665,7 +665,7 @@ func TestGetCurrentUser(t *testing.T) {
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  testUserName,
 						ID:    testUserID,
-						Email: testEmail,
+						Email: testUserEmail,
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
 								Group: "owners-plan9",
@@ -710,4 +710,64 @@ func TestGetCurrentUser(t *testing.T) {
 			compareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
+}
+
+func TestNewUser(t *testing.T) {
+	expectedResponse := `{"id":"","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+
+	expectedKubermaticUser := apiUserToKubermaticUser(apiUser)
+	expectedKubermaticUser.GenerateName = "user-"
+
+	kubermaticObj := []runtime.Object{}
+
+	ep, clientSet, err := createTestEndpointAndGetClients(apiUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/v1/me", nil)
+	res := httptest.NewRecorder()
+	ep.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
+	}
+	compareWithResult(t, res, expectedResponse)
+
+	actions := clientSet.fakeKubermaticClient.Actions()
+	if len(actions) != 10 {
+		t.Fatalf("expected to get exactly 10 action but got %d, actions = %v", len(actions), actions)
+	}
+
+	action := actions[9]
+	if !action.Matches("create", "users") {
+		t.Fatalf("unexpected action %#v", action)
+	}
+	createAction, ok := action.(clienttesting.CreateAction)
+	if !ok {
+		t.Fatalf("unexpected action %#v", action)
+	}
+	if !equality.Semantic.DeepEqual(createAction.GetObject().(*kubermaticapiv1.User), expectedKubermaticUser) {
+		t.Fatalf("%v", diff.ObjectDiff(expectedKubermaticUser, createAction.GetObject().(*kubermaticapiv1.User)))
+	}
+}
+
+func TestCreateUserWithoutEmail(t *testing.T) {
+	expectedResponse := `{"error":{"code":400,"message":"Email, ID and Name cannot be empty when creating a new user resource"}}`
+	apiUser := getUser("", "", "", false)
+
+	ep, _, err := createTestEndpointAndGetClients(apiUser, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/v1/me", nil)
+	res := httptest.NewRecorder()
+	ep.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusBadRequest, res.Code, res.Body.String())
+	}
+	compareWithResult(t, res, expectedResponse)
 }

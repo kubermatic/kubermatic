@@ -130,7 +130,7 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 				if err == provider.ErrNotFound {
 					user, err = r.userProvider.CreateUser(apiUser.ID, apiUser.Name, apiUser.Email)
 					if err != nil {
-						return nil, err
+						return nil, kubernetesErrorToHTTPError(err)
 					}
 				} else {
 					return nil, err
@@ -146,7 +146,7 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 				}
 				user, err = r.userProvider.Update(user)
 				if err != nil {
-					return nil, err
+					return nil, kubernetesErrorToHTTPError(err)
 				}
 			}
 

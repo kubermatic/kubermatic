@@ -11,9 +11,10 @@ import (
 func TestDatacentersEndpoint(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -29,9 +30,10 @@ func TestDatacentersEndpoint(t *testing.T) {
 func TestDatacenterEndpointNotFound(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -45,9 +47,10 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 func TestDatacenterEndpointPrivate(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -61,9 +64,10 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 func TestDatacenterEndpointAdmin(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
+	apiUser := getUser(testUserEmail, testUserID, testUserName, true)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, true), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -80,9 +84,10 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 func TestDatacenterEndpointFound(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}

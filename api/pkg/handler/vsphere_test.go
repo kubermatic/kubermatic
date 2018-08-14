@@ -58,8 +58,10 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	req.Header.Add("Username", "user")
 	req.Header.Add("Password", "pass")
 
+	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
