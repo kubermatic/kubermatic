@@ -69,6 +69,16 @@
                 }
             },
             "version": "3dc646872c0412832a2879a2a59c6acaa77aa68d"
+        },
+        {
+            "name": "grafana",
+            "source": {
+                "git": {
+                    "remote": "https://github.com/brancz/kubernetes-grafana",
+                    "subdir": "grafana"
+                }
+            },
+            "version": "8f131a315dfe877819c3a490eedfbcfe183b95cf"
         }
     ]
 }
