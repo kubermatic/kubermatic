@@ -346,7 +346,7 @@ pipeline:
     values:
     - values
     when:
-      branch: release/*
+      branch: release/v2.7.*
   10-e2e:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig

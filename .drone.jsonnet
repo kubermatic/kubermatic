@@ -9,7 +9,7 @@ local drone = import 'drone/drone.libsonnet';
     local goImage = 'golang:1.10.3',
     local dockerSecrets = ['docker_username', 'docker_password'],
     local whenBranchMaster = { when: { branch: 'master' } },
-    local whenBranchRelease = { when: { branch: 'release/*' } },
+    local whenBranchRelease = { when: { branch: 'release/v2.7.*' } },
     local whenEventTag = { when: { event: ['tag'] } },
     local charts = [
       { namespace: 'kubermatic', name: 'kubermatic', path: 'config/kubermatic/' },
