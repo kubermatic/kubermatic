@@ -12,5 +12,10 @@
 {{ end }}
 
 {{ define "slack.kubermatic.title" }}{{ template "slack.kubermatic.title.range" . }}{{ end }}
-{{ define "slack.kubermatic.text" }}{{ template "slack.kubermatic.text.range" . }}{{ end }}
+{{ define "slack.kubermatic.text" }}
+{{ template "slack.kubermatic.text.range" . }}
+{{ range $k, $v := .GroupLabels }}
+{{- if ne $k "alertname" }}• *{{ $k }}*: {{ $v }}{{ end }}
+{{ end }}
+{{ end }}
 {{ define "slack.kubermatic.fallback" }}{{ template "slack.kubermatic.fallback.range" . }}{{ end }}
