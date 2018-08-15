@@ -1,18 +1,3 @@
-local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-
-local datasources = [
-  {
-    name: "prometheus",
-    type: "prometheus",
-    access: "proxy",
-    org_id: 1,
-    url: "http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
-    version: 1,
-    editable: false,
-    default: true,
-  },
-];
-
 local g =
 (import 'grafana/grafana.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
@@ -40,18 +25,9 @@ local g =
 
     grafana+:: {
       dashboards: $.grafanaDashboards,
-      datasources: datasources,
       config: {}, // This will add the config reference to the deployment, but we're using our own with helm
     },
   },
 };
 
-// Create a new object to have a list with all dashboards.
-{
-  dashboardDatasources: g.grafana.dashboardDatasources,
-  dashboardDefinitions: k.core.v1.list.new(g.grafana.dashboardDefinitions),
-  dashboardSources: g.grafana.dashboardSources,
-  deployment: g.grafana.deployment,
-  serviceAccount: g.grafana.serviceAccount,
-  service: g.grafana.service,
-}
+g.grafanaDashboards
