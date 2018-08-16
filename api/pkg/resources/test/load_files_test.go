@@ -432,6 +432,7 @@ func TestLoadFiles(t *testing.T) {
 				data := resources.NewTemplateData(
 					cluster,
 					&dc,
+					"testdc",
 					kubeInformerFactory.Core().V1().Secrets().Lister(),
 					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
 					kubeInformerFactory.Core().V1().Services().Lister(),
@@ -443,7 +444,15 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				deps := clustercontroller.GetDeploymentCreators()
+				dummyCluster := &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
+							{},
+						},
+					},
+				}
+
+				deps := clustercontroller.GetDeploymentCreators(dummyCluster)
 
 				for _, create := range deps {
 					res, err := create(data, nil)

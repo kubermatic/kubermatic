@@ -82,7 +82,7 @@ func TestListProjectEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -97,7 +97,7 @@ func TestListProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExpectedResponse: []apiv1.Project{
 				apiv1.Project{
@@ -210,7 +210,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -221,7 +221,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 	}
@@ -272,7 +272,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			HTTPStatus:       http.StatusCreated,
 			ExistingAPIUser: apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 
@@ -299,7 +299,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -310,7 +310,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 	}
@@ -323,6 +323,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			if tc.ExistingProject != nil {
 				kubermaticObj = []runtime.Object{tc.ExistingProject}
 			}
+			kubermaticObj = append(kubermaticObj, apiUserToKubermaticUser(tc.ExistingAPIUser))
 			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -366,7 +367,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -377,7 +378,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingProject: &kubermaticapiv1.Project{ObjectMeta: metav1.ObjectMeta{Name: "myProjectInternalName"}, Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"}},
 		},
@@ -388,7 +389,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-mySecondProjectInternalName",
@@ -399,7 +400,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingProject: &kubermaticapiv1.Project{ObjectMeta: metav1.ObjectMeta{Name: "myProjectInternalName"}, Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"}},
 		},
