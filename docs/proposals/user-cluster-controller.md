@@ -29,9 +29,8 @@ Some of those resources are strictly required (as opposed to "addons") and shoul
 
 ## Implementation
 
-The envisioned improvement is started by establishing a user-cluster-controller-manager created within the (seed's) cluster-controller. The manager will create a user-cluster-controller inside the cluster-namespace.
+The envisioned improvement is started by establishing a user-cluster-controller-manager created by the (seed's) cluster-controller. The manager will create a user-cluster-controller inside the cluster-namespace.
 Resources of the user-cluster which are not considered "addons" or should not be controlled by the (seed's) cluster-controller will be moved into the control of the user-cluster-controller.
-
 
 ## Task & effort:
 
