@@ -112,6 +112,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 	return resources.NewTemplateData(
 		c,
 		&dc,
+		cc.dc,
 		cc.secretLister,
 		cc.configMapLister,
 		cc.serviceLister,
