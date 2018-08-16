@@ -91,7 +91,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterName: spec.HumanReadableName})
+		existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterSpecName: spec.HumanReadableName})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -134,7 +134,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -181,7 +181,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -267,19 +267,19 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 		// TODO: I think that in general it would be better if the cluster resource
 		// has the reference to the ssh keys - not the other way around as it is now.
 		// detach ssh keys that are being used by this clusters
-		clusterSSHKeys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName})
+		clusterSSHKeys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		for _, clusterSSHKey := range clusterSSHKeys {
-			clusterSSHKey.RemoveFromCluster(req.ClusterName)
+			clusterSSHKey.RemoveFromCluster(req.ClusterID)
 			if _, err = sshKeyProvider.Update(user, project, clusterSSHKey); err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
 		}
 
-		err = clusterProvider.Delete(user, project, req.ClusterName)
+		err = clusterProvider.Delete(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -297,7 +297,7 @@ func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoin
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -325,7 +325,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(user, project, req.ClusterName)
+		_, err = clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -354,10 +354,10 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		if sshKey.IsUsedByCluster(req.ClusterName) {
+		if sshKey.IsUsedByCluster(req.ClusterID) {
 			return nil, nil
 		}
-		sshKey.AddToCluster(req.ClusterName)
+		sshKey.AddToCluster(req.ClusterID)
 		_, err = sshKeyProvider.Update(user, project, sshKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -377,11 +377,11 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		_, err = clusterProvider.Get(user, project, req.ClusterName)
+		_, err = clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName, SortBy: "metadata.creationTimestamp"})
+		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID, SortBy: "metadata.creationTimestamp"})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -433,7 +433,7 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(user, project, req.ClusterName)
+		_, err = clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -463,7 +463,7 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		clusterSSHKey.RemoveFromCluster(req.ClusterName)
+		clusterSSHKey.RemoveFromCluster(req.ClusterID)
 		_, err = sshKeyProvider.Update(user, project, clusterSSHKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -545,7 +545,7 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		c, err := clusterProvider.Get(user, project, req.ClusterName)
+		c, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -626,7 +626,7 @@ type AssignSSHKeysToClusterReq struct {
 	DCReq
 	assignSSHKeysToClusterBodyReq
 	// in: path
-	ClusterName string `json:"cluster_name"`
+	ClusterID string `json:"cluster_id"`
 }
 
 type assignSSHKeysToClusterBodyReq struct {
@@ -638,7 +638,7 @@ type assignSSHKeysToClusterBodyReq struct {
 type ListSSHKeysAssignedToClusterReq struct {
 	DCReq
 	// in: path
-	ClusterName string `json:"cluster_name"`
+	ClusterID string `json:"cluster_id"`
 }
 
 // DetachSSHKeysFromClusterReq defines HTTP request for newDetachSSHKeyFromCluster endpoint
@@ -648,7 +648,7 @@ type DetachSSHKeysFromClusterReq struct {
 	// in: path
 	KeyName string `json:"key_name"`
 	// in: path
-	ClusterName string `json:"cluster_name"`
+	ClusterID string `json:"cluster_id"`
 }
 
 // NewCreateClusterReq defines HTTP request for newCreateCluster endpoint
@@ -698,17 +698,17 @@ func newDecodeListClustersReq(c context.Context, r *http.Request) (interface{}, 
 type NewGetClusterReq struct {
 	DCReq
 	// in: path
-	ClusterName string `json:"cluster_name"`
+	ClusterID string `json:"cluster_id"`
 }
 
 func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewGetClusterReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -719,10 +719,10 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func decodeClusterName(c context.Context, r *http.Request) (string, error) {
-	clusterName := mux.Vars(r)["cluster_name"]
+func decodeClusterID(c context.Context, r *http.Request) (string, error) {
+	clusterName := mux.Vars(r)["cluster_id"]
 	if clusterName == "" {
-		return "", fmt.Errorf("'cluster_name' parameter is required but was not provided")
+		return "", fmt.Errorf("'cluster_id' parameter is required but was not provided")
 	}
 
 	return clusterName, nil
@@ -738,7 +738,7 @@ type NewUpdateClusterReq struct {
 
 func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewUpdateClusterReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -748,7 +748,7 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -759,11 +759,11 @@ func newDecodeUpdateClusterReq(c context.Context, r *http.Request) (interface{},
 
 func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AssignSSHKeysToClusterReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -780,11 +780,11 @@ func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interfa
 
 func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req ListSSHKeysAssignedToClusterReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -797,12 +797,12 @@ func decodeListSSHKeysAssignedToCluster(c context.Context, r *http.Request) (int
 
 func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req DetachSSHKeysFromClusterReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -825,16 +825,16 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 type ClusterAdminTokenReq struct {
 	DCReq
 	// in: path
-	ClusterName string `json:"cluster_name"`
+	ClusterID string `json:"cluster_id"`
 }
 
 func decodeClusterAdminTokenReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req ClusterAdminTokenReq
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 
 	dcr, err := decodeDcReq(c, r)
 	if err != nil {
@@ -856,7 +856,7 @@ func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -876,7 +876,7 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
