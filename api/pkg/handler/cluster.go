@@ -720,12 +720,12 @@ func newDecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, er
 }
 
 func decodeClusterID(c context.Context, r *http.Request) (string, error) {
-	clusterName := mux.Vars(r)["cluster_id"]
-	if clusterName == "" {
+	clusterID := mux.Vars(r)["cluster_id"]
+	if clusterID == "" {
 		return "", fmt.Errorf("'cluster_id' parameter is required but was not provided")
 	}
 
-	return clusterName, nil
+	return clusterID, nil
 }
 
 // NewUpdateClusterReq defines HTTP request for newUpdateCluster endpoint
