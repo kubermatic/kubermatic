@@ -6,9 +6,7 @@ metadata:
     role: prometheus-rulefiles
 data:
 {{ (.Files.Glob "rules/*").AsConfig | indent 2 }}
-  _customrules.yaml: |
 {{- if .Values.prometheus.rules }}
+  _customrules.yaml: |
 {{ toYaml .Values.prometheus.rules | indent 4 }}
-{{- else }}
-    groups: []
 {{- end}}
