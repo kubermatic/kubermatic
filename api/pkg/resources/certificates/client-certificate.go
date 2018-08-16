@@ -12,12 +12,12 @@ import (
 )
 
 type clientCertificateTemplateData interface {
-	GetClusterCA() (*triple.KeyPair, error)
+	GetCA(name string) (*triple.KeyPair, error)
 	GetClusterRef() metav1.OwnerReference
 }
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
-func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string) func(data clientCertificateTemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func GetClientCertificateCreator(caName, name, commonName string, organizations []string, dataCertKey, dataKeyKey string) func(data clientCertificateTemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return func(data clientCertificateTemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
@@ -29,7 +29,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 		se.Name = name
 		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-		ca, err := data.GetClusterCA()
+		ca, err := data.GetCA(caName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}

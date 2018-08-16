@@ -72,7 +72,9 @@ const (
 	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 
-	//CASecretName is the name for the secret containing the root ca key
+	//FrontProxyCASecretName is the name for the secret containing the front proxy ca
+	FrontProxyCASecretName = "front-proxy-ca"
+	//CASecretName is the name for the secret containing the root ca
 	CASecretName = "ca"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
@@ -90,8 +92,8 @@ const (
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
 	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
-	//ApiserverProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
-	ApiserverProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
+	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -387,7 +389,17 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 
 // GetClusterCA returns the root CA of the cluster
 func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
-	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
+	return d.GetCA(CASecretName)
+}
+
+// GetFrontProxyCA returns the root CA of the cluster
+func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
+	return d.GetCA(FrontProxyCASecretName)
+}
+
+// GetCA returns the CA with the given name for this cluster
+func (d *TemplateData) GetCA(name string) (*triple.KeyPair, error) {
+	return GetClusterCAFromLister(name, d.Cluster, d.SecretLister)
 }
 
 // ServiceClusterIP returns the ClusterIP as string for the
@@ -540,9 +552,9 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return wantOrganizations.Equal(certOrganizations)
 }
 
-// GetClusterCAFromLister returns the root CA of the cluster from the lister
-func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CASecretName)
+// GetClusterCAFromLister returns the CA of the cluster from the lister
+func GetClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(name)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}

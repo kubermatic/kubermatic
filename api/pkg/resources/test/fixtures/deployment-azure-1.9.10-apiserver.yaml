@@ -34,6 +34,7 @@ spec:
         app: apiserver
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
+        front-proxy-ca-secret-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
@@ -151,9 +152,9 @@ spec:
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --proxy-client-cert-file
-        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.crt
+        - /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
         - --proxy-client-key-file
-        - /etc/kubernetes/pki/proxy-client/apiserver-proxy-client.key
+        - /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
         - --client-ca-file
         - /etc/kubernetes/pki/ca/ca.crt
         - --kubelet-client-certificate
@@ -163,7 +164,7 @@ spec:
         - --v
         - "4"
         - --requestheader-client-ca-file
-        - /etc/kubernetes/pki/ca/ca.crt
+        - /etc/kubernetes/pki/front-proxy/ca/ca.crt
         - --requestheader-allowed-names
         - apiserver-aggregator
         - --requestheader-extra-headers-prefix
@@ -237,8 +238,11 @@ spec:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
-        - mountPath: /etc/kubernetes/pki/proxy-client
+        - mountPath: /etc/kubernetes/pki/front-proxy/client
           name: apiserver-proxy-client-certificate
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/front-proxy/ca
+          name: front-proxy-ca
           readOnly: true
       dnsConfig:
         nameservers:
@@ -309,4 +313,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: apiserver-proxy-client-certificate
+      - name: front-proxy-ca
+        secret:
+          defaultMode: 256
+          secretName: front-proxy-ca
 status: {}
