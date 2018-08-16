@@ -3,20 +3,76 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := []resources.InitializerConfigurationCreator{
+		ipamcontroller.MachineIPAMInitializerConfiguration,
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *admissionv1alpha1.InitializerConfiguration
+		initializerConfiguration, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
+		}
+
+		if existing, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Get(initializerConfiguration.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Create(initializerConfiguration); err != nil {
+				return fmt.Errorf("failed to create InitializerConfiguration %s %v", initializerConfiguration.Name, err)
+			}
+			glog.V(4).Infof("Created InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+			continue
+		}
+
+		initializerConfiguration, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
+		}
+
+		if diff := deep.Equal(initializerConfiguration, existing); diff == nil {
+			continue
+		}
+
+		if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Update(initializerConfiguration); err != nil {
+			return fmt.Errorf("failed to update InitializerConfiguration %s: %v", initializerConfiguration.Name, err)
+		}
+		glog.V(4).Infof("Updated InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+	}
+
+	return nil
+}
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 	client, err := cc.userClusterConnProvider.GetClient(c)
@@ -123,16 +179,27 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 	return nil
 }
 
+// GetUserClusterRoleCreators returns a list of GetUserClusterRoleCreators
+func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
+	creators := []resources.ClusterRoleCreator{
+		machinecontroller.ClusterRole,
+		kubestatemetrics.ClusterRole,
+	}
+
+	if len(c.Spec.MachineNetworks) > 0 {
+		creators = append(creators, ipamcontroller.ClusterRole)
+	}
+
+	return creators
+}
+
 func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return err
 	}
 
-	creators := []resources.ClusterRoleCreator{
-		machinecontroller.ClusterRole,
-		kubestatemetrics.ClusterRole,
-	}
+	creators := GetUserClusterRoleCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -176,12 +243,8 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) err
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+// GetUserClusterRoleBindingCreators returns a list of ClusterRoleBindingCreators which should be used to - guess what - create user cluster role bindings.
+func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreator {
 	creators := []resources.ClusterRoleBindingCreator{
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
@@ -189,6 +252,21 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		controllermanager.AdminClusterRoleBinding,
 		kubestatemetrics.ClusterRoleBinding,
 	}
+
+	if len(c.Spec.MachineNetworks) > 0 {
+		creators = append(creators, ipamcontroller.ClusterRoleBinding)
+	}
+
+	return creators
+}
+
+func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	creators := GetUserClusterRoleBindingCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {

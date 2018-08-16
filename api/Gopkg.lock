@@ -662,7 +662,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:1a67b4d46278d779922305be4b57e478568b5cf51bd20df6fea623cb76082a27"
+  digest = "1:a9df415b82688898337aa6f2deaeb0334a08815ee506b3850770793985821a39"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -670,6 +670,11 @@
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1/fake",
+    "pkg/client/informers/externalversions",
+    "pkg/client/informers/externalversions/internalinterfaces",
+    "pkg/client/informers/externalversions/machines",
+    "pkg/client/informers/externalversions/machines/v1alpha1",
+    "pkg/client/listers/machines/v1alpha1",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -1509,6 +1514,9 @@
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned",
     "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake",
+    "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions",
+    "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions/machines/v1alpha1",
+    "github.com/kubermatic/machine-controller/pkg/client/listers/machines/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
@@ -1539,6 +1547,7 @@
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
     "gopkg.in/yaml.v2",
+    "k8s.io/api/admissionregistration/v1alpha1",
     "k8s.io/api/apps/v1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/batch/v1beta1",
