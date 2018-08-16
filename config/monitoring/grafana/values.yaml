@@ -3,9 +3,5 @@ grafana:
   password: bG9vZHNlMTIz # loodse123
   host: ""
   image:
-    repository: quay.io/coreos/monitoring-grafana
-    tag: 5.0.0
-  watcher:
-    image:
-      repository: quay.io/coreos/grafana-watcher
-      tag: v0.0.8
+    repository: grafana/grafana
+    tag: 5.2.1
