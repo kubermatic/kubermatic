@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         app: ingress-nginx
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10254'
     spec:
     {{ if .Values.nginx.hostNetwork }}
       hostNetwork: true

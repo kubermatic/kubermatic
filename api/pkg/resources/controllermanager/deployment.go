@@ -204,6 +204,7 @@ func getFlags(data *resources.TemplateData, kcDir string) []string {
 		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
+		"--feature-gates", "RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true",
 		"--v", "4",
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
