@@ -157,7 +157,7 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
-	deploymentCreators := cluster.GetDeploymentCreators()
+	deploymentCreators := cluster.GetDeploymentCreators(nil)
 
 	for _, createFunc := range statefulsetCreators {
 		statefulset, err := createFunc(templateData, nil)
