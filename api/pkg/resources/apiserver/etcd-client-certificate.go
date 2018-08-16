@@ -10,6 +10,7 @@ import (
 // EtcdClientCertificate returns a secret with the client certificate for authenticating against etcd
 func EtcdClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
+		resources.CASecretName,
 		resources.ApiserverEtcdClientCertificateSecretName,
 		"apiserver",
 		nil,
@@ -17,10 +18,11 @@ func EtcdClientCertificate(data *resources.TemplateData, existing *corev1.Secret
 		resources.ApiserverEtcdClientCertificateKeySecretKey)(data, existing)
 }
 
-// ProxyClientCertificate returns a secret with the client certificate for authenticating against extension apiserver
-func ProxyClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+// FrontProxyClientCertificate returns a secret with the client certificate for authenticating against extension apiserver
+func FrontProxyClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
-		resources.ApiserverProxyClientCertificateSecretName,
+		resources.FrontProxyCASecretName,
+		resources.ApiserverFrontProxyClientCertificateSecretName,
 		"apiserver-aggregator",
 		nil,
 		resources.ApiserverProxyClientCertificateCertSecretKey,
