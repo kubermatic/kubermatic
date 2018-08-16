@@ -45,7 +45,7 @@ func main() {
 	flag.StringVar(&runOpts.NodePath, "kubermatic-node", "/manifests/node.yaml", "path to Node yaml")
 	flag.Var(&runOpts.Addons, "kubermatic-addons", "comma separated list of addons")
 	flag.IntVar(&runOpts.Nodes, "kubermatic-nodes", 3, "number of worker nodes")
-	flag.DurationVar(&runOpts.ClusterTimeout, "kubermatic-cluster-timeout", 3*time.Minute, "cluster creation timeout")
+	flag.DurationVar(&runOpts.ClusterTimeout, "kubermatic-cluster-timeout", 5*time.Minute, "cluster creation timeout")
 	flag.DurationVar(&runOpts.NodesTimeout, "kubermatic-nodes-timeout", 10*time.Minute, "nodes creation timeout")
 	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
 	flag.BoolVar(&runOpts.DeleteCluster, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
