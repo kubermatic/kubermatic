@@ -183,6 +183,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	}
 	ops := []secretOp{
 		{resources.CASecretName, cc.getRootCACertSecret},
+		{resources.FrontProxyCASecretName, cc.getFrontProxyCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
@@ -569,10 +570,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 // GetSecretCreators returns all SecretCreators that are currently in use
 func GetSecretCreators() map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
-		resources.EtcdTLSCertificateSecretName:              etcd.TLSCertificate,
-		resources.ApiserverEtcdClientCertificateSecretName:  apiserver.EtcdClientCertificate,
-		resources.ServiceAccountKeySecretName:               apiserver.ServiceAccountKey,
-		resources.ApiserverProxyClientCertificateSecretName: apiserver.ProxyClientCertificate,
+		resources.EtcdTLSCertificateSecretName:                   etcd.TLSCertificate,
+		resources.ApiserverEtcdClientCertificateSecretName:       apiserver.EtcdClientCertificate,
+		resources.ServiceAccountKeySecretName:                    apiserver.ServiceAccountKey,
+		resources.ApiserverFrontProxyClientCertificateSecretName: apiserver.FrontProxyClientCertificate,
 	}
 }
 

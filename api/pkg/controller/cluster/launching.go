@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -47,7 +48,7 @@ func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) (*kubermat
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
 func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			caKp, err := cc.getFullCAFromLister(c)
+			caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 			if err != nil {
 				return err
 			}

@@ -122,6 +122,14 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
 	}
 
+	frontProxyCASecret := &corev1.Secret{}
+	frontProxyCASecret.Name = resources.FrontProxyCASecretName
+	frontProxyCASecret.Namespace = "test-ns"
+	frontProxyCASecret.Data = map[string][]byte{
+		resources.CACertSecretKey: certutil.EncodeCertPEM(keyPair.Cert),
+		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
+	}
+
 	etcdClientService := &corev1.Service{}
 	etcdClientService.Name = resources.EtcdClientServiceName
 	etcdClientService.Namespace = "test-ns"
@@ -129,6 +137,9 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 
 	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 	if err := secretIndexer.Add(caSecret); err != nil {
+		t.Fatalf("Error adding secret to indexer: %v", err)
+	}
+	if err := secretIndexer.Add(frontProxyCASecret); err != nil {
 		t.Fatalf("Error adding secret to indexer: %v", err)
 	}
 	secretLister := listerscorev1.NewSecretLister(secretIndexer)
