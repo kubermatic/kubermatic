@@ -5,6 +5,7 @@ data:
       scrape_interval: 15s
       external_labels:
         cluster: "de-test-01"
+        region: "testdc"
     rule_files:
     - "/etc/prometheus/config/rules.yaml"
     scrape_configs:
