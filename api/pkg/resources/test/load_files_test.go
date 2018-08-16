@@ -443,7 +443,15 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				deps := clustercontroller.GetDeploymentCreators()
+				dummyCluster := &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
+							{},
+						},
+					},
+				}
+
+				deps := clustercontroller.GetDeploymentCreators(dummyCluster)
 
 				for _, create := range deps {
 					res, err := create(data, nil)

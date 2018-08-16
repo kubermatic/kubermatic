@@ -315,6 +315,8 @@ type NewCluster struct {
 type NewClusterSpec struct {
 	// Cloud specifies the cloud providers configuration
 	Cloud kubermaticv1.CloudSpec `json:"cloud"`
+	// MachineNetworks optionally specifies the parameters for IPAM.
+	MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// Version desired version of the kubernetes master components
 	Version string `json:"version"`
