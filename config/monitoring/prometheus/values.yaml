@@ -5,4 +5,4 @@ prometheus:
   host: ""
   storageSize: 100Gi
   externalLabels:
-    region: default
+    seed_cluster: default
