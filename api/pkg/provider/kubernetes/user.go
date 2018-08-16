@@ -7,6 +7,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -60,6 +61,9 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 
 // CreateUser creates a user
 func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
+	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
+		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
+	}
 	user := kubermaticv1.User{}
 	user.GenerateName = "user-"
 	user.Spec.Email = email

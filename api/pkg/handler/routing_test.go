@@ -28,6 +28,7 @@ import (
 
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -230,14 +231,16 @@ func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
 }
 
 const (
-	testUserID   = "1233"
-	testUserName = "user1"
-	testEmail    = "john@acme.com"
+	testUserID    = "1233"
+	testUserName  = "user1"
+	testUserEmail = "john@acme.com"
 )
 
-func getUser(name string, admin bool) apiv1.User {
+func getUser(email, id, name string, admin bool) apiv1.User {
 	u := apiv1.User{
-		ID: name,
+		ID:    id,
+		Name:  name,
+		Email: email,
 		Roles: map[string]struct{}{
 			"user": {},
 		},
@@ -246,6 +249,17 @@ func getUser(name string, admin bool) apiv1.User {
 		u.Roles[AdminRoleKey] = struct{}{}
 	}
 	return u
+}
+
+func apiUserToKubermaticUser(user apiv1.User) *kubermaticapiv1.User {
+	return &kubermaticapiv1.User{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: kubermaticapiv1.UserSpec{
+			Name:  user.Name,
+			Email: user.Email,
+			ID:    user.ID,
+		},
+	}
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
@@ -261,7 +275,7 @@ func TestUpRoute(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/healthz", nil)
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(getUser(testUserEmail, testUserID, testUserName, false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}

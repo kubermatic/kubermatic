@@ -64,7 +64,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			Spec: kubermaticv1.UserSpec{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 				Projects: []kubermaticv1.ProjectGroup{
 					{
 						Group: "owners-myProjectInternalName",
@@ -76,7 +76,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ExistingAPIUser: &apiv1.User{
 			Name:  testUserName,
 			ID:    testUserID,
-			Email: testEmail,
+			Email: testUserEmail,
 		},
 		ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 			&kubermaticv1.UserSSHKey{
@@ -269,7 +269,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -280,7 +280,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -427,7 +427,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -438,7 +438,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
 				&kubermaticv1.UserSSHKey{
@@ -563,7 +563,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -574,7 +574,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -627,7 +627,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -638,7 +638,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -740,7 +740,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.UserSpec{
 					Name:  testUserName,
 					ID:    testUserID,
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -752,7 +752,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserID,
 				Name:  testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 		// scenario 2
@@ -781,7 +781,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.UserSpec{
 					Name:  testUserName,
 					ID:    testUserID,
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -793,7 +793,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExistingAPIUser: &apiv1.User{
 				Name:  testUserName,
 				ID:    testUserID,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -834,7 +834,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				Spec: kubermaticv1.UserSpec{
 					Name:  testUserName,
 					ID:    testUserID,
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-secretProject",
@@ -846,7 +846,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserID,
 				Name:  testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 		},
 	}
@@ -930,7 +930,7 @@ func TestGetClusterHealth(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -941,7 +941,7 @@ func TestGetClusterHealth(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1072,7 +1072,7 @@ func TestUpdateCluster(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1083,7 +1083,7 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1203,7 +1203,7 @@ func TestGetCluster(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1214,7 +1214,7 @@ func TestGetCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1329,7 +1329,7 @@ func TestListClusters(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -1340,7 +1340,7 @@ func TestListClusters(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
@@ -1451,7 +1451,7 @@ func TestClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1489,7 +1489,7 @@ func TestClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1505,9 +1505,11 @@ func TestClusterEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster/"+test.clusterName, nil)
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
+			ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.cluster, apiUserToKubermaticUser(apiUser)}, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1538,7 +1540,7 @@ func TestClustersEndpoint(t *testing.T) {
 		&kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   "cluster-user1-1",
-				Labels: map[string]string{"user": testUserName},
+				Labels: map[string]string{"user": testUserID},
 			},
 			Status: kubermaticv1.ClusterStatus{
 				RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1552,7 +1554,7 @@ func TestClustersEndpoint(t *testing.T) {
 		&kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   "cluster-user1-2",
-				Labels: map[string]string{"user": testUserName},
+				Labels: map[string]string{"user": testUserID},
 			},
 			Status: kubermaticv1.ClusterStatus{
 				RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1566,7 +1568,7 @@ func TestClustersEndpoint(t *testing.T) {
 		&kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   "cluster-user2-1",
-				Labels: map[string]string{"user": "user2"},
+				Labels: map[string]string{"user": "666"},
 			},
 			Status: kubermaticv1.ClusterStatus{
 				RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1584,37 +1586,52 @@ func TestClustersEndpoint(t *testing.T) {
 		wantClusterNames []string
 		admin            bool
 		username         string
+		userid           string
+		useremail        string
 	}{
 		{
 			name:             "got user1 clusters",
 			wantClusterNames: []string{"cluster-user1-1", "cluster-user1-2"},
 			admin:            false,
 			username:         testUserName,
+			userid:           testUserID,
+			useremail:        testUserEmail,
 		},
 		{
 			name:             "got user2 clusters",
 			wantClusterNames: []string{"cluster-user2-1"},
 			admin:            false,
 			username:         "user2",
+			userid:           "666",
+			useremail:        "a@abcd.com",
 		},
 		{
 			name:             "got no cluster",
 			wantClusterNames: []string{},
 			admin:            false,
 			username:         "does-not-exist",
+			userid:           "007",
+			useremail:        "bond@bond.com",
 		},
 		{
 			name:             "admin - got all cluster",
 			wantClusterNames: []string{"cluster-user1-1", "cluster-user1-2", "cluster-user2-1"},
 			admin:            true,
 			username:         "foo",
+			userid:           "bar",
+			useremail:        "foo@bar.com",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			apiUser := getUser(test.useremail, test.userid, test.username, test.admin)
+			kubermaticObjs := []runtime.Object{}
+			kubermaticObjs = append(kubermaticObjs, clusterList...)
+			kubermaticObjs = append(kubermaticObjs, apiUserToKubermaticUser(apiUser))
+
 			req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(getUser(test.username, test.admin), []runtime.Object{}, clusterList, nil, nil)
+			ep, err := createTestEndpoint(apiUser, []runtime.Object{}, kubermaticObjs, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1665,7 +1682,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1694,7 +1711,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1723,7 +1740,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1752,7 +1769,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -1779,8 +1796,10 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(getUser(testUserName, false), []runtime.Object{}, []runtime.Object{test.cluster}, nil, nil)
+			ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.cluster, apiUserToKubermaticUser(apiUser)}, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1816,14 +1835,14 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 	tester := apiv1.User{
 		ID:    testUserName,
-		Email: testEmail,
+		Email: testUserEmail,
 	}
 
 	user := &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: kubermaticv1.UserSpec{
 			Name:  "John",
-			Email: testEmail,
+			Email: testUserEmail,
 			Projects: []kubermaticv1.ProjectGroup{
 				{
 					Group: "owners-myProjectInternalName",
@@ -1891,14 +1910,14 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	tester := apiv1.User{
 		ID:    testUserName,
-		Email: testEmail,
+		Email: testUserEmail,
 	}
 
 	user := &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: kubermaticv1.UserSpec{
 			Name:  "John",
-			Email: testEmail,
+			Email: testUserEmail,
 			Projects: []kubermaticv1.ProjectGroup{
 				{
 					Group: "owners-myProjectInternalName",
