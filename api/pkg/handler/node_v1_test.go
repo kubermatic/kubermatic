@@ -61,7 +61,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -72,7 +72,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingNodes: []*corev1.Node{
 				&corev1.Node{
@@ -250,7 +250,7 @@ func TestListNodesForCluster(t *testing.T) {
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -261,7 +261,7 @@ func TestListNodesForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingNodes: []*corev1.Node{
 				&corev1.Node{
@@ -513,7 +513,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -524,7 +524,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingNodes: []*corev1.Node{
 				&corev1.Node{
@@ -635,7 +635,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
-					Email: testEmail,
+					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
@@ -646,7 +646,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			},
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
-				Email: testEmail,
+				Email: testUserEmail,
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{

@@ -113,6 +113,8 @@ spec:
         - --allocate-node-cidrs=true
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
+        - --feature-gates
+        - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true
         - --v
         - "4"
         command:
