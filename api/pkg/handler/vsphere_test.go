@@ -56,7 +56,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, _, err := createTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, []runtime.Object{}, nil, nil)
+	ep, _, err := createTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
