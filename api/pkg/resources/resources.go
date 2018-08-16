@@ -246,6 +246,7 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 type TemplateData struct {
 	Cluster           *kubermaticv1.Cluster
 	DC                *provider.DatacenterMeta
+	SeedDC            string
 	SecretLister      corev1lister.SecretLister
 	ConfigMapLister   corev1lister.ConfigMapLister
 	ServiceLister     corev1lister.ServiceLister
@@ -290,6 +291,7 @@ func String(v string) *string {
 func NewTemplateData(
 	cluster *kubermaticv1.Cluster,
 	dc *provider.DatacenterMeta,
+	seedDatacenter string,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
 	serviceLister corev1lister.ServiceLister,
@@ -300,6 +302,7 @@ func NewTemplateData(
 	return &TemplateData{
 		Cluster:           cluster,
 		DC:                dc,
+		SeedDC:            seedDatacenter,
 		ConfigMapLister:   configMapLister,
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,

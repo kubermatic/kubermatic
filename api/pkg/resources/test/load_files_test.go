@@ -432,6 +432,7 @@ func TestLoadFiles(t *testing.T) {
 				data := resources.NewTemplateData(
 					cluster,
 					&dc,
+					"testdc",
 					kubeInformerFactory.Core().V1().Secrets().Lister(),
 					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
 					kubeInformerFactory.Core().V1().Services().Lister(),
