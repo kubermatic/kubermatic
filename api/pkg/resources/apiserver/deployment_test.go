@@ -24,13 +24,13 @@ func TestGetAdmissionControlFlags(t *testing.T) {
 			name:                              "Ensure admission webhooks 1.9+",
 			kubernetesVersion:                 "1.9.0",
 			expectedAdmissionControlFlagName:  "--admission-control",
-			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
 		},
 		{
 			name:                              "Ensure new admission flagname 1.10+",
 			kubernetesVersion:                 "1.10.0",
 			expectedAdmissionControlFlagName:  "--enable-admission-plugins",
-			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+			expectedAdmissionControlFlagValue: "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
 		},
 	}
 

@@ -61,6 +61,31 @@ func (cc *Controller) createRootCASecret(commonName string, c *kubermaticv1.Clus
 	}, nil
 }
 
+func (cc *Controller) getImagePullSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	kubermaticDockerCfg, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.ImagePullSecretName)
+	if err != nil {
+		return nil, "", fmt.Errorf("couldn't retrieve dockercfg from kubermatic ns: %v", err)
+	}
+
+	var secret *corev1.Secret
+	if existingSecret != nil {
+		secret = existingSecret
+	} else {
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations:     map[string]string{},
+				Labels:          map[string]string{},
+				OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		}
+	}
+
+	secret.Data = kubermaticDockerCfg.Data
+
+	return cc.secretWithJSON(secret)
+}
+
 func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	if existingSecret == nil {
 		data, err := cc.createRootCASecret(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL), c)
@@ -367,6 +392,10 @@ func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Clust
 
 func (cc *Controller) getMachineControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	return cc.getKubeconfigSecret(c, existingSecret, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername)
+}
+
+func (cc *Controller) getIPAMControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername)
 }
 
 func (cc *Controller) getKubeStateMetricsKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {

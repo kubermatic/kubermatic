@@ -54,6 +54,12 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
+		if len(cluster.Spec.MachineNetworks) > 0 {
+			if err := cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
+				return nil, err
+			}
+		}
+
 		if err := cc.userClusterEnsureRoles(cluster); err != nil {
 			return nil, err
 		}
