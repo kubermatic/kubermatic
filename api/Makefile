@@ -1,12 +1,13 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter ipam-controller
 GOBUILDFLAGS += -v
-LDFLAGS += -extldflags '-static'
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
+KUBERMATICCOMMIT=$(shell git log -1 --format=%H)
+LDFLAGS += -extldflags '-static' -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT)
 HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
@@ -23,6 +24,9 @@ $(CMD): vendor
 check: gofmt lint
 test: vendor
 	@$(GO) test -v ./...
+
+test-update:
+	@$(GO) test -v ./... -update
 
 clean:
 	@cd _build
@@ -89,4 +93,4 @@ run-api-server:
 run-rbac-generator:
 	./hack/run-rbac-generator.sh
 
-.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator $(CMD)
+.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(CMD)
