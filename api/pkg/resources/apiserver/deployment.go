@@ -219,8 +219,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.ApiserverProxyClientCertificateSecretName,
-					MountPath: "/etc/kubernetes/pki/proxy-client",
+					Name:      resources.ApiserverFrontProxyClientCertificateSecretName,
+					MountPath: "/etc/kubernetes/pki/front-proxy/client",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.FrontProxyCASecretName,
+					MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 					ReadOnly:  true,
 				},
 			},
@@ -270,13 +275,13 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--audit-log-path", "/var/log/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--proxy-client-cert-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
-		"--proxy-client-key-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
+		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
+		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
-		"--requestheader-client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
@@ -421,10 +426,19 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.ApiserverProxyClientCertificateSecretName,
+			Name: resources.ApiserverFrontProxyClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverProxyClientCertificateSecretName,
+					SecretName:  resources.ApiserverFrontProxyClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.FrontProxyCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.FrontProxyCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

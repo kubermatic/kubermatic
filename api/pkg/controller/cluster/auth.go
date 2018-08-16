@@ -42,7 +42,7 @@ func (cc *Controller) secretWithJSON(secret *corev1.Secret) (*corev1.Secret, str
 	return secret, string(b), nil
 }
 
-func (cc *Controller) createRootCASecret(commonName string, c *kubermaticv1.Cluster) (map[string][]byte, error) {
+func (cc *Controller) createCASecret(commonName string, c *kubermaticv1.Cluster) (map[string][]byte, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a private key for new CA: %v", err)
@@ -88,7 +88,7 @@ func (cc *Controller) getImagePullSecret(c *kubermaticv1.Cluster, existingSecret
 
 func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	if existingSecret == nil {
-		data, err := cc.createRootCASecret(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL), c)
+		data, err := cc.createCASecret(fmt.Sprintf("root-ca.%s.%s.%s", c.Name, cc.dc, cc.externalURL), c)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to create a self-signed certificate for a new CA: %v", err)
 		}
@@ -97,8 +97,19 @@ func (cc *Controller) getRootCACertSecret(c *kubermaticv1.Cluster, existingSecre
 	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
 }
 
-func (cc *Controller) getFullCAFromLister(c *kubermaticv1.Cluster) (*triple.KeyPair, error) {
-	caSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(resources.CASecretName)
+func (cc *Controller) getFrontProxyCACertSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	if existingSecret == nil {
+		data, err := cc.createCASecret("front-proxy-ca", c)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create a self-signed certificate for a new CA: %v", err)
+		}
+		return cc.secretWithJSON(cc.secretWithData(data, c))
+	}
+	return cc.secretWithJSON(cc.secretWithData(existingSecret.Data, c))
+}
+
+func (cc *Controller) getFullCAFromLister(name string, c *kubermaticv1.Cluster) (*triple.KeyPair, error) {
+	caSecret, err := cc.secretLister.Secrets(c.Status.NamespaceName).Get(name)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
@@ -132,7 +143,7 @@ func (cc *Controller) createApiserverTLSCertificatesSecret(caKp *triple.KeyPair,
 }
 
 func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
@@ -187,7 +198,7 @@ func (cc *Controller) getApiserverServingCertificatesSecret(c *kubermaticv1.Clus
 }
 
 func (cc *Controller) getKubeletClientCertificatesSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}
@@ -235,7 +246,7 @@ func (cc *Controller) createKubeletClientCertificates(caKp *triple.KeyPair, comm
 }
 
 func (cc *Controller) createAdminKubeconfigSecret(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get CA: %v", err)
 	}
@@ -307,7 +318,7 @@ func (cc *Controller) getTokenUsersSecret(c *kubermaticv1.Cluster, existingSecre
 }
 
 func (cc *Controller) createOpenVPNServerCertificates(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get CA: %v", err)
 	}
@@ -345,7 +356,7 @@ func (cc *Controller) getOpenVPNServerCertificates(c *kubermaticv1.Cluster, exis
 }
 
 func (cc *Controller) createOpenVPNInternalClientCertificates(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get CA: %v", err)
 	}
@@ -403,7 +414,7 @@ func (cc *Controller) getKubeStateMetricsKubeconfigSecret(c *kubermaticv1.Cluste
 }
 
 func (cc *Controller) getKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret, secretName, username string) (*corev1.Secret, string, error) {
-	caKp, err := cc.getFullCAFromLister(c)
+	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get CA: %v", err)
 	}

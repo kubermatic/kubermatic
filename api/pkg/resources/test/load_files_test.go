@@ -268,7 +268,7 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
-							Name:            resources.ApiserverProxyClientCertificateSecretName,
+							Name:            resources.ApiserverFrontProxyClientCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
@@ -318,6 +318,13 @@ func TestLoadFiles(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.SchedulerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.FrontProxyCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
@@ -432,6 +439,7 @@ func TestLoadFiles(t *testing.T) {
 				data := resources.NewTemplateData(
 					cluster,
 					&dc,
+					"testdc",
 					kubeInformerFactory.Core().V1().Secrets().Lister(),
 					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
 					kubeInformerFactory.Core().V1().Services().Lister(),
