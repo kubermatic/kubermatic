@@ -1,7 +1,20 @@
 alertmanager:
-  version: v0.15.0
+  version: v0.15.2
+  # let `auth:` be for backward compatibility 
   # admin:loodse123
   auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
+  auth_settings:
+    basic:
+      enabled: true
+    oidc:
+      enabled: false
+      client_id: ""
+      client_secret: ""
+      encryption_key: ""
+      discovery_url: ""
+      redirection_url: ""
+  keycloak_proxy_image: quay.io/gambol99/keycloak-proxy
+  keycloak_proxy_version: v2.3.0
   host: ""
   config:
     global:

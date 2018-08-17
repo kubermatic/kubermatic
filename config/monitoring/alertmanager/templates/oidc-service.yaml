@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-kubermatic-oidc
+  labels:
+    app: alertmanager-kubermatic-oidc
+spec:
+  ports:
+  - name: web
+    port: 3000
+  selector:
+    app: alertmanager-kubermatic-oidc-proxy
