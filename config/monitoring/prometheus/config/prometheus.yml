@@ -42,6 +42,7 @@ scrape_configs:
     - '{__name__="up"}'
     - '{__name__=~"etcd.*"}'
     - '{__name__=~"machine_controller.*"}'
+    - '{kubermatic="federate"}'
   metrics_path: /federate
   scheme: http
   kubernetes_sd_configs:
