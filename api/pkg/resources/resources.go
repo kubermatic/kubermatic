@@ -114,6 +114,8 @@ const (
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
+	// PrometheusCustomRulesConfigMapName is the name for the configmap containing custom prometheus alerts for cluster namespaces.
+	PrometheusCustomRulesConfigMapName = "clusterns-prometheus-rules"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"

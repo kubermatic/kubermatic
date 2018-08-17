@@ -39,6 +39,15 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Data["prometheus.yaml"] = configBuffer.String()
 	cm.Data["rules.yaml"] = prometheusRules
 
+	customRulesCM, err := data.ConfigMapLister.ConfigMaps(resources.KubermaticNamespaceName).Get(resources.PrometheusCustomRulesConfigMapName)
+	if err != nil {
+		return nil, err
+	}
+
+	if val, ok := customRulesCM.Data["_customrules.yaml"]; ok {
+		cm.Data["rules-custom.yaml"] = val
+	}
+
 	return cm, nil
 }
 
@@ -49,7 +58,7 @@ const prometheusConfig = `global:
     cluster: "{{ .Cluster.Name }}"
     region: "{{ .SeedDC }}"
 rule_files:
-- "/etc/prometheus/config/rules.yaml"
+- "/etc/prometheus/config/rules*.yaml"
 scrape_configs:
 - job_name: etcd
   scheme: https
