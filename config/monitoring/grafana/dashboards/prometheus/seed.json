@@ -503,6 +503,7 @@
           ],
           "thresholds": "1,10",
           "title": "Skipped Iterations [$interval]",
+          "transparent": "<< transparentPanels | toJson >>",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -580,6 +581,7 @@
           ],
           "thresholds": "1,10",
           "title": "Tardy Scrapes [$interval]",
+          "transparent": "<< transparentPanels | toJson >>",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -657,6 +659,7 @@
           ],
           "thresholds": "1,10",
           "title": "Reload Failures [$interval]",
+          "transparent": "<< transparentPanels | toJson >>",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -734,6 +737,7 @@
           ],
           "thresholds": "1,10",
           "title": "Skipped Scrapes [$interval]",
+          "transparent": "<< transparentPanels | toJson >>",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
