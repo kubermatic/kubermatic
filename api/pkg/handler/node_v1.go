@@ -37,7 +37,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -84,7 +84,7 @@ func newListNodesForCluster(projectProvider provider.ProjectProvider) endpoint.E
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -152,7 +152,7 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -203,12 +203,12 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterName})
+		keys, err := sshKeyProvider.List(user, project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -345,7 +345,7 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return "", fmt.Errorf("'node_name' parameter is required but was not provided")
 	}
 
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return nil, err
 	}
 
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 	req.NodeName = nodeName
 	req.DCReq = dcr.(DCReq)
 
@@ -373,7 +373,7 @@ type NewListNodesForClusterReq struct {
 func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewListNodesForClusterReq
 
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{},
 	}
 
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 	req.DCReq = dcr.(DCReq)
 
 	return req, nil
@@ -401,7 +401,7 @@ type NewCreateNodeReq struct {
 func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewCreateNodeReq
 
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}
 		return nil, err
 	}
 
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 	req.DCReq = dcr.(DCReq)
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -433,7 +433,7 @@ type NewNodeReq struct {
 func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewNodeReq
 
-	clusterName, err := decodeClusterName(c, r)
+	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +447,7 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 		return nil, err
 	}
 
-	req.ClusterName = clusterName
+	req.ClusterID = clusterID
 	req.NodeName = nodeName
 	req.DCReq = dcr.(DCReq)
 
