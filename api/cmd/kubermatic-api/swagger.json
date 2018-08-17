@@ -1012,7 +1012,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_name}": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}": {
       "get": {
         "consumes": [
           "application/json"
@@ -1049,8 +1049,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node_name",
+            "x-go-name": "NodeID",
+            "name": "node_id",
             "in": "path",
             "required": true
           },
@@ -1112,8 +1112,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node_name",
+            "x-go-name": "NodeID",
+            "name": "node_id",
             "in": "path",
             "required": true
           }
