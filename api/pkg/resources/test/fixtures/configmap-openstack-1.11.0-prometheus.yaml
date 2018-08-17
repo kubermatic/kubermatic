@@ -13,11 +13,20 @@ data:
       scheme: https
       metrics_path: '/metrics'
       static_configs:
-      - targets: ['etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379','etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379','etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379']
+      - targets:
+        - 'etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379'
+        - 'etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379'
+        - 'etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379'
       tls_config:
         ca_file: /etc/etcd/pki/client/ca.crt
         cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
         key_file: /etc/etcd/pki/client/apiserver-etcd-client.key
+      relabel_configs:
+      - source_labels: [__address__]
+        regex: (etcd-\d+).+
+        action: replace
+        replacement: $1
+        target_label: instance
     - job_name: 'pods-0'
 
       kubernetes_sd_configs:
@@ -90,6 +99,135 @@ data:
   rules.yaml: |2
 
     groups:
+    - name: kubermatic.goprocess
+      rules:
+      - record: job:process_resident_memory_bytes:clone
+        expr: process_resident_memory_bytes
+        labels:
+          kubermatic: federate
+
+      - record: job:process_cpu_seconds_total:rate5m
+        expr: rate(process_cpu_seconds_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:process_open_fds:clone
+        expr: process_open_fds
+        labels:
+          kubermatic: federate
+
+    - name: kubermatic.etcd
+      rules:
+      - record: job:etcd_server_has_leader:sum
+        expr: sum(etcd_server_has_leader)
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_disk_wal_fsync_duration_seconds_bucket:99percentile
+        expr: histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])) by (instance, le))
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_disk_backend_commit_duration_seconds_bucket:99percentile
+        expr: histogram_quantile(0.99, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])) by (instance, le))
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_db_total_size_in_bytes:clone
+        expr: etcd_debugging_mvcc_db_total_size_in_bytes
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_network_client_grpc_received_bytes_total:rate5m
+        expr: rate(etcd_network_client_grpc_received_bytes_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_network_client_grpc_sent_bytes_total:rate5m
+        expr: rate(etcd_network_client_grpc_sent_bytes_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_network_peer_received_bytes_total:rate5msum
+        expr: sum(rate(etcd_network_peer_received_bytes_total[5m])) by (instance)
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_network_peer_sent_bytes_total:rate5msum
+        expr: sum(rate(etcd_network_peer_sent_bytes_total[5m])) by (instance)
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_server_proposals_failed_total:rate5msum
+        expr: sum(rate(etcd_server_proposals_failed_total[5m]))
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_server_proposals_pending:sum
+        expr: sum(etcd_server_proposals_pending)
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_server_proposals_committed_total:rate5msum
+        expr: sum(rate(etcd_server_proposals_committed_total[5m]))
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_server_proposals_applied_total:rate5msum
+        expr: sum(rate(etcd_server_proposals_applied_total[5m]))
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_server_leader_changes_seen_total:changes1d
+        expr: changes(etcd_server_leader_changes_seen_total[1d])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_delete_total:rate5m
+        expr: rate(etcd_debugging_mvcc_delete_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_put_total:rate5m
+        expr: rate(etcd_debugging_mvcc_put_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_range_total:rate5m
+        expr: rate(etcd_debugging_mvcc_range_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_watcher_total:rate5m
+        expr: rate(etcd_debugging_mvcc_watcher_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_txn_total:rate5m
+        expr: rate(etcd_debugging_mvcc_txn_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_mvcc_keys_total:clone
+        expr: etcd_debugging_mvcc_keys_total
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_store_reads_total:rate5m
+        expr: rate(etcd_debugging_store_reads_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_store_writes_total:rate5m
+        expr: rate(etcd_debugging_store_writes_total[5m])
+        labels:
+          kubermatic: federate
+
+      - record: job:etcd_debugging_store_expires_total:rate5m
+        expr: rate(etcd_debugging_store_expires_total[5m])
+        labels:
+          kubermatic: federate
+
     - name: machine-controller
       rules:
       - alert: MachineControllerTooManyErrors
