@@ -40,7 +40,6 @@ scrape_configs:
   params:
     match[]:
     - '{__name__="up"}'
-    - '{__name__=~"etcd.*"}'
     - '{__name__=~"machine_controller.*"}'
     - '{kubermatic="federate"}'
   metrics_path: /federate
