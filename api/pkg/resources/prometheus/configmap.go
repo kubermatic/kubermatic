@@ -43,10 +43,11 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 }
 
 const prometheusConfig = `global:
-  evaluation_interval: 1m
-  scrape_interval: 15s
+  evaluation_interval: 30s
+  scrape_interval: 30s
   external_labels:
     cluster: "{{ .Cluster.Name }}"
+    region: "{{ .SeedDC }}"
 rule_files:
 - "/etc/prometheus/config/rules.yaml"
 scrape_configs:

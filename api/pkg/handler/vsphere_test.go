@@ -1,15 +1,17 @@
 package handler
 
 import (
-	"flag"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/vmware/govmomi/simulator"
 )
+
+const vSphereDatacenterName = "moon-1"
 
 type vSphereMock struct {
 	model  *simulator.Model
@@ -17,17 +19,10 @@ type vSphereMock struct {
 }
 
 func (v *vSphereMock) tearUp() error {
-	// Yeah this is sucky, but api doesnt offer any other method without getting too low level.
-	f := flag.Lookup("httptest.serve")
-	err := f.Value.Set("127.0.0.1:8989")
-	if err != nil {
-		return err
-	}
-
 	// ESXi model + initial set of objects (VMs, network, datastore)
 	v.model = simulator.ESX()
 
-	err = v.model.Create()
+	err := v.model.Create()
 	if err != nil {
 		return err
 	}
@@ -54,14 +49,14 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	defer mock.tearDown()
 
 	req := httptest.NewRequest("GET", "/api/v1/vsphere/networks", nil)
-	req.Header.Add("DatacenterName", "moon-1")
+	req.Header.Add("DatacenterName", vSphereDatacenterName)
 	req.Header.Add("Username", "user")
 	req.Header.Add("Password", "pass")
 
 	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
 
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
+	ep, _, err := createTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -72,4 +67,24 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	}
 
 	compareWithResult(t, res, `[{"name":"VM Network"}]`)
+}
+
+func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.DatacenterMeta {
+	return map[string]provider.DatacenterMeta{
+		vSphereDatacenterName: {
+			Location: "Dark Side",
+			Seed:     "us-central1",
+			Country:  "Moon States",
+			Spec: provider.DatacenterSpec{
+				VSphere: &provider.VSphereSpec{
+					Endpoint:      v.server.Server.URL,
+					AllowInsecure: true,
+					Datastore:     "LocalDS_0",
+					Datacenter:    "ha-datacenter",
+					Cluster:       "localhost.localdomain",
+					RootPath:      "/ha-datacenter/vm/",
+				},
+			},
+		},
+	}
 }

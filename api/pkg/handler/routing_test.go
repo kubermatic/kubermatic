@@ -156,21 +156,6 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 				},
 			},
 		},
-		"moon-1": {
-			Location: "Dark Side",
-			Seed:     "us-central1",
-			Country:  "Moon States",
-			Spec: provider.DatacenterSpec{
-				VSphere: &provider.VSphereSpec{
-					Endpoint:      "http://127.0.0.1:8989",
-					AllowInsecure: true,
-					Datastore:     "LocalDS_0",
-					Datacenter:    "ha-datacenter",
-					Cluster:       "localhost.localdomain",
-					RootPath:      "/ha-datacenter/vm/",
-				},
-			},
-		},
 	}
 }
 

@@ -16,12 +16,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
@@ -112,6 +112,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 	return resources.NewTemplateData(
 		c,
 		&dc,
+		cc.dc,
 		cc.secretLister,
 		cc.configMapLister,
 		cc.serviceLister,
@@ -182,6 +183,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 	}
 	ops := []secretOp{
 		{resources.CASecretName, cc.getRootCACertSecret},
+		{resources.FrontProxyCASecretName, cc.getFrontProxyCACertSecret},
 		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
@@ -192,6 +194,12 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
+		{resources.ImagePullSecretName, cc.getImagePullSecret},
+	}
+
+	if len(c.Spec.MachineNetworks) > 0 {
+		ipamSecret := secretOp{resources.IPAMControllerKubeconfigSecretName, cc.getIPAMControllerKubeconfigSecret}
+		ops = append(ops, ipamSecret)
 	}
 
 	for _, op := range ops {
@@ -490,8 +498,8 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators() []resources.DeploymentCreator {
-	return []resources.DeploymentCreator{
+func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
+	creators := []resources.DeploymentCreator{
 		machinecontroller.Deployment,
 		openvpn.Deployment,
 		apiserver.Deployment,
@@ -500,10 +508,16 @@ func GetDeploymentCreators() []resources.DeploymentCreator {
 		dns.Deployment,
 		kubestatemetrics.Deployment,
 	}
+
+	if c != nil && len(c.Spec.MachineNetworks) > 0 {
+		creators = append(creators, ipamcontroller.Deployment)
+	}
+
+	return creators
 }
 
 func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
-	creators := GetDeploymentCreators()
+	creators := GetDeploymentCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -556,10 +570,10 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 // GetSecretCreators returns all SecretCreators that are currently in use
 func GetSecretCreators() map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
-		resources.EtcdTLSCertificateSecretName:              etcd.TLSCertificate,
-		resources.ApiserverEtcdClientCertificateSecretName:  apiserver.EtcdClientCertificate,
-		resources.ServiceAccountKeySecretName:               apiserver.ServiceAccountKey,
-		resources.ApiserverProxyClientCertificateSecretName: apiserver.ProxyClientCertificate,
+		resources.EtcdTLSCertificateSecretName:                   etcd.TLSCertificate,
+		resources.ApiserverEtcdClientCertificateSecretName:       apiserver.EtcdClientCertificate,
+		resources.ServiceAccountKeySecretName:                    apiserver.ServiceAccountKey,
+		resources.ApiserverFrontProxyClientCertificateSecretName: apiserver.FrontProxyClientCertificate,
 	}
 }
 

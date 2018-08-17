@@ -11,6 +11,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -23,8 +24,13 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
+// KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
+var KUBERMATICCOMMIT string
+
 const (
-	//ApiserverDeploymentName is the name for the apiserver deployment
+	// KubermaticNamespaceName specifies the name of the kubermatic namespace
+	KubermaticNamespaceName = "kubermatic"
+	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
@@ -67,12 +73,19 @@ const (
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
 	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
+	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
+	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
-	//ControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
-	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
+	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 
-	//CASecretName is the name for the secret containing the root ca key
+	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
+	ImagePullSecretName = "dockercfg"
+
+	//FrontProxyCASecretName is the name for the secret containing the front proxy ca
+	FrontProxyCASecretName = "front-proxy-ca"
+	//CASecretName is the name for the secret containing the root ca
 	CASecretName = "ca"
 	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
@@ -90,8 +103,8 @@ const (
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
 	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
-	//ApiserverProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
-	ApiserverProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
+	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -119,6 +132,24 @@ const (
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
+	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
+	IPAMControllerCertUsername = "kubermatic:ipam-controller"
+
+	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
+	MachineIPAMInitializerConfigurationName = "ipam-initializer"
+	// MachineIPAMInitializerName is the name of the initializer used for setting up static ips for machines
+	MachineIPAMInitializerName = "ipam.kubermatic.io"
+	// IPAMControllerDeploymentName is the name of the ipam controller's deployment
+	IPAMControllerDeploymentName = "ipam-controller"
+
+	// IPAMControllerRoleName is the name for the IPAMController roles
+	IPAMControllerRoleName = "ipam-controller"
+	// IPAMControllerRoleBindingName is the name for the IPAMController rolebinding
+	IPAMControllerRoleBindingName = "ipam-controller"
+	// IPAMControllerClusterRoleName is the name for the IPAMController cluster role
+	IPAMControllerClusterRoleName = "system:kubermatic-ipam-controller"
+	// IPAMControllerClusterRoleBindingName is the name for the IPAMController clusterrolebinding
+	IPAMControllerClusterRoleBindingName = "system:kubermatic-ipam-controller"
 
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
@@ -239,6 +270,9 @@ type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.Clust
 // DeploymentCreator defines an interface to create/update Deployment's
 type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
 
+// InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
+type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
+
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets's
 type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
 
@@ -246,6 +280,7 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 type TemplateData struct {
 	Cluster           *kubermaticv1.Cluster
 	DC                *provider.DatacenterMeta
+	SeedDC            string
 	SecretLister      corev1lister.SecretLister
 	ConfigMapLister   corev1lister.ConfigMapLister
 	ServiceLister     corev1lister.ServiceLister
@@ -290,6 +325,7 @@ func String(v string) *string {
 func NewTemplateData(
 	cluster *kubermaticv1.Cluster,
 	dc *provider.DatacenterMeta,
+	seedDatacenter string,
 	secretLister corev1lister.SecretLister,
 	configMapLister corev1lister.ConfigMapLister,
 	serviceLister corev1lister.ServiceLister,
@@ -300,6 +336,7 @@ func NewTemplateData(
 	return &TemplateData{
 		Cluster:           cluster,
 		DC:                dc,
+		SeedDC:            seedDatacenter,
 		ConfigMapLister:   configMapLister,
 		SecretLister:      secretLister,
 		ServiceLister:     serviceLister,
@@ -387,7 +424,17 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 
 // GetClusterCA returns the root CA of the cluster
 func (d *TemplateData) GetClusterCA() (*triple.KeyPair, error) {
-	return GetClusterCAFromLister(d.Cluster, d.SecretLister)
+	return d.GetCA(CASecretName)
+}
+
+// GetFrontProxyCA returns the root CA of the cluster
+func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
+	return d.GetCA(FrontProxyCASecretName)
+}
+
+// GetCA returns the CA with the given name for this cluster
+func (d *TemplateData) GetCA(name string) (*triple.KeyPair, error) {
+	return GetClusterCAFromLister(name, d.Cluster, d.SecretLister)
 }
 
 // ServiceClusterIP returns the ClusterIP as string for the
@@ -540,9 +587,9 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return wantOrganizations.Equal(certOrganizations)
 }
 
-// GetClusterCAFromLister returns the root CA of the cluster from the lister
-func GetClusterCAFromLister(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(CASecretName)
+// GetClusterCAFromLister returns the CA of the cluster from the lister
+func GetClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(name)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
