@@ -56,12 +56,12 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeName, machineClient, kubeClient)
+		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
 		if machine == nil && node == nil {
-			return nil, k8cerrors.NewNotFound("Node", req.NodeName)
+			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
 		}
 
 		if machine != nil {
@@ -172,12 +172,12 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeName, machineClient, kubeClient)
+		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
 		if machine == nil && node == nil {
-			return nil, apierrors.NewNotFound("Node", req.NodeName)
+			return nil, apierrors.NewNotFound("Node", req.NodeID)
 		}
 
 		if machine == nil {
@@ -334,15 +334,15 @@ func convertNodesV2ToNodesV1(nodesV2 []*apiv2.Node) []*apiv1.Node {
 type NewDeleteNodeForClusterReq struct {
 	NewGetClusterReq
 	// in: path
-	NodeName string `json:"node_name"`
+	NodeID string `json:"node_id"`
 }
 
 func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewDeleteNodeForClusterReq
 
-	nodeName := mux.Vars(r)["node_name"]
-	if nodeName == "" {
-		return "", fmt.Errorf("'node_name' parameter is required but was not provided")
+	nodeID := mux.Vars(r)["node_id"]
+	if nodeID == "" {
+		return "", fmt.Errorf("'node_id' parameter is required but was not provided")
 	}
 
 	clusterID, err := decodeClusterID(c, r)
@@ -356,7 +356,7 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 	}
 
 	req.ClusterID = clusterID
-	req.NodeName = nodeName
+	req.NodeID = nodeID
 	req.DCReq = dcr.(DCReq)
 
 	return req, nil
@@ -425,7 +425,7 @@ func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}
 type NewNodeReq struct {
 	NewGetClusterReq
 	// in: path
-	NodeName string `json:"node_name"`
+	NodeID string `json:"node_id"`
 	// in: query
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
@@ -437,9 +437,9 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	nodeName := mux.Vars(r)["node_name"]
-	if nodeName == "" {
-		return nil, fmt.Errorf("'node_name' parameter is required but was not provided")
+	nodeID := mux.Vars(r)["node_id"]
+	if nodeID == "" {
+		return nil, fmt.Errorf("'node_id' parameter is required but was not provided")
 	}
 
 	dcr, err := decodeDcReq(c, r)
@@ -448,7 +448,7 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	}
 
 	req.ClusterID = clusterID
-	req.NodeName = nodeName
+	req.NodeID = nodeID
 	req.DCReq = dcr.(DCReq)
 
 	return req, nil
