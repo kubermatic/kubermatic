@@ -18,3 +18,7 @@ check-rules:
 .PHONY: grafana
 grafana:
 	jsonnet -J vendor -m grafana/dashboards/ -e '(import "grafana/jsonnet/grafana.jsonnet")'
+
+.PHONY: format-dashboards
+format-dashboards:
+	find grafana/dashboards -name '*.json' -exec sh -c "jq --sort-keys '.' {} > {}.tmp && mv {}.tmp {}" \;
