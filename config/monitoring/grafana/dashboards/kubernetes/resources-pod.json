@@ -741,7 +741,7 @@
     ]
   },
   "timezone": "utc",
-  "title": "K8s / Compute Resources / Pod",
+  "title": "Compute Resources / Pod",
   "uid": "0143e76b1bcb",
   "version": 0
 }

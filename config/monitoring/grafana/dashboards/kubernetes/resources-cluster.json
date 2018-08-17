@@ -1163,7 +1163,7 @@
     ]
   },
   "timezone": "utc",
-  "title": "K8s / Compute Resources / Cluster",
+  "title": "Compute Resources / Cluster",
   "uid": "ef240c71f09d",
   "version": 0
 }
