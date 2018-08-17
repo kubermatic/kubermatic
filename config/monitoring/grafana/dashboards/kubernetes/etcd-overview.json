@@ -1,22 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "description": "etcd metrics (cluster overview)",
-  "editable": true,
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 14,
+  "hideControls": "<< hideControls | default false | toJson >>",
   "iteration": 1534515683711,
   "links": [],
   "panels": [
@@ -108,7 +98,7 @@
       ],
       "thresholds": "",
       "title": "Up",
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -179,7 +169,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -270,7 +260,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -361,7 +351,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -468,7 +458,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -568,7 +558,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -670,7 +660,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -761,7 +751,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -852,7 +842,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -946,7 +936,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1048,7 +1038,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1139,7 +1129,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1230,7 +1220,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1321,7 +1311,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1412,7 +1402,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1503,7 +1493,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1594,7 +1584,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1685,7 +1675,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
+      "transparent": "<< transparentPanels | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1718,7 +1708,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -1741,7 +1731,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {

@@ -2,13 +2,12 @@
   "annotations": {
     "list": []
   },
-  "editable": false,
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
   "graphTooltip": 0,
-  "hideControls": false,
-  "id": null,
+  "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
-  "refresh": "",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "rows": [
     {
       "collapse": false,
@@ -24,7 +23,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -96,7 +95,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "fill": 1,
           "gridPos": {},
           "id": 3,
@@ -193,7 +192,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -265,7 +264,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "fill": 1,
           "gridPos": {},
           "id": 5,
@@ -358,7 +357,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "fill": 1,
           "gridPos": {},
           "id": 6,
@@ -437,7 +436,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus",
+          "datasource": "$datasource",
           "fill": 1,
           "gridPos": {},
           "id": 7,
@@ -529,7 +528,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "prometheus",
+        "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
         "label": null,
@@ -549,7 +548,7 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {

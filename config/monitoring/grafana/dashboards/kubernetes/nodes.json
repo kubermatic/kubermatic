@@ -2,13 +2,12 @@
   "annotations": {
     "list": []
   },
-  "editable": false,
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
   "graphTooltip": 0,
-  "hideControls": false,
-  "id": null,
+  "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
-  "refresh": "",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "rows": [
     {
       "collapse": false,
@@ -930,7 +929,7 @@
           "text": "Prometheus",
           "value": "Prometheus"
         },
-        "hide": 0,
+        "hide": 2,
         "label": null,
         "name": "datasource",
         "options": [],
@@ -962,7 +961,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {
