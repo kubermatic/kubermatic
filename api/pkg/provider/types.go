@@ -93,8 +93,8 @@ type SSHKeyProvider interface {
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
 type ClusterListOptions struct {
-	// ClusterName (spec.HumanReadableName) gets the clusters with the given name
-	ClusterName string
+	// ClusterSpecName gets the clusters with the given name in the spec
+	ClusterSpecName string
 
 	// SortBy sorts the result by the given key name,
 	// for example setting "metadata.creationTimestamp" will sort the result by creation timestamp
