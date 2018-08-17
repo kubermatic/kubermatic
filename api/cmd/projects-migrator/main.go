@@ -81,16 +81,19 @@ func main() {
 	ctx.masterKubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 	ctx.seedClusterProviders = clusterProviders
 
-	// TODO:
 	// phase 0: remove duplicated users
 	//
 	//          duplicated users have the same Spec.ID, Spec.Email, Spec.Name
 	//          for example on dev environment: user-lknc7, user-n45j9, user-z9s20j
+	err = removeDuplicatedUsers(ctx)
+	if err != nil {
+		glog.Errorf("phase 0 failed due to = %v", err)
+	}
 
 	// phase 1: migrate existing cluster resources along with ssh keys they use to projects
 	err = migrateToProject(ctx)
 	if err != nil {
-		glog.Error(err)
+		glog.Errorf("phase 1 failed due to = %v", err)
 	}
 
 	// TODO:
@@ -107,6 +110,64 @@ func main() {
 	//
 	//         note that:
 	//         this step essentially breaks backward compatibility and prevents the old clients (dashboard) from finding the resources.
+
+	// TODO:
+	// phase 4 remove ssh keys without an owner
+	//
+	//         the keys that don't have an owner have their sshKey.Spec.Owner field empty
+	//         for example: key-8036218bef587f8230dad6426099da14-c7i4 and key-8036218bef587f8230dad6426099da14-wwk5 on dev env
+}
+
+// removeDuplicatedUsers finds users with the same spec.ID, spec.Email and spec.Name
+// and removes duplication. This is safe to do because resources like clusters are bound to the user
+// if there is a match on spec.ID field.
+func removeDuplicatedUsers(ctx migrationContext) error {
+	glog.Info("Running PHASE 0 ...")
+	allUsers, err := ctx.masterKubermaticClient.KubermaticV1().Users().List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	seenUsersKey := func(user kubermaticv1.User) string {
+		return fmt.Sprintf("%s:%s:%s", user.Spec.ID, user.Spec.Email, user.Spec.Name)
+	}
+
+	seenUsers := map[string][]kubermaticv1.User{}
+	glog.Info("STEP 1: building the list of duplicated users in the system")
+	{
+		for _, user := range allUsers.Items {
+			key := seenUsersKey(user)
+			seenUserKeyListToUpdate := []kubermaticv1.User{}
+			if seenUserList, ok := seenUsers[seenUsersKey(user)]; ok {
+				seenUserKeyListToUpdate = append(seenUserList, user)
+			} else {
+				seenUserKeyListToUpdate = append(seenUserKeyListToUpdate, user)
+			}
+			seenUsers[key] = seenUserKeyListToUpdate
+		}
+	}
+	printDuplicatedUsers(seenUsers)
+
+	glog.Info("STEP 2: removing duplicated users if any")
+	{
+		for _, userList := range seenUsers {
+			if len(userList) > 1 {
+				for i := 0; i < len(userList)-1; i++ {
+					userName := userList[i].Name
+					if !ctx.dryRun {
+						err := ctx.masterKubermaticClient.KubermaticV1().Users().Delete(userName, &metav1.DeleteOptions{})
+						if err != nil {
+							return err
+						}
+						glog.Infof("the user = %s was removed from the system", userName)
+					} else {
+						glog.Infof("the user = %s was NOT removed from the system because dry-run option was requested", userName)
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // migrateToProject starts the migration of existing resources.
@@ -114,6 +175,8 @@ func main() {
 // Similarly with ssh keys that are being used by the clusters.
 // Next we create a default project for the users and start the migration process by updating the existing resources.
 func migrateToProject(ctx migrationContext) error {
+	glog.Info("\n")
+	glog.Info("Running PHASE 1 ...")
 	//
 	// step 1: get clusters that doesn't belong to any project,
 	//         clusters like that don't have OwnerReferences set for a project
@@ -262,7 +325,7 @@ func migrateToProject(ctx migrationContext) error {
 
 			projectName := isOwnedByProject(sshKey.OwnerReferences)
 			if len(projectName) > 0 {
-				glog.Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
+				glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
 				continue
 			}
 
@@ -271,8 +334,9 @@ func migrateToProject(ctx migrationContext) error {
 				userSSHKeys := sshKeysToAdoptByUserID[sshKey.Spec.Owner]
 				userSSHKeys = append(userSSHKeys, sshKey)
 				sshKeysToAdoptByUserID[sshKey.Spec.Owner] = userSSHKeys
+				glog.V(2).Infof("adding the ssh keys (ID = %s, Name = %s) to the list", sshKey.Name, sshKey.Spec.Name)
 			} else {
-				glog.Infof("skipping the following ssh keys (ID = %s, Name = %s) as it is not being used by any cluster", sshKey.Name, sshKey.Spec.Name)
+				glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it is not being used by any cluster", sshKey.Name, sshKey.Spec.Name)
 			}
 		}
 	}
@@ -436,6 +500,20 @@ func printSSHKeysToAdopt(sshKeysToAdoptByUserID map[string][]kubermaticv1.UserSS
 		glog.V(2).Infof("%1s there are %d ssh key resources", "", len(sshKeysResources))
 		for index, sshKey := range sshKeysResources {
 			glog.V(3).Infof("%2s %d. name = %s", "", index+1, sshKey.Name)
+		}
+	}
+}
+
+func printDuplicatedUsers(users map[string][]kubermaticv1.User) {
+	glog.V(2).Info("==================================================================================================")
+	glog.V(2).Info("duplicated users in the system")
+	glog.V(2).Info("==================================================================================================")
+	for userKey, userList := range users {
+		if len(userList) > 1 {
+			glog.V(2).Infof("%1s there are %d users with the same key %s", "", len(userList), userKey)
+			for index, duplicatedUser := range userList {
+				glog.V(3).Infof("%2s %d. user (%s) has Name = %s, Email = %s and ID = %s, the account was created on %s", "", index+1, duplicatedUser.Name, duplicatedUser.Spec.Name, duplicatedUser.Spec.Email, duplicatedUser.Spec.ID, duplicatedUser.CreationTimestamp.String())
+			}
 		}
 	}
 }
