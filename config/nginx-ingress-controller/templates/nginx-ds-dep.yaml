@@ -62,6 +62,14 @@ spec:
             - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
             - --default-ssl-certificate=default/kubermatic-tls-certificates
             - --annotations-prefix=ingress.kubernetes.io
+          securityContext:
+            capabilities:
+              drop:
+              - ALL
+              add:
+              - NET_BIND_SERVICE
+            # www-data -> 33
+            runAsUser: 33
           env:
             - name: POD_NAME
               valueFrom:
