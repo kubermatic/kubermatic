@@ -12,3 +12,9 @@ providers:
     path: /grafana-dashboard-definitions/kubernetes
   org_id: 1
   type: file
+- folder: "Prometheus"
+  name: "prometheus"
+  options:
+    path: /grafana-dashboard-definitions/prometheus
+  org_id: 1
+  type: file
