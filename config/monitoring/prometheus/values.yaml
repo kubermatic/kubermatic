@@ -6,3 +6,20 @@ prometheus:
   storageSize: 100Gi
   externalLabels:
     region: default
+  containers:
+    prometheus:
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 512Mi
+    reloader:
+      resources:
+        limits:
+          cpu: 100m
+          memory: 64Mi
+        requests:
+          cpu: 25m
+          memory: 16Mi
