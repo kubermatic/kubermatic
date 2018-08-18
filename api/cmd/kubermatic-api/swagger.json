@@ -315,7 +315,7 @@
         }
       }
     },
-    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}": {
+    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}": {
       "delete": {
         "description": "Deletes the specified cluster",
         "produces": [
@@ -342,8 +342,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -364,7 +364,7 @@
         }
       }
     },
-    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}/health": {
+    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health": {
       "get": {
         "description": "Returns the cluster's component health status",
         "produces": [
@@ -391,8 +391,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -675,7 +675,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}": {
       "get": {
         "description": "Gets the cluster with the given name",
         "produces": [
@@ -702,8 +702,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -752,8 +752,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           },
@@ -784,7 +784,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig": {
       "get": {
         "produces": [
           "application/yaml"
@@ -811,8 +811,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -836,7 +836,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics": {
       "get": {
         "description": "Gets cluster metrics",
         "produces": [
@@ -863,8 +863,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -891,7 +891,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
         "description": "Lists nodes that belong to the given cluster",
         "produces": [
@@ -918,8 +918,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           },
@@ -980,8 +980,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           },
@@ -1012,7 +1012,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}": {
       "get": {
         "consumes": [
           "application/json"
@@ -1042,15 +1042,15 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node_name",
+            "x-go-name": "NodeID",
+            "name": "node_id",
             "in": "path",
             "required": true
           },
@@ -1105,15 +1105,15 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node_name",
+            "x-go-name": "NodeID",
+            "name": "node_id",
             "in": "path",
             "required": true
           }
@@ -1134,7 +1134,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys": {
       "get": {
         "description": "Lists ssh keys that are assigned to the cluster\nThe returned collection is sorted by creation timestamp.",
         "consumes": [
@@ -1164,8 +1164,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -1225,8 +1225,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -1247,7 +1247,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name}": {
       "delete": {
         "description": "Unassignes an ssh key from the given cluster",
         "consumes": [
@@ -1284,8 +1284,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -1306,7 +1306,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token": {
       "get": {
         "produces": [
           "application/json"
@@ -1333,8 +1333,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -1383,8 +1383,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -1408,7 +1408,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades": {
       "get": {
         "description": "Gets possible cluster upgrades",
         "produces": [
@@ -1435,8 +1435,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "path",
             "required": true
           }
@@ -2819,6 +2819,13 @@
           "type": "string",
           "x-go-name": "HumanReadableName"
         },
+        "machineNetworks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MachineNetworkingConfig"
+          },
+          "x-go-name": "MachineNetworks"
+        },
         "masterVersion": {
           "description": "MasterVersion is Deprecated",
           "type": "string",
@@ -3561,6 +3568,28 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "MachineNetworkingConfig": {
+      "type": "object",
+      "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
+      "properties": {
+        "cidr": {
+          "type": "string",
+          "x-go-name": "CIDR"
+        },
+        "dnsServers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "DNSServers"
+        },
+        "gateway": {
+          "type": "string",
+          "x-go-name": "Gateway"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
       "type": "object",
@@ -3662,6 +3691,14 @@
       "properties": {
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
+        },
+        "machineNetworks": {
+          "description": "MachineNetworks optionally specifies the parameters for IPAM.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MachineNetworkingConfig"
+          },
+          "x-go-name": "MachineNetworks"
         },
         "version": {
           "description": "Version desired version of the kubernetes master components",

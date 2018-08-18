@@ -31,6 +31,7 @@ var (
 const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
+	tag     = "v3.2.24"
 )
 
 // StatefulSet returns the etcd StatefulSet
@@ -88,7 +89,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     name,
-			Image:                    "quay.io/coreos/etcd:v3.2.20",
+			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + tag,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  etcdStartCmd,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -351,8 +352,6 @@ echo "initial-cluster: ${INITIAL_CLUSTER}"
 exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="{{ .DataDir }}" \
-    --heartbeat-interval=500 \
-    --election-timeout=5000 \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="{{ .Token }}" \
     --initial-cluster-state=${INITIAL_STATE} \

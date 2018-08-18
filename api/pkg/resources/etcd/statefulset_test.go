@@ -61,8 +61,6 @@ echo "initial-cluster: ${INITIAL_CLUSTER}"
 exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-    --heartbeat-interval=500 \
-    --election-timeout=5000 \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="lg69pmx8wf" \
     --initial-cluster-state=${INITIAL_STATE} \
@@ -133,8 +131,6 @@ echo "initial-cluster: ${INITIAL_CLUSTER}"
 exec /usr/local/bin/etcd \
     --name=${POD_NAME} \
     --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-    --heartbeat-interval=500 \
-    --election-timeout=5000 \
     --initial-cluster=${INITIAL_CLUSTER} \
     --initial-cluster-token="62m9k9tqlm" \
     --initial-cluster-state=${INITIAL_STATE} \

@@ -125,10 +125,16 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
 
+	flags, err := getApiserverFlags(data, externalNodePort, etcd)
+	if err != nil {
+		return nil, err
+	}
+
 	resourceRequirements := defaultResourceRequirements
 	if data.Cluster.Spec.ComponentsOverride.Apiserver.Resources != nil {
 		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Apiserver.Resources
 	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
@@ -137,7 +143,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "apiserver"},
 			Env:             getEnvVars(data),
-			Args:            getApiserverFlags(data, externalNodePort, etcd),
+			Args:            flags,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
@@ -213,8 +219,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 				{
-					Name:      resources.ApiserverProxyClientCertificateSecretName,
-					MountPath: "/etc/kubernetes/pki/proxy-client",
+					Name:      resources.ApiserverFrontProxyClientCertificateSecretName,
+					MountPath: "/etc/kubernetes/pki/front-proxy/client",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.FrontProxyCASecretName,
+					MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 					ReadOnly:  true,
 				},
 			},
@@ -224,10 +235,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) []string {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) ([]string, error) {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
+	}
+
+	clusterVersionSemVer, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err != nil {
+		return nil, err
 	}
 
 	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
@@ -259,17 +275,21 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--audit-log-path", "/var/log/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--proxy-client-cert-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
-		"--proxy-client-key-file", "/etc/kubernetes/pki/proxy-client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
+		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
+		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
 		"--v", "4",
-		"--requestheader-client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+	}
+	if clusterVersionSemVer.Minor() >= 9 {
+		flags = append(flags, "--feature-gates", "Initializers=true")
+		flags = append(flags, "--runtime-config", "admissionregistration.k8s.io/v1alpha1")
 	}
 	if data.Cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
@@ -293,7 +313,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 	} else {
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
-	return flags
+	return flags, nil
 }
 
 func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
@@ -308,7 +328,7 @@ func getAdmissionControlFlags(data *resources.TemplateData) (string, string) {
 
 	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
 	if clusterVersionSemVer.Minor() >= 9 {
-		admissionControlFlagValue += ",MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+		admissionControlFlagValue += ",Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
 	}
 
 	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
@@ -406,10 +426,19 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.ApiserverProxyClientCertificateSecretName,
+			Name: resources.ApiserverFrontProxyClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverProxyClientCertificateSecretName,
+					SecretName:  resources.ApiserverFrontProxyClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.FrontProxyCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.FrontProxyCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

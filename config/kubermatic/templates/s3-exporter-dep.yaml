@@ -45,6 +45,8 @@ spec:
     metadata:
       labels:
         app: s3-exporter
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '9340'
     spec:
       serviceAccount: s3-exporter
       containers:
@@ -66,7 +68,7 @@ spec:
           args:
             - -v=4
             - -logtostderr
-            - -endpoint=http://minio.minio.svc.cluster.local:9000
+            - -endpoint={{.Values.kubermatic.s3_exporter.endpoint}}
             - -access-key-id=$(ACCESS_KEY_ID)
             - -secret-access-key=$(SECRET_ACCESS_KEY)
             - -bucket={{.Values.kubermatic.s3_exporter.bucket}}

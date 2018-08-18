@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: grafana-datasources
+  data:
+    datasources.yaml: |
+{{ (.Files.Get "config/datasources.yaml") | indent 6 }}
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: grafana-dashboards
+  data:
+    dashboards.yaml: |
+{{ (.Files.Get "config/dashboards.yaml") | indent 6 }}
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: grafana-dashboard-definitions
+  data:
+    # See the README.md for more details on how dashboards are treated as templates.
+    {{- range $file, $content := (.Files.Glob "dashboards/**") }}
+    {{ $file | replace "dashboards/" "" | replace "/" "-" }}: |
+{{ (regexReplaceAllLiteral "\\n\\s+" ((tpl (($.Files.Get $file) | replace "{{" "_{_{" | replace "}}" "_}_}" | replace "[[ " "{{ .Values.grafana.dashboards." | replace "]]" "}}" | replace "\"<< " "{{ .Values.grafana.dashboards." | replace ">>\"" "}}") $) | replace "_{_{" "{{" | replace "_}_}" "}}") " ") | indent 6 }}
+    {{- end }}

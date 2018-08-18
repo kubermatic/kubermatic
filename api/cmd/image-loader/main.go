@@ -157,7 +157,7 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
-	deploymentCreators := cluster.GetDeploymentCreators()
+	deploymentCreators := cluster.GetDeploymentCreators(nil)
 
 	for _, createFunc := range statefulsetCreators {
 		statefulset, err := createFunc(templateData, nil)
@@ -302,7 +302,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.KubeletClientCertificatesSecretName,
 		resources.ServiceAccountKeySecretName,
 		resources.ApiserverEtcdClientCertificateSecretName,
-		resources.ApiserverProxyClientCertificateSecretName,
+		resources.ApiserverFrontProxyClientCertificateSecretName,
 		resources.EtcdTLSCertificateSecretName,
 		resources.MachineControllerKubeconfigSecretName,
 		resources.ControllerManagerKubeconfigSecretName,
@@ -310,6 +310,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.KubeStateMetricsKubeconfigSecretName,
 		resources.OpenVPNServerCertificatesSecretName,
 		resources.OpenVPNClientCertificatesSecretName,
+		resources.FrontProxyCASecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)

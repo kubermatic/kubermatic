@@ -5,6 +5,9 @@ Fixes #
 
 **Special notes for your reviewer**:
 
+**Documentation**:
+<!-- Add links to the related documentation changes related to this pull request. E.g. the link to the kubermatic/docs pullrequest. -->
+
 **Release note**:
 <!--  Write your release note:
 1. Enter your extended release note in the below block. If the PR requires additional action from users switching to the new release, include the string "action required".
