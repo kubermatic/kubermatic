@@ -6,16 +6,26 @@ items:
   metadata:
     name: grafana-datasources
   data:
-    datasources.yaml: |
-{{ (.Files.Get "config/datasources.yaml") | indent 6 }}
+{{ (.Files.Glob (.Values.grafana.provisioning.datasources.source | default "provisioning/datasources/*")).AsConfig | indent 4 }}
+{{- if .Values.grafana.provisioning.datasources.extra }}
+    _extra.yaml: |
+      apiVersion: 1
+      datasources:
+{{ toYaml .Values.grafana.provisioning.datasources.extra | indent 6 }}
+{{- end }}
 
 - apiVersion: v1
   kind: ConfigMap
   metadata:
     name: grafana-dashboards
   data:
-    dashboards.yaml: |
-{{ (.Files.Get "config/dashboards.yaml") | indent 6 }}
+{{ (.Files.Glob (.Values.grafana.provisioning.dashboards.source | default "provisioning/dashboards/*")).AsConfig | indent 4 }}
+{{- if .Values.grafana.provisioning.dashboards.extra }}
+    _extra.yaml: |
+      apiVersion: 1
+      providers:
+{{ toYaml .Values.grafana.provisioning.dashboards.extra | indent 6 }}
+{{- end }}
 
 - apiVersion: v1
   kind: ConfigMap
