@@ -133,13 +133,13 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 			return nil, err
 		}
 	}
-	if len(options.ClusterName) == 0 {
+	if len(options.ClusterSpecName) == 0 {
 		return projectClusters, nil
 	}
 
 	filteredProjectClusters := []*kubermaticapiv1.Cluster{}
 	for _, projectCluster := range projectClusters {
-		if projectCluster.Spec.HumanReadableName == options.ClusterName {
+		if projectCluster.Spec.HumanReadableName == options.ClusterSpecName {
 			filteredProjectClusters = append(filteredProjectClusters, projectCluster)
 		}
 	}

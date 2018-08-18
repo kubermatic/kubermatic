@@ -125,73 +125,73 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListClusters())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.newGetCluster())
 
 	mux.Methods(http.MethodPut).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.newUpdateCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.newGetClusterKubeconfig())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.newDeleteCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/health").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health").
 		Handler(r.newGetClusterHealth())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades").
 		Handler(r.getClusterUpgrades())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
 		Handler(r.clusterMetricsHandler())
 
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys").
 		Handler(r.newAssignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys").
 		Handler(r.newListSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name}").
 		Handler(r.newDetachSSHKeyFromCluster())
 
 	//
 	// Defines a set of HTTP endpoints for nodes that belong to a cluster
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
 		Handler(r.newGetNodeForCluster())
 
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
 		Handler(r.newCreateNodeForCluster())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
 		Handler(r.newListNodesForCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
 		Handler(r.newDeleteNodeForCluster())
 
 	//
 	// Defines set of HTTP endpoints for the admin token that belongs to a cluster
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
 		Handler(r.getClusterAdminToken())
 
 	mux.Methods(http.MethodPut).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
 		Handler(r.revokeClusterAdminToken())
 
 	//
@@ -768,7 +768,7 @@ func (r Routing) newListClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name} project newGetCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newGetCluster
 //
 //     Gets the cluster with the given name
 //
@@ -793,7 +793,7 @@ func (r Routing) newGetCluster() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name} project newUpdateCluster
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newUpdateCluster
 //
 //     Updates the given cluster.
 //
@@ -819,7 +819,7 @@ func (r Routing) newUpdateCluster() http.Handler {
 }
 
 // newGetClusterKubeconfig returns the kubeconfig for the cluster.
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/kubeconfig project newGetClusterKubeconfig
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig project newGetClusterKubeconfig
 //
 //     Gets the kubeconfig for the specified cluster.
 //
@@ -845,7 +845,7 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name} project newDeleteCluster
+// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
 //
 //     Deletes the specified cluster
 //
@@ -870,7 +870,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_name}/health project newGetClusterHealth
+// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
 //
 //     Returns the cluster's component health status
 //
@@ -895,7 +895,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newAssignSSHKeyToCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys project newAssignSSHKeyToCluster
 //
 //     Assigns an existing ssh key to the given cluster
 //
@@ -923,7 +923,7 @@ func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys project newListSSHKeysAssignedToCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys project newListSSHKeysAssignedToCluster
 //
 //     Lists ssh keys that are assigned to the cluster
 //     The returned collection is sorted by creation timestamp.
@@ -952,7 +952,7 @@ func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
 //
 //     Unassignes an ssh key from the given cluster
 //
@@ -980,7 +980,7 @@ func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project getClusterAdminToken
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token project getClusterAdminToken
 //
 //     Returns the current admin token for the given cluster.
 //
@@ -1005,7 +1005,7 @@ func (r Routing) getClusterAdminToken() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/token project revokeClusterAdminToken
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token project revokeClusterAdminToken
 //
 //     Revokes the current admin token and returns a newly generated one.
 //
@@ -1030,7 +1030,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newGetNodeForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project newGetNodeForCluster
 //
 //     Gets a node that is assigned to the given cluster.
 //
@@ -1058,7 +1058,7 @@ func (r Routing) newGetNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newCreateNodeForCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project newCreateNodeForCluster
 //
 //     Creates a node that will belong to the given cluster
 //
@@ -1086,7 +1086,7 @@ func (r Routing) newCreateNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes project newListNodesForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project newListNodesForCluster
 //
 //
 //     Lists nodes that belong to the given cluster
@@ -1112,7 +1112,7 @@ func (r Routing) newListNodesForCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/nodes/{node_name} project newDeleteNodeForCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project newDeleteNodeForCluster
 //
 //    Deletes the given node that belongs to the cluster.
 //
@@ -1137,7 +1137,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/upgrades project getClusterUpgrades
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades project getClusterUpgrades
 //
 //    Gets possible cluster upgrades
 //
@@ -1162,7 +1162,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_name}/metrics project clusterMetricsHandler
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project clusterMetricsHandler
 //
 //    Gets cluster metrics
 //

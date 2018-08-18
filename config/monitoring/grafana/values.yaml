@@ -5,3 +5,8 @@ grafana:
   image:
     repository: grafana/grafana
     tag: 5.2.1
+  dashboards:
+    editable: false
+    transparentPanels: true
+    refresh: 30s
+    defaultRange: now-1h
