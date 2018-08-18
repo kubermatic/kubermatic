@@ -50,12 +50,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 5
         resources:
-          limits:
-            cpu: 1
-            memory: 2Gi
-          requests:
-            cpu: 100m
-            memory: 512Mi
+{{ toYaml .Values.prometheus.containers.prometheus.resources | indent 10 }}
         volumeMounts:
         - mountPath: /etc/prometheus/config/
           name: prometheus-kubermatic-config
@@ -74,12 +69,7 @@ spec:
         - --volume-dir=/etc/prometheus/rules
         - --webhook-url=http://localhost:9090/-/reload
         resources:
-          limits:
-            cpu: 100m
-            memory: 64Mi
-          requests:
-            cpu: 25m
-            memory: 16Mi
+{{ toYaml .Values.prometheus.containers.reloader.resources | indent 10 }}
         volumeMounts:
         - mountPath: /etc/prometheus/config/
           name: prometheus-kubermatic-config
