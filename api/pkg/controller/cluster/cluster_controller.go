@@ -290,6 +290,9 @@ func (cc *Controller) updateCluster(name string, modify func(*kubermaticv1.Clust
 			modify(currentCluster)
 			// Update the cluster
 			updatedCluster, err = cc.kubermaticClient.KubermaticV1().Clusters().Update(currentCluster)
+			if err != nil {
+				return err
+			}
 		}
 
 		return err

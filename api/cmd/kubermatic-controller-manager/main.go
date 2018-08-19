@@ -213,11 +213,11 @@ func main() {
 			return nil
 		}, func(err error) {
 			glog.Errorf("Stopping internal http server: %v", err)
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second)
 			defer cancel()
 
 			glog.Info("Shutting down the internal http server")
-			if err := s.Shutdown(ctx); err != nil {
+			if err := s.Shutdown(timeoutCtx); err != nil {
 				glog.Error("failed to shutdown the internal http server gracefully:", err)
 			}
 		})
@@ -232,8 +232,7 @@ func main() {
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					err := runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, controllers)
-					if err != nil {
+					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, controllers); err != nil {
 						glog.Error(err)
 						ctxDone()
 					}
