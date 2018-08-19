@@ -4,8 +4,73 @@ prometheus:
   version: 'v2.2.1'
   host: ""
   storageSize: 100Gi
-  externalLabels:
-    region: default
+
+  # Specify additional external labels which will be added to all
+  # alerts sent by Prometheus.
+  #externalLabels:
+  #  region: default
+
+  # Configure the scraping rules for Prometheus. You can either
+  # add your own scraping configs here or change the path to the
+  # predefined config files that are evaluated when Helm builds
+  # the chart and deploys it. You cannot use this to load files
+  # at runtime from a custom volume because Prometheus does not
+  # support it.
+  scraping:
+    files:
+    - 'config/scraping/*.yaml'
+    #configs:
+    #- job_name: myscrapejob
+    #  honor_labels: true
+    #  ...
+
+  # Similarly to the scraping config, you can configure the
+  # target alertmanagers here.
+  alertmanagers:
+    files:
+    - 'config/alertmanagers/*.yaml'
+    #configs:
+    #- scheme: http
+    #  path_prefix: /
+    #  ...
+
+  # The list of rule files to load; if you use the `volumes`
+  # directive below to mount your own ConfigMap or Secret into
+  # Prometheus, you will want to extend this list to laod your
+  # own rule files. You can remove the predefined path to
+  # effectively disable the stock recordings and alerts.
+  ruleFiles:
+  - '/etc/prometheus/rules/*.yaml'
+
+  # Optionally add some more recording/alerting rules; the structure
+  # beneath `rules` is identical to regular rules files as documented
+  # in https://prometheus.io/docs/prometheus/2.2/getting_started/
+  # For larger collections of rules, consider using the custom volume
+  # approach shown further down in the `volumes` section.
+  #rules:
+  #  groups:
+  #    - name: myrules
+  #      rules:
+  #      - alert: DatacenterIsOnFire
+  #        expr: temperature{cpu} > 100
+  #        for: 5m
+
+  # If you prefer to manage your recording/alerting rules in your
+  # own ConfigMaps or Secrets, you can use this section to mount
+  # those into the Prometheus pods. Remember to extend the `ruleFiles`
+  # section above to have your files be loaded into Prometheus.
+  # For each volume, specify either a configMap name or a secretName,
+  # never both.
+  #volumes:
+  #- name: initech-alerting-rules
+  #  mountPath: /initech/alerts
+  #  configMap: initech-alerting-rules-configmap
+  #- name: initech-recording-rules
+  #  mountPath: /initech/recordings
+  #  secretName: initech-recording-rules-secret
+
+  # For larger deployments it can make sense to increase the CPU/memory
+  # limits accordingly.
   containers:
     prometheus:
       resources:

@@ -1,0 +1,45 @@
+job_name: clusters
+honor_labels: true
+params:
+  match[]:
+  - '{__name__="up"}'
+  - '{__name__=~"machine_controller.*"}'
+  - '{kubermatic="federate"}'
+metrics_path: /federate
+scheme: http
+kubernetes_sd_configs:
+- role: endpoints
+relabel_configs:
+- source_labels: [__meta_kubernetes_service_label_cluster]
+  separator: ;
+  regex: user
+  replacement: $1
+  action: keep
+- source_labels: [__meta_kubernetes_endpoint_port_name]
+  separator: ;
+  regex: web
+  replacement: $1
+  action: keep
+- source_labels: [__meta_kubernetes_namespace]
+  separator: ;
+  regex: (.*)
+  target_label: namespace
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_pod_name]
+  separator: ;
+  regex: (.*)
+  target_label: pod
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_service_name]
+  separator: ;
+  regex: (.*)
+  target_label: service
+  replacement: $1
+  action: replace
+- separator: ;
+  regex: (.*)
+  target_label: endpoint
+  replacement: web
+  action: replace
