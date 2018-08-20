@@ -396,6 +396,9 @@ pipeline:
     - thz=tobias.hintze
     - toschneck=tobias.schneck
     - xrstf=christoph
+    - xmudrii=marko
+    - maciaszczykm=marcin
+    - floreks=sebastian.florek
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: grafana
   name: grafana
-  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -32,45 +31,25 @@ spec:
         - mountPath: /var/lib/grafana
           name: grafana-storage
           readOnly: false
-        - mountPath: /etc/grafana/provisioning/datasources
-          name: grafana-datasources
-          readOnly: false
-        - mountPath: /etc/grafana/provisioning/dashboards
-          name: grafana-dashboards
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/k8s-cluster-rsrc-use
-          name: grafana-dashboard-k8s-cluster-rsrc-use
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/k8s-node-rsrc-use
-          name: grafana-dashboard-k8s-node-rsrc-use
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-cluster
-          name: grafana-dashboard-k8s-resources-cluster
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-namespace
-          name: grafana-dashboard-k8s-resources-namespace
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/k8s-resources-pod
-          name: grafana-dashboard-k8s-resources-pod
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/machine-controller
-          name: grafana-dashboard-machine-controller
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/nginx
-          name: grafana-dashboard-nginx
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/nodes
-          name: grafana-dashboard-nodes
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/pods
-          name: grafana-dashboard-pods
-          readOnly: false
-        - mountPath: /grafana-dashboard-definitions/0/statefulset
-          name: grafana-dashboard-statefulset
-          readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
-          readOnly: false
+          readOnly: true
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: grafana-datasources
+          readOnly: true
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: grafana-dashboards
+          readOnly: true
+        - mountPath: /grafana-dashboard-definitions
+          name: grafana-dashboard-definitions
+          readOnly: true
+        {{- if .Values.grafana.volumes }}
+        {{- range .Values.grafana.volumes }}
+        - mountPath: {{ .mountPath }}
+          name: {{ .name }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
@@ -78,42 +57,32 @@ spec:
       volumes:
       - emptyDir: {}
         name: grafana-storage
-      - name: grafana-datasources
-        secret:
-          secretName: grafana-datasources
-      - configMap:
-          name: grafana-dashboards
-        name: grafana-dashboards
-      - configMap:
-          name: grafana-dashboard-k8s-cluster-rsrc-use
-        name: grafana-dashboard-k8s-cluster-rsrc-use
-      - configMap:
-          name: grafana-dashboard-k8s-node-rsrc-use
-        name: grafana-dashboard-k8s-node-rsrc-use
-      - configMap:
-          name: grafana-dashboard-k8s-resources-cluster
-        name: grafana-dashboard-k8s-resources-cluster
-      - configMap:
-          name: grafana-dashboard-k8s-resources-namespace
-        name: grafana-dashboard-k8s-resources-namespace
-      - configMap:
-          name: grafana-dashboard-k8s-resources-pod
-        name: grafana-dashboard-k8s-resources-pod
-      - configMap:
-          name: grafana-dashboard-machine-controller
-        name: grafana-dashboard-machine-controller
-      - configMap:
-          name: grafana-dashboard-nginx
-        name: grafana-dashboard-nginx
-      - configMap:
-          name: grafana-dashboard-nodes
-        name: grafana-dashboard-nodes
-      - configMap:
-          name: grafana-dashboard-pods
-        name: grafana-dashboard-pods
-      - configMap:
-          name: grafana-dashboard-statefulset
-        name: grafana-dashboard-statefulset
       - name: grafana-config
         secret:
           secretName: grafana-config
+      - name: grafana-datasources
+        configMap:
+          name: grafana-datasources
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+      - name: grafana-dashboard-definitions
+        configMap:
+          name: grafana-dashboard-definitions
+          items:
+          {{- range $file, $content := (.Files.Glob "dashboards/**") }}
+          - key: {{ $file | replace "dashboards/" "" | replace "/" "-" }}
+            path: {{ $file | replace "dashboards/" "" }}
+          {{- end }}
+      {{- if .Values.grafana.volumes }}
+      {{- range .Values.grafana.volumes }}
+      - name: {{ .name }}
+        {{- if .configMap }}
+        configMap:
+          name: {{ .configMap }}
+        {{- else }}
+        secret:
+          secretName: {{ .secretName }}
+        {{- end }}
+      {{- end }}
+      {{- end }}

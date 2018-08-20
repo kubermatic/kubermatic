@@ -1,7 +1,7 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 30s
   scrape_timeout: 10s
-  evaluation_interval: 1m
+  evaluation_interval: 30s
   external_labels: {{ if eq (.Values.prometheus.externalLabels | len) 0 }}{}{{ end }}
     {{- range $k, $v := .Values.prometheus.externalLabels }}
     {{ $k }}: {{ $v | quote }}
@@ -40,8 +40,8 @@ scrape_configs:
   params:
     match[]:
     - '{__name__="up"}'
-    - '{__name__=~"etcd.*"}'
     - '{__name__=~"machine_controller.*"}'
+    - '{kubermatic="federate"}'
   metrics_path: /federate
   scheme: http
   kubernetes_sd_configs:

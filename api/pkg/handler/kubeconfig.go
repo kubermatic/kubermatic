@@ -43,7 +43,7 @@ func newGetClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterName)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
