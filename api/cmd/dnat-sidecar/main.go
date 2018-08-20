@@ -49,6 +49,8 @@ type controllerContext struct {
 	rulesHash                 []byte
 }
 
+// DnatRule stores address+port before translation (match) and
+// provides address+port after translation.
 type DnatRule struct {
 	OriginalTargetAddress string
 	OriginalTargetPort    string
@@ -137,9 +139,12 @@ func execRestore(rules []string) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	io.WriteString(stdin, strings.Join(rules, "\n"))
-	io.WriteString(stdin, "\n")
-	stdin.Close()
+	if _, err := io.WriteString(stdin, strings.Join(rules, "\n")+"\n"); err != nil {
+		return -1, fmt.Errorf("failed to write to iptables-restore stdin: %v", err)
+	}
+	if err := stdin.Close(); err != nil {
+		return -1, fmt.Errorf("failed to close iptables-restore stdin: %v", err)
+	}
 
 	_, err = cmd.CombinedOutput()
 	if err == nil {
@@ -154,6 +159,8 @@ func execRestore(rules []string) (int, error) {
 	return -1, err
 }
 
+// GetMatchArgs returns iptables arguments to match for the
+// rule's OriginalTargetAddress and Port.
 func (rule *DnatRule) GetMatchArgs() []string {
 	return []string{
 		"-p", "tcp",
@@ -161,6 +168,9 @@ func (rule *DnatRule) GetMatchArgs() []string {
 		"--dport", rule.OriginalTargetPort,
 	}
 }
+
+// GetTargetArgs returns iptables arguments to specify the
+// rule's target after translation.
 func (rule *DnatRule) GetTargetArgs() []string {
 	if rule.Translate == nil {
 		return []string{}
@@ -170,6 +180,9 @@ func (rule *DnatRule) GetTargetArgs() []string {
 		"--to", rule.Translate(rule),
 	}
 }
+
+// RestoreLine returns a line of `iptables-save`-file representing
+// the rule.
 func (rule *DnatRule) RestoreLine(chain string) string {
 	args := []string{"-A", chain}
 	args = append(args, rule.GetMatchArgs()...)
@@ -177,6 +190,7 @@ func (rule *DnatRule) RestoreLine(chain string) string {
 	return strings.Join(args, " ")
 }
 
+// Insert executes iptables binary and inserts the rule.
 func (rule *DnatRule) Insert(chain string) error {
 	args := []string{"-t", "nat", "-I", chain}
 	args = append(args, rule.GetMatchArgs()...)
@@ -201,7 +215,10 @@ func (ctrl *controllerContext) handle(reason string, oldobj, newobj interface{})
 	// a complete ruleset all the time and comparing for changes.
 
 	// Check that we have a rule in OUTPUT chain which jumps to our node-translation chain
-	ensureJump()
+	if err := ensureJump(); err != nil {
+		glog.Errorf("failed to ensure jump-rule in OUTPUT chain: %v", err)
+		return
+	}
 
 	nodes, err := ctrl.nodeLister.List(labels.Everything())
 	if err != nil {
@@ -270,7 +287,7 @@ func getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
 // hashRules sorts and hashes the given rules. This is used
 // to detect the changes.
 func hashRules(rules []*DnatRule) []byte {
-	ruleStrings := make([]string, len(rules), len(rules))
+	ruleStrings := make([]string, len(rules))
 	for _, rule := range rules {
 		ruleStrings = append(ruleStrings, rule.RestoreLine(NodeTranslationChainName))
 	}
@@ -278,7 +295,10 @@ func hashRules(rules []*DnatRule) []byte {
 
 	hasher := sha1.New()
 	for _, s := range ruleStrings {
-		hasher.Write([]byte(s))
+		if _, err := hasher.Write([]byte(s)); err != nil {
+			glog.Errorf("failed to hash bytes: %v", err)
+			return nil
+		}
 	}
 	return hasher.Sum(nil)
 }
@@ -312,7 +332,7 @@ func ensureJump() error {
 		"-j", NodeTranslationChainName,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to check for jump rule: %v", err)
+		return err
 	}
 	if rc != 0 { // rule does not exist, create it
 		rc2, err := execIptables([]string{
@@ -321,7 +341,7 @@ func ensureJump() error {
 			"-j", NodeTranslationChainName,
 		})
 		if err != nil || rc2 != 0 {
-			return fmt.Errorf("failed (%d) to insert jump rule: %v", rc2, err)
+			return err
 		}
 		glog.V(2).Infof("Inserted OUTPUT rule to jump into node-translation.")
 	}
