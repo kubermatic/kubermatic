@@ -1,8 +1,14 @@
 
-### [v2.7.0-rc1]()
+### [v2.7.0]()
 
 **Merged pull requests:**
 
+- use annotations instead of labels for the nginx-ingress Prometheus configuration [#1823](https://github.com/kubermatic/kubermatic/issues/1823) ([xrstf](https://github.com/xrstf))
+- Update nginx ingress controller to 0.18.0 [#1800](https://github.com/kubermatic/kubermatic/issues/1800) ([bashofmann](https://github.com/bashofmann))
+- Use dedicated CA for Kubernetes aggregation layer [#1787](https://github.com/kubermatic/kubermatic/issues/1787) ([mrIncompetent](https://github.com/mrIncompetent))
+- Scrape nginx ingress controller metrics [#1777](https://github.com/kubermatic/kubermatic/issues/1777) ([bashofmann](https://github.com/bashofmann))
+- Make s3-exporter endpoint configurable [#1772](https://github.com/kubermatic/kubermatic/issues/1772) ([bashofmann](https://github.com/bashofmann))
+- Update kubermatic dashboard to v0.37 [#1766](https://github.com/kubermatic/kubermatic/issues/1766) ([mrIncompetent](https://github.com/mrIncompetent))
 - Update dashboard version to v0.36 [#1754](https://github.com/kubermatic/kubermatic/issues/1754) ([mrIncompetent](https://github.com/mrIncompetent))
 - Heapster is replaced by metrics-server. [#1730](https://github.com/kubermatic/kubermatic/issues/1730) ([glower](https://github.com/glower))
 - It is now possible to customize user cluster configmaps/secrets via a `MutatingAdmissionWebhook` [#1740](https://github.com/kubermatic/kubermatic/issues/1740) ([alvaroaleman](https://github.com/alvaroaleman))
