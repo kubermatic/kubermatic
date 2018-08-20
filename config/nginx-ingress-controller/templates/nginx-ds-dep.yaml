@@ -19,8 +19,9 @@ spec:
     metadata:
       labels:
         app: ingress-nginx
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '10254'
+      annotations:
+        kubermatic/scrape: {{ .Values.nginx.prometheus.scrape | quote }}
+        kubermatic/scrape_port: {{ .Values.nginx.prometheus.port | quote }}
     spec:
     {{ if .Values.nginx.hostNetwork }}
       hostNetwork: true
@@ -81,7 +82,7 @@ spec:
                   fieldPath: metadata.namespace
           ports:
           - name: metrics
-            containerPort: 10254
+            containerPort: {{ .Values.nginx.prometheus.port }}
           - name: http
             containerPort: 80
           - name: https
@@ -90,7 +91,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /healthz
-              port: 10254
+              port: {{ .Values.nginx.prometheus.port }}
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -100,7 +101,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /healthz
-              port: 10254
+              port: {{ .Values.nginx.prometheus.port }}
               scheme: HTTP
             periodSeconds: 10
             successThreshold: 1
