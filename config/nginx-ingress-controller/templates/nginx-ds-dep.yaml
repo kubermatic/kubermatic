@@ -19,6 +19,7 @@ spec:
     metadata:
       labels:
         app: ingress-nginx
+      annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '10254'
     spec:
