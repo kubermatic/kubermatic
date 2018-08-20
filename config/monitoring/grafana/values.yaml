@@ -5,3 +5,56 @@ grafana:
   image:
     repository: grafana/grafana
     tag: 5.2.1
+
+  # Control where the provisioning files are located.
+  # If you want to *not* use the predefined ones, this
+  # allows you to specify your own directory without
+  # having to touch the existing files. If you only want
+  # to add new elements, you can just place your YAML files
+  # into the directories.
+  provisioning:
+    dashboards:
+      source: provisioning/dashboards/*
+
+      # You can specify additional dashboard sources inline as well.
+      #extra:
+      #- folder: "Initech Resources"
+      #  name: "initech"
+      #  options:
+      #    path: /grafana-dashboard-definitions/initech
+      #  org_id: 1
+      #  type: file
+
+    datasources:
+      source: provisioning/datasources/*
+
+      # You can specify additional datasources inline as well.
+      #extra:
+      #- name: influxdb
+      #  type: influxdb
+      #  access: proxy
+      #  org_id: 1
+      #  url: http://influxdb.monitoring.svc.cluster.local:9090
+      #  version: 1
+      #  editable: false
+
+  # If you manage your dashboards via your own configmaps,
+  # you can add them here to have them automatically be
+  # mounted in Grafana. For each volume, specify either a
+  # configMap name or a secretName, never both.
+  #volumes:
+  #- name: initech-public-dashboards
+  #  mountPath: /initech/public-dashboards
+  #  configMap: initech-dashboards-configmap
+  #- name: initech-secret-dashboards
+  #  mountPath: /initech/secret-dashboards
+  #  secretName: initech-dashboards-secret
+
+  # These values are injected into the dashboard JSON files,
+  # see the README.md for more information on how templating
+  # works.
+  dashboards:
+    editable: false
+    transparentPanels: true
+    refresh: 30s
+    defaultRange: now-1h
