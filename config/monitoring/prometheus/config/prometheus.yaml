@@ -11,9 +11,7 @@ global:
 
 {{- if .Values.prometheus.ruleFiles }}
 rule_files:
-  {{- range .Values.prometheus.ruleFiles }}
-  - {{ . | quote }}
-  {{- end }}
+{{- toYaml .Values.prometheus.ruleFiles | nindent 2 }}
 {{- end }}
 
 {{ if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}
