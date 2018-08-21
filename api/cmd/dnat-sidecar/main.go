@@ -24,17 +24,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-type controllerRunOptions struct {
-	kubeconfig string
-}
-
-var (
-	kubeconfig string
-)
-
 func main() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
+	kubeconfigFlag := flag.String("kubeconfig", "", "Path to a kubeconfig.")
 	networkFlag := flag.String("node-access-network", "", "Node-Access-Network to translate to.")
+	chainNameFlag := flag.String("chain-name", "node-access-dnat", "Name of the chain in nat table.")
 	flag.Parse()
 
 	nodeAccessNetwork, _, err := net.ParseCIDR(*networkFlag)
@@ -42,7 +35,7 @@ func main() {
 		glog.Fatalf("node-access-network invalid or missing: %v", err)
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -71,6 +64,7 @@ func main() {
 				octets[2], octets[3])
 			return fmt.Sprintf("%s:%s", newAddress, rule.OriginalTargetPort)
 		},
+		nodeTranslationChainName: *chainNameFlag,
 	}
 
 	// Recreate iptables chaing based on add/update/delete events
