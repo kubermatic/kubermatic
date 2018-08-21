@@ -8,7 +8,7 @@ alertmanager:
       slack_api_url: https://
     route:
       receiver: 'default'
-      group_by: ['alertname', 'cluster', 'region']
+      group_by: ['alertname', 'cluster', 'seed_cluster']
       group_wait: 10s
       group_interval: 5m
       repeat_interval: 1h
