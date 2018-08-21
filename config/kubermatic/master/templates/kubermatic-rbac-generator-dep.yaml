@@ -14,6 +14,21 @@ spec:
       labels:
         app: rbac-generator
     spec:
+      initContainers:
+      - name: projects-migrator
+        image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
+        command:
+        - projects-migrator
+        args:
+        - -v=3
+        - -logtostderr
+        - -kubeconfig=/opt/.kube/kubeconfig
+        - -dry-run=false
+        volumeMounts:
+          - name: kubeconfigwithseeds
+            mountPath: "/opt/.kube/"
+            readOnly: true
       containers:
       - name: rbac-generator
         command:
