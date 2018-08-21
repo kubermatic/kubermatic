@@ -5,10 +5,7 @@ kind: Ingress
 metadata:
   name: {{ .name }}-iap
   labels:
-    app: {{ template "iap.name" $ }}
-    chart: {{ template "iap.chart" $ }}
-    release: {{ $.Release.Name }}
-    heritage: {{ $.Release.Service }}
+    app: iap
     target: {{ .name }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
@@ -21,7 +18,7 @@ spec:
     - {{ .ingress.host | trim }}
   backend:
     serviceName: {{ .name }}-iap
-    servicePort: {{ $.Values.iap.service.port }}
+    servicePort: {{ $.Values.iap.port }}
   rules:
   - host: {{ .ingress.host | trim }}
     http:
@@ -29,5 +26,5 @@ spec:
       - path: "/"
         backend:
           serviceName: {{ .name }}-iap
-          servicePort: {{ $.Values.iap.service.port }}
+          servicePort: {{ $.Values.iap.port }}
 {{- end -}}

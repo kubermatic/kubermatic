@@ -3,25 +3,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "iap.fullname" $ }}-{{ .name }}
+  name: iap-{{ .name }}
   labels:
-    app: {{ template "iap.name" $ }}
-    chart: {{ template "iap.chart" $ }}
-    release: {{ $.Release.Name }}
-    heritage: {{ $.Release.Service }}
+    app: iap
     target: {{ .name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "iap.name" $ }}
-      release: {{ $.Release.Name }}
+      app: iap
       target: {{ .name }}
   template:
     metadata:
       labels:
-        app: {{ template "iap.name" $ }}
-        release: {{ $.Release.Name }}
+        app: iap
         target: {{ .name }}
     spec:
       containers:
@@ -31,16 +26,16 @@ spec:
         args:
         - --discovery-url={{ $.Values.iap.discovery_url }}
         - --redirection-url={{ .redirection_url }}
-        - --listen=0.0.0.0:3000
+        - --listen=0.0.0.0:{{ $.Values.iap.port }}
         - --upstream-url=http://{{ .upstream_service }}:{{ .upstream_port }}
         - --enable-refresh-tokens=true
         - --resources=uri=/*
         envFrom:
         - secretRef:
-            name: {{ template "iap.fullname" $ }}-{{ .name }}-secret
+            name: iap-{{ .name }}-secret
         ports:
         - name: http
-          containerPort: 3000
+          containerPort: {{ $.Values.iap.port }}
           protocol: TCP
         livenessProbe:
           httpGet:
