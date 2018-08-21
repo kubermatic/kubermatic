@@ -6,9 +6,3 @@ providers:
     path: /grafana-dashboard-definitions/kubermatic
   org_id: 1
   type: file
-- folder: "Kubernetes"
-  name: "kubernetes"
-  options:
-    path: /grafana-dashboard-definitions/kubernetes
-  org_id: 1
-  type: file

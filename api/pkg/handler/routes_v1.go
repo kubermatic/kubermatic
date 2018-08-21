@@ -169,7 +169,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// Defines a set of HTTP endpoints for nodes that belong to a cluster
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
 		Handler(r.newGetNodeForCluster())
 
 	mux.Methods(http.MethodPost).
@@ -181,7 +181,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListNodesForCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
 		Handler(r.newDeleteNodeForCluster())
 
 	//
@@ -1030,7 +1030,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_name} project newGetNodeForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project newGetNodeForCluster
 //
 //     Gets a node that is assigned to the given cluster.
 //
@@ -1112,7 +1112,7 @@ func (r Routing) newListNodesForCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_name} project newDeleteNodeForCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project newDeleteNodeForCluster
 //
 //    Deletes the given node that belongs to the cluster.
 //

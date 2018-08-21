@@ -137,7 +137,7 @@ func decodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
 
 	projectID, ok := mux.Vars(r)["project_id"]
 	if !ok {
-		return nil, fmt.Errorf("'node_name' parameter is required but was not provided")
+		return nil, fmt.Errorf("'project_id' parameter is required but was not provided")
 	}
 
 	req.Name = projectID

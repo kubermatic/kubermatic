@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - args:
-        - --config.file=/etc/prometheus/config/prometheus.yml
+        - --config.file=/etc/prometheus/config/prometheus.yaml
         - --storage.tsdb.no-lockfile
         - --storage.tsdb.path=/prometheus
         - --storage.tsdb.retention=360h
@@ -50,12 +50,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 5
         resources:
-          limits:
-            cpu: 1
-            memory: 2Gi
-          requests:
-            cpu: 100m
-            memory: 512Mi
+{{ toYaml .Values.prometheus.containers.prometheus.resources | indent 10 }}
         volumeMounts:
         - mountPath: /etc/prometheus/config/
           name: prometheus-kubermatic-config
@@ -67,6 +62,13 @@ spec:
           name: prometheus-kubermatic-db
           readOnly: false
           subPath: prometheus-db
+        {{- if .Values.prometheus.volumes }}
+        {{- range .Values.prometheus.volumes }}
+        - mountPath: {{ .mountPath }}
+          name: {{ .name }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
       - name: reloader
         image: jimmidyson/configmap-reload
         args:
@@ -74,12 +76,7 @@ spec:
         - --volume-dir=/etc/prometheus/rules
         - --webhook-url=http://localhost:9090/-/reload
         resources:
-          limits:
-            cpu: 100m
-            memory: 64Mi
-          requests:
-            cpu: 25m
-            memory: 16Mi
+{{ toYaml .Values.prometheus.containers.reloader.resources | indent 10 }}
         volumeMounts:
         - mountPath: /etc/prometheus/config/
           name: prometheus-kubermatic-config
@@ -87,6 +84,13 @@ spec:
         - mountPath: /etc/prometheus/rules/
           name: prometheus-kubermatic-rules
           readOnly: false
+        {{- if .Values.prometheus.volumes }}
+        {{- range .Values.prometheus.volumes }}
+        - mountPath: {{ .mountPath }}
+          name: {{ .name }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
       serviceAccountName: prometheus-kubermatic
       securityContext:
         fsGroup: 2000
@@ -99,6 +103,18 @@ spec:
       - name: prometheus-kubermatic-rules
         configMap:
           name: prometheus-kubermatic-rules
+      {{- if .Values.prometheus.volumes }}
+      {{- range .Values.prometheus.volumes }}
+      - name: {{ .name }}
+        {{- if .configMap }}
+        configMap:
+          name: {{ .configMap }}
+        {{- else }}
+        secret:
+          secretName: {{ .secretName }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
   volumeClaimTemplates:
   - metadata:
       name: prometheus-kubermatic-db

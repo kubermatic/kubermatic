@@ -27,7 +27,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 		Name                    string
 		Body                    string
 		HTTPStatus              int
-		NodeNameToDelete        string
+		NodeIDToDelete          string
 		ExistingProject         *kubermaticv1.Project
 		ExistingKubermaticUser  *kubermaticv1.User
 		ExistingAPIUser         *apiv1.User
@@ -40,10 +40,10 @@ func TestDeleteNodeForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: delete the node that belong to the given cluster",
-			Body:             ``,
-			HTTPStatus:       http.StatusOK,
-			NodeNameToDelete: "venus",
+			Name:           "scenario 1: delete the node that belong to the given cluster",
+			Body:           ``,
+			HTTPStatus:     http.StatusOK,
+			NodeIDToDelete: "venus",
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -148,7 +148,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeNameToDelete), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToDelete), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -192,8 +192,8 @@ func TestDeleteNodeForCluster(t *testing.T) {
 					if !ok {
 						t.Fatalf("unexpected action %#v", action)
 					}
-					if tc.NodeNameToDelete != deleteAction.GetName() {
-						t.Fatalf("expected that machine %s will be deleted, but machine %s was deleted", tc.NodeNameToDelete, deleteAction.GetName())
+					if tc.NodeIDToDelete != deleteAction.GetName() {
+						t.Fatalf("expected that machine %s will be deleted, but machine %s was deleted", tc.NodeIDToDelete, deleteAction.GetName())
 					}
 				}
 			}
@@ -202,7 +202,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			}
 
 			//
-			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeNameToDelete), strings.NewReader(""))
+			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToDelete), strings.NewReader(""))
 			res = httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 			if res.Code != tc.ExpectedHTTPStatusOnGet {
@@ -481,7 +481,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		Body                   string
 		ExpectedResponse       string
 		HTTPStatus             int
-		NodeNameToSync         string
+		NodeIDToSync           string
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
@@ -495,7 +495,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			Body:             ``,
 			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"","containerRuntime":{"name":"","version":""}}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:       http.StatusOK,
-			NodeNameToSync:   "venus",
+			NodeIDToSync:     "venus",
 			ExistingProject: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "myProjectInternalName",
@@ -563,7 +563,7 @@ func TestGetNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeNameToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}

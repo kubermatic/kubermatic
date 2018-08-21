@@ -1,0 +1,57 @@
+job_name: kube-state-metrics
+honor_labels: true
+scrape_interval: 1m
+scrape_timeout: 30s
+metrics_path: /metrics
+kubernetes_sd_configs:
+- api_server: null
+  role: endpoints
+  namespaces:
+    names:
+    - monitoring
+relabel_configs:
+- source_labels: [__meta_kubernetes_service_label_app]
+  separator: ;
+  regex: kube-state-metrics
+  replacement: $1
+  action: keep
+- source_labels: [__meta_kubernetes_endpoint_port_name]
+  separator: ;
+  regex: http-metrics
+  replacement: $1
+  action: keep
+- source_labels: [__meta_kubernetes_namespace]
+  separator: ;
+  regex: (.*)
+  target_label: namespace
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_pod_name]
+  separator: ;
+  regex: (.*)
+  target_label: pod
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_service_name]
+  separator: ;
+  regex: (.*)
+  target_label: service
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_service_name]
+  separator: ;
+  regex: (.*)
+  target_label: job
+  replacement: ${1}
+  action: replace
+- source_labels: [__meta_kubernetes_service_label_app]
+  separator: ;
+  regex: (.+)
+  target_label: job
+  replacement: ${1}
+  action: replace
+- separator: ;
+  regex: (.*)
+  target_label: endpoint
+  replacement: http-metrics
+  action: replace

@@ -64,7 +64,7 @@ const prometheusConfig = `global:
   scrape_interval: 30s
   external_labels:
     cluster: "{{ .Cluster.Name }}"
-    region: "{{ .SeedDC }}"
+    seed_cluster: "{{ .SeedDC }}"
 rule_files:
 - "/etc/prometheus/config/rules*.yaml"
 scrape_configs:
@@ -72,11 +72,20 @@ scrape_configs:
   scheme: https
   metrics_path: '/metrics'
   static_configs:
-  - targets: ['etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379','etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379']
+  - targets:
+    - 'etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+    - 'etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+    - 'etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
   tls_config:
     ca_file: /etc/etcd/pki/client/ca.crt
     cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
     key_file: /etc/etcd/pki/client/apiserver-etcd-client.key
+  relabel_configs:
+  - source_labels: [__address__]
+    regex: (etcd-\d+).+
+    action: replace
+    replacement: $1
+    target_label: instance
 
 {{- range $i, $e := until 2 }}
 - job_name: 'pods-{{ $i }}'
