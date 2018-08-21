@@ -26,7 +26,7 @@ spec:
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
-        image: quay.io/prometheus/prometheus:v2.2.1
+        image: quay.io/prometheus/prometheus:v2.3.2
         livenessProbe:
           failureThreshold: 6
           httpGet:
