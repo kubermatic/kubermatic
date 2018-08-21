@@ -1,0 +1,65 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "iap.fullname" $ }}-{{ .name }}
+  labels:
+    app: {{ template "iap.name" $ }}
+    chart: {{ template "iap.chart" $ }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    target: {{ .name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "iap.name" $ }}
+      release: {{ $.Release.Name }}
+      target: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "iap.name" $ }}
+        release: {{ $.Release.Name }}
+        target: {{ .name }}
+    spec:
+      containers:
+      - name: keycloak-proxy
+        image: "{{ $.Values.iap.image.repository }}:{{ $.Values.iap.image.tag }}"
+        imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
+        args:
+        - --discovery-url={{ $.Values.iap.discovery_url }}
+        - --redirection-url={{ .redirection_url }}
+        - --listen=0.0.0.0:3000
+        - --upstream-url=http://{{ .upstream_service }}:{{ .upstream_port }}
+        - --enable-refresh-tokens=true
+        - --resources=uri=/*
+        envFrom:
+        - secretRef:
+            name: {{ template "iap.fullname" $ }}-{{ .name }}-secret
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /oauth/health
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /oauth/health
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+{{- if $.Values.iap.resources }}
+        resources:
+{{ toYaml $.Values.iap.resources | indent 10 }}
+{{- end }}
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+{{- end }}

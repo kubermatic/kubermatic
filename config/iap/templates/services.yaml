@@ -1,0 +1,24 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-iap
+  labels:
+    app: {{ template "iap.name" $ }}
+    chart: {{ template "iap.chart" $ }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    target: {{ .name }}
+spec:
+  type: {{ $.Values.iap.service.type }}
+  ports:
+  - port: {{ $.Values.iap.service.port }}
+    name: http
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: {{ template "iap.name" $ }}
+    release: {{ $.Release.Name }}
+    target: {{ .name }}
+{{- end }}

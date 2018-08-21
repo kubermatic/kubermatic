@@ -1,0 +1,66 @@
+iap:
+  deployments:
+    alertmanager:
+      name: alertmanager
+      redirection_url: https://alertmanager.kubermatic.tld/
+      client_id: xxx
+      client_secret: xxx
+      encryption_key: xxx
+      upstream_service: alertmanager-kubermatic.monitoring.svc.cluster.local
+      upstream_port: 9093
+      ingress:
+        host: "alertmanager.kubermatic.tld"
+        annotations: {}
+    grafana:
+      name: grafana
+      redirection_url: https://grafana.kubermatic.tld/
+      client_id: xxx
+      client_secret: xxx
+      encryption_key: xxx
+      upstream_service: grafana.monitoring.svc.cluster.local
+      upstream_port: 3000
+      ingress:
+        host: "grafana.kubermatic.tld"
+        annotations: {}
+    kibana:
+      name: kibana
+      redirection_url: https://kibana.kubermatic.tld/
+      client_id: xxx
+      client_secret: xxx
+      encryption_key: xxx
+      upstream_service: kibana.logging.svc.cluster.local
+      upstream_port: 5601
+      ingress:
+        host: "kibana.kubermatic.tld"
+        annotations: {}
+    prometheus:
+      name: prometheus
+      redirection_url: https://prometheus.kubermatic.tld/
+      client_id: xxx
+      client_secret: xxx
+      encryption_key: xxx
+      upstream_service: prometheus-kubermatic.monitoring.svc.cluster.local
+      upstream_port: 9090
+      ingress:
+        host: "prometheus.kubermatic.tld"
+        annotations:
+          ingress.kubernetes.io/upstream-hash-by: "ip_hash"
+
+  discovery_url: https://kubermatic.tld/dex/.well-known/openid-configuration
+
+  image:
+    repository: quay.io/gambol99/keycloak-proxy
+    tag: v2.3.0
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 64Mi

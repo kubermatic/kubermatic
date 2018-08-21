@@ -1,7 +1,6 @@
 grafana:
   user: YWRtaW4= # admin
   password: bG9vZHNlMTIz # loodse123
-  host: ""
   image:
     repository: grafana/grafana
     tag: 5.2.1
