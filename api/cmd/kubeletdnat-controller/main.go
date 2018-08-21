@@ -14,14 +14,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	coreinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/workqueue"
 )
 
 func main() {
@@ -47,15 +45,14 @@ func main() {
 
 	kubeInformerFactory := coreinformers.NewSharedInformerFactory(client, time.Minute*5)
 
-	ctrl := DnatController{
-		client:     client,
-		nodeLister: kubeInformerFactory.Core().V1().Nodes().Lister(),
-		queue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
+	ctrl := kubeletdnat.NewController(
+		client,
+		kubeInformerFactory.Core().V1().Nodes(),
 
 		// This implements the current node-access-network translations by
 		// changing the first two octets of the node-ip-address into the
 		// respective two octets of the node-access-network.
-		dnatTranslator: func(rule *DnatRule) string {
+		func(rule *kubeletdnat.DnatRule) string {
 			octets := strings.Split(rule.OriginalTargetAddress, ".")
 
 			l := len(nodeAccessNetwork)
@@ -64,30 +61,8 @@ func main() {
 				octets[2], octets[3])
 			return fmt.Sprintf("%s:%s", newAddress, rule.OriginalTargetPort)
 		},
-		nodeTranslationChainName: *chainNameFlag,
-	}
 
-	// Recreate iptables chaing based on add/update/delete events
-	kubeInformerFactory.Core().V1().Nodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { ctrl.enqueue(obj.(*corev1.Node)) },
-		UpdateFunc: func(_, newObj interface{}) { ctrl.enqueue(newObj.(*corev1.Node)) },
-		DeleteFunc: func(obj interface{}) {
-			n, ok := obj.(*corev1.Node)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				n, ok = tombstone.Obj.(*corev1.Node)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Service %#v", obj))
-					return
-				}
-			}
-			ctrl.enqueue(n)
-		},
-	})
+		*chainNameFlag)
 
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)

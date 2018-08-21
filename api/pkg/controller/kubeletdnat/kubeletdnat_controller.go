@@ -1,4 +1,4 @@
-package main
+package kubeletdnat
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	k8sinformersV1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	k8slistersV1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -30,12 +31,12 @@ var (
 	preferredAddressTypes = []corev1.NodeAddressType{corev1.NodeExternalIP}
 )
 
-// DnatController updates iptable rules to match node addresses.
+// Controller updates iptable rules to match node addresses.
 // Every node address gets a translation to the respective node-access (vpn) address.
-type DnatController struct {
-	queue      workqueue.RateLimitingInterface
+type Controller struct {
 	client     kubernetes.Interface
 	nodeLister k8slistersV1.NodeLister
+	queue      workqueue.RateLimitingInterface
 
 	dnatTranslator           func(rule *DnatRule) string
 	nodeTranslationChainName string
@@ -49,15 +50,53 @@ type DnatRule struct {
 	Translate             func(*DnatRule) string
 }
 
+// NewController creates a new controller for the specified data.
+func NewController(
+	client kubernetes.Interface,
+	nodeInformer k8sinformersV1.NodeInformer,
+	dnatTranslator func(rule *DnatRule) string,
+	nodeTranslationChainName string) *Controller {
+
+	ctrl := &Controller{
+		client:                   client,
+		nodeLister:               nodeInformer.Lister(),
+		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
+		dnatTranslator:           dnatTranslator,
+		nodeTranslationChainName: nodeTranslationChainName,
+	}
+
+	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { ctrl.enqueue(obj.(*corev1.Node)) },
+		UpdateFunc: func(_, newObj interface{}) { ctrl.enqueue(newObj.(*corev1.Node)) },
+		DeleteFunc: func(obj interface{}) {
+			n, ok := obj.(*corev1.Node)
+			if !ok {
+				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
+					return
+				}
+				n, ok = tombstone.Obj.(*corev1.Node)
+				if !ok {
+					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Service %#v", obj))
+					return
+				}
+			}
+			ctrl.enqueue(n)
+		},
+	})
+	return ctrl
+}
+
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
-func (ctrl *DnatController) Run(stopCh <-chan struct{}) {
+func (ctrl *Controller) Run(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 	go wait.Until(ctrl.runWorker, time.Second, stopCh)
 	<-stopCh
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
-func (ctrl *DnatController) handleErr(err error, key interface{}) {
+func (ctrl *Controller) handleErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -82,11 +121,11 @@ func (ctrl *DnatController) handleErr(err error, key interface{}) {
 	glog.V(0).Infof("Dropping %q out of the queue: %v", key, err)
 }
 
-func (ctrl *DnatController) runWorker() {
+func (ctrl *Controller) runWorker() {
 	for ctrl.processNextItem() {
 	}
 }
-func (ctrl *DnatController) processNextItem() bool {
+func (ctrl *Controller) processNextItem() bool {
 	key, quit := ctrl.queue.Get()
 	if quit {
 		return false
@@ -98,10 +137,10 @@ func (ctrl *DnatController) processNextItem() bool {
 	return true
 }
 
-func (ctrl *DnatController) enqueue(n *corev1.Node) {
+func (ctrl *Controller) enqueue(n *corev1.Node) {
 	ctrl.enqueueAfter(n, 0)
 }
-func (ctrl *DnatController) enqueueAfter(n *corev1.Node, duration time.Duration) {
+func (ctrl *Controller) enqueueAfter(n *corev1.Node, duration time.Duration) {
 	_, err := cache.DeletionHandlingMetaNamespaceKeyFunc(n)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", n, err))
@@ -114,7 +153,7 @@ func (ctrl *DnatController) enqueueAfter(n *corev1.Node, duration time.Duration)
 
 // syncDnatRules will recreate the complete set of translation rules
 // based on the list of nodes.
-func (ctrl *DnatController) syncDnatRules(key string) error {
+func (ctrl *Controller) syncDnatRules(key string) error {
 	glog.V(6).Infof("Syncing DNAT rules as %s got modified", key)
 
 	// Get nodes from lister, make a copy.
@@ -210,7 +249,7 @@ func hashLines(lines []string) []byte {
 
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
-func (ctrl *DnatController) applyRules(rules []string) error {
+func (ctrl *Controller) applyRules(rules []string) error {
 	restore := []string{"*nat", fmt.Sprintf(":%s - [0:0]", ctrl.nodeTranslationChainName)}
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
@@ -226,7 +265,7 @@ func (ctrl *DnatController) applyRules(rules []string) error {
 }
 
 // createJumpRule creates a rule in OUTPUT chain which jumps to node translation chain
-func (ctrl *DnatController) createJumpRule() error {
+func (ctrl *Controller) createJumpRule() error {
 	args := []string{
 		"-t", "nat",
 		"-I", "OUTPUT",
