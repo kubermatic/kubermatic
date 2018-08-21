@@ -110,3 +110,19 @@ kubermatic:
         secretKeyRef:
           name: s3-credentials
           key: SECRET_ACCESS_KEY
+#  clusterNamespacePrometheus:
+#    disableDefaultRules: false
+#    rules:
+#      groups:
+#      - name: my-custom-group
+#        rules:
+#        - alert: MyCustomAlert
+#          annotations:
+#            message: Something happend in {{ $labels.namespace }}
+#          expr: |
+#            sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
+#          for: 10m
+#          labels:
+#            severity: warning
+  clusterNamespacePrometheus: {}
+  

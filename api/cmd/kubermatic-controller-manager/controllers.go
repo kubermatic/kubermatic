@@ -102,6 +102,8 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
+		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
+		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),

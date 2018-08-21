@@ -1,0 +1,9 @@
+{{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clusterns-prometheus-rules
+data:
+  _customrules.yaml: |
+{{ toYaml .Values.kubermatic.clusterNamespacePrometheus.rules | indent 4 }}
+{{- end}}

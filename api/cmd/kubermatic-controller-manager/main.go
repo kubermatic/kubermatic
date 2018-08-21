@@ -41,24 +41,26 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	masterResources      string
-	externalURL          string
-	dc                   string
-	dcFile               string
-	workerName           string
-	versionsFile         string
-	updatesFile          string
-	workerCount          int
-	overwriteRegistry    string
-	nodePortRange        string
-	nodeAccessNetwork    string
-	addonsPath           string
-	addonsList           string
-	backupContainerFile  string
-	cleanupContainerFile string
-	backupContainerImage string
-	backupInterval       string
-	etcdDiskSize         string
+	masterResources                        string
+	externalURL                            string
+	dc                                     string
+	dcFile                                 string
+	workerName                             string
+	versionsFile                           string
+	updatesFile                            string
+	workerCount                            int
+	overwriteRegistry                      string
+	nodePortRange                          string
+	nodeAccessNetwork                      string
+	addonsPath                             string
+	addonsList                             string
+	backupContainerFile                    string
+	cleanupContainerFile                   string
+	backupContainerImage                   string
+	backupInterval                         string
+	etcdDiskSize                           string
+	inClusterPrometheusRulesFile           string
+	inClusterPrometheusDisableDefaultRules bool
 }
 
 type controllerContext struct {
@@ -97,6 +99,8 @@ func main() {
 	flag.StringVar(&runOp.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&runOp.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
+	flag.StringVar(&runOp.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the alerting rules for the prometheus running in the cluster-foo namespaces.")
+	flag.BoolVar(&runOp.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
