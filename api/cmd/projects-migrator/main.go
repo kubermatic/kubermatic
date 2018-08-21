@@ -96,12 +96,15 @@ func main() {
 		glog.Errorf("phase 1 failed due to = %v", err)
 	}
 
-	// TODO:
 	// phase 2: migrate the remaining ssh keys to a project
 	//
 	//          note that:
 	//          the remaining ssh keys are the ones that are owned by
 	//          the project owner and were not used by running cluster (phase 1)
+	err = migrateRemainingSSHKeys(ctx)
+	if err != nil {
+		glog.Errorf("phase 2 failed due to %v", err)
+	}
 
 	// TODO:
 	// phase 3 clean up
@@ -116,6 +119,90 @@ func main() {
 	//
 	//         the keys that don't have an owner have their sshKey.Spec.Owner field empty
 	//         for example: key-8036218bef587f8230dad6426099da14-c7i4 and key-8036218bef587f8230dad6426099da14-wwk5 on dev env
+}
+
+//  migrateRemainingSSHKeys assigns the keys that are owned by the project owner
+func migrateRemainingSSHKeys(ctx migrationContext) error {
+	glog.Info("\n")
+	glog.Infof("Running PHASE 2 ...")
+
+	type projectOwnerTuple struct {
+		project kubermaticv1.Project
+		owner   kubermaticv1.User
+	}
+
+	projectOwnersTuple := map[string]projectOwnerTuple{}
+	glog.Info("STEP 1: getting the list of projects owners")
+	{
+		allProjects, err := ctx.masterKubermaticClient.KubermaticV1().Projects().List(metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, project := range allProjects.Items {
+			userName := isOwnedByUser(project.OwnerReferences)
+			if len(userName) > 0 {
+				if user, err := ctx.masterKubermaticClient.KubermaticV1().Users().Get(userName, metav1.GetOptions{}); err == nil {
+					projectOwnersTuple[userName] = projectOwnerTuple{project: project, owner: *user}
+				}
+			} else {
+				return fmt.Errorf("project ID = %s, Name = %s doesn't have an owner", project.Name, project.Spec.Name)
+			}
+		}
+	}
+
+	type keyProjectTuple struct {
+		key     kubermaticv1.UserSSHKey
+		project kubermaticv1.Project
+	}
+
+	keysProjectTuple := []keyProjectTuple{}
+	glog.Info("STEP 2: getting the list of keys that are owned by a project owner")
+	{
+		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, key := range allKeys.Items {
+			if len(key.Spec.Owner) == 0 {
+				glog.Warningf("the key ID = %s, Name = %s doesn't have an owner", key.Name, key.Spec.Name)
+				continue
+			}
+			if projectOwner, ok := projectOwnersTuple[key.Spec.Owner]; ok {
+				keysProjectTuple = append(keysProjectTuple, keyProjectTuple{key: key, project: projectOwner.project})
+			} else {
+				glog.V(3).Infof("the owner = %s of the key ID = %s, Name = %s doesn't have a project", key.Spec.Owner, key.Name, key.Spec.Name)
+			}
+		}
+
+		sshKeysToAdoptByProjectID := map[string][]kubermaticv1.UserSSHKey{}
+		for _, keyProject := range keysProjectTuple {
+			keys := sshKeysToAdoptByProjectID[keyProject.project.Name]
+			keys = append(keys, keyProject.key)
+			sshKeysToAdoptByProjectID[keyProject.project.Name] = keys
+		}
+		printSSHKeysToAdopt("project", sshKeysToAdoptByProjectID)
+	}
+
+	glog.Info("STEP 3: migrating the remaining keys")
+	{
+		for _, keyProject := range keysProjectTuple {
+			oRef := createOwnerReferenceForProject(keyProject.project)
+			key := keyProject.key
+			key.OwnerReferences = append(key.OwnerReferences, oRef)
+			if !ctx.dryRun {
+				_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Update(&key)
+				if err != nil {
+					return err
+				}
+				glog.Infof("the ssh key = %s was migrated to the project = %s from the system", key.Name, keyProject.project.Name)
+			} else {
+				glog.Infof("the ssh key = %s was NOT migrated to the project = %s because dry-run option was requested", key.Name, keyProject.project.Name)
+			}
+		}
+	}
+
+	return nil
 }
 
 // removeDuplicatedUsers finds users with the same spec.ID, spec.Email and spec.Name
@@ -340,7 +427,7 @@ func migrateToProject(ctx migrationContext) error {
 			}
 		}
 	}
-	printSSHKeysToAdopt(sshKeysToAdoptByUserID)
+	printSSHKeysToAdopt("user", sshKeysToAdoptByUserID)
 
 	// step 5: migrate cluster resources
 	//         in order to add (migrate) a cluster to a project
@@ -476,6 +563,16 @@ func isOwnedByProject(owners []metav1.OwnerReference) string {
 	return ""
 }
 
+func isOwnedByUser(owners []metav1.OwnerReference) string {
+	for _, owner := range owners {
+		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
+			len(owner.Name) > 0 && len(owner.UID) > 0 {
+			return owner.Name
+		}
+	}
+	return ""
+}
+
 // printClusterToAdopt prints cluster resources to stdout
 func printClusterToAdopt(clustersToAdoptByUserID map[string]map[string]*clustersProviderTuple) {
 	for userID, clustersMap := range clustersToAdoptByUserID {
@@ -492,10 +589,14 @@ func printClusterToAdopt(clustersToAdoptByUserID map[string]map[string]*clusters
 }
 
 // printSSHKeysToAdopt prints ssh keys resources to stdout
-func printSSHKeysToAdopt(sshKeysToAdoptByUserID map[string][]kubermaticv1.UserSSHKey) {
-	for user, sshKeysResources := range sshKeysToAdoptByUserID {
+func printSSHKeysToAdopt(keyName string, sshKeysToAdoptByID map[string][]kubermaticv1.UserSSHKey) {
+	if len(sshKeysToAdoptByID) == 0 {
+		glog.V(2).Infof("there are not ssh keys to migrate for %s(s)", keyName)
+		return
+	}
+	for key, sshKeysResources := range sshKeysToAdoptByID {
 		glog.V(2).Info("==================================================================================================")
-		glog.V(2).Infof("ssh keys that will be migrated for user with ID = %s:", user)
+		glog.V(2).Infof("ssh keys that will be migrated for %s with ID = %s:", keyName, key)
 		glog.V(2).Info("==================================================================================================")
 		glog.V(2).Infof("%1s there are %d ssh key resources", "", len(sshKeysResources))
 		for index, sshKey := range sshKeysResources {

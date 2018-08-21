@@ -45,6 +45,7 @@ spec:
     metadata:
       labels:
         app: s3-exporter
+      annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9340'
     spec:
