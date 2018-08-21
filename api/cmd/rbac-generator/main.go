@@ -9,8 +9,12 @@ import (
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -82,14 +86,13 @@ func main() {
 			}
 			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelector(ctrlCtx.runOptions.workerName))
 			ctrlCtx.seedClusterProviders = append(ctrlCtx.seedClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("seed/%s", ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 		}
 	}
 
 	ctrl, err := rbaccontroller.New(
 		rbaccontroller.NewMetrics(),
-		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticMasterClient,
 		ctrlCtx.kubermaticMasterInformerFactory,
 		ctrlCtx.kubeMasterClient,
@@ -116,4 +119,16 @@ func main() {
 	go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 
 	<-ctrlCtx.stopCh
+}
+
+// return label selector to only process clusters with a matching machine.k8s.io/controller label
+func labelSelector(workerName string) func(*metav1.ListOptions) {
+	return func(options *metav1.ListOptions) {
+		req, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+		if err != nil {
+			glog.Fatalf("failed to build label selector: %v", err)
+		}
+
+		options.LabelSelector = req.String()
+	}
 }

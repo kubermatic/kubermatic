@@ -56,7 +56,6 @@ func NewMetrics() *Metrics {
 type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
-	workerName   string
 
 	kubermaticMasterClient kubermaticclientset.Interface
 	projectLister          kubermaticv1lister.ProjectLister
@@ -86,7 +85,6 @@ type projectResource struct {
 // so that whenever a project is deleted dependants object will be garbage collected.
 func New(
 	metrics *Metrics,
-	workerName string,
 	kubermaticMasterClient kubermaticclientset.Interface,
 	kubermaticMasterInformerFactory kubermaticsharedinformer.SharedInformerFactory,
 	kubeMasterClient kubernetes.Interface,
@@ -97,7 +95,6 @@ func New(
 		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
 		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
 		metrics:                metrics,
-		workerName:             workerName,
 		kubermaticMasterClient: kubermaticMasterClient,
 		kubeMasterClient:       kubeMasterClient,
 		seedClusterProviders:   seedClusterProviders,

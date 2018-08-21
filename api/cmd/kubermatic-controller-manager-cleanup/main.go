@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -52,7 +53,12 @@ func main() {
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
+	labelSelector, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+	if err != nil {
+		glog.Fatalf("failed to build label selector: %v", err)
+	}
+
+	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{LabelSelector: labelSelector.String()})
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -63,11 +69,6 @@ func main() {
 	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
-
-			if c.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
-				glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", c.Name)
-				return
-			}
 
 			cleanupCluster(c, &ctx)
 		}(&clusters.Items[i])

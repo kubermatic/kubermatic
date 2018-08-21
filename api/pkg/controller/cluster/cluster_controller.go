@@ -53,8 +53,7 @@ type Controller struct {
 	dc          string
 	cps         map[string]provider.CloudProvider
 
-	queue      workqueue.RateLimitingInterface
-	workerName string
+	queue workqueue.RateLimitingInterface
 
 	overwriteRegistry                                string
 	nodePortRange                                    string
@@ -88,7 +87,6 @@ func NewController(
 	kubeClient kubernetes.Interface,
 	kubermaticClient kubermaticclientset.Interface,
 	externalURL string,
-	workerName string,
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
@@ -136,7 +134,6 @@ func NewController(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 
 		externalURL: externalURL,
-		workerName:  workerName,
 		dc:          dc,
 		dcs:         dcs,
 		cps:         cps,
@@ -344,11 +341,6 @@ func (cc *Controller) syncCluster(key string) error {
 
 	if cluster.Spec.Pause {
 		glog.V(6).Infof("skipping paused cluster %s", key)
-		return nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != cc.workerName {
-		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
 	}
 

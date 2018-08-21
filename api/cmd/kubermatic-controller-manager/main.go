@@ -25,6 +25,9 @@ import (
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/net"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -288,8 +291,7 @@ func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kube
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermaticClient,
 	}
-
-	ctrlCtx.kubermaticInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5)
+	ctrlCtx.kubermaticInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelector(runOp.workerName))
 	ctrlCtx.kubeInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
 
 	return ctrlCtx
@@ -301,4 +303,16 @@ func (ctx *controllerContext) Start() {
 
 	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
 	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
+}
+
+// return label selector to only process clusters with a matching machine.k8s.io/controller label
+func labelSelector(workerName string) func(*metav1.ListOptions) {
+	return func(options *metav1.ListOptions) {
+		req, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+		if err != nil {
+			glog.Fatalf("failed to build label selector: %v", err)
+		}
+
+		options.LabelSelector = req.String()
+	}
 }

@@ -30,10 +30,6 @@ func (c *Controller) sync(key string) error {
 		}
 		return err
 	}
-	if c.shouldSkipProject(sharedProject) {
-		glog.V(8).Infof("skipping project %s due to different worker than (%s) is assigned to it", key, c.workerName)
-		return nil
-	}
 	if c.shouldDeleteProject(sharedProject) {
 		return c.ensureProjectCleanup(sharedProject)
 	}
@@ -344,10 +340,6 @@ func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resou
 	existingClusterRoleBinding.Subjects = updatedListOfSubjectes
 	_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
 	return err
-}
-
-func (c *Controller) shouldSkipProject(project *kubermaticv1.Project) bool {
-	return project.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName
 }
 
 func (c *Controller) shouldDeleteProject(project *kubermaticv1.Project) bool {
