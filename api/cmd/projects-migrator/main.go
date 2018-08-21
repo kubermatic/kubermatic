@@ -35,11 +35,13 @@ type clusterProvider struct {
 
 func main() {
 	var kubeconfig, masterURL string
+	var removeDupUsers bool
 	ctx := migrationContext{}
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.BoolVar(&ctx.dryRun, "dry-run", true, "If true, only print the object that would be created, without creating them")
+	flag.BoolVar(&removeDupUsers, "rm-dup-users", false, "If true, only removes duplicated users and exits")
 	flag.Parse()
 
 	var err error
@@ -82,19 +84,40 @@ func main() {
 	ctx.masterKubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 	ctx.seedClusterProviders = clusterProviders
 
+	// special case
+	// if this flag was set then remove duplicates for users and exit the app
+	if removeDupUsers {
+		err := removeOrDetectDuplicatedUsers(ctx, "0", false)
+		if err != nil {
+			glog.Fatalf("failed to remove duplicates for users, due to = %v", err)
+		}
+		glog.Info("successfully removed duplicates for users")
+		return
+	}
+
+	// phase -1: stop when duplicated users
+	//
+	//           all duplicates were removed manually,
+	//           that means our API server allowed to create a duplicate for a users
+	//           please provide a fix, then remove duplicated users and then rerun the app
+	err = removeOrDetectDuplicatedUsers(ctx, "-1", true)
+	if err != nil {
+		glog.Fatalf(`PHASE -1 failed: due to = %v, please provide a fix to our API server, then remove duplicates for users (set rm-dup-users flag to true), and then rerun the app`, err)
+	}
+
 	// phase 0: remove duplicated users
 	//
 	//          duplicated users have the same Spec.ID, Spec.Email, Spec.Name
 	//          for example on dev environment: user-lknc7, user-n45j9, user-z9s20j
-	err = removeDuplicatedUsers(ctx)
+	err = removeOrDetectDuplicatedUsers(ctx, "0", false)
 	if err != nil {
-		glog.Fatalf("phase 0 failed due to = %v", err)
+		glog.Fatalf("PHASE 0 failed due to = %v", err)
 	}
 
 	// phase 1: migrate existing cluster resources along with ssh keys they use to projects
 	err = migrateToProject(ctx)
 	if err != nil {
-		glog.Fatalf("phase 1 failed due to = %v", err)
+		glog.Fatalf("PHASE 1 failed due to = %v", err)
 	}
 
 	// phase 2: migrate the remaining ssh keys to a project
@@ -104,7 +127,7 @@ func main() {
 	//          the project owner and were not used by running cluster (phase 1)
 	err = migrateRemainingSSHKeys(ctx)
 	if err != nil {
-		glog.Fatalf("phase 2 failed due to %v", err)
+		glog.Fatalf("PHASE 2 failed due to %v", err)
 	}
 
 	// TODO:
@@ -121,7 +144,7 @@ func main() {
 	//         for example: key-8036218bef587f8230dad6426099da14-c7i4 and key-8036218bef587f8230dad6426099da14-wwk5 on dev env
 	err = removeKeysWithoutOwner(ctx)
 	if err != nil {
-		glog.Errorf("phase 4 failed due to %v", err)
+		glog.Errorf("PHASE 4 failed due to %v", err)
 	}
 }
 
@@ -246,11 +269,13 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 	return nil
 }
 
-// removeDuplicatedUsers finds users with the same spec.ID, spec.Email and spec.Name
+// removeOrDetectDuplicatedUsers finds users with the same spec.ID, spec.Email and spec.Name
 // and removes duplication. This is safe to do because resources like clusters are bound to the user
 // if there is a match on spec.ID field.
-func removeDuplicatedUsers(ctx migrationContext) error {
-	glog.Info("Running PHASE 0 ...")
+//
+// note: if the stopOnDuplicated arg is set to true then this function exits when duplicates are detected
+func removeOrDetectDuplicatedUsers(ctx migrationContext, phase string, stopOnDuplicates bool) error {
+	glog.Infof("Running PHASE %s ...", phase)
 	allUsers, err := ctx.masterKubermaticClient.KubermaticV1().Users().List(metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -276,10 +301,20 @@ func removeDuplicatedUsers(ctx migrationContext) error {
 	}
 	printDuplicatedUsers(seenUsers)
 
-	glog.Info("STEP 2: removing duplicated users if any")
+	step2Msg := "STEP 2: removing duplicated users (if any)"
+	if stopOnDuplicates {
+		step2Msg = "STEP 2: detecting duplicated users (if any)"
+	}
+
+	glog.Info(step2Msg)
 	{
 		for _, userList := range seenUsers {
 			if len(userList) > 1 {
+
+				if stopOnDuplicates {
+					return errors.New("duplicated users detected")
+				}
+
 				seenUserWithProjects := false
 				for i := 0; i < len(userList)-1; i++ {
 					user := userList[i]
@@ -553,7 +588,7 @@ func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProvid
 	helper := func(cluster kubermaticv1.Cluster, provider *clusterProvider) {
 		if val, ok := cluster.Labels["user"]; !ok || len(val) == 0 {
 			glog.Warningf("the cluster ID = %s, Name = %s doesn't have an owner (this might be okay, e2e tests ?)", cluster.Name, cluster.Spec.HumanReadableName)
-				return
+			return
 		}
 		userClustersMap := clustersToAdoptByUserID[cluster.Labels["user"]]
 
