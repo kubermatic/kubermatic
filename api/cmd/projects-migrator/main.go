@@ -551,6 +551,10 @@ func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProvid
 	// helper is a helper method that adds the given cluster to the list of clusters
 	// grouped by the user's ID and physical location
 	helper := func(cluster kubermaticv1.Cluster, provider *clusterProvider) {
+		if val, ok := cluster.Labels["user"]; !ok || len(val) == 0 {
+			glog.Warningf("the cluster ID = %s, Name = %s doesn't have an owner (this might be okay, e2e tests ?)", cluster.Name, cluster.Spec.HumanReadableName)
+				return
+		}
 		userClustersMap := clustersToAdoptByUserID[cluster.Labels["user"]]
 
 		if userClustersMap == nil {
