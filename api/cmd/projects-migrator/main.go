@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 
@@ -239,7 +240,17 @@ func removeDuplicatedUsers(ctx migrationContext) error {
 	{
 		for _, userList := range seenUsers {
 			if len(userList) > 1 {
+				seenUserWithProjects := false
 				for i := 0; i < len(userList)-1; i++ {
+					user := userList[i]
+					if len(user.Spec.Projects) > 0 {
+						if seenUserWithProjects {
+							return errors.New("there is more that one user that belongs to some projects fot the given key, please manually remove one of them and rerun the app")
+						}
+						glog.Warningf("cannot remove the user = %s because it already belongs to some projects = %v", user.Name, user.Spec.Projects)
+						seenUserWithProjects = true
+						continue
+					}
 					userName := userList[i].Name
 					if !ctx.dryRun {
 						err := ctx.masterKubermaticClient.KubermaticV1().Users().Delete(userName, &metav1.DeleteOptions{})
@@ -254,6 +265,7 @@ func removeDuplicatedUsers(ctx migrationContext) error {
 			}
 		}
 	}
+
 	return nil
 }
 
