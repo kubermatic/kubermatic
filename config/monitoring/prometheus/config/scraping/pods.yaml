@@ -1,0 +1,28 @@
+job_name: 'pods'
+kubernetes_sd_configs:
+- role: pod
+relabel_configs:
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape]
+  action: keep
+  regex: true
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metric_path]
+  action: replace
+  target_label: __metrics_path__
+  regex: (.+)
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port]
+  action: replace
+  regex: ([^:]+)(?::\d+)?;(\d+)
+  replacement: $1:$2
+  target_label: __address__
+- action: labelmap
+  regex: __meta_kubernetes_pod_label_(.+)
+- source_labels: [__meta_kubernetes_namespace]
+  regex: (.*)
+  target_label: namespace
+  replacement: $1
+  action: replace
+- source_labels: [__meta_kubernetes_pod_name]
+  regex: (.*)
+  target_label: pod
+  replacement: $1
+  action: replace
