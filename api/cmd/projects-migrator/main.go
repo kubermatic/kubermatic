@@ -523,7 +523,7 @@ func migrateToProject(ctx migrationContext) error {
 	{
 		for userID, clustersMap := range clustersToAdoptByUserID {
 			for clusterName, clusterResourcesProviderTuple := range clustersMap {
-				project := ownersOfClusterWithProject[userID]
+				project, projectExists := ownersOfClusterWithProject[userID]
 				ownerRef := metav1.OwnerReference{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.ProjectKindName,
@@ -531,6 +531,10 @@ func migrateToProject(ctx migrationContext) error {
 					Name:       project.Name,
 				}
 				for _, clusterResource := range clusterResourcesProviderTuple.clusters {
+					if !projectExists {
+						glog.Warningf("skipping cluster resource = %s (physical location %s), there is no project for a user with ID = %s (the user doesn't exist ?)", clusterResource.Name, clusterName, userID)
+						continue
+					}
 					clusterResource.OwnerReferences = append(clusterResource.OwnerReferences, ownerRef)
 					if !ctx.dryRun {
 						kubermaticClient := clusterResourcesProviderTuple.provider.kubermaticClient
@@ -554,7 +558,11 @@ func migrateToProject(ctx migrationContext) error {
 	{
 		for userID, sshKeys := range sshKeysToAdoptByUserID {
 			for _, sshKey := range sshKeys {
-				project := ownersOfClusterWithProject[userID]
+				project, ok := ownersOfClusterWithProject[userID]
+				if !ok {
+					glog.Warningf("skipping the ssh key = %s, there is no project for a user with ID = %s (the user doesn't exist ?)", sshKey.Name, userID)
+					continue
+				}
 				ownerRef := createOwnerReferenceForProject(project)
 				sshKey.OwnerReferences = append(sshKey.OwnerReferences, ownerRef)
 				if !ctx.dryRun {
