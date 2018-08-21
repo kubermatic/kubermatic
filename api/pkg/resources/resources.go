@@ -114,8 +114,6 @@ const (
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
-	// PrometheusCustomRulesConfigMapName is the name for the configmap containing custom prometheus alerts for cluster namespaces.
-	PrometheusCustomRulesConfigMapName = "clusterns-prometheus-rules"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
@@ -280,16 +278,18 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	Cluster           *kubermaticv1.Cluster
-	DC                *provider.DatacenterMeta
-	SeedDC            string
-	SecretLister      corev1lister.SecretLister
-	ConfigMapLister   corev1lister.ConfigMapLister
-	ServiceLister     corev1lister.ServiceLister
-	OverwriteRegistry string
-	NodePortRange     string
-	NodeAccessNetwork string
-	EtcdDiskSize      resource.Quantity
+	Cluster                                *kubermaticv1.Cluster
+	DC                                     *provider.DatacenterMeta
+	SeedDC                                 string
+	SecretLister                           corev1lister.SecretLister
+	ConfigMapLister                        corev1lister.ConfigMapLister
+	ServiceLister                          corev1lister.ServiceLister
+	OverwriteRegistry                      string
+	NodePortRange                          string
+	NodeAccessNetwork                      string
+	EtcdDiskSize                           resource.Quantity
+	InClusterPrometheusRulesFile           string
+	InClusterPrometheusDisableDefaultRules bool
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
@@ -334,18 +334,22 @@ func NewTemplateData(
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
-	etcdDiskSize resource.Quantity) *TemplateData {
+	etcdDiskSize resource.Quantity,
+	inClusterPrometheusRulesFile string,
+	inClusterPrometheusDisableDefaultRules bool) *TemplateData {
 	return &TemplateData{
-		Cluster:           cluster,
-		DC:                dc,
-		SeedDC:            seedDatacenter,
-		ConfigMapLister:   configMapLister,
-		SecretLister:      secretLister,
-		ServiceLister:     serviceLister,
-		OverwriteRegistry: overwriteRegistry,
-		NodePortRange:     nodePortRange,
-		NodeAccessNetwork: nodeAccessNetwork,
-		EtcdDiskSize:      etcdDiskSize,
+		Cluster:                                cluster,
+		DC:                                     dc,
+		SeedDC:                                 seedDatacenter,
+		ConfigMapLister:                        configMapLister,
+		SecretLister:                           secretLister,
+		ServiceLister:                          serviceLister,
+		OverwriteRegistry:                      overwriteRegistry,
+		NodePortRange:                          nodePortRange,
+		NodeAccessNetwork:                      nodeAccessNetwork,
+		EtcdDiskSize:                           etcdDiskSize,
+		InClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
+		InClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 	}
 }
 

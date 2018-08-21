@@ -55,6 +55,12 @@ spec:
           - -addons-path=/opt/addons
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
+          {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
+          - -in-cluster-prometheus-disable-default-rules=true
+          {{- end }}
+          {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+          - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus/_customrules.yaml
+          {{- end }}
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
           ports:
@@ -74,6 +80,11 @@ spec:
             - name: backup-container
               mountPath: "/opt/backup/"
               readOnly: true
+            {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+            - name: in-cluster-prometheus-rules-file
+              mountPath: "/opt/incluster-prometheus/"
+              readOnly: true
+            {{- end }}
           resources:
             requests:
               memory: "64Mi"
@@ -111,3 +122,8 @@ spec:
         - name: backup-container
           configMap:
             name: backup-container
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+        - name: in-cluster-prometheus-rules-file
+          configMap:
+            name: clusterns-prometheus-rules
+        {{- end }}

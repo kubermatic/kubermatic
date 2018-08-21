@@ -3,6 +3,7 @@ package prometheus
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -37,15 +38,22 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
 	cm.Data["prometheus.yaml"] = configBuffer.String()
-	cm.Data["rules.yaml"] = prometheusRules
 
-	customRulesCM, err := data.ConfigMapLister.ConfigMaps(resources.KubermaticNamespaceName).Get(resources.PrometheusCustomRulesConfigMapName)
-	if err != nil {
-		return nil, err
+	if data.InClusterPrometheusDisableDefaultRules {
+		delete(cm.Data, "rules.yaml")
+	} else {
+		cm.Data["rules.yaml"] = prometheusRules
 	}
 
-	if val, ok := customRulesCM.Data["_customrules.yaml"]; ok {
-		cm.Data["rules-custom.yaml"] = val
+	if data.InClusterPrometheusRulesFile == "" {
+		delete(cm.Data, "rules-custom.yaml")
+	} else {
+		customRules, err := ioutil.ReadFile(data.InClusterPrometheusRulesFile)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't read custom rules file, see: %v", err)
+		}
+
+		cm.Data["rules-custom.yaml"] = string(customRules)
 	}
 
 	return cm, nil
