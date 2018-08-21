@@ -125,3 +125,4 @@ kubermatic:
 #          labels:
 #            severity: warning
   clusterNamespacePrometheus: {}
+  
