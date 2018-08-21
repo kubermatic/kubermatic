@@ -5,8 +5,8 @@ nginx:
   replicas: 3
   ignoreMasterTaint: false
   prometheus:
-    port: "10254"
-    scrape: "true"
+    port: 10254
+    scrape: true
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
     tag: 0.18.0

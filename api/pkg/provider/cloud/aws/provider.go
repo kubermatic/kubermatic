@@ -218,6 +218,7 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 }
 
 func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
+	glog.V(4).Infof("Looking for the default subnet for VPC %s...", *vpc.VpcId)
 	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -235,8 +236,12 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 		return nil, fmt.Errorf("failed to list subnets: %v", err)
 	}
 
-	if len(sOut.Subnets) != 1 {
-		return nil, errors.New("no default subnet exists")
+	if len(sOut.Subnets) == 0 {
+		return nil, errors.New("no default subnet exists in vpc")
+	}
+
+	if len(sOut.Subnets) > 1 {
+		return nil, errors.New("more than one default subnet exists in vpc")
 	}
 
 	return sOut.Subnets[0], nil
@@ -419,9 +424,11 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
+		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
 		subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get default subnet: %v", err)
+
+			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", *vpc.VpcId, err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
