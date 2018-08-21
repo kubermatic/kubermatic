@@ -88,13 +88,13 @@ func main() {
 	//          for example on dev environment: user-lknc7, user-n45j9, user-z9s20j
 	err = removeDuplicatedUsers(ctx)
 	if err != nil {
-		glog.Errorf("phase 0 failed due to = %v", err)
+		glog.Fatalf("phase 0 failed due to = %v", err)
 	}
 
 	// phase 1: migrate existing cluster resources along with ssh keys they use to projects
 	err = migrateToProject(ctx)
 	if err != nil {
-		glog.Errorf("phase 1 failed due to = %v", err)
+		glog.Fatalf("phase 1 failed due to = %v", err)
 	}
 
 	// phase 2: migrate the remaining ssh keys to a project
@@ -104,7 +104,7 @@ func main() {
 	//          the project owner and were not used by running cluster (phase 1)
 	err = migrateRemainingSSHKeys(ctx)
 	if err != nil {
-		glog.Errorf("phase 2 failed due to %v", err)
+		glog.Fatalf("phase 2 failed due to %v", err)
 	}
 
 	// TODO:
@@ -115,11 +115,51 @@ func main() {
 	//         note that:
 	//         this step essentially breaks backward compatibility and prevents the old clients (dashboard) from finding the resources.
 
-	// TODO:
 	// phase 4 remove ssh keys without an owner
 	//
 	//         the keys that don't have an owner have their sshKey.Spec.Owner field empty
 	//         for example: key-8036218bef587f8230dad6426099da14-c7i4 and key-8036218bef587f8230dad6426099da14-wwk5 on dev env
+	err = removeKeysWithoutOwner(ctx)
+	if err != nil {
+		glog.Errorf("phase 4 failed due to %v", err)
+	}
+}
+
+func removeKeysWithoutOwner(ctx migrationContext) error {
+	glog.Info("\n")
+	glog.Infof("Running PHASE 4 ...")
+
+	keysWithoutOwner := []kubermaticv1.UserSSHKey{}
+	glog.Info("STEP 1: getting the list of keys that are owned by a project owner")
+	{
+		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, key := range allKeys.Items {
+			if len(key.Spec.Owner) == 0 {
+				keysWithoutOwner = append(keysWithoutOwner, key)
+			}
+		}
+	}
+
+	glog.Info("STEP 2: removing the keys without an owner (if any)")
+	{
+		for _, keyToRemove := range keysWithoutOwner {
+			if !ctx.dryRun {
+				err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Delete(keyToRemove.Name, &metav1.DeleteOptions{})
+				if err != nil {
+					return err
+				}
+				glog.Infof("the ssh key = %s was removed", keyToRemove.Name)
+			} else {
+				glog.Infof("the ssh key = %s was NOT removed because dry-run option was requested", keyToRemove.Name)
+			}
+		}
+	}
+
+	return nil
 }
 
 //  migrateRemainingSSHKeys assigns the keys that are owned by the project owner
