@@ -9,7 +9,7 @@ metadata:
     target: {{ .name }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
-{{- if .ingress.annotations -}}
+{{- if .ingress.annotations }}
 {{ toYaml .ingress.annotations | indent 4 }}
 {{- end }}
 spec:
