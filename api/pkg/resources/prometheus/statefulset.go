@@ -17,6 +17,8 @@ const (
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
+
+	tag = "v2.3.2"
 )
 
 var (
@@ -69,7 +71,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:v2.2.0",
+			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
