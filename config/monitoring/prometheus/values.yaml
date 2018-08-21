@@ -8,7 +8,7 @@ prometheus:
   # Specify additional external labels which will be added to all
   # alerts sent by Prometheus.
   #externalLabels:
-  #  region: default
+  #  seed_cluster: default
 
   # Configure the scraping rules for Prometheus. You can either
   # add your own scraping configs here or change the path to the
