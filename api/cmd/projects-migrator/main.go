@@ -147,7 +147,7 @@ func removeKeysWithoutOwner(ctx migrationContext) error {
 	{
 		for _, keyToRemove := range keysWithoutOwner {
 			if !ctx.dryRun {
-				_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Update(&keyToRemove)
+				err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Delete(keyToRemove.Name, &metav1.DeleteOptions{})
 				if err != nil {
 					return err
 				}
