@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -48,21 +46,8 @@ func main() {
 	ctrl := kubeletdnat.NewController(
 		client,
 		kubeInformerFactory.Core().V1().Nodes(),
-
-		// This implements the current node-access-network translations by
-		// changing the first two octets of the node-ip-address into the
-		// respective two octets of the node-access-network.
-		func(rule *kubeletdnat.DnatRule) string {
-			octets := strings.Split(rule.OriginalTargetAddress, ".")
-
-			l := len(nodeAccessNetwork)
-			newAddress := fmt.Sprintf("%d.%d.%s.%s",
-				nodeAccessNetwork[l-4], nodeAccessNetwork[l-3],
-				octets[2], octets[3])
-			return fmt.Sprintf("%s:%s", newAddress, rule.OriginalTargetPort)
-		},
-
-		*chainNameFlag)
+		*chainNameFlag,
+		nodeAccessNetwork)
 
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)

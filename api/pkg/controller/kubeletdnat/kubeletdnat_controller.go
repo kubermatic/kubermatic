@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"net"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -28,7 +29,7 @@ import (
 )
 
 var (
-	preferredAddressTypes = []corev1.NodeAddressType{corev1.NodeExternalIP}
+	preferredAddressTypes = []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
 )
 
 // Controller updates iptable rules to match node addresses.
@@ -38,8 +39,8 @@ type Controller struct {
 	nodeLister k8slistersV1.NodeLister
 	queue      workqueue.RateLimitingInterface
 
-	dnatTranslator           func(rule *DnatRule) string
 	nodeTranslationChainName string
+	nodeAccessNetwork        net.IP
 }
 
 // DnatRule stores address+port before translation (match) and
@@ -47,22 +48,23 @@ type Controller struct {
 type DnatRule struct {
 	OriginalTargetAddress string
 	OriginalTargetPort    string
-	Translate             func(*DnatRule) string
+	TranslatedAddress     string
+	TranslatedPort        string
 }
 
 // NewController creates a new controller for the specified data.
 func NewController(
 	client kubernetes.Interface,
 	nodeInformer k8sinformersV1.NodeInformer,
-	dnatTranslator func(rule *DnatRule) string,
-	nodeTranslationChainName string) *Controller {
+	nodeTranslationChainName string,
+	nodeAccessNetwork net.IP) *Controller {
 
 	ctrl := &Controller{
-		client:                   client,
-		nodeLister:               nodeInformer.Lister(),
-		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
-		dnatTranslator:           dnatTranslator,
+		client:     client,
+		nodeLister: nodeInformer.Lister(),
+		queue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
 		nodeTranslationChainName: nodeTranslationChainName,
+		nodeAccessNetwork:        nodeAccessNetwork,
 	}
 
 	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -169,12 +171,11 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	// Create the set of rules from all listed nodes.
 	desiredRules := []string{}
 	for _, node := range nodes {
-		rule, err := getRuleFromNode(node)
+		rule, err := ctrl.getRuleFromNode(node)
 		if err != nil {
 			glog.Errorf("failed to get dnat rule from node %s: %v", node.Name, err)
 			continue
 		}
-		rule.Translate = ctrl.dnatTranslator
 		desiredRules = append(desiredRules, rule.RestoreLine(ctrl.nodeTranslationChainName))
 	}
 	sort.Strings(desiredRules)
@@ -184,7 +185,7 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	if rc != 0 || err != nil {
 		return fmt.Errorf("failed to read iptable rules: %d / %v", rc, err)
 	}
-	actualRules, haveJump := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
+	actualRules, haveJump, haveMasquerade := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
 
 	actualHash := hashLines(actualRules)
 	desiredHash := hashLines(desiredRules)
@@ -198,9 +199,20 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 
 	// Ensure to jump into the translation chain.
 	if !haveJump {
-		if err := ctrl.createJumpRule(); err != nil {
+		if err := ctrl.createRule(
+			[]string{"-t", "nat", "-I", "OUTPUT", "-j",
+				ctrl.nodeTranslationChainName}); err != nil {
 			return fmt.Errorf("failed to create jump-rule in OUTPUT chain: %v", err)
 		}
+		glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", ctrl.nodeTranslationChainName)
+	}
+
+	// Ensure to masquerade outgoing vpn packets.
+	if !haveMasquerade {
+		if err := ctrl.createRule([]string{"-t", "nat", "-I", "POSTROUTING", "-o", "tun0", "-j", "MASQUERADE"}); err != nil {
+			return fmt.Errorf("failed to create jump-rule in OUTPUT chain: %v", err)
+		}
+		glog.V(2).Infof("Inserted POSTROUTING rule to masquerade vpn traffic.")
 	}
 
 	return nil
@@ -220,9 +232,20 @@ func getPreferredNodeAddress(node *corev1.Node) (string, error) {
 	return "", fmt.Errorf("no preferred addresses found; known addresses: %v", node.Status.Addresses)
 }
 
+func getInternalNodeAddress(node *corev1.Node) (string, error) {
+	for _, address := range node.Status.Addresses {
+		if address.Type == corev1.NodeInternalIP {
+			return address.Address, nil
+		}
+	}
+	return "", fmt.Errorf("no internal address found; known addresses: %v", node.Status.Addresses)
+}
+
 // getRuleFromNode determines the used kubelet address of a node
 // and creates a DnatRule from it.
-func getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
+func (ctrl *Controller) getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
+	rule := &DnatRule{}
+	// Set matching part of the rule (original address).
 	host, err := getPreferredNodeAddress(node)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get preferred node address: %v", err)
@@ -231,7 +254,27 @@ func getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
 	if port <= 0 {
 		port = provider.DefaultKubeletPort
 	}
-	return &DnatRule{host, strconv.FormatInt(int64(port), 10), nil}, nil
+	rule.OriginalTargetAddress = host
+	rule.OriginalTargetPort = strconv.FormatInt(int64(port), 10)
+
+	// Set translation part of the rule (new destination)
+	//    This implements the current node-access-network translations by
+	//    changing the first two octets of the node-ip-address into the
+	//    respective two octets of the node-access-network.
+	internalIP, err := getInternalNodeAddress(node)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get internal node address: %v", err)
+	}
+	octets := strings.Split(internalIP, ".")
+
+	l := len(ctrl.nodeAccessNetwork)
+	newAddress := fmt.Sprintf("%d.%d.%s.%s",
+		ctrl.nodeAccessNetwork[l-4], ctrl.nodeAccessNetwork[l-3],
+		octets[2], octets[3])
+	rule.TranslatedAddress = newAddress
+	rule.TranslatedPort = rule.OriginalTargetPort
+
+	return rule, nil
 }
 
 // hashRules sorts and hashes the given rules. This is used
@@ -264,13 +307,8 @@ func (ctrl *Controller) applyRules(rules []string) error {
 	return nil
 }
 
-// createJumpRule creates a rule in OUTPUT chain which jumps to node translation chain
-func (ctrl *Controller) createJumpRule() error {
-	args := []string{
-		"-t", "nat",
-		"-I", "OUTPUT",
-		"-j", ctrl.nodeTranslationChainName,
-	}
+// createRule creates an iptables rule
+func (ctrl *Controller) createRule(args []string) error {
 	rc, out, err := execIptables(args)
 	if err != nil {
 		return err
@@ -278,7 +316,6 @@ func (ctrl *Controller) createJumpRule() error {
 	if rc != 0 {
 		return fmt.Errorf("iptables with arguments %v returned non-zero (%d). output: %s", args, rc, out)
 	}
-	glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", ctrl.nodeTranslationChainName)
 	return nil
 }
 
@@ -353,12 +390,20 @@ func (rule *DnatRule) GetMatchArgs() []string {
 // GetTargetArgs returns iptables arguments to specify the
 // rule's target after translation.
 func (rule *DnatRule) GetTargetArgs() []string {
-	if rule.Translate == nil {
+	var target string
+	if len(rule.TranslatedAddress) > 0 {
+		target = rule.TranslatedAddress
+	}
+	target = target + ":"
+	if len(rule.TranslatedPort) > 0 {
+		target = target + rule.TranslatedPort
+	}
+	if len(target) == 0 {
 		return []string{}
 	}
 	return []string{
 		"-j", "DNAT",
-		"--to-destination", rule.Translate(rule),
+		"--to-destination", target,
 	}
 }
 
@@ -386,20 +431,25 @@ func (rule *DnatRule) Insert(chain string) error {
 	return nil
 }
 
-func filterDnatRules(rules []string, chain string) ([]string, bool) {
+func filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
 	out := []string{}
 	haveJump := false
+	haveMasquerade := false
 
 	rulePrefix := fmt.Sprintf("-A %s ", chain)
 	jumpPattern := fmt.Sprintf("-A OUTPUT -j %s", chain)
+	masqPattern := fmt.Sprintf("-A POSTROUTING -o tun0 -j MASQUERADE")
 	for _, rule := range rules {
 		if rule == jumpPattern {
 			haveJump = true
+		}
+		if rule == masqPattern {
+			haveMasquerade = true
 		}
 		if !strings.HasPrefix(rule, rulePrefix) {
 			continue
 		}
 		out = append(out, rule)
 	}
-	return out, haveJump
+	return out, haveJump, haveMasquerade
 }
