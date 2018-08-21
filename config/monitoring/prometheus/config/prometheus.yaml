@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+  {{- if .Values.prometheus.externalLabels }}
+  external_labels:
+    {{- range $k, $v := .Values.prometheus.externalLabels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
+
+{{- if .Values.prometheus.ruleFiles }}
+rule_files:
+{{- toYaml .Values.prometheus.ruleFiles | nindent 2 }}
+{{- end }}
+
+{{ if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}
+alerting:
+  alertmanagers:
+  {{- range .Values.prometheus.alertmanagers.files }}
+  {{- range $filename, $content := $.Files.Glob . }}
+  - {{ ($.Files.Get $filename) | fromYaml | toJson }}
+  {{- end }}
+  {{- end }}
+
+  {{- range .Values.prometheus.alertmanagers.configs }}
+  - {{ . | toJson }}
+  {{- end }}
+{{ end }}
+
+{{ if or .Values.prometheus.scraping.files .Values.prometheus.scraping.configs }}
+scrape_configs:
+{{- range .Values.prometheus.scraping.files }}
+{{- range $filename, $content := $.Files.Glob . }}
+- {{ ($.Files.Get $filename) | fromYaml | toJson }}
+{{- end }}
+{{- end }}
+
+{{- range .Values.prometheus.scraping.configs }}
+- {{ . | toJson }}
+{{- end }}
+{{ end }}
