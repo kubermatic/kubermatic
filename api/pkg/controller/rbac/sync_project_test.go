@@ -820,7 +820,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					destination: destinationSeed,
 				},
 			},
-			expectedActionsForMaster: []string{"get", "update", "get", "update", "get", "update"},
+			expectedActionsForMaster: []string{"get", "update", "get", "update"},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -842,17 +842,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:clusters:editors",
-					},
-				},
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Subjects: []rbacv1.Subject{},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -891,26 +880,9 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:     "kubermatic:clusters:editors",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "viewers-plan9",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:viewers",
-					},
-				},
 			},
 			seedClusters:            2,
-			expectedActionsForSeeds: []string{"get", "update", "get", "update", "get", "update"},
+			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -932,17 +904,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:clusters:editors",
-					},
-				},
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Subjects: []rbacv1.Subject{},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},
@@ -979,23 +940,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:clusters:editors",
-					},
-				},
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "viewers-plan9",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:viewers",
 					},
 				},
 			},

@@ -1,0 +1,20 @@
+kubernetes_sd_configs:
+- api_server: null
+  role: endpoints
+  namespaces:
+    names:
+    - monitoring
+scheme: http
+path_prefix: /
+timeout: 10s
+relabel_configs:
+- source_labels: [__meta_kubernetes_service_name]
+  separator: ;
+  regex: alertmanager-kubermatic
+  replacement: $1
+  action: keep
+- source_labels: [__meta_kubernetes_endpoint_port_name]
+  separator: ;
+  regex: web
+  replacement: $1
+  action: keep

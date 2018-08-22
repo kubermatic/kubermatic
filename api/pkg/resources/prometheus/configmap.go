@@ -3,6 +3,7 @@ package prometheus
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -37,7 +38,23 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
 	cm.Data["prometheus.yaml"] = configBuffer.String()
-	cm.Data["rules.yaml"] = prometheusRules
+
+	if data.InClusterPrometheusDisableDefaultRules {
+		delete(cm.Data, "rules.yaml")
+	} else {
+		cm.Data["rules.yaml"] = prometheusRules
+	}
+
+	if data.InClusterPrometheusRulesFile == "" {
+		delete(cm.Data, "rules-custom.yaml")
+	} else {
+		customRules, err := ioutil.ReadFile(data.InClusterPrometheusRulesFile)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't read custom rules file, see: %v", err)
+		}
+
+		cm.Data["rules-custom.yaml"] = string(customRules)
+	}
 
 	return cm, nil
 }
@@ -47,9 +64,9 @@ const prometheusConfig = `global:
   scrape_interval: 30s
   external_labels:
     cluster: "{{ .Cluster.Name }}"
-    region: "{{ .SeedDC }}"
+    seed_cluster: "{{ .SeedDC }}"
 rule_files:
-- "/etc/prometheus/config/rules.yaml"
+- "/etc/prometheus/config/rules*.yaml"
 scrape_configs:
 - job_name: etcd
   scheme: https
