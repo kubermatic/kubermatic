@@ -451,10 +451,10 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.KubeletClientCertificatesSecretName,
+			Name: resources.KubeletDnatControllerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeletClientCertificatesSecretName,
+					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
