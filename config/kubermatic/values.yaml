@@ -110,16 +110,16 @@ kubermatic:
         secretKeyRef:
           name: s3-credentials
           key: SECRET_ACCESS_KEY
-  clusterNamespacePrometheus:
-    disableDefaultScrapingConfigs: true
-    scrapingConfigs:
-    - job_name: 'schnitzel'
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape]
-        action: keep
-        regex: true
+#  clusterNamespacePrometheus:
+#    disableDefaultScrapingConfigs: true
+#    scrapingConfigs:
+#    - job_name: 'schnitzel'
+#      kubernetes_sd_configs:
+#      - role: pod
+#      relabel_configs:
+#      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape]
+#        action: keep
+#        regex: true
 #    disableDefaultRules: false
 #    rules:
 #      groups:
@@ -133,5 +133,5 @@ kubermatic:
 #          for: 10m
 #          labels:
 #            severity: warning
-#  clusterNamespacePrometheus: {}
+  clusterNamespacePrometheus: {}
   
