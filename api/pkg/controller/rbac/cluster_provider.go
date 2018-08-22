@@ -1,14 +1,20 @@
 package rbac
 
 import (
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-
 	"fmt"
 
+	"github.com/golang/glog"
+
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticv1listers "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -26,6 +32,8 @@ type ClusterProvider struct {
 
 	rbacClusterRoleLister        rbaclister.ClusterRoleLister
 	rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister
+
+	clusterResourceLister kubermaticv1listers.ClusterLister
 }
 
 // NewClusterProvider creates a brand new ClusterProvider
@@ -69,4 +77,13 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 		}
 	}
 	return nil
+}
+
+// AddIndexerFor adds Lister for the given resource
+// Note: this method creates Lister for some resources, for example "cluster" resources
+func (p *ClusterProvider) AddIndexerFor(indexer cache.Indexer, gvr schema.GroupVersionResource) {
+	if gvr.Resource == kubermaticv1.ClusterResourceName {
+		p.clusterResourceLister = kubermaticv1listers.NewClusterLister(indexer)
+		glog.V(4).Infof("creating a lister for resource %q for provider %q", gvr.String(), p.providerName)
+	}
 }
