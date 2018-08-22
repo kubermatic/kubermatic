@@ -186,8 +186,8 @@ pipeline:
       target: values
     values:
     - values
-    #when:
-    #  branch: master
+    when:
+      branch: master
   9-deploy-cloud-asia:
     charts:
     - name: kubermatic
