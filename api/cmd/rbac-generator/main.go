@@ -81,7 +81,7 @@ func main() {
 				glog.Fatal(err)
 			}
 			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
-			kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 			ctrlCtx.seedClusterProviders = append(ctrlCtx.seedClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("seed/%s", ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 		}
