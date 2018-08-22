@@ -24,7 +24,6 @@ spec:
         - -v=3
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
-        - -dry-run=false
         volumeMounts:
           - name: kubeconfigwithseeds
             mountPath: "/opt/.kube/"
