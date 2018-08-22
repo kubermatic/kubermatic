@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/Masterminds/semver"
 
@@ -120,9 +121,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+		return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+	}
+
+	dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 	}
 
 	flags, err := getApiserverFlags(data, externalNodePort, etcd)
@@ -137,6 +143,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
+		*dnatControllerSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
@@ -439,6 +446,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.FrontProxyCASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.KubeletClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.KubeletClientCertificatesSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
