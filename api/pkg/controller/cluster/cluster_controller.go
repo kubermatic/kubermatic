@@ -54,12 +54,14 @@ type Controller struct {
 	queue      workqueue.RateLimitingInterface
 	workerName string
 
-	overwriteRegistry                      string
-	nodePortRange                          string
-	nodeAccessNetwork                      string
-	etcdDiskSize                           resource.Quantity
-	inClusterPrometheusRulesFile           string
-	inClusterPrometheusDisableDefaultRules bool
+	overwriteRegistry                                string
+	nodePortRange                                    string
+	nodeAccessNetwork                                string
+	etcdDiskSize                                     resource.Quantity
+	inClusterPrometheusRulesFile                     string
+	inClusterPrometheusDisableDefaultRules           bool
+	inClusterPrometheusDisableDefaultScrapingConfigs bool
+	inClusterPrometheusScrapingConfigsFile           string
 
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
@@ -93,6 +95,8 @@ func NewController(
 	etcdDiskSize string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
+	inClusterPrometheusDisableDefaultScrapingConfigs bool,
+	inClusterPrometheusScrapingConfigsFile string,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -115,12 +119,14 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		overwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
+		overwriteRegistry:                                overwriteRegistry,
+		nodePortRange:                                    nodePortRange,
+		nodeAccessNetwork:                                nodeAccessNetwork,
+		etcdDiskSize:                                     resource.MustParse(etcdDiskSize),
+		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
+		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
+		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
+		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 
 		externalURL: externalURL,
 		workerName:  workerName,

@@ -449,6 +449,8 @@ func TestLoadFiles(t *testing.T) {
 					resource.MustParse("5Gi"),
 					"",
 					false,
+					false,
+					"",
 				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)

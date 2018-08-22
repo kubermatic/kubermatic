@@ -59,7 +59,13 @@ spec:
           - -in-cluster-prometheus-disable-default-rules=true
           {{- end }}
           {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
-          - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus/_customrules.yaml
+          - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus-rules/_customrules.yaml
+          {{- end }}
+          {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultScrapingConfigs }}
+          - -in-cluster-prometheus-disable-default-scraping-configs=true
+          {{- end }}
+          {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+          - -in-cluster-prometheus-scraping-configs-file=/opt/incluster-prometheus-scraping-configs/_custom-scraping-configs.yaml
           {{- end }}
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
@@ -82,7 +88,12 @@ spec:
               readOnly: true
             {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
             - name: in-cluster-prometheus-rules-file
-              mountPath: "/opt/incluster-prometheus/"
+              mountPath: "/opt/incluster-prometheus-rules/"
+              readOnly: true
+            {{- end }}
+            {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+            - name: in-cluster-prometheus-scraping-configs-file
+              mountPath: "/opt/incluster-prometheus-scraping-configs/"
               readOnly: true
             {{- end }}
           resources:
@@ -126,4 +137,9 @@ spec:
         - name: in-cluster-prometheus-rules-file
           configMap:
             name: clusterns-prometheus-rules
+        {{- end }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+        - name: in-cluster-prometheus-scraping-configs-file
+          configMap:
+            name: clusterns-prometheus-scraping-configs
         {{- end }}

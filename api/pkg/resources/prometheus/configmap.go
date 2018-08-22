@@ -13,6 +13,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// inClusterPrometheusDisableDefaultScrapingConfigs
+// inClusterPrometheusScrapingConfigsFile
+
+type promTplModel struct {
+	*resources.TemplateData
+	InClusterPrometheusScrapingConfigs string
+}
+
 // ConfigMap returns a ConfigMap containing the prometheus config for the supplied data
 func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
@@ -25,12 +33,22 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm.Data = map[string]string{}
 	}
 
+	model := &promTplModel{TemplateData: data}
+	if data.InClusterPrometheusScrapingConfigsFile != "" {
+		customScrapingConfigs, err := ioutil.ReadFile(data.InClusterPrometheusScrapingConfigsFile)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't read custom scraping configs file, see: %v", err)
+		}
+
+		model.InClusterPrometheusScrapingConfigs = string(customScrapingConfigs)
+	}
+
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse prometheus config template: %v", err)
 	}
-	if err := configTpl.Execute(&configBuffer, data); err != nil {
+	if err := configTpl.Execute(&configBuffer, model); err != nil {
 		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
 	}
 
@@ -63,19 +81,23 @@ const prometheusConfig = `global:
   evaluation_interval: 30s
   scrape_interval: 30s
   external_labels:
-    cluster: "{{ .Cluster.Name }}"
-    seed_cluster: "{{ .SeedDC }}"
+    cluster: "{{ .TemplateData.Cluster.Name }}"
+    seed_cluster: "{{ .TemplateData.SeedDC }}"
 rule_files:
 - "/etc/prometheus/config/rules*.yaml"
 scrape_configs:
+{{- if .InClusterPrometheusScrapingConfigs }}
+{{ .InClusterPrometheusScrapingConfigs }}
+{{- end }}
+{{- if not .InClusterPrometheusDisableDefaultScrapingConfigs }}
 - job_name: etcd
   scheme: https
   metrics_path: '/metrics'
   static_configs:
   - targets:
-    - 'etcd-0.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
-    - 'etcd-1.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
-    - 'etcd-2.etcd.{{ .Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+    - 'etcd-0.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+    - 'etcd-1.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+    - 'etcd-2.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
   tls_config:
     ca_file: /etc/etcd/pki/client/ca.crt
     cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
@@ -94,7 +116,7 @@ scrape_configs:
   - role: pod
     namespaces:
       names:
-      - "{{ $.Cluster.Status.NamespaceName }}"
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
   relabel_configs:
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_scrape]
@@ -119,7 +141,7 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-
+{{- end }}
 {{- end }}
 alerting:
   alertmanagers:

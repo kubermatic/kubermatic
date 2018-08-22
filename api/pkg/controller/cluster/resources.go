@@ -122,6 +122,8 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.etcdDiskSize,
 		cc.inClusterPrometheusRulesFile,
 		cc.inClusterPrometheusDisableDefaultRules,
+		cc.inClusterPrometheusDisableDefaultScrapingConfigs,
+		cc.inClusterPrometheusScrapingConfigsFile,
 	), nil
 }
 
