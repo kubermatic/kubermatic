@@ -75,7 +75,7 @@ func main() {
 
 			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient := kubernetes.NewForConfigOrDie(cfg)
-			kubermaticClient := kubermaticclientset.NewForConfigOrDie(ctx.config)
+			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			clusterProviders = append(clusterProviders, &clusterProvider{fmt.Sprintf("seed/%s", ctxName), kubeClient, kubermaticClient})
 		}
 	}
