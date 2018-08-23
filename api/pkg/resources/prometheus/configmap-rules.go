@@ -19,6 +19,13 @@ groups:
     labels:
       kubermatic: federate
 
+- name: kubermatic.machine_controller
+  rules:
+  - record: job:machine_controller_errors_total:rate5m
+    expr: rate(machine_controller_errors_total[5m])
+    labels:
+      kubermatic: federate
+
 - name: kubermatic.etcd
   rules:
   - record: job:etcd_server_has_leader:sum
