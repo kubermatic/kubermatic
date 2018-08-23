@@ -200,18 +200,16 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 
 	// Ensure to jump into the translation chain.
 	if !haveJump {
-		if err := ctrl.createRule(
-			[]string{"-t", "nat", "-I", "OUTPUT", "-j",
-				ctrl.nodeTranslationChainName}); err != nil {
-			return fmt.Errorf("failed to create jump-rule in OUTPUT chain: %v", err)
+		if err := execIptables([]string{"-t", "nat", "-I", "OUTPUT", "-j", ctrl.nodeTranslationChainName}); err != nil {
+			return fmt.Errorf("failed to create jump rule in OUTPUT chain: %v", err)
 		}
 		glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", ctrl.nodeTranslationChainName)
 	}
 
 	// Ensure to masquerade outgoing vpn packets.
 	if !haveMasquerade {
-		if err := ctrl.createRule([]string{"-t", "nat", "-I", "POSTROUTING", "-o", "tun0", "-j", "MASQUERADE"}); err != nil {
-			return fmt.Errorf("failed to create jump-rule in OUTPUT chain: %v", err)
+		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", "tun0", "-j", "MASQUERADE"}); err != nil {
+			return fmt.Errorf("failed to create masquerade rule in POSTROUTING chain: %v", err)
 		}
 		glog.V(2).Infof("Inserted POSTROUTING rule to masquerade vpn traffic.")
 	}
@@ -298,41 +296,19 @@ func (ctrl *Controller) applyRules(rules []string) error {
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
 
-	rc, err := execRestore(restore)
-	if err != nil {
-		return err
-	}
-	if rc != 0 {
-		return fmt.Errorf("iptables-restore returned non-zero for: %d", rc)
-	}
-	return nil
+	return execRestore(restore)
 }
 
-// createRule creates an iptables rule
-func (ctrl *Controller) createRule(args []string) error {
-	rc, out, err := execIptables(args)
-	if err != nil {
-		return err
-	}
-	if rc != 0 {
-		return fmt.Errorf("iptables with arguments %v returned non-zero (%d). output: %s", args, rc, out)
-	}
-	return nil
-}
-
-func execIptables(cmdcode []string) (int, string, error) {
-	cmd := exec.Command("iptables", cmdcode...)
+func execIptables(args []string) error {
+	cmd := exec.Command("iptables", args...)
 	out, err := cmd.CombinedOutput()
 	if err == nil {
-		return 0, string(out), nil
+		return nil
 	}
-	if xErr, ok := err.(*exec.ExitError); ok {
-		wstat := xErr.Sys().(syscall.WaitStatus)
-		if wstat.Exited() {
-			return wstat.ExitStatus(), string(out), nil
-		}
+	if len(out) > 0 {
+		return fmt.Errorf("iptables with arguments %v failed: %v (output: %s)", args, err, string(out))
 	}
-	return -1, string(out), err
+	return fmt.Errorf("iptables with arguments %v failed: %v", args, err)
 }
 
 func execSave() (int, []string, error) {
@@ -350,31 +326,28 @@ func execSave() (int, []string, error) {
 	return -1, []string{}, err
 }
 
-func execRestore(rules []string) (int, error) {
+func execRestore(rules []string) error {
 	cmd := exec.Command("iptables-restore", []string{"--noflush", "-v", "-T", "nat"}...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return -1, err
+		return err
 	}
 	if _, err := io.WriteString(stdin, strings.Join(rules, "\n")+"\n"); err != nil {
-		return -1, fmt.Errorf("failed to write to iptables-restore stdin: %v", err)
+		return fmt.Errorf("failed to write to iptables-restore stdin: %v", err)
 	}
 	if err := stdin.Close(); err != nil {
-		return -1, fmt.Errorf("failed to close iptables-restore stdin: %v", err)
+		return fmt.Errorf("failed to close iptables-restore stdin: %v", err)
 	}
 
-	_, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err == nil {
-		return 0, nil
+		return nil
 	}
-	if xErr, ok := err.(*exec.ExitError); ok {
-		wstat := xErr.Sys().(syscall.WaitStatus)
-		if wstat.Exited() {
-			return wstat.ExitStatus(), nil
-		}
+	if len(out) > 0 {
+		return fmt.Errorf("iptables-restore failed: %v (output: %s)", err, string(out))
 	}
-	return -1, err
+	return fmt.Errorf("iptables-restore failed: %v", err)
 }
 
 // GetMatchArgs returns iptables arguments to match for the
@@ -415,21 +388,6 @@ func (rule *DnatRule) RestoreLine(chain string) string {
 	args = append(args, rule.GetMatchArgs()...)
 	args = append(args, rule.GetTargetArgs()...)
 	return strings.Join(args, " ")
-}
-
-// Insert executes iptables binary and inserts the rule.
-func (rule *DnatRule) Insert(chain string) error {
-	args := []string{"-t", "nat", "-I", chain}
-	args = append(args, rule.GetMatchArgs()...)
-	args = append(args, rule.GetTargetArgs()...)
-	rc, out, err := execIptables(args)
-	if err != nil {
-		return err
-	}
-	if rc != 0 {
-		return fmt.Errorf("iptables with arguments %v returned non-zero (%d). output: %s", args, rc, out)
-	}
-	return nil
 }
 
 func filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
