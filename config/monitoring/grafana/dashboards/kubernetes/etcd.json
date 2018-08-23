@@ -1952,7 +1952,7 @@
         "multi": false,
         "name": "cluster",
         "options": [],
-        "query": "label_values(etcd_server_has_leader, cluster)",
+        "query": "label_values(job:etcd_server_has_leader:sum, cluster)",
         "refresh": 1,
         "regex": "",
         "sort": 2,
