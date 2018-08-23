@@ -21,7 +21,7 @@ func DnatControllerClusterRole(data *resources.TemplateData, existing *rbacv1.Cl
 		{
 			APIGroups: []string{""},
 			Resources: []string{"nodes"},
-			Verbs:     []string{"list", "get"},
+			Verbs:     []string{"list", "get", "watch"},
 		},
 	}
 	return r, nil
