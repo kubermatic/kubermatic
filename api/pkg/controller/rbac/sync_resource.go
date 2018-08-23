@@ -14,11 +14,12 @@ import (
 
 // syncProjectResource generates RBAC Role and Binding for a resource that belongs to a project.
 // in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
-// instead it assumes that all required information is stored in OwnerReferences
+// instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
 //
 // note:
-// the project resources live only on master cluster and there are times
-// that this code will be run on a seed cluster
+// the project resources live only on master cluster and cluster resources are on master and seed clusters
+// we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
+// project resource and will be automatically gc'ed
 func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 	projectName := ""
 	for _, owner := range item.metaObject.GetOwnerReferences() {
@@ -28,6 +29,10 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 			break
 		}
 	}
+	if len(projectName) == 0 {
+		projectName = item.metaObject.GetLabels()[kubermaticv1.ProjectIDLabelKey]
+	}
+
 	if len(projectName) == 0 {
 		return nil
 		//
