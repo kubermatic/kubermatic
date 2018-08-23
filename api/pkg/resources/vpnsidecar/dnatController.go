@@ -24,7 +24,9 @@ func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1
 			"-logtostderr",
 		},
 		SecurityContext: &corev1.SecurityContext{
-			Privileged: resources.Bool(true),
+			Capabilities: &corev1.Capabilities{
+				Add: []corev1.Capability{"NET_ADMIN"},
+			},
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
