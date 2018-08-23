@@ -125,6 +125,7 @@ func (ctrl *Controller) handleErr(err error, key interface{}) {
 
 func (ctrl *Controller) runWorker() {
 	for ctrl.processNextItem() {
+		time.Sleep(time.Second * 15)
 	}
 }
 func (ctrl *Controller) processNextItem() bool {
@@ -277,8 +278,7 @@ func (ctrl *Controller) getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
 	return rule, nil
 }
 
-// hashRules sorts and hashes the given rules. This is used
-// to detect the changes.
+// hashRules sorts and hashes the given rules. This is used to detect the changes.
 func hashLines(lines []string) []byte {
 	hasher := sha1.New()
 	for _, s := range lines {
@@ -292,6 +292,7 @@ func hashLines(lines []string) []byte {
 
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
+// This function replaces a complete chain (removing all pre-existing rules).
 func (ctrl *Controller) applyRules(rules []string) error {
 	restore := []string{"*nat", fmt.Sprintf(":%s - [0:0]", ctrl.nodeTranslationChainName)}
 	restore = append(restore, rules...)

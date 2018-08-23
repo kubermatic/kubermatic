@@ -22,7 +22,7 @@ import (
 
 func main() {
 	kubeconfigFlag := flag.String("kubeconfig", "", "Path to a kubeconfig.")
-	networkFlag := flag.String("node-access-network", "", "Node-Access-Network to translate to.")
+	networkFlag := flag.String("node-access-network", "", "The network in CIDR notation to translate to.")
 	chainNameFlag := flag.String("chain-name", "node-access-dnat", "Name of the chain in nat table.")
 	flag.Parse()
 
