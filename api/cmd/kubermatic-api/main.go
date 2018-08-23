@@ -136,6 +136,8 @@ func main() {
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
 
+		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+
 		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
 			kubermaticSeedClient,
 			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
@@ -144,7 +146,7 @@ func main() {
 			handler.IsAdmin,
 		)
 		newClusterProviders[ctx] = kubernetesprovider.NewRBACCompliantClusterProvider(
-			defaultImpersonationClient.CreateImpersonatedClientSet,
+			defaultImpersonationClientForSeed.CreateImpersonatedClientSet,
 			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 			workerName,
