@@ -835,7 +835,6 @@
         "multi": true,
         "name": "namespace",
         "options": [],
-        "mumblefoo": "bla",
         "query": "label_values(kubelet_volume_stats_used_bytes{ [[ volumeDashboardNamespaceFilter ]] }, namespace)",
         "refresh": 1,
         "regex": "",
