@@ -39,6 +39,7 @@ const (
 
 const (
 	WorkerNameLabelKey = "worker-name"
+	ProjectIDLabelKey  = "project-id"
 )
 
 //+genclient

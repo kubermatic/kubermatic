@@ -69,6 +69,7 @@ type Controller struct {
 	projectResourcesInformers []cache.Controller
 	projectResourcesQueue     workqueue.RateLimitingInterface
 
+	allClusterProviders  []*ClusterProvider
 	seedClusterProviders []*ClusterProvider
 	projectResources     []projectResource
 }
@@ -169,17 +170,19 @@ func New(
 		rbacClusterRoleLister:        c.rbacClusterRoleMasterLister,
 		rbacClusterRoleBindingLister: c.rbacClusterRoleBindingMasterLister,
 	})
+	c.allClusterProviders = allClusterProviders
 
 	for _, clusterProvider := range allClusterProviders {
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 && clusterProvider.providerName != masterProviderName {
-				glog.V(6).Infof("skipping adding a shared informer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
-			informer, err := c.informerFor(clusterProvider.kubermaticInformerFactory, resource.gvr, resource.kind, clusterProvider)
+			informer, indexer, err := c.informerIndexerFor(clusterProvider.kubermaticInformerFactory, resource.gvr, resource.kind, clusterProvider)
 			if err != nil {
 				return nil, err
 			}
+			clusterProvider.AddIndexerFor(indexer, resource.gvr)
 			c.projectResourcesInformers = append(c.projectResourcesInformers, informer)
 		}
 	}
@@ -331,7 +334,7 @@ type projectResourceQueueItem struct {
 	clusterProvider *ClusterProvider
 }
 
-func (c *Controller) informerFor(sharedInformers kubermaticsharedinformers.SharedInformerFactory, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) (cache.Controller, error) {
+func (c *Controller) informerIndexerFor(sharedInformers kubermaticsharedinformers.SharedInformerFactory, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) (cache.Controller, cache.Indexer, error) {
 	handlers := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueueProjectResource(obj, gvr, kind, clusterProvider)
@@ -348,9 +351,9 @@ func (c *Controller) informerFor(sharedInformers kubermaticsharedinformers.Share
 	}
 	shared, err := sharedInformers.ForResource(gvr)
 	if err == nil {
-		glog.V(4).Infof("using a shared informer for a project's resource %q for provider %q", gvr.String(), clusterProvider.providerName)
+		glog.V(4).Infof("using a shared informer and indexer for a project's resource %q for provider %q", gvr.String(), clusterProvider.providerName)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
-		return shared.Informer().GetController(), nil
+		return shared.Informer().GetController(), shared.Informer().GetIndexer(), nil
 	}
-	return nil, fmt.Errorf("uanble to create shared informer fo the given project's resource %v for provider %q", gvr.String(), clusterProvider.providerName)
+	return nil, nil, fmt.Errorf("uanble to create shared informer and indexer for the given project's resource %v for provider %q", gvr.String(), clusterProvider.providerName)
 }

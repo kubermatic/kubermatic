@@ -66,16 +66,9 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				kubermaticapiv1.WorkerNameLabelKey: p.workerName,
+				kubermaticapiv1.ProjectIDLabelKey:  project.Name,
 			},
 			Name: name,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticapiv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
 		},
 		Spec: *spec,
 		Status: kubermaticapiv1.ClusterStatus{
@@ -115,11 +108,15 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 
 	projectClusters := []*kubermaticapiv1.Cluster{}
 	for _, cluster := range clusters {
+		// TODO: remove reading OwnerReferences after migration
 		owners := cluster.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.APIVersion == kubermaticapiv1.SchemeGroupVersion.String() && owner.Kind == kubermaticapiv1.ProjectKindName && owner.Name == project.Name {
 				projectClusters = append(projectClusters, cluster)
 			}
+		}
+		if clusterProject := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]; clusterProject == project.Name {
+			projectClusters = append(projectClusters, cluster)
 		}
 	}
 

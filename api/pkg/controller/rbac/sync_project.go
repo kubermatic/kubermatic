@@ -243,6 +243,7 @@ func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, gr
 // In particular:
 // - removes project/group reference from users object
 // - removes no longer needed Subject from RBAC Binding for project's resources
+// - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer
 func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	sharedUsers, err := c.userLister.List(labels.Everything())
@@ -262,6 +263,25 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 			user.Spec.Projects = updatedProjectGroup
 			if _, err = c.kubermaticMasterClient.KubermaticV1().Users().Update(user); err != nil {
 				return err
+			}
+		}
+	}
+
+	// cluster resources don't have OwnerReferences set thus we need to manually remove them
+	for _, clusterProvider := range c.allClusterProviders {
+		if clusterProvider.clusterResourceLister == nil {
+			return fmt.Errorf("there is no lister for cluster resources for cluster provider %s", clusterProvider.providerName)
+		}
+		clusterResources, err := clusterProvider.clusterResourceLister.List(labels.Everything())
+		if err != nil {
+			return err
+		}
+		for _, clusterResource := range clusterResources {
+			if clusterProject := clusterResource.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
+				err := clusterProvider.kubermaticClient.KubermaticV1().Clusters().Delete(clusterResource.Name, &metav1.DeleteOptions{})
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
