@@ -25,11 +25,9 @@ spec:
         imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
         args:
         - --discovery-url={{ $.Values.iap.discovery_url }}
-        - --redirection-url={{ .redirection_url }}
         - --listen=0.0.0.0:{{ $.Values.iap.port }}
         - --upstream-url=http://{{ .upstream_service }}:{{ .upstream_port }}
-        - --enable-refresh-tokens=true
-        - --resources=uri=/*
+        - --config=/config/config.yaml
         envFrom:
         - secretRef:
             name: iap-{{ .name }}-secret
@@ -53,6 +51,16 @@ spec:
         resources:
 {{ toYaml $.Values.iap.resources | indent 10 }}
 {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: iap-{{ .name }}-configmap
+          items:
+          - key: config.yaml
+            path: config.yaml
       securityContext:
         fsGroup: 65534
         runAsNonRoot: true

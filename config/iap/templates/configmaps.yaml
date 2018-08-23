@@ -1,0 +1,12 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iap-{{ .name }}-configmap
+data:
+  config.yaml: |
+{{- with .config }}
+{{ toYaml . | indent 4 }}
+{{ end }}
+{{ end }}
