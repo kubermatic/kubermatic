@@ -123,7 +123,9 @@ spec:
             cpu: 10m
             memory: 30Mi
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - NET_ADMIN
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -293,6 +295,8 @@ spec:
         - svc.cluster.local
         - cluster.local
       dnsPolicy: None
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - command:
         - /bin/sh
