@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ver=v0.1.0
+ver=v0.2.0-rc1
 image=quay.io/kubermatic/vpnsidecar-dnat-controller
 
 set -euox pipefail

@@ -14,7 +14,7 @@ func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1
 	kcDir := "/etc/kubernetes/dnat-controller-kubeconfig"
 	return &corev1.Container{
 		Name:            name,
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.1.0",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc1",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
 		Args: []string{
