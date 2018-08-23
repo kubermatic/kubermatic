@@ -794,7 +794,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					t.Fatalf("unexpected number of clusters were deleted, expected only %d, but got %d, for provider %s", len(deletedClusterResources), len(fakeKubermaticClient.Actions()), providerName)
 				}
 
-				for index, action := range fakeKubermaticClient.Actions() {
+				for _, action := range fakeKubermaticClient.Actions() {
 					if !action.Matches("delete", "clusters") {
 						t.Fatalf("unexpected action %#v", action)
 					}
@@ -802,8 +802,17 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					if !ok {
 						t.Fatalf("unexpected action %#v", action)
 					}
-					if deleteAction.GetName() != deletedClusterResources[index] {
-						t.Fatalf("wrong cluster has been deleted %s, expected %s", deleteAction.GetName(), deletedClusterResources[index])
+
+					foundDeletedResourceOnTheList := false
+					for _, deletedClusterResource := range deletedClusterResources {
+						if deleteAction.GetName() == deletedClusterResource {
+							foundDeletedResourceOnTheList = true
+							break
+						}
+
+					}
+					if !foundDeletedResourceOnTheList {
+						t.Fatalf("wrong cluster has been deleted %s, the cluster is not on the list  %v", deleteAction.GetName(), deletedClusterResources)
 					}
 				}
 			}
