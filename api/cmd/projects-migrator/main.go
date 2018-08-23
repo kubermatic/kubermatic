@@ -248,7 +248,7 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 			userName := isOwnedByUser(project.OwnerReferences)
 			if len(userName) > 0 {
 				if user, err := ctx.masterKubermaticClient.KubermaticV1().Users().Get(userName, metav1.GetOptions{}); err == nil {
-					projectOwnersTuple[userName] = projectOwnerTuple{project: project, owner: *user}
+					projectOwnersTuple[user.Spec.ID] = projectOwnerTuple{project: project, owner: *user}
 				}
 			} else {
 				return fmt.Errorf("project ID = %s, Name = %s doesn't have an owner", project.Name, project.Spec.Name)
@@ -509,7 +509,7 @@ func migrateToProject(ctx migrationContext) error {
 			if !ctx.dryRun {
 				_, err := ctx.masterKubermaticClient.KubermaticV1().Users().Update(&user)
 				if err != nil {
-					glog.Errorf("failed to update user (ID = %s) object, however we can continue because the user object will be updated by the \"rbac-controller\" anyway, err = %v", user.Spec.ID, err)
+					return fmt.Errorf("failed to update user (ID = %s) object, err = %v", user.Spec.ID, err)
 				}
 			} else {
 				glog.Infof("a project (ID = %s, Name = %s) for userID = %s was NOT added to the \"Spec.Projects\" field because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID)
