@@ -270,6 +270,10 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 				glog.Warningf("the key ID = %s, Name = %s doesn't have an owner", key.Name, key.Spec.Name)
 				continue
 			}
+			if projectName := isOwnedByProject(key.GetOwnerReferences(), nil); len(projectName) > 0 {
+				glog.V(2).Infof("skipping the key ID = %s, Name = %s, already belongs to the project %s", key.Name, key.Spec.Name, projectName)
+				continue
+			}
 			if projectOwner, ok := projectOwnersTuple[key.Spec.Owner]; ok {
 				keysProjectTuple = append(keysProjectTuple, keyProjectTuple{key: key, project: projectOwner.project})
 			} else {
