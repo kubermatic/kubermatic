@@ -738,7 +738,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				}
 				return nil, fmt.Errorf("provider %s not found", name)
 			}
-			allClusterProviders := make([]*ClusterProvider, len(test.existingClustersOn))
+			seedClusterProviders := make([]*ClusterProvider, len(test.existingClustersOn))
 			{
 				index := 0
 				for providerName, clusterResources := range test.existingClustersOn {
@@ -758,7 +758,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
 					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerFactory, fakeKubermaticClient, nil)
 					fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
-					allClusterProviders[index] = fakeProvider
+					seedClusterProviders[index] = fakeProvider
 					index = index + 1
 				}
 			}
@@ -768,7 +768,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.allClusterProviders = allClusterProviders
+			target.seedClusterProviders = seedClusterProviders
 			target.userLister = userLister
 			target.kubermaticMasterClient = fakeKubermaticMasterClient
 			err := target.ensureProjectCleanup(test.projectToSync)
@@ -781,7 +781,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				t.Fatalf("deletedClustersOn field is different than existingClusterOn in length, did you forget to update deletedClusterOn ?")
 			}
 			for providerName, deletedClusterResources := range test.deletedClustersOn {
-				provider, err := getClusterProviderByName(providerName, allClusterProviders)
+				provider, err := getClusterProviderByName(providerName, seedClusterProviders)
 				if err != nil {
 					t.Fatalf("unable to validate deleted cluster resources because didn't find the provider %s", providerName)
 				}

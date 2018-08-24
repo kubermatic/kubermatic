@@ -79,10 +79,6 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
-			if cfg.Host == config.Host && cfg.Username == config.Username && cfg.Password == config.Password {
-				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubernetes master client", ctxName)
-				continue
-			}
 
 			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient, err := kubernetes.NewForConfig(cfg)

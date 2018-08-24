@@ -135,10 +135,6 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 func (c *Controller) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
-			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.rbacClusterRoleMasterLister)
-			if err != nil {
-				return err
-			}
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
@@ -147,6 +143,11 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 					if err != nil {
 						return err
 					}
+				}
+			} else {
+				err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.rbacClusterRoleMasterLister)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -165,11 +166,6 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 				return err
 			}
 
-			err := ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, c.rbacClusterRoleBindingMasterLister)
-			if err != nil {
-				return err
-			}
-
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
 					seedClusterRESTClient := seedClusterProvider.kubeClient
@@ -177,6 +173,11 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 					if err != nil {
 						return err
 					}
+				}
+			} else {
+				err := ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, c.rbacClusterRoleBindingMasterLister)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -287,7 +288,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	}
 
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
-	for _, clusterProvider := range c.allClusterProviders {
+	for _, clusterProvider := range c.seedClusterProviders {
 		if clusterProvider.clusterResourceLister == nil {
 			return fmt.Errorf("there is no lister for cluster resources for cluster provider %s", clusterProvider.providerName)
 		}

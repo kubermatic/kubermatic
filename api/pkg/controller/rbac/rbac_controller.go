@@ -69,7 +69,6 @@ type Controller struct {
 	projectResourcesInformers []cache.Controller
 	projectResourcesQueue     workqueue.RateLimitingInterface
 
-	allClusterProviders  []*ClusterProvider
 	seedClusterProviders []*ClusterProvider
 	projectResources     []projectResource
 }
@@ -169,18 +168,7 @@ func New(
 		},
 	}
 
-	allClusterProviders := seedClusterProviders
-	allClusterProviders = append(allClusterProviders, &ClusterProvider{
-		providerName:                 masterProviderName,
-		kubeClient:                   kubeMasterClient,
-		kubermaticClient:             kubermaticMasterClient,
-		kubermaticInformerFactory:    kubermaticMasterInformerFactory,
-		rbacClusterRoleLister:        c.rbacClusterRoleMasterLister,
-		rbacClusterRoleBindingLister: c.rbacClusterRoleBindingMasterLister,
-	})
-	c.allClusterProviders = allClusterProviders
-
-	for _, clusterProvider := range allClusterProviders {
+	for _, clusterProvider := range seedClusterProviders {
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 && clusterProvider.providerName != masterProviderName {
 				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
