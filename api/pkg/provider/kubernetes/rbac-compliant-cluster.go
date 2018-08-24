@@ -108,13 +108,6 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 
 	projectClusters := []*kubermaticapiv1.Cluster{}
 	for _, cluster := range clusters {
-		// TODO: remove reading OwnerReferences after migration
-		owners := cluster.GetOwnerReferences()
-		for _, owner := range owners {
-			if owner.APIVersion == kubermaticapiv1.SchemeGroupVersion.String() && owner.Kind == kubermaticapiv1.ProjectKindName && owner.Name == project.Name {
-				projectClusters = append(projectClusters, cluster)
-			}
-		}
 		if clusterProject := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]; clusterProject == project.Name {
 			projectClusters = append(projectClusters, cluster)
 		}
