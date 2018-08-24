@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"hash/crc32"
-	"os"
 	"sort"
 	"time"
 
@@ -230,7 +229,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			secretExistsInLister := func() (bool, error) {
 				_, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(generatedSecret.Name)
 				if err != nil {
-					if os.IsNotExist(err) {
+					if errors.IsNotFound(err) {
 						return false, nil
 					}
 					runtime.HandleError(fmt.Errorf("failed to check if a created secret %s/%s got published to lister: %v", c.Status.NamespaceName, generatedSecret.Name, err))
