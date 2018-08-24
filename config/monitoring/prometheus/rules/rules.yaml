@@ -622,7 +622,7 @@ groups:
         days.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays
     expr: |
-      predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[1h], 4 * 24 * 3600) < 0
+      kubelet_volume_stats_available_bytes{job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
     for: 5m
     labels:
       severity: critical
