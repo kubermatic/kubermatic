@@ -214,7 +214,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 			exists = true
 		}
 
-		generatedSecret, currentJSON, err := op.gen(c, existingSecret)
+		generatedSecret, currentJSON, err := op.gen(c, existingSecret.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to generate Secret %s: %v", op.name, err)
 		}
