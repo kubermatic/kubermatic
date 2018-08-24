@@ -62,26 +62,21 @@ func (cc *Controller) createCASecret(commonName string, c *kubermaticv1.Cluster)
 }
 
 func (cc *Controller) getImagePullSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	kubermaticDockerCfg, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.ImagePullSecretName)
+	cacheCfgSecret, err := cc.secretLister.Secrets(resources.KubermaticNamespaceName).Get(resources.ImagePullSecretName)
 	if err != nil {
 		return nil, "", fmt.Errorf("couldn't retrieve dockercfg from kubermatic ns: %v", err)
 	}
+	cfgSecret := cacheCfgSecret.DeepCopy()
 
-	var secret *corev1.Secret
-	if existingSecret != nil {
-		secret = existingSecret
-	} else {
-		secret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations:     map[string]string{},
-				Labels:          map[string]string{},
-				OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
-			},
-			Type: corev1.SecretTypeDockerConfigJson,
-		}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations:     map[string]string{},
+			Labels:          map[string]string{},
+			OwnerReferences: []metav1.OwnerReference{cc.getOwnerRefForCluster(c)},
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: cfgSecret.Data,
 	}
-
-	secret.Data = kubermaticDockerCfg.Data
 
 	return cc.secretWithJSON(secret)
 }
