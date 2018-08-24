@@ -68,10 +68,6 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
-			if cfg.Host == ctx.config.Host && cfg.Username == ctx.config.Username && cfg.Password == ctx.config.Password {
-				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubernetes master client", ctxName)
-				continue
-			}
 
 			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient := kubernetes.NewForConfigOrDie(cfg)
@@ -160,7 +156,7 @@ func remigrate(ctx migrationContext) error {
 	//         clusters like that have OwnerReferences set for a project
 	//
 	//         note that this step will get clusters resources that belong to
-	//         master and seed clusters (physical location)
+	//         seed clusters (physical location)
 	glog.Info("STEP 1: getting the list of clusters that were migrated")
 	_, alreadyAdoptedClusters, err := getAllClusters(ctx)
 	if err != nil {
@@ -398,7 +394,7 @@ func migrateToProject(ctx migrationContext) error {
 	//         clusters like that don't have OwnerReferences set for a project
 	//
 	//         note that this step will get clusters resources that belong to
-	//         master and seed clusters (physical location)
+	//         seed clusters (physical location)
 	glog.Info("STEP 1: getting the list of clusters that needs to be migrated")
 	clustersToAdoptByUserID, _, err := getAllClusters(ctx)
 	if err != nil {
@@ -650,27 +646,6 @@ func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProvid
 		userClusterResourcesTuple.clusters = append(userClusterResourcesTuple.clusters, cluster)
 		userClustersMap[provider.name] = userClusterResourcesTuple
 		clustersToAdoptByUserID[cluster.Labels["user"]] = userClustersMap
-	}
-
-	// get cluster resources that are located in master cluster
-	{
-		masterClusters, err := ctx.masterKubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
-		if err != nil {
-			return nil, nil, err
-		}
-
-		masterClusterProvider := &clusterProvider{"master", ctx.masterKubeClient, ctx.masterKubermaticClient}
-		alreadyAdoptedOnMaster := []kubermaticv1.Cluster{}
-
-		for _, cluster := range masterClusters.Items {
-			projectName := isOwnedByProject(cluster.GetOwnerReferences(), cluster.Labels)
-			if len(projectName) == 0 {
-				helper(cluster, masterClusterProvider)
-			} else {
-				alreadyAdoptedOnMaster = append(alreadyAdoptedOnMaster, cluster)
-			}
-		}
-		alreadyAdoptedClusters = append(alreadyAdoptedClusters, &clustersProviderTuple{clusters: alreadyAdoptedOnMaster, provider: masterClusterProvider})
 	}
 
 	// get cluster resources that are located in seed clusters
