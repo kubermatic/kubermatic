@@ -182,6 +182,20 @@ func (ctrl *Controller) enqueueAfter(n *corev1.Node, duration time.Duration) {
 	ctrl.queue.AddAfter("some node", duration)
 }
 
+func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
+	rules := []string{}
+	for _, node := range nodes {
+		rule, err := ctrl.getRuleFromNode(node)
+		if err != nil {
+			glog.Errorf("failed to get dnat rule from node %s: %v", node.Name, err)
+			continue
+		}
+		rules = append(rules, rule.RestoreLine(ctrl.nodeTranslationChainName))
+	}
+	sort.Strings(rules)
+	return rules
+}
+
 // syncDnatRules will recreate the complete set of translation rules
 // based on the list of nodes.
 func (ctrl *Controller) syncDnatRules(key string) error {
@@ -198,22 +212,14 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	}
 
 	// Create the set of rules from all listed nodes.
-	desiredRules := []string{}
-	for _, node := range nodes {
-		rule, err := ctrl.getRuleFromNode(node)
-		if err != nil {
-			glog.Errorf("failed to get dnat rule from node %s: %v", node.Name, err)
-			continue
-		}
-		desiredRules = append(desiredRules, rule.RestoreLine(ctrl.nodeTranslationChainName))
-	}
-	sort.Strings(desiredRules)
+	desiredRules := ctrl.getDesiredRules(nodes)
 
-	// Get current iptable rules
+	// Get the actual state (current iptable rules)
 	rc, allActualRules, err := execSave()
 	if rc != 0 || err != nil {
 		return fmt.Errorf("failed to read iptable rules: %d / %v", rc, err)
 	}
+	// filter out everything that's not relevant for us
 	actualRules, haveJump, haveMasquerade := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
 
 	actualHash := hashLines(actualRules)
@@ -421,6 +427,9 @@ func (rule *DnatRule) RestoreLine(chain string) string {
 	return strings.Join(args, " ")
 }
 
+// filterDnatRules enumerates through all given rules and returns all
+// rules matching the given chain. It also returns two booleans to
+// indicate if the jump and the masquerade rule are present.
 func filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
 	out := []string{}
 	haveJump := false
