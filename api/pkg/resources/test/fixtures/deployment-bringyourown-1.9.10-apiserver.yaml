@@ -112,7 +112,7 @@ spec:
         - -logtostderr
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc1
+        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc2
         imagePullPolicy: IfNotPresent
         name: dnat-controller
         resources:
