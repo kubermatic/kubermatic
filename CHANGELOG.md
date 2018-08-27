@@ -121,3 +121,13 @@
 **Misc:**
 
 - Added addon for default StorageClass depending on a cloud provider [#1697](https://github.com/kubermatic/kubermatic/issues/1697) ([glower](https://github.com/glower))
+
+
+
+
+### [v2.6.14]()
+
+
+**Misc:**
+
+- Updated machine-controller to `v0.7.17` [#1677](https://github.com/kubermatic/kubermatic/issues/1677) ([thz](https://github.com/thz))
