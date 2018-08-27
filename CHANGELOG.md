@@ -120,6 +120,10 @@
 
 ### [v2.6.14]()
 
+**Cloud Provider:**
+
+- Azure: fixed minor issue with seed clusters running on Azure [#1657](https://github.com/kubermatic/kubermatic/issues/1657) ([thz](https://github.com/thz))
+
 
 **Misc:**
 
