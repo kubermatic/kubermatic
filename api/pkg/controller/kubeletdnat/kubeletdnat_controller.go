@@ -160,7 +160,7 @@ func (ctrl *Controller) syncDnatRules() error {
 		return fmt.Errorf("failed to read iptable rules: %v", err)
 	}
 	// filter out everything that's not relevant for us
-	actualRules, haveJump, haveMasquerade := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
+	actualRules, haveJump, haveMasquerade := ctrl.filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) {
 		// Need to update chain in kernel.
@@ -350,14 +350,14 @@ func (rule *dnatRule) RestoreLine(chain string) string {
 // filterDnatRules enumerates through all given rules and returns all
 // rules matching the given chain. It also returns two booleans to
 // indicate if the jump and the masquerade rule are present.
-func filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
+func (ctrl *Controller) filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
 	out := []string{}
 	haveJump := false
 	haveMasquerade := false
 
 	rulePrefix := fmt.Sprintf("-A %s ", chain)
 	jumpPattern := fmt.Sprintf("-A OUTPUT -j %s", chain)
-	masqPattern := fmt.Sprintf("-A POSTROUTING -o tun0 -j MASQUERADE")
+	masqPattern := fmt.Sprintf("-A POSTROUTING -o %s -j MASQUERADE", ctrl.vpnInterface)
 	for _, rule := range rules {
 		if rule == jumpPattern {
 			haveJump = true
