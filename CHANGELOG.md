@@ -229,3 +229,94 @@
 - Enabled CoreOS on Openstack [#673](https://github.com/kubermatic/dashboard-v2/issues/673) ([kgroschoff](https://github.com/kgroschoff))
 - cri-o has been disabled [#670](https://github.com/kubermatic/dashboard-v2/issues/670) ([kgroschoff](https://github.com/kgroschoff))
 - Node deletion can now be confirmed by pressing enter [#672](https://github.com/kubermatic/dashboard-v2/issues/672) ([kgroschoff](https://github.com/kgroschoff))
+
+
+
+
+### [v2.6.3]()
+
+
+**Cloud Provider:**
+
+- Fixed floating IP defaulting on openstack [#1332](https://github.com/kubermatic/kubermatic/issues/1332) ([mrIncompetent](https://github.com/mrIncompetent))
+- Azure: added multi-AZ node support [#1354](https://github.com/kubermatic/kubermatic/issues/1354) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fixed premature logout from vsphere API [#1373](https://github.com/kubermatic/kubermatic/issues/1373) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+**Misc:**
+
+- Control plane can now reach the nodes via VPN [#1234](https://github.com/kubermatic/kubermatic/issues/1234) ([thz](https://github.com/thz))
+- Enabled Mutating/Validating Admission Webhooks for K8S 1.9&#43; [#1352](https://github.com/kubermatic/kubermatic/issues/1352) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated addon manager to `v0.1.0` [#1363](https://github.com/kubermatic/kubermatic/issues/1363) ([thz](https://github.com/thz))
+- Update machine-controller to `v0.7.5` [#1374](https://github.com/kubermatic/kubermatic/issues/1374) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
+### [v2.6.2]()
+
+
+- Minor fixes and improvements for Openstack support
+
+
+
+
+### [v2.6.1]()
+
+
+**Cloud Provider:**
+
+- Non-ESXi vsphere hosts are now supported [#1306](https://github.com/kubermatic/kubermatic/issues/1306) ([alvaroaleman](https://github.com/alvaroaleman))
+- VSphere target folder will be properly cleaned up on cluster deletion. [#1314](https://github.com/kubermatic/kubermatic/issues/1314) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+**Misc:**
+
+- Addons in kubermatic charts can now be specified as a list [#1304](https://github.com/kubermatic/kubermatic/issues/1304) ([guusvw](https://github.com/guusvw))
+- Updated machine-controller to `v0.7.3` [#1311](https://github.com/kubermatic/kubermatic/issues/1311) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Monitoring:**
+
+- Fixed metric name for addon controller [#1323](https://github.com/kubermatic/kubermatic/issues/1323) ([alvaroaleman](https://github.com/alvaroaleman))
+
+### [v2.6.0]()
+
+
+**Bugfix:**
+
+- Cluster IPv6 addresses will be ignored on systems on which they are available [#1017](https://github.com/kubermatic/kubermatic/issues/1017) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fixed an issue with duplicate users being sometimes created [#990](https://github.com/kubermatic/kubermatic/issues/990) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Cloud Provider:**
+
+- Added Azure support [#1200](https://github.com/kubermatic/kubermatic/issues/1200) ([kdomanski](https://github.com/kdomanski))
+- Openstack: made cluster resource cleanup idempotent [#961](https://github.com/kubermatic/kubermatic/issues/961) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Misc:**
+
+- Updated prometheus operator to `v0.19.0` [#1014](https://github.com/kubermatic/kubermatic/issues/1014) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated dex to `v2.10.0` [#1052](https://github.com/kubermatic/kubermatic/issues/1052) ([mrIncompetent](https://github.com/mrIncompetent))
+- etcd operator has been replaced with a `StatefulSet` [#1065](https://github.com/kubermatic/kubermatic/issues/1065) ([mrIncompetent](https://github.com/mrIncompetent))
+- Nodeport range is now configurable [#1084](https://github.com/kubermatic/kubermatic/issues/1084) ([mrIncompetent](https://github.com/mrIncompetent))
+- Bare-metal provider has been removed [#1087](https://github.com/kubermatic/kubermatic/issues/1087) ([mrIncompetent](https://github.com/mrIncompetent))
+- Introduced addon manager [#1152](https://github.com/kubermatic/kubermatic/issues/1152) ([mrIncompetent](https://github.com/mrIncompetent))
+- etcd data of user clusters can now be automatically backed up [#1170](https://github.com/kubermatic/kubermatic/issues/1170) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated machine-controller to `v0.7.2` [#1227](https://github.com/kubermatic/kubermatic/issues/1227) ([mrIncompetent](https://github.com/mrIncompetent))
+- etcd disk size can now be configured [#1301](https://github.com/kubermatic/kubermatic/issues/1301) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated kube-state-metrics to `v1.3.1` [#933](https://github.com/kubermatic/kubermatic/issues/933) ([metalmatze](https://github.com/metalmatze))
+- Added the ability to blacklist a cluster from reconciliation by the cluster-controller [#936](https://github.com/kubermatic/kubermatic/issues/936) ([mrIncompetent](https://github.com/mrIncompetent))
+- Allow disabling TLS verification in offline environments [#968](https://github.com/kubermatic/kubermatic/issues/968) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated nginx-ingress to `v0.14.0` [#983](https://github.com/kubermatic/kubermatic/issues/983) ([metalmatze](https://github.com/metalmatze))
+- Kubernetes can now automatically allocate a nodeport if the default nodeport range is unavailable [#987](https://github.com/kubermatic/kubermatic/issues/987) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated nodeport-proxy to `v1.1` [#988](https://github.com/kubermatic/kubermatic/issues/988) ([mrIncompetent](https://github.com/mrIncompetent))
+- Added support for Kubernetes `v1.10.2` [#989](https://github.com/kubermatic/kubermatic/issues/989) ([mrIncompetent](https://github.com/mrIncompetent))
+- Various other fixes and improvements
+
+
+**Monitoring:**
+
+- Added alerts for kubermatic master components being down [#1031](https://github.com/kubermatic/kubermatic/issues/1031) ([metalmatze](https://github.com/metalmatze))
+- Massive amount of general improvements to alerting
