@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/golang/glog"
@@ -41,6 +40,7 @@ type Controller struct {
 
 	nodeTranslationChainName string
 	nodeAccessNetwork        net.IP
+	vpnInterface             string
 }
 
 // dnatRule stores address+port before translation (match) and
@@ -57,7 +57,8 @@ func NewController(
 	client kubernetes.Interface,
 	nodeInformer k8sinformersV1.NodeInformer,
 	nodeTranslationChainName string,
-	nodeAccessNetwork net.IP) *Controller {
+	nodeAccessNetwork net.IP,
+	vpnInterface string) *Controller {
 
 	ctrl := &Controller{
 		client:     client,
@@ -65,6 +66,7 @@ func NewController(
 		queue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
+		vpnInterface:             vpnInterface,
 	}
 
 	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -118,7 +120,7 @@ func (ctrl *Controller) processNextItem() bool {
 	}
 
 	defer ctrl.queue.Done(key)
-	err := ctrl.syncDnatRules(key.(string))
+	err := ctrl.syncDnatRules()
 	ctrl.handleErr(err, key)
 	return true
 }
@@ -136,8 +138,8 @@ func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
 
 // syncDnatRules will recreate the complete set of translation rules
 // based on the list of nodes.
-func (ctrl *Controller) syncDnatRules(key string) error {
-	glog.V(6).Infof("Syncing DNAT rules as %s got modified", key)
+func (ctrl *Controller) syncDnatRules() error {
+	glog.V(6).Infof("Syncing DNAT rules")
 
 	// Get nodes from lister, make a copy.
 	cachedNodes, err := ctrl.nodeLister.List(labels.Everything())
@@ -153,9 +155,9 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	desiredRules := ctrl.getDesiredRules(nodes)
 
 	// Get the actual state (current iptable rules)
-	rc, allActualRules, err := execSave()
-	if rc != 0 || err != nil {
-		return fmt.Errorf("failed to read iptable rules: %d / %v", rc, err)
+	allActualRules, err := execSave()
+	if err != nil {
+		return fmt.Errorf("failed to read iptable rules: %v", err)
 	}
 	// filter out everything that's not relevant for us
 	actualRules, haveJump, haveMasquerade := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
@@ -178,7 +180,7 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 
 	// Ensure to masquerade outgoing vpn packets.
 	if !haveMasquerade {
-		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", "tun0", "-j", "MASQUERADE"}); err != nil {
+		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", ctrl.vpnInterface, "-j", "MASQUERADE"}); err != nil {
 			return fmt.Errorf("failed to create masquerade rule in POSTROUTING chain: %v", err)
 		}
 		glog.V(2).Infof("Inserted POSTROUTING rule to masquerade vpn traffic.")
@@ -275,19 +277,10 @@ func execIptables(args []string) error {
 	return fmt.Errorf("iptables with arguments %v failed: %v", args, err)
 }
 
-func execSave() (int, []string, error) {
+func execSave() ([]string, error) {
 	cmd := exec.Command("iptables-save", []string{"-t", "nat"}...)
 	out, err := cmd.CombinedOutput()
-	if err == nil {
-		return 0, strings.Split(string(out), "\n"), nil
-	}
-	if xErr, ok := err.(*exec.ExitError); ok {
-		wstat := xErr.Sys().(syscall.WaitStatus)
-		if wstat.Exited() {
-			return wstat.ExitStatus(), []string{}, nil
-		}
-	}
-	return -1, []string{}, err
+	return strings.Split(string(out), "\n"), err
 }
 
 func execRestore(rules []string) error {
