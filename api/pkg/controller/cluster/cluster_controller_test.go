@@ -46,6 +46,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		"5Gi",
 		"",
 		false,
+		[]byte{},
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubeInformerFactory.Core().V1().Namespaces(),

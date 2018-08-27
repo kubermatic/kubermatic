@@ -55,6 +55,7 @@ spec:
           - -addons-path=/opt/addons
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
+          - -image-pull-secret=/opt/docker/.dockerconfigjson
           {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
           - -in-cluster-prometheus-disable-default-rules=true
           {{- end }}
@@ -80,6 +81,9 @@ spec:
             - name: backup-container
               mountPath: "/opt/backup/"
               readOnly: true
+            - name: dockercfg
+              mountPath: "/opt/docker/"
+              readOnly: true
             {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
             - name: in-cluster-prometheus-rules-file
               mountPath: "/opt/incluster-prometheus/"
@@ -94,7 +98,6 @@ spec:
               cpu: "200m"
       imagePullSecrets:
         - name: dockercfg
-        - name: quay
       tolerations:
       - key: "only_critical"
         operator: "Equal"
@@ -122,6 +125,9 @@ spec:
         - name: backup-container
           configMap:
             name: backup-container
+        - name: dockercfg
+          secret:
+            secretName: dockercfg
         {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
         - name: in-cluster-prometheus-rules-file
           configMap:

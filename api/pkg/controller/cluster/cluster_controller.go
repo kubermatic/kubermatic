@@ -60,6 +60,7 @@ type Controller struct {
 	etcdDiskSize                           resource.Quantity
 	inClusterPrometheusRulesFile           string
 	inClusterPrometheusDisableDefaultRules bool
+	imagePullSecretData                    []byte
 
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
@@ -93,6 +94,7 @@ func NewController(
 	etcdDiskSize string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
+	imagePullSecretData []byte,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -121,6 +123,7 @@ func NewController(
 		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
 		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
+		imagePullSecretData:                    imagePullSecretData,
 
 		externalURL: externalURL,
 		workerName:  workerName,

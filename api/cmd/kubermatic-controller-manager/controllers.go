@@ -87,6 +87,11 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, err
 	}
 
+	imagePullSecret, err := ioutil.ReadFile(ctrlCtx.runOptions.imagePullSecretFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.imagePullSecretFile, err)
+	}
+
 	cps := cloud.Providers(dcs)
 
 	return cluster.NewController(
@@ -104,6 +109,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
+		imagePullSecret,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),
