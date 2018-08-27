@@ -85,7 +85,8 @@ func NewController(
 	}
 
 	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) { ctrl.enqueue(obj.(*corev1.Node)) },
+		AddFunc:    func(_ interface{}) { ctrl.queue.Add(QueueKey) },
+		DeleteFunc: func(_ interface{}) { ctrl.queue.Add(QueueKey) },
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldRule, oldErr := ctrl.getRuleFromNode(oldObj.(*corev1.Node))
 			if oldErr != nil {
@@ -101,23 +102,7 @@ func NewController(
 			if oldRule.Equals(newRule) {
 				return
 			}
-			ctrl.enqueue(newObj.(*corev1.Node))
-		},
-		DeleteFunc: func(obj interface{}) {
-			n, ok := obj.(*corev1.Node)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				n, ok = tombstone.Obj.(*corev1.Node)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Service %#v", obj))
-					return
-				}
-			}
-			ctrl.enqueue(n)
+			ctrl.queue.Add(QueueKey)
 		},
 	})
 	return ctrl
@@ -162,20 +147,6 @@ func (ctrl *Controller) processNextItem() bool {
 	err := ctrl.syncDnatRules(key.(string))
 	ctrl.handleErr(err, key)
 	return true
-}
-
-func (ctrl *Controller) enqueue(n *corev1.Node) {
-	ctrl.enqueueAfter(n, 0)
-}
-func (ctrl *Controller) enqueueAfter(n *corev1.Node, duration time.Duration) {
-	_, err := cache.DeletionHandlingMetaNamespaceKeyFunc(n)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", n, err))
-		return
-	}
-	// Our sync has no conditions on the actual object. To gain some deduplication
-	// we use a constant key here.
-	ctrl.queue.AddAfter(QueueKey, duration)
 }
 
 func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
