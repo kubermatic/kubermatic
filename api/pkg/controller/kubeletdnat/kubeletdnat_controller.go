@@ -52,6 +52,18 @@ type DnatRule struct {
 	TranslatedPort        string
 }
 
+// Equals returns true if the rule equals the given rule.
+func (rule *DnatRule) Equals(other *DnatRule) bool {
+	if other == nil ||
+		rule.OriginalTargetAddress != other.OriginalTargetAddress ||
+		rule.OriginalTargetPort != other.OriginalTargetPort ||
+		rule.TranslatedAddress != other.TranslatedAddress ||
+		rule.TranslatedPort != other.TranslatedPort {
+		return false
+	}
+	return true
+}
+
 // NewController creates a new controller for the specified data.
 func NewController(
 	client kubernetes.Interface,
@@ -68,8 +80,24 @@ func NewController(
 	}
 
 	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { ctrl.enqueue(obj.(*corev1.Node)) },
-		UpdateFunc: func(_, newObj interface{}) { ctrl.enqueue(newObj.(*corev1.Node)) },
+		AddFunc: func(obj interface{}) { ctrl.enqueue(obj.(*corev1.Node)) },
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldRule, oldErr := ctrl.getRuleFromNode(oldObj.(*corev1.Node))
+			if oldErr != nil {
+				runtime.HandleError(fmt.Errorf("failed to get rule from old node: %v", oldErr))
+				return
+			}
+			newRule, newErr := ctrl.getRuleFromNode(newObj.(*corev1.Node))
+			if newErr != nil {
+				runtime.HandleError(fmt.Errorf("failed to get rule from new node: %v", newErr))
+				return
+			}
+
+			if oldRule.Equals(newRule) {
+				return
+			}
+			ctrl.enqueue(newObj.(*corev1.Node))
+		},
 		DeleteFunc: func(obj interface{}) {
 			n, ok := obj.(*corev1.Node)
 			if !ok {
@@ -93,6 +121,7 @@ func NewController(
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
 func (ctrl *Controller) Run(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
+	go wait.Until(func() { ctrl.queue.Add("some node") }, time.Second*30, stopCh)
 	go wait.Until(ctrl.runWorker, time.Second, stopCh)
 	<-stopCh
 }
@@ -125,7 +154,6 @@ func (ctrl *Controller) handleErr(err error, key interface{}) {
 
 func (ctrl *Controller) runWorker() {
 	for ctrl.processNextItem() {
-		time.Sleep(time.Second * 15)
 	}
 }
 func (ctrl *Controller) processNextItem() bool {
@@ -243,6 +271,9 @@ func getInternalNodeAddress(node *corev1.Node) (string, error) {
 // getRuleFromNode determines the used kubelet address of a node
 // and creates a DnatRule from it.
 func (ctrl *Controller) getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
+	if node == nil {
+		return nil, fmt.Errorf("invalid/nil node reference")
+	}
 	rule := &DnatRule{}
 	// Set matching part of the rule (original address).
 	host, err := getPreferredNodeAddress(node)
