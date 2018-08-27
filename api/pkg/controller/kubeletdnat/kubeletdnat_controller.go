@@ -136,20 +136,11 @@ func (ctrl *Controller) handleErr(err error, key interface{}) {
 		return
 	}
 
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if ctrl.queue.NumRequeues(key) < 5 {
-		glog.V(0).Infof("Error syncing node access dnat rules %v: %v", key, err)
+	glog.V(0).Infof("Error syncing node access dnat rules %v: %v", key, err)
 
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		ctrl.queue.AddRateLimited(key)
-		return
-	}
-
-	ctrl.queue.Forget(key)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
-	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping %q out of the queue: %v", key, err)
+	// Re-enqueue the key rate limited. Based on the rate limiter on the
+	// queue and the re-enqueue history, the key will be processed later again.
+	ctrl.queue.AddRateLimited(key)
 }
 
 func (ctrl *Controller) runWorker() {
