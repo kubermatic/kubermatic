@@ -52,18 +52,20 @@ func TestRuleGeneration(t *testing.T) {
 
 	rules := ctrl.getDesiredRules(nodes)
 
-	if len(rules) != 3 {
-		t.Errorf("expected exactly 3 rules from test nodes. got %d rules.", len(rules))
-		return
-	}
 	expectedRules := []string{
+		"-A test-chain -d 10.1.1.11/32 -p tcp -m tcp --dport 10250 -j DNAT --to-destination 10.254.1.11:10250",
 		"-A test-chain -d 10.1.1.12/32 -p tcp -m tcp --dport 10250 -j DNAT --to-destination 10.254.1.12:10250",
+		"-A test-chain -d 10.1.1.13/32 -p tcp -m tcp --dport 10250 -j DNAT --to-destination 10.254.1.13:10250",
 		"-A test-chain -d 192.0.2.101/32 -p tcp -m tcp --dport 10250 -j DNAT --to-destination 10.254.1.11:10250",
 		"-A test-chain -d 192.0.2.103/32 -p tcp -m tcp --dport 10250 -j DNAT --to-destination 10.254.1.13:10250",
 	}
+	if len(rules) != len(expectedRules) {
+		t.Errorf("expected exactly %d rules from test nodes. got %d rules.", len(expectedRules), len(rules))
+		return
+	}
 	for i, expectedRule := range expectedRules {
 		if rules[i] != expectedRule {
-			t.Errorf("unexpected rule #%d: %q", i, rules[i])
+			t.Errorf("unexpected rule #%d. expeceted: %q", i, rules[i])
 		}
 	}
 }

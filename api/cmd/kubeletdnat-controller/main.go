@@ -51,7 +51,6 @@ func main() {
 
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-	glog.V(6).Infof("Factory started.")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var gr run.Group

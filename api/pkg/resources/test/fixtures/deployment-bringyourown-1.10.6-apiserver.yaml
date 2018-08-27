@@ -112,16 +112,16 @@ spec:
         - -logtostderr
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc2
+        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc4
         imagePullPolicy: IfNotPresent
         name: dnat-controller
         resources:
           limits:
-            cpu: 40m
+            cpu: 5m
             memory: 64Mi
           requests:
-            cpu: 10m
-            memory: 30Mi
+            cpu: 5m
+            memory: 32Mi
         securityContext:
           capabilities:
             add:
@@ -209,7 +209,7 @@ spec:
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
         - --kubelet-preferred-address-types
-        - Hostname,InternalIP,ExternalIP
+        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver

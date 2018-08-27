@@ -1,8 +1,6 @@
 package kubeletdnat
 
 import (
-	"bytes"
-	"crypto/sha1"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -29,12 +28,8 @@ import (
 )
 
 const (
-	// QueueKey is the constant key added to the queue for deduplication.
-	QueueKey = "some node"
-)
-
-var (
-	preferredAddressTypes = []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
+	// queueKey is the constant key added to the queue for deduplication.
+	queueKey = "some node"
 )
 
 // Controller updates iptable rules to match node addresses.
@@ -48,25 +43,13 @@ type Controller struct {
 	nodeAccessNetwork        net.IP
 }
 
-// DnatRule stores address+port before translation (match) and
+// dnatRule stores address+port before translation (match) and
 // provides address+port after translation.
-type DnatRule struct {
-	OriginalTargetAddress string
-	OriginalTargetPort    string
-	TranslatedAddress     string
-	TranslatedPort        string
-}
-
-// Equals returns true if the rule equals the given rule.
-func (rule *DnatRule) Equals(other *DnatRule) bool {
-	if other == nil ||
-		rule.OriginalTargetAddress != other.OriginalTargetAddress ||
-		rule.OriginalTargetPort != other.OriginalTargetPort ||
-		rule.TranslatedAddress != other.TranslatedAddress ||
-		rule.TranslatedPort != other.TranslatedPort {
-		return false
-	}
-	return true
+type dnatRule struct {
+	originalTargetAddress string
+	originalTargetPort    string
+	translatedAddress     string
+	translatedPort        string
 }
 
 // NewController creates a new controller for the specified data.
@@ -85,24 +68,15 @@ func NewController(
 	}
 
 	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ interface{}) { ctrl.queue.Add(QueueKey) },
-		DeleteFunc: func(_ interface{}) { ctrl.queue.Add(QueueKey) },
+		AddFunc:    func(_ interface{}) { ctrl.queue.Add(queueKey) },
+		DeleteFunc: func(_ interface{}) { ctrl.queue.Add(queueKey) },
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			oldRule, oldErr := ctrl.getRuleFromNode(oldObj.(*corev1.Node))
-			if oldErr != nil {
-				runtime.HandleError(fmt.Errorf("failed to get rule from old node: %v", oldErr))
+			oldNode := oldObj.(*corev1.Node)
+			newNode := newObj.(*corev1.Node)
+			if equality.Semantic.DeepEqual(oldNode.Status.Addresses, newNode.Status.Addresses) {
 				return
 			}
-			newRule, newErr := ctrl.getRuleFromNode(newObj.(*corev1.Node))
-			if newErr != nil {
-				runtime.HandleError(fmt.Errorf("failed to get rule from new node: %v", newErr))
-				return
-			}
-
-			if oldRule.Equals(newRule) {
-				return
-			}
-			ctrl.queue.Add(QueueKey)
+			ctrl.queue.Add(queueKey)
 		},
 	})
 	return ctrl
@@ -111,7 +85,7 @@ func NewController(
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
 func (ctrl *Controller) Run(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	go wait.Until(func() { ctrl.queue.Add(QueueKey) }, time.Second*30, stopCh)
+	go wait.Until(func() { ctrl.queue.Add(queueKey) }, time.Second*30, stopCh)
 	go wait.Until(ctrl.runWorker, time.Second, stopCh)
 	<-stopCh
 }
@@ -152,12 +126,9 @@ func (ctrl *Controller) processNextItem() bool {
 func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
 	rules := []string{}
 	for _, node := range nodes {
-		rule, err := ctrl.getRuleFromNode(node)
-		if err != nil {
-			glog.Errorf("failed to get dnat rule from node %s: %v", node.Name, err)
-			continue
+		for _, rule := range ctrl.getRulesForNode(node) {
+			rules = append(rules, rule.RestoreLine(ctrl.nodeTranslationChainName))
 		}
-		rules = append(rules, rule.RestoreLine(ctrl.nodeTranslationChainName))
 	}
 	sort.Strings(rules)
 	return rules
@@ -189,9 +160,7 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	// filter out everything that's not relevant for us
 	actualRules, haveJump, haveMasquerade := filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
 
-	actualHash := hashLines(actualRules)
-	desiredHash := hashLines(desiredRules)
-	if !bytes.Equal(desiredHash, actualHash) {
+	if !equality.Semantic.DeepEqual(actualRules, desiredRules) {
 		// Need to update chain in kernel.
 		glog.V(6).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
 		if err := ctrl.applyRules(desiredRules); err != nil {
@@ -200,7 +169,7 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	}
 
 	// Ensure to jump into the translation chain.
-	if !haveJump {
+	if !haveJump && len(desiredRules) > 0 {
 		if err := execIptables([]string{"-t", "nat", "-I", "OUTPUT", "-j", ctrl.nodeTranslationChainName}); err != nil {
 			return fmt.Errorf("failed to create jump rule in OUTPUT chain: %v", err)
 		}
@@ -218,18 +187,19 @@ func (ctrl *Controller) syncDnatRules(key string) error {
 	return nil
 }
 
-// getPreferredNodeAddress is behaving like k8s' nodeutil.GetPreferredNodeAddress:
-// returns the address of the provided node, using the provided preference order.
-func getPreferredNodeAddress(node *corev1.Node) (string, error) {
-	for _, addressType := range preferredAddressTypes {
+// getNodeAddresses returns all relevant addresses of a node.
+func getNodeAddresses(node *corev1.Node) []string {
+	addressTypes := []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
+	addresses := []string{}
+	for _, addressType := range addressTypes {
 		for _, address := range node.Status.Addresses {
 			if address.Type == addressType {
-				return address.Address, nil
+				addresses = append(addresses, address.Address)
 			}
 
 		}
 	}
-	return "", fmt.Errorf("no preferred addresses found; known addresses: %v", node.Status.Addresses)
+	return addresses
 }
 
 func getInternalNodeAddress(node *corev1.Node) (string, error) {
@@ -241,55 +211,45 @@ func getInternalNodeAddress(node *corev1.Node) (string, error) {
 	return "", fmt.Errorf("no internal address found; known addresses: %v", node.Status.Addresses)
 }
 
-// getRuleFromNode determines the used kubelet address of a node
-// and creates a DnatRule from it.
-func (ctrl *Controller) getRuleFromNode(node *corev1.Node) (*DnatRule, error) {
-	if node == nil {
-		return nil, fmt.Errorf("invalid/nil node reference")
-	}
-	rule := &DnatRule{}
-	// Set matching part of the rule (original address).
-	host, err := getPreferredNodeAddress(node)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get preferred node address: %v", err)
-	}
+// getRulesForNode determines the used kubelet address of a node
+// and creates a dnatRule from it.
+func (ctrl *Controller) getRulesForNode(node *corev1.Node) []*dnatRule {
+	rules := []*dnatRule{}
+
 	port := int(node.Status.DaemonEndpoints.KubeletEndpoint.Port)
 	if port <= 0 {
 		port = provider.DefaultKubeletPort
 	}
-	rule.OriginalTargetAddress = host
-	rule.OriginalTargetPort = strconv.FormatInt(int64(port), 10)
 
-	// Set translation part of the rule (new destination)
-	//    This implements the current node-access-network translations by
-	//    changing the first two octets of the node-ip-address into the
-	//    respective two octets of the node-access-network.
 	internalIP, err := getInternalNodeAddress(node)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get internal node address: %v", err)
+		glog.Errorf("failed to get internal node address: %v", err)
+		return rules
 	}
 	octets := strings.Split(internalIP, ".")
 
-	l := len(ctrl.nodeAccessNetwork)
-	newAddress := fmt.Sprintf("%d.%d.%s.%s",
-		ctrl.nodeAccessNetwork[l-4], ctrl.nodeAccessNetwork[l-3],
-		octets[2], octets[3])
-	rule.TranslatedAddress = newAddress
-	rule.TranslatedPort = rule.OriginalTargetPort
+	for _, address := range getNodeAddresses(node) {
+		rule := &dnatRule{}
 
-	return rule, nil
-}
+		// Set matching part of the rule (original address).
+		rule.originalTargetAddress = address
+		rule.originalTargetPort = strconv.FormatInt(int64(port), 10)
 
-// hashRules sorts and hashes the given rules. This is used to detect the changes.
-func hashLines(lines []string) []byte {
-	hasher := sha1.New()
-	for _, s := range lines {
-		if _, err := hasher.Write([]byte(s)); err != nil {
-			glog.Errorf("failed to hash bytes: %v", err)
-			return nil
-		}
+		// Set translation part of the rule (new destination)
+		//    This implements the current node-access-network translations by
+		//    changing the first two octets of the node-ip-address into the
+		//    respective two octets of the node-access-network.
+		//    The last two octets are the last two octets of the internal address
+		l := len(ctrl.nodeAccessNetwork)
+		newAddress := fmt.Sprintf("%d.%d.%s.%s",
+			ctrl.nodeAccessNetwork[l-4], ctrl.nodeAccessNetwork[l-3],
+			octets[2], octets[3])
+		rule.translatedAddress = newAddress
+		rule.translatedPort = rule.originalTargetPort
+
+		rules = append(rules, rule)
 	}
-	return hasher.Sum(nil)
+	return rules
 }
 
 // applyRules creates a iptables-save file and pipes it to stdin of
@@ -355,26 +315,26 @@ func execRestore(rules []string) error {
 }
 
 // GetMatchArgs returns iptables arguments to match for the
-// rule's OriginalTargetAddress and Port.
-func (rule *DnatRule) GetMatchArgs() []string {
+// rule's originalTargetAddress and Port.
+func (rule *dnatRule) GetMatchArgs() []string {
 	return []string{
-		"-d", rule.OriginalTargetAddress + "/32",
+		"-d", rule.originalTargetAddress + "/32",
 		"-p", "tcp",
 		"-m", "tcp",
-		"--dport", rule.OriginalTargetPort,
+		"--dport", rule.originalTargetPort,
 	}
 }
 
 // GetTargetArgs returns iptables arguments to specify the
 // rule's target after translation.
-func (rule *DnatRule) GetTargetArgs() []string {
+func (rule *dnatRule) GetTargetArgs() []string {
 	var target string
-	if len(rule.TranslatedAddress) > 0 {
-		target = rule.TranslatedAddress
+	if len(rule.translatedAddress) > 0 {
+		target = rule.translatedAddress
 	}
 	target = target + ":"
-	if len(rule.TranslatedPort) > 0 {
-		target = target + rule.TranslatedPort
+	if len(rule.translatedPort) > 0 {
+		target = target + rule.translatedPort
 	}
 	if len(target) == 0 {
 		return []string{}
@@ -387,7 +347,7 @@ func (rule *DnatRule) GetTargetArgs() []string {
 
 // RestoreLine returns a line of `iptables-save`-file representing
 // the rule.
-func (rule *DnatRule) RestoreLine(chain string) string {
+func (rule *dnatRule) RestoreLine(chain string) string {
 	args := []string{"-A", chain}
 	args = append(args, rule.GetMatchArgs()...)
 	args = append(args, rule.GetTargetArgs()...)
