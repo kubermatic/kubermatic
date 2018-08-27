@@ -113,10 +113,6 @@ func TestAddUserToProject(t *testing.T) {
 						Email: "bob@acme.com",
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
-								Group: "readers-plan9",
-								Name:  "plan9",
-							},
-							{
 								Group: "editors-placeX",
 								Name:  "placeX",
 							},
@@ -542,6 +538,108 @@ func TestAddUserToProject(t *testing.T) {
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
 			ExpectedActions:  8,
+		},
+
+		{
+			Name:          "scenario 6: john the owner of the plan9 project invites bob to the project second time",
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusBadRequest,
+			ProjectToSync: "plan9",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "myProjectInternalName",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "my-first-project",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
+				},
+
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "plan9",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "John",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
+				},
+
+				&kubermaticapiv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "myThirdProjectInternalName",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.io/v1",
+								Kind:       "User",
+								UID:        "",
+								Name:       "my-third-project",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
+				},
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUserName,
+						ID:    testUserID,
+						Email: testUserEmail,
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-plan9",
+								Name:  "plan9",
+							},
+							{
+								Group: "editors-myThirdProjectInternalName",
+								Name:  "myThirdProjectInternalName",
+							},
+						},
+					},
+				},
+
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "readers-plan9",
+								Name:  "plan9",
+							},
+							{
+								Group: "editors-placeX",
+								Name:  "placeX",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUserID,
+				Name:  testUserName,
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9 because user is already in the project"}}`,
+			ExpectedActions:  9,
 		},
 	}
 
