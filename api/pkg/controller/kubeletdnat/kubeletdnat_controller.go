@@ -28,6 +28,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+const (
+	// QueueKey is the constant key added to the queue for deduplication.
+	QueueKey = "some node"
+)
+
 var (
 	preferredAddressTypes = []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
 )
@@ -121,7 +126,7 @@ func NewController(
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
 func (ctrl *Controller) Run(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	go wait.Until(func() { ctrl.queue.Add("some node") }, time.Second*30, stopCh)
+	go wait.Until(func() { ctrl.queue.Add(QueueKey) }, time.Second*30, stopCh)
 	go wait.Until(ctrl.runWorker, time.Second, stopCh)
 	<-stopCh
 }
@@ -170,7 +175,7 @@ func (ctrl *Controller) enqueueAfter(n *corev1.Node, duration time.Duration) {
 	}
 	// Our sync has no conditions on the actual object. To gain some deduplication
 	// we use a constant key here.
-	ctrl.queue.AddAfter("some node", duration)
+	ctrl.queue.AddAfter(QueueKey, duration)
 }
 
 func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
