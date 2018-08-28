@@ -204,12 +204,12 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
         - --feature-gates
         - Initializers=true
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
-        - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver

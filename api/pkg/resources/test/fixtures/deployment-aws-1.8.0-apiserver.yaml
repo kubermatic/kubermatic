@@ -204,12 +204,12 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
         - --cloud-provider
         - aws
         - --cloud-config
         - /etc/kubernetes/cloud/config
-        - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver

@@ -204,6 +204,8 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
         - --feature-gates
         - Initializers=true
         - --runtime-config
@@ -212,8 +214,6 @@ spec:
         - aws
         - --cloud-config
         - /etc/kubernetes/cloud/config
-        - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver
