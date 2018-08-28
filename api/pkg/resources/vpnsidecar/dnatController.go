@@ -12,12 +12,12 @@ import (
 var (
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("10Mi"),
 			corev1.ResourceCPU:    resource.MustParse("5m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("5m"),
+			corev1.ResourceMemory: resource.MustParse("20Mi"),
+			corev1.ResourceCPU:    resource.MustParse("20m"),
 		},
 	}
 )
@@ -27,7 +27,7 @@ func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1
 	kcDir := "/etc/kubernetes/dnat-controller-kubeconfig"
 	return &corev1.Container{
 		Name:            name,
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc4",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc5",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
 		Args: []string{
