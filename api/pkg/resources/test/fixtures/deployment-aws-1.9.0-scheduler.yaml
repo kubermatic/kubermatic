@@ -30,6 +30,7 @@ spec:
       labels:
         app: scheduler
         ca-secret-revision: "123456"
+        cluster: de-test-01
         openvpn-client-certificates-secret-revision: "123456"
         scheduler-kubeconfig-secret-revision: "123456"
     spec:

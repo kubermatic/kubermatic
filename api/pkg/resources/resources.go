@@ -516,8 +516,9 @@ func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.P
 
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
 // This will force pods being restarted as soon as one of the secrets/configmaps get updated.
-func (d *TemplateData) GetPodTemplateLabels(name string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+func (d *TemplateData) GetPodTemplateLabels(name, clusterName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
 	podLabels := BaseAppLabel(name, additionalLabels)
+	podLabels["cluster"] = clusterName
 
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
