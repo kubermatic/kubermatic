@@ -157,7 +157,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		ServiceLister: serviceLister,
 	}
 
-	for name, create := range GetSecretCreators() {
+	for name, create := range GetSecretCreators([]byte{}) {
 		existing := &corev1.Secret{
 			Data: map[string][]byte{"Test": []byte("Data")},
 		}
