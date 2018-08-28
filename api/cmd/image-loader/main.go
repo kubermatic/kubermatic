@@ -311,6 +311,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.OpenVPNServerCertificatesSecretName,
 		resources.OpenVPNClientCertificatesSecretName,
 		resources.FrontProxyCASecretName,
+		resources.KubeletDnatControllerKubeconfigSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)

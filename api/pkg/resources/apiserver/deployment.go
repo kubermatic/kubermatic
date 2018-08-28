@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/Masterminds/semver"
 
@@ -92,6 +93,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	etcd := fmt.Sprintf("https://%s:2379", etcdClientServiceIP)
 
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+		{
+			Name: resources.ImagePullSecretName,
+		},
+	}
+
 	// Configure user cluster DNS resolver for this pod.
 	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 	if err != nil {
@@ -120,9 +127,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+		return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+	}
+
+	dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 	}
 
 	flags, err := getApiserverFlags(data, externalNodePort, etcd)
@@ -137,6 +149,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
+		*dnatControllerSidecar,
 		{
 			Name:            name,
 			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
@@ -286,6 +299,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 	}
 	if clusterVersionSemVer.Minor() >= 9 {
 		flags = append(flags, "--feature-gates", "Initializers=true")
@@ -308,11 +322,6 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	if data.Cluster.Spec.Cloud.BringYourOwn != nil {
-		flags = append(flags, "--kubelet-preferred-address-types", "Hostname,InternalIP,ExternalIP")
-	} else {
-		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
-	}
 	return flags, nil
 }
 
@@ -439,6 +448,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.FrontProxyCASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.KubeletDnatControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
