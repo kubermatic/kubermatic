@@ -195,7 +195,6 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
 		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
 		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
-		{resources.ImagePullSecretName, cc.getImagePullSecret},
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -569,8 +568,9 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators() map[string]resources.SecretCreator {
+func GetSecretCreators(dockerPullConfigJSON []byte) map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
+		resources.ImagePullSecretName:                            resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON),
 		resources.EtcdTLSCertificateSecretName:                   etcd.TLSCertificate,
 		resources.ApiserverEtcdClientCertificateSecretName:       apiserver.EtcdClientCertificate,
 		resources.ServiceAccountKeySecretName:                    apiserver.ServiceAccountKey,
@@ -579,7 +579,7 @@ func GetSecretCreators() map[string]resources.SecretCreator {
 }
 
 func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
-	creators := GetSecretCreators()
+	creators := GetSecretCreators(cc.dockerPullConfigJSON)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
