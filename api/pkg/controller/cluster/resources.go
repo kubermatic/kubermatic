@@ -568,9 +568,9 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators(imagePullSecretData []byte) map[string]resources.SecretCreator {
+func GetSecretCreators(dockerPullConfigJSON []byte) map[string]resources.SecretCreator {
 	return map[string]resources.SecretCreator{
-		resources.ImagePullSecretName:                            resources.ImagePullSecretCreator(resources.ImagePullSecretName, imagePullSecretData),
+		resources.ImagePullSecretName:                            resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON),
 		resources.EtcdTLSCertificateSecretName:                   etcd.TLSCertificate,
 		resources.ApiserverEtcdClientCertificateSecretName:       apiserver.EtcdClientCertificate,
 		resources.ServiceAccountKeySecretName:                    apiserver.ServiceAccountKey,
@@ -579,7 +579,7 @@ func GetSecretCreators(imagePullSecretData []byte) map[string]resources.SecretCr
 }
 
 func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
-	creators := GetSecretCreators(cc.imagePullSecretData)
+	creators := GetSecretCreators(cc.dockerPullConfigJSON)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {

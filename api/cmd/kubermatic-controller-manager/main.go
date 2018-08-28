@@ -61,7 +61,7 @@ type controllerRunOptions struct {
 	etcdDiskSize                           string
 	inClusterPrometheusRulesFile           string
 	inClusterPrometheusDisableDefaultRules bool
-	imagePullSecretFile                    string
+	dockerPullConfigJSONFile               string
 }
 
 type controllerContext struct {
@@ -102,7 +102,7 @@ func main() {
 	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&runOp.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&runOp.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
-	flag.StringVar(&runOp.imagePullSecretFile, "image-pull-secret", "config.json", "The file containing the docker auth config.")
+	flag.StringVar(&runOp.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
@@ -121,7 +121,7 @@ func main() {
 		glog.Fatal("backup-container is undefined")
 	}
 
-	if runOp.imagePullSecretFile == "" {
+	if runOp.dockerPullConfigJSONFile == "" {
 		glog.Fatal("image-pull-secret is undefined")
 	}
 
