@@ -1,6 +1,8 @@
-package resources
+package vpnsidecar
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -17,13 +19,13 @@ var (
 // to user cluster networks.
 // Also required but not provided by this func:
 // * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
-func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container, error) {
-	openvpnServiceIP, err := data.ClusterIPByServiceName(OpenVPNServerServiceName)
+func OpenVPNSidecarContainer(data *resources.TemplateData, name string) (*corev1.Container, error) {
+	openvpnServiceIP, err := data.ClusterIPByServiceName(resources.OpenVPNServerServiceName)
 	if err != nil {
 		return nil, err
 	}
 	return &corev1.Container{
-		Name:            "openvpn-client",
+		Name:            name,
 		Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/sbin/openvpn"},
@@ -49,7 +51,7 @@ func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container
 			"--log", "/dev/stdout",
 		},
 		SecurityContext: &corev1.SecurityContext{
-			Privileged: Bool(true),
+			Privileged: resources.Bool(true),
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -66,12 +68,12 @@ func OpenVPNSidecarContainer(data *TemplateData, name string) (*corev1.Container
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/etc/openvpn/pki/client",
-				Name:      OpenVPNClientCertificatesSecretName,
+				Name:      resources.OpenVPNClientCertificatesSecretName,
 				ReadOnly:  true,
 			},
 			{
 				MountPath: "/etc/kubernetes/pki/ca",
-				Name:      CASecretName,
+				Name:      resources.CASecretName,
 				ReadOnly:  true,
 			},
 		},

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,7 +73,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
-	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
 	}
