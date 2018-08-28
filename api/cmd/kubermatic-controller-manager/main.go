@@ -122,7 +122,7 @@ func main() {
 	}
 
 	if runOp.dockerPullConfigJSONFile == "" {
-		glog.Fatal("image-pull-secret is undefined")
+		glog.Fatal("docker-pull-config-json-file is undefined")
 	}
 
 	// Validate etcd disk size
