@@ -128,7 +128,12 @@ func (ctrl *Controller) processNextItem() bool {
 func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
 	rules := []string{}
 	for _, node := range nodes {
-		for _, rule := range ctrl.getRulesForNode(node) {
+		nodeRules, err := ctrl.getRulesForNode(node)
+		if err != nil {
+			glog.Errorf("could not generate rules for node %s: %v - skipping", node.Name, err)
+			continue
+		}
+		for _, rule := range nodeRules {
 			rules = append(rules, rule.RestoreLine(ctrl.nodeTranslationChainName))
 		}
 	}
@@ -215,7 +220,7 @@ func getInternalNodeAddress(node *corev1.Node) (string, error) {
 
 // getRulesForNode determines the used kubelet address of a node
 // and creates a dnatRule from it.
-func (ctrl *Controller) getRulesForNode(node *corev1.Node) []*dnatRule {
+func (ctrl *Controller) getRulesForNode(node *corev1.Node) ([]*dnatRule, error) {
 	rules := []*dnatRule{}
 
 	port := int(node.Status.DaemonEndpoints.KubeletEndpoint.Port)
@@ -225,8 +230,7 @@ func (ctrl *Controller) getRulesForNode(node *corev1.Node) []*dnatRule {
 
 	internalIP, err := getInternalNodeAddress(node)
 	if err != nil {
-		glog.Errorf("failed to get internal node address: %v", err)
-		return rules
+		return rules, fmt.Errorf("failed to get internal node address: %v", err)
 	}
 	octets := strings.Split(internalIP, ".")
 
@@ -251,7 +255,7 @@ func (ctrl *Controller) getRulesForNode(node *corev1.Node) []*dnatRule {
 
 		rules = append(rules, rule)
 	}
-	return rules
+	return rules, nil
 }
 
 // applyRules creates a iptables-save file and pipes it to stdin of
