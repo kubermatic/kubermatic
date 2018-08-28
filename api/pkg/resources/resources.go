@@ -189,6 +189,9 @@ const (
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay
 	RegistryQuay = "quay.io"
+
+	// TopologyKeyHostname defines the topology key for the node hostname
+	TopologyKeyHostname = "kubernetes.io/hostname"
 )
 
 const (
