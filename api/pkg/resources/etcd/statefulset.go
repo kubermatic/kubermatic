@@ -57,7 +57,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, data.Cluster.Name, volumes, baseLabels)
+	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}

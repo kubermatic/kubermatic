@@ -65,7 +65,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(name, data.Cluster.Name, volumes, nil)
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
 	}

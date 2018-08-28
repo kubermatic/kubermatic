@@ -516,9 +516,8 @@ func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.P
 
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
 // This will force pods being restarted as soon as one of the secrets/configmaps get updated.
-func (d *TemplateData) GetPodTemplateLabels(name, clusterName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
-	podLabels := BaseAppLabel(name, additionalLabels)
-	podLabels["cluster"] = clusterName
+func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+	podLabels := AppClusterLabel(appName, d.Cluster.Name, additionalLabels)
 
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
@@ -549,6 +548,14 @@ func BaseAppLabel(name string, additionalLabels map[string]string) map[string]st
 		labels[k] = v
 	}
 	return labels
+}
+
+// AppClusterLabel returns the base app label + the cluster label. Additional labels can be included as well
+func AppClusterLabel(appName, clusterName string, additionalLabels map[string]string) map[string]string {
+	podLabels := BaseAppLabel(appName, additionalLabels)
+	podLabels["cluster"] = clusterName
+
+	return podLabels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days
