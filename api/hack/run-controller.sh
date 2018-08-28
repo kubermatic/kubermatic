@@ -21,6 +21,6 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -external-url=dev.kubermatic.io \
   -backup-container=../config/kubermatic/static/backup-container.yaml \
   -cleanup-container=../config/kubermatic/static/cleanup-container.yaml \
-  -image-pull-secret=../../secrets/seed-clusters/dev.kubermatic.io/.dockerconfigjson \
+  -docker-pull-config-json-file=../../secrets/seed-clusters/dev.kubermatic.io/.dockerconfigjson \
   -logtostderr=1 \
   -v=6 $@
