@@ -1,10 +1,6 @@
 kubermatic:
-  docker:
-    # the base64 encoded docker authentication token
-    secret: ""
-  quay:
-    # the base64 encoded quay.io authentication token
-    secret: ""
+  # the base64 encoded docker/quay authentication json file
+  imagePullSecretData: ""
   auth:
     # the full path to the openid connect token issuer. For example 'https://dev.kubermatic.io/dex'
     tokenIssuer: ""
@@ -125,4 +121,3 @@ kubermatic:
 #          labels:
 #            severity: warning
   clusterNamespacePrometheus: {}
-  
