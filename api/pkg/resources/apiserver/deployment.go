@@ -299,6 +299,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 	}
 	if clusterVersionSemVer.Minor() >= 9 {
 		flags = append(flags, "--feature-gates", "Initializers=true")
@@ -321,7 +322,6 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	return flags, nil
 }
 
