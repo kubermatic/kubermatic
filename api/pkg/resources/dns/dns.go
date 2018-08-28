@@ -66,7 +66,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
+	podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, data.Cluster.Name, volumes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get podlabels: %v", err)
 	}
