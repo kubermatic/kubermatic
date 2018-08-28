@@ -108,11 +108,11 @@ spec:
         - --node-access-network
         - 192.0.2.0/24
         - -v
-        - "6"
+        - "4"
         - -logtostderr
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0-rc5
+        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0
         imagePullPolicy: IfNotPresent
         name: dnat-controller
         resources:
