@@ -8,6 +8,14 @@ ark:
   podAnnotations: {}
   #  iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_ARK_ROLE_NAME>
 
+  serviceAccount:
+    hook:
+      create: true
+      name:
+    server:
+      create: true
+      name:
+
   tolerations: []
 
   nodeSelector: {}
@@ -32,6 +40,7 @@ ark:
       #  s3ForcePathStyle:
       #  s3Url:
       #  kmsKeyId:
+      resticLocation: restic-xrstf
 
     backupSyncPeriod: 60m
     gcSyncPeriod: 60m
@@ -40,8 +49,6 @@ ark:
     restoreOnlyMode: false
 
   credentials:
-    existingSecret:
-    useSecret: true
     secretContents: {}
     aws: |
       [default]

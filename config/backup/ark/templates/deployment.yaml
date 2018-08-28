@@ -1,32 +1,20 @@
-{{- if and .Values.ark.configuration.backupStorageProvider.name .Values.ark.configuration.backupStorageProvider.bucket -}}
-{{- $provider := .Values.ark.configuration.backupStorageProvider.name -}}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ template "ark.fullname" . }}
-  labels:
-    release: {{ .Release.Name }}
-    app: {{ template "ark.name" . }}
-    chart: {{ template "ark.chart" . }}
-    heritage: {{ .Release.Service }}
+  name: ark-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      release: {{ .Release.Name }}
-      app: {{ template "ark.name" . }}
+      name: ark-server
   template:
     metadata:
       labels:
-        release: {{ .Release.Name }}
-        app: {{ template "ark.name" . }}
-    {{- with .Values.ark.podAnnotations }}
+        name: ark-server
       annotations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
+{{ toYaml .Values.ark.podAnnotations | indent 8 }}
     spec:
       restartPolicy: Always
-      serviceAccountName: {{ template "ark.serverServiceAccount" . }}
       containers:
         - name: ark
           image: "{{ .Values.ark.image.repository }}:{{ .Values.ark.image.tag }}"
@@ -35,39 +23,22 @@ spec:
             - /ark
           args:
             - server
-          {{- if eq $provider "azure" }}
-          envFrom:
-            - secretRef:
-                name: {{ template "ark.secretName" . }}
-          {{- end }}
+          env:
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /credentials/cloud
           volumeMounts:
             - name: plugins
               mountPath: /plugins
-        {{- if and .Values.ark.credentials.useSecret (or (eq $provider "aws") (eq $provider "gcp")) }}
             - name: cloud-credentials
               mountPath: /credentials
-          env:
-          {{- if eq $provider "aws" }}
-            - name: AWS_SHARED_CREDENTIALS_FILE
-          {{- else }}
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-          {{- end }}
-              value: /credentials/cloud
-        {{- end }}
       volumes:
-        {{- if and .Values.ark.credentials.useSecret (or (eq $provider "aws") (eq $provider "gcp")) }}
-        - name: cloud-credentials
-          secret:
-            secretName: {{ template "ark.secretName" . }}
-        {{- end }}
         - name: plugins
           emptyDir: {}
-    {{- with .Values.ark.nodeSelector }}
+        - name: cloud-credentials
+          secret:
+            secretName: cloud-credentials
+      serviceAccountName: ark-server
       nodeSelector:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.ark.tolerations }}
+{{ toYaml .Values.ark.nodeSelector | indent 8 }}
       tolerations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-{{- end -}}
+{{ toYaml .Values.ark.tolerations | indent 8 }}
