@@ -41,6 +41,16 @@ spec:
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: apiserver
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --client
