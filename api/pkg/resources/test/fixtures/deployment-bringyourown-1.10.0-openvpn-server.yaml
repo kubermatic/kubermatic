@@ -26,6 +26,7 @@ spec:
       labels:
         app: openvpn-server
         ca-secret-revision: "123456"
+        cluster: de-test-01
         openvpn-client-configs-configmap-revision: "123456"
         openvpn-server-certificates-secret-revision: "123456"
     spec:

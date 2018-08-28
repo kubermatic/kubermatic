@@ -28,6 +28,7 @@ spec:
       creationTimestamp: null
       labels:
         app: kube-state-metrics
+        cluster: de-test-01
         kube-state-metrics-kubeconfig-secret-revision: "123456"
     spec:
       containers:

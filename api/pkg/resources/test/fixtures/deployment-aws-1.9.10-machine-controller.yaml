@@ -29,6 +29,7 @@ spec:
       creationTimestamp: null
       labels:
         app: machine-controller
+        cluster: de-test-01
         machinecontroller-kubeconfig-secret-revision: "123456"
     spec:
       containers:
