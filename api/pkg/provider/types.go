@@ -101,6 +101,13 @@ type ClusterListOptions struct {
 	SortBy string
 }
 
+// ClusterGetOptions allows to check the status of the cluster
+type ClusterGetOptions struct {
+	// CheckInitStatus if set to true will check if cluster is initialized. The call will return error if
+	// not all cluster components are running
+	CheckInitStatus bool
+}
+
 // NewClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
 type NewClusterProvider interface {
@@ -116,7 +123,7 @@ type NewClusterProvider interface {
 	List(project *kubermaticv1.Project, options *ClusterListOptions) ([]*kubermaticv1.Cluster, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
+	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
 	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)

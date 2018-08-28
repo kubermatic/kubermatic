@@ -134,7 +134,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -181,7 +181,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID)
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -297,7 +297,7 @@ func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoin
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID)
+		existingCluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -325,7 +325,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(user, project, req.ClusterID)
+		_, err = clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -377,7 +377,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		_, err = clusterProvider.Get(user, project, req.ClusterID)
+		_, err = clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -433,7 +433,7 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(user, project, req.ClusterID)
+		_, err = clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -545,7 +545,7 @@ func getClusterMetricsEndpoint(projectProvider provider.ProjectProvider, prometh
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		c, err := clusterProvider.Get(user, project, req.ClusterID)
+		c, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -856,7 +856,7 @@ func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -876,7 +876,7 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(user, project, req.ClusterID)
+		cluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
