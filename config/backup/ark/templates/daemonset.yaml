@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: ark-restic
+  name: restic
 spec:
   selector:
     matchLabels:
-      name: ark-restic
+      name: restic
   template:
     metadata:
       labels:
-        name: ark-restic
+        name: restic
     spec:
       containers:
         - name: ark
