@@ -479,6 +479,17 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				},
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
