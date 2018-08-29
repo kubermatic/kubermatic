@@ -37,3 +37,6 @@ ark:
     scheduleSyncPeriod: 1m
     resourcePriorities: []
     restoreOnlyMode: false
+
+  # glob expressions to find schedule defitions
+  schedulesPath: schedules/*
