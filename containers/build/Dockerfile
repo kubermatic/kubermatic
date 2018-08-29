@@ -13,6 +13,8 @@ COPY --from=builddeps /go/bin/* /usr/local/bin/
 RUN curl -o /usr/bin/kubectl -L "https://storage.googleapis.com/kubernetes-release/release/v1.10.6/bin/linux/amd64/kubectl"
 RUN chmod 0755 /usr/bin/kubectl
 
+RUN apt update && apt -y install git
+
 RUN mkdir -p /go/src/github.com/kubermatic/kubermatic/api
 
 WORKDIR /go/src/github.com/kubermatic/kubermatic/api
