@@ -13,7 +13,7 @@ ark:
   # not let this drift apart.
   configuration:
     backupStorageProvider:
-      resticLocation: restic-xrstf
+      resticLocation: resticbackups
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
