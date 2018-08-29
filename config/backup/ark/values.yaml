@@ -11,9 +11,9 @@ ark:
   # to know whether or not to enable the restic daemonset. Make sure
   # to use a single values.yaml shared with the ark-config chart to
   # not let this drift apart.
-  configuration:
-    backupStorageProvider:
-      resticLocation: resticbackups
+  #configuration:
+  #  backupStorageProvider:
+  #    resticLocation: resticbackups
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
