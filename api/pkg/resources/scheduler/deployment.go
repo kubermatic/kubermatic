@@ -173,6 +173,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+
 	return dep, nil
 }
 

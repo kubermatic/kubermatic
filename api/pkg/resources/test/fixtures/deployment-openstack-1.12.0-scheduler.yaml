@@ -34,6 +34,16 @@ spec:
         openvpn-client-certificates-secret-revision: "123456"
         scheduler-kubeconfig-secret-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scheduler
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --client
