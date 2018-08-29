@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// InternalClientCertificate returns a secret with the etcd client certificate
+// InternalClientCertificate returns a secret with a client certificate for the openvpn clients in the seed-cluster.
 func InternalClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.OpenVPNClientCertificatesSecretName,

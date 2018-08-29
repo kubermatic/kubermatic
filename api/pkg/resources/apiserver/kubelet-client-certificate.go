@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// KubeletClientCertificate returns a secret with the etcd client certificate
+// KubeletClientCertificate returns a secret with the client certificate for the apiserver -> kubelet connection.
 func KubeletClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.KubeletClientCertificatesSecretName,

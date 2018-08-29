@@ -43,14 +43,14 @@ func getCACreator(name, commonName string) func(*resources.TemplateData, *corev1
 	}
 }
 
-// RootCA returns a function to create a secret with a ca
+// RootCA returns a function to create a secret with the root ca
 func RootCA(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	create := getCACreator(resources.CASecretName, fmt.Sprintf("root-ca.%s", data.Cluster.Address.ExternalName))
 
 	return create(data, existing)
 }
 
-// FrontProxyCA returns a function to create a secret with a ca
+// FrontProxyCA returns a function to create a secret with front proxy ca
 func FrontProxyCA(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	create := getCACreator(resources.FrontProxyCASecretName, resources.FrontProxyCASecretName)
 
