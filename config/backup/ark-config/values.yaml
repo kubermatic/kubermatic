@@ -1,22 +1,36 @@
 ark:
-  ## Parameters for the ' default' Config resource
-  ## See https://heptio.github.io/ark/v0.9.0/config-definition
+  # see https://heptio.github.io/ark/v0.9.0/config-definition
   configuration:
+    # If you are using volumes backed by cloud provider
+    # storages, you can enable this option to use the provider's
+    # native API to perform snapshots for you.
     #persistentVolumeProvider:
     #  name:
     #  config:
     #    region:
     #    apiTimeout:
 
+    # In all cases, you need to specify where backups should be
+    # placed. This can either be a cloud-native storage (like
+    # AWS S3) or your own S3-compatible storage (like Minio,
+    # configure "aws" in that case).
     backupStorageProvider:
-      name: aws
-      bucket: ark-xrstf
-      resticLocation: restic-xrstf
+      name: aws|gcp|azure
+      bucket: myclusterbackups
+
+      # provider specific configuration, for example for AWS S3
       config:
         region: eu-west-1
-        s3Url: http://minio.minio.svc.cluster.local:9000
-        s3ForcePathStyle: "true"
-        #kmsKeyId:
+        #s3Url: ...
+        #s3ForcePathStyle: "true" or "false" # must be a string
+        #kmsKeyId: ...
+
+      # If you are making use of restic to perform file-based
+      # snapshots of your volumes, configure the bucket name
+      # inside your backupStorageProvider where restic should
+      # create its repository. If you leave this empty, no
+      # restic daemonset will be created.
+      #resticLocation: resticbackups
 
     backupSyncPeriod: 60m
     gcSyncPeriod: 60m
