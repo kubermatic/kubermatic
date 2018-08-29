@@ -32,7 +32,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -79,7 +79,7 @@ func newListNodesForCluster(projectProvider provider.ProjectProvider) endpoint.E
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -147,7 +147,7 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -198,7 +198,7 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
