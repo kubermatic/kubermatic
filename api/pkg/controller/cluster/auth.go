@@ -372,6 +372,10 @@ func (cc *Controller) getSchedulerKubeconfigSecret(c *kubermaticv1.Cluster, exis
 	return cc.getKubeconfigSecret(c, existingSecret, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername)
 }
 
+func (cc *Controller) getKubeletDnatControllerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
+	return cc.getKubeconfigSecret(c, existingSecret, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername)
+}
+
 func (cc *Controller) getControllerManagerKubeconfigSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
 	return cc.getKubeconfigSecret(c, existingSecret, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername)
 }

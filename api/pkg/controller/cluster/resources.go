@@ -189,6 +189,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
+		{resources.KubeletDnatControllerKubeconfigSecretName, cc.getKubeletDnatControllerKubeconfigSecret},
 		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
 		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.KubeStateMetricsKubeconfigSecretName, cc.getKubeStateMetricsKubeconfigSecret},

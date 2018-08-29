@@ -26,6 +26,7 @@ spec:
       labels:
         app: dns-resolver
         ca-secret-revision: "123456"
+        cluster: de-test-01
         dns-resolver-configmap-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
     spec:

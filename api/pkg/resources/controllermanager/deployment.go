@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -107,7 +108,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
@@ -189,6 +190,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: controllerManagerMounts,
 		},
 	}
+
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
 
 	return dep, nil
 }

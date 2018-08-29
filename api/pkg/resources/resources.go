@@ -71,11 +71,13 @@ const (
 	AdminKubeconfigSecretName = "admin-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
+	//KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
+	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
 	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
 	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
-	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
@@ -132,6 +134,8 @@ const (
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
+	//KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
+	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
 	IPAMControllerCertUsername = "kubermatic:ipam-controller"
 
@@ -150,6 +154,11 @@ const (
 	IPAMControllerClusterRoleName = "system:kubermatic-ipam-controller"
 	// IPAMControllerClusterRoleBindingName is the name for the IPAMController clusterrolebinding
 	IPAMControllerClusterRoleBindingName = "system:kubermatic-ipam-controller"
+
+	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
+	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
+	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding
+	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
@@ -189,6 +198,9 @@ const (
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay
 	RegistryQuay = "quay.io"
+
+	// TopologyKeyHostname defines the topology key for the node hostname
+	TopologyKeyHostname = "kubernetes.io/hostname"
 )
 
 const (
@@ -507,8 +519,8 @@ func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.P
 
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
 // This will force pods being restarted as soon as one of the secrets/configmaps get updated.
-func (d *TemplateData) GetPodTemplateLabels(name string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
-	podLabels := BaseAppLabel(name, additionalLabels)
+func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+	podLabels := AppClusterLabel(appName, d.Cluster.Name, additionalLabels)
 
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
@@ -539,6 +551,14 @@ func BaseAppLabel(name string, additionalLabels map[string]string) map[string]st
 		labels[k] = v
 	}
 	return labels
+}
+
+// AppClusterLabel returns the base app label + the cluster label. Additional labels can be included as well
+func AppClusterLabel(appName, clusterName string, additionalLabels map[string]string) map[string]string {
+	podLabels := BaseAppLabel(appName, additionalLabels)
+	podLabels["cluster"] = clusterName
+
+	return podLabels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days
