@@ -21,14 +21,11 @@ spec:
           args:
             - restic
             - server
-          volumeMounts:
-            - name: cloud-credentials
-              mountPath: /credentials
-            - name: host-pods
-              mountPath: /host_pods
-              mountPropagation: HostToContainer
-            - name: scratch
-              mountPath: /scratch
+          {{- if .Values.ark.credentials.azure }}
+          envFrom:
+            - secretRef:
+                name: azure-credentials
+          {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -38,19 +35,46 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: AWS_SHARED_CREDENTIALS_FILE
-              value: /credentials/cloud
             - name: ARK_SCRATCH_DIR
               value: /scratch
+          {{- if .Values.ark.credentials.aws }}
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /credentials/aws/creds
+          {{- end }}
+          {{- if .Values.ark.credentials.gcp }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /credentials/gcp/creds
+          {{- end }}
+          volumeMounts:
+            - name: host-pods
+              mountPath: /host_pods
+              mountPropagation: HostToContainer
+            - name: scratch
+              mountPath: /scratch
+          {{- if .Values.ark.credentials.aws }}
+            - name: aws-credentials
+              mountPath: /credentials/aws
+          {{- end }}
+          {{- if .Values.ark.credentials.gcp }}
+            - name: gcp-credentials
+              mountPath: /credentials/gcp
+          {{- end }}
       volumes:
-        - name: cloud-credentials
-          secret:
-            secretName: cloud-credentials
         - name: host-pods
           hostPath:
             path: /var/lib/kubelet/pods
         - name: scratch
           emptyDir: {}
+      {{- if .Values.ark.credentials.aws }}
+        - name: aws-credentials
+          secret:
+            secretName: aws-credentials
+      {{- end }}
+      {{- if .Values.ark.credentials.gcp }}
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-credentials
+      {{- end }}
       serviceAccountName: ark-server
       securityContext:
         runAsUser: 0

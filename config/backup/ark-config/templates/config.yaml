@@ -2,45 +2,4 @@ apiVersion: ark.heptio.com/v1
 kind: Config
 metadata:
   name: default
-{{ with .Values.ark.configuration }}
-#{{- with .persistentVolumeProvider }}
-#  persistentVolumeProvider:
-#    name: {{ .name  }}
-#  {{ with .config }}
-#    config:
-#    {{- with .region }}
-#      region: {{ . }}
-#    {{- end }}
-#    {{- with .apitimeout }}
-#      apiTimeout: {{ . }}
-#    {{- end }}
-#  {{- end }}
-#{{- end }}
-{{- with .backupStorageProvider }}
-backupStorageProvider:
-  name: {{ .name }}
-  bucket: {{ .bucket  }}
-{{- with .resticLocation  }}
-  resticLocation: {{ . }}
-{{- end }}
-{{- with .config }}
-  config:
-  {{- with .region }}
-    region: {{ . }}
-  {{- end }}
-  {{- with .s3ForcePathStyle }}
-    s3ForcePathStyle: {{ . | quote }}
-  {{- end }}
-  {{- with .s3Url }}
-    s3Url: {{ . }}
-  {{- end }}
-  {{- with .kmsKeyId }}
-    kmsKeyId: {{ . }}
-  {{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
-backupSyncPeriod: {{ .backupSyncPeriod }}
-gcSyncPeriod: {{ .gcSyncPeriod }}
-scheduleSyncPeriod: {{ .scheduleSyncPeriod }}
-restoreOnlyMode: {{ .restoreOnlyMode }}
+{{ .Values.ark.configuration | toYaml }}
