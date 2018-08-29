@@ -37,6 +37,7 @@ spec:
         cluster: de-test-01
         front-proxy-ca-secret-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
+        kubeletdnatcontroller-kubeconfig-secret-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
@@ -113,6 +114,36 @@ spec:
           name: ca
           readOnly: true
       - args:
+        - --kubeconfig
+        - /etc/kubernetes/dnat-controller-kubeconfig/kubeletdnatcontroller-kubeconfig
+        - --node-access-network
+        - 192.0.2.0/24
+        - -v
+        - "4"
+        - -logtostderr
+        command:
+        - /usr/local/bin/kubeletdnat-controller
+        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0
+        imagePullPolicy: IfNotPresent
+        name: dnat-controller
+        resources:
+          limits:
+            cpu: 20m
+            memory: 20Mi
+          requests:
+            cpu: 5m
+            memory: 10Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/dnat-controller-kubeconfig
+          name: kubeletdnatcontroller-kubeconfig
+          readOnly: true
+      - args:
         - --advertise-address
         - 35.198.93.90
         - --secure-port
@@ -184,12 +215,12 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
         - --cloud-provider
         - openstack
         - --cloud-config
         - /etc/kubernetes/cloud/config
-        - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
         command:
         - /hyperkube
         - apiserver
@@ -266,6 +297,8 @@ spec:
         - svc.cluster.local
         - cluster.local
       dnsPolicy: None
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - command:
         - /bin/sh
@@ -328,4 +361,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: front-proxy-ca
+      - name: kubeletdnatcontroller-kubeconfig
+        secret:
+          defaultMode: 256
+          secretName: kubeletdnatcontroller-kubeconfig
 status: {}

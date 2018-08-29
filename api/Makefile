@@ -1,6 +1,6 @@
 REPO=kubermatic/api
 GO?=go
-CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter ipam-controller projects-migrator
+CMD=kubermatic-api kubermatic-controller-manager kubermatic-controller-manager-cleanup image-loader rbac-generator s3-storeuploader kubermatic-e2e s3-exporter ipam-controller projects-migrator kubeletdnat-controller
 GOBUILDFLAGS += -v
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
