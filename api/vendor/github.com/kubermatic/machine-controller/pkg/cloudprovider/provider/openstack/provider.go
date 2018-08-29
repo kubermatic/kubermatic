@@ -3,6 +3,7 @@ package openstack
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -545,6 +546,9 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 		return "", "", fmt.Errorf("failed to parse config: %v", err)
 	}
 
+	// Quotation marks in passwords are allowed and must be escaped to not break
+	// the cloud-config
+	var replacer = strings.NewReplacer("\"", "\\\"")
 	config = fmt.Sprintf(`
 [Global]
 auth-url = "%s"
@@ -553,7 +557,7 @@ password = "%s"
 domain-name="%s"
 tenant-name = "%s"
 region = "%s"
-`, c.IdentityEndpoint, c.Username, c.Password, c.DomainName, c.TenantName, c.Region)
+`, c.IdentityEndpoint, c.Username, replacer.Replace(c.Password), c.DomainName, c.TenantName, c.Region)
 	return config, "openstack", nil
 }
 
